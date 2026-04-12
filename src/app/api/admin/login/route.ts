@@ -111,8 +111,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Kullanıcı adı veya şifre hatalı' }, { status: 401 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Sunucu hatası veya veritabanı bağlantı sorunu' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Sunucu hatası veya veritabanı bağlantı sorunu' }, { status: 500 });
   }
 }

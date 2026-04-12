@@ -108,10 +108,10 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('[AUTH_REGISTER]', error);
     return NextResponse.json(
-      { error: 'Bir hata oluştu. Lütfen tekrar deneyin.' },
+      { error: error?.message || 'Bir hata oluştu. Lütfen tekrar deneyin.' },
       { status: 500 }
     );
   }
