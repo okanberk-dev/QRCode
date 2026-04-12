@@ -69,23 +69,22 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto animate-slide-up bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-      <h3 className="text-xl font-semibold mb-2 text-[var(--color-text-main)]">{t.share_experience}</h3>
-      <p className="text-sm text-[var(--color-text-muted)] mb-6">
+    <div className="w-full max-w-md mx-auto animate-slide-up bg-white p-6 sm:p-8 rounded-2xl shadow-[0_1px_2px_0_rgba(60,64,67,.3),0_1px_3px_1px_rgba(60,64,67,.15)] border border-gray-100">
+      <h3 className="text-xl font-medium mb-2 text-[#202124]">{t.share_experience}</h3>
+      <p className="text-sm text-[#5f6368] mb-8">
         {t.feedback_reason}
       </p>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">
+        <div className="bg-red-50 text-[#d93025] p-3 rounded-lg text-sm mb-6 border border-red-100">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4 text-left">
-        {/* Comment - Required for low ratings */}
+      <form onSubmit={handleSubmit} className="space-y-6 text-left">
         <div>
-          <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-1">
-            {t.comment_label} <span className="text-[var(--color-primary-500)]">*</span>
+          <label htmlFor="comment" className="block text-xs font-medium text-[#70757a] uppercase tracking-wider mb-2">
+            {t.comment_label} <span className="text-[#d93025]">*</span>
           </label>
           <textarea
             id="comment"
@@ -94,99 +93,101 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
             value={formData.comment}
             onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
             placeholder={t.comment_placeholder}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-red-100 outline-none transition-all resize-none text-[var(--color-text-main)]"
+            className="w-full px-4 py-3 rounded-xl border border-[#dadce0] focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all resize-none text-[#202124] bg-white"
           />
         </div>
 
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            {t.name_label} <span className="text-gray-400 font-normal">{t.optional}</span>
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            placeholder={t.name_placeholder}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-red-100 outline-none transition-all text-[var(--color-text-main)]"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-              {t.phone_label} <span className="text-gray-400 font-normal">{t.optional}</span>
-            </label>
+        <div className="space-y-6">
+          <div className="relative group">
             <input
-              type="tel"
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              placeholder={t.phone_placeholder}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-red-100 outline-none transition-all text-[var(--color-text-main)]"
+              type="text"
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder={t.name_placeholder}
+              className="w-full px-4 py-3 rounded-xl border border-[#dadce0] focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all text-[#202124] bg-white placeholder-gray-400"
             />
+            <label htmlFor="name" className="absolute -top-2.5 left-3 px-1 bg-white text-xs font-medium text-[#70757a]">
+              {t.name_label} <span className="text-gray-400 font-normal">{t.optional}</span>
+            </label>
           </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              {t.email_label} <span className="text-gray-400 font-normal">{t.optional}</span>
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              placeholder={t.email_placeholder}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-red-100 outline-none transition-all text-[var(--color-text-main)]"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="relative group">
+              <input
+                type="tel"
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder={t.phone_placeholder}
+                className="w-full px-4 py-3 rounded-xl border border-[#dadce0] focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all text-[#202124] bg-white placeholder-gray-400"
+              />
+              <label htmlFor="phone" className="absolute -top-2.5 left-3 px-1 bg-white text-xs font-medium text-[#70757a]">
+                {t.phone_label}
+              </label>
+            </div>
+
+            <div className="relative group">
+              <input
+                type="email"
+                id="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder={t.email_placeholder}
+                className="w-full px-4 py-3 rounded-xl border border-[#dadce0] focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all text-[#202124] bg-white placeholder-gray-400"
+              />
+              <label htmlFor="email" className="absolute -top-2.5 left-3 px-1 bg-white text-xs font-medium text-[#70757a]">
+                {t.email_label}
+              </label>
+            </div>
           </div>
         </div>
         
-        <div className="space-y-3 mt-4">
-          <label className="flex items-start gap-2 cursor-pointer group">
+        <div className="space-y-4 pt-2">
+          <label className="flex items-start gap-3 cursor-pointer group">
             <div className="flex-shrink-0 mt-0.5">
               <input
                 type="checkbox"
                 required
-                className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 transition-colors cursor-pointer"
+                className="w-4 h-4 rounded border-[#dadce0] text-[#1a73e8] focus:ring-[#1a73e8] transition-colors cursor-pointer"
                 checked={formData.hasKvkkConsent}
                 onChange={(e) => setFormData(prev => ({ ...prev, hasKvkkConsent: e.target.checked }))}
               />
             </div>
-            <span className="text-xs text-gray-500 leading-tight">
-              {t.kvkk_consent_pt1} <a href="/kvkk" target="_blank" className="text-red-500 hover:underline">{t.kvkk_link}</a>{t.kvkk_consent_pt2}<a href="/acik-riza" target="_blank" className="text-red-500 hover:underline">{t.acik_riza_link}</a>{t.kvkk_consent_pt3} <span className="text-red-500">*</span>
+            <span className="text-[11px] text-[#70757a] leading-tight">
+              {t.kvkk_consent_pt1} <a href="/kvkk" target="_blank" className="text-[#1a73e8] hover:underline">{t.kvkk_link}</a>{t.kvkk_consent_pt2}<a href="/acik-riza" target="_blank" className="text-[#1a73e8] hover:underline">{t.acik_riza_link}</a>{t.kvkk_consent_pt3} <span className="text-[#d93025] font-bold">*</span>
             </span>
           </label>
 
-          <label className="flex items-start gap-2 cursor-pointer group">
+          <label className="flex items-start gap-3 cursor-pointer group">
             <div className="flex-shrink-0 mt-0.5">
               <input
                 type="checkbox"
-                className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 transition-colors cursor-pointer"
+                className="w-4 h-4 rounded border-[#dadce0] text-[#1a73e8] focus:ring-[#1a73e8] transition-colors cursor-pointer"
                 checked={formData.hasMarketingConsent}
                 onChange={(e) => setFormData(prev => ({ ...prev, hasMarketingConsent: e.target.checked }))}
               />
             </div>
-            <span className="text-xs text-gray-500 leading-tight">
-              {t.marketing_consent_pt1}<a href="/ticari-ileti" target="_blank" className="text-red-500 hover:underline">{t.marketing_link}</a>{t.marketing_consent_pt2}
+            <span className="text-[11px] text-[#70757a] leading-tight">
+              {t.marketing_consent_pt1}<a href="/ticari-ileti" target="_blank" className="text-[#1a73e8] hover:underline">{t.marketing_link}</a>{t.marketing_consent_pt2}
             </span>
           </label>
         </div>
         
-        <div className="pt-2">
+        <div className="pt-4">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-2 bg-[var(--color-main)] bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-500)] text-white font-medium px-4 py-4 rounded-xl hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-200 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 bg-[#1a73e8] hover:bg-[#1967d2] text-white font-medium px-6 py-3.5 rounded-full shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="animate-spin" size={20} />
+                <Loader2 className="animate-spin" size={18} />
                 <span>{t.sending}</span>
               </>
             ) : (
               <>
-                <Send size={20} />
+                <Send size={18} />
                 <span>{t.send}</span>
               </>
             )}

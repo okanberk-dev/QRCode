@@ -20,17 +20,15 @@ export default function StarRating({ rating, onRatingChange }: StarRatingProps) 
           onClick={() => onRatingChange(star)}
           onMouseEnter={() => setHoverRating(star)}
           onMouseLeave={() => setHoverRating(0)}
-          className={`
-            relative p-2 transition-all duration-300 transform
-            hover:scale-110 active:scale-95 focus:outline-none
-            ${(hoverRating || rating) >= star ? 'star-anim-pulse text-[var(--color-accent-500)]' : 'text-gray-300'}
-          `}
-          aria-label={`${star} Yıldız`}
+          className="group relative transition-all duration-200 active:scale-90"
         >
           <Star
-            size={48} // Big touch targets for mobile
-            className="transition-colors duration-200"
-            fill={(hoverRating || rating) >= star ? 'currentColor' : 'none'}
+            size={48}
+            className={`transition-all duration-300 ${
+              star <= (hoverRating || rating)
+                ? 'fill-[#fbbc04] text-[#fbbc04] scale-110'
+                : 'text-gray-200 fill-transparent'
+            } group-hover:drop-shadow-[0_0_8px_rgba(251,188,4,0.3)]`}
             strokeWidth={1.5}
           />
         </button>
