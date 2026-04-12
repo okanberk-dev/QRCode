@@ -28,12 +28,12 @@ There are multiple identity types:
 3.  **Restaurant Owner (Users):** The SaaS clients (from `User` model, role: `restaurant_owner`).
 
 ### ⚡ Simultaneous Entity Creation
-When a Superadmin creates a new `Manager` from the Admin Panel (`src/app/admin/users/page.tsx`), the API allows for the simultaneous creation of a new `Restaurant` (passing `isNewRestaurant` and `restaurantData` containing name, slug, address, phone). This executes sequentially and binds the new `restaurantId` to the `AdminUser`. Do NOT separate this logic without implementing Prisma Transactions (which is currently handled async block sequentially).
+When a Superadmin creates a new `Manager` from the Admin Panel (`src/app/admin/users/page.tsx`), the API allows for the simultaneous creation of a new `Restaurant` (passing `isNewRestaurant` and `restaurantData` containing name, slug, address, phone). This executes sequentially and binds the new `restaurantId` to the `AdminUser`.
 
-### ⚠️ IDOR & Prisma Scoping Rules
-When fetching records in `/api/feedback/*` and `/api/restaurants/*`:
-*   Always extract `admin` token via `getAdminFromRequest(req)`.
-*   Ensure that if `admin.role === 'restaurant_owner'`, queries are STRICTLY scoped (`where: { restaurantId: { in: userRestIds } }`) to prevent IDOR (Insecure Direct Object Reference) data leakage between different SaaS clients.
+### 🛡️ Security & UX Enhancements
+- **Double Password Verification:** The registration form (`RegisterForm.tsx`) implements a "Confirm Password" logic to prevent user entry errors.
+- **Admin Stealth:** The Admin Panel entry points are removed from the public Marketing Footer for better security posture and cleaner client-facing UX.
+- **IDOR Protection:** Queries in `/api/feedback/*` and `/api/restaurants/*` are strictly scoped to the `admin.restaurantId` or user's authorized IDs.
 
 ---
 
@@ -104,7 +104,8 @@ The main layout relies heavily on a custom color palette defined mostly inline o
 
 ## 🔧 Build & Deploy
 This project deploys on Vercel. 
-If modifying components used in SSR (e.g. `PricingFaq.tsx`), ensure strict hydration compliance. Do not use dynamic browser objects inside Server Components.
+*   **Prisma Client:** The `package.json` includes a `postinstall: prisma generate` script. This is CRITICAL for Vercel environments to ensure the Prisma Client is generated correctly during the build phase, preventing "undefined model" runtime errors.
+*   **SSR Compliance:** Do not use dynamic browser objects inside Server Components.
 
 ```bash
 npm install
