@@ -9,7 +9,7 @@ export default function GoogleReviewLink() {
     <div className="mt-8 pt-8 border-t border-gray-200 w-full text-center">
       <p className="text-sm text-[#5f6368] mb-4">{t.direct_google_text}</p>
       <a 
-        href={process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL || 'https://search.google.com/local/writereview?placeid=YOUR_PLACE_ID'}
+        href={process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL || 'https://www.google.com/search?q=mama%27s+burger+ankara&ie=UTF-8#sv=CAwShAIKBmxjbF9wdhI3CgNwdnESMENnMHZaeTh4TVcxeVpqQnFOM1EySWhNS0RXMWhiV0VuY3lCaWRYSm5aWElRQWhnRBJ-CgNscWkSd0NoUnRZVzFoSjNNZ1luVnlaMlZ5SUdGdWEyRnlZVWltdnFEUTNiT0FnQWhhSUJBQUVBRVlBQmdCR0FJaUZHMWhiV0VuY3lCaWRYSm5aWElnWVc1cllYSmhrZ0VVWm1GemRGOW1iMjlrWDNKbGMzUmhkWEpoYm5REhIKA3RicxILbHJmOiEzc0lBRT0SGQoBcRIUbWFtYSdzIGJ1cmdlciBhbmthcmEaEmxvY2FsLXBsYWNlLXZpZXdlchgKIOylosgG'}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center justify-center gap-2 text-sm font-medium text-[#1a73e8] hover:bg-[#e8f0fe] transition-all px-6 py-2.5 rounded-full border border-[#dadce0] hover:border-[#d2e3fc]"

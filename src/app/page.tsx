@@ -19,7 +19,7 @@ function RatingContent() {
 
     // If 4 or 5 stars, log to DB and redirect to Google Review directly
     if (newRating >= 4) {
-      const googleUrl = process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL || 'https://search.google.com/local/writereview?placeid=YOUR_PLACE_ID';
+      const googleUrl = process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL || 'https://www.google.com/search?q=mama%27s+burger+ankara&ie=UTF-8#sv=CAwShAIKBmxjbF9wdhI3CgNwdnESMENnMHZaeTh4TVcxeVpqQnFOM1EySWhNS0RXMWhiV0VuY3lCaWRYSm5aWElRQWhnRBJ-CgNscWkSd0NoUnRZVzFoSjNNZ1luVnlaMlZ5SUdGdWEyRnlZVWltdnFEUTNiT0FnQWhhSUJBQUVBRVlBQmdCR0FJaUZHMWhiV0VuY3lCaWRYSm5aWElnWVc1cllYSmhrZ0VVWm1GemRGOW1iMjlrWDNKbGMzUmhkWEpoYm5REhIKA3RicxILbHJmOiEzc0lBRT0SGQoBcRIUbWFtYSdzIGJ1cmdlciBhbmthcmEaEmxvY2FsLXBsYWNlLXZpZXdlchgKIOylosgG';
       
       // Log the high rating in background (optional, but good for analytics)
       try {

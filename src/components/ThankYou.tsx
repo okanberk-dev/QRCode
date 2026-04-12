@@ -31,7 +31,7 @@ export default function ThankYou({ rating }: ThankYouProps) {
 
       {isHighRating && (
         <a 
-          href={process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL || 'https://search.google.com/local/writereview?placeid=YOUR_PLACE_ID'}
+          href={process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL || 'https://www.google.com/search?q=mama%27s+burger+ankara&ie=UTF-8#sv=CAwShAIKBmxjbF9wdhI3CgNwdnESMENnMHZaeTh4TVcxeVpqQnFOM1EySWhNS0RXMWhiV0VuY3lCaWRYSm5aWElRQWhnRBJ-CgNscWkSd0NoUnRZVzFoSjNNZ1luVnlaMlZ5SUdGdWEyRnlZVWltdnFEUTNiT0FnQWhhSUJBQUVBRVlBQmdCR0FJaUZHMWhiV0VuY3lCaWRYSm5aWElnWVc1cllYSmhrZ0VVWm1GemRGOW1iMjlrWDNKbGMzUmhkWEpoYm5REhIKA3RicxILbHJmOiEzc0lBRT0SGQoBcRIUbWFtYSdzIGJ1cmdlciBhbmthcmEaEmxvY2FsLXBsYWNlLXZpZXdlchgKIOylosgG'}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center gap-2 bg-[#1a73e8] hover:bg-[#1967d2] text-white font-medium px-8 py-3 rounded-full shadow-sm hover:shadow-md transition-all text-sm"
