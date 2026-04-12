@@ -4,21 +4,35 @@ import { verifyJwt } from '@/lib/auth';
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Protect all /admin/* routes EXCEPT the login page (/admin)
-  if (pathname.startsWith('/admin') && pathname !== '/admin') {
+  // Check access to /admin UI endpoints
+  if (pathname.startsWith('/admin')) {
     const token = req.cookies.get('admin_token')?.value;
 
-    if (!token) {
-      return NextResponse.redirect(new URL('/admin', req.url));
-    }
-
-    try {
-      const payload = await verifyJwt(token);
-      if (!payload) {
+    if (pathname === '/admin') {
+      if (token) {
+        try {
+          const payload = await verifyJwt(token);
+          if (payload) {
+            return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+          }
+        } catch {
+          // Token is invalid, let them stay on login page
+        }
+      }
+    } else {
+      // Protect all other /admin/* routes
+      if (!token) {
         return NextResponse.redirect(new URL('/admin', req.url));
       }
-    } catch {
-      return NextResponse.redirect(new URL('/admin', req.url));
+
+      try {
+        const payload = await verifyJwt(token);
+        if (!payload) {
+          return NextResponse.redirect(new URL('/admin', req.url));
+        }
+      } catch {
+        return NextResponse.redirect(new URL('/admin', req.url));
+      }
     }
   }
 
