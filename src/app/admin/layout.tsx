@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import { verifyJwt } from '@/lib/auth';
 
 export default async function AdminLayout({
   children,
@@ -10,8 +11,16 @@ export default async function AdminLayout({
   const cookieStore = await cookies();
   const token = cookieStore.get('admin_token')?.value;
 
-  // Simple auth check. Real app should verify signature here.
-  const isAuthenticated = !!token;
+  // Real auth verification: verify the JWT signature and contents
+  let isAuthenticated = false;
+  try {
+    if (token) {
+      const payload = await verifyJwt(token);
+      isAuthenticated = !!payload;
+    }
+  } catch (e) {
+    isAuthenticated = false;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 flex-col md:flex-row">

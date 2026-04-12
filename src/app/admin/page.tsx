@@ -42,7 +42,7 @@ export default function AdminLogin() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50 flex-1">
       <div className="w-full max-w-sm p-8 bg-white rounded-3xl shadow-sm border border-gray-100">
         <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-600">
+          <div className="w-16 h-16 bg-[#e8f0fe] rounded-full flex items-center justify-center text-[#1a73e8]">
             <Lock size={32} />
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function AdminLogin() {
               required
               value={credentials.username}
               onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none transition-all"
             />
           </div>
           <div>
@@ -73,14 +73,14 @@ export default function AdminLogin() {
               required
               value={credentials.password}
               onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none transition-all"
             />
           </div>
           <div className="pt-4">
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-500 text-white font-medium px-4 py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 bg-[#1a73e8] hover:bg-[#185abc] text-white font-medium px-4 py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : 'Giriş Yap'}
             </button>

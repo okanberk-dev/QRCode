@@ -83,7 +83,7 @@ export default function AdminDashboard() {
   if (loading && !stats) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-red-500 w-8 h-8" />
+        <Loader2 className="animate-spin text-[#1a73e8] w-8 h-8" />
       </div>
     );
   }
@@ -98,7 +98,7 @@ export default function AdminDashboard() {
         
         <button
           onClick={handleExport}
-          className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm"
+          className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 hover:border-[#1a73e8] hover:text-[#1a73e8] px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-sm"
         >
           <Download size={16} />
           CSV Olarak İndir
@@ -123,7 +123,7 @@ export default function AdminDashboard() {
             <select 
               value={filterRating}
               onChange={(e) => { setFilterRating(e.target.value); setPage(1); }}
-              className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-100 bg-gray-50"
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#e8f0fe] focus:border-[#1a73e8] bg-gray-50"
             >
               <option value="all">Tümü</option>
               <option value="low">Sadece Düşük (1-3)</option>

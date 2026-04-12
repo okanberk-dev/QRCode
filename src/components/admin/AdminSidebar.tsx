@@ -7,17 +7,15 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   const handleLogout = async () => {
-    // Basic trick: delete cookie via JS by setting it to past date.
-    // In a real app we'd have a logout endpoint.
     document.cookie = 'admin_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.location.href = '/admin';
   };
 
   return (
-    <div className="w-full md:w-64 bg-white border-b md:border-r md:border-b-0 border-gray-200 p-4 flex flex-col justify-between">
+    <div className="w-full md:w-64 bg-white border-b md:border-r md:border-b-0 border-gray-200 p-4 flex flex-col justify-between shadow-sm z-50">
       <div>
         <div className="mb-8 p-2">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-red-600 to-red-400 bg-clip-text text-transparent">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-[#1a73e8] to-[#185abc] bg-clip-text text-transparent">
             Mamma's Admin
           </h1>
         </div>
@@ -25,9 +23,9 @@ export default function AdminSidebar() {
         <nav className="space-y-2">
           <a
             href="/admin/dashboard"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
               pathname === '/admin/dashboard'
-                ? 'bg-red-50 text-red-600 font-medium'
+                ? 'bg-[#e8f0fe] text-[#1a73e8] font-semibold'
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >

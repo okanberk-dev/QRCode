@@ -162,18 +162,32 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
           
           {/* Consents Section */}
           <div className="space-y-4 border-t border-gray-100 pt-6">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                required
-                className="mt-1 w-4 h-4 rounded border-[#dadce0] text-[#1a73e8] focus:ring-[#1a73e8]"
-                checked={formData.hasKvkkConsent}
-                onChange={(e) => setFormData(prev => ({ ...prev, hasKvkkConsent: e.target.checked }))}
-              />
-              <span className="text-[11px] text-[#70757a]">
-                Aydınlatma Metni'ni okudum ve Kabul ediyorum <span className="text-[#d93025]">*</span>
-              </span>
-            </label>
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  required
+                  className="mt-1 w-4 h-4 rounded border-[#dadce0] text-[#1a73e8] focus:ring-[#1a73e8]"
+                  checked={formData.hasKvkkConsent}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hasKvkkConsent: e.target.checked }))}
+                />
+                <span className="text-[12px] leading-snug text-[#70757a]">
+                  <a href="/kvkk" target="_blank" className="text-[#1a73e8] hover:underline">Aydınlatma Metni</a>'ni ve <a href="/acik-riza" target="_blank" className="text-[#1a73e8] hover:underline">Açık Rıza Metni</a>'ni okudum, verilerimin işlenmesini kabul ediyorum <span className="text-[#d93025]">*</span>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  className="mt-1 w-4 h-4 rounded border-[#dadce0] text-[#1a73e8] focus:ring-[#1a73e8]"
+                  checked={formData.hasMarketingConsent}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hasMarketingConsent: e.target.checked }))}
+                />
+                <span className="text-[12px] leading-snug text-[#70757a]">
+                  Kampanya ve fırsatlardan haberdar olmak için <a href="/ticari-ileti" target="_blank" className="text-[#1a73e8] hover:underline">Ticari Elektronik İleti</a> almayı kabul ediyorum. (Opsiyonel)
+                </span>
+              </label>
+            </div>
           </div>
           
           <div className="flex justify-end pt-4 gap-4">

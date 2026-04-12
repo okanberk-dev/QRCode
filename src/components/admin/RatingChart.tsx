@@ -31,7 +31,7 @@ export default function RatingChart({ distribution, totalCount }: RatingChartPro
               
               <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                 <div 
-                  className={`h-full rounded-full ${star >= 4 ? 'bg-green-500' : star === 3 ? 'bg-yellow-400' : 'bg-red-500'}`}
+                  className="h-full rounded-full bg-[#fbbc04]"
                   style={{ width: `${percentage}%` }}
                 />
               </div>

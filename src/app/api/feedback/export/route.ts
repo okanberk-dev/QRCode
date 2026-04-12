@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
       f.hasMarketingConsent ? 'EVET' : 'HAYIR'
     ]);
 
-    const csvContent = [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const csvContent = '\ufeff' + [header.join(','), ...rows.map(r => r.join(','))].join('\n');
 
     return new NextResponse(csvContent, {
       status: 200,
