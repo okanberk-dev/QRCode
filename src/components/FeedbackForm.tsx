@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Send, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 interface FeedbackFormProps {
   rating: number;
@@ -10,6 +11,7 @@ interface FeedbackFormProps {
 }
 
 export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const source = searchParams.get('source') || 'qr';
   const branch = searchParams.get('branch') || '';
@@ -32,7 +34,7 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
     setError('');
 
     if (!formData.comment.trim()) {
-      setError('Lütfen yorumunuzu belirtin.');
+      setError(t.error_comment_required);
       return;
     }
 
@@ -54,23 +56,23 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
       const result = await response.json();
 
       if (!response.ok) {
-        setError(result.error || 'Bir hata oluştu, lütfen tekrar deneyin.');
+        setError(result.error || t.error_generic);
         setIsSubmitting(false);
         return;
       }
 
       onSuccess();
     } catch (err) {
-      setError('Bağlantı hatası. Lütfen internetinizi kontrol edin.');
+      setError(t.error_connection);
       setIsSubmitting(false);
     }
   };
 
   return (
     <div className="w-full max-w-md mx-auto animate-slide-up bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-      <h3 className="text-xl font-semibold mb-2 text-[var(--color-text-main)]">Deneyiminizi paylaşın</h3>
+      <h3 className="text-xl font-semibold mb-2 text-[var(--color-text-main)]">{t.share_experience}</h3>
       <p className="text-sm text-[var(--color-text-muted)] mb-6">
-        Size daha iyi hizmet verebilmemiz için görüşleriniz çok değerli.
+        {t.feedback_reason}
       </p>
 
       {error && (
@@ -83,7 +85,7 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
         {/* Comment - Required for low ratings */}
         <div>
           <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-1">
-            Yorumunuz <span className="text-[var(--color-primary-500)]">*</span>
+            {t.comment_label} <span className="text-[var(--color-primary-500)]">*</span>
           </label>
           <textarea
             id="comment"
@@ -91,21 +93,21 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
             rows={4}
             value={formData.comment}
             onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
-            placeholder="Neyi daha iyi yapabilirdik?"
+            placeholder={t.comment_placeholder}
             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-red-100 outline-none transition-all resize-none text-[var(--color-text-main)]"
           />
         </div>
 
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            Ad Soyad <span className="text-gray-400 font-normal">(İsteğe bağlı)</span>
+            {t.name_label} <span className="text-gray-400 font-normal">{t.optional}</span>
           </label>
           <input
             type="text"
             id="name"
             value={formData.name}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            placeholder="Adınız Soyadınız"
+            placeholder={t.name_placeholder}
             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-red-100 outline-none transition-all text-[var(--color-text-main)]"
           />
         </div>
@@ -113,28 +115,28 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-              Telefon <span className="text-gray-400 font-normal">(İsteğe bağlı)</span>
+              {t.phone_label} <span className="text-gray-400 font-normal">{t.optional}</span>
             </label>
             <input
               type="tel"
               id="phone"
               value={formData.phone}
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              placeholder="05XX XXX XX XX"
+              placeholder={t.phone_placeholder}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-red-100 outline-none transition-all text-[var(--color-text-main)]"
             />
           </div>
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              E-posta <span className="text-gray-400 font-normal">(İsteğe bağlı)</span>
+              {t.email_label} <span className="text-gray-400 font-normal">{t.optional}</span>
             </label>
             <input
               type="email"
               id="email"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              placeholder="ornek@email.com"
+              placeholder={t.email_placeholder}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-red-100 outline-none transition-all text-[var(--color-text-main)]"
             />
           </div>
@@ -152,7 +154,7 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
               />
             </div>
             <span className="text-xs text-gray-500 leading-tight">
-              Kişisel verilerimin işlenmesine ilişkin <a href="/kvkk" target="_blank" className="text-red-500 hover:underline">KVKK Aydınlatma Metni</a>'ni ve <a href="/acik-riza" target="_blank" className="text-red-500 hover:underline">Açık Rıza Metni</a>'ni okudum, kabul ediyorum. <span className="text-red-500">*</span>
+              {t.kvkk_consent_pt1} <a href="/kvkk" target="_blank" className="text-red-500 hover:underline">{t.kvkk_link}</a>{t.kvkk_consent_pt2}<a href="/acik-riza" target="_blank" className="text-red-500 hover:underline">{t.acik_riza_link}</a>{t.kvkk_consent_pt3} <span className="text-red-500">*</span>
             </span>
           </label>
 
@@ -166,7 +168,7 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
               />
             </div>
             <span className="text-xs text-gray-500 leading-tight">
-              Mamma's Burger tarafından sunulan kampanya, indirim ve fırsatlardan haberdar olmak için tarafıma <a href="/ticari-ileti" target="_blank" className="text-red-500 hover:underline">Ticari Elektronik İleti</a> gönderilmesini (SMS/E-posta) onaylıyorum.
+              {t.marketing_consent_pt1}<a href="/ticari-ileti" target="_blank" className="text-red-500 hover:underline">{t.marketing_link}</a>{t.marketing_consent_pt2}
             </span>
           </label>
         </div>
@@ -180,18 +182,16 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
             {isSubmitting ? (
               <>
                 <Loader2 className="animate-spin" size={20} />
-                <span>Gönderiliyor...</span>
+                <span>{t.sending}</span>
               </>
             ) : (
               <>
                 <Send size={20} />
-                <span>Gönder</span>
+                <span>{t.send}</span>
               </>
             )}
           </button>
         </div>
-        
-        <div className="pt-2">
       </form>
     </div>
   );

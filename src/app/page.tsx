@@ -5,11 +5,12 @@ import StarRating from '@/components/StarRating';
 import FeedbackForm from '@/components/FeedbackForm';
 import ThankYou from '@/components/ThankYou';
 import GoogleReviewLink from '@/components/GoogleReviewLink';
-import Image from 'next/image';
+import { useTranslation } from '@/lib/i18n';
 
 export default function RatingPage() {
   const [rating, setRating] = useState<number>(0);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const { t, isRtl } = useTranslation();
 
   const handleRatingChange = (newRating: number) => {
     setRating(newRating);
@@ -20,7 +21,7 @@ export default function RatingPage() {
   const showThankYouHigh = rating >= 4;
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
+    <main className={`flex flex-col items-center justify-center min-h-screen px-4 py-12 ${isRtl ? 'dir-rtl' : ''}`} dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-lg mx-auto flex flex-col items-center text-center">
         
         {/* Branding placeholder */}
@@ -31,16 +32,16 @@ export default function RatingPage() {
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-bold text-[var(--color-text-main)] mb-2">
-          {process.env.NEXT_PUBLIC_RESTAURANT_NAME || "Mamma's Burger"}
+          {t.restaurant_name}
         </h1>
         <p className="text-[var(--color-text-muted)] text-lg mb-8">
-          Bizi değerlendirin, deneyiminizi bizimle paylaşın
+          {t.subtitle}
         </p>
 
         {/* Rating Selector - Hidden if form is successfully submitted or if high rating selected */}
         {!showThankYouLow && !showThankYouHigh && (
           <div className="w-full bg-white p-6 rounded-3xl shadow-sm mb-8 border border-gray-100">
-            <h2 className="text-xl font-medium text-gray-800 mb-2">Nasıl buldunuz?</h2>
+            <h2 className="text-xl font-medium text-gray-800 mb-2">{t.how_was_it}</h2>
             <StarRating rating={rating} onRatingChange={handleRatingChange} />
           </div>
         )}
@@ -58,9 +59,9 @@ export default function RatingPage() {
         
         {/* Footer */}
         <footer className="mt-auto pt-8 flex gap-4 text-sm text-gray-400 border-t border-gray-100 w-full justify-center">
-          <a href="/gizlilik" className="hover:text-gray-600 transition-colors">Gizlilik Politikası</a>
+          <a href="/gizlilik" className="hover:text-gray-600 transition-colors">{t.privacy}</a>
           <span>&bull;</span>
-          <a href="/kvkk" className="hover:text-gray-600 transition-colors">KVKK</a>
+          <a href="/kvkk" className="hover:text-gray-600 transition-colors">{t.kvkk}</a>
         </footer>
       </div>
     </main>
