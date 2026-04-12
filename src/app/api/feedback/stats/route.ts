@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     const avgRating = aggregations._avg.rating?.toFixed(1) || '0.0';
 
     // Group by rating for distribution chart
-    const distributionRaw: any[] = await prisma.feedback.groupBy({
+    const distributionRaw = await prisma.feedback.groupBy({
       by: ['rating'],
       _count: true,
       orderBy: { rating: 'desc' }
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     const distribution = {
       5: 0, 4: 0, 3: 0, 2: 0, 1: 0,
     };
-    distributionRaw.forEach((item: any) => {
+    distributionRaw.forEach((item) => {
       distribution[item.rating as keyof typeof distribution] = item._count;
     });
 

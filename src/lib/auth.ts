@@ -2,7 +2,8 @@ import * as jose from 'jose';
 import { NextRequest } from 'next/server';
 
 export async function signJwt(payload: any) {
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret');
+  if (!process.env.JWT_SECRET) throw new Error("Missing JWT_SECRET");
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
   
   const jwt = await new jose.SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
@@ -15,7 +16,8 @@ export async function signJwt(payload: any) {
 
 export async function verifyJwt(token: string) {
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret');
+    if (!process.env.JWT_SECRET) throw new Error("Missing JWT_SECRET");
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jose.jwtVerify(token, secret);
     return payload;
   } catch (error) {

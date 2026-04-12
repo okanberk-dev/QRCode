@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendFeedbackNotification } from '@/lib/email';
-import { rateLimit } from '@/lib/rate-limit';
 import { getAdminFromRequest } from '@/lib/auth';
 import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/validations';
 
@@ -9,9 +8,16 @@ export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for') || (req as any).ip || 'unknown';
     
-    // Rate limit: Max 3 submissions per IP per 10 minutes
-    const isAllowed = rateLimit(ip, { windowMs: 10 * 60 * 1000, maxRequests: 3 });
-    if (!isAllowed) {
+    // Serverless-safe Database Rate limiting: Max 3 submissions per IP per 10 mins
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    const recentSubmissions = await prisma.feedback.count({
+      where: {
+        ipAddress: ip,
+        createdAt: { gte: tenMinutesAgo }
+      }
+    });
+
+    if (recentSubmissions >= 3) {
       return NextResponse.json({ error: 'Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.' }, { status: 429 });
     }
 

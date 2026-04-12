@@ -9,13 +9,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const feedbacks: any[] = await prisma.feedback.findMany({
+    const feedbacks = await prisma.feedback.findMany({
       orderBy: { createdAt: 'desc' }
     });
 
     // Generate CSV
     const header = ['ID', 'Tarih', 'Puan', 'Ad Soyad', 'E-posta', 'Telefon', 'Yorum', 'Şube', 'Masa No', 'IP', 'Pazarlama İzni'];
-    const rows = feedbacks.map((f: any) => [
+    const rows = feedbacks.map((f) => [
       f.id,
       f.createdAt.toISOString(),
       f.rating.toString(),

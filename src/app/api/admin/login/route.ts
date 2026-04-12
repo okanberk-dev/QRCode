@@ -6,8 +6,14 @@ export async function POST(req: NextRequest) {
   try {
     const { username, password } = await req.json();
 
-    const validUsername = process.env.ADMIN_USERNAME || 'admin';
-    const validPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const validUsername = process.env.ADMIN_USERNAME;
+    const validPassword = process.env.ADMIN_PASSWORD;
+
+    // Security Enhancement: Refuse login if env vars are missing
+    if (!validUsername || !validPassword) {
+      console.error('SERVER MISCONFIGURATION: Missing ADMIN_USERNAME or ADMIN_PASSWORD');
+      return NextResponse.json({ error: 'Sunucu yapılandırma hatası' }, { status: 500 });
+    }
 
     if (username === validUsername && password === validPassword) {
       // Create token
