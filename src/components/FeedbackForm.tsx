@@ -3,18 +3,18 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Loader2, X, Image as ImageIcon, Camera } from 'lucide-react';
-import { useTranslation } from '@/lib/i18n';
 
 interface FeedbackFormProps {
   rating: number;
   onSuccess: () => void;
+  restaurantSlug?: string;
+  restaurantName?: string;
 }
 
-export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
-  const { t } = useTranslation();
+export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restaurantName }: FeedbackFormProps) {
   const searchParams = useSearchParams();
   const source = searchParams.get('source') || 'qr';
-  const branch = searchParams.get('branch') || 'Mahall Ankara';
+  const branch = restaurantName || searchParams.get('branch') || '';
   const tableNumber = searchParams.get('table') || '';
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +34,7 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
     setError('');
 
     if (!formData.comment.trim()) {
-      setError(t.error_comment_required);
+      setError('Lütfen yorumunuzu belirtin.');
       return;
     }
 
@@ -49,21 +49,22 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
           rating,
           source,
           branch,
-          tableNumber
+          tableNumber,
+          restaurantSlug,
         })
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        setError(result.error || t.error_generic);
+        setError(result.error || 'Bir hata oluştu, lütfen tekrar deneyin.');
         setIsSubmitting(false);
         return;
       }
 
       onSuccess();
     } catch (err) {
-      setError(t.error_connection);
+      setError('Bağlantı hatası. Lütfen internetinizi kontrol edin.');
       setIsSubmitting(false);
     }
   };
@@ -172,7 +173,7 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
                   onChange={(e) => setFormData(prev => ({ ...prev, hasKvkkConsent: e.target.checked }))}
                 />
                 <span className="text-[12px] leading-snug text-[#70757a]">
-                  <a href="/kvkk" target="_blank" className="text-[#1a73e8] hover:underline">Aydınlatma Metni</a>'ni ve <a href="/acik-riza" target="_blank" className="text-[#1a73e8] hover:underline">Açık Rıza Metni</a>'ni okudum, verilerimin işlenmesini kabul ediyorum <span className="text-[#d93025]">*</span>
+                  <a href="/kvkk" target="_blank" className="text-[#1a73e8] hover:underline">Aydınlatma Metni</a>&apos;ni ve <a href="/acik-riza" target="_blank" className="text-[#1a73e8] hover:underline">Açık Rıza Metni</a>&apos;ni okudum, verilerimin işlenmesini kabul ediyorum <span className="text-[#d93025]">*</span>
                 </span>
               </label>
 

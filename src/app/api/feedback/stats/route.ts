@@ -10,19 +10,21 @@ export async function GET(req: NextRequest) {
 
   try {
     const daysParam = req.nextUrl.searchParams.get('days');
+    const restaurantId = req.nextUrl.searchParams.get('restaurantId');
     const today = new Date();
     
     // Build date filter
-    let dateFilter: any = {};
+    const dateFilter: any = {};
     if (daysParam && daysParam !== 'all') {
       const days = parseInt(daysParam);
       const pastDate = new Date();
       pastDate.setDate(today.getDate() - days);
-      dateFilter = {
-        createdAt: {
-          gte: pastDate
-        }
-      };
+      dateFilter.createdAt = { gte: pastDate };
+    }
+
+    // Restaurant filter
+    if (restaurantId && restaurantId !== 'all') {
+      dateFilter.restaurantId = restaurantId;
     }
 
     // Today filter
@@ -31,20 +33,16 @@ export async function GET(req: NextRequest) {
     // Basic stats
     const totalCount = await prisma.feedback.count({ where: dateFilter });
     
-    const todayCount = await prisma.feedback.count({
-      where: {
-        ...dateFilter,
-        createdAt: {
-          gte: startOfToday,
-        },
-      },
-    });
+    const todayFilter = { ...dateFilter, createdAt: { gte: startOfToday } };
+    const todayCount = await prisma.feedback.count({ where: todayFilter });
 
     const lowRatingCount = await prisma.feedback.count({
-      where: {
-        ...dateFilter,
-        rating: { lte: 3 }
-      }
+      where: { ...dateFilter, rating: { lte: 3 } }
+    });
+
+    // Count High Rating Redirects (Google Redirects)
+    const googleRedirectsCount = await prisma.feedback.count({
+      where: { ...dateFilter, rating: { gte: 4 }, comment: 'High Rating Redirect' }
     });
 
     const aggregations = await prisma.feedback.aggregate({
@@ -62,20 +60,14 @@ export async function GET(req: NextRequest) {
       orderBy: { rating: 'desc' }
     });
     
-    // Map distribution to ensure 1-5 keys exist
-    const distribution = {
-      5: 0, 4: 0, 3: 0, 2: 0, 1: 0,
-    };
+    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     distributionRaw.forEach((item) => {
       distribution[item.rating as keyof typeof distribution] = item._count;
     });
 
     // --- WORD CLOUD LOGIC ---
     const allComments = await prisma.feedback.findMany({
-      where: {
-        ...dateFilter,
-        comment: { not: '' }
-      },
+      where: { ...dateFilter, comment: { not: '' } },
       select: { comment: true }
     });
 
@@ -101,13 +93,14 @@ export async function GET(req: NextRequest) {
     const wordCloud = Object.entries(wordCounts)
       .map(([text, value]) => ({ text, value }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 30); // Top 30 words
+      .slice(0, 30);
 
     return NextResponse.json({
       totalCount,
       todayCount,
       avgRating,
       lowRatingCount,
+      googleRedirectsCount,
       distribution,
       wordCloud
     });

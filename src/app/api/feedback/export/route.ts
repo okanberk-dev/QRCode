@@ -9,21 +9,34 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const restaurantId = req.nextUrl.searchParams.get('restaurantId');
+    const where: any = {};
+    
+    if (restaurantId && restaurantId !== 'all') {
+      where.restaurantId = restaurantId;
+    }
+
     const feedbacks = await prisma.feedback.findMany({
-      orderBy: { createdAt: 'desc' }
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        restaurant: {
+          select: { name: true, slug: true }
+        }
+      }
     });
 
     // Generate CSV
-    const header = ['ID', 'Tarih', 'Puan', 'Ad Soyad', 'E-posta', 'Telefon', 'Yorum', 'Şube', 'Masa No', 'IP', 'Pazarlama İzni'];
+    const header = ['ID', 'Tarih', 'Puan', 'Ad Soyad', 'E-posta', 'Telefon', 'Yorum', 'Restoran', 'Şube', 'Masa No', 'IP', 'Pazarlama İzni'];
     const rows = feedbacks.map((f) => [
       f.id,
       f.createdAt.toISOString(),
       f.rating.toString(),
-      // Escape quotes and wrap in quotes to handle commas/newlines in text naturally
       `"${(f.name || '').replace(/"/g, '""')}"`,
       `"${(f.email || '').replace(/"/g, '""')}"`,
       `"${(f.phone || '').replace(/"/g, '""')}"`,
       `"${(f.comment || '').replace(/"/g, '""')}"`,
+      `"${(f.restaurant?.name || '').replace(/"/g, '""')}"`,
       `"${(f.branch || '').replace(/"/g, '""')}"`,
       `"${(f.tableNumber || '').replace(/"/g, '""')}"`,
       `"${(f.ipAddress || '').replace(/"/g, '""')}"`,
@@ -31,12 +44,15 @@ export async function GET(req: NextRequest) {
     ]);
 
     const csvContent = '\ufeff' + [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const filename = restaurantId && restaurantId !== 'all' 
+      ? `degerlendirmeler-${restaurantId}-${new Date().toISOString().split('T')[0]}.csv`
+      : `degerlendirmeler-tumu-${new Date().toISOString().split('T')[0]}.csv`;
 
     return new NextResponse(csvContent, {
       status: 200,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="mammasburger-degerlendirmeler-${new Date().toISOString().split('T')[0]}.csv"`
+        'Content-Disposition': `attachment; filename="${filename}"`
       }
     });
 

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { rating, name, email, phone, comment, source, branch, tableNumber } = body;
+    const { rating, name, email, phone, comment, source, branch, tableNumber, restaurantSlug } = body;
 
     // Validation
     if (!isValidRating(rating)) {
@@ -33,6 +33,22 @@ export async function POST(req: NextRequest) {
     }
     if (!isValidPhone(phone)) {
       return NextResponse.json({ error: 'Geçersiz telefon' }, { status: 400 });
+    }
+
+    // Find restaurant by slug
+    let restaurantId: string | null = null;
+    let notificationEmail: string | null = null;
+    let restaurantName: string = 'Restoran';
+
+    if (restaurantSlug) {
+      const restaurant = await prisma.restaurant.findUnique({
+        where: { slug: restaurantSlug },
+      });
+      if (restaurant) {
+        restaurantId = restaurant.id;
+        notificationEmail = restaurant.notificationEmail;
+        restaurantName = restaurant.name;
+      }
     }
 
     // Save to DB
@@ -50,13 +66,12 @@ export async function POST(req: NextRequest) {
         userAgent: req.headers.get('user-agent'),
         hasKvkkConsent: body.hasKvkkConsent ?? true,
         hasMarketingConsent: body.hasMarketingConsent ?? false,
+        restaurantId,
       },
     });
 
     // Send email for 1, 2, 3 stars
     if (rating <= 3) {
-      // Trigger email but don't await strictly to prevent delay
-      // Actually, in serverless, we should await to ensure it finishes before function shuts down
       try {
         await sendFeedbackNotification({
           rating,
@@ -66,6 +81,8 @@ export async function POST(req: NextRequest) {
           comment,
           branch,
           tableNumber,
+          restaurantName,
+          toEmail: notificationEmail,
         });
       } catch (err) {
         // Log but don't fail the entire request - the feedback IS in the DB!
@@ -76,7 +93,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, id: feedback.id }, { status: 201 });
   } catch (error) {
     console.error('Feedback submission error (Detailed):', error);
-    // Be more specific in logs for the user to find in Vercel panel
     if (error instanceof Error) {
       console.error('ERROR MESSAGE:', error.message);
       console.error('ERROR STACK:', error.stack);
@@ -97,11 +113,17 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '50', 10);
   const ratingFilter = searchParams.get('rating'); // e.g. "low" or "1"
   const daysParam = searchParams.get('days');
+  const restaurantId = searchParams.get('restaurantId');
   
   const skip = (page - 1) * limit;
 
   // Build filter query
   const where: any = {};
+
+  // Restaurant filter
+  if (restaurantId && restaurantId !== 'all') {
+    where.restaurantId = restaurantId;
+  }
 
   // Rating filter
   if (ratingFilter === 'low') {
@@ -127,6 +149,11 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
+      include: {
+        restaurant: {
+          select: { name: true, slug: true }
+        }
+      }
     });
 
     const total = await prisma.feedback.count({ where });
