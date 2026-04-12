@@ -22,7 +22,9 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
     name: '',
     email: '',
     phone: '',
-    comment: ''
+    comment: '',
+    hasKvkkConsent: false,
+    hasMarketingConsent: false
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,6 +140,37 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
           </div>
         </div>
         
+        <div className="space-y-3 mt-4">
+          <label className="flex items-start gap-2 cursor-pointer group">
+            <div className="flex-shrink-0 mt-0.5">
+              <input
+                type="checkbox"
+                required
+                className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 transition-colors cursor-pointer"
+                checked={formData.hasKvkkConsent}
+                onChange={(e) => setFormData(prev => ({ ...prev, hasKvkkConsent: e.target.checked }))}
+              />
+            </div>
+            <span className="text-xs text-gray-500 leading-tight">
+              Kişisel verilerimin işlenmesine ilişkin <a href="/kvkk" target="_blank" className="text-red-500 hover:underline">KVKK Aydınlatma Metni</a>'ni ve <a href="/acik-riza" target="_blank" className="text-red-500 hover:underline">Açık Rıza Metni</a>'ni okudum, kabul ediyorum. <span className="text-red-500">*</span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-2 cursor-pointer group">
+            <div className="flex-shrink-0 mt-0.5">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 transition-colors cursor-pointer"
+                checked={formData.hasMarketingConsent}
+                onChange={(e) => setFormData(prev => ({ ...prev, hasMarketingConsent: e.target.checked }))}
+              />
+            </div>
+            <span className="text-xs text-gray-500 leading-tight">
+              Mamma's Burger tarafından sunulan kampanya, indirim ve fırsatlardan haberdar olmak için tarafıma <a href="/ticari-ileti" target="_blank" className="text-red-500 hover:underline">Ticari Elektronik İleti</a> gönderilmesini (SMS/E-posta) onaylıyorum.
+            </span>
+          </label>
+        </div>
+        
         <div className="pt-2">
           <button
             type="submit"
@@ -158,9 +191,7 @@ export default function FeedbackForm({ rating, onSuccess }: FeedbackFormProps) {
           </button>
         </div>
         
-        <p className="text-xs text-center text-gray-400 mt-4">
-          Devam ederek <a href="/kvkk" className="underline hover:text-gray-600">KVKK Aydınlatma Metni</a>'ni okuduğunuzu ve kabul ettiğinizi onaylamış olursunuz.
-        </p>
+        <div className="pt-2">
       </form>
     </div>
   );

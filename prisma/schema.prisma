@@ -18,9 +18,11 @@ model Feedback {
   source      String?  // "qr", "web", etc.
   branch      String?  // "ankara", etc.
   tableNumber String?  @map("table_number")
-  ipAddress   String?  @map("ip_address")
-  userAgent   String?  @map("user_agent")
-  createdAt   DateTime @default(now()) @map("created_at")
+  ipAddress          String?  @map("ip_address")
+  userAgent          String?  @map("user_agent")
+  hasKvkkConsent     Boolean  @default(true) @map("has_kvkk_consent")
+  hasMarketingConsent Boolean @default(false) @map("has_marketing_consent")
+  createdAt          DateTime @default(now()) @map("created_at")
 
   @@map("feedback")
 }

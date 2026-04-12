@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Generate CSV
-    const header = ['ID', 'Tarih', 'Puan', 'Ad Soyad', 'E-posta', 'Telefon', 'Yorum', 'Şube', 'Masa No', 'IP'];
+    const header = ['ID', 'Tarih', 'Puan', 'Ad Soyad', 'E-posta', 'Telefon', 'Yorum', 'Şube', 'Masa No', 'IP', 'Pazarlama İzni'];
     const rows = feedbacks.map((f: any) => [
       f.id,
       f.createdAt.toISOString(),
@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
       `"${(f.comment || '').replace(/"/g, '""')}"`,
       `"${(f.branch || '').replace(/"/g, '""')}"`,
       `"${(f.tableNumber || '').replace(/"/g, '""')}"`,
-      `"${(f.ipAddress || '').replace(/"/g, '""')}"`
+      `"${(f.ipAddress || '').replace(/"/g, '""')}"`,
+      f.hasMarketingConsent ? 'EVET' : 'HAYIR'
     ]);
 
     const csvContent = [header.join(','), ...rows.map(r => r.join(','))].join('\n');

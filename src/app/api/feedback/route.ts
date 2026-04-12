@@ -42,6 +42,8 @@ export async function POST(req: NextRequest) {
         tableNumber: sanitizeText(tableNumber, 20),
         ipAddress: ip,
         userAgent: req.headers.get('user-agent'),
+        hasKvkkConsent: body.hasKvkkConsent ?? true,
+        hasMarketingConsent: body.hasMarketingConsent ?? false,
       },
     });
 
