@@ -21,9 +21,7 @@ export default function RestaurantDetailPage() {
     category: 'Restoran',
     address: '',
     phone: '',
-    workingHours: '',
     googlePlaceId: '',
-    googleReviewUrl: '',
     notificationEmail: '',
     primaryColor: '#1a73e8',
     isActive: true,
@@ -41,9 +39,7 @@ export default function RestaurantDetailPage() {
             category: data.category || 'Restoran',
             address: data.address || '',
             phone: data.phone || '',
-            workingHours: data.workingHours || '',
             googlePlaceId: data.googlePlaceId || '',
-            googleReviewUrl: data.googleReviewUrl || '',
             notificationEmail: data.notificationEmail || '',
             primaryColor: data.primaryColor || '#1a73e8',
             isActive: data.isActive ?? true,
@@ -176,19 +172,14 @@ export default function RestaurantDetailPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tema Rengi</label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <input
                     type="color"
                     value={formData.primaryColor}
                     onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
-                    className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
+                    className="w-16 h-12 rounded-lg border border-gray-200 cursor-pointer p-1"
                   />
-                  <input
-                    type="text"
-                    value={formData.primaryColor}
-                    onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
-                    className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm font-mono"
-                  />
+                  <span className="text-sm text-gray-500 font-mono">{formData.primaryColor}</span>
                 </div>
               </div>
             </div>
@@ -222,26 +213,14 @@ export default function RestaurantDetailPage() {
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Çalışma Saatleri</label>
-                <input
-                  type="text"
-                  value={formData.workingHours}
-                  onChange={(e) => setFormData(prev => ({ ...prev, workingHours: e.target.value }))}
-                  placeholder="10:00 - 22:00"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
+              />
             </div>
           </div>
         </div>
@@ -265,17 +244,6 @@ export default function RestaurantDetailPage() {
               <p className="text-xs text-gray-400 mt-1">1-2-3 yıldız puanlarında bu e-posta adresine bildirim gönderilir.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Google Review URL</label>
-              <input
-                type="url"
-                value={formData.googleReviewUrl}
-                onChange={(e) => setFormData(prev => ({ ...prev, googleReviewUrl: e.target.value }))}
-                placeholder="https://search.google.com/local/writereview?placeid=..."
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
-              />
-              <p className="text-xs text-gray-400 mt-1">4-5 yıldız puanlarda müşteri bu URL&apos;ye yönlendirilir.</p>
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Google Place ID</label>
               <input
                 type="text"
@@ -284,6 +252,7 @@ export default function RestaurantDetailPage() {
                 placeholder="ChIJlQUi..."
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm font-mono"
               />
+              <p className="text-xs text-gray-400 mt-1">4-5 yıldız puanlamalarda müşteriler bu mekana yönlendirilir.</p>
             </div>
           </div>
         </div>

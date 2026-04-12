@@ -26,8 +26,7 @@ export async function GET(req: NextRequest) {
         category: restaurant.category,
         address: restaurant.address,
         phone: restaurant.phone,
-        workingHours: restaurant.workingHours,
-        googleReviewUrl: restaurant.googleReviewUrl,
+        googlePlaceId: restaurant.googlePlaceId,
         primaryColor: restaurant.primaryColor,
         isActive: restaurant.isActive,
       });
@@ -69,7 +68,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, phone, workingHours, googlePlaceId, googleReviewUrl, notificationEmail, primaryColor } = body;
+    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor } = body;
 
     if (!name || !slug) {
       return NextResponse.json({ error: 'Ad ve slug zorunludur' }, { status: 400 });
@@ -94,9 +93,7 @@ export async function POST(req: NextRequest) {
         category: category || 'Restoran',
         address: address || null,
         phone: phone || null,
-        workingHours: workingHours || null,
         googlePlaceId: googlePlaceId || null,
-        googleReviewUrl: googleReviewUrl || null,
         notificationEmail: notificationEmail || null,
         primaryColor: primaryColor || '#1a73e8',
       },

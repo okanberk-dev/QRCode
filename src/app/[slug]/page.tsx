@@ -16,8 +16,7 @@ interface RestaurantData {
   category: string;
   address: string | null;
   phone: string | null;
-  workingHours: string | null;
-  googleReviewUrl: string | null;
+  googlePlaceId: string | null;
   primaryColor: string;
   isActive: boolean;
 }
@@ -60,7 +59,7 @@ function SlugContent() {
 
     if (newRating >= 4) {
       setIsRedirecting(true);
-      const googleUrl = restaurant.googleReviewUrl || '#';
+      const googleUrl = restaurant.googlePlaceId ? `https://search.google.com/local/writereview?placeid=${restaurant.googlePlaceId}` : '#';
 
       try {
         fetch('/api/feedback', {
@@ -206,7 +205,7 @@ function SlugContent() {
                 />
               )}
 
-              {showThankYouLow && <ThankYou rating={rating} googleReviewUrl={restaurant.googleReviewUrl} />}
+              {showThankYouLow && <ThankYou rating={rating} googleReviewUrl={restaurant.googlePlaceId ? `https://search.google.com/local/writereview?placeid=${restaurant.googlePlaceId}` : null} />}
 
               {!showForm && <ReviewList />}
 
@@ -228,15 +227,7 @@ function SlugContent() {
                 </div>
               </div>
             )}
-            {restaurant.workingHours && (
-              <div className="flex items-start gap-4 p-2">
-                <Clock style={{ color: restaurant.primaryColor }} className="mt-1" size={20} />
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-[#202124]">Çalışma Saatleri</span>
-                  <p className="text-sm text-[#5f6368]">{restaurant.workingHours}</p>
-                </div>
-              </div>
-            )}
+
             {restaurant.phone && (
               <div className="flex items-start gap-4 p-2">
                 <Phone style={{ color: restaurant.primaryColor }} className="mt-1" size={20} />

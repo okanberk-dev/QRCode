@@ -49,7 +49,7 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, phone, workingHours, googlePlaceId, googleReviewUrl, notificationEmail, primaryColor, isActive } = body;
+    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, isActive } = body;
 
     // Validate slug if provided
     if (slug) {
@@ -75,9 +75,7 @@ export async function PUT(
         ...(category !== undefined && { category }),
         ...(address !== undefined && { address: address || null }),
         ...(phone !== undefined && { phone: phone || null }),
-        ...(workingHours !== undefined && { workingHours: workingHours || null }),
         ...(googlePlaceId !== undefined && { googlePlaceId: googlePlaceId || null }),
-        ...(googleReviewUrl !== undefined && { googleReviewUrl: googleReviewUrl || null }),
         ...(notificationEmail !== undefined && { notificationEmail: notificationEmail || null }),
         ...(primaryColor !== undefined && { primaryColor }),
         ...(isActive !== undefined && { isActive }),

@@ -27,10 +27,9 @@ export default function RestaurantsPage() {
     slug: '',
     category: 'Restoran',
     notificationEmail: '',
-    googleReviewUrl: '',
+    googlePlaceId: '',
     address: '',
     phone: '',
-    workingHours: '',
     primaryColor: '#1a73e8',
   });
 
@@ -90,7 +89,7 @@ export default function RestaurantsPage() {
       }
 
       setShowCreateModal(false);
-      setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googleReviewUrl: '', address: '', phone: '', workingHours: '', primaryColor: '#1a73e8' });
+      setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googlePlaceId: '', address: '', phone: '', primaryColor: '#1a73e8' });
       fetchRestaurants();
     } catch (err) {
       setError('Bağlantı hatası');
@@ -284,19 +283,14 @@ export default function RestaurantsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tema Rengi</label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <input
                       type="color"
                       value={formData.primaryColor}
                       onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
-                      className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
+                      className="w-16 h-12 rounded-lg border border-gray-200 cursor-pointer p-1"
                     />
-                    <input
-                      type="text"
-                      value={formData.primaryColor}
-                      onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
-                      className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm font-mono"
-                    />
+                    <span className="text-sm text-gray-500 font-mono">{formData.primaryColor}</span>
                   </div>
                 </div>
               </div>
@@ -314,15 +308,15 @@ export default function RestaurantsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Google Review URL</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Google Place ID</label>
                 <input
-                  type="url"
-                  value={formData.googleReviewUrl}
-                  onChange={(e) => setFormData(prev => ({ ...prev, googleReviewUrl: e.target.value }))}
-                  placeholder="https://search.google.com/local/writereview?placeid=..."
+                  type="text"
+                  value={formData.googlePlaceId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, googlePlaceId: e.target.value }))}
+                  placeholder="ChIJ..."
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
                 />
-                <p className="text-xs text-gray-400 mt-1">4-5 yıldız puanlarda müşteri bu URL&apos;ye yönlendirilir.</p>
+                <p className="text-xs text-gray-400 mt-1">Google Maps'ten aldığınız mekan kimliği. 4-5 yıldıza basanlar buraya yönlendirilecek.</p>
               </div>
 
               <div>
@@ -336,27 +330,15 @@ export default function RestaurantsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="(0312) 285 00 00"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Çalışma Saatleri</label>
-                  <input
-                    type="text"
-                    value={formData.workingHours}
-                    onChange={(e) => setFormData(prev => ({ ...prev, workingHours: e.target.value }))}
-                    placeholder="10:00 - 22:00"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="(0312) 285 00 00"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
+                />
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
