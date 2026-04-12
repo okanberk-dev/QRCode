@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Feedback {
+  id          String   @id @default(cuid())
+  rating      Int
+  name        String?
+  email       String?
+  phone       String?
+  comment     String?
+  source      String?  // "qr", "web", etc.
+  branch      String?  // "ankara", etc.
+  tableNumber String?  @map("table_number")
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("feedback")
+}
+
+model AdminUser {
+  id           String @id @default(cuid())
+  username     String @unique
+  passwordHash String @map("password_hash")
+
+  @@map("admin_users")
+}
+
+model Settings {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+
+  @@map("settings")
+}
