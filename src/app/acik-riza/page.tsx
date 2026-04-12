@@ -1,41 +1,43 @@
+'use client';
+
 export default function AcikRizaText() {
   return (
-    <div className="max-w-4xl mx-auto py-16 px-6 sm:px-8 bg-white">
-      <h1 className="text-2xl font-bold text-[#202124] mb-8 border-b pb-4">Kişisel Verilerin İşlenmesine İlişkin Açık Rıza Metni</h1>
+    <div className="max-w-4xl mx-auto py-16 px-6 sm:px-8 bg-white font-sans text-[#334155]">
+      <h1 className="text-3xl font-black text-[#0f172a] mb-10 border-b pb-6">Açık Rıza Metni</h1>
       
-      <div className="space-y-8 text-[15px] leading-relaxed text-[#3c4043]">
-        <section>
-          <p>
-            Mamma's Burger (“Şirket”) tarafından sunulan Aydınlatma Metni’ni okudum ve anladım. Şirket’in hizmet kalitesini 
-            artırmak, müşteri deneyimini ölçümlemek ve şikayet/talep süreçlerini yönetmek amacıyla hazırladığı dijital form aracılığıyla;
+      <div className="space-y-10 leading-relaxed">
+        <section className="space-y-4">
+          <p className="font-medium text-lg">
+            ReviewsFlow (“Şirket”) tarafından sunulan Aydınlatma Metni’ni okudum ve anladım. Şirket’in hizmet kalitesini 
+            artırmak, müşteri deneyimini ölçümlemek ve geri bildirim süreçlerini yönetmek amacıyla hazırladığı dijital altyapı aracılığıyla;
           </p>
         </section>
 
-        <section className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-          <p className="font-medium text-[#202124] mb-3">Aşağıda belirtilen durumlara özgür irademle açık rıza veriyorum:</p>
-          <ul className="list-disc pl-5 space-y-3">
-            <li>
-              Kimlik (Ad, Soyad) ve İletişim (Telefon, E-posta) verilerimin, Şirket tarafından sadece 
-              bildirilen amaçlarla sınırlı olmak kaydıyla işlenmesine,
+        <section className="bg-gray-50 p-10 rounded-[32px] border border-gray-100 space-y-6">
+          <p className="font-bold text-[#0f172a] text-xl">Aşağıdaki durumlara özgür irademle onay veriyorum:</p>
+          <ul className="space-y-4 font-medium">
+            <li className="flex gap-4">
+              <span className="text-[#79C5D1] font-black">•</span>
+              <span>Kimlik (Ad, Soyad) ve İletişim (Telefon, E-posta) verilerimin, sadece belirtilen amaçlarla sınırlı kalmak kaydıyla işlenmesine,</span>
             </li>
-            <li>
-              Web sitesinin barındırıldığı teknolojik altyapının sunucularının yurt dışında bulunması nedeniyle, 
-              verilerimin güvenli bir şekilde <strong>yurt dışına aktarılmasına</strong>,
+            <li className="flex gap-4">
+              <span className="text-[#79C5D1] font-black">•</span>
+              <span>Hizmetin teknik altyapısı gereği verilerimin güvenli sunucularda muhafaza edilmesine ve bu amaçla yurt dışına aktarılmasına,</span>
             </li>
-            <li>
-              Verilerimin, hizmetin sunulabilmesi için gerekli olan teknik iş ortaklarına aktarılmasına.
+            <li className="flex gap-4">
+              <span className="text-[#79C5D1] font-black">•</span>
+              <span>Verilerimin, hizmetin sunumu için gerekli teknik iş ortakları ile paylaşılmasına.</span>
             </li>
           </ul>
         </section>
 
-        <p>
-          İşbu açık rıza beyanımı dilediğim zaman geri alma hakkına sahip olduğumu, bu durumda talebimi 
-          <strong> info@mammasburger.com</strong> adresine iletebileceğimi biliyorum.
+        <p className="italic text-sm text-gray-400 font-bold">
+          Bu rızayı dilediğim zaman okanberk16@gmail.com adresine ulaşarak geri çekme hakkına sahip olduğumu biliyorum.
         </p>
 
-        <div className="mt-12 pt-8 border-t border-gray-100 flex justify-center">
-          <a href="/" className="px-8 py-3 bg-[#1a73e8] text-white rounded-full font-medium text-sm hover:shadow-lg transition-all">
-            Okudum, Ana Sayfaya Dön
+        <div className="mt-12 pt-10 border-t border-gray-100 flex justify-center">
+          <a href="/" className="px-10 py-4 bg-[#111827] text-white rounded-2xl font-black text-sm hover:bg-black transition-all shadow-xl shadow-gray-200">
+            Anladım, Ana Sayfaya Dön
           </a>
         </div>
       </div>

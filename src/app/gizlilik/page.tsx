@@ -1,58 +1,41 @@
+'use client';
+
 export default function GizlilikPolicy() {
   const lastUpdate = new Date().toLocaleDateString('tr-TR');
   
   return (
-    <div className="max-w-4xl mx-auto py-16 px-6 sm:px-8 bg-white">
-      <h1 className="text-2xl font-bold text-[#202124] mb-8 border-b pb-4">Gizlilik Politikası</h1>
+    <div className="max-w-4xl mx-auto py-16 px-6 sm:px-8 bg-white font-sans text-[#334155]">
+      <h1 className="text-3xl font-black text-[#0f172a] mb-10 border-b pb-6">Gizlilik Politikası</h1>
       
-      <div className="space-y-8 text-[15px] leading-relaxed text-[#3c4043]">
-        <p className="text-sm text-[#70757a]">Son Güncelleme: {lastUpdate}</p>
+      <div className="space-y-10 leading-relaxed font-medium">
+        <p className="text-xs font-black text-gray-400 uppercase tracking-widest italic">Son Güncelleme: {lastUpdate}</p>
 
-        <section>
-          <h2 className="text-lg font-semibold text-[#202124] mb-3">1. Veri Güvenliği Taahhüdü</h2>
+        <section className="space-y-4">
+          <h2 className="text-xl font-black text-[#0f172a]">1. Veri Güvenliği</h2>
           <p>
-            Mamma's Burger (“Şirket”) olarak, gizliliğinize saygı duyuyor ve bizimle paylaştığınız kişisel verilerin korunmasını 
-            en üst düzeyde sağlıyoruz. Bu politika, QR kod üzerinden eriştiğiniz değerlendirme formunda toplanan verilerin 
-            kapsamını ve kullanım şeklini açıklar.
+            ReviewsFlow olarak, geri bildirim formları üzerinden toplanan verilerin korunmasını en üst düzeyde sağlıyoruz. 
+            Bu politika, verilerinizin kapsamını ve kullanım şeklini açıklar.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-[#202124] mb-3">2. Hangi Veriler Toplanır?</h2>
+        <section className="space-y-4">
+          <h2 className="text-xl font-black text-[#0f172a]">2. Toplanan Veriler</h2>
           <p>
-            Değerlendirme formunu doldurduğunuzda; adınız, soyadınız (varsa), telefon numaranız, e-posta adresiniz, 
-            verdiğiniz puan ve yazdığınız yorumlar sistemimize kaydedilir. Ayrıca, sistem güvenliği ve mükerrer kayıtları 
-            önlemek amacıyla IP adresiniz ve cihaz bilgileriniz (User Agent) sınırlı süreyle işlenecektir.
+            Formu doldurduğunuzda; adınız, telefon numaranız, e-posta adresiniz, puanınız ve yorumlarınız sistemimize kaydedilir. 
+            Güvenlik amacıyla IP adresiniz sınırlı süreyle işlenebilir.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-[#202124] mb-3">3. Verilerin Kullanım Amacı</h2>
+        <section className="space-y-4">
+          <h2 className="text-xl font-black text-[#0f172a]">3. Kullanım Amacı</h2>
           <p>
-            Toplanan veriler sadece restoran hizmet kalitemizin ölçülmesi, müşteri memnuniyetinin artırılması ve 
-            olası taleplerinizde size ulaşılabilmesi amacıyla kullanılır. Verileriniz, yasal zorunluluklar hariç 
-            üçüncü şahıslara satılmaz veya devredilmez.
+             Verileriniz sadece hizmet kalitesinin ölçülmesi ve müşteri memnuniyetinin artırılması amacıyla kullanılır. 
+             Yasal zorunluluklar hariç üçüncü şahıslara satılmaz.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-[#202124] mb-3">4. Verilerin Saklanması</h2>
-          <p>
-            Verileriniz, işleme amacının gerektirdiği süre boyunca veya yasal zaman aşımı süreleri uyarınca güvenli sunucularda 
-            saklanır. Amacın ortadan kalkması halinde verileriniz KVKK mevzuatına uygun olarak imha edilir veya anonim hale getirilir.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-[#202124] mb-3">5. İletişim</h2>
-          <p>
-            Gizlilik politikamız hakkındaki tüm soru ve talepleriniz için bize her zaman <strong>info@mammasburger.com</strong> 
-            üzerinden ulaşabilirsiniz.
-          </p>
-        </section>
-
-        <div className="mt-12 pt-8 border-t border-gray-100 flex justify-center">
-          <a href="/" className="px-8 py-3 bg-[#1a73e8] text-white rounded-full font-medium text-sm hover:shadow-lg transition-all">
+        <div className="mt-12 pt-10 border-t border-gray-100 flex justify-center">
+          <a href="/" className="px-10 py-4 bg-[#111827] text-white rounded-2xl font-black text-sm hover:bg-black transition-all shadow-xl shadow-gray-200">
             Ana Sayfaya Dön
           </a>
         </div>

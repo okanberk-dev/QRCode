@@ -1,40 +1,35 @@
+'use client';
+
 export default function TicariIletiText() {
   return (
-    <div className="max-w-4xl mx-auto py-16 px-6 sm:px-8 bg-white">
-      <h1 className="text-2xl font-bold text-[#202124] mb-8 border-b pb-4">Ticari Elektronik İleti Onay Metni</h1>
+    <div className="max-w-4xl mx-auto py-16 px-6 sm:px-8 bg-white font-sans text-[#334155]">
+      <h1 className="text-3xl font-black text-[#0f172a] mb-10 border-b pb-6">Ticari Elektronik İleti Onay Metni</h1>
       
-      <div className="space-y-8 text-[15px] leading-relaxed text-[#3c4043]">
-        <section>
+      <div className="space-y-10 leading-relaxed font-medium">
+        <section className="space-y-4">
           <p>
-            Mamma's Burger (“Şirket”) tarafından sunulan ürün, hizmet, menü güncellemeleri, özel teklifler, fırsat ve 
-            kampanyalar hakkında bilgilendirilmem, tanıtım ve pazarlama faaliyetlerinin yürütülmesi amaçlarıyla;
+            ReviewsFlow tarafından sunulan ürün, hizmet, özellik güncellemeleri ve kampanyalar hakkında bilgilendirilmem amaçlarıyla;
           </p>
         </section>
 
-        <section className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
-          <p className="mb-4 text-[#202124]">
-            Tarafımla e-posta ve/veya SMS (Kısa Mesaj) kanalları üzerinden iletişime geçilmesine, elektronik ticari ileti 
-            gönderilmesine ve bu amaçla iletişim verilerimin (telefon numarası, e-posta adresi) işlenerek, 
-            6563 Sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun uyarınca İleti Yönetim Sistemi (İYS) üzerinden kayıt altına alınmasına;
+        <section className="bg-blue-50 p-10 rounded-[32px] border border-blue-100">
+          <p className="mb-4 text-[#0f172a] font-black italic">
+            Tarafımla e-posta ve/veya SMS kanalları üzerinden iletişime geçilmesine, elektronik ticari ileti 
+            gönderilmesine ve 6563 Sayılı Kanun uyarınca İYS üzerinden kayıt altına alınmasına;
           </p>
-          <p className="font-bold text-[#1a73e8]">Açık rızamla onay veriyorum.</p>
+          <p className="font-extrabold text-[#79C5D1] text-xl">Özgür irademle onay veriyorum.</p>
         </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-[#202124] mb-3">Ret Hakkı ve İptal Prosedürü</h2>
-          <p className="mb-4">
-            Dilediğiniz zaman, hiçbir gerekçe göstermeksizin ticari elektronik ileti almayı reddetme hakkına sahipsiniz. 
-            Ret talebinizi tarafınıza gönderilen iletilerdeki reddetme bağlantısını (ret linki) kullanarak veya 
-            <strong> info@mammasburger.com</strong> adresine e-posta göndererek ücretsiz olarak iletebilirsiniz. 
-          </p>
+        <section className="space-y-4">
+          <h2 className="text-xl font-black text-[#0f172a]">Ret Hakkı</h2>
           <p>
-            Talebiniz Şirkete ulaştığı tarihten itibaren en geç 3 (üç) iş günü içerisinde ticari elektronik ileti 
-            gönderimi durdurulacaktır.
+            Dilediğiniz zaman, hiçbir gerekçe göstermeksizin ticari ileti almayı reddedebilirsiniz. 
+            Ret talebinizi <strong>okanberk16@gmail.com</strong> adresine iletebilirsiniz. 
           </p>
         </section>
 
-        <div className="mt-12 pt-8 border-t border-gray-100 flex justify-center">
-          <a href="/" className="px-8 py-3 bg-[#1a73e8] text-white rounded-full font-medium text-sm hover:shadow-lg transition-all">
+        <div className="mt-12 pt-10 border-t border-gray-100 flex justify-center">
+          <a href="/" className="px-10 py-4 bg-[#111827] text-white rounded-2xl font-black text-sm hover:bg-black transition-all shadow-xl shadow-gray-200">
             Ana Sayfaya Dön
           </a>
         </div>
