@@ -42,8 +42,11 @@ export default function AdminSidebar() {
   }, []);
 
   const handleLogout = async () => {
-    document.cookie = 'admin_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    document.cookie = 'user_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Logout error', e);
+    }
     window.location.href = '/admin';
   };
 

@@ -19,15 +19,32 @@ export async function generateMetadata({
     },
     description: t.siteDescription,
     keywords: locale === 'tr'
-      ? ['QR yorum sistemi', 'restoran itibar yönetimi', 'Google yorum toplama', 'buaze', 'dijital itibar']
-      : ['QR review system', 'restaurant reputation management', 'Google review collection', 'buaze', 'digital reputation'],
+      ? ['QR yorum sistemi', 'restoran itibar yönetimi', 'Google yorum toplama', 'dijital itibar', 'restoran yazılımı', 'müşteri memnuniyeti', 'buaze']
+      : ['QR review system', 'restaurant reputation management', 'Google review collection', 'digital reputation', 'restaurant software', 'customer feedback', 'buaze'],
     authors: [{ name: 'Buaze', url: 'https://buaze.com' }],
     creator: 'Buaze',
     publisher: 'Buaze',
+    applicationName: 'Buaze',
+    generator: 'Next.js',
+    classification: 'B2B SaaS',
+    category: 'Business',
+    // GEO Tags
+    other: {
+      'geo.region': 'TR',
+      'geo.placename': 'Bursa',
+      'geo.position': '40.1828;29.0667',
+      'ICBM': '40.1828, 29.0667',
+    },
     robots: {
       index: true,
       follow: true,
-      googleBot: { index: true, follow: true },
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
     openGraph: {
       type: 'website',
@@ -36,11 +53,20 @@ export async function generateMetadata({
       siteName: 'Buaze',
       title: `Buaze — ${locale === 'tr' ? 'Dijital İtibar Yönetim Platformu' : 'Digital Reputation Management Platform'}`,
       description: t.siteDescription,
+      images: [
+        {
+          url: '/hero-dashboard.png', // Fallback social image
+          width: 1200,
+          height: 630,
+          alt: 'Buaze Platform',
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: `Buaze — ${locale === 'tr' ? 'Dijital İtibar' : 'Digital Reputation'}`,
       description: t.siteDescription,
+      creator: '@buaze',
     },
     alternates: {
       canonical: `https://buaze.com/${locale}`,
@@ -49,6 +75,9 @@ export async function generateMetadata({
         'en': 'https://buaze.com/en',
         'x-default': 'https://buaze.com/en',
       },
+    },
+    icons: {
+      icon: '/favicon.ico',
     },
   };
 }

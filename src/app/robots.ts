@@ -11,10 +11,14 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/tr/auth/',
           '/en/auth/',
-          '/tr/dashboard/',
-          '/en/dashboard/',
         ],
       },
+      // Allow AI bots to read the marketing pages for search generative experiences
+      {
+        userAgent: ['GPTBot', 'ChatGPT-User', 'Google-Extended', 'Anthropic-ai', 'PerplexityBot'],
+        allow: ['/', '/tr/', '/en/'],
+        disallow: ['/admin/', '/api/', '/tr/auth/', '/en/auth/'],
+      }
     ],
     sitemap: 'https://buaze.com/sitemap.xml',
     host: 'https://buaze.com',

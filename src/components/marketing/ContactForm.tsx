@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 
 interface ContactFormProps {
@@ -24,13 +24,40 @@ export default function ContactForm({ t }: ContactFormProps) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [error, setError] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError('');
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data = {
+      name: formData.get('name'),
+      email: formData.get('email'),
+      business: formData.get('business'),
+      message: formData.get('message'),
+    };
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok) {
+        setSent(true);
+        if (formRef.current) formRef.current.reset();
+      } else {
+        setError(t.contact_form_submit + ' başarısız oldu.');
+      }
+    } catch (err) {
+      setError('Bağlantı hatası.');
+    } finally {
       setLoading(false);
-      setSent(true);
-    }, 1500);
+    }
   };
 
   return (
@@ -48,15 +75,21 @@ export default function ContactForm({ t }: ContactFormProps) {
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-bold text-center">
+                {error}
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-widest text-gray-400">{t.contact_form_name}</label>
                 <input
                   required
+                  name="name"
                   type="text"
                   id="contact-name"
-                  className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#79C5D1] focus:ring-4 focus:ring-[#79C5D1]/10 outline-none transition-all font-bold text-sm"
+                  className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm"
                   placeholder={t.contact_name_placeholder}
                 />
               </div>
@@ -64,9 +97,10 @@ export default function ContactForm({ t }: ContactFormProps) {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-400">{t.contact_form_email}</label>
                 <input
                   required
+                  name="email"
                   type="email"
                   id="contact-email"
-                  className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#79C5D1] focus:ring-4 focus:ring-[#79C5D1]/10 outline-none transition-all font-bold text-sm"
+                  className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm"
                   placeholder={t.contact_email_placeholder}
                 />
               </div>
@@ -75,8 +109,9 @@ export default function ContactForm({ t }: ContactFormProps) {
               <label className="text-xs font-black uppercase tracking-widest text-gray-400">{t.contact_form_business}</label>
               <input
                 type="text"
+                name="business"
                 id="contact-business"
-                className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#79C5D1] focus:ring-4 focus:ring-[#79C5D1]/10 outline-none transition-all font-bold text-sm"
+                className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm"
                 placeholder={t.contact_business_placeholder}
               />
             </div>
@@ -84,12 +119,12 @@ export default function ContactForm({ t }: ContactFormProps) {
               <label className="text-xs font-black uppercase tracking-widest text-gray-400">{t.contact_form_message}</label>
               <textarea
                 required
+                name="message"
                 rows={5}
                 id="contact-message"
-                className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#79C5D1] focus:ring-4 focus:ring-[#79C5D1]/10 outline-none transition-all font-bold text-sm resize-none"
+                className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm resize-none"
                 placeholder={t.contact_message_placeholder}
-              />
-            </div>
+              />            </div>
             <button
               type="submit"
               id="contact-submit-btn"

@@ -4,7 +4,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://buaze.com';
   const locales = ['tr', 'en'];
 
-  const staticPages = ['', '/about', '/pricing', '/contact', '/privacy', '/terms', '/cookie'];
+  const staticPages = [
+    { path: '', priority: 1.0, changefreq: 'weekly' as const },
+    { path: '/pricing', priority: 0.9, changefreq: 'monthly' as const },
+    { path: '/about', priority: 0.8, changefreq: 'monthly' as const },
+    { path: '/contact', priority: 0.8, changefreq: 'monthly' as const },
+    { path: '/privacy', priority: 0.5, changefreq: 'yearly' as const },
+    { path: '/terms', priority: 0.5, changefreq: 'yearly' as const },
+    { path: '/cookie', priority: 0.5, changefreq: 'yearly' as const }
+  ];
+  
   const trOnlyPages = ['/kvkk', '/gizlilik', '/acik-riza', '/ticari-ileti'];
 
   const entries: MetadataRoute.Sitemap = [];
@@ -13,14 +22,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
   for (const locale of locales) {
     for (const page of staticPages) {
       entries.push({
-        url: `${baseUrl}/${locale}${page}`,
+        url: `${baseUrl}/${locale}${page.path}`,
         lastModified: new Date(),
-        changeFrequency: page === '' ? 'weekly' : 'monthly',
-        priority: page === '' ? 1.0 : 0.8,
+        changeFrequency: page.changefreq,
+        priority: page.priority,
         alternates: {
           languages: {
-            tr: `${baseUrl}/tr${page}`,
-            en: `${baseUrl}/en${page}`,
+            tr: `${baseUrl}/tr${page.path}`,
+            en: `${baseUrl}/en${page.path}`,
+            'x-default': `${baseUrl}/en${page.path}`,
           },
         },
       });
