@@ -55,6 +55,8 @@ export async function POST(req: NextRequest) {
 
     // Send email for 1, 2, 3 stars
     if (rating <= 3) {
+      // Trigger email but don't await strictly to prevent delay
+      // Actually, in serverless, we should await to ensure it finishes before function shuts down
       try {
         await sendFeedbackNotification({
           rating,
@@ -66,14 +68,20 @@ export async function POST(req: NextRequest) {
           tableNumber,
         });
       } catch (err) {
-        console.error('Email notification failed but saving succeeded', err);
+        // Log but don't fail the entire request - the feedback IS in the DB!
+        console.error('Email notification failed but saving succeeded:', err);
       }
     }
 
     return NextResponse.json({ success: true, id: feedback.id }, { status: 201 });
   } catch (error) {
-    console.error('Feedback submission error:', error);
-    return NextResponse.json({ error: 'Bir hata oluştu' }, { status: 500 });
+    console.error('Feedback submission error (Detailed):', error);
+    // Be more specific in logs for the user to find in Vercel panel
+    if (error instanceof Error) {
+      console.error('ERROR MESSAGE:', error.message);
+      console.error('ERROR STACK:', error.stack);
+    }
+    return NextResponse.json({ error: 'Sunucu hatası veya veritabanı bağlantı sorunu. Lütfen tekrar deneyiniz.' }, { status: 500 });
   }
 }
 

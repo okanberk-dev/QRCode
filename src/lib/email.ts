@@ -1,14 +1,28 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: Number(process.env.SMTP_PORT) === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+let transporterInstance: any = null;
+
+function getTransporter() {
+  if (transporterInstance) return transporterInstance;
+
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
+
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+    return null;
+  }
+
+  transporterInstance = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: Number(SMTP_PORT) || 587,
+    secure: Number(SMTP_PORT) === 465,
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+  });
+
+  return transporterInstance;
+}
 
 export interface NotificationParams {
   rating: number;
@@ -21,8 +35,10 @@ export interface NotificationParams {
 }
 
 export async function sendFeedbackNotification(data: NotificationParams) {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn("SMTP credentials not configured. Skipping email notification.");
+  const transporter = getTransporter();
+
+  if (!transporter) {
+    console.warn("SMTP credentials not fully configured. Skipping email notification.");
     return;
   }
 

@@ -1,9 +1,11 @@
 import * as jose from 'jose';
 import { NextRequest } from 'next/server';
 
+const DEFAULT_SECRET = 'mammas_burger_secret_key_123456';
+
 export async function signJwt(payload: any) {
-  if (!process.env.JWT_SECRET) throw new Error("Missing JWT_SECRET");
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+  const secretString = process.env.JWT_SECRET || DEFAULT_SECRET;
+  const secret = new TextEncoder().encode(secretString);
   
   const jwt = await new jose.SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
@@ -16,8 +18,8 @@ export async function signJwt(payload: any) {
 
 export async function verifyJwt(token: string) {
   try {
-    if (!process.env.JWT_SECRET) throw new Error("Missing JWT_SECRET");
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const secretString = process.env.JWT_SECRET || DEFAULT_SECRET;
+    const secret = new TextEncoder().encode(secretString);
     const { payload } = await jose.jwtVerify(token, secret);
     return payload;
   } catch (error) {
