@@ -36,9 +36,14 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [kvkkConsent, setKvkkConsent] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (form.password !== confirmPassword) {
+      setError(locale === 'tr' ? 'Şifreler uyuşmuyor.' : 'Passwords do not match.');
+      return;
+    }
     if (!kvkkConsent) {
       setError(locale === 'tr' ? 'Lütfen KVKK onayını verin.' : 'Please accept the data processing consent.');
       return;
@@ -139,6 +144,24 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             </span>
           </div>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="reg-confirm-password" className="block text-xs font-black uppercase tracking-widest text-gray-500">
+          {locale === 'tr' ? 'ŞİFRE TEKRAR' : 'CONFIRM PASSWORD'}
+        </label>
+        <div className="relative">
+          <input
+            id="reg-confirm-password"
+            type={showPassword ? 'text' : 'password'}
+            required
+            minLength={8}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm pr-12"
+            placeholder="••••••••"
+          />
+        </div>
       </div>
 
       <label className="flex items-start gap-3 cursor-pointer group">

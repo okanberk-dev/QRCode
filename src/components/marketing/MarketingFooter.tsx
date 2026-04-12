@@ -82,7 +82,6 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
             <ul className="space-y-4 text-sm font-semibold text-gray-400">
               <li><Link href={`${base}/auth/login`} className="hover:text-[#FDBF1D] transition-colors">{locale === 'tr' ? 'Giriş Yap' : 'Log In'}</Link></li>
               <li><Link href={`${base}/auth/register`} className="hover:text-[#FDBF1D] transition-colors">{locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}</Link></li>
-              <li><Link href={`/admin`} className="hover:text-[#FDBF1D] transition-colors">Admin Panel</Link></li>
             </ul>
           </div>
         </div>
