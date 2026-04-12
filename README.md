@@ -14,6 +14,7 @@ This repository contains the source code for the **Buaze QR Feedback & Restauran
 *   **Database ORM:** Prisma
 *   **Database Provider:** Supabase (PostgreSQL) - Uses `DATABASE_URL` (Port 6543 pgbouncer for connections) & `DIRECT_URL` (Port 5432 for migrations).
 *   **Styling:** Tailwind CSS + Lucide React (Icons)
+*   **Charts:** Recharts (Interactive visualization)
 *   **Authentication:** Custom JWT mechanism using `jose`. JWTs are stored in `httpOnly` secure cookies.
 *   **Internationalization (i18n):** Route-based dynamic matching (`src/app/[locale]/...`) governed by `src/lib/translations.ts`.
 
@@ -34,6 +35,13 @@ When a Superadmin creates a new `Manager` from the Admin Panel (`src/app/admin/u
 - **Double Password Verification:** The registration form (`RegisterForm.tsx`) implements a "Confirm Password" logic to prevent user entry errors.
 - **Admin Stealth:** The Admin Panel entry points are removed from the public Marketing Footer for better security posture and cleaner client-facing UX.
 - **IDOR Protection:** Queries in `/api/feedback/*` and `/api/restaurants/*` are strictly scoped to the `admin.restaurantId` or user's authorized IDs.
+
+### 📊 Advanced Analytics Dashboard
+The platform features a data-rich administration suite (`src/app/admin/dashboard/page.tsx`):
+- **Interaction Trends:** Dual-axis area/line charts showing QR scan counts vs. Average Rating development.
+- **Daily Heatmap:** Bar charts identifying peak customer engagement days.
+- **Sentiment Analysis:** Word cloud based on actual customer feedback comments.
+- **Dynamic Scoping:** Superadmins see global stats; Managers/Owners see strictly scoped data for their own establishments.
 
 ---
 
