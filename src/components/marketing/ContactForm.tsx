@@ -47,14 +47,16 @@ export default function ContactForm({ t }: ContactFormProps) {
         body: JSON.stringify(data),
       });
 
+      const responseData = await res.json().catch(() => ({}));
+
       if (res.ok) {
         setSent(true);
         if (formRef.current) formRef.current.reset();
       } else {
-        setError(t.contact_form_submit + ' başarısız oldu.');
+        setError(responseData.error || t.contact_form_submit + ' başarısız oldu.');
       }
-    } catch (err) {
-      setError('Bağlantı hatası.');
+    } catch (err: any) {
+      setError(err?.message || 'Bağlantı hatası.');
     } finally {
       setLoading(false);
     }

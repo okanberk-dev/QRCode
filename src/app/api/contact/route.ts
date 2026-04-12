@@ -17,6 +17,9 @@ export async function POST(req: NextRequest) {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     const mailOptions = {
@@ -54,8 +57,8 @@ export async function POST(req: NextRequest) {
     await transporter.sendMail(mailOptions);
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Contact form email failed:', error);
-    return NextResponse.json({ error: 'E-posta gönderilirken bir hata oluştu.' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'E-posta gönderilirken bir hata oluştu.' }, { status: 500 });
   }
 }
