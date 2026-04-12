@@ -37,7 +37,10 @@ const dictionaries = {
     kvkk: "KVKK",
     error_comment_required: "Lütfen yorumunuzu belirtin.",
     error_generic: "Bir hata oluştu, lütfen tekrar deneyin.",
-    error_connection: "Bağlantı hatası. Lütfen internetinizi kontrol edin."
+    error_connection: "Bağlantı hatası. Lütfen internetinizi kontrol edin.",
+    order_online: "Hemen Sipariş Ver",
+    delivery_platforms: "Bizi buradaki platformlardan da sipariş edebilirsiniz:",
+    visit_website: "Web Sitemizi Ziyaret Et"
   },
   en: {
     restaurant_name: process.env.NEXT_PUBLIC_RESTAURANT_NAME || "Mamma's Burger",
@@ -73,7 +76,10 @@ const dictionaries = {
     kvkk: "Data Policy",
     error_comment_required: "Please provide your comment.",
     error_generic: "An error occurred, please try again.",
-    error_connection: "Connection error. Please check your internet."
+    error_connection: "Connection error. Please check your internet.",
+    order_online: "Order Online Now",
+    delivery_platforms: "You can also order from these platforms:",
+    visit_website: "Visit Our Website"
   },
   ar: {
     restaurant_name: process.env.NEXT_PUBLIC_RESTAURANT_NAME || "Mamma's Burger",
@@ -109,7 +115,10 @@ const dictionaries = {
     kvkk: "سياسة البيانات",
     error_comment_required: "يرجى كتابة تعليقك.",
     error_generic: "حدث خطأ، يرجى المحاولة مرة أخرى.",
-    error_connection: "خطأ في الاتصال. يرجى التحقق من الإنترنت الخاص بك."
+    error_connection: "خطأ في الاتصال. يرجى التحقق من الإنترنت الخاص بك.",
+    order_online: "اطلب الآن أونلاين",
+    delivery_platforms: "يمكنك أيضاً الطلب من هذه المنصات:",
+    visit_website: "زيارة موقعنا الإلكتروني"
   }
 };
 
