@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import StarRating from '@/components/StarRating';
 import FeedbackForm from '@/components/FeedbackForm';
 import ThankYou from '@/components/ThankYou';
@@ -11,14 +11,42 @@ export default function RatingPage() {
   const [rating, setRating] = useState<number>(0);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const { t, isRtl } = useTranslation();
+  const searchParams = useSearchParams();
 
-  const handleRatingChange = (newRating: number) => {
+  const handleRatingChange = async (newRating: number) => {
     setRating(newRating);
+
+    // If 4 or 5 stars, log to DB and redirect to Google Review directly
+    if (newRating >= 4) {
+      const googleUrl = process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL || 'https://search.google.com/local/writereview?placeid=YOUR_PLACE_ID';
+      
+      // Log the high rating in background (optional, but good for analytics)
+      try {
+        fetch('/api/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rating: newRating,
+            source: searchParams.get('source') || 'qr',
+            branch: searchParams.get('branch') || '',
+            tableNumber: searchParams.get('table') || '',
+            comment: 'High Rating Redirect'
+          })
+        });
+      } catch (e) {
+        console.error('Failed to log high rating', e);
+      }
+
+      // Small delay for UX feel, then redirect
+      setTimeout(() => {
+        window.location.href = googleUrl;
+      }, 600);
+    }
   };
 
   const showForm = rating > 0 && rating <= 3 && !formSubmitted;
   const showThankYouLow = formSubmitted;
-  const showThankYouHigh = rating >= 4;
+  const showThankYouHigh = false; // Never show high rating thank you page anymore as per user request
 
   return (
     <main className={`flex flex-col items-center justify-center min-h-screen px-4 py-12 ${isRtl ? 'dir-rtl' : ''}`} dir={isRtl ? 'rtl' : 'ltr'}>
