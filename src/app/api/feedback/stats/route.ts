@@ -9,8 +9,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const totalCount = await prisma.feedback.count();
-    
     const daysParam = req.nextUrl.searchParams.get('days');
     const today = new Date();
     
