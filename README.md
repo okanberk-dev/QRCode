@@ -27,6 +27,9 @@ There are multiple identity types:
 2.  **Manager:** Local staff/admin for a specific operation.
 3.  **Restaurant Owner (Users):** The SaaS clients (from `User` model, role: `restaurant_owner`).
 
+### ⚡ Simultaneous Entity Creation
+When a Superadmin creates a new `Manager` from the Admin Panel (`src/app/admin/users/page.tsx`), the API allows for the simultaneous creation of a new `Restaurant` (passing `isNewRestaurant` and `restaurantData` containing name, slug, address, phone). This executes sequentially and binds the new `restaurantId` to the `AdminUser`. Do NOT separate this logic without implementing Prisma Transactions (which is currently handled async block sequentially).
+
 ### ⚠️ IDOR & Prisma Scoping Rules
 When fetching records in `/api/feedback/*` and `/api/restaurants/*`:
 *   Always extract `admin` token via `getAdminFromRequest(req)`.

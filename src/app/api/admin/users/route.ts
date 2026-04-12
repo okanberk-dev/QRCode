@@ -37,10 +37,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { username, password, role, restaurantId } = body;
+    const { username, password, role, restaurantId, isNewRestaurant, restaurantData } = body;
 
     if (!username || !password || !role) {
       return NextResponse.json({ error: 'Eksik bilgi' }, { status: 400 });
+    }
+
+    if (role === 'manager' && isNewRestaurant) {
+      if (!restaurantData?.name || !restaurantData?.slug) {
+        return NextResponse.json({ error: 'Yeni restoran için isim ve URL zorunludur' }, { status: 400 });
+      }
     }
 
     const existing = await prisma.adminUser.findUnique({ where: { username } });
@@ -50,18 +56,39 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    let finalRestaurantId = restaurantId;
+
+    if (role === 'manager' && isNewRestaurant && restaurantData) {
+      // Sluğun daha önce kullanılıp kullanılmadığını kontrol et
+      const existingRest = await prisma.restaurant.findUnique({ where: { slug: restaurantData.slug } });
+      if (existingRest) {
+        return NextResponse.json({ error: 'Bu URL Slug zaten kullanımda' }, { status: 400 });
+      }
+
+      const rest = await prisma.restaurant.create({
+        data: {
+          name: restaurantData.name,
+          slug: restaurantData.slug,
+          address: restaurantData.address || null,
+          phone: restaurantData.phone || null,
+        }
+      });
+      finalRestaurantId = rest.id;
+    }
+
     const user = await prisma.adminUser.create({
       data: {
         username,
         passwordHash: hashedPassword,
         role,
-        restaurantId: role === 'manager' ? restaurantId : null
+        restaurantId: role === 'manager' ? finalRestaurantId : null
       },
       select: { id: true, username: true, role: true }
     });
 
     return NextResponse.json(user, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Kullanıcı oluşturulamadı' }, { status: 500 });
+  } catch (error: any) {
+    console.error('[ADMIN_USER_CREATE]', error);
+    return NextResponse.json({ error: error?.message || 'Kullanıcı oluşturulamadı' }, { status: 500 });
   }
 }
