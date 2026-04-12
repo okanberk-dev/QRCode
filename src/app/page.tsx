@@ -60,7 +60,7 @@ function RatingContent() {
         <div className="text-center mb-8">
           <div className="relative w-28 h-28 mx-auto mb-4 drop-shadow-sm">
             <Image 
-              src="/logo.png" 
+              src="https://www.mamasburger.com.tr/assets/site/img/logo-mini.png" 
               alt="Mamma's Burger Logo" 
               fill 
               className="object-contain"
