@@ -2,7 +2,23 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ['www.mamasburger.com.tr', 'mamasburger.com.tr'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'www.mamasburger.com.tr',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'mamasburger.com.tr',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
+        pathname: '/**',
+      }
+    ],
   },
 };
 
