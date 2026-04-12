@@ -88,15 +88,29 @@ export async function GET(req: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || '50', 10);
   const ratingFilter = searchParams.get('rating'); // e.g. "low" or "1"
+  const daysParam = searchParams.get('days');
   
   const skip = (page - 1) * limit;
 
   // Build filter query
   const where: any = {};
+
+  // Rating filter
   if (ratingFilter === 'low') {
     where.rating = { lte: 3 };
   } else if (ratingFilter) {
     where.rating = parseInt(ratingFilter, 10);
+  }
+
+  // Date filter
+  if (daysParam && daysParam !== 'all') {
+    const days = parseInt(daysParam);
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - days);
+    where.createdAt = {
+      ...where.createdAt,
+      gte: pastDate
+    };
   }
 
   try {

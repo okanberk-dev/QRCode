@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, Calendar } from 'lucide-react';
 import StatsCards from '@/components/admin/StatsCards';
 import FeedbackTable from '@/components/admin/FeedbackTable';
 import RatingChart from '@/components/admin/RatingChart';
+import WordCloud from '@/components/admin/WordCloud';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -13,20 +14,25 @@ export default function AdminDashboard() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filterRating, setFilterRating] = useState('all');
+  const [daysFilter, setDaysFilter] = useState('7');
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch stats
-      const statsRes = await fetch('/api/feedback/stats');
+      // Fetch stats with date filter
+      const statsRes = await fetch(`/api/feedback/stats?days=${daysFilter}`);
       if (statsRes.ok) {
         setStats(await statsRes.json());
       } else if (statsRes.status === 401) {
         window.location.href = '/admin';
       }
 
-      // Fetch feedbacks with optional filter
-      const query = new URLSearchParams({ page: page.toString(), limit: '10' });
+      // Fetch feedbacks with filters
+      const query = new URLSearchParams({ 
+        page: page.toString(), 
+        limit: '10',
+        days: daysFilter 
+      });
       if (filterRating !== 'all') {
         query.append('rating', filterRating);
       }
@@ -45,11 +51,34 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
-  }, [page, filterRating]);
+  }, [page, filterRating, daysFilter]);
 
   const handleExport = () => {
     window.open('/api/feedback/export', '_blank');
   };
+
+  const DateTabs = () => (
+    <div className="flex bg-gray-100 p-1 rounded-xl mb-6 self-start">
+      {[
+        { label: 'Bugün', val: '1' },
+        { label: '7 Gün', val: '7' },
+        { label: '30 Gün', val: '30' },
+        { label: 'Tümü', val: 'all' }
+      ].map((tab) => (
+        <button
+          key={tab.val}
+          onClick={() => { setDaysFilter(tab.val); setPage(1); }}
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+            daysFilter === tab.val 
+            ? 'bg-white text-gray-900 shadow-sm' 
+            : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
 
   if (loading && !stats) {
     return (
@@ -61,7 +90,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-2 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Kontrol Paneli</h1>
           <p className="text-gray-500 text-sm">Müşteri değerlendirmelerini ve analizlerini inceleyin.</p>
@@ -76,11 +105,16 @@ export default function AdminDashboard() {
         </button>
       </div>
 
+      <div className="mt-8 flex flex-col">
+        <DateTabs />
+      </div>
+
       {stats && <StatsCards stats={stats} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-8">
           {stats && <RatingChart distribution={stats.distribution} totalCount={stats.totalCount} />}
+          {stats && <WordCloud words={stats.wordCloud} />}
         </div>
         
         <div className="lg:col-span-2 flex flex-col h-full space-y-4">
