@@ -1,4 +1,4 @@
-import { Star, MessageSquareWarning, Hash } from 'lucide-react';
+import { Star, MessageSquareWarning, Hash, Zap, Heart } from 'lucide-react';
 
 interface StatsProps {
   stats: {
@@ -12,57 +12,76 @@ interface StatsProps {
 
 export default function StatsCards({ stats }: StatsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between transition-all hover:shadow-md">
-        <div>
-          <p className="text-sm text-gray-500 font-medium mb-1">Toplam Yorum</p>
-          <h3 className="text-3xl font-black text-[#111827]">{stats.totalCount}</h3>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      {/* Toplam Yorum */}
+      <div className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between transition-all hover:shadow-md group">
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-10 h-10 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center group-hover:bg-[#111827] group-hover:text-white transition-colors">
+            <Hash size={20} />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Genel</span>
         </div>
-        <div className="w-12 h-12 bg-gray-100 text-[#111827] rounded-full flex items-center justify-center">
-          <Hash size={24} />
+        <div>
+          <p className="text-xs font-bold text-gray-400 mb-1">Toplam Yorum</p>
+          <h3 className="text-3xl font-black text-[#111827] tabular-nums">{stats.totalCount}</h3>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between transition-all hover:shadow-md">
-        <div>
-          <p className="text-sm text-gray-500 font-medium mb-1">Ortalama Puan</p>
-          <h3 className="text-3xl font-black text-[#111827]">{stats.avgRating} <span className="text-base font-normal text-gray-400">/ 5</span></h3>
+      {/* Ortalama Puan */}
+      <div className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between transition-all hover:shadow-md group">
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-10 h-10 bg-[#FDBF1D]/10 text-[#FDBF1D] rounded-xl flex items-center justify-center group-hover:bg-[#FDBF1D] group-hover:text-[#111827] transition-colors">
+            <Star size={20} fill="currentColor" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#FDBF1D]">Rating</span>
         </div>
-        <div className="w-12 h-12 bg-[#FDBF1D]/10 text-[#FDBF1D] rounded-full flex items-center justify-center">
-          <Star size={24} fill="currentColor" />
+        <div>
+          <p className="text-xs font-bold text-gray-400 mb-1">Ortalama Puan</p>
+          <h3 className="text-3xl font-black text-[#111827] tabular-nums">
+            {stats.avgRating} <span className="text-sm font-bold text-gray-300">/ 5</span>
+          </h3>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between transition-all hover:shadow-md">
-        <div>
-          <p className="text-sm text-gray-500 font-medium mb-1">Düşük Puanlı (1-3)</p>
-          <h3 className="text-3xl font-black text-[#111827]">{stats.lowRatingCount}</h3>
+      {/* Düşük Puanlar */}
+      <div className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between transition-all hover:shadow-md group">
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
+            <MessageSquareWarning size={20} />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Kritik</span>
         </div>
-        <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center">
-          <MessageSquareWarning size={24} />
+        <div>
+          <p className="text-xs font-bold text-gray-400 mb-1">Düşük Puanlı</p>
+          <h3 className="text-3xl font-black text-[#111827] tabular-nums">{stats.lowRatingCount}</h3>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between transition-all hover:shadow-md">
-        <div>
-          <p className="text-sm text-gray-500 font-medium mb-1">Bugün Gelen</p>
-          <h3 className="text-3xl font-black text-[#111827]">{stats.todayCount}</h3>
+      {/* Bugün */}
+      <div className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between transition-all hover:shadow-md group">
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors">
+            <Zap size={20} />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Canlı</span>
         </div>
-        <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+        <div>
+          <p className="text-xs font-bold text-gray-400 mb-1">Bugün Gelen</p>
+          <h3 className="text-3xl font-black text-[#111827] tabular-nums">{stats.todayCount}</h3>
         </div>
       </div>
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between transition-all hover:shadow-md">
-        <div>
-          <p className="text-sm text-gray-500 font-medium mb-1">Yüksek Memnuniyet</p>
-          <h3 className="text-3xl font-black text-[#111827]">{stats.googleRedirectsCount || 0}</h3>
+
+      {/* Yüksek Memnuniyet */}
+      <div className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between transition-all hover:shadow-md group">
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-10 h-10 bg-green-50 text-green-500 rounded-xl flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors">
+            <Heart size={20} />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-green-400">Mutlu</span>
         </div>
-        <div className="w-12 h-12 bg-gray-100 text-[#111827] rounded-full flex items-center justify-center">
-          <svg className="w-6 h-6" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor"/>
-          </svg>
+        <div>
+          <p className="text-xs font-bold text-gray-400 mb-1">Pozitif Yönlendirme</p>
+          <h3 className="text-3xl font-black text-[#111827] tabular-nums">{stats.googleRedirectsCount || 0}</h3>
         </div>
       </div>
     </div>

@@ -74,8 +74,8 @@ export async function GET(req: NextRequest) {
       distribution[item.rating] = item._count;
     });
 
-    // Weekly trend (last 7 days)
-    const weeklyTrend: { date: string; count: number }[] = [];
+    // Weekly trend (last 7 days) - Scan counts + Avg Rating
+    const trends: { date: string; count: number; avgRating: number }[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
@@ -83,12 +83,39 @@ export async function GET(req: NextRequest) {
       const end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
 
       const trendFilter: any = { ...dateFilter, createdAt: { gte: start, lt: end } };
-      const count = await prisma.feedback.count({ where: trendFilter });
-      weeklyTrend.push({
-        date: d.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric' }),
-        count
+      
+      const [count, aggregations] = await Promise.all([
+        prisma.feedback.count({ where: trendFilter }),
+        prisma.feedback.aggregate({
+          _avg: { rating: true },
+          where: trendFilter
+        })
+      ]);
+
+      trends.push({
+        date: d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }),
+        count,
+        avgRating: parseFloat(aggregations._avg.rating?.toFixed(1) || '0')
       });
     }
+
+    // Day of week distribution (Pzt, Sal, ...)
+    const dayDistributionRaw = await prisma.feedback.findMany({
+      where: dateFilter,
+      select: { createdAt: true }
+    });
+
+    const daysMap: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 0: 0 };
+    dayDistributionRaw.forEach((f: any) => {
+      const day = f.createdAt.getDay(); // 0 is Sunday, 1 is Monday...
+      daysMap[day] = (daysMap[day] || 0) + 1;
+    });
+
+    const dayLabels = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+    const dayDistribution = [1, 2, 3, 4, 5, 6, 0].map(d => ({
+      name: dayLabels[d],
+      count: daysMap[d]
+    }));
 
     // Word Cloud
     const allComments = await prisma.feedback.findMany({
@@ -128,7 +155,8 @@ export async function GET(req: NextRequest) {
       lowRatingCount,
       googleRedirectsCount,
       distribution,
-      weeklyTrend,
+      trends, // Detailed trend (count + rating)
+      dayDistribution, // Distribution by day of week
       wordCloud
     });
   } catch (error) {
