@@ -7,18 +7,23 @@ function getTransporter() {
 
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
 
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+  if (!SMTP_USER || !SMTP_PASS) {
     return null;
   }
 
+  // Gmail için daha stabil olan 'service' yöntemini veya standart host yöntemini kullanıyoruz
   transporterInstance = nodemailer.createTransport({
-    host: SMTP_HOST,
+    host: SMTP_HOST || 'smtp.gmail.com',
     port: Number(SMTP_PORT) || 587,
     secure: Number(SMTP_PORT) === 465,
     auth: {
       user: SMTP_USER,
       pass: SMTP_PASS,
     },
+    // Gmail TLS güvenliği için ek ayarlar
+    tls: {
+      rejectUnauthorized: false
+    }
   });
 
   return transporterInstance;
