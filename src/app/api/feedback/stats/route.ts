@@ -40,6 +40,13 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    const lowRatingCount = await prisma.feedback.count({
+      where: {
+        ...dateFilter,
+        rating: { lte: 3 }
+      }
+    });
+
     const aggregations = await prisma.feedback.aggregate({
       _avg: { rating: true },
       where: dateFilter
@@ -100,6 +107,7 @@ export async function GET(req: NextRequest) {
       totalCount,
       todayCount,
       avgRating,
+      lowRatingCount,
       distribution,
       wordCloud
     });
