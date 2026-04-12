@@ -380,15 +380,18 @@ export default async function LandingPage({
       </section>
 
       {/* FAQ Section */}
-      <section className="py-24 px-6 bg-white border-t border-gray-100">
-        <div className="max-w-3xl mx-auto">
-           <div className="text-center mb-16 space-y-4">
-            <h2 className="text-4xl font-black text-[#111827]">{t.faq_title}</h2>
-            <p className="text-lg text-gray-500 font-medium">{t.faq_subtitle}</p>
-          </div>
-          <PricingFaq t={t} />
-        </div>
-      </section>
+      <div className="bg-white border-t border-gray-100">
+        <PricingFaq 
+          title={t.faq_title} 
+          subtitle={t.faq_subtitle} 
+          faqs={[
+            { q: t.faq_q1, a: t.faq_a1 },
+            { q: t.faq_q2, a: t.faq_a2 },
+            { q: t.faq_q3, a: t.faq_a3 },
+            { q: t.faq_q4, a: t.faq_a4 },
+          ]} 
+        />
+      </div>
 
       {/* Final CTA */}
       <section className="py-24 px-6 text-center space-y-10 bg-[#111827] relative overflow-hidden">
