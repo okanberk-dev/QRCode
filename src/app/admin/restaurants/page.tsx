@@ -65,7 +65,7 @@ export default function RestaurantsPage() {
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
-    setFormData(prev => ({ ...prev, name, slug }));
+    setFormData(prev => ({ ...prev, name, slug: prev.slug === '' ? slug : prev.slug }));
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -113,7 +113,7 @@ export default function RestaurantsPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#1a73e8] w-8 h-8" />
+        <Loader2 className="animate-spin text-[#111827] w-8 h-8" />
       </div>
     );
   }
@@ -122,12 +122,12 @@ export default function RestaurantsPage() {
     <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Restoranlar</h1>
-          <p className="text-gray-500 text-sm">Platformdaki tüm restoranları yönetin.</p>
+          <h1 className="text-2xl font-black text-[#111827] tracking-tight">Restoranlar</h1>
+          <p className="text-gray-500 text-sm font-medium">Platformdaki tüm restoranları yönetin.</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-[#1a73e8] hover:bg-[#185abc] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm"
+          className="flex items-center gap-2 bg-[#111827] hover:bg-[#1f2937] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-md hover:shadow-lg"
         >
           <Plus size={18} />
           Yeni Restoran
@@ -136,13 +136,13 @@ export default function RestaurantsPage() {
 
       {/* Restaurant Cards Grid */}
       {restaurants.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-12 text-center">
           <Store size={48} className="text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-700 mb-2">Henüz restoran yok</h3>
-          <p className="text-gray-500 text-sm mb-6">İlk restoranınızı ekleyerek başlayın.</p>
+          <h3 className="text-lg font-bold text-[#111827] mb-2">Henüz restoran yok</h3>
+          <p className="text-gray-500 text-sm mb-6 font-medium">İlk restoranınızı ekleyerek başlayın.</p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 bg-[#1a73e8] hover:bg-[#185abc] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
+            className="inline-flex items-center gap-2 bg-[#111827] hover:bg-[#1f2937] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-md hover:shadow-lg"
           >
             <Plus size={18} />
             Restoran Ekle
@@ -193,23 +193,23 @@ export default function RestaurantsPage() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 pt-3 border-t border-gray-50">
+                <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
                   <Link
                     href={`/admin/restaurants/${r.id}`}
-                    className="flex-1 text-center py-2 text-sm font-medium text-[#1a73e8] hover:bg-[#e8f0fe] rounded-lg transition-colors"
+                    className="flex-1 text-center py-2 text-sm font-medium text-[#111827] hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     Düzenle
                   </Link>
                   <Link
                     href={`/admin/qr?restaurant=${r.id}`}
-                    className="flex-1 text-center py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                    className="flex-1 text-center py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     QR Kod
                   </Link>
                   <Link
-                    href={`/${r.slug}`}
+                    href={`/r/${r.slug}`}
                     target="_blank"
-                    className="p-2 text-gray-400 hover:text-[#1a73e8] hover:bg-[#e8f0fe] rounded-lg transition-colors"
+                    className="p-2 text-gray-400 hover:text-[#111827] hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     <ExternalLink size={16} />
                   </Link>
@@ -244,21 +244,21 @@ export default function RestaurantsPage() {
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Örn: Mamma's Burger Ankara"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm transition-all shadow-sm"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug *</label>
                 <div className="flex items-center">
-                  <span className="text-sm text-gray-400 mr-1">domain.com/</span>
+                  <span className="text-sm text-gray-400 mr-1">buaze.com/r/</span>
                   <input
                     type="text"
                     required
                     value={formData.slug}
                     onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
                     placeholder="mammas-burger"
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm font-mono"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm font-mono shadow-sm transition-all"
                   />
                 </div>
               </div>
@@ -269,7 +269,7 @@ export default function RestaurantsPage() {
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
                   >
                     <option>Restoran</option>
                     <option>Hamburger Restoranı</option>
@@ -302,21 +302,21 @@ export default function RestaurantsPage() {
                   value={formData.notificationEmail}
                   onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
                   placeholder="restoran@email.com"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
                 />
                 <p className="text-xs text-gray-400 mt-1">1-3 yıldız puanlarda bu adrese bildirim gönderilir.</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Google Place ID</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Google Place ID veya Harita Linki</label>
                 <input
                   type="text"
                   value={formData.googlePlaceId}
                   onChange={(e) => setFormData(prev => ({ ...prev, googlePlaceId: e.target.value }))}
-                  placeholder="ChIJ..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
+                  placeholder="ChIJ... veya https://maps.app.goo.gl/..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
                 />
-                <p className="text-xs text-gray-400 mt-1">Google Maps'ten aldığınız mekan kimliği. 4-5 yıldıza basanlar buraya yönlendirilecek.</p>
+                <p className="text-xs text-gray-400 mt-1">Mekan kimliğini ya da Google Haritalar Yorum veya Mekan linkini direkt ekleyebilirsiniz. 4-5 yıldıza basanlar buraya yönlendirilecek.</p>
               </div>
 
               <div>
@@ -326,7 +326,7 @@ export default function RestaurantsPage() {
                   value={formData.address}
                   onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                   placeholder="Mahall Ankara, Çankaya"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
                 />
               </div>
 
@@ -337,7 +337,7 @@ export default function RestaurantsPage() {
                   value={formData.phone}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   placeholder="(0312) 285 00 00"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1a73e8] focus:ring-2 focus:ring-[#e8f0fe] outline-none text-sm"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
                 />
               </div>
 
@@ -345,14 +345,14 @@ export default function RestaurantsPage() {
                 <button
                   type="button"
                   onClick={() => { setShowCreateModal(false); setError(''); }}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
+                  className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="flex items-center gap-2 bg-[#1a73e8] hover:bg-[#185abc] text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
+                  className="flex items-center gap-2 bg-[#111827] hover:bg-[#1f2937] text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-md disabled:opacity-50"
                 >
                   {creating ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
                   Oluştur

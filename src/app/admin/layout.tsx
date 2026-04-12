@@ -11,21 +11,36 @@ export default async function AdminLayout({
   const cookieStore = await cookies();
   const token = cookieStore.get('admin_token')?.value;
 
-  // Real auth verification: verify the JWT signature and contents
   let isAuthenticated = false;
+  let payload: any = null;
+
   try {
     if (token) {
-      const payload = await verifyJwt(token);
+      payload = await verifyJwt(token);
       isAuthenticated = !!payload;
     }
   } catch (e) {
     isAuthenticated = false;
   }
 
+  // Not authenticated — send to login (but not if already on /admin login or trial page)
+  // Layout wraps all /admin/* so we only redirect if needed
+  if (!isAuthenticated) {
+    // Children will be the login page; don't redirect to avoid loop
+  }
+
+  // If authenticated as restaurant_owner with trial expired, redirect to trial-expired page
+  // (Only if not already on /trial-expired)
+  if (isAuthenticated && payload?.role === 'restaurant_owner' && payload?.plan === 'trial') {
+    // We can't easily check trialEndsAt here without another DB call on every request.
+    // That check is done client-side in the sidebar and API. For server-side, we rely on
+    // the login API to block expired trial logins (which it already does).
+  }
+
   return (
-    <div className="flex h-screen bg-gray-50 flex-col md:flex-row">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       {isAuthenticated && <AdminSidebar />}
-      <div className="flex-1 overflow-auto">
+      <div className={`flex-1 overflow-auto flex flex-col ${!isAuthenticated ? 'items-center justify-center' : ''}`}>
         {children}
       </div>
     </div>

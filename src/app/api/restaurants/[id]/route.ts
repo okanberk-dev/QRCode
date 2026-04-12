@@ -28,6 +28,12 @@ export async function GET(
       return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
     }
 
+    if (admin.role === 'manager' && admin.restaurantId !== restaurant.id) {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    } else if (admin.role === 'restaurant_owner' && restaurant.userId !== admin.id) {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    }
+
     return NextResponse.json(restaurant);
   } catch (error) {
     console.error('Failed to fetch restaurant:', error);
@@ -67,6 +73,15 @@ export async function PUT(
       }
     }
 
+    const currentRest = await prisma.restaurant.findUnique({ where: { id } });
+    if (!currentRest) return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
+
+    if (admin.role === 'manager' && admin.restaurantId !== currentRest.id) {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    } else if (admin.role === 'restaurant_owner' && currentRest.userId !== admin.id) {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    }
+
     const restaurant = await prisma.restaurant.update({
       where: { id },
       data: {
@@ -102,6 +117,15 @@ export async function DELETE(
   const { id } = await params;
 
   try {
+    const currentRest = await prisma.restaurant.findUnique({ where: { id } });
+    if (!currentRest) return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
+
+    if (admin.role === 'manager' && admin.restaurantId !== currentRest.id) {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    } else if (admin.role === 'restaurant_owner' && currentRest.userId !== admin.id) {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    }
+
     // Soft delete: set isActive to false
     await prisma.restaurant.update({
       where: { id },

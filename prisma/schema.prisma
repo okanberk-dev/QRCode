@@ -8,6 +8,24 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  passwordHash  String       @map("password_hash")
+  name          String?
+  role          String       @default("restaurant_owner")
+  plan          String       @default("trial")      // trial | monthly | yearly
+  trialEndsAt   DateTime?    @map("trial_ends_at")
+  locale        String       @default("tr")
+  isActive      Boolean      @default(true) @map("is_active")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  restaurants   Restaurant[]
+
+  @@map("users")
+}
+
 model Restaurant {
   id                String     @id @default(cuid())
   slug              String     @unique
@@ -23,6 +41,9 @@ model Restaurant {
   isActive          Boolean    @default(true) @map("is_active")
   createdAt         DateTime   @default(now()) @map("created_at")
   updatedAt         DateTime   @updatedAt @map("updated_at")
+
+  userId            String?    @map("user_id")
+  user              User?      @relation(fields: [userId], references: [id])
 
   feedbacks         Feedback[]
   adminUsers        AdminUser[]

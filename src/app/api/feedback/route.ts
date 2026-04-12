@@ -125,6 +125,25 @@ export async function GET(req: NextRequest) {
     where.restaurantId = restaurantId;
   }
 
+  // Security override for non-superadmin
+  if (admin.role === 'manager') {
+    where.restaurantId = admin.restaurantId;
+  } else if (admin.role === 'restaurant_owner') {
+    const userRestaurants = await prisma.restaurant.findMany({
+      where: { userId: admin.id },
+      select: { id: true }
+    });
+    const userRestIds = userRestaurants.map(r => r.id);
+    
+    if (where.restaurantId) {
+      if (!userRestIds.includes(where.restaurantId as string)) {
+        return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+      }
+    } else {
+      where.restaurantId = { in: userRestIds };
+    }
+  }
+
   // Rating filter
   if (ratingFilter === 'low') {
     where.rating = { lte: 3 };

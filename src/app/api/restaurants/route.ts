@@ -43,7 +43,15 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const where: any = {};
+    if (admin.role === 'manager' && admin.restaurantId) {
+      where.id = admin.restaurantId;
+    } else if (admin.role === 'restaurant_owner') {
+      where.userId = admin.id;
+    }
+
     const restaurants = await prisma.restaurant.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
@@ -64,6 +72,10 @@ export async function POST(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
   if (!admin) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
+  }
+
+  if (admin.role === 'manager') {
+    return NextResponse.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
   }
 
   try {
@@ -96,6 +108,7 @@ export async function POST(req: NextRequest) {
         googlePlaceId: googlePlaceId || null,
         notificationEmail: notificationEmail || null,
         primaryColor: primaryColor || '#1a73e8',
+        ...(admin.role === 'restaurant_owner' && { userId: admin.id })
       },
     });
 

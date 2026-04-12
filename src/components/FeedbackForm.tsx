@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Loader2, X, Image as ImageIcon, Camera } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface FeedbackFormProps {
   rating: number;
@@ -19,25 +19,11 @@ export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restau
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    comment: '',
-    hasKvkkConsent: false,
-    hasMarketingConsent: false
-  });
+  const [comment, setComment] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (!formData.comment.trim()) {
-      setError('Lütfen yorumunuzu belirtin.');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -45,7 +31,12 @@ export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restau
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          name: null,
+          email: null,
+          phone: null,
+          comment: comment.trim(),
+          hasKvkkConsent: true,
+          hasMarketingConsent: false,
           rating,
           source,
           branch,
@@ -69,149 +60,57 @@ export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restau
     }
   };
 
-  return (
-    <div className="w-full max-w-lg mx-auto animate-slide-up bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden mb-12">
-      {/* Google Header Style */}
-      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h3 className="text-base font-medium text-[#202124]">Deneyiminizi Paylaşın</h3>
-        <X size={20} className="text-[#70757a] opacity-60 cursor-pointer" />
-      </div>
+  const ratingLabels: Record<number, string> = {
+    1: 'Çok kötü bir deneyim yaşadınız mı? Neler oldu?',
+    2: 'Neler daha iyi olabilirdi?',
+    3: 'Beklentilerinizi karşılamayan neler vardı?',
+  };
 
-      <div className="p-5 sm:p-6">
-        {/* Author Metadata */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-[#202124]">Misafir Kullanıcı</span>
-            <span className="text-[11px] text-[#70757a]">Bu değerlendirme herkese açık olarak paylaşılacaktır</span>
-          </div>
+  return (
+    <div className="w-full animate-fade-in">
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm mb-5 border border-red-100 flex items-center gap-2">
+          <span className="font-bold">!</span> {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            {ratingLabels[rating] || 'Deneyiminizi paylaşın'}
+            <span className="font-normal text-gray-400 ml-1">(Opsiyonel)</span>
+          </label>
+          <textarea
+            id="comment"
+            rows={5}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Yorumunuzu buraya yazabilirsiniz..."
+            className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 focus:border-gray-400 focus:ring-2 focus:ring-gray-100 outline-none text-base text-gray-800 bg-white resize-none placeholder-gray-300 transition-all shadow-sm"
+          />
         </div>
 
-        {error && (
-          <div className="bg-red-50 text-[#d93025] p-3 rounded-xl text-sm mb-6 border border-red-100 flex items-center gap-2">
-            <span className="font-bold">!</span> {error}
-          </div>
-        )}
+        {/* KVKK Bilgilendirme */}
+        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+          <p className="text-xs text-gray-500 leading-relaxed">
+            <span className="font-semibold text-gray-600">🔒 Gizliliğiniz Korunuyor:</span> Bu değerlendirme formunda hiçbir kişisel bilginiz (ad, e-posta, telefon) toplanmamaktadır. 
+            Gönderdiğiniz yorum anonim olarak işlenir. 6698 sayılı KVKK kapsamında verileriniz güvende.{' '}
+            <a href="/gizlilik" target="_blank" className="underline text-gray-600 hover:text-gray-800">Gizlilik Politikası</a>
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Main Comment Area */}
-          <div className="space-y-2">
-            <textarea
-              id="comment"
-              required
-              rows={5}
-              value={formData.comment}
-              onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
-              placeholder="Bu yerle ilgili kendi deneyiminizin ayrıntılarını paylaşın..."
-              className="w-full px-0 py-2 border-none focus:ring-0 outline-none text-base text-[#202124] bg-transparent resize-none placeholder-[#70757a]"
-            />
-            <div className="h-px bg-[#dadce0] w-full" />
-          </div>
-
-          {/* Optional Info Section */}
-          <div className="grid grid-cols-1 gap-5">
-            <div className="relative border border-[#dadce0] rounded-lg px-3 py-2 focus-within:border-[#1a73e8] focus-within:ring-1 focus-within:ring-[#1a73e8] transition-all">
-              <label htmlFor="name" className="block text-[11px] font-medium text-[#70757a] mb-0.5">Ad Soyad (Opsiyonel)</label>
-              <input
-                type="text"
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full bg-transparent border-none p-0 text-sm focus:ring-0 outline-none text-[#202124]"
-                placeholder="Örn: Ahmet Yılmaz"
-              />
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex-1 relative border border-[#dadce0] rounded-lg px-3 py-2 focus-within:border-[#1a73e8] focus-within:ring-1 focus-within:ring-[#1a73e8] transition-all">
-                <label htmlFor="phone" className="block text-[11px] font-medium text-[#70757a] mb-0.5">Telefon</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full bg-transparent border-none p-0 text-sm focus:ring-0 outline-none text-[#202124]"
-                  placeholder="05xx..."
-                />
-              </div>
-              <div className="flex-1 relative border border-[#dadce0] rounded-lg px-3 py-2 focus-within:border-[#1a73e8] focus-within:ring-1 focus-within:ring-[#1a73e8] transition-all">
-                <label htmlFor="email" className="block text-[11px] font-medium text-[#70757a] mb-0.5">E-posta</label>
-                <input
-                  type="email"
-                  id="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full bg-transparent border-none p-0 text-sm focus:ring-0 outline-none text-[#202124]"
-                  placeholder="ornek@mail.com"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 py-2 opacity-60">
-            <button type="button" className="flex items-center gap-2 text-sm font-medium text-[#70757a] hover:text-[#202124]">
-              <ImageIcon size={20} />
-              Fotoğraf ekle
-            </button>
-            <button type="button" className="flex items-center gap-2 text-sm font-medium text-[#70757a] hover:text-[#202124]">
-              <Camera size={20} />
-              Kamera
-            </button>
-          </div>
-          
-          {/* Consents Section */}
-          <div className="space-y-4 border-t border-gray-100 pt-6">
-            <div className="space-y-3">
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  required
-                  className="mt-1 w-4 h-4 rounded border-[#dadce0] text-[#1a73e8] focus:ring-[#1a73e8]"
-                  checked={formData.hasKvkkConsent}
-                  onChange={(e) => setFormData(prev => ({ ...prev, hasKvkkConsent: e.target.checked }))}
-                />
-                <span className="text-[12px] leading-snug text-[#70757a]">
-                  <a href="/kvkk" target="_blank" className="text-[#1a73e8] hover:underline">Aydınlatma Metni</a>&apos;ni ve <a href="/acik-riza" target="_blank" className="text-[#1a73e8] hover:underline">Açık Rıza Metni</a>&apos;ni okudum, verilerimin işlenmesini kabul ediyorum <span className="text-[#d93025]">*</span>
-                </span>
-              </label>
-
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  className="mt-1 w-4 h-4 rounded border-[#dadce0] text-[#1a73e8] focus:ring-[#1a73e8]"
-                  checked={formData.hasMarketingConsent}
-                  onChange={(e) => setFormData(prev => ({ ...prev, hasMarketingConsent: e.target.checked }))}
-                />
-                <span className="text-[12px] leading-snug text-[#70757a]">
-                  Kampanya ve fırsatlardan haberdar olmak için <a href="/ticari-ileti" target="_blank" className="text-[#1a73e8] hover:underline">Ticari Elektronik İleti</a> almayı kabul ediyorum. (Opsiyonel)
-                </span>
-              </label>
-            </div>
-          </div>
-          
-          <div className="flex justify-end pt-4 gap-4">
-            <button type="button" className="px-5 py-2 text-sm font-medium text-[#1a73e8] hover:bg-blue-50 rounded-lg transition-colors">
-              İptal
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex items-center justify-center gap-2 bg-[#1a73e8] hover:bg-[#1967d2] text-white font-medium px-8 py-2 rounded-full shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="animate-spin" size={16} />
-                  <span>Gönderiliyor...</span>
-                </>
-              ) : (
-                <span>Yayınla</span>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full flex items-center justify-center gap-2 bg-[#111827] hover:bg-[#1f2937] text-white font-bold text-base px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+        >
+          {isSubmitting ? (
+            <Loader2 className="animate-spin" size={20} />
+          ) : (
+            <span>Gönder</span>
+          )}
+        </button>
+      </form>
     </div>
   );
 }

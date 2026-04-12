@@ -11,12 +11,19 @@ export async function POST(req: NextRequest) {
       console.warn('SECURITY WARNING: Using default JWT_SECRET. Please set one in Vercel.');
     }
 
-    // Check if any admin exists in the database
+    // Check if any admin or regular user exists in the database
     let admin = null;
+    let regularUser = null;
     try {
       admin = await prisma.adminUser.findUnique({
         where: { username }
       });
+      
+      if (!admin) {
+        regularUser = await prisma.user.findUnique({
+          where: { email: username.toLowerCase().trim() }
+        });
+      }
     } catch (dbError) {
       console.error("Database check failed, using fallback:", dbError);
     }
@@ -26,7 +33,11 @@ export async function POST(req: NextRequest) {
     // BOOTSTRAP LOGIC & DB VERIFICATION
     if (admin) {
       isPasswordValid = await bcrypt.compare(password, admin.passwordHash);
+    } else if (regularUser) {
+      isPasswordValid = await bcrypt.compare(password, regularUser.passwordHash);
     } else {
+      // Dummy compare to prevent timing attack vulnerabilities
+      await bcrypt.compare(password, '$2b$12$dummyhashfortimingatackprevention');
       // Fallback for DB issues or first run
       const envUsername = process.env.ADMIN_USERNAME || 'admin';
       const envPassword = process.env.ADMIN_PASSWORD || '123456+';
@@ -53,12 +64,35 @@ export async function POST(req: NextRequest) {
 
     // Verify credentials
     if (isPasswordValid) {
-      const payloadRole = admin?.role || 'superadmin';
-      const payloadRestaurantId = admin?.restaurantId || null;
-      
+      let payloadRole = 'superadmin';
+      let payloadRestaurantId = null;
+      let payloadId = 'env-admin';
+      let payloadUsername = username;
+
+      if (admin) {
+        payloadRole = admin.role;
+        payloadRestaurantId = admin.restaurantId;
+        payloadId = admin.id;
+      } else if (regularUser) {
+        payloadRole = 'restaurant_owner';
+        payloadId = regularUser.id;
+        payloadUsername = regularUser.email;
+        // Fetch their first restaurant to pre-select, assuming they have at least one
+        try {
+          const userRestaurant = await prisma.restaurant.findFirst({
+            where: { userId: regularUser.id }
+          });
+          if (userRestaurant) {
+            payloadRestaurantId = userRestaurant.id;
+          }
+        } catch (e) {
+          console.error("Kullanıcı restoranı çekilemedi");
+        }
+      }
+
       const token = await signJwt({ 
-        id: admin?.id || 'env-admin', 
-        username: username, 
+        id: payloadId, 
+        username: payloadUsername, 
         role: payloadRole,
         restaurantId: payloadRestaurantId
       });

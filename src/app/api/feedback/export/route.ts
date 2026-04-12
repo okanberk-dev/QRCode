@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
-  const admin = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req) as any;
   if (!admin) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
   }
@@ -11,8 +11,26 @@ export async function GET(req: NextRequest) {
   try {
     const restaurantId = req.nextUrl.searchParams.get('restaurantId');
     const where: any = {};
-    
-    if (restaurantId && restaurantId !== 'all') {
+
+    // ─── IDOR Security Override ───
+    if (admin.role === 'manager') {
+      where.restaurantId = admin.restaurantId;
+    } else if (admin.role === 'restaurant_owner') {
+      const userRestaurants = await prisma.restaurant.findMany({
+        where: { userId: admin.id },
+        select: { id: true }
+      });
+      const userRestIds = userRestaurants.map((r: any) => r.id);
+
+      if (restaurantId && restaurantId !== 'all') {
+        if (!userRestIds.includes(restaurantId)) {
+          return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+        }
+        where.restaurantId = restaurantId;
+      } else {
+        where.restaurantId = { in: userRestIds };
+      }
+    } else if (restaurantId && restaurantId !== 'all') {
       where.restaurantId = restaurantId;
     }
 
@@ -26,25 +44,20 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // Generate CSV
-    const header = ['ID', 'Tarih', 'Puan', 'Ad Soyad', 'E-posta', 'Telefon', 'Yorum', 'Restoran', 'Şube', 'Masa No', 'IP', 'Pazarlama İzni'];
-    const rows = feedbacks.map((f) => [
+    // Generate CSV (no personal data collected, so minimal columns)
+    const header = ['ID', 'Tarih', 'Puan', 'Yorum', 'Restoran', 'Şube', 'Masa No'];
+    const rows = feedbacks.map((f: any) => [
       f.id,
       f.createdAt.toISOString(),
       f.rating.toString(),
-      `"${(f.name || '').replace(/"/g, '""')}"`,
-      `"${(f.email || '').replace(/"/g, '""')}"`,
-      `"${(f.phone || '').replace(/"/g, '""')}"`,
-      `"${(f.comment || '').replace(/"/g, '""')}"`,
+      `"${(f.comment && f.comment !== 'High Rating Redirect' ? f.comment : '').replace(/"/g, '""')}"`,
       `"${(f.restaurant?.name || '').replace(/"/g, '""')}"`,
       `"${(f.branch || '').replace(/"/g, '""')}"`,
-      `"${(f.tableNumber || '').replace(/"/g, '""')}"`,
-      `"${(f.ipAddress || '').replace(/"/g, '""')}"`,
-      f.hasMarketingConsent ? 'EVET' : 'HAYIR'
+      `"${(f.tableNumber || '').replace(/"/g, '""')}"`
     ]);
 
     const csvContent = '\ufeff' + [header.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const filename = restaurantId && restaurantId !== 'all' 
+    const filename = restaurantId && restaurantId !== 'all'
       ? `degerlendirmeler-${restaurantId}-${new Date().toISOString().split('T')[0]}.csv`
       : `degerlendirmeler-tumu-${new Date().toISOString().split('T')[0]}.csv`;
 
