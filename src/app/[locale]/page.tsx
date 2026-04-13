@@ -176,7 +176,7 @@ export default async function LandingPage({
                     {[1,2,3,4,5].map(i => <Star key={i} size={14} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
                   </div>
                   <p className="text-[14px] font-bold text-[#111827] leading-tight">
-                    {locale === 'tr' ? '"Haritalar puanımız 3 haftada 4.2'den 4.8'e çıktı!"' : '"Our Maps rating went from 4.2 up to 4.8 in 3 weeks!"'}
+                    {locale === 'tr' ? '"Haritalar puanımız 3 haftada 4.2\'den 4.8\'e çıktı!"' : '"Our Maps rating went from 4.2 up to 4.8 in 3 weeks!"'}
                   </p>
                   <div className="mt-4 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full w-[80%] bg-green-500 rounded-full" />
