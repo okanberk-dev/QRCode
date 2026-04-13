@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Loader2, Store, User, ShieldCheck, Search } from 'lucide-react';
+import { Plus, Trash2, Loader2, Store, User, ShieldCheck, Search, X } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 
 interface User {
@@ -43,6 +43,7 @@ export default function UsersPage() {
     address: '',
     phone: ''
   });
+  const [isManualSlug, setIsManualSlug] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -79,6 +80,11 @@ export default function UsersPage() {
   };
 
   const handleNameChange = (name: string) => {
+    if (isManualSlug) {
+      setRestaurantData(prev => ({ ...prev, name }));
+      return;
+    }
+
     const slug = name
       .toLowerCase()
       .replace(/[çÇ]/g, 'c')
@@ -91,7 +97,8 @@ export default function UsersPage() {
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
-    setRestaurantData(prev => ({ ...prev, name, slug: prev.slug === '' ? slug : prev.slug }));
+    
+    setRestaurantData(prev => ({ ...prev, name, slug }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,6 +142,7 @@ export default function UsersPage() {
         setFormData({ username: '', password: '', role: 'manager', restaurantId: '' });
         setIsNewRestaurant(false);
         setRestaurantData({ name: '', slug: '', address: '', phone: '' });
+        setIsManualSlug(false);
         fetchData();
       }
     } catch (e) {
@@ -266,13 +274,20 @@ export default function UsersPage() {
       {showModal && (
         <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6">
           <div className="bg-white rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 sm:p-10 border-b border-gray-100 bg-[#FCFBF7]">
+            <div className="p-6 sm:p-10 border-b border-gray-100 bg-[#FCFBF7] relative">
               <h2 className="text-xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">
                 {editingId ? 'Hesabı Düzenle' : 'Yeni Yetkili Ekle'}
               </h2>
               <p className="text-[#6b6760] text-[13px] sm:text-sm font-bold mt-2">
                 {editingId ? 'Kullanıcı yetkilerini ve bilgilerini güncelleyin.' : 'Sisteme yeni bir yönetici veya işletme sahibi tanımlayın.'}
               </p>
+
+              <button 
+                onClick={() => { setShowModal(false); setEditingId(null); setError(''); }}
+                className="absolute right-6 top-8 sm:right-8 sm:top-10 p-2 text-gray-400 hover:text-[#111827] hover:bg-gray-100 rounded-xl transition-all"
+              >
+                <X size={24} strokeWidth={3} />
+              </button>
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-6 sm:space-y-8 overflow-y-auto no-scrollbar">
@@ -379,7 +394,10 @@ export default function UsersPage() {
                             type="text"
                             required={isNewRestaurant}
                             value={restaurantData.slug}
-                            onChange={(e) => setRestaurantData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+                            onChange={(e) => {
+                              setRestaurantData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }));
+                              setIsManualSlug(true);
+                            }}
                             placeholder="mammas-burger"
                             className="flex-1 px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FDBF1D] shadow-sm bg-white outline-none text-sm font-bold tracking-tight"
                           />
