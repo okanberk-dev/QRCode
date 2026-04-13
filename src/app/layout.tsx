@@ -2,8 +2,11 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'QR Değerlendirme Platformu',
+  title: 'Buaze | Dijital İtibar Yönetimi',
   description: 'Restoran değerlendirme ve geri bildirim yönetim platformu',
+  verification: {
+    google: 'FYUcNyiNfUTFfmZBl_Xqb_YCFqBpD-PcpHHiGDz_kZ0',
+  },
 };
 
 export const viewport: Viewport = {

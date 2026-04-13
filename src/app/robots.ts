@@ -9,8 +9,12 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           '/admin/',
           '/api/',
+          '/r/',
+          '/tr/dashboard/',
+          '/en/dashboard/',
           '/tr/auth/',
           '/en/auth/',
+          '/*/dashboard/',
         ],
       },
       // Allow AI bots to read the marketing pages for search generative experiences
