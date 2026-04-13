@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface ContactFormProps {
   t: {
@@ -23,7 +23,6 @@ interface ContactFormProps {
 export default function ContactForm({ t }: ContactFormProps) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-
   const [error, setError] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -46,100 +45,106 @@ export default function ContactForm({ t }: ContactFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-
       const responseData = await res.json().catch(() => ({}));
-
       if (res.ok) {
         setSent(true);
         if (formRef.current) formRef.current.reset();
       } else {
-        setError(responseData.error || t.contact_form_submit + ' başarısız oldu.');
+        setError(responseData.error || 'Bir hata oluştu, lütfen tekrar deneyin.');
       }
-    } catch (err: any) {
-      setError(err?.message || 'Bağlantı hatası.');
+    } catch (err: unknown) {
+      setError('Bağlantı hatası. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
     }
   };
 
+  const inputClass = "w-full px-4 py-3 bg-[#F7F4F0] rounded-lg border border-[#e8e4de] focus:border-[#FDBF1D] focus:ring-2 focus:ring-[#FDBF1D]/10 focus:bg-white outline-none transition-all text-[14px] text-[#1f1e1d] placeholder-[#ada89f]";
+  const labelClass = "block text-[11px] font-semibold uppercase tracking-widest text-[#ada89f] mb-1.5";
+
   return (
-    <div className="relative">
-      <div className="bg-white p-10 rounded-[40px] shadow-2xl border border-gray-100 relative z-10 transition-transform hover:scale-[1.01] duration-500">
-        {sent ? (
-          <div className="py-20 text-center space-y-6">
-            <div className="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto">
-              <Send size={40} />
-            </div>
-            <h3 className="text-3xl font-black">{t.contact_success_title}</h3>
-            <p className="text-gray-500 font-bold">{t.contact_success_desc}</p>
-            <button onClick={() => setSent(false)} className="text-sm font-black text-[#79C5D1] hover:underline">
-              {t.contact_success_again}
-            </button>
+    <div className="bg-white rounded-xl border border-[#e8e4de] p-7 sm:p-9">
+      {sent ? (
+        <div className="py-12 text-center space-y-5">
+          <div className="w-14 h-14 bg-[#FDBF1D]/10 rounded-full flex items-center justify-center mx-auto">
+            <CheckCircle2 size={28} className="text-[#FDBF1D]" />
           </div>
-        ) : (
-          <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-bold text-center">
-                {error}
-              </div>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-gray-400">{t.contact_form_name}</label>
-                <input
-                  required
-                  name="name"
-                  type="text"
-                  id="contact-name"
-                  className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm"
-                  placeholder={t.contact_name_placeholder}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-gray-400">{t.contact_form_email}</label>
-                <input
-                  required
-                  name="email"
-                  type="email"
-                  id="contact-email"
-                  className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm"
-                  placeholder={t.contact_email_placeholder}
-                />
-              </div>
+          <h3 className="text-[20px] font-extrabold text-[#1f1e1d]">{t.contact_success_title}</h3>
+          <p className="text-[14px] text-[#6b6760]">{t.contact_success_desc}</p>
+          <button
+            onClick={() => setSent(false)}
+            className="text-[13px] font-semibold text-[#FDBF1D] hover:underline underline-offset-4"
+          >
+            {t.contact_success_again}
+          </button>
+        </div>
+      ) : (
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
+          {error && (
+            <div className="bg-red-50 text-red-600 border border-red-100 px-4 py-3 rounded-lg text-[13px]">
+              {error}
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-gray-400">{t.contact_form_business}</label>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>{t.contact_form_name}</label>
               <input
+                required
+                name="name"
                 type="text"
-                name="business"
-                id="contact-business"
-                className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm"
-                placeholder={t.contact_business_placeholder}
+                id="contact-name"
+                className={inputClass}
+                placeholder={t.contact_name_placeholder}
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-gray-400">{t.contact_form_message}</label>
-              <textarea
+            <div>
+              <label className={labelClass}>{t.contact_form_email}</label>
+              <input
                 required
-                name="message"
-                rows={5}
-                id="contact-message"
-                className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm resize-none"
-                placeholder={t.contact_message_placeholder}
-              />            </div>
-            <button
-              type="submit"
-              id="contact-submit-btn"
-              disabled={loading}
-              className="w-full py-5 bg-[#111827] text-white font-black rounded-2xl hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-50 flex items-center justify-center gap-3 active:scale-95"
-            >
-              {loading ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
-              {t.contact_form_submit}
-            </button>
-          </form>
-        )}
-      </div>
-      <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-[#FDBF1D]/5 blur-[80px] rounded-full -z-10" />
+                name="email"
+                type="email"
+                id="contact-email"
+                className={inputClass}
+                placeholder={t.contact_email_placeholder}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>{t.contact_form_business}</label>
+            <input
+              type="text"
+              name="business"
+              id="contact-business"
+              className={inputClass}
+              placeholder={t.contact_business_placeholder}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>{t.contact_form_message}</label>
+            <textarea
+              required
+              name="message"
+              rows={5}
+              id="contact-message"
+              className={`${inputClass} resize-none`}
+              placeholder={t.contact_message_placeholder}
+            />
+          </div>
+
+          <button
+            type="submit"
+            id="contact-submit-btn"
+            disabled={loading}
+            className="w-full py-3.5 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] font-semibold text-[14px] rounded-lg transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 active:scale-[0.98]"
+          >
+            {loading ? <Loader2 className="animate-spin" size={17} /> : <Send size={16} />}
+            {t.contact_form_submit}
+          </button>
+        </form>
+      )}
     </div>
   );
 }

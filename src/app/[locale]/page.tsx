@@ -114,11 +114,11 @@ export default async function LandingPage({
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-start gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row items-center gap-5 pt-4">
                 <Link
                   href={`${base}/auth/register`}
                   id="hero-cta-btn"
-                  className="px-7 py-3.5 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] text-[15px] font-semibold rounded-lg transition-all active:scale-[0.97] text-center shadow-sm hover:shadow-md"
+                  className="px-8 py-3.5 bg-[#FDBF1D] text-[#1f1e1d] text-[15px] font-extrabold rounded-lg shadow-[0_4px_0_0_#1f1e1d] border-2 border-[#1f1e1d] hover:bg-[#EAB308] active:translate-y-1 active:shadow-[0_0px_0_0_#1f1e1d] transition-all text-center"
                 >
                   {t.hero_cta}
                 </Link>
@@ -138,7 +138,7 @@ export default async function LandingPage({
             </div>
 
             {/* Right: Floating Quote Bubbles with dot pattern */}
-            <div className="relative min-h-[360px] sm:min-h-[420px] hidden lg:block" style={{ placeItems: 'center end' }}>
+            <div className="relative min-h-[360px] sm:min-h-[420px] hidden lg:flex items-center justify-end">
               {/* Dot pattern */}
               <div
                 className="absolute inset-0 w-full h-full opacity-[0.08]"
@@ -148,44 +148,25 @@ export default async function LandingPage({
                 }}
               />
 
-              {/* Quote Bubble 1 — Top right area */}
-              <div className="absolute top-2 right-0 max-w-[270px] bg-white rounded-xl border border-[#e8e4de] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] transform rotate-1 hover:rotate-0 transition-transform duration-500 z-10">
-                <div className="flex gap-0.5 mb-3">
-                  {[1,2,3,4,5].map(i => <Star key={i} size={13} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+              {/* ReviewFlowz Style Single Hero Quote Wrapper */}
+              <div className="relative max-w-[280px] bg-white rounded-[20px] border border-[#e8e4de] p-6 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.12)] transform hover:-translate-y-2 transition-transform duration-500 z-10">
+                <div className="flex gap-[2px] mb-4">
+                  {[1,2,3,4,5].map(i => (
+                    <svg key={i} xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                    </svg>
+                  ))}
                 </div>
-                <p className="text-[13px] text-[#1f1e1d] leading-relaxed">
+                <div className="text-[14px] text-[#1f1e1d] font-medium leading-[1.6]">
                   {locale === 'tr'
-                    ? '"Buaze ile Google puanımız 2 ayda 3.8\'den 4.7\'ye çıktı. Harika!"'
-                    : '"Super easy to use and worked perfectly for our restaurant chain"'}
-                </p>
-                {/* Speech tail */}
-                <div className="absolute -bottom-[6px] left-8 w-3 h-3 bg-white border-b border-r border-[#e8e4de] transform rotate-45" />
-              </div>
-
-              {/* Quote Bubble 2 — Mid left */}
-              <div className="absolute top-[170px] -left-4 max-w-[250px] bg-white rounded-xl border border-[#e8e4de] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] transform -rotate-2 hover:rotate-0 transition-transform duration-500 z-10">
-                <div className="flex gap-0.5 mb-3">
-                  {[1,2,3,4,5].map(i => <Star key={i} size={13} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+                    ? '"Buaze\'yi kullanmak gerçekten çok kolay. Yorum toplamak konusunda müthiş zaman kazandırıyor"'
+                    : '"Really love how easy Buaze is to use. It saves so much time collecting reviews"'}
                 </div>
-                <p className="text-[13px] text-[#1f1e1d] leading-relaxed">
-                  {locale === 'tr'
-                    ? '"Olumsuz yorumları filtreleme özelliği işimizi kurtarıyor."'
-                    : '"The negative review filtering feature is a real game changer."'}
-                </p>
-                <div className="absolute -bottom-[6px] right-10 w-3 h-3 bg-white border-b border-r border-[#e8e4de] transform rotate-45" />
-              </div>
-
-              {/* Quote Bubble 3 — Bottom right */}
-              <div className="absolute bottom-4 right-6 max-w-[260px] bg-white rounded-xl border border-[#e8e4de] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] transform rotate-1 hover:rotate-0 transition-transform duration-500 z-10">
-                <div className="flex gap-0.5 mb-3">
-                  {[1,2,3,4,5].map(i => <Star key={i} size={13} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
-                </div>
-                <p className="text-[13px] text-[#1f1e1d] leading-relaxed">
-                  {locale === 'tr'
-                    ? '"QR kod sistemi geri bildirim sürecimizi tamamen değiştirdi."'
-                    : '"The QR code system completely transformed our feedback process."'}
-                </p>
-                <div className="absolute -top-[6px] left-12 w-3 h-3 bg-white border-t border-l border-[#e8e4de] transform rotate-45" />
+                {/* Speech tail perfectly matching card border and background */}
+                <svg className="absolute -bottom-3 right-8 w-6 h-6 text-white drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 0H22L12 16L2 0Z" stroke="#e8e4de" strokeWidth="1" />
+                  <path d="M3 0H21L12 14L3 0Z" fill="white" />
+                </svg>
               </div>
             </div>
           </div>

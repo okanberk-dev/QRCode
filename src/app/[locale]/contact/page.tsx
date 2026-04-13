@@ -19,10 +19,7 @@ export async function generateMetadata({
       : 'Get in touch with the Buaze team. Send your questions, demo requests, or support inquiries.',
     alternates: {
       canonical: `https://buaze.com/${locale}/contact`,
-      languages: {
-        'tr': 'https://buaze.com/tr/contact',
-        'en': 'https://buaze.com/en/contact',
-      },
+      languages: { 'tr': 'https://buaze.com/tr/contact', 'en': 'https://buaze.com/en/contact' },
     },
   };
 }
@@ -39,61 +36,76 @@ export default async function ContactPage({
   const { locale } = await params;
   const t = getTranslations(locale);
 
-  const contactItems = [
-    { icon: <Mail size={24} />, label: t.contact_email_label, value: t.contact_email, color: 'bg-[#FDBF1D]/10 text-[#FDBF1D] group-hover:bg-[#FDBF1D] group-hover:text-white' },
-    { icon: <Phone size={24} />, label: t.contact_phone_label, value: t.contact_phone, color: 'bg-[#79C5D1]/10 text-[#79C5D1] group-hover:bg-[#79C5D1] group-hover:text-white' },
-    { icon: <MapPin size={24} />, label: t.contact_address_label, value: t.contact_address, color: 'bg-gray-100 text-gray-400 group-hover:bg-[#111827] group-hover:text-white' },
-  ];
-
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Buaze',
     url: 'https://buaze.com',
     email: 'hello@buaze.com',
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: 'Bursa',
-      addressCountry: 'TR',
-    },
+    address: { '@type': 'PostalAddress', addressLocality: 'Bursa', addressCountry: 'TR' },
   };
 
+  const contactItems = [
+    { icon: <Mail size={19} />, label: t.contact_email_label, value: t.contact_email },
+    { icon: <Phone size={19} />, label: t.contact_phone_label, value: t.contact_phone },
+    { icon: <MapPin size={19} />, label: t.contact_address_label, value: t.contact_address },
+  ];
+
   return (
-    <div className="min-h-screen bg-white text-[#111827] font-sans">
+    <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans pt-[64px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-
       <MarketingNavbar locale={locale} t={t} />
 
-      <section className="pt-48 pb-24 px-6 overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
-
-            <div className="space-y-12">
-              <div className="space-y-4">
-                <h1 className="text-5xl sm:text-7xl font-black tracking-tight">{t.contact_title}</h1>
-                <p className="text-xl text-gray-500 font-bold">{t.contact_subtitle}</p>
-              </div>
-
-              <div className="space-y-8">
-                {contactItems.map((item, i) => (
-                  <div key={i} className="flex items-center gap-6 group">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${item.color}`}>
-                      {item.icon}
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase font-black text-gray-400 tracking-widest">{item.label}</p>
-                      <p className="text-lg font-black italic">{item.value}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <ContactForm t={t} />
+      {/* Header */}
+      <section className="pt-16 sm:pt-20 pb-14 px-5 sm:px-8">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="max-w-[560px]">
+            <p className="text-[13px] font-semibold text-[#FDBF1D] uppercase tracking-widest mb-4">
+              {locale === 'tr' ? 'İletişim' : 'Contact'}
+            </p>
+            <h1 className="text-[36px] sm:text-[48px] font-extrabold leading-[1.1] tracking-[-0.02em] mb-4">
+              {t.contact_title}
+            </h1>
+            <p className="text-[15px] text-[#6b6760] leading-relaxed">
+              {t.contact_subtitle}
+            </p>
           </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="pb-16 sm:pb-24 px-5 sm:px-8">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+
+          {/* Contact Info */}
+          <div className="space-y-5">
+            {contactItems.map((item, i) => (
+              <div key={i} className="flex items-start gap-4 p-5 bg-white rounded-xl border border-[#e8e4de] hover:border-[#FDBF1D]/30 transition-colors group">
+                <div className="w-10 h-10 bg-[#F7F4F0] group-hover:bg-[#FDBF1D]/10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors text-[#6b6760] group-hover:text-[#1f1e1d]">
+                  {item.icon}
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-[#ada89f] mb-0.5">{item.label}</p>
+                  <p className="text-[15px] font-semibold text-[#1f1e1d]">{item.value}</p>
+                </div>
+              </div>
+            ))}
+
+            {/* Extra info */}
+            <div className="p-6 bg-[#F7F4F0] rounded-xl border border-[#e8e4de]">
+              <p className="text-[13px] text-[#6b6760] leading-relaxed">
+                {locale === 'tr'
+                  ? 'Genellikle 24 saat içinde yanıt veriyoruz. Demo talepleri için hemen iletişime geçebilirsiniz.'
+                  : 'We usually respond within 24 hours. Feel free to reach out for demo requests immediately.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Form */}
+          <ContactForm t={t} />
         </div>
       </section>
 
