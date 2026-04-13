@@ -8,7 +8,7 @@ import { useAdminTranslation } from './AdminTranslationProvider';
 
 export default function AdminMobileNav() {
   const pathname = usePathname();
-  const { t } = useAdminTranslation();
+  const { t, locale } = useAdminTranslation();
   const [role, setRole] = useState('manager');
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function AdminMobileNav() {
     { href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
     { href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/tr/dashboard/guide', icon: BookOpen, label: 'Rehber', roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: locale === 'tr' ? 'Kullanım Kılavuzu' : 'User Guide', roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/customers', icon: UsersRound, label: t('customers'), roles: ['superadmin'] },
   ];
 
