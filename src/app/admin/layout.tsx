@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileNav from '@/components/admin/AdminMobileNav';
 import { verifyJwt } from '@/lib/auth';
@@ -11,8 +11,14 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
+  const headerStore = await headers();
+
   const token = cookieStore.get('admin_token')?.value;
   const adminLocale = cookieStore.get('ADMIN_LOCALE')?.value || 'tr';
+
+  const adminPath = (headerStore.get('x-admin-path') || headerStore.get('next-url') || '/admin').split('?')[0];
+  const isAdminLoginRoute = adminPath === '/admin';
+  const isProtectedAdminRoute = adminPath.startsWith('/admin/') && !isAdminLoginRoute;
 
   let isAuthenticated = false;
   let payload: any = null;
@@ -26,10 +32,9 @@ export default async function AdminLayout({
     isAuthenticated = false;
   }
 
-  // Not authenticated — send to login (but not if already on /admin login or trial page)
-  // Layout wraps all /admin/* so we only redirect if needed
-  if (!isAuthenticated) {
-    // Children will be the login page; don't redirect to avoid loop
+  // Unauthenticated users can only access /admin (login page)
+  if (!isAuthenticated && isProtectedAdminRoute) {
+    redirect('/admin');
   }
 
   // If authenticated as restaurant_owner with trial expired, redirect to trial-expired page
@@ -37,7 +42,7 @@ export default async function AdminLayout({
     // Logic for trial expiration check could go here if needed.
   }
 
-  // Determine if we should show the sidebar. 
+  // Determine if we should show the sidebar.
   // We hide it if not authenticated.
   const showSidebar = isAuthenticated;
 
@@ -46,7 +51,7 @@ export default async function AdminLayout({
       <div className="flex flex-col lg:flex-row h-screen bg-[#FCFBF7] overflow-hidden font-sans selection:bg-[#FDBF1D]/30">
         {showSidebar && <AdminSidebar />}
         <div className={`flex-1 overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center' : 'p-3 sm:p-10 mb-14 lg:mb-0 pb-10 lg:pb-0'}`}>
-          <div className={showSidebar ? "max-w-7xl mx-auto w-full" : "w-full max-w-full"}>
+          <div className={showSidebar ? 'max-w-7xl mx-auto w-full' : 'w-full max-w-full'}>
             {children}
           </div>
         </div>
