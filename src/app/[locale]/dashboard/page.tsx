@@ -247,14 +247,14 @@ export default async function DashboardPage({
               href="/admin/restaurants"
               className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#1f1e1d] text-white font-black rounded-xl border-2 border-[#1f1e1d] shadow-[0_3px_0_0_#000] hover:bg-[#FDBF1D] hover:text-[#111827] active:translate-y-[2px] active:shadow-[0_1px_0_0_#000] transition-all text-xs sm:text-sm uppercase tracking-wider"
             >
-              {t.dash_add_restaurant} <ArrowRight size={16} sm:size={18} strokeWidth={3} />
+              {t.dash_add_restaurant} <ArrowRight size={18} strokeWidth={3} />
             </Link>
           </div>
 
           {user.restaurants.length === 0 ? (
             <div className="bg-white rounded-[24px] border-2 border-dashed border-[#e8e4de] p-12 sm:p-24 text-center space-y-4 sm:space-y-6">
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#F7F4F0] rounded-2xl flex items-center justify-center mx-auto border-2 border-[#e8e4de]">
-                <Building2 size={32} sm:size={40} className="text-[#ada89f]" />
+                <Building2 size={40} className="text-[#ada89f]" />
               </div>
               <div className="space-y-1 sm:space-y-2">
                 <p className="text-base sm:text-[18px] font-black text-[#1f1e1d]">{t.dash_no_restaurant}</p>
