@@ -172,7 +172,8 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
   );
 }
 
-export default function FeedbacksPage({ params }: { params: { locale: Locale } }) {
+export default async function FeedbacksPage({ params }: { params: Promise<{ locale: Locale }> }) {
+  const resolvedParams = await params;
   return (
     <Suspense fallback={
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#FCFBF7]">
@@ -180,7 +181,7 @@ export default function FeedbacksPage({ params }: { params: { locale: Locale } }
         <span className="text-xs font-black text-[#ada89f] uppercase tracking-[0.3em]">Yükleniyor...</span>
       </div>
     }>
-      <FeedbacksContent params={params} />
+      <FeedbacksContent params={resolvedParams} />
     </Suspense>
   );
 }

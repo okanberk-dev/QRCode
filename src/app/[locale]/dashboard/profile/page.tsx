@@ -7,8 +7,8 @@ import { useRouter } from 'next/navigation';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 
-export default function ProfilePage({ params }: { params: { locale: Locale } }) {
-  const { locale } = params;
+export default async function ProfilePage({ params }: { params: Promise<{ locale: Locale }> }) {
+  const { locale } = await params;
   const t = getTranslations(locale);
   const router = useRouter();
   
