@@ -33,46 +33,57 @@ export default async function CookiePage({
     <div className="min-h-screen flex flex-col font-sans bg-[#FCFBF7] selection:bg-[#FDBF1D]/30">
       <MarketingNavbar locale={locale} t={t} />
 
-      <main className="flex-1 pt-[120px] sm:pt-[150px] pb-16 sm:pb-24">
-        <div className="max-w-[760px] mx-auto px-5 sm:px-8">
-          <div className="mb-8">
-            <h1 className="text-[36px] sm:text-[46px] font-extrabold text-[#1f1e1d] tracking-[-0.03em] leading-[1.1] mb-2">
-              {isTr ? 'Çerez Politikası' : 'Cookie Policy'}
+      <main className="flex-1 max-w-[900px] mx-auto w-full px-5 py-20 sm:py-32">
+        <div className="bg-white p-8 sm:p-16 rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d]">
+          <div className="mb-10">
+            <h1 className="text-[28px] sm:text-[42px] font-black text-[#1f1e1d] tracking-[-0.03em] leading-tight mb-2">
+              {isTr ? 'Çerez' : 'Cookie'} <span className="text-[#ea580c]">{isTr ? 'Politikası' : 'Policy'}</span>
             </h1>
-            <p className="text-[14px] text-[#6b6760] font-medium">
+            <p className="text-[13px] text-[#ada89f] font-bold uppercase tracking-widest">
               {isTr ? 'Son güncelleme: 13 Nisan 2026' : 'Last updated: April 13, 2026'}
             </p>
           </div>
           
-          <div className="bg-white rounded-[24px] border-[2.5px] border-[#1f1e1d] p-8 sm:p-12 shadow-[6px_8px_0_0_#1f1e1d]">
-            <article className="space-y-6 text-[#4a4742] leading-relaxed">
-              <section className="space-y-3">
-                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">{isTr ? '1. Çerez Nedir?' : '1. What Are Cookies?'}</h2>
+          <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-10 text-[15px] sm:text-[16px] leading-relaxed">
+             <p className="font-bold text-[18px] text-[#1f1e1d]">
+               {isTr 
+                 ? 'Buaze web sitesini daha verimli kullanabilmeniz için teknik çerezler kullanmaktayız.' 
+                 : 'We use technical cookies so that you can use the Buaze website more efficiently.'}
+             </p>
+
+              <section className="space-y-4">
+                <h2 className="text-[#1f1e1d] text-[22px] font-black tracking-tight">{isTr ? '1. Çerez Nedir?' : '1. What are Cookies?'}</h2>
                 <p>
                   {isTr 
-                    ? 'Çerezler (cookies), bir web sitesini ziyaret ettiğinizde tarayıcınız aracılığıyla cihazınıza kaydedilen küçük metin dosyalarıdır. Buaze olarak, sitemizin düzgün çalışmasını sağlamak için çerezleri kullanıyoruz.'
-                    : 'Cookies are small text files downloaded to your device when you visit a website. At Buaze, we use cookies to ensure our website functions properly.'}
+                    ? 'Çerezler, ziyaret ettiğiniz web siteleri tarafından tarayıcınıza bırakılan küçük metin dosyalarıdır.'
+                    : 'Cookies are small text files left in your browser by the websites you visit.'}
                 </p>
               </section>
 
-              <section className="space-y-3">
-                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">{isTr ? '2. Hangi Çerezleri Kullanıyoruz?' : '2. How We Use Cookies'}</h2>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li><strong>{isTr ? 'Zorunlu Çerezler:' : 'Essential Cookies:'}</strong> {isTr ? 'Uygulamanın temel işlevleri ve oturum yönetimi için.' : 'For core application functionality and session management.'}</li>
-                  <li><strong>{isTr ? 'Analitik Çerezler:' : 'Analytical Cookies:'}</strong> {isTr ? 'Sitemizin nasıl kullanıldığını analiz ederek performans iyileştirmesi yapmak için.' : 'To analyze how our site is used and improve performance.'}</li>
+              <section className="space-y-4">
+                <h2 className="text-[#1f1e1d] text-[22px] font-black tracking-tight">{isTr ? '2. Çerez Türleri' : '2. Types of Cookies'}</h2>
+                <ul className="list-none space-y-3">
+                  {[
+                    isTr ? 'Oturum Yönetimi Çerezleri' : 'Session Management Cookies',
+                    isTr ? 'Güvenlik Çerezleri' : 'Security Cookies',
+                    isTr ? 'Analitik ve Performans Çerezleri' : 'Analytics and Performance Cookies'
+                  ].map((li, i) => (
+                    <li key={i} className="flex items-center gap-3">
+                       <span className="w-5 h-5 rounded-full bg-[#1f1e1d] flex-shrink-0 flex items-center justify-center text-white text-[10px]">✓</span>
+                       <span className="font-bold text-[#1f1e1d]">{li}</span>
+                    </li>
+                  ))}
                 </ul>
               </section>
 
-              <section className="space-y-3">
-                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">{isTr ? '3. Çerezleri Nasıl Kontrol Edebilirsiniz?' : '3. Controlling Cookies'}</h2>
-                <p>
-                  {isTr
-                    ? 'Tarayıcı ayarlarınızı değiştirerek çerezleri reddedebilir veya silebilirsiniz. Ancak, çerezleri tamamen devre dışı bırakmanız halinde sistemin bazı özelliklerinin çalışmayabileceğini unutmayın.'
-                    : 'You can prevent the setting of cookies by adjusting the settings on your browser. Be aware that disabling cookies will affect the functionality of this and many other websites that you visit.'}
-                </p>
-              </section>
-
-            </article>
+               <div className="pt-10 border-t border-[#e8e4de] flex flex-col sm:flex-row items-center justify-between gap-6">
+                 <p className="text-[13px] text-[#ada89f] font-medium">
+                   {isTr ? 'Tarayıcı ayarlarınızdan çerezleri yönetebilirsiniz.' : 'You can manage cookies from your browser settings.'}
+                 </p>
+                 <a href="mailto:hello@buaze.com" className="px-6 py-3 bg-[#1f1e1d] text-white rounded-xl text-[14px] font-bold hover:bg-[#ea580c] transition-colors">
+                   hello@buaze.com
+                 </a>
+               </div>
           </div>
         </div>
       </main>

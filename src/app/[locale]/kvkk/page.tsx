@@ -18,53 +18,56 @@ export default async function KvkkPage({
 }) {
   const { locale } = await params;
   const t = await getTranslations(locale);
+  const isTr = locale === 'tr';
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-[#FCFBF7] selection:bg-[#FDBF1D]/30">
       <MarketingNavbar locale={locale} t={t} />
 
-      <main className="flex-1 pt-[120px] sm:pt-[150px] pb-16 sm:pb-24">
-        <div className="max-w-[760px] mx-auto px-5 sm:px-8">
-          <div className="mb-8">
-            <h1 className="text-[36px] sm:text-[46px] font-extrabold text-[#1f1e1d] tracking-[-0.03em] leading-[1.1] mb-2">
-              KVKK Aydınlatma Metni
+      <main className="flex-1 max-w-[900px] mx-auto w-full px-5 py-20 sm:py-32">
+        <div className="bg-white p-8 sm:p-16 rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d]">
+          <div className="mb-10">
+            <h1 className="text-[28px] sm:text-[42px] font-black text-[#1f1e1d] leading-tight mb-2">
+              <span className="text-[#ea580c]">KVKK</span> {isTr ? 'Aydınlatma Metni' : 'Clarification Text'}
             </h1>
-            <p className="text-[14px] text-[#6b6760] font-medium">
-              Son güncelleme: 13 Nisan 2026
+            <p className="text-[13px] text-[#ada89f] font-bold uppercase tracking-widest">
+              {isTr ? 'Son güncelleme: 13 Nisan 2026' : 'Last updated: April 13, 2026'}
             </p>
           </div>
           
-          <div className="bg-white rounded-[24px] border-[2.5px] border-[#1f1e1d] p-8 sm:p-12 shadow-[6px_8px_0_0_#1f1e1d]">
-            <article className="space-y-6 text-[#4a4742] leading-relaxed">
-              <section className="space-y-3">
-                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">1. Veri Sorumlusu</h2>
+          <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-10 text-[15px] sm:text-[16px] leading-relaxed">
+             <p className="font-bold text-[18px] text-[#1f1e1d]">
+               {isTr 
+                 ? '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca verilerinizin güvenliği bizim için esastır.' 
+                 : 'The security of your data is essential to us in accordance with the Law on Protection of Personal Data ("KVKK").'}
+             </p>
+
+              <section className="space-y-4">
+                <h2 className="text-[#1f1e1d] text-[22px] font-black tracking-tight">{isTr ? '1. Veri Sorumlusu' : '1. Data Controller'}</h2>
                 <p>
-                  6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verileriniz veri sorumlusu olarak Buaze ("Şirket") tarafından aşağıda açıklanan amaçlar kapsamında işlenebilecektir.
+                  {isTr 
+                    ? 'Buaze Teknoloji olarak kişisel verilerinizi kanuni sınırlar içerisinde toplamakta ve işlemekteyiz.'
+                    : 'As Buaze Tech, we collect and process your personal data within legal boundaries.'}
                 </p>
               </section>
 
-              <section className="space-y-3">
-                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">2. Kişisel Verilerin İşlenme Amacı</h2>
+              <section className="space-y-4">
+                <h2 className="text-[#1f1e1d] text-[22px] font-black tracking-tight">{isTr ? '2. İşleme Amaçları' : '2. Processing Purposes'}</h2>
                 <p>
-                  Şirketimiz tarafından toplanan kişisel verileriniz, temel olarak itibar yönetimi yazılım hizmetlerimizin sunulması, faturalandırma ve ödeme işlemlerinin gerçekleştirilmesi ile güvenliğin sağlanması amaçlarıyla sınırlı kalarak işlenmektedir.
+                  {isTr
+                    ? 'Verileriniz; üyelik süreçlerini yürütmek, hizmet kalitesini artırmak ve yasal yükümlülüklerimizi yerine getirmek amacıyla işlenir.'
+                    : 'Your data is processed to carry out membership processes, improve service quality, and fulfill our legal obligations.'}
                 </p>
               </section>
 
-              <section className="space-y-3">
-                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">3. Kişisel Verilerin Aktarılması</h2>
-                <p>
-                  Kişisel verileriniz, yasal mevzuat gereğince zorunlu olan kamu kurumlarıyla ve sistemin altyapısını sağlayan teknik servis sağlayıcılarımızla sadece amaçla bağlantılı ve ölçülü olarak paylaşılabilecektir.
-                </p>
-              </section>
-
-              <section className="space-y-3">
-                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">4. İlgili Kişinin Hakları</h2>
-                <p>
-                  KVKK'nın 11. maddesi uyarınca veri sahipleri; kişisel verilerinin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme, amacına uygun kullanılıp kullanılmadığını öğrenme ve eksik/yanlış verilerin düzeltilmesini talep etme hakkına sahiptir. Taleplerinizi yasal formlara uygun olarak iletişim kanalımızdan bize iletebilirsiniz.
-                </p>
-              </section>
-
-            </article>
+               <div className="pt-10 border-t border-[#e8e4de] flex flex-col sm:flex-row items-center justify-between gap-6">
+                 <p className="text-[13px] text-[#ada89f] font-medium">
+                   {isTr ? 'Haklarınız için info sayfamızı inceleyin.' : 'Review our info page for your rights.'}
+                 </p>
+                 <a href="mailto:hello@buaze.com" className="px-6 py-3 bg-[#1f1e1d] text-white rounded-xl text-[14px] font-bold hover:bg-[#ea580c] transition-colors">
+                   hello@buaze.com
+                 </a>
+               </div>
           </div>
         </div>
       </main>

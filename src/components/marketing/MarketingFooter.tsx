@@ -46,7 +46,7 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
               {locale === 'tr' ? 'Ürün' : 'Product'}
             </h4>
             <ul className="space-y-3 text-[13px] font-medium text-[#6b6760]">
-              <li><Link href={`${base}/#how-it-works`} className="hover:text-white transition-colors">{locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}</Link></li>
+              <li><Link href={`${base}/how-it-works`} className="hover:text-white transition-colors">{locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}</Link></li>
               <li><Link href={`${base}/pricing`} className="hover:text-white transition-colors">{locale === 'tr' ? 'Fiyatlandırma' : 'Pricing'}</Link></li>
               <li><Link href={`${base}/faq`} className="hover:text-white transition-colors">{locale === 'tr' ? 'Sıkça Sorulan Sorular' : 'FAQ'}</Link></li>
               <li><Link href={`${base}/about`} className="hover:text-white transition-colors">{t.footer_about}</Link></li>

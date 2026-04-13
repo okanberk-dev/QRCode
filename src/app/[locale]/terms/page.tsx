@@ -33,55 +33,59 @@ export default async function TermsPage({
     <div className="min-h-screen flex flex-col font-sans bg-[#FCFBF7] selection:bg-[#FDBF1D]/30">
       <MarketingNavbar locale={locale} t={t} />
 
-      <main className="flex-1 pt-[120px] sm:pt-[150px] pb-16 sm:pb-24">
-        <div className="max-w-[760px] mx-auto px-5 sm:px-8">
-          <div className="mb-8">
-            <h1 className="text-[36px] sm:text-[46px] font-extrabold text-[#1f1e1d] tracking-[-0.03em] leading-[1.1] mb-2">
-              {isTr ? 'Kullanım Koşulları' : 'Terms of Service'}
+      <main className="flex-1 max-w-[900px] mx-auto w-full px-5 py-20 sm:py-32">
+        <div className="bg-white p-8 sm:p-16 rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d]">
+          <div className="mb-10">
+            <h1 className="text-[28px] sm:text-[42px] font-black text-[#1f1e1d] tracking-[-0.03em] leading-tight mb-2">
+              {isTr ? 'Kullanım' : 'Terms of'} <span className="text-[#ea580c]">{isTr ? 'Koşulları' : 'Service'}</span>
             </h1>
-            <p className="text-[14px] text-[#6b6760] font-medium">
+            <p className="text-[13px] text-[#ada89f] font-bold uppercase tracking-widest">
               {isTr ? 'Son güncelleme: 13 Nisan 2026' : 'Last updated: April 13, 2026'}
             </p>
           </div>
           
-          <div className="bg-white rounded-[24px] border-[2.5px] border-[#1f1e1d] p-8 sm:p-12 shadow-[6px_8px_0_0_#1f1e1d]">
-            <article className="space-y-6 text-[#4a4742] leading-relaxed">
-              <section className="space-y-3">
-                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">{isTr ? '1. Sözleşmenin Kabulü' : '1. Acceptance of Terms'}</h2>
+          <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-10 text-[15px] sm:text-[16px] leading-relaxed">
+             <p className="font-bold text-[18px] text-[#1f1e1d]">
+               {isTr 
+                 ? 'Buaze platformunu kullanarak aşağıdaki kullanım koşullarını kabul etmiş sayılırsınız.' 
+                 : 'By using the Buaze platform, you are deemed to have accepted the following terms of use.'}
+             </p>
+
+              <section className="space-y-4">
+                <h2 className="text-[#1f1e1d] text-[22px] font-black tracking-tight">{isTr ? '1. Sözleşmenin Kabulü' : '1. Acceptance of Terms'}</h2>
                 <p>
                   {isTr 
-                    ? 'Buaze ("biz", "bizi" veya "bizim") tarafından sunulan hizmetleri kullanarak, bu Kullanım Koşullarını ("Koşullar") tamamen anladığınızı ve kabul ettiğinizi beyan edersiniz. Bu koşulları kabul etmiyorsanız, hizmetlerimizi kullanmamalısınız.'
-                    : 'By accessing or using the services provided by Buaze ("we", "us", or "our"), you agree to be bound by these Terms of Service. If you disagree with any part of the terms, then you may not access the service.'}
+                    ? 'Buaze tarafından sunulan hizmetleri kullanarak, bu Kullanım Koşullarını tamamen anladığınızı ve kabul ettiğinizi beyan edersiniz.'
+                    : 'By accessing or using the services provided by Buaze, you agree to be bound by these Terms of Service.'}
                 </p>
               </section>
 
-              <section className="space-y-3">
-                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">{isTr ? '2. Hizmetlerin Kullanımı' : '2. Use of Services'}</h2>
+              <section className="space-y-4">
+                <h2 className="text-[#1f1e1d] text-[22px] font-black tracking-tight">{isTr ? '2. Hizmetlerin Kullanımı' : '2. Use of Services'}</h2>
                 <p>
                   {isTr
-                    ? 'Hizmetlerimiz, işletmelerin çevrimiçi itibarlarını yönetmelerine olanak tanır. Kullanıcılar hesaplarına iletilen hiçbir yorum veya veriyi manipüle edemez. Sistemin kötüye kullanımı halinde hesabı sonlandırma hakkımız gizlidir.'
-                    : 'Our services allow businesses to manage their online reputation. Users may not manipulate reviews or data provided to their accounts. We reserve the right to terminate accounts that abuse the system.'}
+                    ? 'Hizmetlerimiz, işletmelerin çevrimiçi itibarlarını yönetmelerine olanak tanır. Sistemin kötüye kullanımı halinde hesabı sonlandırma hakkımız gizlidir.'
+                    : 'Our services allow businesses to manage their online reputation. We reserve the right to terminate accounts that abuse the system.'}
                 </p>
               </section>
 
-              <section className="space-y-3">
-                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">{isTr ? '3. Hesap Güvenliği' : '3. Account Security'}</h2>
+              <section className="space-y-4">
+                <h2 className="text-[#1f1e1d] text-[22px] font-black tracking-tight">{isTr ? '3. Hesap Güvenliği' : '3. Account Security'}</h2>
                 <p>
                   {isTr
                     ? 'Hesabınızın güvenliğinden tamamen siz sorumlusunuz. Şifrenizin üçüncü şahıslara geçmesi durumunda doğabilecek zararlardan firmamız sorumlu tutulamaz.'
-                    : 'You are responsible for safeguarding the password that you use to access the Service and for any activities or actions under your password. We cannot be held liable for any loss arising from unauthorized access.'}
+                    : 'You are responsible for safeguarding your password. We cannot be held liable for any loss arising from unauthorized access.'}
                 </p>
               </section>
 
-              <section className="space-y-3">
-                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">{isTr ? '4. Fiyatlandırma ve Ödeme' : '4. Pricing and Payment'}</h2>
-                <p>
-                  {isTr
-                    ? 'Fiyatlandırma planlarımız abonelik bazlıdır ve seçtiğiniz periyotlarda (aylık veya yıllık) faturalandırılır. İade koşulları, standart dijital hizmet prosedürleri doğrultusunda uygulanır.'
-                    : 'Our pricing plans are subscription-based and billed periodically (monthly or annually). Refund conditions follow our standard digital services policy.'}
-                </p>
-              </section>
-            </article>
+               <div className="pt-10 border-t border-[#e8e4de] flex flex-col sm:flex-row items-center justify-between gap-6">
+                 <p className="text-[13px] text-[#ada89f] font-medium">
+                   {isTr ? 'Sorularınız için bizimle iletişime geçin.' : 'Contact us for any questions.'}
+                 </p>
+                 <a href="mailto:hello@buaze.com" className="px-6 py-3 bg-[#1f1e1d] text-white rounded-xl text-[14px] font-bold hover:bg-[#ea580c] transition-colors">
+                   hello@buaze.com
+                 </a>
+               </div>
           </div>
         </div>
       </main>

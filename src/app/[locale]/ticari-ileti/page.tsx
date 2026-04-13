@@ -18,25 +18,29 @@ export default async function ConsentMarketingPage({
   const t = getTranslations(locale);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-32">
-        <div className="bg-white p-10 sm:p-14 rounded-3xl shadow-sm border border-gray-100">
-          <h1 className="text-3xl sm:text-4xl font-black text-[#111827] mb-8">Ticari İletişim ve Elektronik İleti Onayı</h1>
+      <main className="flex-1 max-w-[900px] mx-auto w-full px-5 py-20 sm:py-32">
+        <div className="bg-white p-8 sm:p-16 rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d]">
+          <h1 className="text-[28px] sm:text-[42px] font-black text-[#1f1e1d] leading-tight mb-10 tracking-[-0.03em]">
+             Ticari İletişim ve <span className="text-[#ea580c]">Elektronik İleti Onayı</span>
+          </h1>
           
-          <div className="prose prose-gray max-w-none text-gray-600 space-y-6">
-            <p>
-              6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun ve ilgili mevzuat uyarınca, <strong>Buaze Teknoloji</strong> tarafından sunulan ürün, hizmet, özel teklif, kampanya ve güncellemeler hakkında bilgilendirilmek amacıyla;
+          <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-8 text-[15px] sm:text-[16px] leading-relaxed">
+            <p className="font-medium">
+              6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun ve ilgili mevzuat uyarınca, <strong className="text-[#1f1e1d]">Buaze Teknoloji</strong> tarafından sunulan ürün, hizmet, özel teklif, kampanya ve güncellemeler hakkında bilgilendirilmek amacıyla;
             </p>
 
-            <p>
-              Tarafıma e-posta, SMS (kısa mesaj), telefon, push bildirimi ve diğer anlık mesajlaşma kanalları aracılığıyla <strong>ticari elektronik ileti gönderilmesine onayım olduğunu beyan ve kabul ederim</strong>.
-            </p>
+            <div className="p-8 bg-[#fdfdfd] border-2 border-[#1f1e1d] rounded-2xl shadow-[4px_5px_0_0_#1f1e1d]">
+              <p className="font-bold text-[#1f1e1d] leading-relaxed">
+                Tarafıma e-posta, SMS (kısa mesaj), telefon, push bildirimi ve diğer anlık mesajlaşma kanalları aracılığıyla <span className="text-[#ea580c]">ticari elektronik ileti gönderilmesine onayım olduğunu beyan ve kabul ederim</span>.
+              </p>
+            </div>
 
-            <h3 className="text-xl font-bold text-[#111827] mt-8">İleti Gönderiminin Reddedilmesi</h3>
+            <h3 className="text-[22px] font-black text-[#1f1e1d] mt-12 mb-4 tracking-[-0.01em]">İleti Gönderiminin Reddedilmesi</h3>
             <p>
-              Tarafınıza gönderilen e-postaların alt kısmında yer alan "Abonelikten Çık" (Unsubscribe) bağlantısına tıklayarak veya <a href="mailto:hello@buaze.com" className="text-blue-600 hover:underline">hello@buaze.com</a> adresine ret beyanınızı ileterek dilediğiniz zaman (hiçbir gerekçe göstermeksizin) bu onayınızı iptal edebilirsiniz. Ret bildiriminiz ulaştıktan sonra 3 iş günü içinde tarafınıza ticari ileti gönderimi durdurulacaktır.
+              Tarafınıza gönderilen e-postaların alt kısmında yer alan "Abonelikten Çık" (Unsubscribe) bağlantısına tıklayarak veya <a href="mailto:hello@buaze.com" className="text-[#ea580c] font-bold hover:underline">hello@buaze.com</a> adresine ret beyanınızı ileterek dilediğiniz zaman (hiçbir gerekçe göstermeksizin) bu onayınızı iptal edebilirsiniz. Ret bildiriminiz ulaştıktan sonra 3 iş günü içinde tarafınıza ticari ileti gönderimi durdurulacaktır.
             </p>
           </div>
         </div>
