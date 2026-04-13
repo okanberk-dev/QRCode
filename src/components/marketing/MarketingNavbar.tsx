@@ -40,7 +40,7 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
   const base = `/${locale}`;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/70 backdrop-blur-xl border-b border-white/20 h-[64px] shadow-sm">
+    <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/90 backdrop-blur-lg border-b border-[#e8e4de]/60 h-[64px]">
       <div className="max-w-[1200px] mx-auto px-5 sm:px-8 h-full flex items-center justify-between">
         {/* Logo */}
         <Link href={`${base}`} className="flex items-center gap-2 group">

@@ -2,7 +2,10 @@ import type { Metadata } from 'next';
 import { ArrowRight, QrCode, ShieldCheck, CheckCircle2, Star, Shield, MessageSquare, BarChart3, Zap, Users, Trophy } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import PricingFaq from '@/components/marketing/PricingFaq';
 import FeatureTabsUI from '@/components/marketing/FeatureTabsUI';
+import CtaBanner from '@/components/marketing/CtaBanner';
+import CustomerTestimonials from '@/components/marketing/CustomerTestimonials';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
@@ -13,6 +16,7 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const t = getTranslations(locale);
   return {
     title: locale === 'tr'
       ? 'Buaze | Restoranınız İçin Gelişmiş Dijital İtibar Yönetimi'
@@ -34,7 +38,7 @@ export default async function LandingPage({
 }) {
   const { locale } = await params;
   const t = getTranslations(locale);
-  const base = '/'+locale;
+  const base = `/${locale}`;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -62,6 +66,21 @@ export default async function LandingPage({
           telephone: '+90-555-000-0000',
           contactType: 'customer service',
         }
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: t.faq_q1,
+            acceptedAnswer: { '@type': 'Answer', text: t.faq_a1 }
+          },
+          {
+            '@type': 'Question',
+            name: t.faq_q3,
+            acceptedAnswer: { '@type': 'Answer', text: t.faq_a3 }
+          }
+        ]
       }
     ]
   };
@@ -76,127 +95,215 @@ export default async function LandingPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ═══════════════════════════════════════════════════════════
-          HERO SECTION (3D REDESIGN)
+          HERO SECTION
       ═══════════════════════════════════════════════════════════ */}
-      <section className="relative pt-10 sm:pt-16 lg:pt-24 pb-12 sm:pb-20 px-5 sm:px-8 overflow-hidden mesh-gradient">
-        {/* Decorative background blur elements */}
-        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-blue-400/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-[-10%] right-[-5%] w-[30%] h-[30%] bg-yellow-400/10 rounded-full blur-[100px] pointer-events-none" />
-
-        <div className="max-w-[1240px] mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <section className="pt-10 sm:pt-16 lg:pt-20 pb-4 sm:pb-8 px-5 sm:px-8">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mt-4 sm:mt-8">
             {/* Left: Content */}
-            <div className="text-left space-y-8 animate-slide-up">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-700 text-[11px] font-bold uppercase tracking-wider">
-                <Zap size={14} className="fill-yellow-500" />
-                {locale === 'tr' ? 'YENİ NESİL İTİBAR YÖNETİMİ' : 'NEXT-GEN REPUTATION MANAGEMENT'}
-              </div>
-              
-              <h1 className="text-[34px] sm:text-[46px] lg:text-[64px] font-[900] leading-[1.05] tracking-[-0.04em] text-[#111827]">
+            <div className="text-left space-y-6">
+              <h1 className="text-[32px] sm:text-[42px] lg:text-[56px] font-extrabold leading-[1.1] tracking-[-0.04em] text-[#1f1e1d]">
                 {locale === 'tr' ? (
-                  <>İşletmeniz İçin <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#111827] to-[#4b5563]">Kusursuz Dijital</span> <br /><span className="text-[#FDBF1D] inline-block hover:scale-105 transition-transform duration-300">İtibar Yönetimi</span></>
+                  <>İşletmeniz İçin Kusursuz Dijital İtibar Yönetimi <br /><span className="text-[#FDBF1D]">Yeni Müşteriler Kazanmanın</span> En Hızlı Yolu</>
                 ) : (
-                  <>Flawless <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#111827] to-[#4b5563]">Digital Identity</span> <br />For Your <span className="text-[#FDBF1D] inline-block hover:scale-105 transition-transform duration-300">Modern Business</span></>
+                  <>Flawless Digital Reputation Management <br />The Fastest Way to <span className="text-[#FDBF1D]">Win New Customers</span></>
                 )}
               </h1>
 
-              <p className="text-[17px] text-[#4b5563] leading-relaxed max-w-xl font-medium">
-                {locale === 'tr' 
-                  ? 'Dakikalar içinde kurulum yapın, Google puanınızı otomatik yükseltin ve müşterilerinizin güvenini kazanın.' 
-                  : 'Set up in minutes, automatically boost your Google ratings, and win your customers\' trust effortlessly.'}
-              </p>
+              <div className="space-y-1.5 pt-1">
+                <p className="text-[15px] text-[#6b6760] font-normal">
+                  {locale === 'tr' ? 'Dakikalar içinde kurulun ve başlayın' : 'Get up and running in minutes'}
+                </p>
+                <p className="text-[15px] text-[#6b6760] font-normal">
+                  {locale === 'tr' ? 'Hazır olduğunuzda yükseltin' : 'Upgrade when you\'re ready'}
+                </p>
+              </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-6 pt-2">
+              <div className="flex flex-col sm:flex-row items-center gap-5 pt-4">
                 <Link
-                  href={base+'/auth/register'}
-                  className="w-full sm:w-auto px-10 py-4.5 bg-[#111827] text-white text-[16px] font-bold rounded-2xl shadow-xl shadow-gray-200/50 hover:bg-[#1f2937] hover:-translate-y-1 transition-all text-center flex items-center justify-center gap-2 group"
+                  href={`${base}/auth/register`}
+                  id="hero-cta-btn"
+                  className="px-8 py-3.5 bg-[#FDBF1D] text-[#1f1e1d] text-[15px] font-extrabold rounded-lg shadow-[0_4px_0_0_#1f1e1d] border-2 border-[#1f1e1d] hover:bg-[#EAB308] active:translate-y-1 active:shadow-[0_0px_0_0_#1f1e1d] transition-all text-center"
                 >
                   {t.hero_cta}
-                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
-                  href={base+'/pricing'}
-                  className="group flex items-center gap-2 text-[14px] font-bold text-[#4b5563] hover:text-[#111827] transition-colors py-4 px-6 rounded-2xl hover:bg-white/50 backdrop-blur-sm"
+                  href={`${base}/pricing`}
+                  className="group flex items-center gap-1 text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors py-3.5"
                 >
-                  {locale === 'tr' ? 'Fiyatları inceleyin' : 'Explore pricing'}
+                  <span className="underline underline-offset-4 decoration-dotted decoration-[#ada89f] group-hover:decoration-[#1f1e1d]">
+                    {locale === 'tr' ? 'Fiyatları gör' : 'View pricing'}
+                  </span>
                 </Link>
               </div>
 
-              <div className="flex items-center gap-4 pt-4">
-                <div className="flex -space-x-3">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] ring-4 ring-gray-200/5 overflow-hidden">
-                      <img src={'https://i.pravatar.cc/100?u='+i} alt="user" />
-                    </div>
-                  ))}
-                  <div className="w-10 h-10 rounded-full border-2 border-white bg-[#111827] text-white flex items-center justify-center text-[10px] font-bold ring-4 ring-gray-200/5">
-                    +2K
-                  </div>
-                </div>
-                <div className="text-[12px] text-[#6b7280] font-medium">
-                  {locale === 'tr' ? '14 Gün Deneme • Kredi Kartı Gerekmez' : '14 Day Trial • No credit card required'}
-                </div>
-              </div>
+              <p className="text-[12px] text-[#ada89f] font-normal tracking-wide">
+                {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
+              </p>
             </div>
 
-            {/* Right: 3D Aesthetic Mockup */}
-            <div className="relative perspective-1000 lg:h-[600px] flex items-center justify-center pt-10 lg:pt-0">
-              {/* Central 3D Asset */}
-              <div className="relative z-20 animate-float preserve-3d">
-                <div className="relative">
+            {/* Right: Floating Quote Bubbles with dot pattern */}
+              {/* Right: Floating Quote Bubbles with layout matching the image */}
+              <div className="relative w-full flex flex-col gap-0 lg:block min-h-[400px] lg:h-[460px] mt-10 lg:mt-0 items-center lg:items-start px-2 lg:px-0">
+                {/* Dot pattern */}
+                <div
+                  className="absolute inset-0 w-full h-full opacity-[0.08]"
+                  style={{
+                    backgroundImage: 'radial-gradient(circle, #ada89f 1px, transparent 1px)',
+                    backgroundSize: '18px 18px',
+                  }}
+                />
+
+                {/* Box 1: Super easy (Top) */}
+                <div 
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-2 lg:left-0 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-10 transform hover:-translate-y-2 transition-transform self-start -mb-6 lg:mb-0"
+                >
+                  <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} className="f-icon-regular w-embed">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                        </svg>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="paragraph-small text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
+                    {locale === 'tr'
+                      ? '"Kullanımı süper kolay ve kusursuz çalışıyor"'
+                      : '"Super easy to use and worked perfectly"'}
+                  </div>
                   <img 
-                    src="/assets/3d-hero.png" 
-                    alt="3D QR Mockup"
-                    className="w-full max-w-[340px] drop-shadow-[0_32px_64px_rgba(0,0,0,0.15)] rounded-[3rem]"
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
+                    loading="lazy" 
+                    alt="" 
+                    className="image-20 right white absolute -bottom-[16px] left-6 w-6 z-20"
                   />
-                  {/* Glowing background star */}
-                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400/20 rounded-full blur-3xl animate-pulse" />
+                  <img 
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
+                    loading="lazy" 
+                    alt="" 
+                    className="image-20 right absolute -bottom-[20px] left-5 w-[32px] z-10 hidden lg:block"
+                  />
                 </div>
-              </div>
 
-              {/* Floating Glass Cards */}
-              <div className="absolute top-[10%] -left-4 lg:-left-12 z-30 animate-float" style={{ animationDelay: '-2s' }}>
-                <div className="glass-card p-5 rounded-2xl max-w-[240px] shadow-2xl rotate-[-3deg] hover:rotate-0 transition-transform duration-500 cursor-pointer group">
-                  <div className="flex gap-1 mb-3">
-                    {[1,2,3,4,5].map(i => <Star key={i} size={14} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+                {/* Box 2: Really love (Middle) */}
+                <div 
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[120px] lg:right-2 w-[98%] max-w-[290px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-30 transform hover:-translate-y-2 transition-transform self-end lg:self-auto -mb-6 lg:mb-0"
+                >
+                  <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} className="f-icon-regular w-embed">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                        </svg>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-[14px] font-bold text-[#111827] leading-tight group-hover:text-blue-600 transition-colors">
-                    {locale === 'tr' ? '"Kullanımı süper kolay ve kusursuz çalışıyor."' : '"Super easy to use and works flawlessly."' }
-                  </p>
-                  <div className="mt-3 flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 border border-white" />
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Ahmet Y. · İşletme Sahibi</span>
+                  <div className="paragraph-small text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
+                    {locale === 'tr'
+                      ? '"Buaze\'yi kullanmak gerçekten çok kolay. Yorum toplamak konusunda müthiş zaman kazandırıyor"'
+                      : '"Really love how easy Buaze is to use. It saves so much time collecting reviews"'}
                   </div>
+                  <img 
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
+                    loading="lazy" 
+                    alt="" 
+                    className="image-20 right white absolute -bottom-[16px] right-8 w-6 z-20"
+                  />
+                  <img 
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
+                    loading="lazy" 
+                    alt="" 
+                    className="image-20 right absolute -bottom-[20px] right-[27px] w-[32px] z-10 hidden lg:block"
+                  />
                 </div>
-              </div>
 
-              <div className="absolute bottom-[20%] -right-4 lg:-right-8 z-30 animate-float" style={{ animationDelay: '-4s' }}>
-                <div className="glass-card p-6 rounded-2xl max-w-[260px] shadow-2xl rotate-[2deg] hover:rotate-0 transition-transform duration-500 cursor-pointer group">
-                  <div className="flex gap-1 mb-3">
-                    {[1,2,3,4,5].map(i => <Star key={i} size={14} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+                {/* Box 3: Buaze makes (Bottom) */}
+                <div 
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[250px] lg:left-6 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-20 transform hover:-translate-y-2 transition-transform self-start -mt-2 lg:mt-0"
+                >
+                  <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} className="f-icon-regular w-embed">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                        </svg>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-[14px] font-bold text-[#111827] leading-tight">
-                    {locale === 'tr' ? '"Haritalar puanımız 3 haftada 4.2\'den 4.8\'e çıktı!"' : '"Our Maps rating went from 4.2 up to 4.8 in 3 weeks!"'}
-                  </p>
-                  <div className="mt-4 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full w-[80%] bg-green-500 rounded-full" />
+                  <div className="paragraph-small text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
+                    {locale === 'tr'
+                      ? '"Buaze ile yorumları takip etmek ve yanıtlamak artık çok zahmetsiz"'
+                      : '"Buaze makes tracking and replying to reviews effortless."'}
                   </div>
-                </div>
-              </div>
-
-              {/* Success Badge */}
-              <div className="absolute top-[60%] left-[-20px] lg:left-[-60px] z-40 animate-float" style={{ animationDelay: '-1s' }}>
-                <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-white">
-                  <div className="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center text-white">
-                    <CheckCircle2 size={24} />
-                  </div>
-                  <div>
-                    <div className="text-[14px] font-[900] text-[#111827]">+1240</div>
-                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Yeni Yorum</div>
-                  </div>
+                  <img 
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
+                    loading="lazy" 
+                    alt="" 
+                    className="image-20 right white absolute -bottom-[16px] left-8 w-6 z-20"
+                  />
+                  <img 
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
+                    loading="lazy" 
+                    alt="" 
+                    className="image-20 right absolute -bottom-[20px] left-[27px] w-[32px] z-10 hidden lg:block"
+                  />
                 </div>
               </div>
             </div>
+
+            {/* Mobile-only: Single testimonial */}
+            <div className="hero-quote-wrapper _7 lg:hidden mt-10 relative max-w-sm mx-auto bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d]">
+              <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
+                {[1,2,3,4,5].map(i => (
+                  <div key={i} className="f-icon-regular w-embed">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                    </svg>
+                  </div>
+                ))}
+              </div>
+              <div className="paragraph-small text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
+                {locale === 'tr'
+                  ? '"Buaze\'yi kullanmak gerçekten çok kolay. Yorum toplamak konusunda müthiş zaman kazandırıyor"'
+                  : '"Really love how easy Buaze is to use. It saves so much time collecting reviews"'}
+              </div>
+              <img 
+                src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
+                loading="lazy" 
+                alt="" 
+                className="image-20 right white absolute -bottom-[15px] right-8 w-6 z-20"
+              />
+              <img 
+                src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
+                loading="lazy" 
+                alt="" 
+                className="image-20 right absolute -bottom-[19px] right-[27px] w-[32px] z-10"
+              />
+            </div>
+
+          {/* Mobile hero CTA repeat */}
+          <div className="lg:hidden mt-6 pt-5 border-t border-[#e8e4de]/50 text-center space-y-3">
+            <p className="text-[13px] text-[#6b6760]">
+              {locale === 'tr' ? 'Dakikalar içinde kurulun • Hazır olduğunuzda yükseltin' : 'Get up and running in minutes • Upgrade when you\'re ready'}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                href={`${base}/auth/register`}
+                className="w-full sm:w-auto px-7 py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none text-center"
+              >
+                {locale === 'tr' ? 'Hemen başlayın!' : 'Get started now!'}
+              </Link>
+              <Link
+                href={`${base}/pricing`}
+                className="text-[13px] font-medium text-[#6b6760] underline underline-offset-4 decoration-dotted"
+              >
+                {locale === 'tr' ? 'Fiyatları gör' : 'View pricing'}
+              </Link>
+            </div>
+            <p className="text-[11px] text-[#ada89f]">
+              {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
+            </p>
           </div>
         </div>
       </section>
@@ -267,6 +374,138 @@ export default async function LandingPage({
         </div>
       </section>
 
+      {/* ═══════ CTA Banner ═══════ */}
+      <section className="px-5 sm:px-8">
+        <CtaBanner locale={locale} />
+      </section>
+
+      {/* ═══════ Customer Testimonials ═══════ */}
+      <CustomerTestimonials locale={locale} />
+
+      {/* ═══════ Trust / Why Buaze Section (3D Redesign) ═══════ */}
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FCFBF7]">
+        <div className="max-w-[1240px] mx-auto">
+          <div className="relative bg-[#1f1e1d] rounded-[32px] sm:rounded-[48px] p-8 sm:p-14 lg:p-20 border-[3px] border-[#1f1e1d] shadow-[16px_20px_0_0_#FDBF1D] overflow-visible">
+            {/* Background Accent */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ea580c]/10 blur-[120px] rounded-full -mr-32 -mt-32 pointer-events-none" />
+            
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
+              {/* Left Content Column */}
+              <div className="lg:col-span-6 space-y-10">
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 bg-[#FDBF1D] text-[#1f1e1d] px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.1em] border-2 border-[#1f1e1d] shadow-[3px_4px_0_0_#1f1e1d]">
+                    <ShieldCheck size={16} />
+                    {locale === 'tr' ? 'RAKİPSİZ KORUMA' : 'UNRIVALED PROTECTION'}
+                  </div>
+                  <h2 className="text-[36px] sm:text-[48px] lg:text-[56px] font-extrabold text-white leading-[1.05] tracking-[-0.04em]">
+                    {locale === 'tr' ? 'Dijital İtibarınızın' : 'Your Digital Reputation\'s'}<br />
+                    <span className="text-[#FDBF1D]">{locale === 'tr' ? 'Komuta Merkezi' : 'Command Center'}</span>
+                  </h2>
+                  <p className="text-[16px] sm:text-[18px] text-[#ada89f] font-medium leading-relaxed max-w-[500px]">
+                    {locale === 'tr'
+                      ? 'Buaze sadece veri toplamaz; itibarınızı proaktif bir zırh gibi korur ve her etkileşimi kalıcı bir güvene dönüştürür.'
+                      : 'Buaze doesn\'t just collect data; it protects your reputation like a proactive shield and turns every interaction into lasting trust.'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6">
+                  {[
+                    { 
+                      title: locale === 'tr' ? 'Proaktif Kriz Önleme' : 'Proactive Crisis Prevention', 
+                      desc: locale === 'tr' ? 'Düşük puanlı yorumları daha internete düşmeden yakalayan akıllı kalkan.' : 'An intelligent shield that catches low-rated reviews before they hit the web.',
+                      icon: <Zap size={20} className="text-[#FDBF1D]" />
+                    },
+                    { 
+                      title: locale === 'tr' ? 'Puanınızı Domine Edin' : 'Dominate Your Score', 
+                      desc: locale === 'tr' ? 'Google, TripAdvisor ve Yelp üzerinde organik ve hızlı puan artışı sağlayın.' : 'Achieve organic and rapid score increases on Google, TripAdvisor, and Yelp.',
+                      icon: <Trophy size={20} className="text-[#ea580c]" />
+                    }
+                  ].map((item, i) => (
+                    <div key={i} className="group flex gap-5 bg-white/5 border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-all hover:translate-x-2">
+                      <div className="flex-shrink-0 w-12 h-12 bg-white/5 rounded-xl border border-white/20 flex items-center justify-center">
+                        {item.icon}
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-[17px] font-extrabold text-white">{item.title}</h4>
+                        <p className="text-[13px] text-[#6b6760]">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Visual Column (3D Dash) */}
+              <div className="lg:col-span-6 relative flex justify-center lg:justify-end">
+                {/* Floating Metric Chips */}
+                <div className="absolute -top-10 lg:-top-20 -left-4 lg:-left-10 z-[40] transform hover:-translate-y-2 transition-transform cursor-default">
+                  <div className="bg-white px-6 py-4 rounded-2xl border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#ea580c]">
+                    <div className="text-[10px] font-black text-[#6b6760] uppercase mb-1">{locale === 'tr' ? 'CANLI ANALİZ' : 'LIVE ANALYTICS'}</div>
+                    <div className="text-[24px] font-black text-[#1f1e1d] flex items-center gap-2">
+                       <span className="w-2.5 h-2.5 bg-[#16A34A] rounded-full animate-pulse" />
+                       98.5%
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main 3D Browser Mockup */}
+                <div className="relative w-full max-w-[500px] h-[360px] sm:h-[440px] bg-[#1a1a1a] rounded-[32px] border-[3px] border-[#3d3a36] shadow-[24px_32px_0_0_rgba(0,0,0,0.5)] transform lg:rotate-[-2deg] flex flex-col overflow-hidden">
+                   {/* Browser Bar */}
+                   <div className="bg-[#1f1e1d] border-b border-[#3d3a36] p-4 flex gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
+                   </div>
+                   
+                   {/* Mock Content */}
+                   <div className="p-6 sm:p-8 space-y-6 flex-1 text-left">
+                      <div className="space-y-3">
+                         <div className="h-4 bg-white/10 w-1/3 rounded-full" />
+                         <div className="flex gap-2">
+                            {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#FDBF1D" strokeWidth={0} />)}
+                         </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
+                            <div className="text-[10px] text-[#6b6760] font-bold uppercase">{locale === 'tr' ? 'YORUMLAR' : 'REVIEWS'}</div>
+                            <div className="text-[20px] font-black text-white">+142</div>
+                         </div>
+                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
+                            <div className="text-[10px] text-[#6b6760] font-bold uppercase">{locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION'}</div>
+                            <div className="text-[20px] font-black text-[#FDBF1D]">99%</div>
+                         </div>
+                      </div>
+
+                      <div className="bg-white/5 p-5 rounded-xl border border-white/10">
+                         <div className="flex justify-between items-center mb-4">
+                            <div className="h-3 bg-white/10 w-1/4 rounded-full" />
+                            <div className="h-3 bg-[#FDBF1D]/20 w-10 rounded-full" />
+                         </div>
+                         <div className="space-y-2">
+                            <div className="h-2 bg-white/5 w-full rounded-full overflow-hidden">
+                               <div className="h-full w-[85%] bg-[#FDBF1D] shadow-[0_0_15px_rgba(253,191,29,0.3)]" />
+                            </div>
+                            <div className="h-2 bg-white/5 w-full rounded-full overflow-hidden">
+                               <div className="h-full w-[65%] bg-[#ea580c] opacity-60" />
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+
+                   {/* Floating Bottom Badge */}
+                   <div className="absolute bottom-6 right-6 lg:-right-10 transform translate-x-2 z-[40]">
+                      <div className="bg-[#FDBF1D] text-[#1f1e1d] p-5 rounded-2xl border-[3px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] flex flex-col items-center gap-1 group cursor-default">
+                         <Zap size={24} fill="#1f1e1d" className="group-hover:scale-110 transition-transform" />
+                         <span className="text-[11px] font-black uppercase tracking-widest">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
+                      </div>
+                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══════ Pricing Section ═══════ */}
       <section id="pricing" className="py-16 sm:py-24 px-5 sm:px-8 bg-[#F7F4F0]">
         <div className="max-w-[900px] mx-auto">
@@ -292,7 +531,7 @@ export default async function LandingPage({
                 ))}
               </ul>
               <Link
-                href={base+'/auth/register'}
+                href={`${base}/auth/register`}
                 className="block w-full text-center py-3.5 bg-white text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-gray-50 transition-all active:translate-y-[4px] active:shadow-none"
               >
                 {t.pricing_monthly_cta}
@@ -318,7 +557,7 @@ export default async function LandingPage({
                 ))}
               </ul>
               <Link
-                href={base+'/auth/register'}
+                href={`${base}/auth/register`}
                 className="block w-full text-center py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none"
               >
                 {t.pricing_yearly_cta}
@@ -338,14 +577,14 @@ export default async function LandingPage({
           </h2>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href={base+'/auth/register'}
+              href={`${base}/auth/register`}
               id="footer-cta-btn"
               className="px-8 py-4 bg-[#FDBF1D] text-[#1f1e1d] text-base font-extrabold rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none flex items-center gap-2"
             >
               {t.cta_button} <ArrowRight size={18} />
             </Link>
             <Link
-              href={base+'/pricing'}
+              href={`${base}/pricing`}
               className="text-[13px] font-medium text-[#6b6760] underline underline-offset-4 decoration-dotted hover:text-white transition-colors"
             >
               {locale === 'tr' ? 'Fiyatları gör' : 'View pricing'}
