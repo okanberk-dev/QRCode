@@ -1,65 +1,70 @@
 import type { Metadata } from 'next';
-import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { getTranslations } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 
-export const metadata: Metadata = {
-  title: 'KVKK Aydınlatma Metni — Buaze',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'KVKK Aydınlatma Metni | Buaze',
+    description: '6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında aydınlatma metnimiz.',
+  };
+}
 
-export default async function KVKKPage({
+export default async function KvkkPage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
-  const t = getTranslations(locale);
+  const t = await getTranslations(locale);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen flex flex-col font-sans bg-[#FCFBF7] selection:bg-[#FDBF1D]/30">
       <MarketingNavbar locale={locale} t={t} />
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-32">
-        <div className="bg-white p-10 sm:p-14 rounded-3xl shadow-sm border border-gray-100">
-          <h1 className="text-3xl sm:text-4xl font-black text-[#111827] mb-8">Kişisel Verilerin Korunması ve İşlenmesi Aydınlatma Metni</h1>
+      <main className="flex-1 pt-[120px] sm:pt-[150px] pb-16 sm:pb-24">
+        <div className="max-w-[760px] mx-auto px-5 sm:px-8">
+          <div className="mb-8">
+            <h1 className="text-[36px] sm:text-[46px] font-extrabold text-[#1f1e1d] tracking-[-0.03em] leading-[1.1] mb-2">
+              KVKK Aydınlatma Metni
+            </h1>
+            <p className="text-[14px] text-[#6b6760] font-medium">
+              Son güncelleme: 13 Nisan 2026
+            </p>
+          </div>
           
-          <div className="prose prose-gray max-w-none text-gray-600 space-y-6">
-            <p className="font-medium">
-              Veri Sorumlusu: <strong>Buaze Teknoloji ("Şirket" veya "Buaze")</strong> olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") ve ilgili alt mevzuat kapsamında kişisel verilerinizin işlenmesine ve korunmasına büyük önem veriyoruz.
-            </p>
+          <div className="bg-white rounded-[24px] border-[2.5px] border-[#1f1e1d] p-8 sm:p-12 shadow-[6px_8px_0_0_#1f1e1d]">
+            <article className="space-y-6 text-[#4a4742] leading-relaxed">
+              <section className="space-y-3">
+                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">1. Veri Sorumlusu</h2>
+                <p>
+                  6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verileriniz veri sorumlusu olarak Buaze ("Şirket") tarafından aşağıda açıklanan amaçlar kapsamında işlenebilecektir.
+                </p>
+              </section>
 
-            <h3 className="text-xl font-bold text-[#111827] mt-8">1. İşlenen Kişisel Verileriniz</h3>
-            <p>
-              Hizmetlerimizi kullanımınıza bağlı olarak aşağıdaki kişisel verilerinizi işleyebilmekteyiz:
-            </p>
-            <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Kimlik ve İletişim Verileri:</strong> Adınız, soyadınız, e-posta adresiniz, telefon numaranız, firma adınız.</li>
-              <li><strong>İşlem Güvenliği Verileri:</strong> IP adresi bilgileri, şifre ve parola bilgileri, sistem erişim logları, çerez kayıtları.</li>
-              <li><strong>Müşteri İşlem Verileri:</strong> Abonelik paket bilgileriniz, fatura detayları, talep ve şikayet kayıtlarınız.</li>
-            </ul>
+              <section className="space-y-3">
+                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">2. Kişisel Verilerin İşlenme Amacı</h2>
+                <p>
+                  Şirketimiz tarafından toplanan kişisel verileriniz, temel olarak itibar yönetimi yazılım hizmetlerimizin sunulması, faturalandırma ve ödeme işlemlerinin gerçekleştirilmesi ile güvenliğin sağlanması amaçlarıyla sınırlı kalarak işlenmektedir.
+                </p>
+              </section>
 
-            <h3 className="text-xl font-bold text-[#111827] mt-8">2. İşleme Amaçları ve Hukuki Sebepler</h3>
-            <p>Kişisel verileriniz, aşağıda belirtilen amaçlarla ve KVKK'nın 5/2 maddesindeki ilgili hukuki sebeplere dayanılarak işlenmektedir:</p>
-            <ul className="list-disc pl-5 space-y-2">
-              <li>Sözleşmenin kurulması veya ifası: Üyelik işlemlerinizin gerçekleştirilmesi, platform hizmetlerinin sunulması.</li>
-              <li>Hukuki yükümlülüğümüzün yerine getirilmesi: Fatura düzenlenmesi, vergi kanunlarına ve elektronik ticaret mevzuatına uyum sağlanması.</li>
-              <li>Meşru menfaatimiz: Platformun güvenliğinin sağlanması, hataların tespit edilmesi, sahteciliğin önlenmesi.</li>
-            </ul>
+              <section className="space-y-3">
+                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">3. Kişisel Verilerin Aktarılması</h2>
+                <p>
+                  Kişisel verileriniz, yasal mevzuat gereğince zorunlu olan kamu kurumlarıyla ve sistemin altyapısını sağlayan teknik servis sağlayıcılarımızla sadece amaçla bağlantılı ve ölçülü olarak paylaşılabilecektir.
+                </p>
+              </section>
 
-            <h3 className="text-xl font-bold text-[#111827] mt-8">3. Kişisel Verilerin Aktarımı</h3>
-            <p>
-              Verileriniz, yukarıdaki amaçlarla sınırlı olarak; hizmet aldığımız sunucu ve bulut hizmeti sağlayıcılarına (yurtiçi/yurtdışı pazar standartlarında güvenlik sağlayan firmalara), yasal zorunluluklar gereği yetkili kamu kurumlarına aktarılabilmektedir.
-            </p>
+              <section className="space-y-3">
+                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">4. İlgili Kişinin Hakları</h2>
+                <p>
+                  KVKK'nın 11. maddesi uyarınca veri sahipleri; kişisel verilerinin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme, amacına uygun kullanılıp kullanılmadığını öğrenme ve eksik/yanlış verilerin düzeltilmesini talep etme hakkına sahiptir. Taleplerinizi yasal formlara uygun olarak iletişim kanalımızdan bize iletebilirsiniz.
+                </p>
+              </section>
 
-            <h3 className="text-xl font-bold text-[#111827] mt-8">4. Haklarınız</h3>
-            <p>
-              KVKK'nın 11. maddesi kapsamındaki haklarınızı (verinizin işlenip işlenmediğini öğrenme, yanlış ise düzeltilmesini isteme, silinmesini veya yok edilmesini talep etme vb.) kullanmak için <a href="mailto:hello@buaze.com" className="text-blue-600 hover:underline">hello@buaze.com</a> adresi üzerinden bizimle iletişime geçebilirsiniz.
-            </p>
-            <p className="text-sm mt-8 border-t border-gray-100 pt-8">
-              Son Güncelleme: {new Date().toLocaleDateString('tr-TR')}
-            </p>
+            </article>
           </div>
         </div>
       </main>

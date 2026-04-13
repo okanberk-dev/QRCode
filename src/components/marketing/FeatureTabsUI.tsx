@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Trophy, Monitor } from 'lucide-react';
+import { Sparkles, Trophy, Monitor, Star } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 
 interface FeatureTabsUIProps {
@@ -37,11 +37,40 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
       icon: <Trophy size={18} />,
       subtitle: locale === 'tr' ? 'OLUMSUZ YORUMLARI YAYINLANMADAN YAKALAYIN' : 'CATCH NEGATIVE REVIEWS BEFORE THEY GO PUBLIC',
       content: (
-        <img
-          src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/688c976c4d1530a985069a0f_sentiment-analysis.png"
-          alt="Smart Filters"
-          className="mx-auto w-full max-w-[800px] h-auto object-contain drop-shadow-md"
-        />
+        <div className="mx-auto w-full max-w-[650px] bg-[#FCFBF7] rounded-2xl md:rounded-[32px] border-[2.5px] border-[#1f1e1d] p-6 md:p-10 shadow-[6px_8px_0_0_#1f1e1d] space-y-6 md:space-y-8">
+          {/* Positive Review Route */}
+          <div className="bg-white rounded-xl border-[2px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d] relative hover:-translate-y-1 transition-transform">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+              <div className="flex gap-1 text-[#FDBF1D]">
+                {[1,2,3,4,5].map(i => <Star key={i} size={22} fill="currentColor" strokeWidth={0} />)}
+              </div>
+              <div className="bg-[#EFFFF3] text-[#16A34A] px-3.5 py-1.5 text-[11px] font-extrabold rounded-full border border-[#16A34A] uppercase tracking-wider inline-flex items-center w-fit shadow-sm">
+                {locale === 'tr' ? '↗ Google Haritalar\'a Yönlendir' : '↗ Route to Google Maps'}
+              </div>
+            </div>
+            <div className="space-y-2 opacity-50 pl-1">
+              <div className="h-2.5 bg-[#e8e4de] w-3/4 rounded-full" />
+              <div className="h-2.5 bg-[#e8e4de] w-1/2 rounded-full" />
+            </div>
+          </div>
+
+          {/* Negative Review Route */}
+          <div className="bg-[#FFF9F9] rounded-xl border-[2px] border-[#EF4444] p-5 shadow-[4px_6px_0_0_rgba(239,68,68,0.2)] relative hover:-translate-y-1 transition-transform">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+              <div className="flex gap-1">
+                {[1,2].map(i => <Star key={i} size={22} fill="#EF4444" strokeWidth={0} />)}
+                {[3,4,5].map(i => <Star key={i} size={22} fill="#FFE4E6" strokeWidth={0} />)}
+              </div>
+              <div className="bg-[#EF4444] text-white px-3.5 py-1.5 text-[11px] font-extrabold rounded-full shadow-sm uppercase tracking-wider inline-flex items-center w-fit">
+                {locale === 'tr' ? '🔒 Özel Panele Al' : '🔒 Internal Dashboard'}
+              </div>
+            </div>
+            <div className="space-y-2 opacity-40 pl-1">
+              <div className="h-2.5 bg-[#FECDD3] w-2/3 rounded-full" />
+              <div className="h-2.5 bg-[#FECDD3] w-1/3 rounded-full" />
+            </div>
+          </div>
+        </div>
       ),
       p1: locale === 'tr'
         ? 'Düşük puan veren müşterilerinizi otomatik olarak şikayet formuna yönlendirin ve sorunları özel olarak çözün.'

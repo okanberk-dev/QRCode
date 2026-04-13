@@ -1,42 +1,81 @@
 import type { Metadata } from 'next';
+import type { Locale } from '@/lib/translations';
+import { getTranslations } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import { getTranslations } from '@/lib/translations';
-import type { Locale } from '@/lib/translations';
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
   const { locale } = await params;
-  return { title: locale === 'tr' ? 'Çerez Politikası — Buaze' : 'Cookie Policy — Buaze' };
+  const isTr = locale === 'tr';
+  
+  return {
+    title: isTr ? 'Çerez Politikası | Buaze' : 'Cookie Policy | Buaze',
+    description: isTr 
+      ? 'Daha iyi bir deneyim sunmak için kullandığımız çerezler hakkında bilgi.'
+      : 'Information about the cookies we use to provide a better experience.',
+  };
 }
 
-export function generateStaticParams() {
-  return [{ locale: 'tr' }, { locale: 'en' }];
-}
-
-export default async function CookiePage({ params }: { params: Promise<{ locale: Locale }> }) {
+export default async function CookiePage({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}) {
   const { locale } = await params;
-  const t = getTranslations(locale);
-  const lastUpdated = '12 Nisan 2026';
+  const isTr = locale === 'tr';
+  const t = await getTranslations(locale);
 
   return (
-    <div className="min-h-screen bg-white text-[#111827] font-sans">
+    <div className="min-h-screen flex flex-col font-sans bg-[#FCFBF7] selection:bg-[#FDBF1D]/30">
       <MarketingNavbar locale={locale} t={t} />
 
-      <section className="pt-48 pb-24 px-6">
-        <div className="max-w-3xl mx-auto space-y-10">
-           <div className="space-y-4">
-              <h1 className="text-4xl sm:text-6xl font-black tracking-tight">{locale === 'tr' ? 'Çerez Politikası' : 'Cookie Policy'}</h1>
-              <p className="text-sm font-black text-gray-400 uppercase tracking-widest italic tracking-tighter">Son Güncelleme: {lastUpdated}</p>
-           </div>
-
-           <div className="prose prose-slate max-w-none text-gray-600 font-medium leading-relaxed space-y-8">
-              <section className="space-y-4">
-                 <h2 className="text-2xl font-black text-[#111827]">Çerezler</h2>
-                 <p>Sitemizin düzgün çalışması ve dil tercihlerinizin (örn: NEXT_LOCALE) hatırlanması için temel çerezleri kullanıyoruz.</p>
+      <main className="flex-1 pt-[120px] sm:pt-[150px] pb-16 sm:pb-24">
+        <div className="max-w-[760px] mx-auto px-5 sm:px-8">
+          <div className="mb-8">
+            <h1 className="text-[36px] sm:text-[46px] font-extrabold text-[#1f1e1d] tracking-[-0.03em] leading-[1.1] mb-2">
+              {isTr ? 'Çerez Politikası' : 'Cookie Policy'}
+            </h1>
+            <p className="text-[14px] text-[#6b6760] font-medium">
+              {isTr ? 'Son güncelleme: 13 Nisan 2026' : 'Last updated: April 13, 2026'}
+            </p>
+          </div>
+          
+          <div className="bg-white rounded-[24px] border-[2.5px] border-[#1f1e1d] p-8 sm:p-12 shadow-[6px_8px_0_0_#1f1e1d]">
+            <article className="space-y-6 text-[#4a4742] leading-relaxed">
+              <section className="space-y-3">
+                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">{isTr ? '1. Çerez Nedir?' : '1. What Are Cookies?'}</h2>
+                <p>
+                  {isTr 
+                    ? 'Çerezler (cookies), bir web sitesini ziyaret ettiğinizde tarayıcınız aracılığıyla cihazınıza kaydedilen küçük metin dosyalarıdır. Buaze olarak, sitemizin düzgün çalışmasını sağlamak için çerezleri kullanıyoruz.'
+                    : 'Cookies are small text files downloaded to your device when you visit a website. At Buaze, we use cookies to ensure our website functions properly.'}
+                </p>
               </section>
-           </div>
+
+              <section className="space-y-3">
+                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">{isTr ? '2. Hangi Çerezleri Kullanıyoruz?' : '2. How We Use Cookies'}</h2>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li><strong>{isTr ? 'Zorunlu Çerezler:' : 'Essential Cookies:'}</strong> {isTr ? 'Uygulamanın temel işlevleri ve oturum yönetimi için.' : 'For core application functionality and session management.'}</li>
+                  <li><strong>{isTr ? 'Analitik Çerezler:' : 'Analytical Cookies:'}</strong> {isTr ? 'Sitemizin nasıl kullanıldığını analiz ederek performans iyileştirmesi yapmak için.' : 'To analyze how our site is used and improve performance.'}</li>
+                </ul>
+              </section>
+
+              <section className="space-y-3">
+                <h2 className="text-[#1f1e1d] text-[22px] font-extrabold">{isTr ? '3. Çerezleri Nasıl Kontrol Edebilirsiniz?' : '3. Controlling Cookies'}</h2>
+                <p>
+                  {isTr
+                    ? 'Tarayıcı ayarlarınızı değiştirerek çerezleri reddedebilir veya silebilirsiniz. Ancak, çerezleri tamamen devre dışı bırakmanız halinde sistemin bazı özelliklerinin çalışmayabileceğini unutmayın.'
+                    : 'You can prevent the setting of cookies by adjusting the settings on your browser. Be aware that disabling cookies will affect the functionality of this and many other websites that you visit.'}
+                </p>
+              </section>
+
+            </article>
+          </div>
         </div>
-      </section>
+      </main>
 
       <MarketingFooter locale={locale} t={t} />
     </div>
