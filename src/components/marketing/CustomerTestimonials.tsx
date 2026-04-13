@@ -11,9 +11,9 @@ export default function CustomerTestimonials({ locale }: CustomerTestimonialsPro
   return (
     <section className="py-16 sm:py-24 px-5 sm:px-8 bg-[#FCFBF7]">
       <div className="max-w-[1000px] mx-auto text-center mb-12 sm:mb-16">
-        <h2 className="text-[36px] sm:text-[48px] font-extrabold text-[#1f1e1d] tracking-[-0.04em] mb-4">
+                <h2 className="text-[36px] sm:text-[48px] font-extrabold text-[#1f1e1d] tracking-[-0.04em] mb-4">
           {isTr ? 'Müşterilerimizi ' : 'We '}
-          <span className="text-[#ff5c25]">❤</span>
+          <span className="text-[#ea580c]">❤</span>
           {isTr ? ' seviyoruz' : ' our customers'}
         </h2>
         <p className="text-[18px] text-[#6b6760] font-medium">
@@ -25,13 +25,13 @@ export default function CustomerTestimonials({ locale }: CustomerTestimonialsPro
         {/* Review Card 1 */}
         <div className="w-full bg-white p-8 sm:p-10 rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] flex flex-col relative z-10 transition-transform duration-300 hover:-translate-y-2">
           <div className="flex items-center justify-between mb-5">
-            <div className="flex gap-1 text-[#ff5c25]">
+            <div className="flex gap-1 text-[#ea580c]">
               {[1, 2, 3, 4, 5].map((i) => (
                 <Star key={i} size={20} fill="currentColor" strokeWidth={0} />
               ))}
             </div>
-            <div className="bg-[#ff5c25] rounded-full p-1 border border-[#1f1e1d] shadow-[0_2px_0_0_#1f1e1d]">
-              <div className="bg-white rounded-full p-1 text-[#ff5c25]">
+            <div className="bg-[#ea580c] rounded-full p-1 border border-[#1f1e1d] shadow-[0_2px_0_0_#1f1e1d]">
+              <div className="bg-white rounded-full p-1 text-[#ea580c]">
                 <ShieldCheck size={14} />
               </div>
             </div>
@@ -56,7 +56,7 @@ export default function CustomerTestimonials({ locale }: CustomerTestimonialsPro
         {/* Review Card 2 */}
         <div className="w-full bg-[#fdfaf5] p-8 sm:p-10 rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] flex flex-col relative z-10 transition-transform duration-300 hover:-translate-y-2">
           <div className="flex items-center justify-between mb-5">
-            <div className="flex gap-1 text-[#ff5c25]">
+            <div className="flex gap-1 text-[#ea580c]">
               {[1, 2, 3, 4, 5].map((i) => (
                 <Star key={i} size={20} fill="currentColor" strokeWidth={0} />
               ))}

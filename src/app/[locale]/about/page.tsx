@@ -66,6 +66,49 @@ export default async function AboutPage({
         </div>
       </section>
 
+      {/* Our Story */}
+      <section className="py-16 sm:py-24 px-5 sm:px-8 bg-white overflow-hidden">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <div className="relative">
+             <div className="absolute -top-10 -left-10 w-40 h-40 bg-[#FDBF1D]/10 rounded-full blur-3xl" />
+             <div className="bg-[#f0ede8] rounded-[2rem] border-[3px] border-[#1f1e1d] p-4 shadow-[12px_14px_0_0_#1f1e1d] transform -rotate-1">
+                <img 
+                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=800" 
+                  alt="Team work" 
+                  className="rounded-2xl w-full h-[400px] object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-500"
+                />
+             </div>
+          </div>
+          <div className="space-y-6">
+            <h2 className="text-[32px] sm:text-[42px] font-extrabold text-[#1f1e1d] tracking-[-0.03em] leading-tight">
+              {locale === 'tr' ? 'Dijital İtibarı İnsan Odaklı Yapmak' : 'Making Reputation Human-Centric'}
+            </h2>
+            <div className="space-y-4 text-[15px] sm:text-[16px] text-[#4a4742] leading-relaxed">
+              <p>
+                {locale === 'tr' 
+                  ? 'Buaze, küçük işletme sahiplerinin her gün karşılaştığı büyük bir sorunu çözmek için doğdu: Dijital platformların kaosu içinde boğulmadan gerçek müşteri geri bildirimlerine nasıl ulaşılır?' 
+                  : 'Buaze was born to solve a problem that small business owners face every day: How to reach genuine customer feedback without drowning in the chaos of digital platforms?'}
+              </p>
+              <p>
+                {locale === 'tr'
+                  ? 'Geleneksel yorum toplama yöntemlerinin yavaş, verimsiz ve çoğu zaman tek taraflı olduğunu fark ettik. Bu yüzden, teknolojiyi (QR kodları ve akıllı algoritmaları) kullanarak işletme ve müşteri arasında köprü kuracak, her iki taraf için de süreci zahmetsiz hale getirecek bir sistem geliştirdik.'
+                  : 'We realized that traditional review collection methods were slow, inefficient, and often one-sided. That\'s why we built a system that uses technology to bridge the gap between businesses and customers, making the process effortless for both sides.'}
+              </p>
+              <div className="pt-4 grid grid-cols-2 gap-8">
+                 <div>
+                    <div className="text-[32px] font-black text-[#FDBF1D]">500+</div>
+                    <div className="text-[12px] font-bold text-[#ada89f] uppercase tracking-widest">{locale === 'tr' ? 'MUTLU İŞLETME' : 'HAPPY BUSINESSES'}</div>
+                 </div>
+                 <div>
+                    <div className="text-[32px] font-black text-[#FDBF1D]">1.2M</div>
+                    <div className="text-[12px] font-bold text-[#ada89f] uppercase tracking-widest">{locale === 'tr' ? 'TOPLANAN YORUM' : 'REVIEWS COLLECTED'}</div>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Mission & Vision */}
       <section className="py-14 sm:py-20 px-5 sm:px-8 bg-[#F7F4F0]">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -81,7 +124,7 @@ export default async function AboutPage({
           {/* Vision */}
           <div className="bg-white p-8 sm:p-10 rounded-xl border border-[#e8e4de] space-y-5">
             <div className="w-11 h-11 bg-[#FDBF1D]/10 rounded-lg flex items-center justify-center">
-              <Eye size={22} className="text-[#FDBF1D]" />
+               <Eye size={22} className="text-[#FDBF1D]" />
             </div>
             <h2 className="text-[22px] sm:text-[26px] font-extrabold tracking-[-0.01em]">{t.about_vision_title}</h2>
             <p className="text-[14px] sm:text-[15px] text-[#6b6760] leading-relaxed">{t.about_vision_desc}</p>

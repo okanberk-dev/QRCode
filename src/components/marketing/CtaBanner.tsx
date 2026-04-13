@@ -19,7 +19,7 @@ export default function CtaBanner({ locale }: CtaBannerProps) {
       <div className="flex flex-col sm:flex-row items-center gap-6">
         <Link
           href={`/${locale}/auth/register`}
-          className="px-8 py-3.5 bg-[#ff5c25] text-white font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#ff4e11] transition-all active:translate-y-[4px] active:shadow-none"
+          className="px-8 py-3.5 bg-[#ea580c] text-white font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#c2410c] transition-all active:translate-y-[4px] active:shadow-none"
         >
           {locale === 'tr' ? 'Hemen başlayın!' : 'Get started now!'}
         </Link>

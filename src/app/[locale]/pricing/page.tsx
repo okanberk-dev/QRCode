@@ -172,6 +172,70 @@ export default async function PricingPage({
         </div>
       </section>
 
+      {/* ═══════ Trusted By Logos ═══════ */}
+      <section className="py-12 sm:py-16 px-5 sm:px-8 bg-white border-y border-[#e8e4de]">
+        <div className="max-w-[1000px] mx-auto text-center">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-[#ada89f] mb-8">
+            {locale === 'tr' ? 'DÜNYA ÇAPINDA GÜVENİLEN' : 'TRUSTED WORLDWIDE'}
+          </p>
+          <div className="flex flex-wrap justify-center gap-x-12 sm:gap-x-20 gap-y-8 items-center opacity-40 grayscale">
+            {['Google', 'TripAdvisor', 'Yelp', 'Foursquare', 'Zomato'].map(site => (
+              <span key={site} className="text-xl sm:text-2xl font-black text-[#1f1e1d] tracking-tight cursor-default select-none">
+                {site}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ Comparison Table ═══════ */}
+      <section className="py-16 sm:py-24 px-5 sm:px-8 bg-[#FCFBF7]">
+        <div className="max-w-[800px] mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-[28px] sm:text-[36px] font-extrabold text-[#1f1e1d] tracking-[-0.02em]">
+              {locale === 'tr' ? 'Plan Karşılaştırması' : 'Compare Plans'}
+            </h2>
+            <p className="text-[14px] text-[#6b6760] font-medium mt-2">
+              {locale === 'tr' ? 'İhtiyacınıza en uygun olanı seçin' : 'Choose what fits your needs best'}
+            </p>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[4px_6px_0_0_#1f1e1d] bg-white">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#1f1e1d] text-white">
+                  <th className="p-5 text-[14px] font-bold uppercase tracking-wider">{locale === 'tr' ? 'Özellik' : 'Feature'}</th>
+                  <th className="p-5 text-[14px] font-bold text-center uppercase tracking-wider">{locale === 'tr' ? 'Aylık' : 'Monthly'}</th>
+                  <th className="p-5 text-[14px] font-bold text-center uppercase tracking-wider text-[#FDBF1D]">{locale === 'tr' ? 'Yıllık' : 'Yearly'}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#e8e4de]">
+                {[
+                  { name: locale === 'tr' ? 'Dinamik QR Kodlar' : 'Dynamic QR Codes', m: true, y: true },
+                  { name: locale === 'tr' ? 'Yorum Filtreleme' : 'Review Filtering', m: true, y: true },
+                  { name: locale === 'tr' ? 'Analitik Panel' : 'Analytics Panel', m: true, y: true },
+                  { name: locale === 'tr' ? 'Google Haritalar Desteği' : 'Google Maps Support', m: true, y: true },
+                  { name: locale === 'tr' ? '7/24 Öncelikli Destek' : '24/7 Priority Support', m: false, y: true },
+                  { name: locale === 'tr' ? 'Sınırsız Şube Yönetimi' : 'Unlimited Location Mgmt', m: false, y: true },
+                  { name: locale === 'tr' ? 'Kişiselleştirilmiş Widgetlar' : 'Custom Widgets', m: true, y: true },
+                  { name: locale === 'tr' ? 'Yıllık Ödeme Avantajı' : 'Annual Discount', m: false, y: true },
+                ].map((row, i) => (
+                  <tr key={i} className="hover:bg-[#FCFBF7] transition-colors">
+                    <td className="p-5 text-[14px] font-bold text-[#1f1e1d]">{row.name}</td>
+                    <td className="p-5 text-center">
+                      {row.m ? <CheckCircle2 size={18} className="mx-auto text-[#16A34A]" /> : <span className="text-[#ada89f]">—</span>}
+                    </td>
+                    <td className="p-5 text-center">
+                      {row.y ? <CheckCircle2 size={18} className="mx-auto text-[#FDBF1D]" /> : <span className="text-[#ada89f]">—</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials */}
       <section className="py-12 sm:py-16 px-5 sm:px-8 bg-[#F7F4F0]">
         <div className="max-w-[900px] mx-auto grid grid-cols-1 sm:grid-cols-2 gap-5">

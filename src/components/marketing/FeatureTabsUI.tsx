@@ -55,19 +55,19 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
           </div>
 
           {/* Negative Review Route */}
-          <div className="bg-[#FFF9F9] rounded-xl border-[2px] border-[#EF4444] p-5 shadow-[4px_6px_0_0_rgba(239,68,68,0.2)] relative hover:-translate-y-1 transition-transform">
+          <div className="bg-[#FFF9F5] rounded-xl border-[2px] border-[#ea580c] p-5 shadow-[4px_6px_0_0_rgba(234,88,12,0.1)] relative hover:-translate-y-1 transition-transform">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
               <div className="flex gap-1">
-                {[1,2].map(i => <Star key={i} size={22} fill="#EF4444" strokeWidth={0} />)}
-                {[3,4,5].map(i => <Star key={i} size={22} fill="#FFE4E6" strokeWidth={0} />)}
+                {[1,2].map(i => <Star key={i} size={22} fill="#ea580c" strokeWidth={0} />)}
+                {[3,4,5].map(i => <Star key={i} size={22} fill="#FDEBD0" strokeWidth={0} />)}
               </div>
-              <div className="bg-[#EF4444] text-white px-3.5 py-1.5 text-[11px] font-extrabold rounded-full shadow-sm uppercase tracking-wider inline-flex items-center w-fit">
+              <div className="bg-[#ea580c] text-white px-3.5 py-1.5 text-[11px] font-extrabold rounded-full shadow-sm uppercase tracking-wider inline-flex items-center w-fit">
                 {locale === 'tr' ? '🔒 Özel Panele Al' : '🔒 Internal Dashboard'}
               </div>
             </div>
             <div className="space-y-2 opacity-40 pl-1">
-              <div className="h-2.5 bg-[#FECDD3] w-2/3 rounded-full" />
-              <div className="h-2.5 bg-[#FECDD3] w-1/3 rounded-full" />
+              <div className="h-2.5 bg-[#ea580c] w-2/3 rounded-full opacity-30" />
+              <div className="h-2.5 bg-[#ea580c] w-1/3 rounded-full opacity-30" />
             </div>
           </div>
         </div>

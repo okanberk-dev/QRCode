@@ -95,12 +95,26 @@ export default async function ContactPage({
             ))}
 
             {/* Extra info */}
-            <div className="p-6 bg-[#F7F4F0] rounded-xl border border-[#e8e4de]">
-              <p className="text-[13px] text-[#6b6760] leading-relaxed">
+            <div className="p-8 bg-[#1f1e1d] rounded-xl border-[2.5px] border-[#1f1e1d] shadow-[8px_10px_0_0_#FDBF1D] text-white">
+              <div className="flex items-center gap-3 mb-4">
+                 <ShieldCheck className="text-[#FDBF1D]" size={24} />
+                 <h4 className="text-[17px] font-extrabold">{locale === 'tr' ? 'Hızlı Destek Sözü' : 'Fast Support Promise'}</h4>
+              </div>
+              <p className="text-[14px] text-[#ada89f] leading-relaxed mb-6">
                 {locale === 'tr'
-                  ? 'Genellikle 24 saat içinde yanıt veriyoruz. Demo talepleri için hemen iletişime geçebilirsiniz.'
-                  : 'We usually respond within 24 hours. Feel free to reach out for demo requests immediately.'}
+                  ? 'İşletmenizin kesintisiz çalışması bizim için kritik. Destek ekibimiz tüm taleplere ortalama 2 saat içerisinde dönüş yapmaktadır.'
+                  : 'Keeping your business running smoothly is critical to us. Our support team responds to all inquiries within 2 hours on average.'}
               </p>
+              <div className="space-y-4">
+                 <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+                    <span className="text-[12px] font-bold text-[#ada89f] uppercase">{locale === 'tr' ? 'ORTALAMA YANIT' : 'AVG RESPONSE'}</span>
+                    <span className="text-[14px] font-black text-[#FDBF1D]">~2 SAAT</span>
+                 </div>
+                 <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+                    <span className="text-[12px] font-bold text-[#ada89f] uppercase">{locale === 'tr' ? 'ÇÖZÜM ORANI' : 'RESOLUTION RATE'}</span>
+                    <span className="text-[14px] font-black text-[#FDBF1D]">%99.4</span>
+                 </div>
+              </div>
             </div>
           </div>
 

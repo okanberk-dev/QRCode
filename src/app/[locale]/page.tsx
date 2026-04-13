@@ -102,11 +102,11 @@ export default async function LandingPage({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mt-4 sm:mt-8">
             {/* Left: Content */}
             <div className="text-left space-y-6">
-              <h1 className="text-[32px] sm:text-[42px] lg:text-[48px] font-extrabold leading-[1.15] tracking-[-0.02em] text-[#1f1e1d]">
+              <h1 className="text-[32px] sm:text-[42px] lg:text-[56px] font-extrabold leading-[1.1] tracking-[-0.04em] text-[#1f1e1d]">
                 {locale === 'tr' ? (
-                  <>İşletmeler için dijital itibar yönetim yazılımı — <span className="text-[#FDBF1D]">hızlı</span> olanlar için</>
+                  <>İşletmeniz İçin Kusursuz Dijital İtibar Yönetimi <br /><span className="text-[#FDBF1D]">Yeni Müşteriler Kazanmanın</span> En Hızlı Yolu</>
                 ) : (
-                  <>Review management software for teams that <span className="text-[#FDBF1D]">move fast</span></>
+                  <>Flawless Digital Reputation Management <br />The Fastest Way to <span className="text-[#FDBF1D]">Win New Customers</span></>
                 )}
               </h1>
 
@@ -156,7 +156,7 @@ export default async function LandingPage({
 
                 {/* Box 1: Super easy (Top) */}
                 <div 
-                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-2 lg:left-0 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d] z-10 transform hover:-translate-y-1 transition-transform self-start -mb-6 lg:mb-0"
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-2 lg:left-0 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-10 transform hover:-translate-y-2 transition-transform self-start -mb-6 lg:mb-0"
                 >
                   <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
@@ -188,7 +188,7 @@ export default async function LandingPage({
 
                 {/* Box 2: Really love (Middle) */}
                 <div 
-                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[120px] lg:right-2 w-[98%] max-w-[290px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d] z-30 transform hover:-translate-y-1 transition-transform self-end lg:self-auto -mb-6 lg:mb-0"
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[120px] lg:right-2 w-[98%] max-w-[290px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-30 transform hover:-translate-y-2 transition-transform self-end lg:self-auto -mb-6 lg:mb-0"
                 >
                   <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
@@ -220,7 +220,7 @@ export default async function LandingPage({
 
                 {/* Box 3: Buaze makes (Bottom) */}
                 <div 
-                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[250px] lg:left-6 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d] z-20 transform hover:-translate-y-1 transition-transform self-start -mt-2 lg:mt-0"
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[250px] lg:left-6 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-20 transform hover:-translate-y-2 transition-transform self-start -mt-2 lg:mt-0"
                 >
                   <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
@@ -326,6 +326,54 @@ export default async function LandingPage({
         <FeatureTabsUI locale={locale} />
       </section>
 
+      {/* ═══════ How It Works (3D Cards) ═══════ */}
+      <section id="how-it-works" className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-y border-[#e8e4de]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-[12px] font-black uppercase tracking-widest text-[#FDBF1D] mb-4">{locale === 'tr' ? 'BASİT VE ETKİLİ' : 'SIMPLE & EFFECTIVE'}</p>
+            <h2 className="text-[32px] sm:text-[42px] font-extrabold text-[#1f1e1d] tracking-[-0.03em] leading-tight">
+              {locale === 'tr' ? 'Süreç Nasıl İlerler?' : 'How It Works'}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+            {[
+              {
+                step: '01',
+                title: locale === 'tr' ? 'QR Kodunuzu Hazırlayın' : 'Prepare Your QR Code',
+                desc: locale === 'tr' ? 'Panelimizden size özel şık QR kod tasarımları oluşturun, basın ve işletmenizin en stratejik noktalarına yerleştirin.' : 'Create custom, sleek QR code designs from our dashboard, print them, and place them at strategic spots in your business.',
+                icon: <Zap size={24} />
+              },
+              {
+                step: '02',
+                title: locale === 'tr' ? 'Müşteriye Kolaylık Sağlayın' : 'Make It Easy for Customers',
+                desc: locale === 'tr' ? 'Müşterileriniz bir uygulama indirmeden saniyeler içinde QR kodu tarasın ve doğrudan puanlama sayfasına ulaşsın.' : 'Your customers scan the QR code in seconds without downloading an app and go straight to the rating page.',
+                icon: <Users size={24} />
+              },
+              {
+                step: '03',
+                title: locale === 'tr' ? 'İtibarınızı Otomatiğe Alın' : 'Automate Your Reputation',
+                desc: locale === 'tr' ? 'Olumlu yorumları platformlara aktarın, olumsuzları ise sistem içindeki akıllı form ile kriz büyümeden çözün.' : 'Direct positive reviews to platforms, while resolving negative ones internally via our smart form before a crisis emerges.',
+                icon: <Trophy size={24} />
+              }
+            ].map((item, i) => (
+              <div key={i} className="group relative bg-[#FCFBF7] p-8 rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[4px_6px_0_0_#1f1e1d] hover:-translate-y-2 transition-transform duration-300">
+                <div className="absolute -top-5 -right-5 w-14 h-14 bg-[#FDBF1D] rounded-full border-[2px] border-[#1f1e1d] shadow-[2px_3px_0_0_#1f1e1d] flex items-center justify-center text-[18px] font-black text-[#1f1e1d] z-10">
+                  {item.step}
+                </div>
+                <div className="w-12 h-12 bg-white rounded-xl border-[2px] border-[#1f1e1d] flex items-center justify-center mb-6 text-[#1f1e1d]">
+                  {item.icon}
+                </div>
+                <h3 className="text-[20px] font-extrabold text-[#1f1e1d] mb-4">{item.title}</h3>
+                <p className="text-[14px] text-[#6b6760] leading-relaxed font-medium">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ═══════ CTA Banner ═══════ */}
       <section className="px-5 sm:px-8">
         <CtaBanner locale={locale} />
@@ -340,35 +388,57 @@ export default async function LandingPage({
           <div className="bg-[#1f1e1d] rounded-2xl p-8 sm:p-12 lg:p-16 relative overflow-hidden text-white">
             <div className="absolute top-0 right-0 w-80 h-80 bg-[#FDBF1D]/8 blur-[80px] rounded-full -mr-40 -mt-40" />
             <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-14 items-center">
-              <div className="space-y-5">
-                <h2 className="text-[28px] sm:text-[36px] font-extrabold leading-[1.15]">
-                  {locale === 'tr' ? 'Neden Buaze?' : 'Why Buaze?'}
+              <div className="space-y-6">
+                <h2 className="text-[32px] sm:text-[42px] lg:text-[48px] font-extrabold leading-[1.1] tracking-[-0.03em]">
+                  {locale === 'tr' ? 'Neden Buaze Farklı?' : 'Why is Buaze Different?'}
                 </h2>
-                <div className="space-y-4 text-[#ada89f] text-[14px] sm:text-[15px] leading-relaxed">
-                  <p>
+                <div className="space-y-5 text-[#ada89f] text-[15px] sm:text-[16px] leading-relaxed">
+                  <p className="font-medium">
                     {locale === 'tr'
-                      ? 'Buaze, modern işletmelerin en büyük varlığı olan dijital güveni inşa etmek için geliştirildi. Google Haritalar, TripAdvisor ve tüm major platformlarla entegre çalışarak, her müşteri temas noktasını bir büyüme fırsatına dönüştürüyoruz.'
-                      : 'Buaze was developed to build the greatest asset of modern businesses: digital trust. Integrated with Google Maps, TripAdvisor, and all major platforms, we turn every touchpoint into a growth opportunity.'}
+                      ? 'Buaze, sadece bir yorum toplama aracı değildir. İşletmenizin dijital dünyadaki kalkanı ve büyüme motorudur.'
+                      : 'Buaze is not just a review collection tool. It is your business\'s digital shield and growth engine.'}
                   </p>
-                  <p>
-                    {locale === 'tr'
-                      ? 'Yapay zeka analiz algoritmalarımız müşteri duyarlılığını önceden analiz ediyor ve markanızın dijital dünyada en iyi şekilde temsil edilmesini sağlıyor.'
-                      : 'Our AI analysis algorithms analyze customer sentiment in advance and ensure your brand is always represented in the best possible way.'}
-                  </p>
+                  <ul className="space-y-4">
+                    {[
+                      { t: locale === 'tr' ? 'Akıllı Filtreleme Algoritması' : 'Smart Filtering Algorithm', d: locale === 'tr' ? 'Olumsuz geri bildirimleri kamuoyuna yansımadan yakalayın.' : 'Catch negative feedback before it hits the public.' },
+                      { t: locale === 'tr' ? 'Tam Platform Entegrasyonu' : 'Full Platform Integration', d: locale === 'tr' ? 'Google, TripAdvisor ve Yelp ile kesintisiz veri akışı.' : 'Seamless data flow with Google, TripAdvisor, and Yelp.' },
+                      { t: locale === 'tr' ? 'Gerçek Zamanlı Analitik' : 'Real-time Analytics', d: locale === 'tr' ? 'Müşteri memnuniyetini anlık grafiklerle takip edin.' : 'Track customer satisfaction with instant charts.' }
+                    ].map((li, i) => (
+                      <li key={i} className="flex gap-3 items-start">
+                        <div className="w-5 h-5 rounded-full bg-[#FDBF1D] flex-shrink-0 mt-1 flex items-center justify-center">
+                           <CheckCircle2 size={14} className="text-[#1f1e1d]" strokeWidth={3} />
+                        </div>
+                        <div>
+                           <span className="block font-bold text-white text-[16px]">{li.t}</span>
+                           <span className="text-[13px] opacity-80">{li.d}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                {[
-                  { label: locale === 'tr' ? 'Veri Takibi' : 'Data Tracking', val: '24/7' },
-                  { label: locale === 'tr' ? 'Müşteri Artışı' : 'Growth', val: '+40%' },
-                  { label: locale === 'tr' ? 'Risk Yönetimi' : 'Risk Mgmt', val: locale === 'tr' ? 'Aktif' : 'Active' },
-                  { label: locale === 'tr' ? 'Entegrasyon' : 'Integration', val: 'SaaS' }
-                ].map((stat, i) => (
-                  <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-5 text-center hover:bg-white/8 transition-colors">
-                    <p className="text-2xl sm:text-3xl font-extrabold text-[#FDBF1D] mb-0.5">{stat.val}</p>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6760]">{stat.label}</p>
-                  </div>
-                ))}
+              <div className="relative">
+                 <div className="bg-[#1a1a1a] rounded-3xl border-[2.5px] border-[#3d3a36] p-6 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]">
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="bg-[#FDBF1D]/10 p-5 rounded-2xl border border-[#FDBF1D]/20">
+                          <div className="text-[28px] font-black text-[#FDBF1D]">+400%</div>
+                          <div className="text-[10px] font-bold text-[#6b6760] uppercase tracking-wider">{locale === 'tr' ? 'Yorum Artışı' : 'Review Boost'}</div>
+                       </div>
+                       <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
+                          <div className="text-[28px] font-black text-white">4.9/5</div>
+                          <div className="text-[10px] font-bold text-[#6b6760] uppercase tracking-wider">{locale === 'tr' ? 'AVG Puan' : 'AVG Rating'}</div>
+                       </div>
+                       <div className="col-span-2 bg-white/5 p-5 rounded-2xl border border-white/10">
+                          <div className="flex justify-between items-end mb-2">
+                             <div className="text-[12px] font-bold text-white">{locale === 'tr' ? 'Müşteri Güveni' : 'Customer Trust'}</div>
+                             <div className="text-[12px] font-bold text-[#FDBF1D]">98%</div>
+                          </div>
+                          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                             <div className="h-full w-[98%] bg-[#FDBF1D]" />
+                          </div>
+                       </div>
+                    </div>
+                 </div>
               </div>
             </div>
           </div>
