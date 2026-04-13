@@ -181,6 +181,8 @@ export const translations = {
     dash_total_reviews: 'Toplam Yorum',
     dash_today_reviews: 'Bugün Gelenler',
     dash_positive_reviews: 'Pozitif Yorumlar',
+    dash_latest_feedbacks: 'Son Değerlendirmeler',
+    dash_see_all: 'Hepsini Gör',
 
     // Profile
     profile_title: 'Profil Bilgileri',
@@ -384,6 +386,8 @@ export const translations = {
     dash_total_reviews: 'Total Reviews',
     dash_today_reviews: 'Today\'s Feedbacks',
     dash_positive_reviews: 'Positive Reviews',
+    dash_latest_feedbacks: 'Latest Feedbacks',
+    dash_see_all: 'See All',
 
     // Profile
     profile_title: 'Profile Information',

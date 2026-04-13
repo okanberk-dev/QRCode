@@ -137,7 +137,7 @@ export default function AdminDashboard() {
           <div className="inline-flex items-center gap-2 bg-yellow-500/10 text-yellow-500 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.2em]">
             ✦ CANLI PANEL
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-loose">
+          <h1 className="text-xl sm:text-4xl font-black text-white tracking-tight leading-loose">
             {t('welcome')}, {displayName} 👋
           </h1>
           <p className="text-[#ada89f] text-[17px] font-bold max-w-md">Gerçek zamanlı verilerle işletmenizin nabzını tutun.</p>

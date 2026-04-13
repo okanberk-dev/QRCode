@@ -210,10 +210,10 @@ export default async function DashboardPage({
             <div className="bg-[#FCFBF7] border-b-2 border-[#1f1e1d] px-6 sm:px-8 py-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Star className="text-[#ea580c]" size={20} strokeWidth={3} fill="currentColor" />
-                <h3 className="text-lg font-black text-[#111827] uppercase tracking-tighter italic">Son Değerlendirmeler</h3>
+                <h3 className="text-lg font-black text-[#111827] uppercase tracking-tighter italic">{t.dash_latest_feedbacks}</h3>
               </div>
               <Link href={`/${locale}/dashboard/feedbacks`} className="text-[11px] font-black text-[#6b6760] hover:text-[#111827] uppercase tracking-widest flex items-center gap-2">
-                HEPSİNİ GÖR <ArrowRight size={14} strokeWidth={3} />
+                {t.dash_see_all} <ArrowRight size={14} strokeWidth={3} />
               </Link>
             </div>
             <div className="divide-y-2 divide-[#F7F4F0]">

@@ -31,6 +31,9 @@ const adminTranslations = {
     delete: 'Sil',
     edit: 'Düzenle',
     add_new: 'Yeni Ekle',
+    search_placeholder: 'İsim veya e-posta ile ara...',
+    latest_feedbacks: 'Son Değerlendirmeler',
+    see_all: 'Hepsini Gör',
   },
   en: {
     dashboard: 'Dashboard',
@@ -52,6 +55,9 @@ const adminTranslations = {
     delete: 'Delete',
     edit: 'Edit',
     add_new: 'Add New',
+    search_placeholder: 'Search by name or email...',
+    latest_feedbacks: 'Latest Feedbacks',
+    see_all: 'See All',
   }
 };
 
