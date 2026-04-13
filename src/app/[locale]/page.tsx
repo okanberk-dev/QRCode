@@ -17,9 +17,11 @@ export async function generateMetadata({
   const t = getTranslations(locale);
   return {
     title: locale === 'tr'
-      ? 'Buaze — Restoranınızın Dijital İtibar Yönetim Platformu'
-      : 'Buaze — Restaurant Digital Reputation Management Platform',
-    description: t.siteDescription,
+      ? 'Buaze | Restoranınız İçin Gelişmiş Dijital İtibar Yönetimi'
+      : 'Buaze | Advanced Digital Reputation Management for Restaurants',
+    description: locale === 'tr'
+      ? 'Buaze ile restoranınızın dijital itibarını otomatik yönetin. Google Haritalar puanınızı yükseltin, olumsuz yorumları anında filtreleyin.'
+      : 'Automate your restaurant digital reputation with Buaze. Increase your Google Maps ratings and filter out negative reviews instantly.',
   };
 }
 
@@ -286,7 +288,7 @@ export default async function LandingPage({
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href={`${base}/auth/register`}
-                className="w-full sm:w-auto px-7 py-3.5 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] text-[15px] font-semibold rounded-lg transition-all text-center"
+                className="w-full sm:w-auto px-7 py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none text-center"
               >
                 {locale === 'tr' ? 'Hemen başlayın!' : 'Get started now!'}
               </Link>

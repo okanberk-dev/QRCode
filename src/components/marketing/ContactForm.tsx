@@ -138,7 +138,7 @@ export default function ContactForm({ t }: ContactFormProps) {
             type="submit"
             id="contact-submit-btn"
             disabled={loading}
-            className="w-full py-3.5 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] font-semibold text-[14px] rounded-lg transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 active:scale-[0.98]"
+            className="w-full py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 active:translate-y-[4px] active:shadow-none"
           >
             {loading ? <Loader2 className="animate-spin" size={17} /> : <Send size={16} />}
             {t.contact_form_submit}

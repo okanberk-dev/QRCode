@@ -125,7 +125,7 @@ export default async function AboutPage({
             </div>
             <Link
               href={`${base}/auth/register`}
-              className="flex-shrink-0 px-7 py-3.5 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] text-[14px] font-semibold rounded-lg transition-all active:scale-[0.97] shadow-sm hover:shadow-md"
+              className="flex-shrink-0 px-7 py-3.5 bg-[#FDBF1D] text-[#1f1e1d] text-[15px] font-extrabold rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none"
             >
               {locale === 'tr' ? 'Ücretsiz Dene' : 'Start Free Trial'}
             </Link>

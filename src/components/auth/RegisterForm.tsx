@@ -208,7 +208,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         type="submit"
         id="register-submit-btn"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#111827] font-black py-4 rounded-xl transition-all shadow-lg shadow-yellow-200 disabled:opacity-70 active:scale-95"
+        className="w-full flex items-center justify-center gap-2 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold py-3.5 rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all disabled:opacity-70 active:translate-y-[4px] active:shadow-none"
       >
         {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}
         {loading ? t.auth_register_loading : t.auth_register_btn}

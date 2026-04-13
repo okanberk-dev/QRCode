@@ -122,7 +122,7 @@ export default async function PricingPage({
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-[#F7F4F0] hover:bg-[#e8e4de] text-[#1f1e1d] font-semibold text-[14px] rounded-lg transition-all active:scale-[0.98]"
+                className="block w-full text-center py-3.5 bg-white hover:bg-gray-50 text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] active:translate-y-[4px] active:shadow-none transition-all"
               >
                 {t.pricing_monthly_cta}
               </Link>
@@ -155,7 +155,7 @@ export default async function PricingPage({
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] font-semibold text-[14px] rounded-lg transition-all active:scale-[0.97] shadow-sm"
+                className="block w-full text-center py-3.5 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] active:translate-y-[4px] active:shadow-none transition-all"
               >
                 {t.pricing_yearly_cta}
               </Link>

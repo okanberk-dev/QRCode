@@ -14,8 +14,8 @@ export async function generateMetadata({
   return {
     metadataBase: new URL('https://buaze.com'),
     title: {
-      default: `${t.siteName} — ${locale === 'tr' ? 'Restoranınızın Dijital İtibar Yönetim Platformu' : 'Restaurant Digital Reputation Management Platform'}`,
-      template: `%s — ${t.siteName}`,
+      default: `${t.siteName} | ${locale === 'tr' ? 'Restoranınızın Dijital İtibar Yönetim Platformu' : 'Restaurant Digital Reputation Management Platform'}`,
+      template: `%s | ${t.siteName}`,
     },
     description: t.siteDescription,
     keywords: locale === 'tr'
@@ -51,7 +51,7 @@ export async function generateMetadata({
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       url: `https://buaze.com/${locale}`,
       siteName: 'Buaze',
-      title: `Buaze — ${locale === 'tr' ? 'Dijital İtibar Yönetim Platformu' : 'Digital Reputation Management Platform'}`,
+      title: `Buaze | ${locale === 'tr' ? 'Dijital İtibar Yönetim Platformu' : 'Digital Reputation Management Platform'}`,
       description: t.siteDescription,
       images: [
         {
@@ -64,7 +64,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `Buaze — ${locale === 'tr' ? 'Dijital İtibar' : 'Digital Reputation'}`,
+      title: `Buaze | ${locale === 'tr' ? 'Dijital İtibar' : 'Digital Reputation'}`,
       description: t.siteDescription,
       creator: '@buaze',
     },

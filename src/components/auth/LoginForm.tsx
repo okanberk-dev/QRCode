@@ -122,7 +122,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         type="submit"
         id="login-submit-btn"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#111827] hover:bg-black text-white font-black py-4 rounded-xl transition-all shadow-lg disabled:opacity-70 active:scale-95"
+        className="w-full flex items-center justify-center gap-2 bg-[#1f1e1d] text-white font-extrabold py-3.5 rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-black transition-all disabled:opacity-70 active:translate-y-[4px] active:shadow-none"
       >
         {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}
         {loading ? t.auth_login_loading : t.auth_login_btn}
