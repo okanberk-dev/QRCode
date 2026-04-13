@@ -143,9 +143,9 @@ function SlugContent() {
           <div className="w-16 h-16 bg-red-50 text-red-400 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <X size={32} strokeWidth={2.5} />
           </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Sayfa Bulunamadı</h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">{t('feedback_page_not_found')}</h1>
           <p className="text-sm text-gray-500 leading-relaxed">
-            Bu işletme aktif değil veya bağlantı hatalı.
+            {t('feedback_page_inactive')}
           </p>
         </div>
       </div>
@@ -272,8 +272,8 @@ function SlugContent() {
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 group-hover:text-blue-500 transition-colors uppercase tracking-tight">Doğrudan Google&apos;da Yorum Yap</p>
-                <p className="text-[11px] text-gray-400 font-medium">İşletmeyi haritalar üzerinden destekleyin</p>
+                <p className="text-sm font-bold text-gray-900 group-hover:text-blue-500 transition-colors uppercase tracking-tight">{t('feedback_google_direct')}</p>
+                <p className="text-[11px] text-gray-400 font-medium">{t('feedback_google_direct_sub')}</p>
               </div>
               <ChevronRight size={18} className="text-gray-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
             </a>

@@ -242,6 +242,22 @@ export const translations = {
     how_step1: 'QR Kodunuzu Oluşturun ve Basın',
     how_step2: 'Müşteriniz QR Kodu Kolayca Tarasın',
     how_step3: 'Olumlu Yorumlar ve Büyümeyi İzleyin',
+    
+    // Admin Generic
+    dashboard: 'Panel',
+    restaurants: 'İşletmelerim',
+    qr_codes: 'QR Kodlarım',
+    users: 'Kullanıcılar',
+    customers: 'Müşteriler',
+    logout: 'Çıkış Yap',
+    system_language: 'Sistem Dili',
+
+    // Feedback Page Specific
+    feedback_post_title: 'Yorumunuzu Paylaşın',
+    feedback_google_direct: 'Doğrudan Google\'da Yorum Yap',
+    feedback_google_direct_sub: 'İşletmeyi haritalar üzerinden destekleyin',
+    feedback_page_not_found: 'Sayfa Bulunamadı',
+    feedback_page_inactive: 'Bu işletme aktif değil veya bağlantı hatalı.',
   },
   en: {
     // Meta
@@ -479,6 +495,22 @@ export const translations = {
     feedback_atmosphere: 'Atmosphere',
     feedback_add_photo: 'Add photos',
     feedback_photo_hint: 'Photos help people find what they need',
+
+    // Admin Generic
+    dashboard: 'Dashboard',
+    restaurants: 'My Businesses',
+    qr_codes: 'My QR Codes',
+    users: 'Users',
+    customers: 'Customers',
+    logout: 'Log Out',
+    system_language: 'System Language',
+
+    // Feedback Page Specific
+    feedback_post_title: 'Write a Review',
+    feedback_google_direct: 'Review directly on Google',
+    feedback_google_direct_sub: 'Support the business via maps',
+    feedback_page_not_found: 'Page Not Found',
+    feedback_page_inactive: 'This business is not active or the link is incorrect.',
   },
 } as const;
 
