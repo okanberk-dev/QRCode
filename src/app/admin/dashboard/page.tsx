@@ -19,6 +19,59 @@ interface Restaurant {
   slug: string;
 }
 
+const DATE_TABS = [
+  { label: 'Bugün', val: '1' },
+  { label: '7 Gün', val: '7' },
+  { label: '30 Gün', val: '30' },
+  { label: 'Tümü', val: 'all' }
+] as const;
+
+interface DateTabsProps {
+  value: string;
+  onChange: (nextValue: string) => void;
+  variant?: 'default' | 'toolbar';
+}
+
+function DateTabs({ value, onChange, variant = 'default' }: DateTabsProps) {
+  if (variant === 'toolbar') {
+    return (
+      <div className="flex items-center gap-2 overflow-x-auto pb-1.5 lg:pb-0 no-scrollbar">
+        {DATE_TABS.map((tab) => (
+          <button
+            key={tab.val}
+            onClick={() => onChange(tab.val)}
+            className={`px-4 sm:px-6 py-2.5 sm:py-3 text-[10px] sm:text-xs font-bold rounded-xl transition-all uppercase tracking-widest whitespace-nowrap ${
+              value === tab.val
+                ? 'bg-[#111827] text-white shadow-md'
+                : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+            }`}
+          >
+            {tab.label.toUpperCase()}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex bg-gray-100 p-1 rounded-xl self-start">
+      {DATE_TABS.map((tab) => (
+        <button
+          key={tab.val}
+          onClick={() => onChange(tab.val)}
+          className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+            value === tab.val
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const { t, locale } = useAdminTranslation();
   const [stats, setStats] = useState<any>(null);
@@ -97,29 +150,6 @@ export default function AdminDashboard() {
     ? Math.round(((stats.googleRedirectsCount || 0) / stats.totalCount) * 100)
     : null;
 
-  const DateTabs = () => (
-    <div className="flex bg-gray-100 p-1 rounded-xl self-start">
-      {[
-        { label: 'Bugün', val: '1' },
-        { label: '7 Gün', val: '7' },
-        { label: '30 Gün', val: '30' },
-        { label: 'Tümü', val: 'all' }
-      ].map((tab) => (
-        <button
-          key={tab.val}
-          onClick={() => { setDaysFilter(tab.val); setPage(1); }}
-          className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-            daysFilter === tab.val
-            ? 'bg-white text-gray-900 shadow-sm'
-            : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  );
-
   if (loading && !stats) {
     return (
       <div className="flex h-full items-center justify-center p-8">
@@ -158,26 +188,11 @@ export default function AdminDashboard() {
 
       {/* ─── Toolbar ─── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 lg:pb-0 no-scrollbar">
-          {[
-            { label: 'BUGÜN', val: '1' },
-            { label: '7 GÜN', val: '7' },
-            { label: '30 GÜN', val: '30' },
-            { label: 'TÜMÜ', val: 'all' }
-          ].map((tab) => (
-            <button
-              key={tab.val}
-              onClick={() => { setDaysFilter(tab.val); setPage(1); }}
-              className={`px-4 sm:px-6 py-2.5 sm:py-3 text-[10px] sm:text-xs font-bold rounded-xl transition-all uppercase tracking-widest whitespace-nowrap ${
-                daysFilter === tab.val
-                ? 'bg-[#111827] text-white shadow-md'
-                : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <DateTabs
+          value={daysFilter}
+          onChange={(nextValue) => { setDaysFilter(nextValue); setPage(1); }}
+          variant="toolbar"
+        />
 
         <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
           {isSuperAdmin && (
