@@ -14,10 +14,10 @@ export default function StatsCards({ stats }: StatsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-10">
       {/* Toplam Yorum */}
-      <div className="bg-white p-6 rounded-[28px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] flex flex-col justify-between transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none group">
+      <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:translate-y-[-2px] hover:shadow-md group">
         <div className="flex items-center justify-between mb-5">
-          <div className="w-11 h-11 bg-[#F7F4F0] text-[#6b6760] border-2 border-[#1f1e1d] rounded-xl flex items-center justify-center group-hover:bg-[#1f1e1d] group-hover:text-white transition-colors">
-            <Hash size={22} strokeWidth={2.5} />
+          <div className="w-11 h-11 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center group-hover:bg-gray-800 group-hover:text-white transition-colors">
+            <Hash size={20} strokeWidth={2.5} />
           </div>
           <span className="text-[10px] font-black uppercase tracking-widest text-[#ada89f]">GENEL</span>
         </div>
@@ -28,10 +28,10 @@ export default function StatsCards({ stats }: StatsProps) {
       </div>
 
       {/* Ortalama Puan */}
-      <div className="bg-white p-6 rounded-[28px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#FDBF1D] flex flex-col justify-between transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none group">
+      <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:translate-y-[-2px] hover:shadow-md group">
         <div className="flex items-center justify-between mb-5">
-          <div className="w-11 h-11 bg-[#FDBF1D]/10 text-[#FDBF1D] border-2 border-[#1f1e1d] rounded-xl flex items-center justify-center group-hover:bg-[#FDBF1D] group-hover:text-[#1f1e1d] transition-colors">
-            <Star size={22} fill="currentColor" strokeWidth={2.5} />
+          <div className="w-11 h-11 bg-yellow-50 text-yellow-500 rounded-xl flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-white transition-colors">
+            <Star size={20} fill="currentColor" strokeWidth={2.5} />
           </div>
           <span className="text-[10px] font-black uppercase tracking-widest text-[#FDBF1D]">RATING</span>
         </div>
@@ -44,10 +44,10 @@ export default function StatsCards({ stats }: StatsProps) {
       </div>
 
       {/* Düşük Puanlar */}
-      <div className="bg-white p-6 rounded-[28px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#ef4444] flex flex-col justify-between transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none group">
+      <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:translate-y-[-2px] hover:shadow-md group">
         <div className="flex items-center justify-between mb-5">
-          <div className="w-11 h-11 bg-red-50 text-red-500 border-2 border-[#1f1e1d] rounded-xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
-            <MessageSquareWarning size={22} strokeWidth={2.5} />
+          <div className="w-11 h-11 bg-red-50 text-red-500 rounded-xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
+            <MessageSquareWarning size={20} strokeWidth={2.5} />
           </div>
           <span className="text-[10px] font-black uppercase tracking-widest text-red-400">KRİTİK</span>
         </div>
@@ -58,10 +58,10 @@ export default function StatsCards({ stats }: StatsProps) {
       </div>
 
       {/* Bugün */}
-      <div className="bg-white p-6 rounded-[28px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#3b82f6] flex flex-col justify-between transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none group">
+      <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:translate-y-[-2px] hover:shadow-md group">
         <div className="flex items-center justify-between mb-5">
-          <div className="w-11 h-11 bg-blue-50 text-blue-500 border-2 border-[#1f1e1d] rounded-xl flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors">
-            <Zap size={22} strokeWidth={2.5} />
+          <div className="w-11 h-11 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors">
+            <Zap size={20} strokeWidth={2.5} />
           </div>
           <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">CANLI</span>
         </div>
@@ -72,10 +72,10 @@ export default function StatsCards({ stats }: StatsProps) {
       </div>
 
       {/* Pozitif Yönlendirme */}
-      <div className="bg-white p-6 rounded-[28px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#10b981] flex flex-col justify-between transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none group">
+      <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:translate-y-[-2px] hover:shadow-md group">
         <div className="flex items-center justify-between mb-5">
-          <div className="w-11 h-11 bg-green-50 text-green-500 border-2 border-[#1f1e1d] rounded-xl flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors">
-            <Heart size={22} strokeWidth={2.5} />
+          <div className="w-11 h-11 bg-green-50 text-green-500 rounded-xl flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors">
+            <Heart size={20} strokeWidth={2.5} />
           </div>
           <span className="text-[10px] font-black uppercase tracking-widest text-green-400">MUTLU</span>
         </div>

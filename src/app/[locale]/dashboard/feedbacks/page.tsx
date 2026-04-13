@@ -83,7 +83,7 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 bg-white p-4 sm:p-4 rounded-[24px] sm:rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] sm:shadow-[10px_12px_0_0_#1f1e1d] w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 bg-white p-4 sm:p-5 rounded-[24px] sm:rounded-[32px] border-2 border-[#1f1e1d] shadow-[4px_6px_0_0_#1f1e1d] sm:shadow-[6px_8px_0_0_#1f1e1d] w-full sm:w-auto">
             <div className="flex items-center gap-2 px-2 sm:px-4 border-b-2 sm:border-b-0 sm:border-r-2 border-[#F7F4F0] pb-3 sm:pb-0 w-full sm:w-auto">
               <Filter size={18} className="text-[#ada89f]" />
               <span className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest">Filtrele</span>
@@ -121,12 +121,12 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
         {/* Feedback List */}
         <div className="relative">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-24 sm:py-40 bg-white rounded-[24px] sm:rounded-[40px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] sm:shadow-[12px_14px_0_0_#1f1e1d]">
+            <div className="flex flex-col items-center justify-center py-24 sm:py-40 bg-white rounded-[24px] sm:rounded-[40px] border-2 border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] sm:shadow-[8px_10px_0_0_#1f1e1d]">
               <Loader2 className="animate-spin text-[#111827] w-12 h-12 mb-4" strokeWidth={3} />
               <span className="text-xs font-black text-[#ada89f] uppercase tracking-[0.3em]">Yükleniyor...</span>
             </div>
           ) : feedbacks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 sm:py-40 bg-white rounded-[24px] sm:rounded-[40px] border-[3px] border-dashed border-[#e8e4de] text-center italic p-4">
+            <div className="flex flex-col items-center justify-center py-20 sm:py-40 bg-white rounded-[24px] sm:rounded-[40px] border-2 border-dashed border-[#e8e4de] text-center italic p-4">
               <Calendar size={64} className="text-[#e8e4de] mb-6 scale-75 sm:scale-100" />
               <h3 className="text-xl sm:text-2xl font-black text-[#111827] mb-2 uppercase">{t.feedbacks_empty}</h3>
               <p className="text-sm sm:text-base text-[#6b6760] font-bold">Seçili kriterlere uygun değerlendirme bulunamadı.</p>
@@ -141,19 +141,19 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="w-14 h-14 rounded-2xl border-[3px] border-[#1f1e1d] bg-white text-[#111827] flex items-center justify-center shadow-[0_6px_0_0_#1f1e1d] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all"
+                    className="w-14 h-14 rounded-2xl border-2 border-[#1f1e1d] bg-white text-[#111827] flex items-center justify-center shadow-[0_4px_0_0_#1f1e1d] hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all"
                   >
                     <ChevronRight className="rotate-180" size={24} strokeWidth={3} />
                   </button>
                   
-                  <div className="px-8 h-14 rounded-2xl bg-[#111827] text-white flex items-center justify-center font-black text-sm tracking-widest border-[3px] border-[#1f1e1d] shadow-[0_6px_0_0_#000]">
+                  <div className="px-8 h-14 rounded-2xl bg-[#111827] text-white flex items-center justify-center font-black text-sm tracking-widest border-2 border-[#1f1e1d] shadow-[0_4px_0_0_#000]">
                     {page} <span className="opacity-30 mx-2">/</span> {totalPages}
                   </div>
                   
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
-                    className="w-14 h-14 rounded-2xl border-[3px] border-[#1f1e1d] bg-white text-[#111827] flex items-center justify-center shadow-[0_6px_0_0_#1f1e1d] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all"
+                    className="w-14 h-14 rounded-2xl border-2 border-[#1f1e1d] bg-white text-[#111827] flex items-center justify-center shadow-[0_4px_0_0_#1f1e1d] hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all"
                   >
                     <ChevronRight size={24} strokeWidth={3} />
                   </button>

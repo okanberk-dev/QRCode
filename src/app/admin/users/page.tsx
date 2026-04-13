@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Loader2, Store, User, ShieldCheck } from 'lucide-react';
+import { Plus, Trash2, Loader2, Store, User, ShieldCheck, Search } from 'lucide-react';
+import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 
 interface User {
   id: string;
@@ -17,7 +18,9 @@ interface Restaurant {
 }
 
 export default function UsersPage() {
+  const { t } = useAdminTranslation();
   const [users, setUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -166,25 +169,37 @@ export default function UsersPage() {
 
   return (
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-8 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-6 sm:p-8 rounded-[24px] sm:rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] sm:shadow-[10px_12px_0_0_#1f1e1d]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-6 sm:p-8 rounded-[24px] border border-gray-100 shadow-sm">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">Hesap Yönetimi</h1>
           <p className="text-[#6b6760] text-[13px] sm:text-[15px] font-bold">Sistem yöneticilerini ve işletme yetkililerini tanımlayın.</p>
         </div>
         <button
           onClick={() => { setEditingId(null); setFormData({ username: '', password: '', role: 'manager', restaurantId: '' }); setShowModal(true); }}
-          className="flex items-center gap-3 bg-[#FDBF1D] text-[#111827] px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest border-[3px] border-[#1f1e1d] shadow-[0_6px_0_0_#1f1e1d] hover:bg-[#EAB308] active:translate-y-[6px] active:shadow-none transition-all group"
+          className="flex items-center gap-3 bg-[#FDBF1D] text-[#111827] px-8 py-4 rounded-2xl text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#EAB308] active:scale-95 transition-all group"
         >
           <Plus size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
           YENİ HESAP AÇ
         </button>
       </div>
 
-      <div className="bg-white rounded-[24px] sm:rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] sm:shadow-[12px_14px_0_0_#1f1e1d] overflow-hidden">
+      {/* Search Bar */}
+      <div className="relative group">
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#ada89f] group-focus-within:text-[#111827] transition-colors" size={20} strokeWidth={3} />
+        <input 
+          type="text"
+          placeholder="İsim veya kullanıcı adı ile ara..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-white border border-gray-100 rounded-[20px] pl-16 pr-8 py-5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#FDBF1D] transition-all"
+        />
+      </div>
+
+      <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#FCFBF7] border-b-[3px] border-[#1f1e1d] text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">
+              <tr className="bg-[#FCFBF7] border-b border-gray-200 text-[11px] font-bold uppercase tracking-[0.2em] text-[#ada89f]">
                 <th className="px-4 py-4 sm:px-8 sm:py-6">YETKİLİ KULLANICI</th>
                 <th className="px-4 py-4 sm:px-8 sm:py-6">ROL SİSTEMİ</th>
                 <th className="px-4 py-4 sm:px-8 sm:py-6">RESTORAN / ŞUBE</th>
@@ -192,21 +207,23 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-[#F7F4F0] text-sm">
-              {users.map(user => (
+              {users.filter(u => 
+                u.username.toLowerCase().includes(searchTerm.toLowerCase())
+              ).map(user => (
                 <tr key={user.id} className="hover:bg-[#FCFBF7]/50 transition-colors group">
                   <td className="px-4 py-4 sm:px-8 sm:py-6">
                     <div className="flex items-center gap-2 sm:gap-4">
-                      <div className="hidden sm:flex w-12 h-12 rounded-[14px] bg-white border-2 border-[#1f1e1d] shadow-[3px_3px_0_0_#FDBF1D] items-center justify-center text-[#111827] group-hover:bg-[#FDBF1D] group-hover:text-black transition-colors">
+                      <div className="hidden sm:flex w-12 h-12 rounded-[14px] bg-white border border-gray-200 shadow-sm items-center justify-center text-[#111827] group-hover:bg-[#FDBF1D] transition-colors">
                         <User size={20} strokeWidth={2.5} />
                       </div>
                       <span className="font-black text-[#111827] text-[13px] sm:text-[15px] tracking-tight">{user.username}</span>
                     </div>
                   </td>
                   <td className="px-4 py-4 sm:px-8 sm:py-6">
-                    <span className={`px-3 py-1.5 sm:px-4 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest border-2 flex items-center gap-1 sm:gap-2 w-max shadow-[3px_3px_0_0_#1f1e1d] ${
+                    <span className={`px-3 py-1.5 sm:px-4 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1 sm:gap-2 w-max shadow-sm ${
                       user.role === 'superadmin' 
-                        ? 'bg-[#111827] text-white border-[#1f1e1d]' 
-                        : 'bg-[#FDBF1D] text-[#111827] border-[#1f1e1d]'
+                        ? 'bg-[#111827] text-white border-transparent' 
+                        : 'bg-[#FDBF1D] text-[#111827] border-transparent'
                     }`}>
                       {user.role === 'superadmin' ? <ShieldCheck size={14} className="scale-90 sm:scale-100" strokeWidth={3} /> : <Store size={14} className="scale-90 sm:scale-100" strokeWidth={3} />}
                       {user.role === 'superadmin' ? 'SUPER ADMIN' : 'YÖNETİCİ'}
@@ -248,8 +265,8 @@ export default function UsersPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6">
-          <div className="bg-white rounded-[24px] sm:rounded-[40px] border-[3px] sm:border-[4px] border-[#1f1e1d] shadow-[12px_14px_0_0_#FDBF1D] sm:shadow-[20px_24px_0_0_#FDBF1D] w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 sm:p-10 border-b-[3px] border-[#1f1e1d] bg-[#FCFBF7]">
+          <div className="bg-white rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 sm:p-10 border-b border-gray-100 bg-[#FCFBF7]">
               <h2 className="text-xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">
                 {editingId ? 'Hesabı Düzenle' : 'Yeni Yetkili Ekle'}
               </h2>
@@ -260,7 +277,7 @@ export default function UsersPage() {
             
             <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-6 sm:space-y-8 overflow-y-auto no-scrollbar">
               {error && (
-                <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-xs font-black border-2 border-red-500/20 shadow-[0_4px_0_0_#ef4444] text-center uppercase tracking-widest">
+                <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-xs font-bold border border-red-200 text-center uppercase tracking-widest">
                   {error}
                 </div>
               )}
@@ -274,7 +291,7 @@ export default function UsersPage() {
                     disabled={!!editingId} // Kullanıcı adı değiştirilemez (Prisma unique constrain)
                     value={formData.username}
                     onChange={(e) => setFormData({...formData, username: e.target.value.toLowerCase()})}
-                    className={`w-full px-6 py-4 rounded-2xl border-2 border-[#1f1e1d] bg-[#FCFBF7] focus:border-[#FDBF1D] outline-none text-[15px] font-bold transition-all ${editingId ? 'opacity-50 cursor-not-allowed shadow-none' : 'shadow-[4px_4px_0_0_#1f1e1d]'}`}
+                    className={`w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold transition-all shadow-sm ${editingId ? 'opacity-50 cursor-not-allowed shadow-none' : ''}`}
                   />
                 </div>
                 <div className="space-y-2">
@@ -287,7 +304,7 @@ export default function UsersPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     placeholder={editingId ? 'Değişmeyecekse boş bırakın' : '••••••••'}
-                    className="w-full px-6 py-4 rounded-2xl border-2 border-[#1f1e1d] bg-[#FCFBF7] focus:border-[#FDBF1D] outline-none text-[15px] font-bold shadow-[4px_4px_0_0_#1f1e1d] transition-all placeholder:text-[13px] placeholder:font-medium"
+                    className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold shadow-sm transition-all placeholder:text-[13px] placeholder:font-medium"
                   />
                 </div>
               </div>
@@ -297,7 +314,7 @@ export default function UsersPage() {
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value, restaurantId: ''})}
-                  className="w-full px-6 py-4 rounded-2xl border-2 border-[#1f1e1d] bg-[#FCFBF7] outline-none text-sm font-black uppercase tracking-widest appearance-none cursor-pointer shadow-[4px_4px_0_0_#1f1e1d]"
+                  className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
                 >
                   <option value="manager">İŞLETME YÖNETİCİSİ / SAHİBİ</option>
                   <option value="superadmin">SUPER ADMIN (SİSTEM GENELİ)</option>
@@ -305,8 +322,8 @@ export default function UsersPage() {
               </div>
 
               {formData.role === 'manager' && (
-                <div className="bg-[#FCFBF7] rounded-[32px] p-8 border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] space-y-8">
-                  <div className="flex gap-4 p-2 bg-white border-2 border-[#1f1e1d] rounded-2xl">
+                <div className="bg-gray-50 rounded-[24px] p-6 sm:p-8 border border-gray-100 shadow-sm space-y-6 sm:space-y-8">
+                  <div className="flex gap-4 p-2 bg-white border border-gray-200 shadow-sm rounded-xl">
                     <button
                       type="button"
                       disabled={!!editingId}
@@ -333,7 +350,7 @@ export default function UsersPage() {
                         required={!isNewRestaurant}
                         value={formData.restaurantId}
                         onChange={(e) => setFormData({...formData, restaurantId: e.target.value})}
-                        className="w-full px-5 py-4 rounded-xl border-2 border-[#1f1e1d] bg-white text-sm font-black uppercase tracking-widest appearance-none cursor-pointer"
+                        className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FDBF1D] bg-white text-sm font-bold shadow-sm uppercase tracking-widest appearance-none cursor-pointer outline-none"
                       >
                         <option value="">İŞLETME SEÇİN...</option>
                         {restaurants.map(r => (
@@ -351,7 +368,7 @@ export default function UsersPage() {
                           value={restaurantData.name}
                           onChange={(e) => handleNameChange(e.target.value)}
                           placeholder="Örn: Mamma's Burger Ankara"
-                          className="w-full px-5 py-4 rounded-xl border-2 border-[#1f1e1d] bg-white outline-none text-sm font-bold"
+                          className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FDBF1D] shadow-sm bg-white outline-none text-sm font-bold"
                         />
                       </div>
                       <div className="space-y-2">
@@ -364,7 +381,7 @@ export default function UsersPage() {
                             value={restaurantData.slug}
                             onChange={(e) => setRestaurantData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
                             placeholder="mammas-burger"
-                            className="flex-1 px-5 py-4 rounded-xl border-2 border-[#1f1e1d] bg-white outline-none text-sm font-black tracking-tight"
+                            className="flex-1 px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FDBF1D] shadow-sm bg-white outline-none text-sm font-bold tracking-tight"
                           />
                         </div>
                       </div>
@@ -384,9 +401,9 @@ export default function UsersPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center gap-3 bg-[#111827] text-white px-10 py-4 rounded-2xl text-xs font-black uppercase tracking-widest border-2 border-[#1f1e1d] shadow-[0_6px_0_0_#000] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-3 bg-[#111827] text-white px-10 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-sm hover:scale-95 transition-all disabled:opacity-50"
                 >
-                  {isSubmitting ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <Plus size={20} strokeWidth={3} />}
+                  {isSubmitting ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <Plus size={20} className={editingId ? 'rotate-45' : ''} strokeWidth={3} />}
                   {editingId ? 'GÜNCELLEMEYİ KAYDET' : 'HESABI OLUŞTUR'}
                 </button>
               </div>

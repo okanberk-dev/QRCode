@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, LogOut, Store, QrCode, Users, Clock, Crown } from 'lucide-react';
+import { LayoutDashboard, LogOut, Store, QrCode, Users, Clock, Crown, UsersRound, Globe } from 'lucide-react';
 import Link from 'next/link';
+import { useAdminTranslation } from './AdminTranslationProvider';
 
 interface AdminProfile {
   id: string;
@@ -27,6 +28,7 @@ function getTrialInfo(trialEndsAt: string | null | undefined): { daysLeft: numbe
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const { t, locale, setLocale } = useAdminTranslation();
   const [role, setRole] = useState('superadmin');
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -51,13 +53,14 @@ export default function AdminSidebar() {
   };
 
   const menuItems = [
-    { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/restaurants', icon: Store, label: 'Restoranlar', roles: ['superadmin', 'restaurant_owner'] },
-    { href: '/admin/qr', icon: QrCode, label: 'QR Kodlar', roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
+    { href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
   ];
 
   if (role === 'superadmin') {
-    menuItems.push({ href: '/admin/users', icon: Users, label: 'Kullanıcılar', roles: ['superadmin'] } as any);
+    menuItems.push({ href: '/admin/users', icon: Users, label: t('users'), roles: ['superadmin'] } as any);
+    menuItems.push({ href: '/admin/customers', icon: UsersRound, label: t('customers'), roles: ['superadmin'] } as any);
   }
 
   const roleLabel = role === 'superadmin' ? 'Superadmin' : role === 'restaurant_owner' ? 'Restoran Sahibi' : 'Restoran Yetkilisi';
@@ -77,7 +80,7 @@ export default function AdminSidebar() {
       {/* ─── Logo ─── */}
       <div className="p-6 border-b border-white/10 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#FDBF1D] border-2 border-[#1f1e1d] flex items-center justify-center text-[#111827] font-black text-2xl leading-none flex-shrink-0 shadow-[0_4px_0_0_#1f1e1d]">
+          <div className="w-10 h-10 rounded-xl bg-[#FDBF1D] flex items-center justify-center text-[#111827] font-black text-2xl leading-none flex-shrink-0 shadow-sm">
             B
           </div>
           <div className="flex-1 min-w-0">
@@ -97,10 +100,10 @@ export default function AdminSidebar() {
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-black text-sm border-2 ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-black text-sm border border-transparent ${
                 isActive
-                  ? 'bg-[#FDBF1D] text-[#111827] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] translate-y-[-2px]'
-                  : 'text-gray-400 border-transparent hover:bg-white/5 hover:text-white'
+                  ? 'bg-[#FDBF1D] text-[#111827] shadow-sm'
+                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
               <item.icon size={20} className={isActive ? 'text-[#111827]' : 'text-gray-500 group-hover:text-white'} strokeWidth={2.5} />
@@ -136,12 +139,27 @@ export default function AdminSidebar() {
           </div>
         </div>
 
+        <div className="pt-2 pb-3 mb-2 border-b border-white/10 flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <Globe size={14} className="text-gray-400" />
+            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">{t('system_language')}</span>
+          </div>
+          <select 
+            value={locale}
+            onChange={(e: any) => setLocale(e.target.value)}
+            className="bg-white/10 text-white text-xs border-none rounded-lg px-2 py-1 outline-none font-bold"
+          >
+            <option value="tr" className="text-black">TR</option>
+            <option value="en" className="text-black">EN</option>
+          </select>
+        </div>
+
         <button
           onClick={handleLogout}
-          className="flex items-center justify-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500 hover:text-white rounded-2xl transition-all w-full text-xs font-black border-2 border-transparent hover:border-red-600 active:translate-y-1"
+          className="flex items-center justify-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-2xl transition-all w-full text-sm font-bold border border-transparent active:scale-95"
         >
           <LogOut size={16} strokeWidth={2.5} />
-          Çıkış Yap
+          {t('logout')}
         </button>
       </div>
     </div>
@@ -150,17 +168,17 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 bg-[#111827] border-r-4 border-[#1f1e1d] flex-col h-full z-30">
+      <aside className="hidden md:flex w-64 bg-[#111827] border-r border-white/5 flex-col h-full z-30">
         <SidebarContent />
       </aside>
 
       {/* Mobile Top Bar */}
-      <div className="md:hidden bg-[#111827] border-b-4 border-[#1f1e1d] px-5 py-4 flex items-center justify-between sticky top-0 z-40">
+      <div className="md:hidden bg-[#111827] border-b border-white/10 px-5 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#FDBF1D] border-2 border-[#1f1e1d] flex items-center justify-center text-[#111827] font-black text-lg shadow-[0_2px_0_0_#1f1e1d]">B</div>
+          <div className="w-8 h-8 rounded-lg bg-[#FDBF1D] flex items-center justify-center text-[#111827] font-black text-lg shadow-sm">B</div>
           <span className="text-white font-black text-lg tracking-tight">Buaze</span>
         </div>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white p-2 bg-white/5 border-2 border-white/10 rounded-xl">
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white p-2 hover:bg-white/5 transition-colors rounded-xl">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {mobileOpen
               ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
@@ -172,7 +190,7 @@ export default function AdminSidebar() {
       {/* Mobile Drawer */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="w-72 bg-[#111827] h-full flex flex-col border-r-4 border-[#1f1e1d]">
+          <div className="w-72 bg-[#111827] h-full flex flex-col border-r border-white/10 shadow-2xl">
             <SidebarContent />
           </div>
           <div className="flex-1 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />

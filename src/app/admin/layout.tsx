@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { verifyJwt } from '@/lib/auth';
+import { AdminTranslationProvider } from '@/components/admin/AdminTranslationProvider';
 
 export default async function AdminLayout({
   children,
@@ -10,6 +11,7 @@ export default async function AdminLayout({
 }) {
   const cookieStore = await cookies();
   const token = cookieStore.get('admin_token')?.value;
+  const adminLocale = cookieStore.get('ADMIN_LOCALE')?.value || 'tr';
 
   let isAuthenticated = false;
   let payload: any = null;
@@ -38,13 +40,15 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-[#FCFBF7] overflow-hidden font-sans selection:bg-[#FDBF1D]/30">
-      {isAuthenticated && <AdminSidebar />}
-      <div className={`flex-1 overflow-auto flex flex-col ${!isAuthenticated ? 'items-center justify-center p-4 sm:p-6' : 'p-4 sm:p-10'}`}>
-        <div className={isAuthenticated ? "max-w-7xl mx-auto w-full" : "w-full"}>
-          {children}
+    <AdminTranslationProvider initialLocale={adminLocale}>
+      <div className="flex flex-col md:flex-row h-screen bg-[#FCFBF7] overflow-hidden font-sans selection:bg-[#FDBF1D]/30">
+        {isAuthenticated && <AdminSidebar />}
+        <div className={`flex-1 overflow-auto flex flex-col ${!isAuthenticated ? 'items-center justify-center p-4 sm:p-6' : 'p-4 sm:p-10'}`}>
+          <div className={isAuthenticated ? "max-w-7xl mx-auto w-full" : "w-full"}>
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </AdminTranslationProvider>
   );
 }
