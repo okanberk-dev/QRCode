@@ -1,4 +1,9 @@
+import type { Metadata } from 'next';
 import { ShieldCheck, Mail, Smartphone, Bell, Zap } from 'lucide-react';
+import { getTranslations } from '@/lib/translations';
+import type { Locale } from '@/lib/translations';
+import MarketingNavbar from '@/components/marketing/MarketingNavbar';
+import MarketingFooter from '@/components/marketing/MarketingFooter';
 
 export async function generateMetadata({
   params,
