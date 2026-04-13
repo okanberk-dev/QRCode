@@ -284,6 +284,8 @@ export default function AdminDashboard() {
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
                 className="p-3 rounded-2xl border border-gray-200 bg-white text-gray-700 disabled:opacity-30 shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-[0px]"
+                aria-label="Önceki sayfa"
+                title="Önceki sayfa"
               >
                 <ArrowRight size={20} className="rotate-180" strokeWidth={2.5} />
               </button>
@@ -294,6 +296,8 @@ export default function AdminDashboard() {
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
                 className="p-3 rounded-2xl border border-gray-200 bg-white text-gray-700 disabled:opacity-30 shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-[0px]"
+                aria-label="Sonraki sayfa"
+                title="Sonraki sayfa"
               >
                 <ArrowRight size={20} strokeWidth={2.5} />
               </button>

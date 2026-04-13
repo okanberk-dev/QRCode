@@ -203,6 +203,7 @@ export default function RestaurantsPage() {
                     onClick={() => toggleActive(r.id, r.isActive)}
                     className={`transition-all active:scale-90 ${r.isActive ? 'text-[#10b981]' : 'text-[#ada89f]'}`}
                     title={r.isActive ? 'Pasifleştir' : 'Aktifleştir'}
+                    aria-label={r.isActive ? 'Restoranı pasifleştir' : 'Restoranı aktifleştir'}
                   >
                     {r.isActive ? (
                       <ToggleRight size={44} strokeWidth={1.5} />
@@ -241,6 +242,8 @@ export default function RestaurantsPage() {
                     href={`/r/${r.slug}`}
                     target="_blank"
                     className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-500 bg-white hover:text-gray-900 border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95 shrink-0"
+                    aria-label={`${r.name} geri bildirim sayfasını yeni sekmede aç`}
+                    title="Geri bildirim sayfasını yeni sekmede aç"
                   >
                     <ExternalLink size={18} strokeWidth={2.5} />
                   </Link>

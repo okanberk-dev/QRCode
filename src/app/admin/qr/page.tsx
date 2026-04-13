@@ -214,6 +214,8 @@ function QRPageContent() {
                 <button
                   onClick={copyUrl}
                   className={`p-2 rounded-xl border-2 transition-all ${copied ? 'bg-green-500 border-green-400 text-white' : 'bg-white/10 border-white/10 text-white/50 hover:bg-white/20'}`}
+                  aria-label={copied ? 'Bağlantı kopyalandı' : 'QR hedef bağlantısını kopyala'}
+                  title={copied ? 'Kopyalandı' : 'Bağlantıyı kopyala'}
                 >
                   {copied ? <Check size={16} strokeWidth={3} /> : <Copy size={16} strokeWidth={3} />}
                 </button>
@@ -242,6 +244,8 @@ function QRPageContent() {
                 onClick={generateQR}
                 disabled={generating || !selectedId}
                 className="flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-gray-900 transition-all disabled:opacity-30 border border-gray-200 px-5 py-2.5 rounded-xl bg-white shadow-sm hover:bg-gray-50 active:scale-95 uppercase tracking-widest"
+                aria-label="QR kod önizlemesini yenile"
+                title="Önizlemeyi yenile"
               >
                 <RefreshCw size={14} strokeWidth={2.5} className={generating ? 'animate-spin' : ''} />
                 YENİLE
