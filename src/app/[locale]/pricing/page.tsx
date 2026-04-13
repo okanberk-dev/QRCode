@@ -301,11 +301,5 @@ export default async function PricingPage({
       <MarketingFooter locale={locale} t={t} />
     </div>
   );
-}]">
-        <PricingFaq faqs={faqs} title={t.faq_title} subtitle={t.faq_subtitle} />
-      </div>
-
-      <MarketingFooter locale={locale} t={t} />
-    </div>
-  );
 }
+
