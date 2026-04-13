@@ -268,7 +268,7 @@ function SlugContent() {
                     ))}
                   </div>
                   <p className="text-sm font-bold text-blue-600 bg-blue-50 px-4 py-1.5 rounded-full uppercase tracking-widest">
-                    {rating} / 5 YILDIZ
+                    {rating} {t('feedback_rating_stars')}
                   </p>
                 </div>
 
