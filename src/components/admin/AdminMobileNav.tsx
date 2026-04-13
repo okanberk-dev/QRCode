@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Store, QrCode, UsersRound, User, Menu } from 'lucide-react';
+import { LayoutDashboard, Store, QrCode, UsersRound, User, Menu, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
 
