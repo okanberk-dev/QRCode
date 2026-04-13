@@ -382,63 +382,124 @@ export default async function LandingPage({
       {/* ═══════ Customer Testimonials ═══════ */}
       <CustomerTestimonials locale={locale} />
 
-      {/* ═══════ Trust / Why Buaze Section ═══════ */}
-      <section className="py-16 sm:py-24 px-5 sm:px-8 bg-[#FCFBF7]">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="bg-[#1f1e1d] rounded-2xl p-8 sm:p-12 lg:p-16 relative overflow-hidden text-white">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-[#FDBF1D]/8 blur-[80px] rounded-full -mr-40 -mt-40" />
-            <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-14 items-center">
-              <div className="space-y-6">
-                <h2 className="text-[32px] sm:text-[42px] lg:text-[48px] font-extrabold leading-[1.1] tracking-[-0.03em]">
-                  {locale === 'tr' ? 'Neden Buaze Farklı?' : 'Why is Buaze Different?'}
-                </h2>
-                <div className="space-y-5 text-[#ada89f] text-[15px] sm:text-[16px] leading-relaxed">
-                  <p className="font-medium">
+      {/* ═══════ Trust / Why Buaze Section (3D Redesign) ═══════ */}
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FCFBF7]">
+        <div className="max-w-[1240px] mx-auto">
+          <div className="relative bg-[#1f1e1d] rounded-[32px] sm:rounded-[48px] p-8 sm:p-14 lg:p-20 border-[3px] border-[#1f1e1d] shadow-[16px_20px_0_0_#FDBF1D] overflow-visible">
+            {/* Background Accent */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ea580c]/10 blur-[120px] rounded-full -mr-32 -mt-32 pointer-events-none" />
+            
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
+              {/* Left Content Column */}
+              <div className="lg:col-span-6 space-y-10">
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 bg-[#FDBF1D] text-[#1f1e1d] px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.1em] border-2 border-[#1f1e1d] shadow-[3px_4px_0_0_#1f1e1d]">
+                    <ShieldCheck size={16} />
+                    {locale === 'tr' ? 'RAKİPSİZ KORUMA' : 'UNRIVALED PROTECTION'}
+                  </div>
+                  <h2 className="text-[36px] sm:text-[48px] lg:text-[56px] font-extrabold text-white leading-[1.05] tracking-[-0.04em]">
+                    {locale === 'tr' ? 'Dijital İtibarınızın' : 'Your Digital Reputation\'s'}<br />
+                    <span className="text-[#FDBF1D]">{locale === 'tr' ? 'Komuta Merkezi' : 'Command Center'}</span>
+                  </h2>
+                  <p className="text-[16px] sm:text-[18px] text-[#ada89f] font-medium leading-relaxed max-w-[500px]">
                     {locale === 'tr'
-                      ? 'Buaze, sadece bir yorum toplama aracı değildir. İşletmenizin dijital dünyadaki kalkanı ve büyüme motorudur.'
-                      : 'Buaze is not just a review collection tool. It is your business\'s digital shield and growth engine.'}
+                      ? 'Buaze sadece veri toplamaz; itibarınızı proaktif bir zırh gibi korur ve her etkileşimi kalıcı bir güvene dönüştürür.'
+                      : 'Buaze doesn\'t just collect data; it protects your reputation like a proactive shield and turns every interaction into lasting trust.'}
                   </p>
-                  <ul className="space-y-4">
-                    {[
-                      { t: locale === 'tr' ? 'Akıllı Filtreleme Algoritması' : 'Smart Filtering Algorithm', d: locale === 'tr' ? 'Olumsuz geri bildirimleri kamuoyuna yansımadan yakalayın.' : 'Catch negative feedback before it hits the public.' },
-                      { t: locale === 'tr' ? 'Tam Platform Entegrasyonu' : 'Full Platform Integration', d: locale === 'tr' ? 'Google, TripAdvisor ve Yelp ile kesintisiz veri akışı.' : 'Seamless data flow with Google, TripAdvisor, and Yelp.' },
-                      { t: locale === 'tr' ? 'Gerçek Zamanlı Analitik' : 'Real-time Analytics', d: locale === 'tr' ? 'Müşteri memnuniyetini anlık grafiklerle takip edin.' : 'Track customer satisfaction with instant charts.' }
-                    ].map((li, i) => (
-                      <li key={i} className="flex gap-3 items-start">
-                        <div className="w-5 h-5 rounded-full bg-[#FDBF1D] flex-shrink-0 mt-1 flex items-center justify-center">
-                           <CheckCircle2 size={14} className="text-[#1f1e1d]" strokeWidth={3} />
-                        </div>
-                        <div>
-                           <span className="block font-bold text-white text-[16px]">{li.t}</span>
-                           <span className="text-[13px] opacity-80">{li.d}</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6">
+                  {[
+                    { 
+                      title: locale === 'tr' ? 'Proaktif Kriz Önleme' : 'Proactive Crisis Prevention', 
+                      desc: locale === 'tr' ? 'Düşük puanlı yorumları daha internete düşmeden yakalayan akıllı kalkan.' : 'An intelligent shield that catches low-rated reviews before they hit the web.',
+                      icon: <Zap size={20} className="text-[#FDBF1D]" />
+                    },
+                    { 
+                      title: locale === 'tr' ? 'Puanınızı Domine Edin' : 'Dominate Your Score', 
+                      desc: locale === 'tr' ? 'Google, TripAdvisor ve Yelp üzerinde organik ve hızlı puan artışı sağlayın.' : 'Achieve organic and rapid score increases on Google, TripAdvisor, and Yelp.',
+                      icon: <Trophy size={20} className="text-[#ea580c]" />
+                    }
+                  ].map((item, i) => (
+                    <div key={i} className="group flex gap-5 bg-white/5 border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-all hover:translate-x-2">
+                      <div className="flex-shrink-0 w-12 h-12 bg-white/5 rounded-xl border border-white/20 flex items-center justify-center">
+                        {item.icon}
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-[17px] font-extrabold text-white">{item.title}</h4>
+                        <p className="text-[13px] text-[#6b6760]">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="relative">
-                 <div className="bg-[#1a1a1a] rounded-3xl border-[2.5px] border-[#3d3a36] p-6 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]">
-                    <div className="grid grid-cols-2 gap-4">
-                       <div className="bg-[#FDBF1D]/10 p-5 rounded-2xl border border-[#FDBF1D]/20">
-                          <div className="text-[28px] font-black text-[#FDBF1D]">+400%</div>
-                          <div className="text-[10px] font-bold text-[#6b6760] uppercase tracking-wider">{locale === 'tr' ? 'Yorum Artışı' : 'Review Boost'}</div>
-                       </div>
-                       <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
-                          <div className="text-[28px] font-black text-white">4.9/5</div>
-                          <div className="text-[10px] font-bold text-[#6b6760] uppercase tracking-wider">{locale === 'tr' ? 'AVG Puan' : 'AVG Rating'}</div>
-                       </div>
-                       <div className="col-span-2 bg-white/5 p-5 rounded-2xl border border-white/10">
-                          <div className="flex justify-between items-end mb-2">
-                             <div className="text-[12px] font-bold text-white">{locale === 'tr' ? 'Müşteri Güveni' : 'Customer Trust'}</div>
-                             <div className="text-[12px] font-bold text-[#FDBF1D]">98%</div>
-                          </div>
-                          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                             <div className="h-full w-[98%] bg-[#FDBF1D]" />
-                          </div>
-                       </div>
+
+              {/* Right Visual Column (3D Dash) */}
+              <div className="lg:col-span-6 relative flex justify-center lg:justify-end">
+                {/* Floating Metric Chips */}
+                <div className="absolute -top-10 lg:-top-20 -left-4 lg:-left-10 z-[40] transform hover:-translate-y-2 transition-transform cursor-default">
+                  <div className="bg-white px-6 py-4 rounded-2xl border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#ea580c]">
+                    <div className="text-[10px] font-black text-[#6b6760] uppercase mb-1">{locale === 'tr' ? 'CANLI ANALİZ' : 'LIVE ANALYTICS'}</div>
+                    <div className="text-[24px] font-black text-[#1f1e1d] flex items-center gap-2">
+                       <span className="w-2.5 h-2.5 bg-[#16A34A] rounded-full animate-pulse" />
+                       98.5%
                     </div>
-                 </div>
+                  </div>
+                </div>
+
+                {/* Main 3D Browser Mockup */}
+                <div className="relative w-full max-w-[500px] h-[360px] sm:h-[440px] bg-[#1a1a1a] rounded-[32px] border-[3px] border-[#3d3a36] shadow-[24px_32px_0_0_rgba(0,0,0,0.5)] transform lg:rotate-[-2deg] flex flex-col overflow-hidden">
+                   {/* Browser Bar */}
+                   <div className="bg-[#1f1e1d] border-b border-[#3d3a36] p-4 flex gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
+                   </div>
+                   
+                   {/* Mock Content */}
+                   <div className="p-6 sm:p-8 space-y-6 flex-1 text-left">
+                      <div className="space-y-3">
+                         <div className="h-4 bg-white/10 w-1/3 rounded-full" />
+                         <div className="flex gap-2">
+                            {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#FDBF1D" strokeWidth={0} />)}
+                         </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
+                            <div className="text-[10px] text-[#6b6760] font-bold uppercase">{locale === 'tr' ? 'YORUMLAR' : 'REVIEWS'}</div>
+                            <div className="text-[20px] font-black text-white">+142</div>
+                         </div>
+                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
+                            <div className="text-[10px] text-[#6b6760] font-bold uppercase">{locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION'}</div>
+                            <div className="text-[20px] font-black text-[#FDBF1D]">99%</div>
+                         </div>
+                      </div>
+
+                      <div className="bg-white/5 p-5 rounded-xl border border-white/10">
+                         <div className="flex justify-between items-center mb-4">
+                            <div className="h-3 bg-white/10 w-1/4 rounded-full" />
+                            <div className="h-3 bg-[#FDBF1D]/20 w-10 rounded-full" />
+                         </div>
+                         <div className="space-y-2">
+                            <div className="h-2 bg-white/5 w-full rounded-full overflow-hidden">
+                               <div className="h-full w-[85%] bg-[#FDBF1D] shadow-[0_0_15px_rgba(253,191,29,0.3)]" />
+                            </div>
+                            <div className="h-2 bg-white/5 w-full rounded-full overflow-hidden">
+                               <div className="h-full w-[65%] bg-[#ea580c] opacity-60" />
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+
+                   {/* Floating Bottom Badge */}
+                   <div className="absolute bottom-6 right-6 lg:-right-10 transform translate-x-2 z-[40]">
+                      <div className="bg-[#FDBF1D] text-[#1f1e1d] p-5 rounded-2xl border-[3px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] flex flex-col items-center gap-1 group cursor-default">
+                         <Zap size={24} fill="#1f1e1d" className="group-hover:scale-110 transition-transform" />
+                         <span className="text-[11px] font-black uppercase tracking-widest">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
+                      </div>
+                   </div>
+                </div>
               </div>
             </div>
           </div>
