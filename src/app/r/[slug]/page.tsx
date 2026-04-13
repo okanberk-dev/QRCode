@@ -176,10 +176,9 @@ function SlugContent() {
             </div>
           </div>
           
-          <div className="w-64 h-1.5 bg-gray-100 rounded-full overflow-hidden mb-4">
+          <div className="w-64 h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div className="h-full bg-blue-500 rounded-full animate-[progressBar_2s_linear_forwards]" />
           </div>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{t('feedback_via_google')}</p>
           
           <style jsx>{`
             @keyframes progressBar {
@@ -202,10 +201,6 @@ function SlugContent() {
             </button>
             <div className="flex-1 min-w-0">
               <h1 className="text-base font-bold text-gray-900 truncate tracking-tight">{restaurant.name}</h1>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{t('feedback_via_google')}</p>
-              </div>
             </div>
           </div>
           <div className="flex items-center">
