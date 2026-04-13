@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Star, Loader2, MapPin, ChevronRight } from 'lucide-react';
+import { Star, Loader2, MapPin, ChevronRight, Lock } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import FeedbackForm from '@/components/FeedbackForm';
 import ThankYou from '@/components/ThankYou';

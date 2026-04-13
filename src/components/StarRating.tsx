@@ -57,7 +57,7 @@ export default function StarRating({ rating, onRatingChange, t }: StarRatingProp
       <div className="h-6 flex items-center justify-center">
         {active > 0 && labels[active] && (
           <span className="text-sm font-medium text-gray-600">
-            {labels[active].text}
+            {labels[active]}
           </span>
         )}
       </div>
