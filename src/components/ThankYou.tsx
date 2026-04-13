@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, ExternalLink } from 'lucide-react';
+import { CheckCircle, ExternalLink, Heart } from 'lucide-react';
 
 interface ThankYouProps {
   rating?: number;
@@ -12,47 +12,58 @@ export default function ThankYou({ rating, googleReviewUrl }: ThankYouProps) {
   const hasGoogleUrl = !!googleReviewUrl;
 
   return (
-    <div className="w-full max-w-md mx-auto text-center animate-fade-in">
+    <div className="w-full max-w-sm mx-auto text-center">
       {/* Success Icon */}
-      <div className="flex justify-center mb-6">
+      <div className="flex justify-center mb-7">
         <div className="relative">
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center ${isLowRating ? 'bg-orange-50' : 'bg-green-50'}`}>
+          {/* Outer glow ring */}
+          <div className={`absolute -inset-3 rounded-full opacity-20 animate-pulse ${isLowRating ? 'bg-orange-400' : 'bg-green-400'}`} />
+          <div className={`relative w-20 h-20 rounded-full flex items-center justify-center shadow-lg ${
+            isLowRating 
+              ? 'bg-gradient-to-br from-orange-50 to-orange-100 shadow-orange-100' 
+              : 'bg-gradient-to-br from-green-50 to-green-100 shadow-green-100'
+          }`}>
             <CheckCircle
-              size={44}
+              size={40}
               className={isLowRating ? 'text-orange-500' : 'text-green-500'}
-              strokeWidth={1.8}
+              strokeWidth={1.5}
             />
           </div>
-          <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 text-lg">
+          {/* Emoji badge */}
+          <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md border border-gray-100 text-lg">
             {isLowRating ? '🙏' : '🎉'}
           </div>
         </div>
       </div>
 
       {/* Title & Message */}
-      <h2 className="text-2xl font-bold text-[#111827] mb-3">
+      <h2 className="text-xl sm:text-2xl font-bold text-[#111827] mb-2.5">
         {isLowRating ? 'Görüşünüz Alındı' : 'Teşekkür Ederiz!'}
       </h2>
 
-      <p className="text-gray-500 mb-8 text-base leading-relaxed px-4">
+      <p className="text-gray-500 mb-8 text-sm sm:text-base leading-relaxed px-2">
         {isLowRating
-          ? 'Geri bildiriminiz bizim için çok değerli. Yaşadığınız sorunu en kısa sürede inceleyip iyileştireceğiz.'
+          ? 'Geri bildiriminiz bizim için çok değerli. Yaşadığınız sorunu en kısa sürede inceleyeceğiz.'
           : 'Güzel puanlamanız için çok teşekkürler! Sizi tekrar ağırlamaktan mutluluk duyarız.'}
       </p>
 
-      {/* Google CTA — shown for all ratings if google URL exists */}
+      {/* Google CTA */}
       {hasGoogleUrl && (
-        <div className={`rounded-2xl p-5 border ${isLowRating ? 'bg-gray-50 border-gray-100' : 'bg-[#FDBF1D]/5 border-[#FDBF1D]/20'}`}>
-          <p className="text-sm font-medium text-gray-600 mb-3">
+        <div className={`rounded-2xl p-5 sm:p-6 border ${
+          isLowRating 
+            ? 'bg-gray-50 border-gray-100' 
+            : 'bg-gradient-to-br from-[#FDBF1D]/5 to-[#EAB308]/5 border-[#FDBF1D]/15'
+        }`}>
+          <p className="text-sm font-medium text-gray-600 mb-4">
             {isLowRating
               ? 'Deneyiminizi Google\'da da paylaşmak ister misiniz?'
-              : 'Yorumunuzu Google\'da da paylaşın, diğer misafirlere yardımcı olun!'}
+              : 'Yorumunuzu Google\'da da paylaşın!'}
           </p>
           <a
             href={googleReviewUrl!}
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center justify-center gap-2.5 font-semibold px-6 py-3 rounded-xl shadow-sm transition-all text-sm ${
+            className={`inline-flex items-center justify-center gap-2.5 font-bold px-6 py-3.5 rounded-xl shadow-sm transition-all text-sm active:scale-[0.98] w-full sm:w-auto ${
               isLowRating
                 ? 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md'
                 : 'bg-white border border-gray-200 text-gray-800 hover:shadow-md'
@@ -66,16 +77,18 @@ export default function ThankYou({ rating, googleReviewUrl }: ThankYouProps) {
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
             Google&apos;da Yorum Yap
-            <ExternalLink size={13} className="opacity-60" />
+            <ExternalLink size={13} className="opacity-50" />
           </a>
         </div>
       )}
 
-      {/* KVKK Footer */}
-      <p className="text-xs text-gray-400 mt-6 px-4 leading-relaxed">
-        Bu değerlendirme anonim olarak iletilmiştir. Kişisel veri toplanmamaktadır.{' '}
-        <a href="/gizlilik" target="_blank" className="underline hover:text-gray-600">Gizlilik Politikası</a>
-      </p>
+      {/* Warm footer */}
+      <div className="flex items-center justify-center gap-1.5 mt-8 text-gray-300">
+        <Heart size={12} className="fill-current" />
+        <p className="text-[10px] sm:text-[11px]">
+          Anonim değerlendirmeniz güvenle iletildi
+        </p>
+      </div>
     </div>
   );
 }
