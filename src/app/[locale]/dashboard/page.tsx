@@ -136,7 +136,7 @@ export default async function DashboardPage({
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-14 space-y-14">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-14 space-y-10 sm:space-y-14">
         {/* Welcome */}
         <div className="space-y-3">
           <div className="inline-block px-4 py-1.5 bg-[#FDBF1D] text-[#1f1e1d] border-2 border-[#1f1e1d] rounded-full text-[11px] font-black uppercase tracking-widest mb-2 shadow-[2px_2px_0_0_#1f1e1d]">
@@ -166,7 +166,7 @@ export default async function DashboardPage({
         )}
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {[
             { label: locale === 'tr' ? 'Toplam Yorum' : 'Total Reviews', val: totalReviews, icon: <Star size={24} />, shadow: '#FDBF1D', link: `/${locale}/dashboard/feedbacks` },
             { label: locale === 'tr' ? 'Bugün Gelen' : 'Today\'s Feedbacks', val: todayReviews, icon: <Calendar size={24} />, shadow: '#3b82f6', link: `/${locale}/dashboard/feedbacks?days=1` },
@@ -174,16 +174,16 @@ export default async function DashboardPage({
             { label: locale === 'tr' ? 'QR Aktif' : 'Active QR', val: user.restaurants.filter(r => r.isActive).length, icon: <QrCode size={24} />, shadow: '#a855f7' },
           ].map(stat => (
             stat.link ? (
-              <Link key={stat.label} href={stat.link} className="bg-white rounded-[28px] p-7 border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] group hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-[#1f1e1d] mb-5 bg-[#FCFBF7] group-hover:bg-[#FDBF1D] transition-colors`}>
+              <Link key={stat.label} href={stat.link} className="bg-white rounded-[24px] sm:rounded-[28px] p-5 sm:p-7 border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] group hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-[#1f1e1d] mb-4 sm:mb-5 bg-[#FCFBF7] group-hover:bg-[#FDBF1D] transition-colors`}>
                   {stat.icon}
                 </div>
                 <div className="text-3xl font-black text-[#1f1e1d] tracking-tighter tabular-nums">{stat.val}</div>
                 <div className="text-[12px] font-black text-[#ada89f] uppercase tracking-widest mt-1">{stat.label}</div>
               </Link>
             ) : (
-              <div key={stat.label} className="bg-white rounded-[28px] p-7 border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d]">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-[#1f1e1d] mb-5 bg-[#FCFBF7]`}>
+              <div key={stat.label} className="bg-white rounded-[24px] sm:rounded-[28px] p-5 sm:p-7 border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d]">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-[#1f1e1d] mb-4 sm:mb-5 bg-[#FCFBF7]`}>
                   {stat.icon}
                 </div>
                 <div className="text-3xl font-black text-[#1f1e1d] tracking-tighter tabular-nums">{stat.val}</div>
@@ -260,7 +260,7 @@ export default async function DashboardPage({
 
         {/* Upgrade CTA */}
         {user.plan === 'trial' && (
-          <div className="bg-[#111827] text-white rounded-[40px] border-[4px] border-[#1f1e1d] p-10 sm:p-14 flex flex-col sm:flex-row items-center justify-between gap-10 shadow-[15px_18px_0_0_#FDBF1D]">
+          <div className="bg-[#111827] text-white rounded-[32px] sm:rounded-[40px] border-[3px] sm:border-[4px] border-[#1f1e1d] p-8 sm:p-14 flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-10 shadow-[8px_10px_0_0_#FDBF1D] sm:shadow-[15px_18px_0_0_#FDBF1D]">
             <div className="space-y-4">
               <h3 className="text-[32px] font-black leading-tight tracking-[-0.03em]">
                 {locale === 'tr' ? 'Kesintisiz İtibar Yönetimi' : 'Uninterrupted Reputation Mgmt'}

@@ -58,8 +58,8 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
   }, [page, filterRating, daysFilter]);
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] font-sans selection:bg-[#FDBF1D]/30 p-4 sm:p-8 md:p-12 lg:p-20">
-      <div className="max-w-6xl mx-auto space-y-12">
+    <div className="min-h-screen bg-[#FCFBF7] font-sans selection:bg-[#FDBF1D]/30 p-4 sm:p-6 md:p-10 lg:p-14">
+      <div className="max-w-6xl mx-auto space-y-8 sm:space-y-12">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div className="space-y-6">
@@ -74,17 +74,17 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
             </Link>
             
             <div className="space-y-2">
-              <h1 className="text-[40px] md:text-[56px] font-black text-[#111827] leading-[0.9] tracking-tighter uppercase italic">
+              <h1 className="text-[32px] sm:text-[40px] md:text-[56px] font-black text-[#111827] leading-[1.1] tracking-tighter uppercase italic">
                 {t.feedbacks_title}
               </h1>
-              <p className="text-[17px] text-[#6b6760] font-bold max-w-md italic">
+              <p className="text-[15px] sm:text-[17px] text-[#6b6760] font-bold max-w-md italic">
                 {t.feedbacks_subtitle}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[10px_12px_0_0_#1f1e1d]">
-            <div className="flex items-center gap-2 px-4 border-r-2 border-[#F7F4F0]">
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 bg-white p-4 sm:p-4 rounded-[24px] sm:rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] sm:shadow-[10px_12px_0_0_#1f1e1d] w-full sm:w-auto">
+            <div className="flex items-center gap-2 px-2 sm:px-4 border-b-2 sm:border-b-0 sm:border-r-2 border-[#F7F4F0] pb-3 sm:pb-0 w-full sm:w-auto">
               <Filter size={18} className="text-[#ada89f]" />
               <span className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest">Filtrele</span>
             </div>
@@ -100,7 +100,7 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
               <option value="30">Son 30 Gün</option>
             </select>
 
-            <div className="h-6 w-[2px] bg-[#F7F4F0]" />
+            <div className="hidden sm:block h-6 w-[2px] bg-[#F7F4F0]" />
 
             <select
               value={filterRating}
@@ -121,15 +121,15 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
         {/* Feedback List */}
         <div className="relative">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-40 bg-white rounded-[40px] border-[3px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d]">
+            <div className="flex flex-col items-center justify-center py-24 sm:py-40 bg-white rounded-[24px] sm:rounded-[40px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] sm:shadow-[12px_14px_0_0_#1f1e1d]">
               <Loader2 className="animate-spin text-[#111827] w-12 h-12 mb-4" strokeWidth={3} />
               <span className="text-xs font-black text-[#ada89f] uppercase tracking-[0.3em]">Yükleniyor...</span>
             </div>
           ) : feedbacks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-40 bg-white rounded-[40px] border-[3px] border-dashed border-[#e8e4de] text-center italic">
-              <Calendar size={64} className="text-[#e8e4de] mb-6" />
-              <h3 className="text-2xl font-black text-[#111827] mb-2 uppercase">{t.feedbacks_empty}</h3>
-              <p className="text-[#6b6760] font-bold">Seçili kriterlere uygun değerlendirme bulunamadı.</p>
+            <div className="flex flex-col items-center justify-center py-20 sm:py-40 bg-white rounded-[24px] sm:rounded-[40px] border-[3px] border-dashed border-[#e8e4de] text-center italic p-4">
+              <Calendar size={64} className="text-[#e8e4de] mb-6 scale-75 sm:scale-100" />
+              <h3 className="text-xl sm:text-2xl font-black text-[#111827] mb-2 uppercase">{t.feedbacks_empty}</h3>
+              <p className="text-sm sm:text-base text-[#6b6760] font-bold">Seçili kriterlere uygun değerlendirme bulunamadı.</p>
             </div>
           ) : (
             <div className="space-y-10">

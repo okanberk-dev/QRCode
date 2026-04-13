@@ -96,8 +96,8 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
   }
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] font-sans selection:bg-[#FDBF1D]/30 p-4 sm:p-8 md:p-12 lg:p-20">
-      <div className="max-w-4xl mx-auto space-y-12">
+    <div className="min-h-screen bg-[#FCFBF7] font-sans selection:bg-[#FDBF1D]/30 p-4 sm:p-6 md:p-10 lg:p-16">
+      <div className="max-w-4xl mx-auto space-y-8 sm:space-y-12">
         {/* Back Link */}
         <Link 
           href={`/${locale}/dashboard`}
@@ -106,24 +106,24 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
           <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#1f1e1d] flex items-center justify-center shadow-[2px_2px_0_0_#1f1e1d] group-hover:translate-y-0.5 group-hover:shadow-none transition-all">
             <ArrowLeft size={16} strokeWidth={3} />
           </div>
-          Dashboard'a Dön
+          {locale === 'tr' ? 'Dashboard\'a Dön' : 'Back to Dashboard'}
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Sidebar Info */}
           <div className="space-y-8">
             <div className="space-y-4">
-              <h1 className="text-[40px] font-black text-[#111827] leading-[0.9] tracking-tighter uppercase italic">
+              <h1 className="text-[32px] sm:text-[40px] font-black text-[#111827] leading-[1.1] sm:leading-[0.9] tracking-tighter uppercase italic">
                 {t.profile_title}
               </h1>
-              <p className="text-[17px] text-[#6b6760] font-bold italic">
+              <p className="text-[15px] sm:text-[17px] text-[#6b6760] font-bold italic">
                 {t.profile_subtitle}
               </p>
             </div>
 
-            <div className="p-8 bg-[#111827] rounded-[40px] border-[4px] border-[#1f1e1d] shadow-[12px_14px_0_0_#FDBF1D] space-y-6">
-              <div className="w-16 h-16 rounded-[20px] bg-[#FDBF1D] border-2 border-[#1f1e1d] flex items-center justify-center shadow-[4px_4px_0_0_#1f1e1d]">
-                <ShieldCheck size={32} className="text-[#111827]" strokeWidth={2.5} />
+            <div className="p-6 sm:p-8 bg-[#111827] rounded-[32px] sm:rounded-[40px] border-[3px] sm:border-[4px] border-[#1f1e1d] shadow-[8px_10px_0_0_#FDBF1D] sm:shadow-[12px_14px_0_0_#FDBF1D] space-y-6">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[20px] bg-[#FDBF1D] border-2 border-[#1f1e1d] flex items-center justify-center shadow-[4px_4px_0_0_#1f1e1d]">
+                <ShieldCheck size={28} className="text-[#111827]" strokeWidth={2.5} />
               </div>
               <div className="space-y-2">
                 <h4 className="text-white font-black uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
@@ -136,7 +136,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
 
           {/* Form Area */}
           <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="bg-white rounded-[40px] border-[4px] border-[#1f1e1d] shadow-[15px_18px_0_0_#111827] p-8 sm:p-12 space-y-10">
+            <form onSubmit={handleSubmit} className="bg-white rounded-[32px] sm:rounded-[40px] border-[3px] sm:border-[4px] border-[#1f1e1d] shadow-[10px_12px_0_0_#111827] sm:shadow-[15px_18px_0_0_#111827] p-6 sm:p-12 space-y-8 sm:space-y-10">
               {error && (
                 <div className="flex items-center gap-4 p-5 bg-red-50 border-2 border-red-500/20 rounded-2xl text-red-600 text-[13px] font-black uppercase tracking-widest shadow-[0_4px_0_0_#ef4444]">
                   <AlertCircle size={20} strokeWidth={3} />

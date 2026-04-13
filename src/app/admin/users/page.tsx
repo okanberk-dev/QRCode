@@ -165,11 +165,11 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-8 rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[10px_12px_0_0_#1f1e1d]">
+    <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-8 sm:space-y-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-6 sm:p-8 rounded-[24px] sm:rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] sm:shadow-[10px_12px_0_0_#1f1e1d]">
         <div className="space-y-1">
-          <h1 className="text-3xl font-black text-[#111827] tracking-tight uppercase">Hesap Yönetimi</h1>
-          <p className="text-[#6b6760] text-[15px] font-bold">Sistem yöneticilerini ve işletme yetkililerini tanımlayın.</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">Hesap Yönetimi</h1>
+          <p className="text-[#6b6760] text-[13px] sm:text-[15px] font-bold">Sistem yöneticilerini ve işletme yetkililerini tanımlayın.</p>
         </div>
         <button
           onClick={() => { setEditingId(null); setFormData({ username: '', password: '', role: 'manager', restaurantId: '' }); setShowModal(true); }}
@@ -180,48 +180,48 @@ export default function UsersPage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d] overflow-hidden">
+      <div className="bg-white rounded-[24px] sm:rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] sm:shadow-[12px_14px_0_0_#1f1e1d] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#FCFBF7] border-b-[3px] border-[#1f1e1d] text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">
-                <th className="px-8 py-6">YETKİLİ KULLANICI</th>
-                <th className="px-8 py-6">ROL SİSTEMİ</th>
-                <th className="px-8 py-6">RESTORAN / ŞUBE</th>
-                <th className="px-8 py-6 text-right">EYLEMLER</th>
+                <th className="px-4 py-4 sm:px-8 sm:py-6">YETKİLİ KULLANICI</th>
+                <th className="px-4 py-4 sm:px-8 sm:py-6">ROL SİSTEMİ</th>
+                <th className="px-4 py-4 sm:px-8 sm:py-6">RESTORAN / ŞUBE</th>
+                <th className="px-4 py-4 sm:px-8 sm:py-6 text-right">EYLEMLER</th>
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-[#F7F4F0] text-sm">
               {users.map(user => (
                 <tr key={user.id} className="hover:bg-[#FCFBF7]/50 transition-colors group">
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-[14px] bg-white border-2 border-[#1f1e1d] shadow-[3px_3px_0_0_#FDBF1D] flex items-center justify-center text-[#111827] group-hover:bg-[#FDBF1D] group-hover:text-black transition-colors">
+                  <td className="px-4 py-4 sm:px-8 sm:py-6">
+                    <div className="flex items-center gap-2 sm:gap-4">
+                      <div className="hidden sm:flex w-12 h-12 rounded-[14px] bg-white border-2 border-[#1f1e1d] shadow-[3px_3px_0_0_#FDBF1D] items-center justify-center text-[#111827] group-hover:bg-[#FDBF1D] group-hover:text-black transition-colors">
                         <User size={20} strokeWidth={2.5} />
                       </div>
-                      <span className="font-black text-[#111827] text-[15px] tracking-tight">{user.username}</span>
+                      <span className="font-black text-[#111827] text-[13px] sm:text-[15px] tracking-tight">{user.username}</span>
                     </div>
                   </td>
-                  <td className="px-8 py-6">
-                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-2 flex items-center gap-2 w-max shadow-[3px_3px_0_0_#1f1e1d] ${
+                  <td className="px-4 py-4 sm:px-8 sm:py-6">
+                    <span className={`px-3 py-1.5 sm:px-4 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest border-2 flex items-center gap-1 sm:gap-2 w-max shadow-[3px_3px_0_0_#1f1e1d] ${
                       user.role === 'superadmin' 
                         ? 'bg-[#111827] text-white border-[#1f1e1d]' 
                         : 'bg-[#FDBF1D] text-[#111827] border-[#1f1e1d]'
                     }`}>
-                      {user.role === 'superadmin' ? <ShieldCheck size={14} strokeWidth={3} /> : <Store size={14} strokeWidth={3} />}
+                      {user.role === 'superadmin' ? <ShieldCheck size={14} className="scale-90 sm:scale-100" strokeWidth={3} /> : <Store size={14} className="scale-90 sm:scale-100" strokeWidth={3} />}
                       {user.role === 'superadmin' ? 'SUPER ADMIN' : 'YÖNETİCİ'}
                     </span>
                   </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-2 font-bold text-[#6b6760]">
+                  <td className="px-4 py-4 sm:px-8 sm:py-6">
+                    <div className="flex items-center gap-2 font-bold text-[#6b6760] text-[13px] sm:text-sm">
                       {user.restaurant ? (
-                        <span className="text-[#111827] font-black">{user.restaurant.name.toUpperCase()}</span>
+                        <span className="text-[#111827] font-black line-clamp-1">{user.restaurant.name.toUpperCase()}</span>
                       ) : (
                         <span className="text-[#ada89f] italic">SİSTEM GENELİ</span>
                       )}
                     </div>
                   </td>
-                  <td className="px-8 py-6 text-right">
+                  <td className="px-4 py-4 sm:px-8 sm:py-6 text-right">
                     <div className="flex items-center justify-end gap-3">
                       <button 
                         onClick={() => handleEdit(user)}
@@ -247,18 +247,18 @@ export default function UsersPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-[40px] border-[4px] border-[#1f1e1d] shadow-[20px_24px_0_0_#FDBF1D] w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-10 border-b-[3px] border-[#1f1e1d] bg-[#FCFBF7]">
-              <h2 className="text-3xl font-black text-[#111827] tracking-tight uppercase">
+        <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="bg-white rounded-[24px] sm:rounded-[40px] border-[3px] sm:border-[4px] border-[#1f1e1d] shadow-[12px_14px_0_0_#FDBF1D] sm:shadow-[20px_24px_0_0_#FDBF1D] w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 sm:p-10 border-b-[3px] border-[#1f1e1d] bg-[#FCFBF7]">
+              <h2 className="text-xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">
                 {editingId ? 'Hesabı Düzenle' : 'Yeni Yetkili Ekle'}
               </h2>
-              <p className="text-[#6b6760] text-sm font-bold mt-2">
+              <p className="text-[#6b6760] text-[13px] sm:text-sm font-bold mt-2">
                 {editingId ? 'Kullanıcı yetkilerini ve bilgilerini güncelleyin.' : 'Sisteme yeni bir yönetici veya işletme sahibi tanımlayın.'}
               </p>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-10 space-y-8 overflow-y-auto no-scrollbar">
+            <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-6 sm:space-y-8 overflow-y-auto no-scrollbar">
               {error && (
                 <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-xs font-black border-2 border-red-500/20 shadow-[0_4px_0_0_#ef4444] text-center uppercase tracking-widest">
                   {error}
