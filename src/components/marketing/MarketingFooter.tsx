@@ -24,32 +24,28 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
   const base = `/${locale}`;
 
   return (
-    <footer className="bg-[#111827] pt-20 pb-8 px-6 text-white border-t border-gray-800">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+    <footer className="bg-[#1f1e1d] pt-16 pb-8 px-5 sm:px-8 text-white border-t border-[#3d3a36]">
+      <div className="max-w-[1200px] mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 mb-14">
           {/* Col 1: Brand */}
-          <div className="md:col-span-1 min-w-[280px]">
-            <Link href={base} className="flex items-center gap-2.5 mb-6 group inline-flex">
-              <BuazeLogo size={42} className="opacity-90 group-hover:opacity-100 transition-opacity" />
-              <span className="text-2xl font-black tracking-tight text-white">Buaze</span>
+          <div className="sm:col-span-2 md:col-span-1 min-w-0">
+            <Link href={base} className="flex items-center gap-2 mb-5 group inline-flex">
+              <BuazeLogo size={28} className="opacity-80 group-hover:opacity-100 transition-opacity" />
+              <span className="text-[17px] font-extrabold tracking-[-0.02em] text-white">
+                buaze<span className="text-[#FDBF1D]">.</span>
+              </span>
             </Link>
-            <p className="text-gray-400 text-sm leading-relaxed mb-6 font-medium">
-              {t.siteDescription || 'Restoranınızın dijital itibarını profesyonelce yönetin. Yorum toplayın, büyüyün.'}
+            <p className="text-[#6b6760] text-[13px] leading-relaxed mb-5">
+              {t.siteDescription || 'Restoranınızın dijital itibarını profesyonelce yönetin.'}
             </p>
-            <div className="flex gap-3">
-              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#79C5D1] border border-[#79C5D1]/20 bg-[#79C5D1]/10 px-3 py-1.5 rounded-lg">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#79C5D1]" />
-                {t.cta_badge2}
-              </div>
-            </div>
           </div>
 
           {/* Col 2: Product */}
-          <div className="md:col-span-1">
-            <h4 className="text-white font-black uppercase tracking-widest text-xs mb-6 opacity-50">
+          <div>
+            <h4 className="text-[#ada89f] font-semibold uppercase tracking-widest text-[10px] mb-5">
               {locale === 'tr' ? 'Ürün' : 'Product'}
             </h4>
-            <ul className="space-y-4 text-sm font-semibold text-gray-400">
+            <ul className="space-y-3 text-[13px] font-medium text-[#6b6760]">
               <li><Link href={`${base}/#how-it-works`} className="hover:text-white transition-colors">{locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}</Link></li>
               <li><Link href={`${base}/pricing`} className="hover:text-white transition-colors">{locale === 'tr' ? 'Fiyatlandırma' : 'Pricing'}</Link></li>
               <li><Link href={`${base}/about`} className="hover:text-white transition-colors">{t.footer_about}</Link></li>
@@ -58,11 +54,11 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
           </div>
 
           {/* Col 3: Legal */}
-          <div className="md:col-span-1">
-            <h4 className="text-white font-black uppercase tracking-widest text-xs mb-6 opacity-50">
+          <div>
+            <h4 className="text-[#ada89f] font-semibold uppercase tracking-widest text-[10px] mb-5">
               {locale === 'tr' ? 'Yasal' : 'Legal'}
             </h4>
-            <ul className="space-y-4 text-sm font-semibold text-gray-400">
+            <ul className="space-y-3 text-[13px] font-medium text-[#6b6760]">
               <li><Link href={`${base}/terms`} className="hover:text-white transition-colors">{t.footer_terms}</Link></li>
               <li><Link href={`${base}/privacy`} className="hover:text-white transition-colors">{t.footer_privacy}</Link></li>
               <li><Link href={`${base}/cookie`} className="hover:text-white transition-colors">{t.footer_cookie}</Link></li>
@@ -73,9 +69,9 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
           </div>
 
           {/* Col 4: Platform */}
-          <div className="md:col-span-1">
-            <h4 className="text-white font-black uppercase tracking-widest text-xs mb-6 opacity-50">Platform</h4>
-            <ul className="space-y-4 text-sm font-semibold text-gray-400">
+          <div>
+            <h4 className="text-[#ada89f] font-semibold uppercase tracking-widest text-[10px] mb-5">Platform</h4>
+            <ul className="space-y-3 text-[13px] font-medium text-[#6b6760]">
               <li><Link href={`${base}/auth/login`} className="hover:text-[#FDBF1D] transition-colors">{locale === 'tr' ? 'Giriş Yap' : 'Log In'}</Link></li>
               <li><Link href={`${base}/auth/register`} className="hover:text-[#FDBF1D] transition-colors">{locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}</Link></li>
             </ul>
@@ -83,11 +79,10 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
         </div>
 
         {/* Bottom */}
-        <div className="pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-gray-500 text-[11px] font-bold uppercase tracking-widest">
+        <div className="pt-6 border-t border-[#3d3a36] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[#6b6760] text-[11px] font-medium">
             © {new Date().getFullYear()} Buaze. {t.footer_copyright}
           </p>
-
         </div>
       </div>
     </footer>

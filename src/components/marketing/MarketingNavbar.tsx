@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, X, Globe } from 'lucide-react';
+import { Menu, X, Globe, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -40,43 +40,43 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
   const base = `/${locale}`;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-gray-100/60 h-[64px]">
-      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-        {/* Logo + Brand Name */}
+    <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/90 backdrop-blur-lg border-b border-[#e8e4de]/60 h-[64px]">
+      <div className="max-w-[1200px] mx-auto px-5 sm:px-8 h-full flex items-center justify-between">
+        {/* Logo */}
         <Link href={`${base}`} className="flex items-center gap-2 group">
-          <BuazeLogo size={30} />
-          <span className="text-[19px] font-extrabold tracking-[-0.02em] text-[#111827]">
-            buaze
-            <span className="text-[#FDBF1D]">.</span>
+          <BuazeLogo size={28} />
+          <span className="text-[17px] font-extrabold tracking-[-0.02em] text-[#1f1e1d]">
+            buaze<span className="text-[#FDBF1D]">.</span>
           </span>
         </Link>
 
-        {/* Desktop Menu */}
+        {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-7">
-          <Link href={`${base}/#how-it-works`} className="text-[13px] font-medium text-gray-500 hover:text-[#111827] transition-colors">{t.nav_howItWorks}</Link>
-          <Link href={`${base}/about`} className="text-[13px] font-medium text-gray-500 hover:text-[#111827] transition-colors">{t.nav_about}</Link>
-          <Link href={`${base}/pricing`} className="text-[13px] font-medium text-gray-500 hover:text-[#111827] transition-colors">{t.nav_pricing}</Link>
-          <Link href={`${base}/contact`} className="text-[13px] font-medium text-gray-500 hover:text-[#111827] transition-colors">{t.nav_contact}</Link>
+          <Link href={`${base}/#how-it-works`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_howItWorks}</Link>
+          <Link href={`${base}/about`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_about}</Link>
+          <Link href={`${base}/pricing`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_pricing}</Link>
+          <Link href={`${base}/contact`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_contact}</Link>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {/* Language Switcher */}
+        {/* Right side actions */}
+        <div className="flex items-center gap-1">
+          {/* Language */}
           <div className="relative">
             <button
               onClick={() => setLangMenuOpen(!langMenuOpen)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[13px] font-medium text-gray-400 hover:text-[#111827] hover:bg-gray-50 transition-all"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[12px] font-medium text-[#ada89f] hover:text-[#1f1e1d] hover:bg-[#F7F4F0] transition-all"
               aria-label="Switch language"
             >
-              <Globe size={14} />
+              <Globe size={13} />
               <span>{locale.toUpperCase()}</span>
             </button>
             {langMenuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setLangMenuOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl p-1 min-w-[100px] z-50">
+                <div className="absolute right-0 top-full mt-2 bg-white border border-[#e8e4de] rounded-lg shadow-lg p-1 min-w-[110px] z-50">
                   <button
                     onClick={switchLocale}
-                    className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    className="w-full text-left px-3.5 py-2.5 rounded-md text-[13px] font-medium hover:bg-[#F7F4F0] transition-colors flex items-center gap-2"
                   >
                     <span>{otherLocale === 'tr' ? '🇹🇷' : '🇬🇧'}</span>
                     <span>{otherLocale === 'tr' ? 'Türkçe' : 'English'}</span>
@@ -88,18 +88,18 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
 
           <Link
             href={`${base}/auth/login`}
-            className="hidden sm:block px-4 py-1.5 text-[13px] font-medium text-gray-500 hover:text-[#111827] transition-colors"
+            className="hidden sm:block px-3.5 py-1.5 text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors"
           >
             {t.nav_login}
           </Link>
           <Link
             href={`${base}/auth/register`}
-            className="px-4 py-2 text-[13px] font-semibold bg-[#111827] hover:bg-[#1f2937] text-white rounded-lg transition-all active:scale-95"
+            className="px-4 py-2 text-[13px] font-semibold bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] rounded-lg transition-all active:scale-95 shadow-sm"
           >
             {t.nav_register}
           </Link>
           <button
-            className="md:hidden p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors ml-1"
+            className="md:hidden p-2 text-[#6b6760] hover:bg-[#F7F4F0] rounded-md transition-colors ml-1"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -110,20 +110,20 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <>
-          <div className="fixed inset-0 bg-black/20 z-[98]" onClick={() => setMobileMenuOpen(false)} />
-          <div className="md:hidden absolute top-[64px] left-0 right-0 bg-white border-b border-gray-100 p-6 flex flex-col gap-1 z-[99] shadow-xl">
-            <Link href={`${base}/#how-it-works`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-gray-700 py-3 px-2 rounded-lg hover:bg-gray-50 transition-colors">{t.nav_howItWorks}</Link>
-            <Link href={`${base}/about`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-gray-700 py-3 px-2 rounded-lg hover:bg-gray-50 transition-colors">{t.nav_about}</Link>
-            <Link href={`${base}/pricing`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-gray-700 py-3 px-2 rounded-lg hover:bg-gray-50 transition-colors">{t.nav_pricing}</Link>
-            <Link href={`${base}/contact`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-gray-700 py-3 px-2 rounded-lg hover:bg-gray-50 transition-colors">{t.nav_contact}</Link>
-            <div className="pt-3 mt-2 border-t border-gray-100 space-y-1">
-              <Link href={`${base}/auth/login`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-medium text-gray-700 py-3 px-2 rounded-lg hover:bg-gray-50">{t.nav_login}</Link>
+          <div className="fixed inset-0 bg-black/10 z-[98]" onClick={() => setMobileMenuOpen(false)} />
+          <div className="md:hidden absolute top-[64px] left-0 right-0 bg-white border-b border-[#e8e4de] p-5 flex flex-col gap-0.5 z-[99] shadow-lg">
+            <Link href={`${base}/#how-it-works`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_howItWorks}</Link>
+            <Link href={`${base}/about`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_about}</Link>
+            <Link href={`${base}/pricing`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_pricing}</Link>
+            <Link href={`${base}/contact`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_contact}</Link>
+            <div className="pt-3 mt-2 border-t border-[#e8e4de] space-y-0.5">
+              <Link href={`${base}/auth/login`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0]">{t.nav_login}</Link>
             </div>
             <button
               onClick={() => { switchLocale(); setMobileMenuOpen(false); }}
-              className="flex items-center gap-2 text-[13px] font-medium text-gray-400 hover:text-[#111827] py-3 px-2 mt-2"
+              className="flex items-center gap-2 text-[13px] font-medium text-[#ada89f] hover:text-[#1f1e1d] py-3 px-3 mt-1"
             >
-              <Globe size={15} />
+              <Globe size={14} />
               {otherLocale === 'tr' ? '🇹🇷 Türkçe' : '🇬🇧 English'}
             </button>
           </div>

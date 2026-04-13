@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ArrowRight, QrCode, ShieldCheck, CheckCircle2, Star, Shield, HelpCircle, ChevronDown } from 'lucide-react';
+import { ArrowRight, QrCode, ShieldCheck, CheckCircle2, Star, Shield, MessageSquare, BarChart3, Zap, Users } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import PricingFaq from '@/components/marketing/PricingFaq';
@@ -81,7 +81,7 @@ export default async function LandingPage({
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#111827] font-sans selection:bg-[#FDBF1D] selection:text-white pt-[64px]">
+    <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans selection:bg-[#FDBF1D]/30 selection:text-[#1f1e1d] pt-[64px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -89,247 +89,368 @@ export default async function LandingPage({
 
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* ═══════ Hero Section — ReviewFlowz Style ═══════ */}
-      <section className="pt-16 sm:pt-24 pb-16 sm:pb-20 px-6 max-w-7xl mx-auto overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          {/* Left: Content */}
-          <div className="space-y-7 lg:text-left text-center">
-            <h1 className="text-4xl sm:text-5xl xl:text-[56px] font-extrabold leading-[1.1] tracking-tight text-[#111827]">
-              {locale === 'tr' ? (
-                <>İşletmeler için dijital itibar yönetim yazılımı — <span className="relative inline-block"><span className="relative z-10">hızlı</span><span className="absolute bottom-1 left-0 right-0 h-3 bg-[#FDBF1D]/30 rounded-sm -z-0" /></span> olanlar için</>
-              ) : (
-                <>Review management software for teams that <span className="relative inline-block"><span className="relative z-10">move fast</span><span className="absolute bottom-1 left-0 right-0 h-3 bg-[#FDBF1D]/30 rounded-sm -z-0" /></span></>
-              )}
-            </h1>
+      {/* ═══════════════════════════════════════════════════════════
+          HERO SECTION
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="pt-10 sm:pt-16 lg:pt-20 pb-4 sm:pb-8 px-5 sm:px-8">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mt-4 sm:mt-8">
+            {/* Left: Content */}
+            <div className="text-left space-y-6">
+              <h1 className="text-[32px] sm:text-[42px] lg:text-[48px] font-extrabold leading-[1.15] tracking-[-0.02em] text-[#1f1e1d]">
+                {locale === 'tr' ? (
+                  <>İşletmeler için dijital itibar yönetim yazılımı — <span className="text-[#FDBF1D]">hızlı</span> olanlar için</>
+                ) : (
+                  <>Review management software for teams that <span className="text-[#FDBF1D]">move fast</span></>
+                )}
+              </h1>
 
-            <div className="space-y-2">
-              <p className="text-base text-gray-500 font-medium flex items-center gap-2 justify-center lg:justify-start">
-                <span className="w-1 h-1 rounded-full bg-gray-400" />
-                {locale === 'tr' ? 'Dakikalar içinde kurulun ve başlayın' : 'Get up and running in minutes'}
-              </p>
-              <p className="text-base text-gray-500 font-medium flex items-center gap-2 justify-center lg:justify-start">
-                <span className="w-1 h-1 rounded-full bg-gray-400" />
-                {locale === 'tr' ? 'Hazır olduğunuzda yükseltin' : 'Upgrade when you\'re ready'}
+              <div className="space-y-1.5 pt-1">
+                <p className="text-[15px] text-[#6b6760] font-normal">
+                  {locale === 'tr' ? 'Dakikalar içinde kurulun ve başlayın' : 'Get up and running in minutes'}
+                </p>
+                <p className="text-[15px] text-[#6b6760] font-normal">
+                  {locale === 'tr' ? 'Hazır olduğunuzda yükseltin' : 'Upgrade when you\'re ready'}
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-start gap-4 pt-2">
+                <Link
+                  href={`${base}/auth/register`}
+                  id="hero-cta-btn"
+                  className="px-7 py-3.5 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] text-[15px] font-semibold rounded-lg transition-all active:scale-[0.97] text-center shadow-sm hover:shadow-md"
+                >
+                  {t.hero_cta}
+                </Link>
+                <Link
+                  href={`${base}/pricing`}
+                  className="group flex items-center gap-1 text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors py-3.5"
+                >
+                  <span className="underline underline-offset-4 decoration-dotted decoration-[#ada89f] group-hover:decoration-[#1f1e1d]">
+                    {locale === 'tr' ? 'Fiyatları gör' : 'View pricing'}
+                  </span>
+                </Link>
+              </div>
+
+              <p className="text-[12px] text-[#ada89f] font-normal tracking-wide">
+                {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 lg:items-start">
-              <Link
-                href={`${base}/auth/register`}
-                id="hero-cta-btn"
-                className="w-full sm:w-auto px-8 py-4 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#111827] text-base font-bold rounded-xl transition-all shadow-lg shadow-yellow-400/20 active:scale-[0.97] text-center"
-              >
-                {t.hero_cta}
-              </Link>
-              <Link
-                href={`${base}/pricing`}
-                className="text-sm font-medium text-gray-500 hover:text-[#111827] transition-colors underline underline-offset-4 decoration-gray-300 hover:decoration-gray-500"
-              >
-                {locale === 'tr' ? 'Fiyatları gör →' : 'View pricing →'}
-              </Link>
-            </div>
+            {/* Right: Floating Quote Bubbles with dot pattern */}
+            <div className="relative min-h-[360px] sm:min-h-[420px] hidden lg:block" style={{ placeItems: 'center end' }}>
+              {/* Dot pattern */}
+              <div
+                className="absolute inset-0 w-full h-full opacity-[0.08]"
+                style={{
+                  backgroundImage: 'radial-gradient(circle, #ada89f 1px, transparent 1px)',
+                  backgroundSize: '18px 18px',
+                }}
+              />
 
-            <p className="text-xs text-gray-400 font-medium">
-              {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
+              {/* Quote Bubble 1 — Top right area */}
+              <div className="absolute top-2 right-0 max-w-[270px] bg-white rounded-xl border border-[#e8e4de] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] transform rotate-1 hover:rotate-0 transition-transform duration-500 z-10">
+                <div className="flex gap-0.5 mb-3">
+                  {[1,2,3,4,5].map(i => <Star key={i} size={13} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+                </div>
+                <p className="text-[13px] text-[#1f1e1d] leading-relaxed">
+                  {locale === 'tr'
+                    ? '"Buaze ile Google puanımız 2 ayda 3.8\'den 4.7\'ye çıktı. Harika!"'
+                    : '"Super easy to use and worked perfectly for our restaurant chain"'}
+                </p>
+                {/* Speech tail */}
+                <div className="absolute -bottom-[6px] left-8 w-3 h-3 bg-white border-b border-r border-[#e8e4de] transform rotate-45" />
+              </div>
+
+              {/* Quote Bubble 2 — Mid left */}
+              <div className="absolute top-[170px] -left-4 max-w-[250px] bg-white rounded-xl border border-[#e8e4de] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] transform -rotate-2 hover:rotate-0 transition-transform duration-500 z-10">
+                <div className="flex gap-0.5 mb-3">
+                  {[1,2,3,4,5].map(i => <Star key={i} size={13} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+                </div>
+                <p className="text-[13px] text-[#1f1e1d] leading-relaxed">
+                  {locale === 'tr'
+                    ? '"Olumsuz yorumları filtreleme özelliği işimizi kurtarıyor."'
+                    : '"The negative review filtering feature is a real game changer."'}
+                </p>
+                <div className="absolute -bottom-[6px] right-10 w-3 h-3 bg-white border-b border-r border-[#e8e4de] transform rotate-45" />
+              </div>
+
+              {/* Quote Bubble 3 — Bottom right */}
+              <div className="absolute bottom-4 right-6 max-w-[260px] bg-white rounded-xl border border-[#e8e4de] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] transform rotate-1 hover:rotate-0 transition-transform duration-500 z-10">
+                <div className="flex gap-0.5 mb-3">
+                  {[1,2,3,4,5].map(i => <Star key={i} size={13} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+                </div>
+                <p className="text-[13px] text-[#1f1e1d] leading-relaxed">
+                  {locale === 'tr'
+                    ? '"QR kod sistemi geri bildirim sürecimizi tamamen değiştirdi."'
+                    : '"The QR code system completely transformed our feedback process."'}
+                </p>
+                <div className="absolute -top-[6px] left-12 w-3 h-3 bg-white border-t border-l border-[#e8e4de] transform rotate-45" />
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile-only: Single testimonial */}
+          <div className="lg:hidden mt-8 bg-white rounded-xl border border-[#e8e4de] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+            <div className="flex gap-0.5 mb-2">
+              {[1,2,3,4,5].map(i => <Star key={i} size={13} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+            </div>
+            <p className="text-[13px] text-[#1f1e1d] leading-relaxed">
+              {locale === 'tr'
+                ? '"Buaze ile Google puanımız 2 ayda 3.8\'den 4.7\'ye çıktı. Harika!"'
+                : '"Super easy to use and worked perfectly for our restaurant chain"'}
             </p>
           </div>
 
-          {/* Right: Floating Testimonial Bubbles */}
-          <div className="relative hidden lg:block min-h-[420px]">
-            {/* Dot pattern background */}
-            <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, #111827 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-
-            {/* Testimonial Bubble 1 — Top Right */}
-            <div className="absolute top-4 right-0 max-w-[280px] bg-white rounded-2xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)] border border-gray-100 p-5 transform rotate-1 hover:-rotate-0 transition-transform duration-500">
-              <div className="flex gap-0.5 mb-2.5">
-                {[1,2,3,4,5].map(i => <Star key={i} size={14} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
-              </div>
-              <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                {locale === 'tr'
-                  ? '"Buaze ile Google puanımız 2 ayda 3.8\'den 4.7\'ye çıktı!"'
-                  : '"Super easy to use and worked perfectly for our restaurant"'}
-              </p>
-              {/* Speech triangle */}
-              <div className="absolute -bottom-2 left-8 w-4 h-4 bg-white border-b border-r border-gray-100 transform rotate-45" />
+          {/* Mobile hero CTA repeat */}
+          <div className="lg:hidden mt-6 pt-5 border-t border-[#e8e4de]/50 text-center space-y-3">
+            <p className="text-[13px] text-[#6b6760]">
+              {locale === 'tr' ? 'Dakikalar içinde kurulun • Hazır olduğunuzda yükseltin' : 'Get up and running in minutes • Upgrade when you\'re ready'}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                href={`${base}/auth/register`}
+                className="w-full sm:w-auto px-7 py-3.5 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] text-[15px] font-semibold rounded-lg transition-all text-center"
+              >
+                {locale === 'tr' ? 'Hemen başlayın!' : 'Get started now!'}
+              </Link>
+              <Link
+                href={`${base}/pricing`}
+                className="text-[13px] font-medium text-[#6b6760] underline underline-offset-4 decoration-dotted"
+              >
+                {locale === 'tr' ? 'Fiyatları gör' : 'View pricing'}
+              </Link>
             </div>
-
-            {/* Testimonial Bubble 2 — Middle Left */}
-            <div className="absolute top-44 -left-4 max-w-[260px] bg-white rounded-2xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)] border border-gray-100 p-5 transform -rotate-2 hover:rotate-0 transition-transform duration-500">
-              <div className="flex gap-0.5 mb-2.5">
-                {[1,2,3,4,5].map(i => <Star key={i} size={14} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
-              </div>
-              <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                {locale === 'tr'
-                  ? '"Olumsuz yorumları filtreleme özelliği işimizi kurtarıyor."'
-                  : '"The negative review filtering feature is a game changer."'}
-              </p>
-              <div className="absolute -bottom-2 right-10 w-4 h-4 bg-white border-b border-r border-gray-100 transform rotate-45" />
-            </div>
-
-            {/* Testimonial Bubble 3 — Bottom Right */}
-            <div className="absolute bottom-8 right-8 max-w-[250px] bg-white rounded-2xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)] border border-gray-100 p-5 transform rotate-1 hover:-rotate-1 transition-transform duration-500">
-              <div className="flex gap-0.5 mb-2.5">
-                {[1,2,3,4,5].map(i => <Star key={i} size={14} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
-              </div>
-              <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                {locale === 'tr'
-                  ? '"QR kod sistemi müşteri geri bildirim sürecimizi tamamen değiştirdi."'
-                  : '"The QR code system completely transformed our feedback process."'}
-              </p>
-              <div className="absolute -top-2 left-12 w-4 h-4 bg-white border-t border-l border-gray-100 transform rotate-45" />
-            </div>
-
-            {/* Floating stat card */}
-            <div className="absolute top-2 left-20 bg-[#111827] text-white rounded-xl px-4 py-3 shadow-xl transform -rotate-3">
-              <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">{locale === 'tr' ? 'Ortalama Puan' : 'Avg. Rating'}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <Star size={14} className="fill-[#FDBF1D] text-[#FDBF1D]" />
-                <span className="text-lg font-bold">4.8</span>
-              </div>
-            </div>
+            <p className="text-[11px] text-[#ada89f]">
+              {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Review Sites Strip */}
-      <section className="bg-[#F9FAFB] py-16 px-6 border-y border-gray-100">
-        <div className="max-w-7xl mx-auto">
-          <p className="text-center text-sm font-black text-gray-400 uppercase tracking-widest mb-10">{t.hero_platforms_title}</p>
-          <div className="flex flex-wrap justify-center gap-x-12 gap-y-6 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-500 items-center">
+      {/* ═══════ Logo Carousel ═══════ */}
+      <section className="py-12 sm:py-16 px-5 sm:px-8">
+        <div className="max-w-[1000px] mx-auto">
+          <div className="flex flex-wrap justify-center gap-x-10 sm:gap-x-14 gap-y-5 items-center opacity-30 hover:opacity-50 transition-opacity duration-500">
             {['Google', 'TripAdvisor', 'Yelp', 'Foursquare', 'Zomato'].map(site => (
-              <div key={site} className="flex items-center gap-2 font-black text-xl md:text-2xl italic text-[#111827] transition-colors cursor-default drop-shadow-sm">
+              <span key={site} className="text-lg sm:text-xl font-bold text-[#1f1e1d] tracking-tight cursor-default select-none">
                 {site}
-              </div>
+              </span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features - Zig Zag */}
-      <section id="how-it-works" className="py-24 px-6 space-y-32 overflow-hidden">
-        {/* Feature 1 */}
-        <article className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <div className="order-2 lg:order-1 relative px-4">
-             <div className="absolute inset-0 bg-[#FDBF1D]/5 blur-3xl rounded-full transform -rotate-6" />
-             <div className="bg-white p-8 sm:p-10 rounded-[32px] shadow-xl border border-gray-100 relative z-10 transform -rotate-2 hover:rotate-0 transition-transform duration-500">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-[#111827] flex items-center justify-center text-[#FDBF1D] font-black shadow-inner">1</div>
-                <h3 className="text-xl sm:text-2xl font-black text-[#111827]">{t.feat1_title}</h3>
+      {/* ═══════ Dashboard Preview ═══════ */}
+      <section className="pb-16 sm:pb-24 px-5 sm:px-8">
+        <div className="max-w-[960px] mx-auto">
+          <div className="rounded-xl border border-[#e8e4de] overflow-hidden shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] bg-white">
+            <img
+              src="/images/dashboard_mockup.png"
+              alt="Buaze Analytics Dashboard"
+              className="w-full h-auto"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          FEATURE SECTIONS — Tabbed / Card-based like ReviewFlowz
+      ═══════════════════════════════════════════════════════════ */}
+
+      {/* Feature Block 1 */}
+      <section id="how-it-works" className="py-16 sm:py-24 px-5 sm:px-8 bg-[#F7F4F0]">
+        <div className="max-w-[1200px] mx-auto">
+          {/* Feature Tabs */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 sm:mb-16">
+            {[
+              {
+                icon: <MessageSquare size={20} />,
+                title: locale === 'tr' ? 'Akıllı Yorum Toplama' : 'Smart Review Collection',
+                desc: locale === 'tr' ? 'QR kod ile anında geri bildirim alın' : 'Get instant feedback via QR codes',
+                active: true
+              },
+              {
+                icon: <ShieldCheck size={20} />,
+                title: locale === 'tr' ? 'Olumsuz Yorum Filtresi' : 'Negative Review Filter',
+                desc: locale === 'tr' ? 'Düşük puanları özel panelinize yönlendirin' : 'Route low ratings to your private dashboard',
+                active: false
+              },
+              {
+                icon: <BarChart3 size={20} />,
+                title: locale === 'tr' ? 'Analitik Panel' : 'Analytics Dashboard',
+                desc: locale === 'tr' ? 'Tüm verilerinizi tek ekranda görün' : 'See all your data in one screen',
+                active: false
+              }
+            ].map((tab, idx) => (
+              <div
+                key={idx}
+                className={`p-5 sm:p-6 rounded-xl border cursor-default transition-all ${
+                  tab.active
+                    ? 'bg-[#FDBF1D]/8 border-[#FDBF1D]/25 shadow-sm'
+                    : 'bg-white border-[#e8e4de] hover:border-[#FDBF1D]/30'
+                }`}
+              >
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${
+                  tab.active ? 'bg-[#FDBF1D]/15 text-[#1f1e1d]' : 'bg-[#f7f4f0] text-[#6b6760]'
+                }`}>
+                  {tab.icon}
+                </div>
+                <h3 className="text-[15px] font-bold text-[#1f1e1d] mb-1">{tab.title}</h3>
+                <p className="text-[13px] text-[#6b6760]">{tab.desc}</p>
               </div>
-              <div className="space-y-4">
-                <div className="p-6 bg-[#F9FAFB] rounded-2xl border border-dashed border-gray-200">
-                  <div className="flex items-center gap-2 mb-3">
-                    {[1, 2, 3, 4, 5].map(i => <Star key={i} size={16} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+            ))}
+          </div>
+
+          {/* Feature Detail */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="space-y-5">
+              <h2 className="text-[28px] sm:text-[36px] font-extrabold leading-[1.15] tracking-[-0.01em] text-[#1f1e1d]">
+                {t.feat1_title}
+              </h2>
+              <p className="text-[15px] sm:text-base text-[#6b6760] leading-relaxed">
+                {t.feat1_desc}
+              </p>
+              <ul className="space-y-3 pt-2">
+                {[t.feat1_li1, t.feat1_li2, t.feat1_li3].map(item => (
+                  <li key={item} className="flex items-start gap-3 text-[14px] font-medium text-[#1f1e1d]">
+                    <CheckCircle2 size={18} className="text-[#FDBF1D] flex-shrink-0 mt-0.5" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[13px] text-[#ada89f] italic">
+                {locale === 'tr'
+                  ? 'Tüm platformları destekliyoruz • Ek ücret yok • Gizli maliyet yok'
+                  : 'We support all platforms • No add-on • No hidden cost'}
+              </p>
+            </div>
+
+            {/* Visual card */}
+            <div className="relative">
+              <div className="bg-white p-6 sm:p-8 rounded-xl border border-[#e8e4de] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)]">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 rounded-lg bg-[#1f1e1d] flex items-center justify-center text-[#FDBF1D] font-bold text-sm">1</div>
+                  <h3 className="text-lg font-bold text-[#1f1e1d]">{t.feat1_title}</h3>
+                </div>
+                <div className="p-5 bg-[#FCFBF7] rounded-lg border border-dashed border-[#e8e4de]">
+                  <div className="flex items-center gap-1 mb-3">
+                    {[1,2,3,4,5].map(i => <Star key={i} size={15} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
                   </div>
-                  <p className="text-base font-bold text-gray-700 leading-relaxed">"Hizmet gerçekten harikaydı, atmosfer mükemmel. Kesinlikle tavsiye ederim!" - Murat K.</p>
+                  <p className="text-[14px] font-medium text-[#1f1e1d] leading-relaxed">
+                    {locale === 'tr'
+                      ? '"Hizmet gerçekten harikaydı, atmosfer mükemmel. Kesinlikle tavsiye ederim!" - Murat K.'
+                      : '"The service was truly amazing, the atmosphere was perfect. Highly recommend!" - Sarah K.'}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-          <div className="order-1 lg:order-2 space-y-6">
-            <h2 className="text-4xl font-black text-[#111827] leading-tight">{t.feat1_title}</h2>
-            <p className="text-lg text-gray-500 leading-relaxed font-medium">{t.feat1_desc}</p>
-            <ul className="space-y-4 pt-4">
-              {[t.feat1_li1, t.feat1_li2, t.feat1_li3].map(item => (
-                <li key={item} className="flex items-center gap-3 font-bold text-gray-700 bg-gray-50 px-4 py-3 rounded-xl">
-                  <div className="w-6 h-6 rounded-full bg-[#111827] text-[#FDBF1D] flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 size={14} />
-                  </div>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </article>
+        </div>
+      </section>
 
-        {/* Feature 2 */}
-        <article className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <div className="space-y-6">
-            <h2 className="text-4xl font-black text-[#111827] leading-tight">{t.feat2_title}</h2>
-            <p className="text-lg text-gray-500 leading-relaxed font-medium">{t.feat2_desc}</p>
-            <div className="p-6 bg-[#FDBF1D]/10 rounded-2xl border border-[#FDBF1D]/20 shadow-sm">
-              <p className="text-base font-bold text-[#111827] italic mb-3">"{locale === 'tr' ? 'Buaze sayesinde Google Reviews sayfamız her zamankinden çok daha harika görünüyor!' : 'Thanks to Buaze, our Google Reviews page looks better than ever!'}"</p>
-              <span className="text-sm font-black text-[#FDBF1D] block">{t.feat2_quote_author}</span>
+      {/* Feature Block 2 — QR Code */}
+      <section className="py-16 sm:py-24 px-5 sm:px-8 bg-[#FCFBF7]">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="space-y-5">
+            <h2 className="text-[28px] sm:text-[36px] font-extrabold leading-[1.15] tracking-[-0.01em] text-[#1f1e1d]">
+              {t.feat2_title}
+            </h2>
+            <p className="text-[15px] sm:text-base text-[#6b6760] leading-relaxed">
+              {t.feat2_desc}
+            </p>
+            <div className="p-5 bg-[#FDBF1D]/6 rounded-xl border border-[#FDBF1D]/15">
+              <p className="text-[14px] font-medium text-[#1f1e1d] italic mb-2">
+                &ldquo;{locale === 'tr' ? 'Buaze sayesinde Google Reviews sayfamız her zamankinden çok daha harika görünüyor!' : 'Thanks to Buaze, our Google Reviews page looks better than ever!'}&rdquo;
+              </p>
+              <span className="text-[13px] font-bold text-[#FDBF1D]">{t.feat2_quote_author}</span>
             </div>
           </div>
-          <div className="relative flex justify-center">
-            <div className="absolute inset-0 bg-[#79C5D1]/10 blur-3xl rounded-full" />
-            <div className="bg-white p-8 sm:p-14 rounded-[40px] shadow-2xl border border-gray-100 flex items-center justify-center relative z-10 group">
-              <div className="absolute inset-2 border-2 border-dashed border-gray-100 rounded-[32px] group-hover:border-[#111827]/20 transition-colors" />
-              <QrCode size={180} strokeWidth={1} className="text-[#111827] relative z-10" />
+
+          <div className="flex justify-center">
+            <div className="bg-white p-10 sm:p-14 rounded-2xl border border-[#e8e4de] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] relative group">
+              <div className="absolute inset-3 border-2 border-dashed border-[#e8e4de] rounded-xl group-hover:border-[#FDBF1D]/30 transition-colors" />
+              <QrCode size={160} strokeWidth={1} className="text-[#1f1e1d] relative z-10" />
             </div>
           </div>
-        </article>
+        </div>
+      </section>
 
-        {/* Feature 3 */}
-        <article className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <div className="lg:order-2 space-y-6">
-            <h2 className="text-4xl font-black text-[#111827] leading-tight">{t.feat3_title}</h2>
-            <p className="text-lg text-gray-500 leading-relaxed font-medium">{t.feat3_desc}</p>
-            <div className="flex items-center gap-5 py-4">
-              <div className="p-4 bg-red-50 text-red-600 rounded-2xl shadow-inner">
-                <Shield size={32} />
+      {/* Feature Block 3 — Negative Review Protection */}
+      <section className="py-16 sm:py-24 px-5 sm:px-8 bg-[#F7F4F0]">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="lg:order-2 space-y-5">
+            <h2 className="text-[28px] sm:text-[36px] font-extrabold leading-[1.15] tracking-[-0.01em] text-[#1f1e1d]">
+              {t.feat3_title}
+            </h2>
+            <p className="text-[15px] sm:text-base text-[#6b6760] leading-relaxed">
+              {t.feat3_desc}
+            </p>
+            <div className="flex items-center gap-4 py-2">
+              <div className="p-3 bg-red-50 text-red-500 rounded-xl">
+                <Shield size={28} />
               </div>
               <div>
-                <h4 className="font-black text-[#111827] text-lg">{t.feat3_badge_title}</h4>
-                <p className="text-sm text-gray-500 font-bold">{t.feat3_badge_desc}</p>
+                <h4 className="font-bold text-[#1f1e1d] text-[15px]">{t.feat3_badge_title}</h4>
+                <p className="text-[13px] text-[#6b6760]">{t.feat3_badge_desc}</p>
               </div>
             </div>
           </div>
-          <div className="lg:order-1 relative px-4">
-            <div className="bg-[#111827] p-8 sm:p-10 rounded-[32px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] space-y-8 text-white overflow-hidden relative transform rotate-1 hover:-rotate-1 transition-transform duration-500">
-              <div className="flex items-center gap-3">
-                {[1, 2, 3].map(i => <Star key={i} size={28} className="fill-orange-500 text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]" />)}
-                {[4, 5].map(i => <Star key={i} size={28} className="text-gray-700" />)}
-              </div>
-              <div className="space-y-4 opacity-80">
-                <div className="h-4 w-3/4 bg-gray-700 rounded-full" />
-                <div className="h-4 w-full bg-gray-700 rounded-full" />
-                <div className="h-4 w-1/2 bg-gray-700 rounded-full" />
-              </div>
-              <div className="pt-4 relative z-10">
-                <div className="bg-[#1f2937] border border-gray-700 text-white p-4 rounded-2xl font-black text-center text-sm flex items-center justify-center gap-2">
-                  <ShieldCheck size={18} className="text-orange-500" />
-                  {locale === 'tr' ? 'Özel Panele İletildi' : 'Sent to Private Dashboard'}
-                </div>
-              </div>
-              <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 blur-[60px] rounded-full pointer-events-none" />
-            </div>
-          </div>
-        </article>
 
-        {/* Trust Section - Enriched for AI-GEO */}
-        <div className="max-w-7xl mx-auto py-12 px-6">
-          <div className="bg-gradient-to-br from-[#111827] to-[#1f2937] rounded-[3rem] p-12 md:p-20 relative overflow-hidden text-white shadow-2xl transition-all hover:shadow-orange-500/10">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-[#FDBF1D]/10 blur-[100px] rounded-full -mr-48 -mt-48"></div>
-            <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6">
-                <h2 className="text-4xl font-black leading-tight">
-                  {locale === 'tr' ? 'Neden Buaze Dijital İtibar Çözümleri?' : 'Why Choose Buaze Digital Reputation Solutions?'}
+          <div className="lg:order-1">
+            <div className="bg-[#1f1e1d] p-7 sm:p-9 rounded-xl shadow-[0_8px_30px_-8px_rgba(0,0,0,0.3)] space-y-6 text-white overflow-hidden relative">
+              <div className="flex items-center gap-2">
+                {[1,2,3].map(i => <Star key={i} size={22} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+                {[4,5].map(i => <Star key={i} size={22} className="text-[#3d3a36]" />)}
+              </div>
+              <div className="space-y-3 opacity-70">
+                <div className="h-3 w-3/4 bg-[#3d3a36] rounded-full" />
+                <div className="h-3 w-full bg-[#3d3a36] rounded-full" />
+                <div className="h-3 w-1/2 bg-[#3d3a36] rounded-full" />
+              </div>
+              <div className="bg-[#2e2a25] border border-[#3d3a36] text-white p-4 rounded-xl font-bold text-center text-[13px] flex items-center justify-center gap-2">
+                <ShieldCheck size={16} className="text-[#FDBF1D]" />
+                {locale === 'tr' ? 'Özel Panele İletildi' : 'Sent to Private Dashboard'}
+              </div>
+              <div className="absolute top-0 right-0 w-40 h-40 bg-[#FDBF1D]/5 blur-[50px] rounded-full pointer-events-none" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ Trust / Why Buaze Section ═══════ */}
+      <section className="py-16 sm:py-24 px-5 sm:px-8 bg-[#FCFBF7]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="bg-[#1f1e1d] rounded-2xl p-8 sm:p-12 lg:p-16 relative overflow-hidden text-white">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-[#FDBF1D]/8 blur-[80px] rounded-full -mr-40 -mt-40" />
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-14 items-center">
+              <div className="space-y-5">
+                <h2 className="text-[28px] sm:text-[36px] font-extrabold leading-[1.15]">
+                  {locale === 'tr' ? 'Neden Buaze?' : 'Why Buaze?'}
                 </h2>
-                <div className="space-y-4 text-gray-400 font-medium">
+                <div className="space-y-4 text-[#ada89f] text-[14px] sm:text-[15px] leading-relaxed">
                   <p>
-                    {locale === 'tr' 
-                      ? 'Buaze, modern işletmelerin en büyük varlığı olan dijital güveni inşa etmek için geliştirildi. Google Haritalar, TripAdvisor ve diğer tüm major platformlarla %100 entegre çalışarak, her müşteri temas noktasını bir büyüme fırsatına dönüştürüyoruz.'
-                      : 'Buaze was developed to build the greatest asset of modern businesses: digital trust. By working 100% integrated with Google Maps, TripAdvisor, and all other major platforms, we turn every customer touchpoint into a growth opportunity.'}
+                    {locale === 'tr'
+                      ? 'Buaze, modern işletmelerin en büyük varlığı olan dijital güveni inşa etmek için geliştirildi. Google Haritalar, TripAdvisor ve tüm major platformlarla entegre çalışarak, her müşteri temas noktasını bir büyüme fırsatına dönüştürüyoruz.'
+                      : 'Buaze was developed to build the greatest asset of modern businesses: digital trust. Integrated with Google Maps, TripAdvisor, and all major platforms, we turn every touchpoint into a growth opportunity.'}
                   </p>
                   <p>
                     {locale === 'tr'
-                      ? 'Yapay zeka odaklı analiz algoritmalarımız sayesinde, müşteri duyarlılığını önceden analiz ediyor ve markanızın dijital dünyada her zaman en iyi şekilde temsil edilmesini sağlıyoruz.'
-                      : 'Thanks to our AI-focused analysis algorithms, we analyze customer sentiment in advance and ensure that your brand is always represented in the best possible way in the digital world.'}
+                      ? 'Yapay zeka analiz algoritmalarımız müşteri duyarlılığını önceden analiz ediyor ve markanızın dijital dünyada en iyi şekilde temsil edilmesini sağlıyor.'
+                      : 'Our AI analysis algorithms analyze customer sentiment in advance and ensure your brand is always represented in the best possible way.'}
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {[
-                  { label: locale === 'tr' ? 'Otomatik Veri' : 'Auto Data', val: '24/7' },
-                  { label: locale === 'tr' ? 'Müşteri Artışı' : 'Cust. Growth', val: '+40%' },
-                  { label: locale === 'tr' ? 'Risk Yönetimi' : 'Risk Management', val: locale === 'tr' ? 'Aktif' : 'Active' },
+                  { label: locale === 'tr' ? 'Veri Takibi' : 'Data Tracking', val: '24/7' },
+                  { label: locale === 'tr' ? 'Müşteri Artışı' : 'Growth', val: '+40%' },
+                  { label: locale === 'tr' ? 'Risk Yönetimi' : 'Risk Mgmt', val: locale === 'tr' ? 'Aktif' : 'Active' },
                   { label: locale === 'tr' ? 'Entegrasyon' : 'Integration', val: 'SaaS' }
                 ].map((stat, i) => (
-                  <div key={i} className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center hover:bg-white/10 transition-colors">
-                    <p className="text-3xl font-black text-[#FDBF1D] mb-1">{stat.val}</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{stat.label}</p>
+                  <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-5 text-center hover:bg-white/8 transition-colors">
+                    <p className="text-2xl sm:text-3xl font-extrabold text-[#FDBF1D] mb-0.5">{stat.val}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6760]">{stat.label}</p>
                   </div>
                 ))}
               </div>
@@ -338,57 +459,59 @@ export default async function LandingPage({
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-6 bg-[#F9FAFB]">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-5xl font-black text-[#111827] tracking-tight">{t.pricing_title}</h2>
-            <p className="text-lg text-[#FDBF1D] font-bold italic">{t.pricing_subtitle}</p>
+      {/* ═══════ Pricing Section ═══════ */}
+      <section id="pricing" className="py-16 sm:py-24 px-5 sm:px-8 bg-[#F7F4F0]">
+        <div className="max-w-[900px] mx-auto">
+          <div className="text-center mb-12 sm:mb-16 space-y-3">
+            <h2 className="text-[32px] sm:text-[42px] font-extrabold text-[#1f1e1d] tracking-[-0.02em]">{t.pricing_title}</h2>
+            <p className="text-[15px] text-[#FDBF1D] font-semibold">{t.pricing_subtitle}</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            <div className="bg-white p-10 rounded-[40px] shadow-sm border border-gray-100 hover:border-gray-200 transition-all group flex flex-col">
-              <h3 className="text-2xl font-black mb-2">{t.pricing_monthly_title}</h3>
-              <p className="text-gray-500 font-bold text-sm mb-8">{t.pricing_monthly_desc}</p>
-              <div className="mb-10">
-                <span className="text-6xl font-black tracking-tighter">{t.pricing_monthly_price}</span>
-                <span className="text-gray-400 font-bold ml-2">{t.pricing_monthly_period}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Monthly Plan */}
+            <div className="bg-white p-8 sm:p-10 rounded-xl border border-[#e8e4de] hover:border-[#FDBF1D]/30 transition-all flex flex-col">
+              <h3 className="text-xl font-extrabold mb-1.5">{t.pricing_monthly_title}</h3>
+              <p className="text-[#6b6760] text-[13px] mb-7">{t.pricing_monthly_desc}</p>
+              <div className="mb-8">
+                <span className="text-[48px] font-extrabold tracking-tighter">{t.pricing_monthly_price}</span>
+                <span className="text-[#ada89f] font-medium ml-1 text-[14px]">{t.pricing_monthly_period}</span>
               </div>
-              <ul className="space-y-5 mb-12 flex-1">
+              <ul className="space-y-4 mb-10 flex-1">
                 {[t.pricing_feature_unlimited_qr, t.pricing_feature_feedback, t.pricing_feature_panel, t.pricing_feature_mobile].map(feat => (
-                  <li key={feat} className="flex items-center gap-3 text-sm font-bold text-gray-700">
-                    <CheckCircle2 size={18} className="text-gray-400" /> {feat}
+                  <li key={feat} className="flex items-center gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#1f1e1d]">
+                    <CheckCircle2 size={16} className="text-[#ada89f] flex-shrink-0" /> {feat}
                   </li>
                 ))}
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-4 bg-gray-50 text-[#111827] font-black rounded-2xl hover:bg-gray-100 transition-all"
+                className="block w-full text-center py-3.5 bg-[#F7F4F0] text-[#1f1e1d] font-semibold text-[14px] rounded-lg hover:bg-[#e8e4de] transition-all"
               >
                 {t.pricing_monthly_cta}
               </Link>
             </div>
 
-            <div className="bg-[#111827] p-10 rounded-[40px] shadow-2xl border border-gray-800 relative md:scale-105 flex flex-col text-white">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#FDBF1D] text-[#111827] px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest shadow-lg">
+            {/* Yearly Plan */}
+            <div className="bg-[#1f1e1d] p-8 sm:p-10 rounded-xl border border-[#3d3a36] relative md:scale-[1.03] flex flex-col text-white shadow-[0_8px_30px_-8px_rgba(0,0,0,0.3)]">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#FDBF1D] text-[#1f1e1d] px-5 py-1.5 rounded-full font-bold text-[11px] uppercase tracking-widest shadow-md">
                 {t.pricing_yearly_badge}
               </div>
-              <h3 className="text-2xl font-black mb-2">{t.pricing_yearly_title}</h3>
-              <p className="text-gray-400 font-bold text-sm mb-8">{t.pricing_yearly_desc}</p>
-              <div className="mb-10">
-                <span className="text-6xl font-black tracking-tighter">{t.pricing_yearly_price}</span>
-                <span className="text-gray-500 font-bold ml-2">{t.pricing_yearly_period}</span>
+              <h3 className="text-xl font-extrabold mb-1.5">{t.pricing_yearly_title}</h3>
+              <p className="text-[#6b6760] text-[13px] mb-7">{t.pricing_yearly_desc}</p>
+              <div className="mb-8">
+                <span className="text-[48px] font-extrabold tracking-tighter">{t.pricing_yearly_price}</span>
+                <span className="text-[#6b6760] font-medium ml-1 text-[14px]">{t.pricing_yearly_period}</span>
               </div>
-              <ul className="space-y-5 mb-12 flex-1">
+              <ul className="space-y-4 mb-10 flex-1">
                 {[t.pricing_feature_all, t.pricing_feature_free_months, t.pricing_feature_priority, t.pricing_feature_google].map(feat => (
-                  <li key={feat} className="flex items-center gap-3 text-sm font-bold text-gray-300">
-                    <CheckCircle2 size={18} className="text-[#FDBF1D]" /> {feat}
+                  <li key={feat} className="flex items-center gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#ada89f]">
+                    <CheckCircle2 size={16} className="text-[#FDBF1D] flex-shrink-0" /> {feat}
                   </li>
                 ))}
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-4 bg-[#FDBF1D] text-[#111827] font-black rounded-2xl hover:bg-[#EAB308] transition-all"
+                className="block w-full text-center py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-semibold text-[14px] rounded-lg hover:bg-[#EAB308] transition-all"
               >
                 {t.pricing_yearly_cta}
               </Link>
@@ -397,35 +520,43 @@ export default async function LandingPage({
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <div className="bg-white border-t border-gray-100">
-        <PricingFaq 
-          title={t.faq_title} 
-          subtitle={t.faq_subtitle} 
+      {/* ═══════ FAQ Section ═══════ */}
+      <div className="bg-[#FCFBF7] border-t border-[#e8e4de]">
+        <PricingFaq
+          title={t.faq_title}
+          subtitle={t.faq_subtitle}
           faqs={[
             { q: t.faq_q1, a: t.faq_a1 },
             { q: t.faq_q2, a: t.faq_a2 },
             { q: t.faq_q3, a: t.faq_a3 },
             { q: t.faq_q4, a: t.faq_a4 },
-          ]} 
+          ]}
         />
       </div>
 
-      {/* Final CTA */}
-      <section className="py-24 px-6 text-center space-y-10 bg-[#111827] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5" />
-        <div className="relative z-10">
-          <h2 className="text-5xl font-black text-white max-w-2xl mx-auto leading-tight mb-8">
+      {/* ═══════ Final CTA ═══════ */}
+      <section className="py-16 sm:py-24 px-5 sm:px-8 text-center bg-[#1f1e1d] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div className="relative z-10 max-w-[600px] mx-auto space-y-7">
+          <h2 className="text-[32px] sm:text-[42px] font-extrabold text-white leading-[1.15] tracking-[-0.02em]">
             {t.cta_title_1} <br />
             <span className="text-[#FDBF1D]">{t.cta_title_2}</span>
           </h2>
-          <Link
-            href={`${base}/auth/register`}
-            id="footer-cta-btn"
-            className="inline-flex items-center gap-3 px-12 py-5 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#111827] text-xl font-black rounded-2xl transition-all shadow-xl shadow-[#FDBF1D]/20 active:scale-95"
-          >
-            {t.cta_button} <ArrowRight />
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href={`${base}/auth/register`}
+              id="footer-cta-btn"
+              className="px-8 py-4 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] text-base font-bold rounded-lg transition-all shadow-lg shadow-[#FDBF1D]/15 active:scale-95 flex items-center gap-2"
+            >
+              {t.cta_button} <ArrowRight size={18} />
+            </Link>
+            <Link
+              href={`${base}/pricing`}
+              className="text-[13px] font-medium text-[#6b6760] underline underline-offset-4 decoration-dotted hover:text-white transition-colors"
+            >
+              {locale === 'tr' ? 'Fiyatları gör' : 'View pricing'}
+            </Link>
+          </div>
         </div>
       </section>
 
