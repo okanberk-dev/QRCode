@@ -148,39 +148,74 @@ export default async function LandingPage({
                 }}
               />
 
-              {/* ReviewFlowz Style Single Hero Quote Wrapper */}
-              <div className="relative max-w-[280px] bg-white rounded-[20px] border border-[#e8e4de] p-6 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.12)] transform hover:-translate-y-2 transition-transform duration-500 z-10">
-                <div className="flex gap-[2px] mb-4">
+              {/* ReviewFlowz Style Single Hero Quote Wrapper - Desktop */}
+              <div 
+                className="hero-quote-wrapper _7 relative max-w-[280px] bg-white rounded-[20px] border border-[#e8e4de] p-6 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.12)] transform hover:-translate-y-2 transition-transform duration-500 z-10"
+                style={{ opacity: 1, transform: 'translate3d(0px, 0px, 0px) scale3d(1, 1, 1) rotateX(0deg) rotateY(0deg) rotateZ(0deg) skew(0deg, 0deg)', transformStyle: 'preserve-3d' }}
+              >
+                <div className="f-testimonial-star-wrapper flex gap-[2px] mb-4">
                   {[1,2,3,4,5].map(i => (
-                    <svg key={i} xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                      <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
-                    </svg>
+                    <div key={i} className="f-icon-regular w-embed">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                      </svg>
+                    </div>
                   ))}
                 </div>
-                <div className="text-[14px] text-[#1f1e1d] font-medium leading-[1.6]">
+                <div className="paragraph-small text-[14px] text-[#1f1e1d] font-medium leading-[1.6]">
                   {locale === 'tr'
                     ? '"Buaze\'yi kullanmak gerçekten çok kolay. Yorum toplamak konusunda müthiş zaman kazandırıyor"'
                     : '"Really love how easy Buaze is to use. It saves so much time collecting reviews"'}
                 </div>
-                {/* Speech tail perfectly matching card border and background */}
-                <svg className="absolute -bottom-3 right-8 w-6 h-6 text-white drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M2 0H22L12 16L2 0Z" stroke="#e8e4de" strokeWidth="1" />
-                  <path d="M3 0H21L12 14L3 0Z" fill="white" />
-                </svg>
+                <img 
+                  src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
+                  loading="lazy" 
+                  sizes="(max-width: 1378px) 100vw, 1378px" 
+                  srcSet="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white-p-500.png 500w, https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white-p-800.png 800w, https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white-p-1080.png 1080w, https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png 1378w" 
+                  alt="" 
+                  className="image-20 right white absolute -bottom-[15px] right-8 w-6 z-20"
+                />
+                <img 
+                  src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
+                  loading="lazy" 
+                  alt="" 
+                  className="image-20 right absolute -bottom-[17px] right-[29px] w-[28px] z-10 opacity-40"
+                />
               </div>
             </div>
           </div>
 
           {/* Mobile-only: Single testimonial */}
-          <div className="lg:hidden mt-8 bg-white rounded-xl border border-[#e8e4de] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-            <div className="flex gap-0.5 mb-2">
-              {[1,2,3,4,5].map(i => <Star key={i} size={13} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+          <div 
+            className="hero-quote-wrapper _7 lg:hidden mt-8 relative bg-white rounded-xl border border-[#e8e4de] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
+            style={{ opacity: 1, transform: 'translate3d(0px, 0px, 0px) scale3d(1, 1, 1) rotateX(0deg) rotateY(0deg) rotateZ(0deg) skew(0deg, 0deg)', transformStyle: 'preserve-3d' }}
+          >
+            <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
+              {[1,2,3,4,5].map(i => (
+                <div key={i} className="f-icon-regular w-embed">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                  </svg>
+                </div>
+              ))}
             </div>
-            <p className="text-[13px] text-[#1f1e1d] leading-relaxed">
+            <div className="paragraph-small text-[13px] text-[#1f1e1d] font-medium leading-[1.6]">
               {locale === 'tr'
-                ? '"Buaze ile Google puanımız 2 ayda 3.8\'den 4.7\'ye çıktı. Harika!"'
-                : '"Super easy to use and worked perfectly for our restaurant chain"'}
-            </p>
+                ? '"Buaze\'yi kullanmak gerçekten çok kolay. Yorum toplamak konusunda müthiş zaman kazandırıyor"'
+                : '"Really love how easy Buaze is to use. It saves so much time collecting reviews"'}
+            </div>
+            <img 
+              src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
+              loading="lazy" 
+              alt="" 
+              className="image-20 right white absolute -bottom-[15px] right-8 w-6 z-20"
+            />
+            <img 
+              src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
+              loading="lazy" 
+              alt="" 
+              className="image-20 right absolute -bottom-[17px] right-[29px] w-[28px] z-10 opacity-40"
+            />
           </div>
 
           {/* Mobile hero CTA repeat */}
