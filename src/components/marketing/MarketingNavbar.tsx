@@ -88,18 +88,18 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
 
           <Link
             href={`${base}/auth/login`}
-            className="hidden sm:block px-3.5 py-1.5 text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors"
+            className="hidden sm:inline-flex px-4 py-2 text-[14px] font-bold text-[#6b6760] hover:text-[#1f1e1d] transition-colors"
           >
             {t.nav_login}
           </Link>
           <Link
             href={`${base}/auth/register`}
-            className="px-4 py-2 text-[13px] font-semibold bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] rounded-lg transition-all active:scale-95 shadow-sm"
+            className="px-5 py-2 text-[14px] font-extrabold bg-[#FDBF1D] text-[#1f1e1d] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_3px_0_0_#1f1e1d] hover:bg-[#EAB308] active:translate-y-[3px] active:shadow-none transition-all"
           >
             {t.nav_register}
           </Link>
           <button
-            className="md:hidden p-2 text-[#6b6760] hover:bg-[#F7F4F0] rounded-md transition-colors ml-1"
+            className="md:hidden p-2 text-[#1f1e1d] hover:bg-[#F7F4F0] rounded-md transition-colors ml-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
