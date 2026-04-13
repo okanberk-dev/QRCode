@@ -66,7 +66,11 @@ export default async function PricingPage({
       text: locale === 'tr'
         ? '"14 günlük deneme bizi ikna etmeye yetti. Hemen yıllık plana geçtik."'
         : '"The 14-day trial convinced us immediately. We switched to the annual plan right away."',
-      author: locale === 'tr' ? 'Selin B. — Ankara' :   return (
+      author: locale === 'tr' ? 'Selin B. — Ankara' : 'Emma W. — New York'
+    }
+  ];
+
+  return (
     <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans pt-[64px] selection:bg-[#FDBF1D]/30">
       <script
         type="application/ld+json"

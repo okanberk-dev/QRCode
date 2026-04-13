@@ -154,7 +154,14 @@ export async function GET(req: NextRequest) {
   }
 
   // Date filter
-  if (daysParam && daysParam !== 'all') {
+  if (daysParam === 'today' || daysParam === '1') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    where.createdAt = {
+      ...where.createdAt,
+      gte: today
+    };
+  } else if (daysParam && daysParam !== 'all') {
     const days = parseInt(daysParam);
     const pastDate = new Date();
     pastDate.setDate(pastDate.getDate() - days);
