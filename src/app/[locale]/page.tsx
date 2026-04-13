@@ -81,7 +81,7 @@ export default async function LandingPage({
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#111827] font-sans selection:bg-[#FDBF1D] selection:text-white pt-[72px]">
+    <div className="min-h-screen bg-white text-[#111827] font-sans selection:bg-[#FDBF1D] selection:text-white pt-[64px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -89,63 +89,102 @@ export default async function LandingPage({
 
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* Hero Section */}
-      <section className="pt-24 pb-20 px-6 max-w-7xl mx-auto overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8 text-center lg:text-left z-10 relative">
-            <div className="inline-flex items-center gap-2 bg-[#FDBF1D]/10 text-[#111827] px-4 py-2 rounded-full text-sm font-black border border-[#FDBF1D]/30 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-[#FDBF1D] animate-pulse" />
-              buaze.com
-            </div>
-            <h1 className="text-5xl sm:text-6xl xl:text-7xl font-black leading-[1.05] tracking-tight text-[#111827]">
-              {t.hero_title_1} <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FDBF1D] to-[#f59e0b] drop-shadow-sm">{t.hero_title_2}</span>
+      {/* ═══════ Hero Section — ReviewFlowz Style ═══════ */}
+      <section className="pt-16 sm:pt-24 pb-16 sm:pb-20 px-6 max-w-7xl mx-auto overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          {/* Left: Content */}
+          <div className="space-y-7 lg:text-left text-center">
+            <h1 className="text-4xl sm:text-5xl xl:text-[56px] font-extrabold leading-[1.1] tracking-tight text-[#111827]">
+              {locale === 'tr' ? (
+                <>İşletmeler için dijital itibar yönetim yazılımı — <span className="relative inline-block"><span className="relative z-10">hızlı</span><span className="absolute bottom-1 left-0 right-0 h-3 bg-[#FDBF1D]/30 rounded-sm -z-0" /></span> olanlar için</>
+              ) : (
+                <>Review management software for teams that <span className="relative inline-block"><span className="relative z-10">move fast</span><span className="absolute bottom-1 left-0 right-0 h-3 bg-[#FDBF1D]/30 rounded-sm -z-0" /></span></>
+              )}
             </h1>
-            <p className="text-xl text-gray-600 leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium">
-              {t.hero_subtitle}
-            </p>
-            <div className="flex flex-col sm:flex-row items-center gap-4">
+
+            <div className="space-y-2">
+              <p className="text-base text-gray-500 font-medium flex items-center gap-2 justify-center lg:justify-start">
+                <span className="w-1 h-1 rounded-full bg-gray-400" />
+                {locale === 'tr' ? 'Dakikalar içinde kurulun ve başlayın' : 'Get up and running in minutes'}
+              </p>
+              <p className="text-base text-gray-500 font-medium flex items-center gap-2 justify-center lg:justify-start">
+                <span className="w-1 h-1 rounded-full bg-gray-400" />
+                {locale === 'tr' ? 'Hazır olduğunuzda yükseltin' : 'Upgrade when you\'re ready'}
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4 lg:items-start">
               <Link
                 href={`${base}/auth/register`}
                 id="hero-cta-btn"
-                className="w-full sm:w-auto px-10 py-5 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#111827] text-lg font-black rounded-xl transition-all shadow-xl shadow-yellow-500/20 active:scale-95 text-center flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-4 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#111827] text-base font-bold rounded-xl transition-all shadow-lg shadow-yellow-400/20 active:scale-[0.97] text-center"
               >
-                {t.hero_cta} <ArrowRight size={20} />
+                {t.hero_cta}
               </Link>
-              <div className="flex -space-x-3 items-center">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#111827] to-[#374151] flex items-center justify-center text-xs font-bold text-white shadow-sm z-10 relative">
-                    <Star size={12} className="fill-[#FDBF1D] text-[#FDBF1D]" />
-                  </div>
-                ))}
-                <div className="pl-6 flex items-center gap-1.5 ml-2">
-                  <Star size={16} className="fill-[#FDBF1D] text-[#FDBF1D]" />
-                  <span className="text-sm font-bold text-[#111827]">{t.hero_rating}</span>
-                </div>
-              </div>
+              <Link
+                href={`${base}/pricing`}
+                className="text-sm font-medium text-gray-500 hover:text-[#111827] transition-colors underline underline-offset-4 decoration-gray-300 hover:decoration-gray-500"
+              >
+                {locale === 'tr' ? 'Fiyatları gör →' : 'View pricing →'}
+              </Link>
             </div>
+
+            <p className="text-xs text-gray-400 font-medium">
+              {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
+            </p>
           </div>
 
-          <div className="relative pt-10 sm:pt-0">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-[#FDBF1D] to-[#EAB308] rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white rounded-[2rem] overflow-hidden shadow-2xl border border-gray-100">
-                <img 
-                  src="/images/dashboard_mockup.png" 
-                  alt="Buaze Analytics Dashboard" 
-                  className="w-full h-auto transform hover:scale-[1.02] transition-transform duration-700"
-                />
+          {/* Right: Floating Testimonial Bubbles */}
+          <div className="relative hidden lg:block min-h-[420px]">
+            {/* Dot pattern background */}
+            <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, #111827 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+
+            {/* Testimonial Bubble 1 — Top Right */}
+            <div className="absolute top-4 right-0 max-w-[280px] bg-white rounded-2xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)] border border-gray-100 p-5 transform rotate-1 hover:-rotate-0 transition-transform duration-500">
+              <div className="flex gap-0.5 mb-2.5">
+                {[1,2,3,4,5].map(i => <Star key={i} size={14} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
               </div>
-              
-              {/* Floating Social Proof */}
-              <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-gray-50 flex items-center gap-3 animate-bounce">
-                <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center">
-                  <ShieldCheck size={20} />
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase font-black text-gray-400">{locale === 'tr' ? 'Güvenilir' : 'Trusted'}</p>
-                  <p className="text-xs font-bold">{locale === 'tr' ? '%100 Organik' : '100% Organic'}</p>
-                </div>
+              <p className="text-sm text-gray-600 font-medium leading-relaxed">
+                {locale === 'tr'
+                  ? '"Buaze ile Google puanımız 2 ayda 3.8\'den 4.7\'ye çıktı!"'
+                  : '"Super easy to use and worked perfectly for our restaurant"'}
+              </p>
+              {/* Speech triangle */}
+              <div className="absolute -bottom-2 left-8 w-4 h-4 bg-white border-b border-r border-gray-100 transform rotate-45" />
+            </div>
+
+            {/* Testimonial Bubble 2 — Middle Left */}
+            <div className="absolute top-44 -left-4 max-w-[260px] bg-white rounded-2xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)] border border-gray-100 p-5 transform -rotate-2 hover:rotate-0 transition-transform duration-500">
+              <div className="flex gap-0.5 mb-2.5">
+                {[1,2,3,4,5].map(i => <Star key={i} size={14} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+              </div>
+              <p className="text-sm text-gray-600 font-medium leading-relaxed">
+                {locale === 'tr'
+                  ? '"Olumsuz yorumları filtreleme özelliği işimizi kurtarıyor."'
+                  : '"The negative review filtering feature is a game changer."'}
+              </p>
+              <div className="absolute -bottom-2 right-10 w-4 h-4 bg-white border-b border-r border-gray-100 transform rotate-45" />
+            </div>
+
+            {/* Testimonial Bubble 3 — Bottom Right */}
+            <div className="absolute bottom-8 right-8 max-w-[250px] bg-white rounded-2xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)] border border-gray-100 p-5 transform rotate-1 hover:-rotate-1 transition-transform duration-500">
+              <div className="flex gap-0.5 mb-2.5">
+                {[1,2,3,4,5].map(i => <Star key={i} size={14} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
+              </div>
+              <p className="text-sm text-gray-600 font-medium leading-relaxed">
+                {locale === 'tr'
+                  ? '"QR kod sistemi müşteri geri bildirim sürecimizi tamamen değiştirdi."'
+                  : '"The QR code system completely transformed our feedback process."'}
+              </p>
+              <div className="absolute -top-2 left-12 w-4 h-4 bg-white border-t border-l border-gray-100 transform rotate-45" />
+            </div>
+
+            {/* Floating stat card */}
+            <div className="absolute top-2 left-20 bg-[#111827] text-white rounded-xl px-4 py-3 shadow-xl transform -rotate-3">
+              <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">{locale === 'tr' ? 'Ortalama Puan' : 'Avg. Rating'}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Star size={14} className="fill-[#FDBF1D] text-[#FDBF1D]" />
+                <span className="text-lg font-bold">4.8</span>
               </div>
             </div>
           </div>
