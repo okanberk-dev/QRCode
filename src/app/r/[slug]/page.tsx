@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Star, Loader2, MapPin, ChevronRight, Lock } from 'lucide-react';
+import { Star, Loader2, MapPin, ChevronRight } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import FeedbackForm from '@/components/FeedbackForm';
 import ThankYou from '@/components/ThankYou';
@@ -187,27 +187,22 @@ function SlugContent() {
       )}
 
       {/* ═══════ Google-Style Header ═══════ */}
-      <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-10 transition-all">
+      <div className="sticky top-0 bg-white border-b border-gray-100 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4 min-w-0">
             <button 
               onClick={() => rating > 0 ? setRating(0) : window.history.back()}
-              className="p-2 -ml-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all active:scale-90"
+              className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold text-gray-900 truncate tracking-tight">{restaurant.name}</h1>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <div className="flex gap-0.5">
-                   {[1,2,3,4,5].map(i => <Star key={i} size={10} className="fill-[#fbbc04] text-[#fbbc04]" />)}
-                </div>
-                <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">{t('feedback_via_google')}</p>
-              </div>
+              <h1 className="text-lg font-medium text-gray-900 truncate">{restaurant.name}</h1>
+              <p className="text-xs text-gray-500">{t('feedback_via_google')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-blue-200">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-medium">
               {initial}
             </div>
           </div>
@@ -215,65 +210,47 @@ function SlugContent() {
       </div>
 
       {/* ═══════ Main Content Area ═══════ */}
-      <div className="max-w-2xl mx-auto w-full px-4 py-10 flex-1">
+      <div className="max-w-2xl mx-auto w-full px-4 py-8">
         
         {!showThankYou && !showForm && (
-          <div className="mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
-            <div className="flex flex-col items-center text-center space-y-4">
-               <div className="w-20 h-20 rounded-[28px] bg-gray-50 flex items-center justify-center text-3xl shadow-inner border border-gray-100/50">
-                 🍽️
-               </div>
-               <div>
-                 <h2 className="text-2xl font-black text-gray-900 tracking-tight">{t('feedback_welcome_title') || 'Deneyiminizi Paylaşın'}</h2>
-                 <p className="text-gray-500 text-sm mt-1 max-w-[280px] mx-auto leading-relaxed">
-                   {restaurant.name} işletmesi için görüşleriniz bizim için çok değerli.
-                 </p>
-               </div>
-            </div>
-          </div>
+          <BusinessSummary 
+            name={restaurant.name} 
+            address={restaurant.address} 
+            category={restaurant.category} 
+          />
         )}
 
         {!showThankYou && (
-          <div className="space-y-10">
-            {/* User Profile Info - Clean & Modern */}
-            <div className="flex items-center gap-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100/50">
-              <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-xl border border-gray-100">
+          <div className="space-y-8">
+            {/* Header info */}
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl">
                 👤
               </div>
               <div className="flex flex-col">
-                <span className="text-[14px] font-bold text-gray-900">{t('feedback_anonymous')}</span>
-                <span className="text-[12px] text-gray-400 font-medium flex items-center gap-1.5">
-                   <Lock size={10} /> {t('feedback_public')}
-                </span>
+                <span className="text-[14px] font-medium text-gray-900">{t('feedback_anonymous')}</span>
+                <span className="text-[12px] text-gray-500">{t('feedback_public')}</span>
               </div>
             </div>
 
             {/* Star Rating Section */}
             {!showForm ? (
-              <div className="py-6 scale-110 origin-top flex justify-center">
+              <div className="py-2">
                 <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
               </div>
             ) : (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="flex gap-2">
-                    {[1,2,3,4,5].map(s => (
-                      <Star 
-                        key={s} 
-                        size={32} 
-                        onClick={() => setRating(s)}
-                        className={`cursor-pointer transition-all active:scale-90 ${s <= rating ? 'fill-[#fbbc04] text-[#fbbc04] drop-shadow-[0_0_8px_rgba(251,188,4,0.3)]' : 'text-gray-100 fill-gray-100'}`} 
-                        strokeWidth={1} 
-                      />
-                    ))}
-                  </div>
-                  <p className="text-sm font-bold text-blue-600 bg-blue-50 px-4 py-1.5 rounded-full uppercase tracking-widest">
-                    {rating} {t('feedback_rating_stars')}
-                  </p>
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="mb-6 flex gap-1">
+                  {[1,2,3,4,5].map(s => (
+                    <Star 
+                      key={s} 
+                      size={20} 
+                      onClick={() => setRating(s)}
+                      className={`cursor-pointer ${s <= rating ? 'fill-[#fbbc04] text-[#fbbc04]' : 'text-gray-200 fill-gray-100'}`} 
+                      strokeWidth={1} 
+                    />
+                  ))}
                 </div>
-
-                <div className="h-px bg-gradient-to-r from-transparent via-gray-100 to-transparent" />
-
                 <FeedbackForm 
                   rating={rating} 
                   onSuccess={() => setFormSubmitted(true)}
@@ -289,7 +266,6 @@ function SlugContent() {
         {showThankYou && (
             <ThankYou rating={rating} googleReviewUrl={googleUrl} t={t} />
         )}
-
 
         {/* ── Google Reviews Direct CTA ── */}
         {!showThankYou && !showForm && !isRedirecting && googleUrl && (
