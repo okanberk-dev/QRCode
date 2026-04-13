@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Loader2, Star, Calendar, Filter, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
@@ -8,7 +8,7 @@ import FeedbackTable from '@/components/admin/FeedbackTable';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 
-export default function FeedbacksPage({ params }: { params: { locale: Locale } }) {
+function FeedbacksContent({ params }: { params: { locale: Locale } }) {
   const { locale } = params;
   const t = getTranslations(locale);
   const searchParams = useSearchParams();
@@ -169,5 +169,18 @@ export default function FeedbacksPage({ params }: { params: { locale: Locale } }
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FeedbacksPage({ params }: { params: { locale: Locale } }) {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#FCFBF7]">
+        <Loader2 className="animate-spin text-[#111827] w-12 h-12 mb-4" strokeWidth={3} />
+        <span className="text-xs font-black text-[#ada89f] uppercase tracking-[0.3em]">Yükleniyor...</span>
+      </div>
+    }>
+      <FeedbacksContent params={params} />
+    </Suspense>
   );
 }
