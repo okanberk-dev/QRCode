@@ -15,7 +15,7 @@ interface Restaurant {
 
 function QRPageContent() {
   const searchParams = useSearchParams();
-  const preselected = searchParams.get('restaurant') || '';
+  const preselected = searchParams.get('restaurant') || searchParams.get('restaurantId') || '';
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedId, setSelectedId] = useState(preselected);

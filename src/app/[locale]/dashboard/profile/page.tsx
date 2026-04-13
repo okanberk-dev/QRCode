@@ -1,16 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Loader2, User, Key, Mail, Check, ShieldCheck, AlertCircle, Globe } from 'lucide-react';
+import { ArrowLeft, Loader2, User, Key, Check, ShieldCheck, AlertCircle, Globe } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 
-export default async function ProfilePage({ params }: { params: Promise<{ locale: Locale }> }) {
-  const { locale } = await params;
+export default function ProfilePage({ params }: { params: { locale: Locale } }) {
+  const { locale } = params;
   const t = getTranslations(locale);
-  const router = useRouter();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
