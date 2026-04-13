@@ -22,11 +22,13 @@ export default function StarRating({ rating, onRatingChange, t }: StarRatingProp
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
+    <div className="flex flex-col items-center gap-6 w-full py-2">
       {/* Stars Row */}
-      <div className="flex flex-row gap-1 justify-center items-center w-full">
+      <div className="flex flex-row gap-2 justify-center items-center w-full">
         {[1, 2, 3, 4, 5].map((star) => {
           const isActive = star <= active;
+          const isSelected = star <= rating;
+          
           return (
             <button
               key={star}
@@ -37,27 +39,36 @@ export default function StarRating({ rating, onRatingChange, t }: StarRatingProp
               onTouchStart={() => setHoverRating(star)}
               onTouchEnd={() => { onRatingChange(star); setHoverRating(0); }}
               aria-label={`${star} yıldız`}
-              className="focus:outline-none p-1 transition-transform active:scale-90"
+              className="focus:outline-none p-1 transition-all duration-200 active:scale-90 relative group"
             >
               <Star
-                size={48}
-                className={`transition-colors duration-200 ${
+                size={44}
+                className={`transition-all duration-300 ${
                   isActive
-                    ? 'fill-[#fbbc04] text-[#fbbc04]'
-                    : 'text-gray-200 fill-gray-100'
-                }`}
-                strokeWidth={1}
+                    ? 'fill-[#fbbc04] text-[#fbbc04] scale-110'
+                    : 'text-gray-200 fill-transparent'
+                } ${isSelected && !hoverRating ? 'fill-[#fbbc04] text-[#fbbc04]' : ''}`}
+                strokeWidth={isActive ? 1.5 : 1}
               />
+              
+              {/* Subtle glow effect for active stars */}
+              {isActive && (
+                <div className="absolute inset-0 bg-[#fbbc04] opacity-10 blur-xl rounded-full scale-150 pointer-events-none transition-opacity duration-500" />
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* Simplified Label */}
-      <div className="h-6 flex items-center justify-center">
-        {active > 0 && labels[active] && (
-          <span className="text-sm font-medium text-gray-600">
-            {labels[active].text}
+      {/* Dynamic Label */}
+      <div className="h-8 flex items-center justify-center transition-all duration-300">
+        {active > 0 && labels[active] ? (
+          <span className="text-base font-semibold text-gray-700 animate-in fade-in slide-in-from-bottom-1">
+            {labels[active]}
+          </span>
+        ) : (
+          <span className="text-sm text-gray-400 font-medium">
+            Deneyiminizi puanlayın
           </span>
         )}
       </div>

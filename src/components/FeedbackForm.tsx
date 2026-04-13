@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Loader2, Send, Lock } from 'lucide-react';
+import { Loader2, Camera, X } from 'lucide-react';
 
 interface FeedbackFormProps {
   rating: number;
@@ -24,6 +24,11 @@ export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restau
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!comment.trim()) {
+      setError('Lütfen deneyiminizi paylaşın.');
+      return;
+    }
+    
     setError('');
     setIsSubmitting(true);
 
@@ -63,76 +68,72 @@ export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restau
     }
   };
 
-  const ratingLabels: Record<number, { title: string; placeholder: string }> = {
-    1: { title: 'Neler yaşadığınızı öğrenebilir miyiz?', placeholder: 'Yaşadığınız sorunu kısaca anlatın...' },
-    2: { title: 'Neler daha iyi olabilirdi?', placeholder: 'Beklentilerinizi karşılayamadığımız noktalar neler?' },
-    3: { title: 'Sizin için neleri iyileştirebiliriz?', placeholder: 'Önerilerinizi paylaşın...' },
-  };
-
-  const label = ratingLabels[rating] || { title: 'Deneyiminizi paylaşın', placeholder: 'Yorumunuzu buraya yazabilirsiniz...' };
-
-
-
   return (
-    <div className="w-full">
-      {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-100 italic">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        
-
-
-        <div className="relative pt-4">
+    <div className="w-full mt-2">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Experience Input Section */}
+        <div className="bg-gray-50/50 rounded-2xl border border-gray-100 p-4 focus-within:border-blue-200 focus-within:bg-white transition-all duration-300">
           <textarea
             id="comment"
             rows={4}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder={t('feedback_placeholder')}
-            className="w-full px-0 py-2 border-b-2 border-gray-100 focus:border-[#1a73e8] outline-none text-[15px] text-gray-800 bg-transparent resize-none placeholder-gray-400 transition-all min-h-[100px]"
+            className="w-full px-0 py-1 bg-transparent border-none focus:ring-0 text-[15px] text-gray-800 placeholder-gray-400 resize-none min-h-[120px]"
           />
-        </div>
-
-        {/* Photo Upload Placeholder */}
-        <div className="pt-2">
-          <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 hover:border-gray-300 transition-colors cursor-pointer bg-gray-50/30 group">
-            <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-400 group-hover:text-blue-500 transition-colors">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            </div>
-            <span className="text-sm font-bold text-gray-700">{t('feedback_add_photo')}</span>
-            <span className="text-[11px] text-gray-400">{t('feedback_photo_hint')}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2">
-          <div className="text-[11px] text-gray-400 leading-relaxed max-w-[60%] italic">
-            {t('feedback_disclaimer')}
-          </div>
           
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onSuccess}
-              className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              {t('feedback_cancel')}
-            </button>
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100/50">
+             <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-gray-100 text-gray-500 transition-colors group"
+                >
+                  <Camera size={18} className="group-hover:text-blue-500" />
+                  <span className="text-xs font-semibold">{t('feedback_add_photo')}</span>
+                </button>
+             </div>
+             <div className="text-[10px] text-gray-400 font-medium">
+                {comment.length} karakter
+             </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-xl text-xs font-medium border border-red-100 animate-in fade-in slide-in-from-top-1">
+            {error}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white font-bold text-sm rounded-lg shadow-sm transition-all disabled:opacity-50 flex items-center gap-2"
+              disabled={isSubmitting || !comment.trim()}
+              className="flex-1 px-6 py-3 bg-[#1a73e8] hover:bg-[#1557b0] disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-sm rounded-xl shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 className="animate-spin" size={16} />
-                </>
+                <Loader2 className="animate-spin" size={18} />
               ) : (
                 t('feedback_post')
               )}
             </button>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors"
+            >
+              {t('feedback_cancel')}
+            </button>
+          </div>
+
+          <div className="flex items-start gap-2 px-2">
+            <div className="p-1 rounded-full bg-blue-50 text-blue-500">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <p className="text-[10px] text-gray-400 leading-tight">
+              {t('feedback_disclaimer')}
+            </p>
           </div>
         </div>
       </form>
