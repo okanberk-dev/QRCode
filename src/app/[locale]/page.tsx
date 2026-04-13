@@ -3,6 +3,7 @@ import { ArrowRight, QrCode, ShieldCheck, CheckCircle2, Star, Shield, MessageSqu
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import PricingFaq from '@/components/marketing/PricingFaq';
+import FeatureTabsUI from '@/components/marketing/FeatureTabsUI';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
@@ -316,17 +317,9 @@ export default async function LandingPage({
         </div>
       </section>
 
-      {/* ═══════ Dashboard Preview ═══════ */}
+      {/* ═══════ Feature Tabs Layout ═══════ */}
       <section className="pb-16 sm:pb-24 px-5 sm:px-8">
-        <div className="max-w-[960px] mx-auto">
-          <div className="rounded-xl border border-[#e8e4de] overflow-hidden shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] bg-white">
-            <img
-              src="/images/dashboard_mockup.png"
-              alt="Buaze Analytics Dashboard"
-              className="w-full h-auto"
-            />
-          </div>
-        </div>
+        <FeatureTabsUI locale={locale} />
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
