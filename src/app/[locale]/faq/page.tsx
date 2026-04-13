@@ -21,13 +21,17 @@ export async function generateMetadata({
   };
 }
 
+export function generateStaticParams() {
+  return [{ locale: 'tr' }, { locale: 'en' }];
+}
+
 export default async function FaqPage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
-  const t = await getTranslations(locale);
+  const t = getTranslations(locale);
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-[#FCFBF7] selection:bg-[#FDBF1D]/30">

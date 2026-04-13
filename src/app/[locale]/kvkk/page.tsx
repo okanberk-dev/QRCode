@@ -4,11 +4,23 @@ import { getTranslations } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const isTr = locale === 'tr';
   return {
-    title: 'KVKK Aydınlatma Metni | Buaze',
-    description: '6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında aydınlatma metnimiz.',
+    title: isTr ? 'KVKK Aydınlatma Metni | Buaze' : 'KVKK Clarification Text | Buaze',
+    description: isTr 
+      ? '6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında aydınlatma metnimiz.'
+      : 'Our clarification text within the scope of the Personal Data Protection Law (KVKK).',
   };
+}
+
+export function generateStaticParams() {
+  return [{ locale: 'tr' }, { locale: 'en' }];
 }
 
 export default async function KvkkPage({
@@ -17,7 +29,7 @@ export default async function KvkkPage({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
-  const t = await getTranslations(locale);
+  const t = getTranslations(locale);
   const isTr = locale === 'tr';
 
   return (

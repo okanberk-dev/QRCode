@@ -4,9 +4,20 @@ import type { Locale } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 
-export const metadata: Metadata = {
-  title: 'Gizlilik Politikası — Buaze',
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: locale === 'tr' ? 'Gizlilik Politikası — Buaze' : 'Privacy Policy — Buaze',
+  };
+}
+
+export function generateStaticParams() {
+  return [{ locale: 'tr' }, { locale: 'en' }];
+}
 
 export default async function PrivacyPage({
   params,

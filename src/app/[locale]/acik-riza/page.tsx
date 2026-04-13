@@ -4,10 +4,21 @@ import type { Locale } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 
-export const metadata: Metadata = {
-  title: 'Açık Rıza Metni — Buaze',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: locale === 'tr' ? 'Açık Rıza Metni — Buaze' : 'Consent Text — Buaze',
+    robots: { index: false, follow: false },
+  };
+}
+
+export function generateStaticParams() {
+  return [{ locale: 'tr' }, { locale: 'en' }];
+}
 
 export default async function ConsentPage({
   params,
