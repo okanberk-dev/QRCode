@@ -309,7 +309,6 @@ function QRPageContent() {
         </div>
       </div>
     </div>
-    </div>
   );
 }
 

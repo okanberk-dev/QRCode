@@ -397,7 +397,3 @@ export default function UsersPage() {
     </div>
   );
 }
-
-    </div>
-  );
-}

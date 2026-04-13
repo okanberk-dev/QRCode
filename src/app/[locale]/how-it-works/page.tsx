@@ -64,56 +64,76 @@ export default async function HowItWorksPage({
   ];
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans pt-[64px]">
+    <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans pt-[64px] selection:bg-[#FDBF1D]/30">
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* Hero Section */}
-      <section className="pt-16 sm:pt-24 pb-16 px-5 sm:px-8 border-b border-[#e8e4de]">
-        <div className="max-w-[1200px] mx-auto text-center space-y-6">
-          <div className="inline-block bg-[#FDBF1D] text-[#1f1e1d] px-4 py-1.5 rounded-full text-[12px] font-black uppercase tracking-widest border-2 border-[#1f1e1d] shadow-[3px_4px_0_0_#1f1e1d] mb-4">
-             {locale === 'tr' ? 'SÜREÇ REHBERİ' : 'PROCESS GUIDE'}
+      {/* ─── Hero Section (3D Enriched) ─── */}
+      <section className="pt-20 sm:pt-32 pb-20 px-5 sm:px-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#FDBF1D]/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+        <div className="max-w-[1200px] mx-auto text-center space-y-8 relative">
+          <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1f1e1d] rounded-full shadow-[4px_4px_0_0_#1f1e1d]">
+             <span className="text-[11px] font-black uppercase tracking-[0.2em]">{locale === 'tr' ? 'SİSTEM NASIL ÇALIŞIR?' : 'HOW THE SYSTEM WORKS'}</span>
           </div>
-          <h1 className="text-[40px] sm:text-[64px] font-black leading-[1] tracking-[-0.04em]">
+          <h1 className="text-[48px] sm:text-[84px] font-black leading-[0.9] tracking-[-0.05em] text-[#111827]">
              {locale === 'tr' ? 'İtibar Yönetiminin' : 'The Future of'}<br/>
-             <span className="text-[#ea580c]">{locale === 'tr' ? 'Geleceği' : 'Reputation Management'}</span>
+             <span className="text-[#ea580c]">{locale === 'tr' ? 'Dijital Geleceği' : 'Digital Reputation'}</span>
           </h1>
-          <p className="text-[16px] sm:text-[18px] text-[#6b6760] max-w-[600px] mx-auto leading-relaxed">
+          <p className="text-[18px] sm:text-[22px] text-[#6b6760] max-w-[640px] mx-auto leading-relaxed font-bold">
              {locale === 'tr' 
-               ? 'Teknoloji ve müşteri psikolojisini birleştirdik. Karmaşık süreçleri 3 basit adıma indirdik.' 
-               : 'We combined technology and customer psychology. We reduced complex processes to 3 simple steps.'}
+               ? 'Karmaşık algoritmaları ve müşteri psikolojisini birleştirdik. İşletmenizi büyütmek için gereken her şeyi 3 basit adıma indirdik.' 
+               : 'We combined complex algorithms with customer psychology. We reduced everything you need to grow your business into 3 simple steps.'}
           </p>
         </div>
       </section>
 
-      {/* Detailed Steps */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8">
-        <div className="max-w-[1000px] mx-auto space-y-32">
+      {/* ─── Detailed Steps (Tactile 3D) ─── */}
+      <section className="py-20 sm:py-40 px-5 sm:px-8 bg-white border-y-[4px] border-[#1f1e1d]">
+        <div className="max-w-[1100px] mx-auto space-y-32 sm:space-y-48">
           {steps.map((step, i) => (
-            <div key={i} className={`flex flex-col ${i % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-12 lg:gap-24`}>
-              <div className="flex-1 space-y-6">
-                <div className="text-[64px] font-black text-[#FDBF1D]/20 leading-none">{step.id}</div>
-                <h2 className="text-[32px] sm:text-[42px] font-black leading-tight tracking-[-0.02em]">
-                   {step.title}
-                </h2>
-                <p className="text-[16px] text-[#6b6760] leading-relaxed">
-                   {step.desc}
-                </p>
-                <ul className="space-y-4 pt-4">
-                   {[1,2].map(j => (
-                     <li key={j} className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-[#1f1e1d] flex items-center justify-center text-white text-[12px] font-bold">✓</div>
-                        <span className="text-[14px] font-bold text-[#1f1e1d]"> {locale === 'tr' ? 'Sınırsız özelleştirme imkanı' : 'Unlimited customization options'}</span>
-                     </li>
-                   ))}
-                </ul>
+            <div key={i} className={`flex flex-col ${i % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-16 lg:gap-24 relative`}>
+              {/* Step indicator line */}
+              {i < steps.length - 1 && (
+                <div className="absolute left-1/2 bottom-[-160px] hidden lg:block w-[4px] h-[120px] bg-[#F7F4F0] -translate-x-1/2" />
+              )}
+              
+              <div className="flex-1 space-y-8">
+                <div className="text-[80px] sm:text-[120px] font-black text-[#FDBF1D]/15 leading-none absolute -top-10 -left-4 sm:-left-10 pointer-events-none select-none">
+                  {step.id}
+                </div>
+                <div className="relative z-10 space-y-6">
+                  <h2 className="text-[36px] sm:text-[52px] font-black leading-[1.1] tracking-[-0.03em] text-[#111827]">
+                     {step.title}
+                  </h2>
+                  <p className="text-[17px] sm:text-[19px] text-[#6b6760] leading-relaxed font-bold">
+                     {step.desc}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     {[
+                       locale === 'tr' ? 'Anlık Bildirimler' : 'Instant Alerts',
+                       locale === 'tr' ? 'Tam Özelleştirme' : 'Full Customization',
+                       locale === 'tr' ? 'Mobil Yönetim' : 'Mobile Admin',
+                       locale === 'tr' ? 'Google Entegrasyonu' : 'Google Integration'
+                     ].map((item, idx) => (
+                       <div key={idx} className="flex items-center gap-3">
+                          <div className="w-6 h-6 rounded-lg bg-[#111827] flex items-center justify-center text-white border-2 border-[#1f1e1d] shadow-[2px_2px_0_0_#FDBF1D]">
+                             <Zap size={12} strokeWidth={3} className="text-[#FDBF1D]" />
+                          </div>
+                          <span className="text-[13px] font-black text-[#111827] uppercase tracking-widest">{item}</span>
+                       </div>
+                     ))}
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 w-full">
+
+              <div className="flex-1 w-full relative">
                 <div className="relative group">
-                  <div className="absolute inset-0 bg-[#ea580c] rounded-[32px] translate-x-4 translate-y-4 group-hover:translate-x-6 group-hover:translate-y-6 transition-transform -z-10" />
-                  <div className="bg-white rounded-[32px] border-[3px] border-[#1f1e1d] p-10 sm:p-16 flex items-center justify-center aspect-square shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] transition-transform group-hover:-translate-y-1">
-                     <div className="text-[#1f1e1d]" style={{ transform: 'scale(2.5)' }}>
+                  <div className="absolute inset-0 bg-[#FDBF1D] rounded-[48px] translate-x-6 translate-y-6 group-hover:translate-x-8 group-hover:translate-y-8 transition-transform -z-10 border-[3px] border-[#1f1e1d]" />
+                  <div className="bg-[#111827] rounded-[48px] border-[4px] border-[#1f1e1d] p-12 sm:p-20 flex items-center justify-center aspect-square shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] transition-all group-hover:-translate-y-2 overflow-hidden">
+                     <div className="text-[#FDBF1D] drop-shadow-[0_10px_10px_rgba(253,191,29,0.3)]" style={{ transform: 'scale(3.5)' }}>
                         {step.icon}
                      </div>
+                     {/* Decorative glow */}
+                     <div className="absolute inset-0 bg-gradient-to-tr from-[#FDBF1D]/10 to-transparent pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -122,37 +142,44 @@ export default async function HowItWorksPage({
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#1f1e1d] text-white">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* ─── Features Grid (Premium 3D) ─── */}
+      <section className="py-24 sm:py-40 px-5 sm:px-8 bg-[#1f1e1d] text-white relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_120%,rgba(234,88,12,0.15),transparent)] pointer-events-none" />
+        <div className="max-w-[1200px] mx-auto relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
             {[
-              { icon: <MessageSquare className="text-[#FDBF1D]" />, t: locale === 'tr' ? 'Akıllı Filtreleme' : 'Smart Filtering', d: locale === 'tr' ? 'Negatif geri bildirimleri yönetin.' : 'Manage negative feedback.' },
-              { icon: <BarChart3 className="text-[#ea580c]" />, t: locale === 'tr' ? 'Detaylı Analiz' : 'Detailed Analytics', d: locale === 'tr' ? 'Eğilimleri anlık takip edin.' : 'Track trends instantly.' },
-              { icon: <Zap className="text-[#FDBF1D]" />, t: locale === 'tr' ? 'Hızlı Kurulum' : 'Fast Setup', d: locale === 'tr' ? '5 dakikada yayına alı.' : 'Go live in 5 minutes.' }
+              { icon: <MessageSquare className="text-[#FDBF1D]" size={36} strokeWidth={2.5} />, t: locale === 'tr' ? 'Akıllı Filtreleme' : 'Smart Filtering', d: locale === 'tr' ? 'Düşük puanlı geri bildirimleri doğrudan size iletir, kamuoyuna yansımasını engeller.' : 'Redirects low-rated feedback directly to you, preventing public exposure.' },
+              { icon: <BarChart3 className="text-[#ea580c]" size={36} strokeWidth={2.5} />, t: locale === 'tr' ? 'Gerçek Zamanlı Analiz' : 'Real-time Analytics', d: locale === 'tr' ? 'Müşteri memnuniyet eğilimlerini anlık grafiklerle izleyin ve aksiyon alın.' : 'Monitor satisfaction trends with live charts and take immediate action.' },
+              { icon: <Zap className="text-[#FDBF1D]" size={36} strokeWidth={2.5} />, t: locale === 'tr' ? 'Işık Hızında Kurulum' : 'Lightning Setup', d: locale === 'tr' ? 'Karmaşık entegrasyonlar yok. Sisteminiz 5 dakikada geri bildirim toplamaya hazır.' : 'No complex integrations. Your system is ready to collect feedback in 5 minutes.' }
             ].map((f, i) => (
-              <div key={i} className="p-8 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-                 <div className="mb-4">{f.icon}</div>
-                 <h4 className="text-[18px] font-black mb-2">{f.t}</h4>
-                 <p className="text-[14px] text-[#ada89f]">{f.d}</p>
+              <div key={i} className="p-10 bg-white/5 rounded-[40px] border-[3px] border-white/10 hover:border-[#FDBF1D]/50 hover:bg-white/10 transition-all group">
+                 <div className="mb-6 w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border-2 border-white/10 group-hover:scale-110 transition-transform">{f.icon}</div>
+                 <h4 className="text-[22px] font-black mb-4 uppercase tracking-tighter">{f.t}</h4>
+                 <p className="text-[15px] text-[#ada89f] font-bold leading-relaxed">{f.d}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8">
-        <div className="max-w-[800px] mx-auto text-center">
-          <h2 className="text-[32px] sm:text-[48px] font-black mb-8 leading-tight">
-             {locale === 'tr' ? 'Kendi Başarı Hikayenizi Yazmaya Başlayın' : 'Start Writing Your Own Success Story'}
+      {/* ─── Final CTA Section ─── */}
+      <section className="py-24 sm:py-40 px-5 sm:px-8 bg-[#FCFBF7]">
+        <div className="max-w-[1000px] mx-auto text-center space-y-12">
+          <h2 className="text-[40px] sm:text-[72px] font-black mb-8 leading-[0.9] tracking-[-0.05em] text-[#111827]">
+             {locale === 'tr' ? 'Başarı Hikayenizi Yazmaya' : 'Ready to Start Writing'}<br/>
+             <span className="text-[#ea580c]">{locale === 'tr' ? 'Şimdi Başlayın' : 'Your Success Story?'}</span>
           </h2>
-          <Link
-            href={`${base}/auth/register`}
-            className="inline-flex items-center gap-2 px-10 py-5 bg-[#FDBF1D] text-[#1f1e1d] text-[18px] font-black rounded-2xl border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] hover:bg-[#ea580c] hover:text-white transition-all active:translate-y-2 active:shadow-none"
-          >
-            {locale === 'tr' ? 'Şimdi Başla' : 'Start Now'} <ArrowRight />
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <Link
+              href={`${base}/auth/register`}
+              className="group inline-flex items-center gap-3 px-12 py-6 bg-[#111827] text-white text-[18px] font-black rounded-[24px] border-[4px] border-[#1f1e1d] shadow-[0_10px_0_0_#000] hover:bg-[#1f1e1d] transition-all active:translate-y-[10px] active:shadow-none uppercase tracking-widest"
+            >
+              {locale === 'tr' ? 'HEMEN BAŞLA' : 'GET STARTED'} <ArrowRight className="group-hover:translate-x-2 transition-transform" strokeWidth={3} />
+            </Link>
+          </div>
+          <p className="text-[12px] font-black text-[#ada89f] uppercase tracking-[0.2em]">
+            {locale === 'tr' ? 'KREDİ KARTI GEREKMEZ • 14 GÜN ÜCRETSİZ ERİŞİM' : 'NO CREDIT CARD REQUIRED • 14 DAYS FREE ACCESS'}
+          </p>
         </div>
       </section>
 

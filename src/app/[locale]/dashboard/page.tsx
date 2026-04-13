@@ -72,7 +72,8 @@ export default async function DashboardPage({
 
   const isTrialExpiring = user.plan === 'trial' && trialDaysLeft <= 3;
 
-  retur    <div className="min-h-screen bg-[#FCFBF7] font-sans selection:bg-[#FDBF1D]/30">
+  return (
+    <div className="min-h-screen bg-[#FCFBF7] font-sans selection:bg-[#FDBF1D]/30">
       {/* Header */}
       <header className="bg-white border-b-4 border-[#1f1e1d] sticky top-0 z-20 px-6 py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -238,7 +239,6 @@ export default async function DashboardPage({
           </div>
         )}
       </main>
-    </div>     </main>
     </div>
   );
 }

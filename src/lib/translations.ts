@@ -63,6 +63,12 @@ export const translations = {
     pricing_feature_free_months: 'Yıllık Ödemede 2 AY ÜCRETSİZ',
     pricing_feature_priority: '7/24 Öncelikli Teknik Destek',
     pricing_feature_google: 'Gelişmiş Google Place ID Haritalama',
+    pricing_enterprise_title: 'Franchise & Zincir',
+    pricing_enterprise_desc: 'Çok şubeli büyük işletmeler için merkezi yönetim ve özel API çözümleri.',
+    pricing_enterprise_cta: 'Teklif Alın / Bize Yazın',
+    pricing_feature_unlimited_locations: 'Sınırsız Şube Tanımlama',
+    pricing_feature_api: 'Özel API Entegrasyonu',
+    pricing_feature_account_manager: 'Özel Müşteri Temsilcisi',
 
     // FAQ
     faq_title: 'Merak Edilen Sorular',
@@ -237,6 +243,12 @@ export const translations = {
     pricing_feature_free_months: '2 MONTHS FREE with Annual Billing',
     pricing_feature_priority: '24/7 Priority Technical Support',
     pricing_feature_google: 'Advanced Google Place ID Mapping',
+    pricing_enterprise_title: 'Franchise & Chain',
+    pricing_enterprise_desc: 'Centralized management and custom API solutions for large multi-location businesses.',
+    pricing_enterprise_cta: 'Get a Quote / Contact',
+    pricing_feature_unlimited_locations: 'Unlimited Location Management',
+    pricing_feature_api: 'Custom API Integration',
+    pricing_feature_account_manager: 'Dedicated Account Manager',
 
     // FAQ
     faq_title: 'Common Questions',

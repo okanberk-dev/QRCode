@@ -37,56 +37,78 @@ export default async function TermsPage({
     <div className="min-h-screen flex flex-col font-sans bg-[#FCFBF7] selection:bg-[#FDBF1D]/30">
       <MarketingNavbar locale={locale} t={t} />
 
-      <main className="flex-1 max-w-[900px] mx-auto w-full px-5 py-20 sm:py-32">
-        <div className="bg-white p-8 sm:p-16 rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d]">
-          <div className="mb-10">
-            <h1 className="text-[28px] sm:text-[42px] font-black text-[#1f1e1d] tracking-[-0.03em] leading-tight mb-2">
-              {isTr ? 'Kullanım' : 'Terms of'} <span className="text-[#ea580c]">{isTr ? 'Koşulları' : 'Service'}</span>
+      <main className="flex-1 max-w-[1000px] mx-auto w-full px-5 py-20 sm:py-32">
+        <div className="bg-white p-10 sm:p-20 rounded-[48px] border-[4px] border-[#1f1e1d] shadow-[15px_20px_0_0_#ea580c] relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-[#ea580c]/5 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
+          
+          <div className="mb-16 relative">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#111827] text-white rounded-xl mb-6 shadow-[4px_4px_0_0_#FDBF1D]">
+               <ShieldCheck size={14} className="text-[#FDBF1D]" />
+               <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'YASAL SÖZLEŞME' : 'LEGAL AGREEMENT'}</span>
+            </div>
+            <h1 className="text-[36px] sm:text-[56px] font-black text-[#111827] tracking-tight leading-none mb-4 whitespace-pre-line">
+              {isTr ? 'Kullanım\nKoşulları' : 'Terms of\nService'}
             </h1>
-            <p className="text-[13px] text-[#ada89f] font-bold uppercase tracking-widest">
+            <p className="text-[13px] text-[#ada89f] font-black uppercase tracking-widest">
               {isTr ? 'Son güncelleme: 13 Nisan 2026' : 'Last updated: April 13, 2026'}
             </p>
           </div>
           
-          <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-10 text-[15px] sm:text-[16px] leading-relaxed">
-             <p className="font-bold text-[18px] text-[#1f1e1d]">
-               {isTr 
-                 ? 'Buaze platformunu kullanarak aşağıdaki kullanım koşullarını kabul etmiş sayılırsınız.' 
-                 : 'By using the Buaze platform, you are deemed to have accepted the following terms of use.'}
-             </p>
+          <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-12 text-[16px] sm:text-[18px] leading-relaxed font-medium">
+             <div className="p-8 bg-[#F7F4F0] rounded-3xl border-2 border-[#1f1e1d] border-dashed">
+               <p className="font-black text-[#111827] m-0">
+                 {isTr 
+                   ? 'Buaze platformunu kullanarak aşağıdaki kullanım koşullarını tamamen anladığınızı ve kabul ettiğinizi beyan edersiniz. Bu koşullar işletmemiz ile sizin aranızdaki yasal hakları belirler.' 
+                   : 'By using the Buaze platform, you declare that you fully understand and accept the following terms of use. These terms define the legal rights between our business and you.'}
+               </p>
+             </div>
 
-              <section className="space-y-4">
-                <h2 className="text-[#1f1e1d] text-[22px] font-black tracking-tight">{isTr ? '1. Sözleşmenin Kabulü' : '1. Acceptance of Terms'}</h2>
+              <section className="space-y-6">
+                <h2 className="text-[#111827] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '1. Hizmet Tanımı' : '1. Service Description'}</h2>
                 <p>
                   {isTr 
-                    ? 'Buaze tarafından sunulan hizmetleri kullanarak, bu Kullanım Koşullarını tamamen anladığınızı ve kabul ettiğinizi beyan edersiniz.'
-                    : 'By accessing or using the services provided by Buaze, you agree to be bound by these Terms of Service.'}
+                    ? 'Buaze, işletmelerin dijital itibarını yönetmesine, müşteri geri bildirimlerini toplamasına ve analiz etmesine olanak tanıyan bir SaaS (Yazılım Hizmeti) platformudur. Sunulan hizmetlerin kapsamı seçilen abonelik planına göre değişiklik gösterebilir.'
+                    : 'Buaze is a SaaS (Software as a Service) platform that allows businesses to manage their digital reputation, collect and analyze customer feedback. The scope of the services offered may vary according to the selected subscription plan.'}
                 </p>
               </section>
 
-              <section className="space-y-4">
-                <h2 className="text-[#1f1e1d] text-[22px] font-black tracking-tight">{isTr ? '2. Hizmetlerin Kullanımı' : '2. Use of Services'}</h2>
+              <section className="space-y-6">
+                <h2 className="text-[#111827] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '2. Fikri Mülkiyet Hakları' : '2. Intellectual Property Rights'}</h2>
                 <p>
                   {isTr
-                    ? 'Hizmetlerimiz, işletmelerin çevrimiçi itibarlarını yönetmelerine olanak tanır. Sistemin kötüye kullanımı halinde hesabı sonlandırma hakkımız gizlidir.'
-                    : 'Our services allow businesses to manage their online reputation. We reserve the right to terminate accounts that abuse the system.'}
+                    ? 'Platform üzerinde yer alan tüm yazılımlar, tasarımlar, logolar ve metin içerikleri Buaze mülkiyetindedir. Yazılı izin olmaksızın kopyalanması, çoğaltılması veya ticari amaçla kullanılması kesinlikle yasaktır.'
+                    : 'All software, designs, logos, and text content on the platform are the property of Buaze. Copying, reproducing, or using them for commercial purposes without written permission is strictly prohibited.'}
                 </p>
               </section>
 
-              <section className="space-y-4">
-                <h2 className="text-[#1f1e1d] text-[22px] font-black tracking-tight">{isTr ? '3. Hesap Güvenliği' : '3. Account Security'}</h2>
+              <section className="space-y-6">
+                <h2 className="text-[#111827] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '3. Kullanıcı Sorumlulukları' : '3. User Responsibilities'}</h2>
                 <p>
                   {isTr
-                    ? 'Hesabınızın güvenliğinden tamamen siz sorumlusunuz. Şifrenizin üçüncü şahıslara geçmesi durumunda doğabilecek zararlardan firmamız sorumlu tutulamaz.'
-                    : 'You are responsible for safeguarding your password. We cannot be held liable for any loss arising from unauthorized access.'}
+                    ? 'Kullanıcılar, platformu yasalara ve dürüstlük kuralına uygun şekilde kullanmayı kabul eder. Sistemin manipüle edilmesi, sahte veriler girilmesi veya üçüncü şahısların haklarının ihlal edilmesi durumunda hesap derhal sonlandırılabilir.'
+                    : 'Users agree to use the platform in accordance with the laws and the rule of integrity. In case of manipulation of the system, entry of fake data, or violation of the rights of third parties, the account may be terminated immediately.'}
                 </p>
               </section>
 
-               <div className="pt-10 border-t border-[#e8e4de] flex flex-col sm:flex-row items-center justify-between gap-6">
-                 <p className="text-[13px] text-[#ada89f] font-medium">
-                   {isTr ? 'Sorularınız için bizimle iletişime geçin.' : 'Contact us for any questions.'}
-                 </p>
-                 <a href="mailto:hello@buaze.com" className="px-6 py-3 bg-[#1f1e1d] text-white rounded-xl text-[14px] font-bold hover:bg-[#ea580c] transition-colors">
+              <section className="space-y-6">
+                <h2 className="text-[#111827] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '4. Sorumluluk Sınırlandırması' : '4. Limitation of Liability'}</h2>
+                <p>
+                  {isTr
+                    ? 'Buaze, teknik aksaklıklardan doğabilecek geçici hizmet kesintilerinden sorumlu tutulamaz. Yazılımımız "olduğu gibi" sunulur ve ticari başarı garantisi verilmez.'
+                    : 'Buaze cannot be held responsible for temporary service interruptions arising from technical glitches. Our software is provided "as is" and no guarantee of commercial success is given.'}
+                </p>
+              </section>
+
+               <div className="pt-16 border-t-2 border-[#F7F4F0] flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
+                 <div className="space-y-1">
+                   <p className="text-[14px] font-black text-[#111827] uppercase tracking-widest leading-none">
+                     {isTr ? 'SORULARINIZ İÇİN' : 'FOR QUESTIONS'}
+                   </p>
+                   <p className="text-[14px] text-[#ada89f] font-bold">
+                     {isTr ? 'hello@buaze.com adresine yazın.' : 'Write to hello@buaze.com'}
+                   </p>
+                 </div>
+                 <a href="mailto:hello@buaze.com" className="px-10 py-5 bg-[#111827] text-white rounded-2xl text-[15px] font-black shadow-[6px_8px_0_0_#ea580c] hover:bg-[#1f1e1d] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-widest">
                    hello@buaze.com
                  </a>
                </div>

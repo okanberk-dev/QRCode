@@ -1,8 +1,4 @@
-import type { Metadata } from 'next';
-import { getTranslations } from '@/lib/translations';
-import type { Locale } from '@/lib/translations';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
+import { ShieldCheck, Zap } from 'lucide-react';
 
 export async function generateMetadata({
   params,
@@ -11,7 +7,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Açık Rıza Metni — Buaze' : 'Consent Text — Buaze',
+    title: locale === 'tr' ? 'Açık Rıza Metni — Buaze' : 'Explicit Consent — Buaze',
+    description: locale === 'tr' 
+      ? 'Kişisel verilerinizin işlenmesine yönelik açık rıza beyanı.'
+      : 'Explicit consent declaration for processing personal data.',
     robots: { index: false, follow: false },
   };
 }
@@ -27,55 +26,80 @@ export default async function ConsentPage({
 }) {
   const { locale } = await params;
   const t = getTranslations(locale);
+  const isTr = locale === 'tr';
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans pt-[64px]">
+    <div className="min-h-screen flex flex-col font-sans bg-[#FCFBF7] selection:bg-[#FDBF1D]/30">
       <MarketingNavbar locale={locale} t={t} />
 
-      <main className="flex-1 max-w-[900px] mx-auto w-full px-5 py-20 sm:py-32">
-        <div className="bg-white p-8 sm:p-16 rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d]">
-          <h1 className="text-[28px] sm:text-[42px] font-black text-[#1f1e1d] leading-tight mb-10 tracking-[-0.03em]">
-             Kişisel Verilerin İşlenmesine İlişkin <span className="text-[#ea580c]">Açık Rıza Metni</span>
-          </h1>
+      <main className="flex-1 max-w-[1000px] mx-auto w-full px-5 py-20 sm:py-32">
+        <div className="bg-white p-10 sm:p-20 rounded-[48px] border-[4px] border-[#1f1e1d] shadow-[15px_20px_0_0_#ea580c] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#ea580c]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
           
-          <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-8 text-[15px] sm:text-[16px] leading-relaxed">
-            <p className="font-medium">
-              Buaze platformuna üye olurken / hizmet ve ürünlerden yararlanırken tarafıma sunulan Aydınlatma Metni'ni 
-              okuduğumu, anladığımı ve Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında kişisel verilerimin işlenmesi ile ilgili 
-              tüm süreçler hakkında bilgilendirildiğimi kabul ederim.
-            </p>
-
-            <div className="bg-[#FCFBF7] p-6 rounded-2xl border-2 border-[#1f1e1d]">
-              <p className="font-bold mb-4 uppercase tracking-widest text-[12px] text-[#ea580c]">İşlenecek Veri Kategorileri:</p>
-              <ul className="list-none space-y-3">
-                {[
-                  'Ürün ve hizmetlere bağlılık süreçlerinin yürütülmesi',
-                  'Müşteri memnuniyetine yönelik süreçlerin planlanması ve icrası',
-                  'Bana özel kişiselleştirilmiş tekliflerin ve kampanyaların sunulması',
-                  'Ürünlerin kullanım alışkanlıklarıma göre özelleştirilmesi'
-                ].map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-3">
-                    <span className="w-5 h-5 rounded-full bg-[#1f1e1d] flex-shrink-0 flex items-center justify-center text-white text-[10px]">✓</span>
-                    <span className="font-bold text-[#1f1e1d]">{item}</span>
-                  </li>
-                ))}
-              </ul>
+          <div className="mb-16 relative">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#111827] text-white rounded-xl mb-6 shadow-[4px_4px_0_0_#FDBF1D]">
+               <ShieldCheck size={14} className="text-[#FDBF1D]" />
+               <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'ONAY METNİ' : 'CONSENT FORM'}</span>
             </div>
-
-            <p>
-              amaçlarıyla Şirket ("Buaze") tarafından işlenmesine, bu verilerin sunucu/bulut sağlayıcısı olarak hizmet 
-              alınan (sunucuları yurt dışında bulunabilen) teknoloji altyapı firmalarına aktarılmasına 
-              <strong className="text-[#1f1e1d]"> hür irademle onay veriyorum</strong>.
+            <h1 className="text-[32px] sm:text-[52px] font-black text-[#111827] tracking-tight leading-[1.1] mb-4 whitespace-pre-line">
+              {isTr ? 'Kişisel Verilerin İşlenmesi\nAçık Rıza Beyanı' : 'Explicit Consent for\nPersonal Data Processing'}
+            </h1>
+            <p className="text-[13px] text-[#ada89f] font-black uppercase tracking-widest">
+              {isTr ? 'Son güncelleme: 13 Nisan 2026' : 'Last updated: April 13, 2026'}
             </p>
-
-             <div className="pt-10 border-t border-[#e8e4de] flex flex-col sm:flex-row items-center justify-between gap-6">
-               <p className="text-[13px] text-[#ada89f] font-medium max-w-[400px]">
-                 Aydınlatma Metnine istinaden, dilediğiniz zaman rızanızı geri çekme hakkına sahipsiniz.
+          </div>
+          
+          <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-12 text-[16px] sm:text-[18px] leading-relaxed font-medium">
+             <div className="p-8 bg-[#F7F4F0] rounded-3xl border-2 border-[#1f1e1d] border-dashed">
+               <p className="font-black text-[#111827] m-0">
+                 {isTr 
+                   ? 'Buaze platformu üzerinden sunulan hizmetlerden yararlanırken, kişisel verilerinizin işlenmesine yönelik hür iradenizle verdiğiniz onay beyanıdır.' 
+                   : 'This is the consent declaration you give with your free will for the processing of your personal data while benefiting from the services offered through the Buaze platform.'}
                </p>
-               <a href="mailto:hello@buaze.com" className="px-6 py-3 bg-[#1f1e1d] text-white rounded-xl text-[14px] font-bold hover:bg-[#ea580c] transition-colors">
-                 hello@buaze.com
-               </a>
              </div>
+
+              <section className="space-y-6">
+                <p>
+                  {isTr
+                    ? 'Buaze tarafından sunulan Aydınlatma Metni çerçevesinde, aşağıdaki amaçlar doğrultusunda verilerimin işlenmesine ve saklanmasına onay veriyorum:'
+                    : 'Within the framework of the Clarification Text provided by Buaze, I consent to the processing and storage of my data for the following purposes:'}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    isTr ? 'Pazarlama ve kampanya süreçleri' : 'Marketing and campaign processes',
+                    isTr ? 'Kişiselleştirilmiş ürün önerileri' : 'Personalized product offers',
+                    isTr ? 'Müşteri memnuniyet anketleri' : 'Customer satisfaction surveys',
+                    isTr ? 'Yurt dışı sunucu altyapı kullanımı' : 'Use of international server infra'
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-4 bg-white border-2 border-[#1f1e1d] rounded-2xl shadow-[4px_4px_0_0_#FDBF1D]">
+                       <div className="w-5 h-5 rounded-lg bg-[#111827] flex items-center justify-center text-white border border-[#1f1e1d]">
+                          <Zap size={10} className="text-[#FDBF1D]" weight="bold" />
+                       </div>
+                       <span className="text-[14px] font-black text-[#111827] uppercase tracking-tight">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <p>
+                {isTr
+                  ? 'Verilerimin sunucu/bulut sağlayıcısı olarak hizmet alınan (sunucuları yurt dışında bulunabilen) teknoloji altyapı firmalarına aktarılmasına ve burada işlenmesine hür irademle rıza gösteriyorum.'
+                  : 'I give consent with my free will for my data to be transferred to and processed by technology infrastructure companies (whose servers may be abroad) from which servers/cloud providers are used.'}
+              </p>
+
+               <div className="pt-16 border-t-2 border-[#F7F4F0] flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
+                 <div className="space-y-1">
+                   <p className="text-[14px] font-black text-[#111827] uppercase tracking-widest leading-none">
+                     {isTr ? 'RIZA GERİ ÇEKME' : 'WITHDRAW CONSENT'}
+                   </p>
+                   <p className="text-[14px] text-[#ada89f] font-bold">
+                     {isTr ? 'Dilediğiniz zaman çekebilirsiniz.' : 'You can withdraw at any time.'}
+                   </p>
+                 </div>
+                 <a href="mailto:hello@buaze.com" className="px-10 py-5 bg-[#111827] text-white rounded-2xl text-[15px] font-black shadow-[6px_8px_0_0_#ea580c] hover:bg-[#1f1e1d] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-widest">
+                   hello@buaze.com
+                 </a>
+               </div>
           </div>
         </div>
       </main>
