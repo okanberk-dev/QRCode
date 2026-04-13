@@ -144,7 +144,7 @@ export default async function LandingPage({
 
             {/* Right: Floating Quote Bubbles with dot pattern */}
               {/* Right: Floating Quote Bubbles with layout matching the image */}
-              <div className="relative w-full h-[460px] hidden lg:block">
+              <div className="relative w-full flex flex-col gap-0 lg:block min-h-[400px] lg:h-[460px] mt-10 lg:mt-0 items-center lg:items-start px-2 lg:px-0">
                 {/* Dot pattern */}
                 <div
                   className="absolute inset-0 w-full h-full opacity-[0.08]"
@@ -154,9 +154,9 @@ export default async function LandingPage({
                   }}
                 />
 
-                {/* Box 1: Top Left */}
+                {/* Box 1: Super easy (Top) */}
                 <div 
-                  className="hero-quote-wrapper _7 absolute top-2 left-0 max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d] z-10 transform hover:-translate-y-1 transition-transform"
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-2 lg:left-0 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d] z-10 transform hover:-translate-y-1 transition-transform self-start -mb-6 lg:mb-0"
                 >
                   <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
@@ -169,8 +169,8 @@ export default async function LandingPage({
                   </div>
                   <div className="paragraph-small text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
                     {locale === 'tr'
-                      ? '"Buaze ile yorumları takip etmek ve yanıtlamak artık çok zahmetsiz."'
-                      : '"Buaze makes tracking and replying to reviews effortless."'}
+                      ? '"Kullanımı süper kolay ve kusursuz çalışıyor"'
+                      : '"Super easy to use and worked perfectly"'}
                   </div>
                   <img 
                     src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
@@ -182,13 +182,13 @@ export default async function LandingPage({
                     src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
                     loading="lazy" 
                     alt="" 
-                    className="image-20 right absolute -bottom-[20px] left-5 w-[32px] z-10"
+                    className="image-20 right absolute -bottom-[20px] left-5 w-[32px] z-10 hidden lg:block"
                   />
                 </div>
 
-                {/* Box 2: Middle Right (Front) */}
+                {/* Box 2: Really love (Middle) */}
                 <div 
-                  className="hero-quote-wrapper _7 absolute top-[120px] right-2 max-w-[270px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d] z-30 transform hover:-translate-y-1 transition-transform"
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[120px] lg:right-2 w-[98%] max-w-[290px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d] z-30 transform hover:-translate-y-1 transition-transform self-end lg:self-auto -mb-6 lg:mb-0"
                 >
                   <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
@@ -214,13 +214,13 @@ export default async function LandingPage({
                     src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
                     loading="lazy" 
                     alt="" 
-                    className="image-20 right absolute -bottom-[20px] right-[27px] w-[32px] z-10"
+                    className="image-20 right absolute -bottom-[20px] right-[27px] w-[32px] z-10 hidden lg:block"
                   />
                 </div>
 
-                {/* Box 3: Bottom Left */}
+                {/* Box 3: Buaze makes (Bottom) */}
                 <div 
-                  className="hero-quote-wrapper _7 absolute top-[250px] left-6 max-w-[240px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d] z-20 transform hover:-translate-y-1 transition-transform"
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[250px] lg:left-6 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d] z-20 transform hover:-translate-y-1 transition-transform self-start -mt-2 lg:mt-0"
                 >
                   <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
@@ -233,8 +233,8 @@ export default async function LandingPage({
                   </div>
                   <div className="paragraph-small text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
                     {locale === 'tr'
-                      ? '"Kullanımı süper kolay ve kusursuz çalışıyor"'
-                      : '"Super easy to use worked perfectly"'}
+                      ? '"Buaze ile yorumları takip etmek ve yanıtlamak artık çok zahmetsiz"'
+                      : '"Buaze makes tracking and replying to reviews effortless."'}
                   </div>
                   <img 
                     src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
@@ -246,7 +246,7 @@ export default async function LandingPage({
                     src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
                     loading="lazy" 
                     alt="" 
-                    className="image-20 right absolute -bottom-[20px] left-[27px] w-[32px] z-10"
+                    className="image-20 right absolute -bottom-[20px] left-[27px] w-[32px] z-10 hidden lg:block"
                   />
                 </div>
               </div>
@@ -435,20 +435,6 @@ export default async function LandingPage({
           </div>
         </div>
       </section>
-
-      {/* ═══════ FAQ Section ═══════ */}
-      <div className="bg-[#FCFBF7] border-t border-[#e8e4de]">
-        <PricingFaq
-          title={t.faq_title}
-          subtitle={t.faq_subtitle}
-          faqs={[
-            { q: t.faq_q1, a: t.faq_a1 },
-            { q: t.faq_q2, a: t.faq_a2 },
-            { q: t.faq_q3, a: t.faq_a3 },
-            { q: t.faq_q4, a: t.faq_a4 },
-          ]}
-        />
-      </div>
 
       {/* ═══════ Final CTA ═══════ */}
       <section className="py-16 sm:py-24 px-5 sm:px-8 text-center bg-[#1f1e1d] relative overflow-hidden">

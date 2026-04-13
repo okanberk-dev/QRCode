@@ -94,7 +94,7 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
           </Link>
           <Link
             href={`${base}/auth/register`}
-            className="px-5 py-2 text-[14px] font-extrabold bg-white text-[#1f1e1d] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_3px_0_0_#1f1e1d] hover:bg-gray-50 active:translate-y-[3px] active:shadow-none transition-all"
+            className="px-5 py-2 text-[14px] font-extrabold bg-[#ff5c25] text-white rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_3px_0_0_#1f1e1d] hover:bg-[#ff4e11] active:translate-y-[3px] active:shadow-none transition-all"
           >
             {t.nav_register}
           </Link>
