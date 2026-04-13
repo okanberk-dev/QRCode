@@ -33,23 +33,24 @@ export default async function AdminLayout({
   }
 
   // If authenticated as restaurant_owner with trial expired, redirect to trial-expired page
-  // (Only if not already on /trial-expired)
   if (isAuthenticated && payload?.role === 'restaurant_owner' && payload?.plan === 'trial') {
-    // We can't easily check trialEndsAt here without another DB call on every request.
-    // That check is done client-side in the sidebar and API. For server-side, we rely on
-    // the login API to block expired trial logins (which it already does).
+    // Logic for trial expiration check could go here if needed.
   }
 
+  // Determine if we should show the sidebar. 
+  // We hide it if not authenticated.
+  const showSidebar = isAuthenticated;
+
   return (
-    <AdminTranslationProvider initialLocale={adminLocale}>
+    <AdminTranslationProvider initialLocale={adminLocale as any}>
       <div className="flex flex-col lg:flex-row h-screen bg-[#FCFBF7] overflow-hidden font-sans selection:bg-[#FDBF1D]/30">
-        {isAuthenticated && <AdminSidebar />}
-        <div className={`flex-1 overflow-auto flex flex-col ${!isAuthenticated ? 'items-center justify-center p-4 sm:p-6' : 'p-3 sm:p-10 mb-20 lg:mb-0 pb-10 lg:pb-0'}`}>
-          <div className={isAuthenticated ? "max-w-7xl mx-auto w-full" : "w-full"}>
+        {showSidebar && <AdminSidebar />}
+        <div className={`flex-1 overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center' : 'p-3 sm:p-10 mb-14 lg:mb-0 pb-10 lg:pb-0'}`}>
+          <div className={showSidebar ? "max-w-7xl mx-auto w-full" : "w-full max-w-full"}>
             {children}
           </div>
         </div>
-        {isAuthenticated && <AdminMobileNav />}
+        {showSidebar && <AdminMobileNav />}
       </div>
     </AdminTranslationProvider>
   );
