@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Download, Loader2, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
+import { Download, Loader2, TrendingUp, Calendar, BarChart3, ArrowRight } from 'lucide-react';
 import StatsCards from '@/components/admin/StatsCards';
 import FeedbackTable from '@/components/admin/FeedbackTable';
 import RatingChart from '@/components/admin/RatingChart';
