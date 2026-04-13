@@ -232,7 +232,7 @@ export default function RestaurantsPage() {
                     YÖNET
                   </Link>
                   <Link
-                    href={`/admin/qr?restaurant=${r.id}`}
+                    href={`/admin/qr?restaurantId=${r.id}`}
                     className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-gray-700 border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all uppercase tracking-widest active:scale-95"
                   >
                     QR KOD

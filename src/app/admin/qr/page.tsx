@@ -15,7 +15,9 @@ interface Restaurant {
 
 function QRPageContent() {
   const searchParams = useSearchParams();
-  const preselected = searchParams.get('restaurant') || '';
+  const restaurantIdParam = searchParams.get('restaurantId');
+  const legacyRestaurantParam = searchParams.get('restaurant');
+  const preselected = restaurantIdParam || legacyRestaurantParam || '';
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedId, setSelectedId] = useState(preselected);
@@ -38,8 +40,13 @@ function QRPageContent() {
 
       if (profileData && (profileData.role === 'manager' || profileData.role === 'restaurant_owner') && profileData.restaurantId) {
         setSelectedId(profileData.restaurantId);
-      } else if (!selectedId && list.length > 0) {
-        setSelectedId(preselected || list[0].id);
+      } else {
+        const hasPreselected = preselected && list.some((restaurant: Restaurant) => restaurant.id === preselected);
+        const initialRestaurantId = hasPreselected ? preselected : (list[0]?.id || '');
+
+        if (initialRestaurantId) {
+          setSelectedId(initialRestaurantId);
+        }
       }
       setLoading(false);
     })
