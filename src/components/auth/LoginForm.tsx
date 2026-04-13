@@ -65,15 +65,15 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-bold border border-red-100">
+        <div className="bg-red-50 text-red-600 p-4 rounded-[20px] text-[13px] font-black border-2 border-red-500/20 shadow-[0_4px_0_0_#ef4444] text-center">
           {error}
         </div>
       )}
 
       <div className="space-y-2">
-        <label htmlFor="login-email" className="block text-xs font-black uppercase tracking-widest text-gray-500">
+        <label htmlFor="login-email" className="block text-[11px] font-black uppercase tracking-widest text-[#ada89f] ml-1">
           {t.auth_email}
         </label>
         <input
@@ -83,17 +83,17 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
           autoComplete="email"
           value={form.email}
           onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
-          className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm"
+          className="w-full px-5 py-4 bg-[#FCFBF7] rounded-xl border-2 border-[#1f1e1d] focus:border-[#FDBF1D] focus:shadow-[0_0_0_4px_rgba(253,191,29,0.1)] outline-none transition-all font-bold text-sm"
           placeholder="can@sirket.com"
         />
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label htmlFor="login-password" className="block text-xs font-black uppercase tracking-widest text-gray-500">
+        <div className="flex items-center justify-between px-1">
+          <label htmlFor="login-password" className="block text-[11px] font-black uppercase tracking-widest text-[#ada89f]">
             {t.auth_password}
           </label>
-          <button type="button" className="text-xs font-bold text-gray-400 hover:text-[#111827] transition-colors">
+          <button type="button" className="text-[11px] font-black text-[#6b6760] hover:text-[#ea580c] transition-colors uppercase tracking-widest">
             {t.auth_forgot}
           </button>
         </div>
@@ -105,15 +105,15 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
             autoComplete="current-password"
             value={form.password}
             onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
-            className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm pr-12"
+            className="w-full px-5 py-4 bg-[#FCFBF7] rounded-xl border-2 border-[#1f1e1d] focus:border-[#FDBF1D] focus:shadow-[0_0_0_4px_rgba(253,191,29,0.1)] outline-none transition-all font-bold text-sm pr-12"
             placeholder="••••••••"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6b6760] hover:text-[#1f1e1d]"
           >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            {showPassword ? <EyeOff size={20} strokeWidth={2.5} /> : <Eye size={20} strokeWidth={2.5} />}
           </button>
         </div>
       </div>
@@ -122,15 +122,15 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         type="submit"
         id="login-submit-btn"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#1f1e1d] text-white font-extrabold py-3.5 rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-black transition-all disabled:opacity-70 active:translate-y-[4px] active:shadow-none"
+        className="w-full flex items-center justify-center gap-2 bg-[#FDBF1D] text-[#111827] font-black py-4 rounded-2xl border-[3px] border-[#1f1e1d] shadow-[0_6px_0_0_#1f1e1d] hover:bg-[#EAB308] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
       >
-        {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}
-        {loading ? t.auth_login_loading : t.auth_login_btn}
+        {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" strokeWidth={3} />}
+        {loading ? t.auth_login_loading.toUpperCase() : t.auth_login_btn.toUpperCase()}
       </button>
 
-      <p className="text-center text-sm font-bold text-gray-500">
+      <p className="text-center text-sm font-bold text-[#6b6760]">
         {t.auth_no_account}{' '}
-        <Link href={`/${locale}/auth/register`} className="text-[#FDBF1D] font-black hover:text-[#EAB308] transition-colors">
+        <Link href={`/${locale}/auth/register`} className="text-[#ea580c] font-black hover:underline decoration-2 underline-offset-4">
           {t.auth_register_link}
         </Link>
       </p>

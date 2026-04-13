@@ -27,36 +27,39 @@ export default function FeedbackTable({ feedbacks }: FeedbackTableProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d] overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-gray-600">
-          <thead className="bg-[#f8fafc] text-[#111827] text-xs uppercase border-b border-gray-200">
+        <table className="w-full text-left text-sm text-[#4a4742]">
+          <thead className="bg-[#1f1e1d] text-white text-[11px] uppercase tracking-[0.1em]">
             <tr>
-              <th className="px-6 py-4 font-bold">Tarih</th>
-              <th className="px-6 py-4 font-bold">Puan</th>
-              <th className="px-6 py-4 font-bold w-1/2">Yorum</th>
-              <th className="px-6 py-4 font-bold">Konum</th>
+              <th className="px-8 py-5 font-black">{locale === 'tr' ? 'TARİH' : 'DATE'}</th>
+              <th className="px-8 py-5 font-black">{locale === 'tr' ? 'PUAN' : 'RATING'}</th>
+              <th className="px-8 py-5 font-black w-1/2">{locale === 'tr' ? 'YORUM' : 'COMMENT'}</th>
+              <th className="px-8 py-5 font-black">{locale === 'tr' ? 'KONUM' : 'LOCATION'}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-[#e8e4de]">
             {feedbacks.map((f) => (
-              <tr key={f.id} className="hover:bg-[#f8fafc] transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-600">
+              <tr key={f.id} className="hover:bg-[#FCFBF7] transition-colors group">
+                <td className="px-8 py-6 whitespace-nowrap font-bold text-[#1f1e1d] text-[13px]">
                   {format(new Date(f.createdAt), 'dd MMM yyyy, HH:mm', { locale: tr })}
                 </td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center gap-1 font-bold px-3 py-1.5 rounded-xl text-xs
-                    ${f.rating >= 4 ? 'bg-green-100 text-green-700' : f.rating === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}
+                <td className="px-8 py-6">
+                  <span className={`inline-flex items-center gap-1 font-black px-3.5 py-1.5 rounded-full text-[11px] border-2 border-[#1f1e1d] shadow-[2px_2px_0_0_#1f1e1d]
+                    ${f.rating >= 4 ? 'bg-[#10b981] text-white' : f.rating === 3 ? 'bg-[#FDBF1D] text-[#1f1e1d]' : 'bg-[#ef4444] text-white'}`}
                   >
-                    {f.rating} Yıldız
+                    {f.rating} {locale === 'tr' ? 'Yıldız' : 'Stars'}
                   </span>
                 </td>
-                <td className="px-6 py-4 max-w-sm" title={f.comment || ''}>
-                  <div className="font-medium text-[#111827]">{f.comment || '-'}</div>
+                <td className="px-8 py-6 max-w-sm" title={f.comment || ''}>
+                  <div className="font-bold text-[#1f1e1d] leading-relaxed line-clamp-2">{f.comment || '-'}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="font-medium text-[#111827]">{f.branch || '-'}</div>
-                  <div className="text-xs text-gray-500 font-medium">Masa: {f.tableNumber || '-'}</div>
+                <td className="px-8 py-6 whitespace-nowrap">
+                  <div className="font-bold text-[#1f1e1d] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#ea580c]"></span>
+                    {f.branch || '-'}
+                  </div>
+                  <div className="text-[11px] text-[#ada89f] font-black uppercase tracking-wider mt-1">Masa: {f.tableNumber || '-'}</div>
                 </td>
               </tr>
             ))}

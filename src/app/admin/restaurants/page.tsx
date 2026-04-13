@@ -119,99 +119,104 @@ export default function RestaurantsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-[#111827] tracking-tight">Restoranlar</h1>
-          <p className="text-gray-500 text-sm font-medium">Platformdaki tüm restoranları yönetin.</p>
+    <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-8 rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[10px_12px_0_0_#1f1e1d]">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black text-[#111827] tracking-tight uppercase">İşletmeler</h1>
+          <p className="text-[#6b6760] text-[15px] font-bold">Platformdaki tüm restoranları ve şubeleri yönetin.</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-[#111827] hover:bg-[#1f2937] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-md hover:shadow-lg"
+          className="flex items-center gap-3 bg-[#FDBF1D] text-[#111827] px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest border-[3px] border-[#1f1e1d] shadow-[0_6px_0_0_#1f1e1d] hover:bg-[#EAB308] active:translate-y-[6px] active:shadow-none transition-all group"
         >
-          <Plus size={18} />
-          Yeni Restoran
+          <Plus size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
+          Yeni İşletme
         </button>
       </div>
 
       {/* Restaurant Cards Grid */}
       {restaurants.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-12 text-center">
-          <Store size={48} className="text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-[#111827] mb-2">Henüz restoran yok</h3>
-          <p className="text-gray-500 text-sm mb-6 font-medium">İlk restoranınızı ekleyerek başlayın.</p>
+        <div className="bg-white rounded-[40px] border-[3px] border-dashed border-[#e8e4de] p-24 text-center space-y-6">
+          <div className="w-24 h-24 bg-[#F7F4F0] rounded-[32px] flex items-center justify-center mx-auto border-2 border-[#e8e4de]">
+            <Store size={48} className="text-[#ada89f]" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-black text-[#111827]">Henüz işletme kaydı yok</h3>
+            <p className="text-[#6b6760] font-bold">İlk restoranınızı ekleyerek dijital itibarınızı yönetmeye başlayın.</p>
+          </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 bg-[#111827] hover:bg-[#1f2937] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-md hover:shadow-lg"
+            className="inline-flex items-center gap-3 bg-[#FDBF1D] text-[#111827] px-10 py-5 rounded-2xl text-[15px] font-black uppercase tracking-widest border-[3px] border-[#1f1e1d] shadow-[0_8px_0_0_#1f1e1d] hover:bg-[#EAB308] active:translate-y-[8px] active:shadow-none transition-all"
           >
-            <Plus size={18} />
-            Restoran Ekle
+            <Plus size={22} strokeWidth={3} />
+            İşletme Ekle
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
           {restaurants.map((r) => (
-            <div key={r.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md ${r.isActive ? 'border-gray-100' : 'border-red-100 opacity-70'}`}>
+            <div key={r.id} className={`bg-white rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d] overflow-hidden transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none ${!r.isActive && 'opacity-70 grayscale-[0.5]'}`}>
               {/* Color strip */}
-              <div className="h-2" style={{ backgroundColor: r.primaryColor }} />
+              <div className="h-3 w-full border-b-[3px] border-[#1f1e1d]" style={{ backgroundColor: r.primaryColor }} />
               
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
+              <div className="p-8 space-y-8">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm"
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-2xl border-[3px] border-[#1f1e1d] shadow-[4px_4px_0_0_#1f1e1d]"
                       style={{ backgroundColor: r.primaryColor }}
                     >
-                      {r.name.charAt(0)}
+                      {r.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-800 text-base">{r.name}</h3>
-                      <p className="text-xs text-gray-400">/{r.slug}</p>
+                      <h3 className="font-black text-[#111827] text-xl tracking-tight leading-none mb-2">{r.name}</h3>
+                      <p className="text-[13px] font-bold text-[#ada89f]">/{r.slug}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => toggleActive(r.id, r.isActive)}
+                    className={`transition-all active:scale-90 ${r.isActive ? 'text-[#10b981]' : 'text-[#ada89f]'}`}
                     title={r.isActive ? 'Pasifleştir' : 'Aktifleştir'}
                   >
                     {r.isActive ? (
-                      <ToggleRight size={28} className="text-green-500" />
+                      <ToggleRight size={44} strokeWidth={1.5} />
                     ) : (
-                      <ToggleLeft size={28} className="text-gray-300" />
+                      <ToggleLeft size={44} strokeWidth={1.5} />
                     )}
                   </button>
                 </div>
 
-                <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                  <span className="bg-gray-100 px-2.5 py-1 rounded-full text-xs font-medium">{r.category}</span>
-                  <span>{r._count.feedbacks} yorum</span>
+                <div className="flex items-center gap-6 py-4 border-y-2 border-[#F7F4F0]">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest leading-none">KATEGORİ</p>
+                    <p className="text-[13px] font-black text-[#111827]">{r.category.toUpperCase()}</p>
+                  </div>
+                  <div className="w-px h-8 bg-[#e8e4de]" />
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest leading-none">YORUM</p>
+                    <p className="text-[13px] font-black text-[#ea580c]">{r._count.feedbacks} ADET</p>
+                  </div>
                 </div>
 
-                {r.notificationEmail && (
-                  <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
-                    <Mail size={12} />
-                    <span className="truncate">{r.notificationEmail}</span>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-3">
                   <Link
                     href={`/admin/restaurants/${r.id}`}
-                    className="flex-1 text-center py-2 text-sm font-medium text-[#111827] hover:bg-gray-100 rounded-lg transition-colors"
+                    className="flex-1 text-center py-4 text-xs font-black bg-[#111827] text-white rounded-xl border-2 border-[#1f1e1d] shadow-[0_4px_0_0_#000] hover:bg-[#1f1e1d] active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest"
                   >
-                    Düzenle
+                    YÖNET
                   </Link>
                   <Link
                     href={`/admin/qr?restaurant=${r.id}`}
-                    className="flex-1 text-center py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="flex-1 text-center py-4 text-xs font-black bg-[#FDBF1D] text-[#111827] rounded-xl border-2 border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest"
                   >
-                    QR Kod
+                    QR KOD
                   </Link>
                   <Link
                     href={`/r/${r.slug}`}
                     target="_blank"
-                    className="p-2 text-gray-400 hover:text-[#111827] hover:bg-gray-100 rounded-lg transition-colors"
+                    className="w-12 h-12 flex items-center justify-center text-[#111827] bg-[#FCFBF7] hover:bg-[#e8e4de] rounded-xl border-2 border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] active:translate-y-1 active:shadow-none transition-all"
                   >
-                    <ExternalLink size={16} />
+                    <ExternalLink size={20} strokeWidth={3} />
                   </Link>
                 </div>
               </div>
@@ -222,146 +227,112 @@ export default function RestaurantsPage() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-800">Yeni Restoran Ekle</h2>
-              <p className="text-sm text-gray-500 mt-1">QR kod platformuna yeni bir restoran ekleyin.</p>
+        <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-[40px] border-[4px] border-[#1f1e1d] shadow-[20px_24px_0_0_#FDBF1D] w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-10 border-b-[3px] border-[#1f1e1d] bg-[#FCFBF7]">
+              <h2 className="text-3xl font-black text-[#111827] tracking-tight uppercase">Yeni İşletme</h2>
+              <p className="text-[#6b6760] text-sm font-bold mt-2">Sisteme yeni bir restoran veya şube tanımlayın.</p>
             </div>
 
-            {error && (
-              <div className="mx-6 mt-4 bg-red-50 text-red-600 p-3 rounded-xl text-sm border border-red-100">
-                {error}
-              </div>
-            )}
+            <form onSubmit={handleCreate} className="p-10 space-y-8 overflow-y-auto no-scrollbar">
+              {error && (
+                <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-xs font-black border-2 border-red-500/20 shadow-[0_4px_0_0_#ef4444] text-center uppercase tracking-widest">
+                  {error}
+                </div>
+              )}
 
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Restoran Adı *</label>
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">İşletme Adı *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Örn: Mamma's Burger Ankara"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm transition-all shadow-sm"
+                  className="w-full px-6 py-4 rounded-2xl border-2 border-[#1f1e1d] bg-[#FCFBF7] focus:border-[#FDBF1D] focus:shadow-[0_0_0_4px_rgba(253,191,29,0.1)] outline-none text-[15px] font-bold transition-all"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug *</label>
-                <div className="flex items-center">
-                  <span className="text-sm text-gray-400 mr-1">buaze.com/r/</span>
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">URL Slug (Otomatik) *</label>
+                <div className="flex items-center gap-3">
+                  <span className="text-[13px] font-black text-[#6b6760] opacity-40">buaze.com/r/</span>
                   <input
                     type="text"
                     required
                     value={formData.slug}
                     onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
                     placeholder="mammas-burger"
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm font-mono shadow-sm transition-all"
+                    className="flex-1 px-6 py-4 rounded-2xl border-2 border-[#1f1e1d] bg-[#FCFBF7] focus:border-[#FDBF1D] outline-none text-[15px] font-black tracking-tight transition-all"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Kategori</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
+                    className="w-full px-6 py-4 rounded-2xl border-2 border-[#1f1e1d] bg-[#FCFBF7] outline-none text-sm font-black uppercase tracking-widest appearance-none cursor-pointer"
                   >
                     <option>Restoran</option>
-                    <option>Hamburger Restoranı</option>
-                    <option>Pizza Restoranı</option>
-                    <option>Kebap Restoranı</option>
                     <option>Kafe</option>
                     <option>Fast Food</option>
                     <option>Fine Dining</option>
+                    <option>Meyhane</option>
+                    <option>Pastane</option>
+                    <option>Otobüs/Gemi</option>
                     <option>Diğer</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tema Rengi</label>
-                  <div className="flex items-center gap-3">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Tema Rengi</label>
+                  <div className="flex items-center gap-4">
                     <input
                       type="color"
                       value={formData.primaryColor}
                       onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
-                      className="w-16 h-12 rounded-lg border border-gray-200 cursor-pointer p-1"
+                      className="w-16 h-12 rounded-xl border-2 border-[#1f1e1d] cursor-pointer p-1 bg-white"
                     />
-                    <span className="text-sm text-gray-500 font-mono">{formData.primaryColor}</span>
+                    <span className="text-sm font-black text-[#111827] font-mono">{formData.primaryColor.toUpperCase()}</span>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bildirim E-postası</label>
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Bildirim E-postası (Kritik Yorumlar İçin)</label>
                 <input
                   type="email"
                   value={formData.notificationEmail}
                   onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
-                  placeholder="restoran@email.com"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
-                />
-                <p className="text-xs text-gray-400 mt-1">1-3 yıldız puanlarda bu adrese bildirim gönderilir.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Google Place ID veya Harita Linki</label>
-                <input
-                  type="text"
-                  value={formData.googlePlaceId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, googlePlaceId: e.target.value }))}
-                  placeholder="ChIJ... veya https://maps.app.goo.gl/..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
-                />
-                <p className="text-xs text-gray-400 mt-1">Mekan kimliğini ya da Google Haritalar Yorum veya Mekan linkini direkt ekleyebilirsiniz. 4-5 yıldıza basanlar buraya yönlendirilecek.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Adres</label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                  placeholder="Mahall Ankara, Çankaya"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
+                  placeholder="yonetim@email.com"
+                  className="w-full px-6 py-4 rounded-2xl border-2 border-[#1f1e1d] bg-[#FCFBF7] outline-none text-sm font-bold transition-all"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="(0312) 285 00 00"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <div className="flex justify-end gap-5 pt-10 border-t-2 border-[#F7F4F0]">
                 <button
                   type="button"
                   onClick={() => { setShowCreateModal(false); setError(''); }}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                  className="px-8 py-4 text-xs font-black text-[#6b6760] hover:text-[#111827] uppercase tracking-widest transition-colors"
                 >
-                  İptal
+                  İPTAL
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="flex items-center gap-2 bg-[#111827] hover:bg-[#1f2937] text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-md disabled:opacity-50"
+                  className="flex items-center gap-3 bg-[#111827] text-white px-10 py-4 rounded-2xl text-xs font-black uppercase tracking-widest border-2 border-[#1f1e1d] shadow-[0_6px_0_0_#000] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-50"
                 >
-                  {creating ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
-                  Oluştur
+                  {creating ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <Plus size={20} strokeWidth={3} />}
+                  İŞLETMEYİ KAYDET
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

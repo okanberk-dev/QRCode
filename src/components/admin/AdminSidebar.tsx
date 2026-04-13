@@ -73,23 +73,23 @@ export default function AdminSidebar() {
   };
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[#111827]">
       {/* ─── Logo ─── */}
-      <div className="p-5 border-b border-white/5">
+      <div className="p-6 border-b border-white/10 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#FDBF1D] flex items-center justify-center text-[#111827] font-black text-xl leading-none flex-shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#FDBF1D] border-2 border-[#1f1e1d] flex items-center justify-center text-[#111827] font-black text-2xl leading-none flex-shrink-0 shadow-[0_4px_0_0_#1f1e1d]">
             B
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-black text-white tracking-tight leading-none">Buaze</h1>
-            <p className="text-[10px] text-gray-500 font-medium tracking-wider uppercase mt-0.5">{roleLabel}</p>
+            <h1 className="text-lg font-black text-white tracking-tight leading-none">Buaze</h1>
+            <p className="text-[10px] text-gray-500 font-bold tracking-widest uppercase mt-1">{roleLabel}</p>
           </div>
           {planBadge()}
         </div>
       </div>
 
       {/* ─── Nav ─── */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
         {menuItems.filter(i => i.roles.includes(role)).map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
           return (
@@ -97,13 +97,13 @@ export default function AdminSidebar() {
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all font-medium text-sm ${
+              className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-black text-sm border-2 ${
                 isActive
-                  ? 'bg-[#FDBF1D]/10 text-[#FDBF1D] border border-[#FDBF1D]/20'
-                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                  ? 'bg-[#FDBF1D] text-[#111827] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] translate-y-[-2px]'
+                  : 'text-gray-400 border-transparent hover:bg-white/5 hover:text-white'
               }`}
             >
-              <item.icon size={18} className={isActive ? 'text-[#FDBF1D]' : 'text-gray-500'} />
+              <item.icon size={20} className={isActive ? 'text-[#111827]' : 'text-gray-500 group-hover:text-white'} strokeWidth={2.5} />
               {item.label}
             </Link>
           );
@@ -112,35 +112,35 @@ export default function AdminSidebar() {
 
       {/* ─── Trial Warning ─── */}
       {trialInfo && !trialInfo.isExpired && trialInfo.daysLeft <= 7 && (
-        <div className="mx-3 mb-3 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock size={13} className="text-orange-400" />
-            <p className="text-orange-400 text-xs font-bold">Deneme Süresi</p>
+        <div className="mx-4 mb-4 bg-orange-500/10 border-2 border-orange-500/20 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock size={14} className="text-orange-400" strokeWidth={3} />
+            <p className="text-orange-400 text-[11px] font-black uppercase tracking-wider">Deneme Süresi</p>
           </div>
-          <p className="text-orange-300 text-xs">{trialInfo.daysLeft} gün kaldı</p>
-          <div className="mt-2 w-full bg-orange-900/30 rounded-full h-1.5">
-            <div className="h-1.5 rounded-full bg-orange-400" style={{ width: `${(trialInfo.daysLeft / 14) * 100}%` }} />
+          <p className="text-white text-xs font-bold leading-tight">{trialInfo.daysLeft} gün kaldı</p>
+          <div className="mt-3 w-full bg-orange-900/30 rounded-full h-2 overflow-hidden border border-orange-500/10">
+            <div className="h-full bg-orange-400 transition-all duration-500" style={{ width: `${(trialInfo.daysLeft / 14) * 100}%` }} />
           </div>
         </div>
       )}
 
       {/* ─── User Info ─── */}
-      <div className="p-3 border-t border-white/5">
-        <div className="flex items-center gap-3 px-2 py-2 mb-1">
-          <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+      <div className="p-4 border-t border-white/10 bg-black/20">
+        <div className="flex items-center gap-3 px-3 py-3 mb-2 rounded-2xl bg-white/5 border border-white/5">
+          <div className="w-9 h-9 rounded-xl bg-[#FDBF1D] border border-[#1f1e1d] flex items-center justify-center text-sm font-black text-[#111827] flex-shrink-0">
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-white truncate">{displayName}</p>
-            <p className="text-[10px] text-gray-500 truncate">{profile?.email || profile?.username}</p>
+            <p className="text-xs font-black text-white truncate">{displayName}</p>
+            <p className="text-[10px] text-gray-500 font-bold truncate tracking-tight">{profile?.email || profile?.username}</p>
           </div>
         </div>
 
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3.5 py-2.5 text-gray-500 hover:bg-red-500/10 hover:text-red-400 rounded-xl transition-colors w-full text-sm"
+          className="flex items-center justify-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500 hover:text-white rounded-2xl transition-all w-full text-xs font-black border-2 border-transparent hover:border-red-600 active:translate-y-1"
         >
-          <LogOut size={16} />
+          <LogOut size={16} strokeWidth={2.5} />
           Çıkış Yap
         </button>
       </div>
@@ -150,21 +150,21 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 bg-[#111827] border-r border-white/5 shadow-xl flex-col h-full">
+      <aside className="hidden md:flex w-64 bg-[#111827] border-r-4 border-[#1f1e1d] flex-col h-full z-30">
         <SidebarContent />
       </aside>
 
       {/* Mobile Top Bar */}
-      <div className="md:hidden bg-[#111827] border-b border-white/5 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+      <div className="md:hidden bg-[#111827] border-b-4 border-[#1f1e1d] px-5 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#FDBF1D] flex items-center justify-center text-[#111827] font-black text-base">B</div>
-          <span className="text-white font-bold text-base">Buaze</span>
+          <div className="w-8 h-8 rounded-lg bg-[#FDBF1D] border-2 border-[#1f1e1d] flex items-center justify-center text-[#111827] font-black text-lg shadow-[0_2px_0_0_#1f1e1d]">B</div>
+          <span className="text-white font-black text-lg tracking-tight">Buaze</span>
         </div>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-gray-400 p-1">
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white p-2 bg-white/5 border-2 border-white/10 rounded-xl">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {mobileOpen
-              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
+              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16M4 18h16" />}
           </svg>
         </button>
       </div>
@@ -172,10 +172,10 @@ export default function AdminSidebar() {
       {/* Mobile Drawer */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="w-72 bg-[#111827] h-full shadow-2xl flex flex-col">
+          <div className="w-72 bg-[#111827] h-full flex flex-col border-r-4 border-[#1f1e1d]">
             <SidebarContent />
           </div>
-          <div className="flex-1 bg-black/50" onClick={() => setMobileOpen(false)} />
+          <div className="flex-1 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
         </div>
       )}
     </>

@@ -38,10 +38,12 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-[#FCFBF7] overflow-hidden font-sans selection:bg-[#FDBF1D]/30">
       {isAuthenticated && <AdminSidebar />}
-      <div className={`flex-1 overflow-auto flex flex-col ${!isAuthenticated ? 'items-center justify-center' : ''}`}>
-        {children}
+      <div className={`flex-1 overflow-auto flex flex-col ${!isAuthenticated ? 'items-center justify-center p-6' : 'p-6 sm:p-10'}`}>
+        <div className={isAuthenticated ? "max-w-7xl mx-auto w-full" : "w-full"}>
+          {children}
+        </div>
       </div>
     </div>
   );
