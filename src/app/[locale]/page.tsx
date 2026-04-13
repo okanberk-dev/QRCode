@@ -103,7 +103,7 @@ export default async function LandingPage({
               <p className="text-[17px] text-[#4b5563] leading-relaxed max-w-xl font-medium">
                 {locale === 'tr' 
                   ? 'Dakikalar içinde kurulum yapın, Google puanınızı otomatik yükseltin ve müşterilerinizin güvenini kazanın.' 
-                  : 'Set up in minutes, automatically boost your Google ratings, and win your customers' trust effortlessly.'}
+                  : 'Set up in minutes, automatically boost your Google ratings, and win your customers\' trust effortlessly.'}
               </p>
 
               <div className="flex flex-col sm:flex-row items-center gap-6 pt-2">
