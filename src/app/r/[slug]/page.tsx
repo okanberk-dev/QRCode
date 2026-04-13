@@ -311,11 +311,3 @@ export default function SlugPage() {
     </Suspense>
   );
 }
-border-4 border-gray-50 border-t-blue-500 animate-spin" />
-        </div>
-      </div>
-    }>
-      <SlugContent />
-    </Suspense>
-  );
-}

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && prisma generate && prisma db push --accept-data-loss"
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +18,7 @@
     "date-fns": "^4.1.0",
     "jose": "^6.2.2",
     "lucide-react": "^1.8.0",
-    "next": "^16.2.3",
+    "next": "^15.1.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
@@ -34,8 +34,8 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "bcryptjs": "^3.0.3",
-    "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.3",
+    "eslint": "^9.16.0",
+    "eslint-config-next": "^15.1.0",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^8.0.5",
     "postcss": "^8.5.9",
