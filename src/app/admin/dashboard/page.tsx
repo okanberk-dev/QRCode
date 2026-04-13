@@ -209,8 +209,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* ─── Advanced Charts ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+        <div className="lg:col-span-2 bg-white p-4 sm:p-8 rounded-[24px] border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <TrendingUp size={20} strokeWidth={3} />
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
           </div>
           {stats && <TrendsChart data={stats.trends} />}
         </div>
-        <div className="lg:col-span-1 bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm">
+        <div className="lg:col-span-1 bg-white p-4 sm:p-8 rounded-[24px] border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
               <BarChart3 size={20} strokeWidth={3} />

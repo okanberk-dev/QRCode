@@ -9,9 +9,10 @@ interface FeedbackFormProps {
   onSuccess: () => void;
   restaurantSlug?: string;
   restaurantName?: string;
+  t: (key: any) => string;
 }
 
-export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restaurantName }: FeedbackFormProps) {
+export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restaurantName, t }: FeedbackFormProps) {
   const searchParams = useSearchParams();
   const source = searchParams.get('source') || 'qr';
   const branch = restaurantName || searchParams.get('branch') || '';
@@ -71,54 +72,51 @@ export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restau
   return (
     <div className="w-full">
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm mb-5 border border-red-100 flex items-start gap-2.5">
-          <span className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">!</span>
-          <span>{error}</span>
+        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-100 italic">
+          {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2.5">
-            {label.title}
-            <span className="font-normal text-gray-400 ml-1.5 text-xs">(Opsiyonel)</span>
-          </label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="relative">
           <textarea
             id="comment"
-            rows={4}
+            rows={5}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder={label.placeholder}
-            className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 focus:border-[#FDBF1D] focus:ring-2 focus:ring-[#FDBF1D]/10 outline-none text-[15px] text-gray-800 bg-gray-50/50 focus:bg-white resize-none placeholder-gray-300 transition-all"
+            placeholder={t('feedback_placeholder')}
+            className="w-full px-0 py-2 border-b-2 border-gray-100 focus:border-[#1a73e8] outline-none text-[15px] text-gray-800 bg-transparent resize-none placeholder-gray-400 transition-all min-h-[120px]"
           />
         </div>
 
-        <div className="flex items-start gap-3 bg-gray-50 rounded-2xl p-4 border border-gray-100/80">
-          <Lock size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />
-          <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed">
-            <span className="font-semibold text-gray-600">Gizliliğiniz korunuyor.</span>{' '}
-            Kişisel bilgi toplanmaz, değerlendirmeniz anonim olarak işlenir.{' '}
-            <a href="/tr/privacy" target="_blank" className="underline text-gray-500 hover:text-gray-700 transition-colors">Gizlilik Politikası</a>
-          </p>
+        <div className="flex items-center justify-between pt-2">
+          <div className="text-[11px] text-gray-400 leading-relaxed max-w-[60%] italic">
+            {t('feedback_disclaimer')}
+          </div>
+          
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onSuccess}
+              className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              {t('feedback_cancel')}
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-6 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white font-bold text-sm rounded-lg shadow-sm transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} />
+                </>
+              ) : (
+                t('feedback_post')
+              )}
+            </button>
+          </div>
         </div>
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full flex items-center justify-center gap-2.5 bg-[#111827] hover:bg-[#1f2937] text-white font-bold text-[15px] px-8 py-4 rounded-2xl shadow-lg shadow-gray-900/10 hover:shadow-xl hover:shadow-gray-900/15 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="animate-spin" size={18} />
-              <span>Gönderiliyor...</span>
-            </>
-          ) : (
-            <>
-              <Send size={16} />
-              <span>Geri Bildirimi Gönder</span>
-            </>
-          )}
-        </button>
       </form>
     </div>
   );

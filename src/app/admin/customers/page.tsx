@@ -153,12 +153,12 @@ export default function CustomersPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#FCFBF7] border-b border-gray-200 text-[11px] font-bold uppercase tracking-[0.2em] text-[#ada89f]">
-                <th className="px-4 py-4 sm:px-8 sm:py-6">{t('customers')}</th>
-                <th className="px-4 py-4 sm:px-8 sm:py-6">ABONELİK PLANI</th>
-                <th className="px-4 py-4 sm:px-8 sm:py-6">{t('restaurants')}</th>
-                <th className="px-4 py-4 sm:px-8 sm:py-6">{t('status')}</th>
-                <th className="px-4 py-4 sm:px-8 sm:py-6 text-right">{t('actions')}</th>
+              <tr className="bg-[#111827] text-[11px] font-bold uppercase tracking-[0.2em] text-[#ada89f]">
+                <th className="px-4 py-6 sm:px-10">{t('customers')}</th>
+                <th className="px-4 py-6 sm:px-10">ÜYELİK DURUMU</th>
+                <th className="px-4 py-6 sm:px-10">{t('restaurants')}</th>
+                <th className="px-4 py-6 sm:px-10">{t('status')}</th>
+                <th className="px-4 py-6 sm:px-10 text-right">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-[#F7F4F0] text-sm">
@@ -166,29 +166,29 @@ export default function CustomersPage() {
                 (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                 c.email.toLowerCase().includes(searchTerm.toLowerCase())
               ).map(customer => (
-                <tr key={customer.id} className="hover:bg-[#FCFBF7]/50 transition-colors group">
-                  <td className="px-4 py-4 sm:px-8 sm:py-6">
-                    <div className="flex items-center gap-2 sm:gap-4">
-                      <div className="hidden sm:flex w-12 h-12 rounded-[14px] bg-white border border-gray-200 shadow-sm items-center justify-center text-[#111827] group-hover:bg-[#FDBF1D] transition-colors">
-                        <User size={20} strokeWidth={2.5} />
+                <tr key={customer.id} className="hover:bg-[#FDBF1D]/5 transition-all group border-b border-[#F7F4F0]">
+                  <td className="px-4 py-6 sm:px-10">
+                    <div className="flex items-center gap-4">
+                      <div className="hidden sm:flex w-14 h-14 rounded-2xl bg-[#111827] text-[#FDBF1D] items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                        <User size={24} strokeWidth={2.5} />
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-black text-[#111827] text-[13px] sm:text-[15px] tracking-tight">{customer.name || 'İsimsiz Müşteri'}</span>
-                        <span className="text-xs font-bold text-[#6b6760]">{customer.email}</span>
+                        <span className="font-black text-[#111827] text-[16px] tracking-tight">{customer.name || 'İsimsiz Müşteri'}</span>
+                        <span className="text-xs font-bold text-[#ada89f] tracking-wide uppercase">{customer.email}</span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4 sm:px-8 sm:py-6">
-                    <span className={`px-3 py-1.5 sm:px-4 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1 sm:gap-2 w-max shadow-sm ${
+                  <td className="px-4 py-6 sm:px-10">
+                    <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border flex items-center gap-2 w-max shadow-sm transition-all group-hover:translate-x-1 ${
                       customer.plan === 'yearly' 
-                        ? 'bg-[#111827] text-white border-transparent' 
+                        ? 'bg-[#111827] text-[#FDBF1D] border-[#FDBF1D]/30 shadow-[0_4px_12px_rgba(253,191,29,0.2)]' 
                         : customer.plan === 'monthly'
-                        ? 'bg-[#EAB308] text-[#111827] border-transparent'
-                        : 'bg-[#FCFBF7] text-[#ada89f] border-gray-200'
+                        ? 'bg-[#FDBF1D] text-[#111827] border-transparent'
+                        : 'bg-white text-[#ada89f] border-[#F7F4F0]'
                     }`}>
-                      {customer.plan === 'yearly' ? <Crown size={14} className="scale-90 sm:scale-100" strokeWidth={3} /> : customer.plan === 'monthly' ? <BadgeCheck size={14} className="scale-90 sm:scale-100" strokeWidth={3} /> : <AlertCircle size={14} className="scale-90 sm:scale-100" strokeWidth={3} />}
-                      {customer.plan}
-                    </span>
+                      {customer.plan === 'yearly' ? <Crown size={16} strokeWidth={3} /> : customer.plan === 'monthly' ? <BadgeCheck size={16} strokeWidth={3} /> : <AlertCircle size={16} strokeWidth={3} />}
+                      {customer.plan === 'yearly' ? 'PLATINUM' : customer.plan === 'monthly' ? 'PRO PLAN' : 'DENEME'}
+                    </div>
                   </td>
                   <td className="px-4 py-4 sm:px-8 sm:py-6">
                     <div className="flex flex-col gap-1 font-bold text-[#6b6760] text-[12px]">

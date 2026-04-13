@@ -10,40 +10,35 @@ interface RatingChartProps {
 }
 
 export default function RatingChart({ distribution, totalCount }: RatingChartProps) {
-  // Find max value to calculate percentage relative to largest bar
   const maxCount = Math.max(...Object.values(distribution));
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
-      <h3 className="text-lg font-semibold text-gray-800 mb-6">Puan Dağılımı</h3>
-      
-      <div className="space-y-4">
-        {[5, 4, 3, 2, 1].map((star) => {
-          const count = distribution[star as keyof typeof distribution] || 0;
-          const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
-          const displayPercentage = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
-          
-          return (
-            <div key={star} className="flex items-center gap-4">
-              <div className="flex items-center gap-1 w-12 text-sm text-gray-600 font-medium whitespace-nowrap">
-                {star} <StarIcon />
-              </div>
-              
-              <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full rounded-full bg-[#fbbc04]"
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
-              
-              <div className="w-20 text-right text-sm">
-                <span className="font-semibold text-gray-700">{count}</span>
-                <span className="text-gray-400 text-xs ml-1">({displayPercentage}%)</span>
-              </div>
+    <div className="space-y-4 w-full">
+      {[5, 4, 3, 2, 1].map((star) => {
+        const count = distribution[star as keyof typeof distribution] || 0;
+        const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+        const displayPercentage = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
+        
+        return (
+          <div key={star} className="flex items-center gap-4">
+            <div className="flex items-center gap-1 w-12 text-sm text-[#ada89f] font-black whitespace-nowrap uppercase tracking-tighter">
+              {star} <StarIcon />
             </div>
-          );
-        })}
-      </div>
+            
+            <div className="flex-1 h-3 bg-[#F7F4F0] rounded-full overflow-hidden border border-[#e8e4de]">
+              <div 
+                className="h-full rounded-full bg-[#FDBF1D] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] transition-all duration-500"
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+            
+            <div className="w-20 text-right text-sm">
+              <span className="font-black text-[#111827]">{count}</span>
+              <span className="text-[#ada89f] text-[10px] font-bold ml-1">({displayPercentage}%)</span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -12,17 +12,10 @@ interface TrendsChartProps {
 
 export default function TrendsChart({ data }: TrendsChartProps) {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-bold text-[#111827]">Etkileşim Trendi</h3>
-          <p className="text-xs text-gray-400 font-medium">QR tarama sayısı ve puan gelişimi</p>
-        </div>
-      </div>
-
-      <div className="flex-1 min-h-[250px] w-full">
+    <div className="flex flex-col h-[350px] w-full">
+      <div className="flex-1 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data}>
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#111827" stopOpacity={0.1}/>

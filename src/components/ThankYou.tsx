@@ -7,67 +7,45 @@ interface ThankYouProps {
   googleReviewUrl?: string | null;
 }
 
-export default function ThankYou({ rating, googleReviewUrl }: ThankYouProps) {
+interface ThankYouProps {
+  rating?: number;
+  googleReviewUrl?: string | null;
+  t: (key: any) => string;
+}
+
+export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) {
   const isLowRating = rating && rating <= 3;
   const hasGoogleUrl = !!googleReviewUrl;
 
   return (
-    <div className="w-full max-w-sm mx-auto text-center">
+    <div className="w-full max-w-sm mx-auto text-center animate-in zoom-in-95 duration-500">
       {/* Success Icon */}
-      <div className="flex justify-center mb-7">
-        <div className="relative">
-          {/* Outer glow ring */}
-          <div className={`absolute -inset-3 rounded-full opacity-20 animate-pulse ${isLowRating ? 'bg-orange-400' : 'bg-green-400'}`} />
-          <div className={`relative w-20 h-20 rounded-full flex items-center justify-center shadow-lg ${
-            isLowRating 
-              ? 'bg-gradient-to-br from-orange-50 to-orange-100 shadow-orange-100' 
-              : 'bg-gradient-to-br from-green-50 to-green-100 shadow-green-100'
-          }`}>
-            <CheckCircle
-              size={40}
-              className={isLowRating ? 'text-orange-500' : 'text-green-500'}
-              strokeWidth={1.5}
-            />
-          </div>
-          {/* Emoji badge */}
-          <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md border border-gray-100 text-lg">
-            {isLowRating ? '🙏' : '🎉'}
-          </div>
+      <div className="flex justify-center mb-8">
+        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-[#1a73e8]">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
       </div>
 
       {/* Title & Message */}
-      <h2 className="text-xl sm:text-2xl font-bold text-[#111827] mb-2.5">
-        {isLowRating ? 'Görüşünüz Alındı' : 'Teşekkür Ederiz!'}
+      <h2 className="text-2xl font-medium text-gray-900 mb-2">
+        {t('feedback_thank_you')}
       </h2>
 
-      <p className="text-gray-500 mb-8 text-sm sm:text-base leading-relaxed px-2">
-        {isLowRating
-          ? 'Geri bildiriminiz bizim için çok değerli. Yaşadığınız sorunu en kısa sürede inceleyeceğiz.'
-          : 'Güzel puanlamanız için çok teşekkürler! Sizi tekrar ağırlamaktan mutluluk duyarız.'}
+      <p className="text-gray-500 mb-10 text-base leading-relaxed">
+        {t('feedback_thank_you_sub')}
       </p>
 
       {/* Google CTA */}
       {hasGoogleUrl && (
-        <div className={`rounded-2xl p-5 sm:p-6 border ${
-          isLowRating 
-            ? 'bg-gray-50 border-gray-100' 
-            : 'bg-gradient-to-br from-[#FDBF1D]/5 to-[#EAB308]/5 border-[#FDBF1D]/15'
-        }`}>
-          <p className="text-sm font-medium text-gray-600 mb-4">
-            {isLowRating
-              ? 'Deneyiminizi Google\'da da paylaşmak ister misiniz?'
-              : 'Yorumunuzu Google\'da da paylaşın!'}
+        <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+          <p className="text-sm font-medium text-gray-700 mb-4">
+            {t('feedback_share_google')}
           </p>
           <a
             href={googleReviewUrl!}
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center justify-center gap-2.5 font-bold px-6 py-3.5 rounded-xl shadow-sm transition-all text-sm active:scale-[0.98] w-full sm:w-auto ${
-              isLowRating
-                ? 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md'
-                : 'bg-white border border-gray-200 text-gray-800 hover:shadow-md'
-            }`}
+            className="inline-flex items-center justify-center gap-2.5 bg-white border border-gray-100 text-gray-800 font-bold px-6 py-3 rounded-xl shadow-sm hover:shadow-md transition-all text-sm active:scale-[0.98]"
           >
             {/* Google G Logo */}
             <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -76,19 +54,11 @@ export default function ThankYou({ rating, googleReviewUrl }: ThankYouProps) {
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
-            Google&apos;da Yorum Yap
-            <ExternalLink size={13} className="opacity-50" />
+            {t('feedback_google_btn')}
+            <ExternalLink size={14} className="opacity-50" />
           </a>
         </div>
       )}
-
-      {/* Warm footer */}
-      <div className="flex items-center justify-center gap-1.5 mt-8 text-gray-300">
-        <Heart size={12} className="fill-current" />
-        <p className="text-[10px] sm:text-[11px]">
-          Anonim değerlendirmeniz güvenle iletildi
-        </p>
-      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Star, Loader2, MapPin, ChevronRight } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import FeedbackForm from '@/components/FeedbackForm';
 import ThankYou from '@/components/ThankYou';
+import { getTranslations, Locale, locales } from '@/lib/translations';
 
 interface RestaurantData {
   id: string;
@@ -23,6 +24,25 @@ function SlugContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
+
+  // --- Locale Handling ---
+  const [locale, setLocale] = useState<Locale>('tr');
+  useEffect(() => {
+    const hl = searchParams.get('hl') as Locale;
+    if (hl && locales.includes(hl)) {
+      setLocale(hl);
+    } else {
+      const browserLang = navigator.language.split('-')[0] as Locale;
+      if (locales.includes(browserLang)) {
+        setLocale(browserLang);
+      }
+    }
+  }, [searchParams]);
+
+  const t = (key: any) => {
+    const trans = getTranslations(locale);
+    return (trans as any)[key] || key;
+  };
 
   const [restaurant, setRestaurant] = useState<RestaurantData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -132,32 +152,28 @@ function SlugContent() {
   const initial = restaurant.name.charAt(0).toUpperCase();
 
   return (
-    <main className="flex flex-col min-h-[100dvh] bg-gradient-to-b from-[#f8f9fa] to-[#f0f1f3] font-sans">
+    <main className="flex flex-col min-h-[100dvh] bg-white font-sans text-gray-900">
       
       {/* ═══════ High Rating Redirect Overlay ═══════ */}
       {isRedirecting && (
-        <div className="fixed inset-0 bg-[#111827]/95 backdrop-blur-xl z-[100] flex flex-col items-center justify-center p-6 text-center">
-          {/* Animated Rings */}
-          <div className="relative mb-8">
-            <div className="absolute inset-0 w-24 h-24 rounded-full bg-[#FDBF1D]/10 animate-ping" />
-            <div className="relative w-24 h-24 rounded-3xl bg-white shadow-2xl flex items-center justify-center">
-              <svg viewBox="0 0 48 48" className="w-12 h-12">
+        <div className="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center p-6 text-center">
+          <div className="mb-8 relative">
+            <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
+              <svg viewBox="0 0 48 48" className="w-10 h-10">
                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                 <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
                 <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z"/>
                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
               </svg>
             </div>
+            <div className="flex flex-col gap-2">
+              <h2 className="text-xl font-medium text-gray-900">{t('feedback_redirecting')}</h2>
+              <p className="text-sm text-gray-500">{t('feedback_redirect_sub')}</p>
+            </div>
           </div>
           
-          <h2 className="text-2xl font-black text-white mb-3">Harika! Teşekkürler 🎉</h2>
-          <p className="text-gray-400 text-sm max-w-[260px] leading-relaxed mb-8">
-            Memnuniyetinizi Google&apos;da paylaşmanız için yönlendiriliyorsunuz...
-          </p>
-          
-          {/* Progress Bar */}
-          <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-[#FDBF1D] to-[#EAB308] rounded-full animate-[progressBar_2s_ease-in-out_forwards]" />
+          <div className="w-48 h-1 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-[#1a73e8] rounded-full animate-[progressBar_2s_linear_forwards]" />
           </div>
           
           <style jsx>{`
@@ -169,112 +185,77 @@ function SlugContent() {
         </div>
       )}
 
-      {/* ═══════ Restaurant Header Card ═══════ */}
-      <div className="bg-white">
-        {/* Top accent bar */}
-        <div className="h-1 bg-gradient-to-r from-[#FDBF1D] via-[#EAB308] to-[#FDBF1D]" />
-        
-        <div className="max-w-lg mx-auto w-full px-5 py-6 sm:py-8">
-          <div className="flex items-start gap-4">
-            {/* Restaurant Avatar */}
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-[#111827] to-[#1f2937] flex items-center justify-center flex-shrink-0 shadow-lg shadow-gray-200/50">
-              <span className="text-xl sm:text-2xl font-black text-[#FDBF1D]">{initial}</span>
-            </div>
-            
+      {/* ═══════ Google-Style Header ═══════ */}
+      <div className="sticky top-0 bg-white border-b border-gray-100 z-10">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4 min-w-0">
+            <button 
+              onClick={() => rating > 0 ? setRating(0) : window.history.back()}
+              className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold text-[#111827] tracking-tight leading-tight truncate">
-                {restaurant.name}
-              </h1>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
-                <span className="text-sm text-gray-500 font-medium">{restaurant.category}</span>
-                {restaurant.address && (
-                  <>
-                    <span className="text-gray-300 hidden sm:inline">·</span>
-                    <div className="flex items-center gap-1 text-sm text-gray-400 w-full sm:w-auto">
-                      <MapPin size={12} className="text-gray-400 flex-shrink-0" />
-                      <span className="truncate text-xs sm:text-sm">{restaurant.address}</span>
-                    </div>
-                  </>
-                )}
-              </div>
+              <h1 className="text-lg font-medium text-gray-900 truncate">{restaurant.name}</h1>
+              <p className="text-xs text-gray-500">{t('feedback_via_google')}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-medium">
+              {initial}
             </div>
           </div>
         </div>
       </div>
 
       {/* ═══════ Main Content Area ═══════ */}
-      <div className="flex-1 max-w-lg mx-auto w-full px-4 sm:px-5 py-5 sm:py-8">
-
-        {/* ── Star Rating Card ── */}
-        {!showThankYou && !showForm && (
-          <div className="bg-white rounded-[28px] shadow-[0_2px_20px_-4px_rgba(0,0,0,0.06)] border border-gray-100/80 overflow-hidden">
-            {/* Header */}
-            <div className="px-6 sm:px-8 pt-8 sm:pt-10 pb-2 text-center">
-              <div className="inline-flex items-center gap-2 bg-[#FDBF1D]/8 border border-[#FDBF1D]/15 px-3.5 py-1.5 rounded-full mb-5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#FDBF1D] animate-pulse" />
-                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#111827]/60">Değerlendirme</span>
+      <div className="max-w-2xl mx-auto w-full px-4 py-8">
+        
+        {!showThankYou && (
+          <div className="space-y-8">
+            {/* Header info */}
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl">
+                👤
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-[#111827] mb-1.5">
-                Deneyiminizi değerlendirin
-              </h2>
-              <p className="text-sm text-gray-400 max-w-[260px] mx-auto leading-relaxed">
-                Görüşünüz hizmet kalitemizi iyileştirmemize yardımcı olur
-              </p>
-            </div>
-            
-            {/* Star Rating */}
-            <div className="px-6 sm:px-8 py-8 sm:py-10">
-              <StarRating rating={rating} onRatingChange={handleRatingChange} />
-            </div>
-            
-            {/* Bottom hint */}
-            <div className="px-6 sm:px-8 pb-6 sm:pb-8">
-              <div className="bg-gray-50 rounded-2xl px-4 py-3 text-center">
-                <p className="text-[11px] sm:text-xs text-gray-400">
-                  ⭐ Puanınızı seçtikten sonra bir sonraki adıma geçeceksiniz
-                </p>
+              <div className="flex flex-col">
+                <span className="text-[14px] font-medium text-gray-900">{t('feedback_anonymous')}</span>
+                <span className="text-[12px] text-gray-500">{t('feedback_public')}</span>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* ── Low Rating Feedback Form ── */}
-        {showForm && (
-          <div className="bg-white rounded-[28px] shadow-[0_2px_20px_-4px_rgba(0,0,0,0.06)] border border-gray-100/80 overflow-hidden">
-            {/* Rating display header */}
-            <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-5 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-0.5">
-                    {[1,2,3,4,5].map(s => (
-                      <Star key={s} size={14} className={s <= rating ? 'fill-[#FDBF1D] text-[#FDBF1D]' : 'text-gray-200 fill-gray-100'} strokeWidth={1.5} />
-                    ))}
-                  </div>
-                  <span className="text-sm font-semibold text-gray-600">{rating}/5</span>
+            {/* Star Rating Section */}
+            {!showForm ? (
+              <div className="py-2">
+                <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
+              </div>
+            ) : (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="mb-6 flex gap-1">
+                  {[1,2,3,4,5].map(s => (
+                    <Star 
+                      key={s} 
+                      size={20} 
+                      onClick={() => setRating(s)}
+                      className={`cursor-pointer ${s <= rating ? 'fill-[#fbbc04] text-[#fbbc04]' : 'text-gray-200 fill-gray-100'}`} 
+                      strokeWidth={1} 
+                    />
+                  ))}
                 </div>
-                <span className="text-xs text-gray-400 bg-gray-50 px-2.5 py-1 rounded-lg font-medium">
-                  Geri Bildirim
-                </span>
+                <FeedbackForm 
+                  rating={rating} 
+                  onSuccess={() => setFormSubmitted(true)}
+                  restaurantSlug={slug}
+                  restaurantName={restaurant.name}
+                  t={t}
+                />
               </div>
-            </div>
-            
-            {/* Form */}
-            <div className="px-6 sm:px-8 py-6 sm:py-8">
-              <FeedbackForm
-                rating={rating}
-                onSuccess={() => setFormSubmitted(true)}
-                restaurantSlug={slug}
-                restaurantName={restaurant.name}
-              />
-            </div>
+            )}
           </div>
         )}
 
-        {/* ── Thank You ── */}
         {showThankYou && (
-          <div className="bg-white rounded-[28px] shadow-[0_2px_20px_-4px_rgba(0,0,0,0.06)] border border-gray-100/80 p-6 sm:p-10">
-            <ThankYou rating={rating} googleReviewUrl={googleUrl} />
-          </div>
+            <ThankYou rating={rating} googleReviewUrl={googleUrl} t={t} />
         )}
 
         {/* ── Google Reviews Direct CTA ── */}
@@ -303,17 +284,14 @@ function SlugContent() {
       </div>
 
       {/* ═══════ Footer ═══════ */}
-      <footer className="max-w-lg mx-auto w-full px-5 pb-6 sm:pb-8 pt-2">
-        <div className="border-t border-gray-200/60 pt-5">
-          <p className="text-[10px] sm:text-[11px] text-gray-400 leading-relaxed text-center">
-            Bu form anonim değerlendirme toplar. Kişisel veri işlenmemektedir.{' '}
-            <a href="/tr/privacy" target="_blank" className="underline hover:text-gray-500 transition-colors">Gizlilik</a>
-            {' · '}
-            <a href="/tr/terms" target="_blank" className="underline hover:text-gray-500 transition-colors">Koşullar</a>
-          </p>
-          <p className="text-[10px] text-gray-300 mt-2 font-medium text-center">
-            Powered by{' '}
-            <a href="https://buaze.com" target="_blank" className="text-[#FDBF1D] font-bold hover:underline">Buaze</a>
+      <footer className="mt-auto py-8 px-4 border-t border-gray-50">
+        <div className="max-w-2xl mx-auto flex flex-col items-center gap-4">
+          <div className="flex gap-4 text-xs text-gray-400">
+            <a href="/tr/privacy" className="hover:text-gray-600 underline">{t('footer_privacy')}</a>
+            <a href="/tr/terms" className="hover:text-gray-600 underline">{t('footer_terms')}</a>
+          </div>
+          <p className="text-[10px] text-gray-300">
+            Powered by <a href="https://buaze.com" className="font-bold hover:text-blue-500">Buaze</a>
           </p>
         </div>
       </footer>
