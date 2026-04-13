@@ -27,8 +27,17 @@ export default function AdminMobileNav() {
 
   const filteredItems = navItems.filter(item => item.roles.includes(role));
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Logout error', e);
+    }
+    window.location.href = '/admin';
+  };
+
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#111827] border-t border-white/10 z-50 flex items-center justify-around px-4 py-3 pb-safe shadow-[0_-4px_20px_0_rgba(0,0,0,0.4)]">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#111827] border-t border-white/10 z-50 flex items-center justify-around px-2 py-3 pb-safe shadow-[0_-4px_20px_0_rgba(0,0,0,0.4)]">
       {filteredItems.map((item) => {
         const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
         const Icon = item.icon;
@@ -42,12 +51,22 @@ export default function AdminMobileNav() {
             }`}
           >
             <div className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-[#FDBF1D]/10' : ''}`}>
-              <Icon size={22} strokeWidth={isActive ? 3 : 2} />
+              <Icon size={20} strokeWidth={isActive ? 3 : 2} />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+            <span className="text-[9px] font-black uppercase tracking-tight">{item.label}</span>
           </Link>
         );
       })}
+
+      <button
+        onClick={handleLogout}
+        className="flex flex-col items-center gap-1 transition-all text-red-500 hover:text-red-400"
+      >
+        <div className="p-1.5 rounded-lg transition-all">
+          <Menu size={20} strokeWidth={2} />
+        </div>
+        <span className="text-[9px] font-black uppercase tracking-tight">{t('logout') || 'Çıkış'}</span>
+      </button>
     </div>
   );
 }

@@ -198,8 +198,7 @@ function SlugContent() {
               <X size={22} strokeWidth={2} />
             </button>
             <div className="flex flex-col">
-               <h1 className="text-[15px] font-bold text-gray-900 truncate tracking-tight leading-tight">{restaurant.name}</h1>
-               <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest leading-tight">Yorum Yaz</span>
+               <h1 className="text-[14px] font-bold text-gray-900 tracking-tight leading-tight">{t('feedback_post_title') || 'Yorum Yaz'}</h1>
             </div>
           </div>
           
@@ -230,35 +229,14 @@ function SlugContent() {
       <div className="max-w-xl mx-auto w-full px-6 py-6 flex-1">
         
         {!showThankYou && !showForm && (
-          <div className="animate-in fade-in duration-500">
-            <BusinessSummary 
-              name={restaurant.name} 
-              address={restaurant.address} 
-              category={restaurant.category} 
-            />
-            <div className="mt-8">
-               <div className="flex flex-col items-center gap-4 mb-8">
-                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-3xl">👤</div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-gray-900 leading-tight">İbrahim</p>
-                    <p className="text-[11px] text-gray-400 font-medium">Bu yorum herkese açık olarak paylaşılır</p>
-                  </div>
-               </div>
+            <div className="mt-4">
                <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
             </div>
-          </div>
         )}
 
         {showForm && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-             <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xl">İ</div>
-                <div className="flex flex-col">
-                  <p className="text-sm font-bold text-gray-900">İbrahim</p>
-                  <p className="text-[11px] text-gray-400 font-medium leading-tight">Bu yorum herkese açık olarak paylaşılır</p>
-                </div>
-             </div>
-            <div className="mb-8 scale-90 -mt-2">
+            <div className="mb-6 scale-90 -mt-2">
               <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
             </div>
             <FeedbackForm 

@@ -22,9 +22,9 @@ export default function StarRating({ rating, onRatingChange, t }: StarRatingProp
   };
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full py-2">
+    <div className="flex flex-col items-center gap-8 w-full py-4">
       {/* Stars Row */}
-      <div className="flex flex-row gap-2 justify-center items-center w-full">
+      <div className="flex flex-row gap-3 justify-center items-center w-full">
         {[1, 2, 3, 4, 5].map((star) => {
           const isActive = star <= active;
           const isSelected = star <= rating;
@@ -39,13 +39,13 @@ export default function StarRating({ rating, onRatingChange, t }: StarRatingProp
               onTouchStart={() => setHoverRating(star)}
               onTouchEnd={() => { onRatingChange(star); setHoverRating(0); }}
               aria-label={`${star} yıldız`}
-              className="focus:outline-none p-1 transition-all duration-200 active:scale-90 relative group"
+              className="focus:outline-none p-1.5 transition-all duration-200 active:scale-90 relative group"
             >
               <Star
-                size={44}
+                size={48}
                 className={`transition-all duration-300 ${
                   isActive
-                    ? 'fill-[#fbbc04] text-[#fbbc04] scale-110'
+                    ? 'fill-[#fbbc04] text-[#fbbc04] scale-110 shadow-sm'
                     : 'text-gray-200 fill-transparent'
                 } ${isSelected && !hoverRating ? 'fill-[#fbbc04] text-[#fbbc04]' : ''}`}
                 strokeWidth={isActive ? 1.5 : 1}
@@ -53,7 +53,7 @@ export default function StarRating({ rating, onRatingChange, t }: StarRatingProp
               
               {/* Subtle glow effect for active stars */}
               {isActive && (
-                <div className="absolute inset-0 bg-[#fbbc04] opacity-10 blur-xl rounded-full scale-150 pointer-events-none transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-[#fbbc04] opacity-5 blur-xl rounded-full scale-150 pointer-events-none transition-opacity duration-500" />
               )}
             </button>
           );
@@ -61,14 +61,14 @@ export default function StarRating({ rating, onRatingChange, t }: StarRatingProp
       </div>
 
       {/* Dynamic Label */}
-      <div className="h-8 flex items-center justify-center transition-all duration-300">
+      <div className="h-6 flex items-center justify-center transition-all duration-300">
         {active > 0 && labels[active] ? (
-          <span className="text-base font-semibold text-gray-700 animate-in fade-in slide-in-from-bottom-1">
+          <span className="text-[15px] font-bold text-gray-800 animate-in fade-in zoom-in-95 duration-300">
             {labels[active]}
           </span>
         ) : (
-          <span className="text-sm text-gray-400 font-medium">
-            Deneyiminizi puanlayın
+          <span className="text-[13px] text-gray-400 font-bold uppercase tracking-[0.1em]">
+            Puan Verin
           </span>
         )}
       </div>

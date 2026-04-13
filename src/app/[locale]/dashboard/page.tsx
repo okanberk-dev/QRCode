@@ -136,10 +136,10 @@ export default async function DashboardPage({
                 <button
                   type="submit"
                   id="dashboard-logout-btn"
-                  className="flex items-center gap-2 text-[13px] font-black text-[#6b6760] hover:text-red-500 transition-all px-4 py-2.5 rounded-xl border-2 border-transparent hover:border-red-500/10 active:translate-y-1"
+                  className="flex items-center gap-2 text-[13px] font-black text-red-500 hover:bg-red-50 transition-all px-3 sm:px-4 py-2.5 rounded-xl border-2 border-red-500/10 hover:border-red-500/20 active:translate-y-1"
                 >
-                  <LogOut size={18} strokeWidth={2.5} />
-                  <span className="hidden sm:block uppercase tracking-wider">{t.dash_logout}</span>
+                  <LogOut size={18} strokeWidth={3} />
+                  <span className="hidden md:block uppercase tracking-wider">{t.dash_logout}</span>
                 </button>
               </form>
             </div>

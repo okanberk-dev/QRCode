@@ -168,12 +168,12 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 bg-[#111827] border-r border-white/5 flex-col h-full z-30">
+      <aside className="hidden lg:flex w-64 bg-[#111827] border-r border-white/5 flex-col h-full z-30">
         <SidebarContent />
       </aside>
 
       {/* Mobile Top Bar */}
-      <div className="md:hidden bg-[#111827] border-b border-white/10 px-5 py-4 flex items-center justify-between sticky top-0 z-40">
+      <div className="lg:hidden bg-[#111827] border-b border-white/10 px-5 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-[#FDBF1D] flex items-center justify-center text-[#111827] font-black text-lg shadow-sm">B</div>
           <span className="text-white font-black text-lg tracking-tight">Buaze</span>
@@ -189,7 +189,7 @@ export default function AdminSidebar() {
 
       {/* Mobile Drawer */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
+        <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="w-72 bg-[#111827] h-full flex flex-col border-r border-white/10 shadow-2xl">
             <SidebarContent />
           </div>
