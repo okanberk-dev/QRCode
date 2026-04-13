@@ -1,4 +1,4 @@
-import { Star, MessageSquareAlert, Hash, Zap, Heart } from 'lucide-react';
+import { Star, AlertTriangle, Hash, Zap, Heart } from 'lucide-react';
 
 interface StatsProps {
   stats: {
@@ -47,7 +47,7 @@ export default function StatsCards({ stats }: StatsProps) {
       <div className="bg-white p-4 sm:p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:translate-y-[-2px] hover:shadow-md group">
         <div className="flex items-center justify-between mb-4 sm:mb-5">
           <div className="w-9 h-9 sm:w-11 sm:h-11 bg-red-50 text-red-500 rounded-xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
-            <MessageSquareAlert size={20} strokeWidth={2.5} />
+            <AlertTriangle size={20} strokeWidth={2.5} />
           </div>
           <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-red-400">KRİTİK</span>
         </div>
