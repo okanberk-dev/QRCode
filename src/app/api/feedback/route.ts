@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { rating, name, email, phone, comment, source, branch, tableNumber, restaurantSlug } = body;
+    const { rating, name, email, phone, comment, source, branch, tableNumber, restaurantSlug, serviceType, aspects } = body;
 
     // Validation
     if (!isValidRating(rating)) {
@@ -67,6 +67,11 @@ export async function POST(req: NextRequest) {
         hasKvkkConsent: body.hasKvkkConsent ?? true,
         hasMarketingConsent: body.hasMarketingConsent ?? false,
         restaurantId,
+        // Rich Feedback Additions
+        serviceType: sanitizeText(serviceType, 50),
+        foodRating: aspects?.food ? Number(aspects.food) : null,
+        serviceRating: aspects?.service ? Number(aspects.service) : null,
+        atmosphereRating: aspects?.atmosphere ? Number(aspects.atmosphere) : null,
       },
     });
 
@@ -83,6 +88,8 @@ export async function POST(req: NextRequest) {
           tableNumber,
           restaurantName,
           toEmail: notificationEmail,
+          serviceType,
+          aspects,
         });
       } catch (err) {
         // Log but don't fail the entire request - the feedback IS in the DB!

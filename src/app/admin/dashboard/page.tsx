@@ -20,7 +20,7 @@ interface Restaurant {
 }
 
 export default function AdminDashboard() {
-  const { t } = useAdminTranslation();
+  const { t, locale } = useAdminTranslation();
   const [stats, setStats] = useState<any>(null);
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -275,7 +275,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className={`transition-all duration-300 ${loading ? 'opacity-30 pointer-events-none scale-[0.98]' : ''}`}>
-            <FeedbackTable feedbacks={feedbacks} />
+            <FeedbackTable feedbacks={feedbacks} locale={locale} />
           </div>
 
           {totalPages > 1 && (

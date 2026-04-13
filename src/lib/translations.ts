@@ -119,6 +119,17 @@ export const translations = {
     rating_good: 'İyi',
     rating_excellent: 'Mükemmel',
 
+    // Rich Feedback Additions
+    feedback_service_type: 'Hizmet türü nedir?',
+    feedback_dine_in: 'Yerinde yemek',
+    feedback_takeout: 'Paket servis',
+    feedback_delivery: 'Teslimat',
+    feedback_food: 'Yemek',
+    feedback_service: 'Servis',
+    feedback_atmosphere: 'Atmosfer',
+    feedback_add_photo: 'Fotoğraf ekle',
+    feedback_photo_hint: 'Fotoğraflar müşterilerin mekanı tanımasına yardımcı olur',
+
     // About
     about_hero_title_1: 'Gerçek İncelemeler',
     about_hero_title_2: 'Gerçek Büyüme',
@@ -457,6 +468,17 @@ export const translations = {
     rating_fair: 'Fair',
     rating_good: 'Good',
     rating_excellent: 'Excellent',
+
+    // Rich Feedback Additions
+    feedback_service_type: 'What was the service type?',
+    feedback_dine_in: 'Dine-in',
+    feedback_takeout: 'Takeout',
+    feedback_delivery: 'Delivery',
+    feedback_food: 'Food',
+    feedback_service: 'Service',
+    feedback_atmosphere: 'Atmosphere',
+    feedback_add_photo: 'Add photos',
+    feedback_photo_hint: 'Photos help people find what they need',
   },
 } as const;
 

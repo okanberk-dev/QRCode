@@ -37,6 +37,12 @@ export interface NotificationParams {
   tableNumber?: string | null;
   restaurantName?: string;
   toEmail?: string | null;
+  serviceType?: string | null;
+  aspects?: {
+    food?: number;
+    service?: number;
+    atmosphere?: number;
+  } | null;
 }
 
 function renderStars(rating: number): string {
@@ -180,6 +186,26 @@ export async function sendFeedbackNotification(data: NotificationParams) {
                 <tr style="border-top:1px solid #e5e7eb;">
                   <td style="padding:12px 16px;font-size:13px;color:#6b7280;">Masa No</td>
                   <td style="padding:12px 16px;font-size:13px;color:#111827;font-weight:600;">Masa ${data.tableNumber}</td>
+                </tr>` : ''}
+                ${data.serviceType ? `
+                <tr style="border-top:1px solid #e5e7eb;">
+                  <td style="padding:12px 16px;font-size:13px;color:#6b7280;">Hizmet Türü</td>
+                  <td style="padding:12px 16px;font-size:13px;color:#111827;font-weight:600;">${data.serviceType === 'dine_in' ? 'Yerinde' : data.serviceType === 'takeout' ? 'Paket' : 'Teslimat'}</td>
+                </tr>` : ''}
+                ${data.aspects?.food ? `
+                <tr style="border-top:1px solid #e5e7eb;">
+                  <td style="padding:12px 16px;font-size:13px;color:#6b7280;">Yemek</td>
+                  <td style="padding:12px 16px;font-size:13px;color:#111827;font-weight:600;">${data.aspects.food} / 5</td>
+                </tr>` : ''}
+                ${data.aspects?.service ? `
+                <tr style="border-top:1px solid #e5e7eb;">
+                  <td style="padding:12px 16px;font-size:13px;color:#6b7280;">Servis</td>
+                  <td style="padding:12px 16px;font-size:13px;color:#111827;font-weight:600;">${data.aspects.service} / 5</td>
+                </tr>` : ''}
+                ${data.aspects?.atmosphere ? `
+                <tr style="border-top:1px solid #e5e7eb;">
+                  <td style="padding:12px 16px;font-size:13px;color:#6b7280;">Atmosfer</td>
+                  <td style="padding:12px 16px;font-size:13px;color:#111827;font-weight:600;">${data.aspects.atmosphere} / 5</td>
                 </tr>` : ''}
                 <tr style="border-top:1px solid #e5e7eb;">
                   <td style="padding:12px 16px;font-size:13px;color:#6b7280;">Tarih & Saat</td>

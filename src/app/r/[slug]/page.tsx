@@ -6,6 +6,7 @@ import { Star, Loader2, MapPin, ChevronRight } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import FeedbackForm from '@/components/FeedbackForm';
 import ThankYou from '@/components/ThankYou';
+import BusinessSummary from '@/components/BusinessSummary';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 
 interface RestaurantData {
@@ -211,6 +212,14 @@ function SlugContent() {
       {/* ═══════ Main Content Area ═══════ */}
       <div className="max-w-2xl mx-auto w-full px-4 py-8">
         
+        {!showThankYou && !showForm && (
+          <BusinessSummary 
+            name={restaurant.name} 
+            address={restaurant.address} 
+            category={restaurant.category} 
+          />
+        )}
+
         {!showThankYou && (
           <div className="space-y-8">
             {/* Header info */}

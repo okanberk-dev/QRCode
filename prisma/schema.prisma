@@ -65,6 +65,13 @@ model Feedback {
   userAgent           String?     @map("user_agent")
   hasKvkkConsent      Boolean     @default(true) @map("has_kvkk_consent")
   hasMarketingConsent Boolean     @default(false) @map("has_marketing_consent")
+  
+  // Rich Feedback Additions
+  serviceType         String?     @map("service_type")
+  foodRating          Int?        @map("food_rating")
+  serviceRating       Int?        @map("service_rating")
+  atmosphereRating    Int?        @map("atmosphere_rating")
+  
   createdAt           DateTime    @default(now()) @map("created_at")
 
   restaurantId        String?     @map("restaurant_id")
