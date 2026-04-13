@@ -292,7 +292,7 @@ export default async function DashboardPage({
                       {t.dash_manage}
                     </Link>
                     <Link
-                      href={`/admin/qr?restaurantId=${restaurant.id}`}
+                      href={`/admin/qr?restaurant=${restaurant.id}`}
                       className="flex-1 text-center py-3 text-[12px] font-black bg-[#FDBF1D] text-[#111827] rounded-xl border-2 border-[#1f1e1d] shadow-[0_3px_0_0_#1f1e1d] hover:bg-[#EAB308] active:translate-y-1 active:shadow-none transition-all uppercase tracking-wider"
                     >
                       {t.dash_qr}
