@@ -43,8 +43,8 @@ export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restau
           branch,
           tableNumber,
           restaurantSlug,
-          serviceType,
-          aspects,
+          serviceType: null,
+          aspects: null,
         })
       });
 
@@ -71,8 +71,7 @@ export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restau
 
   const label = ratingLabels[rating] || { title: 'Deneyiminizi paylaşın', placeholder: 'Yorumunuzu buraya yazabilirsiniz...' };
 
-  const [serviceType, setServiceType] = useState<string | null>(null);
-  const [aspects, setAspects] = useState({ food: 0, service: 0, atmosphere: 0 });
+
 
   return (
     <div className="w-full">
@@ -84,51 +83,7 @@ export default function FeedbackForm({ rating, onSuccess, restaurantSlug, restau
 
       <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
-        {/* Service Type Selection */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-gray-700">{t('feedback_service_type')}</label>
-          <div className="flex flex-wrap gap-2">
-            {['dine_in', 'takeout', 'delivery'].map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setServiceType(type)}
-                className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
-                  serviceType === type 
-                    ? 'bg-blue-50 border-blue-200 text-blue-600' 
-                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
-                }`}
-              >
-                {t(`feedback_${type}`)}
-              </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Aspect Ratings */}
-        <div className="space-y-4 pt-2">
-          {['food', 'service', 'atmosphere'].map((aspect) => (
-            <div key={aspect} className="flex items-center justify-between group">
-              <span className="text-sm text-gray-600 font-medium">{t(`feedback_${aspect}`)}</span>
-              <div className="flex gap-1.5">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setAspects(prev => ({ ...prev, [aspect]: s }))}
-                    className="focus:outline-none transition-transform active:scale-90"
-                  >
-                    <Star 
-                      size={20} 
-                      className={`${s <= (aspects as any)[aspect] ? 'fill-[#fbbc04] text-[#fbbc04]' : 'text-gray-200 fill-gray-100'} transition-colors`} 
-                      strokeWidth={1.5}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
 
         <div className="relative pt-4">
           <textarea
