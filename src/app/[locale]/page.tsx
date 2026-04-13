@@ -26,86 +26,6 @@ export function generateStaticParams() {
   return [{ locale: 'tr' }, { locale: 'en' }];
 }
 
-function DashboardMockup({ locale }: { locale: Locale }) {
-  return (
-    <div className="relative mx-auto max-w-2xl">
-      {/* Laptop frame */}
-      <div className="relative rounded-t-3xl bg-[#1f2937] border-4 border-[#374151] p-2 sm:p-4 pb-0 shadow-2xl overflow-hidden aspect-[16/10] flex flex-col">
-        {/* Screen Top Bar */}
-        <div className="bg-[#111827] h-4 sm:h-6 w-full rounded-t-xl sm:rounded-t-2xl flex items-center justify-center relative">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#4b5563] absolute left-1/2 -translate-x-1/2" />
-        </div>
-        
-        {/* OS / Platform Frame */}
-        <div className="flex-1 bg-white rounded-b-xl flex overflow-hidden">
-          {/* Sidebar */}
-          <div className="w-16 sm:w-48 bg-[#111827] flex-shrink-0 flex flex-col p-2 sm:p-4 border-r border-[#1f2937]">
-            <div className="hidden sm:flex items-center gap-2 mb-8">
-              <div className="w-6 h-6 rounded bg-[#FDBF1D] flex items-center justify-center"><span className="text-[#111827] font-black text-xs">B</span></div>
-              <span className="text-white font-bold text-sm tracking-tight">Buaze</span>
-            </div>
-            <div className="space-y-2">
-              <div className="h-8 rounded bg-[#1f2937] w-full" />
-              <div className="h-8 rounded hover:bg-[#1f2937] w-full opacity-60" />
-              <div className="h-8 rounded hover:bg-[#1f2937] w-full opacity-60" />
-            </div>
-          </div>
-          
-          {/* Main Content */}
-          <div className="flex-1 bg-gray-50 flex flex-col p-3 sm:p-6 overflow-hidden">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-              <div className="h-5 w-32 sm:w-48 bg-gray-200 rounded" />
-              <div className="h-8 w-8 sm:w-24 bg-gray-200 rounded-full" />
-            </div>
-            
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex flex-col justify-center">
-                  <div className="h-3 w-16 bg-gray-100 rounded mb-2" />
-                  <div className="h-6 w-12 bg-gray-200 rounded" />
-                </div>
-              ))}
-              <div className="bg-[#111827] rounded-xl p-3 shadow-sm border border-[#1f2937] flex flex-col justify-center">
-                 <div className="h-2 w-16 bg-[#374151] rounded mb-1" />
-                 <div className="h-3 w-12 bg-[#FDBF1D] rounded font-black text-[#111827] text-[10px] items-center justify-center flex">4.8 ★</div>
-              </div>
-            </div>
-
-            {/* Chart Area */}
-            <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 p-4 relative overflow-hidden flex flex-col justify-end">
-               <div className="absolute top-4 left-4 h-4 w-24 bg-gray-100 rounded" />
-               <div className="h-full w-full flex items-end justify-between gap-1 mt-6">
-                 {[40, 60, 30, 80, 50, 90, 70, 100, 60, 85].map((h, j) => (
-                   <div key={j} className="w-full bg-[#111827]/10 rounded-t-sm" style={{ height: `${h}%` }}>
-                      <div className="w-full bg-[#FDBF1D] h-1 absolute top-0" />
-                   </div>
-                 ))}
-               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Laptop Base */}
-      <div className="h-3 sm:h-4 w-[110%] -ml-[5%] bg-[#4b5563] rounded-b-2xl shadow-xl relative z-10 mx-auto flex justify-center items-start">
-        <div className="w-16 sm:w-24 h-1 sm:h-1.5 bg-[#374151] rounded-b-md" />
-      </div>
-
-      {/* Floating Badge */}
-      <div className="absolute -top-6 -right-6 z-20 bg-white p-4 rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-gray-50 flex items-center gap-3 animate-bounce">
-        <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center">
-          <ShieldCheck size={20} />
-        </div>
-        <div>
-          <p className="text-[10px] uppercase font-black text-gray-400">{locale === 'tr' ? 'Güvenlik' : 'Security'}</p>
-          <p className="text-xs font-bold">{locale === 'tr' ? '%100 Korumalı' : '100% Protected'}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default async function LandingPage({
   params,
 }: {
@@ -207,7 +127,27 @@ export default async function LandingPage({
           </div>
 
           <div className="relative pt-10 sm:pt-0">
-            <DashboardMockup locale={locale} />
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-[#FDBF1D] to-[#EAB308] rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative bg-white rounded-[2rem] overflow-hidden shadow-2xl border border-gray-100">
+                <img 
+                  src="/images/dashboard_mockup.png" 
+                  alt="Buaze Analytics Dashboard" 
+                  className="w-full h-auto transform hover:scale-[1.02] transition-transform duration-700"
+                />
+              </div>
+              
+              {/* Floating Social Proof */}
+              <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-gray-50 flex items-center gap-3 animate-bounce">
+                <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-black text-gray-400">{locale === 'tr' ? 'Güvenilir' : 'Trusted'}</p>
+                  <p className="text-xs font-bold">{locale === 'tr' ? '%100 Organik' : '100% Organic'}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -318,6 +258,45 @@ export default async function LandingPage({
             </div>
           </div>
         </article>
+
+        {/* Trust Section - Enriched for AI-GEO */}
+        <div className="max-w-7xl mx-auto py-12 px-6">
+          <div className="bg-gradient-to-br from-[#111827] to-[#1f2937] rounded-[3rem] p-12 md:p-20 relative overflow-hidden text-white shadow-2xl transition-all hover:shadow-orange-500/10">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[#FDBF1D]/10 blur-[100px] rounded-full -mr-48 -mt-48"></div>
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <h2 className="text-4xl font-black leading-tight">
+                  {locale === 'tr' ? 'Neden Buaze Dijital İtibar Çözümleri?' : 'Why Choose Buaze Digital Reputation Solutions?'}
+                </h2>
+                <div className="space-y-4 text-gray-400 font-medium">
+                  <p>
+                    {locale === 'tr' 
+                      ? 'Buaze, modern işletmelerin en büyük varlığı olan dijital güveni inşa etmek için geliştirildi. Google Haritalar, TripAdvisor ve diğer tüm major platformlarla %100 entegre çalışarak, her müşteri temas noktasını bir büyüme fırsatına dönüştürüyoruz.'
+                      : 'Buaze was developed to build the greatest asset of modern businesses: digital trust. By working 100% integrated with Google Maps, TripAdvisor, and all other major platforms, we turn every customer touchpoint into a growth opportunity.'}
+                  </p>
+                  <p>
+                    {locale === 'tr'
+                      ? 'Yapay zeka odaklı analiz algoritmalarımız sayesinde, müşteri duyarlılığını önceden analiz ediyor ve markanızın dijital dünyada her zaman en iyi şekilde temsil edilmesini sağlıyoruz.'
+                      : 'Thanks to our AI-focused analysis algorithms, we analyze customer sentiment in advance and ensure that your brand is always represented in the best possible way in the digital world.'}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: locale === 'tr' ? 'Otomatik Veri' : 'Auto Data', val: '24/7' },
+                  { label: locale === 'tr' ? 'Müşteri Artışı' : 'Cust. Growth', val: '+40%' },
+                  { label: locale === 'tr' ? 'Risk Yönetimi' : 'Risk Management', val: locale === 'tr' ? 'Aktif' : 'Active' },
+                  { label: locale === 'tr' ? 'Entegrasyon' : 'Integration', val: 'SaaS' }
+                ].map((stat, i) => (
+                  <div key={i} className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center hover:bg-white/10 transition-colors">
+                    <p className="text-3xl font-black text-[#FDBF1D] mb-1">{stat.val}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Pricing Section */}

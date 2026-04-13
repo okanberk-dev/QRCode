@@ -37,10 +37,6 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
               {t.siteDescription || 'Restoranınızın dijital itibarını profesyonelce yönetin. Yorum toplayın, büyüyün.'}
             </p>
             <div className="flex gap-3">
-              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#FDBF1D] border border-[#FDBF1D]/20 bg-[#FDBF1D]/10 px-3 py-1.5 rounded-lg">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#FDBF1D] animate-pulse" />
-                {t.cta_badge1}
-              </div>
               <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#79C5D1] border border-[#79C5D1]/20 bg-[#79C5D1]/10 px-3 py-1.5 rounded-lg">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#79C5D1]" />
                 {t.cta_badge2}
@@ -91,11 +87,7 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
           <p className="text-gray-500 text-[11px] font-bold uppercase tracking-widest">
             © {new Date().getFullYear()} Buaze. {t.footer_copyright}
           </p>
-          <div className="flex gap-4 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300">
-             {/* Payment Methods placeholder showing global reach */}
-            <div className="px-2 py-1 bg-white rounded text-[#111827] text-[10px] font-black italic">VISA</div>
-            <div className="px-2 py-1 bg-white rounded text-[#111827] text-[10px] font-black italic">MASTERCARD</div>
-          </div>
+
         </div>
       </div>
     </footer>
