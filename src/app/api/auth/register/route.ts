@@ -5,7 +5,7 @@ import { signJwt } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, name } = await req.json();
+    const { email, password, name, restaurantName } = await req.json();
 
     // Validate required fields
     if (!email || !password) {
@@ -61,6 +61,46 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    let createdRestaurantId = null;
+
+    if (restaurantName) {
+      // Create a base slug from the restaurant name
+      let baseSlug = restaurantName.toLowerCase()
+        .replace(/[çÇ]/g, 'c')
+        .replace(/[ğĞ]/g, 'g')
+        .replace(/[ıİ]/g, 'i')
+        .replace(/[öÖ]/g, 'o')
+        .replace(/[şŞ]/g, 's')
+        .replace(/[üÜ]/g, 'u')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      if (!baseSlug) baseSlug = 'restoran';
+
+      // Ensure unique slug
+      let finalSlug = baseSlug;
+      let counter = 1;
+      while (true) {
+        const existing = await prisma.restaurant.findUnique({ where: { slug: finalSlug } });
+        if (!existing) break;
+        finalSlug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+
+      const restaurant = await prisma.restaurant.create({
+        data: {
+          name: restaurantName.trim(),
+          slug: finalSlug,
+          userId: user.id,
+          category: 'Restoran',
+          primaryColor: '#1a73e8', // Default
+        }
+      });
+      createdRestaurantId = restaurant.id;
+    }
+
     // Sign user JWT
     const token = await signJwt({
       userId: user.id,
@@ -74,7 +114,7 @@ export async function POST(req: NextRequest) {
       id: user.id, 
       username: user.email, 
       role: 'restaurant_owner',
-      restaurantId: null // New users haven't created a restaurant yet
+      restaurantId: createdRestaurantId
     });
 
     const response = NextResponse.json(

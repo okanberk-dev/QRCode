@@ -35,7 +35,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [kvkkConsent, setKvkkConsent] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', restaurantName: '' });
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,6 +93,21 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
           className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm"
           placeholder="Can Demir"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="reg-restaurant-name" className="block text-xs font-black uppercase tracking-widest text-gray-500">
+          {locale === 'tr' ? 'RESTORAN ADI' : 'RESTAURANT NAME'}
+        </label>
+        <input
+          id="reg-restaurant-name"
+          type="text"
+          required
+          value={form.restaurantName}
+          onChange={(e) => setForm(prev => ({ ...prev, restaurantName: e.target.value }))}
+          className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:border-[#FDBF1D] focus:ring-4 focus:ring-[#FDBF1D]/10 outline-none transition-all font-bold text-sm"
+          placeholder={locale === 'tr' ? "Örn: Mamma's Burger" : "e.g. Mamma's Burger"}
         />
       </div>
 
