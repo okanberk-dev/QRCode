@@ -177,6 +177,31 @@ export const translations = {
     dash_qr: 'QR Kod Yönetimi',
     dash_feedbacks: 'Gelen Değerlendirmeler',
     dash_logout: 'Güvenli Çıkış',
+    dash_profile: 'Profil Yönetimi',
+    dash_total_reviews: 'Toplam Yorum',
+    dash_today_reviews: 'Bugün Gelenler',
+    dash_positive_reviews: 'Pozitif Yorumlar',
+
+    // Profile
+    profile_title: 'Profil Bilgileri',
+    profile_subtitle: 'Hesabınızı ve güvenlik ayarlarınızı yönetin.',
+    profile_name: 'Ad Soyad',
+    profile_email: 'E-posta Adresi',
+    profile_current_password: 'Mevcut Şifre',
+    profile_new_password: 'Yeni Şifre',
+    profile_confirm_password: 'Şifre Tekrar',
+    profile_update_btn: 'Bilgileri Güncelle',
+    profile_success: 'Profiliniz başarıyla güncellendi.',
+    profile_error: 'Güncelleme sırasında hata oluştu.',
+    profile_pass_match: 'Şifreler eşleşmiyor.',
+
+    // Feedbacks Page
+    feedbacks_title: 'Müşteri Değerlendirmeleri',
+    feedbacks_subtitle: 'Şubelerinizden gelen gerçek zamanlı geri bildirimler.',
+    feedbacks_empty: 'Henüz değerlendirme bulunmuyor.',
+    feedbacks_filter_all: 'Tüm Yorumlar',
+    feedbacks_filter_today: 'Bugün Gelenler',
+    feedbacks_filter_positive: 'Pozitif Yorumlar',
 
     // How it works Section
     how_title: 'Süreç Nasıl İlerler?',
@@ -355,6 +380,31 @@ export const translations = {
     dash_add_restaurant: 'Add New Business',
     dash_manage: 'Manage',
     dash_logout: 'Log Out',
+    dash_profile: 'Profile Settings',
+    dash_total_reviews: 'Total Reviews',
+    dash_today_reviews: 'Today\'s Feedbacks',
+    dash_positive_reviews: 'Positive Reviews',
+
+    // Profile
+    profile_title: 'Profile Information',
+    profile_subtitle: 'Manage your personal details and security settings.',
+    profile_name: 'Full Name',
+    profile_email: 'Email Address',
+    profile_current_password: 'Current Password',
+    profile_new_password: 'New Password',
+    profile_confirm_password: 'Confirm Password',
+    profile_update_btn: 'Update Profile',
+    profile_success: 'Profile updated successfully.',
+    profile_error: 'Error updating profile.',
+    profile_pass_match: 'Passwords do not match.',
+
+    // Feedbacks Page
+    feedbacks_title: 'Customer Reviews',
+    feedbacks_subtitle: 'Real-time feedback from all your branches.',
+    feedbacks_empty: 'No evaluations yet.',
+    feedbacks_filter_all: 'All Reviews',
+    feedbacks_filter_today: 'Today\'s Feedbacks',
+    feedbacks_filter_positive: 'Positive Reviews',
 
     // How it works Section
     how_title: 'How It Works',

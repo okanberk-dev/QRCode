@@ -147,6 +147,8 @@ export async function GET(req: NextRequest) {
   // Rating filter
   if (ratingFilter === 'low') {
     where.rating = { lte: 3 };
+  } else if (ratingFilter === 'positive') {
+    where.rating = { gte: 4 };
   } else if (ratingFilter) {
     where.rating = parseInt(ratingFilter, 10);
   }

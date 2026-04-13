@@ -15,9 +15,10 @@ interface FeedbackItem {
 
 interface FeedbackTableProps {
   feedbacks: FeedbackItem[];
+  locale: string;
 }
 
-export default function FeedbackTable({ feedbacks }: FeedbackTableProps) {
+export default function FeedbackTable({ feedbacks, locale }: FeedbackTableProps) {
   if (feedbacks.length === 0) {
     return (
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center text-gray-500">

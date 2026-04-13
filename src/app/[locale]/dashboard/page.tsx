@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
 import Link from 'next/link';
-import { Building2, QrCode, Star, AlertTriangle, ArrowRight, LogOut } from 'lucide-react';
+import { Building2, QrCode, Star, AlertTriangle, ArrowRight, LogOut, User, ShieldCheck, Calendar } from 'lucide-react';
 
 export async function generateMetadata({
   params,
@@ -56,6 +56,14 @@ export default async function DashboardPage({
           slug: true,
           isActive: true,
           _count: { select: { feedbacks: true } },
+          feedbacks: {
+            where: {
+              createdAt: {
+                gte: new Date(new Date().setHours(0, 0, 0, 0))
+              }
+            },
+            select: { id: true }
+          }
         },
       },
     },
@@ -65,7 +73,17 @@ export default async function DashboardPage({
     redirect(`/${locale}/auth/login`);
   }
 
-  // Calculate trial days remaining
+  // Calculate stats
+  const totalReviews = user.restaurants.reduce((a, r) => a + r._count.feedbacks, 0);
+  const todayReviews = user.restaurants.reduce((a, r) => a + r.feedbacks.length, 0);
+  
+  const positiveReviews = await prisma.feedback.count({
+    where: {
+      restaurantId: { in: user.restaurants.map(r => r.id) },
+      rating: { gte: 4 }
+    }
+  });
+
   const trialDaysLeft = user.trialEndsAt
     ? Math.max(0, Math.ceil((user.trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
@@ -84,23 +102,36 @@ export default async function DashboardPage({
             <span className="text-2xl font-black tracking-tight text-[#111827]">Buaze</span>
           </Link>
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3 sm:gap-6">
             {user.plan === 'trial' && (
-              <div className={`hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-black border-2 ${isTrialExpiring ? 'bg-red-50 text-red-600 border-red-600 shadow-[0_3px_0_0_#ef4444]' : 'bg-[#FDBF1D]/10 text-[#ea580c] border-[#ea580c] shadow-[0_3px_0_0_#ea580c]'}`}>
+              <div className={`hidden lg:flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-black border-2 ${isTrialExpiring ? 'bg-red-50 text-red-600 border-red-600 shadow-[0_3px_0_0_#ef4444]' : 'bg-[#FDBF1D]/10 text-[#ea580c] border-[#ea580c] shadow-[0_3px_0_0_#ea580c]'}`}>
                 <AlertTriangle size={14} strokeWidth={3} />
                 {t.dash_trial_banner}: {trialDaysLeft} {t.dash_trial_days}
               </div>
             )}
-            <form action="/api/auth/logout" method="POST">
-              <button
-                type="submit"
-                id="dashboard-logout-btn"
-                className="flex items-center gap-2 text-[13px] font-black text-[#6b6760] hover:text-red-500 transition-colors px-4 py-2.5 rounded-xl border-2 border-transparent hover:border-red-500/20 active:translate-y-1"
+            
+            <div className="flex items-center gap-2 sm:gap-4 border-l-2 border-[#F7F4F0] pl-6">
+              <Link
+                href={`/${locale}/dashboard/profile`}
+                className="flex items-center gap-2 text-[13px] font-black text-[#6b6760] hover:text-[#111827] transition-all px-4 py-2.5 rounded-xl border-2 border-transparent hover:border-[#1f1e1d]/10 active:translate-y-1 group"
               >
-                <LogOut size={18} strokeWidth={2.5} />
-                <span className="hidden sm:block uppercase tracking-wider">{t.dash_logout}</span>
-              </button>
-            </form>
+                <div className="w-8 h-8 rounded-lg bg-[#FCFBF7] border-2 border-[#1f1e1d] flex items-center justify-center shadow-[2px_2px_0_0_#1f1e1d] group-hover:bg-[#FDBF1D] transition-all">
+                  <User size={16} strokeWidth={3} />
+                </div>
+                <span className="hidden sm:block uppercase tracking-wider">{t.dash_profile}</span>
+              </Link>
+
+              <form action="/api/auth/logout" method="POST">
+                <button
+                  type="submit"
+                  id="dashboard-logout-btn"
+                  className="flex items-center gap-2 text-[13px] font-black text-[#6b6760] hover:text-red-500 transition-all px-4 py-2.5 rounded-xl border-2 border-transparent hover:border-red-500/10 active:translate-y-1"
+                >
+                  <LogOut size={18} strokeWidth={2.5} />
+                  <span className="hidden sm:block uppercase tracking-wider">{t.dash_logout}</span>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </header>
@@ -135,20 +166,30 @@ export default async function DashboardPage({
         )}
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { label: locale === 'tr' ? 'Restoranlar' : 'Restaurants', val: user.restaurants.length, icon: <Building2 size={24} />, shadow: '#3b82f6' },
-            { label: locale === 'tr' ? 'Toplam Yorum' : 'Total Reviews', val: user.restaurants.reduce((a, r) => a + r._count.feedbacks, 0), icon: <Star size={24} />, shadow: '#FDBF1D' },
-            { label: locale === 'tr' ? 'QR Aktif' : 'Active QR', val: user.restaurants.filter(r => r.isActive).length, icon: <QrCode size={24} />, shadow: '#10b981' },
-            { label: locale === 'tr' ? 'Plan Durumu' : 'Plan Status', val: user.plan === 'trial' ? (locale === 'tr' ? 'Deneme' : 'Trial') : user.plan, icon: <AlertTriangle size={24} />, shadow: '#a855f7' },
+            { label: locale === 'tr' ? 'Toplam Yorum' : 'Total Reviews', val: totalReviews, icon: <Star size={24} />, shadow: '#FDBF1D', link: `/${locale}/dashboard/feedbacks` },
+            { label: locale === 'tr' ? 'Bugün Gelen' : 'Today\'s Feedbacks', val: todayReviews, icon: <Calendar size={24} />, shadow: '#3b82f6', link: `/${locale}/dashboard/feedbacks?days=1` },
+            { label: locale === 'tr' ? 'Pozitif Yorum' : 'Positive Reviews', val: positiveReviews, icon: <ShieldCheck size={24} />, shadow: '#10b981', link: `/${locale}/dashboard/feedbacks?rating=positive` },
+            { label: locale === 'tr' ? 'QR Aktif' : 'Active QR', val: user.restaurants.filter(r => r.isActive).length, icon: <QrCode size={24} />, shadow: '#a855f7' },
           ].map(stat => (
-            <div key={stat.label} className="bg-white rounded-[28px] p-7 border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] group hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-[#1f1e1d] mb-5 bg-[#FCFBF7] group-hover:bg-[#111827] group-hover:text-white transition-colors`}>
-                {stat.icon}
+            stat.link ? (
+              <Link key={stat.label} href={stat.link} className="bg-white rounded-[28px] p-7 border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] group hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-[#1f1e1d] mb-5 bg-[#FCFBF7] group-hover:bg-[#FDBF1D] transition-colors`}>
+                  {stat.icon}
+                </div>
+                <div className="text-3xl font-black text-[#1f1e1d] tracking-tighter tabular-nums">{stat.val}</div>
+                <div className="text-[12px] font-black text-[#ada89f] uppercase tracking-widest mt-1">{stat.label}</div>
+              </Link>
+            ) : (
+              <div key={stat.label} className="bg-white rounded-[28px] p-7 border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d]">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 border-[#1f1e1d] mb-5 bg-[#FCFBF7]`}>
+                  {stat.icon}
+                </div>
+                <div className="text-3xl font-black text-[#1f1e1d] tracking-tighter tabular-nums">{stat.val}</div>
+                <div className="text-[12px] font-black text-[#ada89f] uppercase tracking-widest mt-1">{stat.label}</div>
               </div>
-              <div className="text-3xl font-black text-[#1f1e1d] tracking-tighter tabular-nums">{stat.val}</div>
-              <div className="text-[12px] font-black text-[#ada89f] uppercase tracking-widest mt-1">{stat.label}</div>
-            </div>
+            )
           ))}
         </div>
 
