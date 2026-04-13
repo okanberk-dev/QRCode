@@ -32,27 +32,23 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
         : 'Magic Links work with any platform because there\'s no integration required. Just paste a URL into your existing workflows',
     },
     {
-      id: 'leaderboards',
-      label: locale === 'tr' ? 'Yorum Liderlik Tablosu' : 'Review Leaderboards',
+      id: 'smart-filters',
+      label: locale === 'tr' ? 'Akıllı Filtreleme' : 'Smart Filtering',
       icon: <Trophy size={18} />,
-      subtitle: locale === 'tr' ? 'PERFORMANSI TAKİP EDİN VE SONUÇLARI ÖDÜLLENDİRİN' : 'TRACK PERFORMANCE AND REWARD RESULTS',
+      subtitle: locale === 'tr' ? 'OLUMSUZ YORUMLARI YAYINLANMADAN YAKALAYIN' : 'CATCH NEGATIVE REVIEWS BEFORE THEY GO PUBLIC',
       content: (
-        <div className="relative w-full max-w-[800px] mx-auto overflow-hidden rounded-xl bg-gray-100 shadow-md aspect-video">
-          <iframe
-            src="https://www.youtube.com/embed/X0Wqu_nqs2U?rel=0&controls=1&autoplay=0&mute=0&start=0"
-            className="absolute top-0 left-0 w-full h-full border-0"
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-            title="Leaderboards Video"
-          />
-        </div>
+        <img
+          src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/688c976c4d1530a985069a0f_sentiment-analysis.png"
+          alt="Smart Filters"
+          className="mx-auto w-full max-w-[800px] h-auto object-contain drop-shadow-md"
+        />
       ),
       p1: locale === 'tr'
-        ? 'Hangi takım üyelerinin, şubelerin veya ürünlerin en çok yorum getirdiğini görmek için tablolar oluşturun.'
-        : 'Build leaderboards to see which team members, locations, or products generate the most reviews.',
+        ? 'Düşük puan veren müşterilerinizi otomatik olarak şikayet formuna yönlendirin ve sorunları özel olarak çözün.'
+        : 'Automatically route customers who give low ratings to a private feedback form and resolve issues privately.',
       p2: locale === 'tr'
-        ? 'Teşvik, takdir veya sağlıklı rekabet için kullanın. Yorum toplamayı ekibinizin kazanmak isteyeceği bir oyuna çevirin.'
-        : 'Use it for incentives, recognition, or healthy competition. Turn review collection into something your team want to win at.',
+        ? 'Gerçek şikayetleri dinleyin, dijital itibarınızı ve Google Haritalar puanınızı güvene alın.'
+        : 'Listen to genuine complaints, protect your digital reputation and secure your Google Maps score.',
     },
     {
       id: 'widgets',

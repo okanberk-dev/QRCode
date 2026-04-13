@@ -4,6 +4,8 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import PricingFaq from '@/components/marketing/PricingFaq';
 import FeatureTabsUI from '@/components/marketing/FeatureTabsUI';
+import CtaBanner from '@/components/marketing/CtaBanner';
+import CustomerTestimonials from '@/components/marketing/CustomerTestimonials';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
@@ -324,169 +326,13 @@ export default async function LandingPage({
         <FeatureTabsUI locale={locale} />
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════
-          FEATURE SECTIONS — Tabbed / Card-based like ReviewFlowz
-      ═══════════════════════════════════════════════════════════ */}
-
-      {/* Feature Block 1 */}
-      <section id="how-it-works" className="py-16 sm:py-24 px-5 sm:px-8 bg-[#F7F4F0]">
-        <div className="max-w-[1200px] mx-auto">
-          {/* Feature Tabs */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 sm:mb-16">
-            {[
-              {
-                icon: <MessageSquare size={20} />,
-                title: locale === 'tr' ? 'Akıllı Yorum Toplama' : 'Smart Review Collection',
-                desc: locale === 'tr' ? 'QR kod ile anında geri bildirim alın' : 'Get instant feedback via QR codes',
-                active: true
-              },
-              {
-                icon: <ShieldCheck size={20} />,
-                title: locale === 'tr' ? 'Olumsuz Yorum Filtresi' : 'Negative Review Filter',
-                desc: locale === 'tr' ? 'Düşük puanları özel panelinize yönlendirin' : 'Route low ratings to your private dashboard',
-                active: false
-              },
-              {
-                icon: <BarChart3 size={20} />,
-                title: locale === 'tr' ? 'Analitik Panel' : 'Analytics Dashboard',
-                desc: locale === 'tr' ? 'Tüm verilerinizi tek ekranda görün' : 'See all your data in one screen',
-                active: false
-              }
-            ].map((tab, idx) => (
-              <div
-                key={idx}
-                className={`p-5 sm:p-6 rounded-xl border cursor-default transition-all ${
-                  tab.active
-                    ? 'bg-[#FDBF1D]/8 border-[#FDBF1D]/25 shadow-sm'
-                    : 'bg-white border-[#e8e4de] hover:border-[#FDBF1D]/30'
-                }`}
-              >
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${
-                  tab.active ? 'bg-[#FDBF1D]/15 text-[#1f1e1d]' : 'bg-[#f7f4f0] text-[#6b6760]'
-                }`}>
-                  {tab.icon}
-                </div>
-                <h3 className="text-[15px] font-bold text-[#1f1e1d] mb-1">{tab.title}</h3>
-                <p className="text-[13px] text-[#6b6760]">{tab.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Feature Detail */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div className="space-y-5">
-              <h2 className="text-[28px] sm:text-[36px] font-extrabold leading-[1.15] tracking-[-0.01em] text-[#1f1e1d]">
-                {t.feat1_title}
-              </h2>
-              <p className="text-[15px] sm:text-base text-[#6b6760] leading-relaxed">
-                {t.feat1_desc}
-              </p>
-              <ul className="space-y-3 pt-2">
-                {[t.feat1_li1, t.feat1_li2, t.feat1_li3].map(item => (
-                  <li key={item} className="flex items-start gap-3 text-[14px] font-medium text-[#1f1e1d]">
-                    <CheckCircle2 size={18} className="text-[#FDBF1D] flex-shrink-0 mt-0.5" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <p className="text-[13px] text-[#ada89f] italic">
-                {locale === 'tr'
-                  ? 'Tüm platformları destekliyoruz • Ek ücret yok • Gizli maliyet yok'
-                  : 'We support all platforms • No add-on • No hidden cost'}
-              </p>
-            </div>
-
-            {/* Visual card */}
-            <div className="relative">
-              <div className="bg-white p-6 sm:p-8 rounded-xl border border-[#e8e4de] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)]">
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-lg bg-[#1f1e1d] flex items-center justify-center text-[#FDBF1D] font-bold text-sm">1</div>
-                  <h3 className="text-lg font-bold text-[#1f1e1d]">{t.feat1_title}</h3>
-                </div>
-                <div className="p-5 bg-[#FCFBF7] rounded-lg border border-dashed border-[#e8e4de]">
-                  <div className="flex items-center gap-1 mb-3">
-                    {[1,2,3,4,5].map(i => <Star key={i} size={15} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
-                  </div>
-                  <p className="text-[14px] font-medium text-[#1f1e1d] leading-relaxed">
-                    {locale === 'tr'
-                      ? '"Hizmet gerçekten harikaydı, atmosfer mükemmel. Kesinlikle tavsiye ederim!" - Murat K.'
-                      : '"The service was truly amazing, the atmosphere was perfect. Highly recommend!" - Sarah K.'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* ═══════ CTA Banner ═══════ */}
+      <section className="px-5 sm:px-8">
+        <CtaBanner locale={locale} />
       </section>
 
-      {/* Feature Block 2 — QR Code */}
-      <section className="py-16 sm:py-24 px-5 sm:px-8 bg-[#FCFBF7]">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div className="space-y-5">
-            <h2 className="text-[28px] sm:text-[36px] font-extrabold leading-[1.15] tracking-[-0.01em] text-[#1f1e1d]">
-              {t.feat2_title}
-            </h2>
-            <p className="text-[15px] sm:text-base text-[#6b6760] leading-relaxed">
-              {t.feat2_desc}
-            </p>
-            <div className="p-5 bg-[#FDBF1D]/6 rounded-xl border border-[#FDBF1D]/15">
-              <p className="text-[14px] font-medium text-[#1f1e1d] italic mb-2">
-                &ldquo;{locale === 'tr' ? 'Buaze sayesinde Google Reviews sayfamız her zamankinden çok daha harika görünüyor!' : 'Thanks to Buaze, our Google Reviews page looks better than ever!'}&rdquo;
-              </p>
-              <span className="text-[13px] font-bold text-[#FDBF1D]">{t.feat2_quote_author}</span>
-            </div>
-          </div>
-
-          <div className="flex justify-center">
-            <div className="bg-white p-10 sm:p-14 rounded-2xl border border-[#e8e4de] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] relative group">
-              <div className="absolute inset-3 border-2 border-dashed border-[#e8e4de] rounded-xl group-hover:border-[#FDBF1D]/30 transition-colors" />
-              <QrCode size={160} strokeWidth={1} className="text-[#1f1e1d] relative z-10" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature Block 3 — Negative Review Protection */}
-      <section className="py-16 sm:py-24 px-5 sm:px-8 bg-[#F7F4F0]">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div className="lg:order-2 space-y-5">
-            <h2 className="text-[28px] sm:text-[36px] font-extrabold leading-[1.15] tracking-[-0.01em] text-[#1f1e1d]">
-              {t.feat3_title}
-            </h2>
-            <p className="text-[15px] sm:text-base text-[#6b6760] leading-relaxed">
-              {t.feat3_desc}
-            </p>
-            <div className="flex items-center gap-4 py-2">
-              <div className="p-3 bg-red-50 text-red-500 rounded-xl">
-                <Shield size={28} />
-              </div>
-              <div>
-                <h4 className="font-bold text-[#1f1e1d] text-[15px]">{t.feat3_badge_title}</h4>
-                <p className="text-[13px] text-[#6b6760]">{t.feat3_badge_desc}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:order-1">
-            <div className="bg-[#1f1e1d] p-7 sm:p-9 rounded-xl shadow-[0_8px_30px_-8px_rgba(0,0,0,0.3)] space-y-6 text-white overflow-hidden relative">
-              <div className="flex items-center gap-2">
-                {[1,2,3].map(i => <Star key={i} size={22} className="fill-[#FDBF1D] text-[#FDBF1D]" />)}
-                {[4,5].map(i => <Star key={i} size={22} className="text-[#3d3a36]" />)}
-              </div>
-              <div className="space-y-3 opacity-70">
-                <div className="h-3 w-3/4 bg-[#3d3a36] rounded-full" />
-                <div className="h-3 w-full bg-[#3d3a36] rounded-full" />
-                <div className="h-3 w-1/2 bg-[#3d3a36] rounded-full" />
-              </div>
-              <div className="bg-[#2e2a25] border border-[#3d3a36] text-white p-4 rounded-xl font-bold text-center text-[13px] flex items-center justify-center gap-2">
-                <ShieldCheck size={16} className="text-[#FDBF1D]" />
-                {locale === 'tr' ? 'Özel Panele İletildi' : 'Sent to Private Dashboard'}
-              </div>
-              <div className="absolute top-0 right-0 w-40 h-40 bg-[#FDBF1D]/5 blur-[50px] rounded-full pointer-events-none" />
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ═══════ Customer Testimonials ═══════ */}
+      <CustomerTestimonials locale={locale} />
 
       {/* ═══════ Trust / Why Buaze Section ═══════ */}
       <section className="py-16 sm:py-24 px-5 sm:px-8 bg-[#FCFBF7]">
@@ -555,7 +401,7 @@ export default async function LandingPage({
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-[#F7F4F0] text-[#1f1e1d] font-semibold text-[14px] rounded-lg hover:bg-[#e8e4de] transition-all"
+                className="block w-full text-center py-3.5 bg-white text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-gray-50 transition-all active:translate-y-[4px] active:shadow-none"
               >
                 {t.pricing_monthly_cta}
               </Link>
@@ -581,7 +427,7 @@ export default async function LandingPage({
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-semibold text-[14px] rounded-lg hover:bg-[#EAB308] transition-all"
+                className="block w-full text-center py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none"
               >
                 {t.pricing_yearly_cta}
               </Link>
@@ -616,7 +462,7 @@ export default async function LandingPage({
             <Link
               href={`${base}/auth/register`}
               id="footer-cta-btn"
-              className="px-8 py-4 bg-[#FDBF1D] hover:bg-[#EAB308] text-[#1f1e1d] text-base font-bold rounded-lg transition-all shadow-lg shadow-[#FDBF1D]/15 active:scale-95 flex items-center gap-2"
+              className="px-8 py-4 bg-[#FDBF1D] text-[#1f1e1d] text-base font-extrabold rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none flex items-center gap-2"
             >
               {t.cta_button} <ArrowRight size={18} />
             </Link>
