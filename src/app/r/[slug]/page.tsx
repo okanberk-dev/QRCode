@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Star, Loader2, MapPin, ChevronRight, X } from 'lucide-react';
 import StarRating from '@/components/StarRating';
-import FeedbackForm from '@/components/FeedbackForm';
+import FeedbackForm, { FeedbackFormHandle } from '@/components/FeedbackForm';
 import ThankYou from '@/components/ThankYou';
 import BusinessSummary from '@/components/BusinessSummary';
 import { getTranslations, Locale, locales } from '@/lib/translations';
@@ -25,6 +25,7 @@ function SlugContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
+  const formRef = useRef<FeedbackFormHandle>(null);
 
   // --- Locale Handling ---
   const [locale, setLocale] = useState<Locale>('tr');
@@ -151,9 +152,6 @@ function SlugContent() {
     );
   }
 
-  // --- Get initial letter for avatar ---
-  const initial = restaurant.name.charAt(0).toUpperCase();
-
   return (
     <main className="flex flex-col min-h-[100dvh] bg-white text-gray-900 selection:bg-blue-100 selection:text-blue-900">
       
@@ -176,7 +174,7 @@ function SlugContent() {
             </div>
           </div>
           
-          <div className="w-64 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="w-64 h-1.5 bg-gray-100 rounded-full overflow-hidden mb-4">
             <div className="h-full bg-blue-500 rounded-full animate-[progressBar_2s_linear_forwards]" />
           </div>
           
@@ -189,46 +187,48 @@ function SlugContent() {
         </div>
       )}
 
-      {/* ═══════ Sticky Header ═══════ */}
-      <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-10">
-        <div className="max-w-xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4 min-w-0">
+      {/* ═══════ Google-Style Sticky Header ═══════ */}
+      <div className="sticky top-0 bg-white border-b border-gray-100 z-50">
+        <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <button 
-              onClick={() => rating > 0 ? setRating(0) : window.history.back()}
-              className="p-2 -ml-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-all"
+              onClick={() => rating > 0 ? (formSubmitted ? window.location.reload() : setRating(0)) : window.history.back()}
+              className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full transition-all"
             >
-              <X size={20} strokeWidth={2.5} />
+              <X size={22} strokeWidth={2} />
             </button>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-base font-bold text-gray-900 truncate tracking-tight">{restaurant.name}</h1>
+            <div className="flex flex-col">
+               <h1 className="text-[15px] font-bold text-gray-900 truncate tracking-tight leading-tight">{restaurant.name}</h1>
+               <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest leading-tight">Yorum Yaz</span>
             </div>
           </div>
-          <div className="flex items-center">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-[13px] font-bold shadow-sm border-2 border-white">
-              {initial}
-            </div>
+          
+          <div className="flex items-center gap-3">
+            {showForm && (
+              <button 
+                onClick={() => formRef.current?.submit()}
+                disabled={formRef.current?.isSubmitting}
+                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  formRef.current?.isSubmitting 
+                    ? 'bg-gray-100 text-gray-400' 
+                    : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
+                }`}
+              >
+                {formRef.current?.isSubmitting ? <Loader2 size={16} className="animate-spin" /> : t('feedback_post')}
+              </button>
+            )}
+            {!showForm && !showThankYou && (
+               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-sm ring-1 ring-gray-100">
+                  {restaurant.name.charAt(0).toUpperCase()}
+               </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* ═══════ Main Content Area ═══════ */}
-      <div className="max-w-xl mx-auto w-full px-6 py-10 flex-1">
+      <div className="max-w-xl mx-auto w-full px-6 py-6 flex-1">
         
-        {/* User Info Bar */}
-        <div className="flex items-center gap-4 mb-10 group">
-          <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-2xl group-hover:bg-blue-50 transition-colors">
-            👤
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[15px] font-bold text-gray-900 tracking-tight">{t('feedback_anonymous')}</span>
-            <div className="flex items-center gap-1">
-                <span className="text-[11px] text-gray-400 font-medium">{t('feedback_public')}</span>
-                <span className="text-[11px] text-gray-300">•</span>
-                <span className="text-[11px] text-blue-500 font-bold">Yeni Değerlendirme</span>
-            </div>
-          </div>
-        </div>
-
         {!showThankYou && !showForm && (
           <div className="animate-in fade-in duration-500">
             <BusinessSummary 
@@ -236,18 +236,33 @@ function SlugContent() {
               address={restaurant.address} 
               category={restaurant.category} 
             />
-            <div className="mt-12">
+            <div className="mt-8">
+               <div className="flex flex-col items-center gap-4 mb-8">
+                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-3xl">👤</div>
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-gray-900 leading-tight">İbrahim</p>
+                    <p className="text-[11px] text-gray-400 font-medium">Bu yorum herkese açık olarak paylaşılır</p>
+                  </div>
+               </div>
                <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
             </div>
           </div>
         )}
 
         {showForm && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="mb-2">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+             <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xl">İ</div>
+                <div className="flex flex-col">
+                  <p className="text-sm font-bold text-gray-900">İbrahim</p>
+                  <p className="text-[11px] text-gray-400 font-medium leading-tight">Bu yorum herkese açık olarak paylaşılır</p>
+                </div>
+             </div>
+            <div className="mb-8 scale-90 -mt-2">
               <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
             </div>
             <FeedbackForm 
+              ref={formRef}
               rating={rating} 
               onSuccess={() => setFormSubmitted(true)}
               restaurantSlug={slug}
@@ -263,7 +278,7 @@ function SlugContent() {
 
         {/* ── Google Direct CTA - Only show on landing state ── */}
         {!showThankYou && !showForm && !isRedirecting && googleUrl && (
-          <div className="mt-12 pt-12 border-t border-gray-50 animate-in fade-in duration-700 delay-300">
+          <div className="mt-12 pt-10 border-t border-gray-50">
             <a
               href={googleUrl}
               target="_blank"
@@ -289,14 +304,14 @@ function SlugContent() {
       </div>
 
       {/* ═══════ Footer ═══════ */}
-      <footer className="py-10 px-6 mt-auto">
+      <footer className="py-10 px-6 mt-auto bg-gray-50/30">
         <div className="max-w-xl mx-auto flex flex-col items-center gap-6">
           <div className="flex gap-6">
-            <a href="/tr/privacy" className="text-xs font-bold text-gray-300 hover:text-gray-900 transition-colors tracking-tight">GİZLİLİK</a>
-            <a href="/tr/terms" className="text-xs font-bold text-gray-300 hover:text-gray-900 transition-colors tracking-tight">KULLANIM</a>
+            <a href="/tr/privacy" className="text-[10px] font-bold text-gray-300 hover:text-gray-900 transition-colors tracking-widest uppercase">GİZLİLİK</a>
+            <a href="/tr/terms" className="text-[10px] font-bold text-gray-300 hover:text-gray-900 transition-colors tracking-widest uppercase">KULLANIM</a>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full">
-            <span className="text-[10px] font-bold text-gray-300 tracking-widest">POWERED BY</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-bold text-gray-300 tracking-[0.2em]">POWERED BY</span>
             <a href="https://buaze.com" className="text-[10px] font-black text-gray-400 hover:text-blue-500 transition-colors tracking-tighter uppercase">BUAZE</a>
           </div>
         </div>
@@ -311,6 +326,14 @@ export default function SlugPage() {
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-6">
           <div className="w-16 h-16 rounded-full border-4 border-gray-50 border-t-blue-500 animate-spin" />
+        </div>
+      </div>
+    }>
+      <SlugContent />
+    </Suspense>
+  );
+}
+border-4 border-gray-50 border-t-blue-500 animate-spin" />
         </div>
       </div>
     }>
