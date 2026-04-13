@@ -129,36 +129,36 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-10">
+    <div className="p-3 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-8 sm:space-y-10 pb-32">
 
       {/* ─── Welcome Banner ─── */}
-      <div className="bg-[#111827] rounded-[32px] border border-gray-800 p-6 sm:p-10 flex flex-col md:flex-row md:items-center justify-between gap-8 relative overflow-hidden shadow-2xl">
-        <div className="relative z-10 space-y-4">
-          <div className="inline-flex items-center gap-2 bg-yellow-500/10 text-yellow-500 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.2em]">
+      <div className="bg-[#111827] rounded-[24px] sm:rounded-[32px] border border-gray-800 p-5 sm:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 sm:gap-8 relative overflow-hidden shadow-2xl">
+        <div className="relative z-10 space-y-3 sm:space-y-4">
+          <div className="inline-flex items-center gap-2 bg-yellow-500/10 text-yellow-500 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em]">
             ✦ CANLI PANEL
           </div>
-          <h1 className="text-xl sm:text-4xl font-black text-white tracking-tight leading-loose">
+          <h1 className="text-xl sm:text-4xl font-black text-white tracking-tight leading-tight">
             {t('welcome')}, {displayName} 👋
           </h1>
-          <p className="text-[#ada89f] text-[17px] font-bold max-w-md">Gerçek zamanlı verilerle işletmenizin nabzını tutun.</p>
+          <p className="text-[#ada89f] text-[15px] sm:text-[17px] font-bold max-w-md">Gerçek zamanlı verilerle işletmenizin nabzını tutun.</p>
         </div>
 
         {/* Satisfaction Rate Badge */}
         {satisfactionRate !== null && (
-          <div className="bg-white rounded-[24px] px-10 py-8 text-center flex-shrink-0 relative z-10 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-2 justify-center mb-2">
+          <div className="bg-white rounded-[20px] sm:rounded-[24px] px-6 sm:px-10 py-6 sm:py-8 text-center flex-shrink-0 relative z-10 shadow-lg border border-gray-100">
+            <div className="flex items-center gap-2 justify-center mb-1.5 sm:mb-2">
               <TrendingUp size={20} className="text-[#ea580c]" strokeWidth={3} />
-              <span className="text-[11px] text-[#ada89f] font-black uppercase tracking-widest">{t('satisfaction')}</span>
+              <span className="text-[10px] sm:text-[11px] text-[#ada89f] font-black uppercase tracking-widest">{t('satisfaction')}</span>
             </div>
-            <p className="text-5xl font-black text-[#111827] tracking-tighter">{satisfactionRate}%</p>
-            <p className="text-[10px] text-[#6b6760] mt-2 font-black uppercase tracking-wider">POZİTİF / TOPLAM</p>
+            <p className="text-3xl sm:text-5xl font-black text-[#111827] tracking-tighter">{satisfactionRate}%</p>
+            <p className="text-[9px] sm:text-[10px] text-[#6b6760] mt-1.5 sm:mt-2 font-black uppercase tracking-wider">POZİTİF / TOPLAM</p>
           </div>
         )}
       </div>
 
       {/* ─── Toolbar ─── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 no-scrollbar">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 lg:pb-0 no-scrollbar">
           {[
             { label: 'BUGÜN', val: '1' },
             { label: '7 GÜN', val: '7' },
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
             <button
               key={tab.val}
               onClick={() => { setDaysFilter(tab.val); setPage(1); }}
-              className={`px-6 py-3 text-xs font-bold rounded-xl transition-all uppercase tracking-widest whitespace-nowrap ${
+              className={`px-4 sm:px-6 py-2.5 sm:py-3 text-[10px] sm:text-xs font-bold rounded-xl transition-all uppercase tracking-widest whitespace-nowrap ${
                 daysFilter === tab.val
                 ? 'bg-[#111827] text-white shadow-md'
                 : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
@@ -179,12 +179,12 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
           {isSuperAdmin && (
             <select
               value={selectedRestaurant}
               onChange={(e) => { setSelectedRestaurant(e.target.value); setPage(1); }}
-              className="px-6 py-3.5 text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
+              className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-3.5 text-[10px] sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
             >
               <option value="all">TÜM RESTORANLAR</option>
               {restaurants.map((r) => (
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
 
           <button
             onClick={handleExport}
-            className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 px-4 sm:px-6 py-3 sm:py-3.5 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95"
           >
             <Download size={18} strokeWidth={3} />
             DIŞA AKTAR
@@ -209,22 +209,22 @@ export default function AdminDashboard() {
       </div>
 
       {/* ─── Advanced Charts ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-        <div className="lg:col-span-2 bg-white p-4 sm:p-8 rounded-[24px] border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+        <div className="lg:col-span-2 bg-white p-4 sm:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden min-h-[350px] sm:min-h-[400px]">
+          <div className="flex items-center gap-3 mb-6 sm:mb-8">
+            <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <TrendingUp size={20} strokeWidth={3} />
             </div>
-            <h3 className="text-xl font-black text-[#1f1e1d]">Trend Analizi</h3>
+            <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">Trend Analizi</h3>
           </div>
           {stats && <TrendsChart data={stats.trends} />}
         </div>
-        <div className="lg:col-span-1 bg-white p-4 sm:p-8 rounded-[24px] border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+        <div className="lg:col-span-1 bg-white p-4 sm:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden min-h-[350px] sm:min-h-[400px]">
+          <div className="flex items-center gap-3 mb-6 sm:mb-8">
+            <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
               <BarChart3 size={20} strokeWidth={3} />
             </div>
-            <h3 className="text-xl font-black text-[#1f1e1d]">Günlük Dağılım</h3>
+            <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">Günlük Dağılım</h3>
           </div>
           {stats && <DayDistributionChart data={stats.dayDistribution} />}
         </div>
