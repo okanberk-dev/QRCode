@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Store, Loader2, MoreVertical, Mail, ExternalLink, ToggleLeft, ToggleRight, Search } from 'lucide-react';
+import { Plus, Store, Loader2, MoreVertical, Mail, ExternalLink, ToggleLeft, ToggleRight, Search, X } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import Link from 'next/link';
 
@@ -35,6 +35,7 @@ export default function RestaurantsPage() {
     phone: '',
     primaryColor: '#1a73e8',
   });
+  const [isManualSlug, setIsManualSlug] = useState(false);
 
   const fetchRestaurants = async () => {
     setLoading(true);
@@ -56,6 +57,11 @@ export default function RestaurantsPage() {
 
   // Auto-generate slug from name
   const handleNameChange = (name: string) => {
+    if (isManualSlug) {
+      setFormData(prev => ({ ...prev, name }));
+      return;
+    }
+
     const slug = name
       .toLowerCase()
       .replace(/[çÇ]/g, 'c')
@@ -68,7 +74,8 @@ export default function RestaurantsPage() {
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
-    setFormData(prev => ({ ...prev, name, slug: prev.slug === '' ? slug : prev.slug }));
+    
+    setFormData(prev => ({ ...prev, name, slug }));
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -93,6 +100,7 @@ export default function RestaurantsPage() {
 
       setShowCreateModal(false);
       setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googlePlaceId: '', address: '', phone: '', primaryColor: '#1a73e8' });
+      setIsManualSlug(false);
       fetchRestaurants();
     } catch (err) {
       setError('Bağlantı hatası');
@@ -247,9 +255,16 @@ export default function RestaurantsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
           <div className="bg-white rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-8 sm:p-10 border-b border-gray-100 bg-[#FCFBF7]">
+            <div className="p-8 sm:p-10 border-b border-gray-100 bg-[#FCFBF7] relative">
               <h2 className="text-3xl font-black text-[#111827] tracking-tight uppercase">Yeni İşletme</h2>
               <p className="text-[#6b6760] text-sm font-bold mt-2">Sisteme yeni bir restoran veya şube tanımlayın.</p>
+              
+              <button 
+                onClick={() => { setShowCreateModal(false); setError(''); }}
+                className="absolute right-8 top-10 p-2 text-gray-400 hover:text-[#111827] hover:bg-gray-100 rounded-xl transition-all"
+              >
+                <X size={24} strokeWidth={3} />
+              </button>
             </div>
 
             <form onSubmit={handleCreate} className="p-8 sm:p-10 space-y-6 sm:space-y-8 overflow-y-auto no-scrollbar">
@@ -279,7 +294,10 @@ export default function RestaurantsPage() {
                     type="text"
                     required
                     value={formData.slug}
-                    onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }));
+                      setIsManualSlug(true);
+                    }}
                     placeholder="mammas-burger"
                     className="flex-1 px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold tracking-tight shadow-sm transition-all"
                   />
@@ -318,15 +336,27 @@ export default function RestaurantsPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Bildirim E-postası (Kritik Yorumlar İçin)</label>
-                <input
-                  type="email"
-                  value={formData.notificationEmail}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
-                  placeholder="yonetim@email.com"
-                  className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold shadow-sm transition-all"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Bildirim E-postası</label>
+                  <input
+                    type="email"
+                    value={formData.notificationEmail}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
+                    placeholder="yonetim@email.com"
+                    className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold shadow-sm transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Telefon Numarası</label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="05..."
+                    className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold shadow-sm transition-all"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-5 pt-10 border-t-2 border-[#F7F4F0]">
