@@ -34,11 +34,11 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
   const getServiceLabel = (type: string | null | undefined) => {
     if (!type) return null;
     const labels: Record<string, any> = {
-      dine_in: { tr: 'Yerinde', en: 'Dine-in', color: 'bg-blue-50 text-blue-600 border-blue-100' },
-      takeout: { tr: 'Paket', en: 'Takeout', color: 'bg-orange-50 text-orange-600 border-orange-100' },
-      delivery: { tr: 'Teslimat', en: 'Delivery', color: 'bg-purple-50 text-purple-600 border-purple-100' }
+      dine_in: { tr: 'Yerinde', en: 'Dine-in', color: 'bg-[#111827]/5 text-[#111827] border-[#111827]/10' },
+      takeout: { tr: 'Paket', en: 'Takeout', color: 'bg-[#FDBF1D]/15 text-[#111827] border-[#FDBF1D]/50' },
+      delivery: { tr: 'Teslimat', en: 'Delivery', color: 'bg-[#111827]/10 text-[#111827] border-[#111827]/15' }
     };
-    return labels[type] || { tr: type, en: type, color: 'bg-gray-50 text-gray-600 border-gray-100' };
+    return labels[type] || { tr: type, en: type, color: 'bg-gray-50 text-gray-600 border-gray-200' };
   };
 
   return (
@@ -68,38 +68,38 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                       {f.rating} {locale === 'tr' ? 'Yıldız' : 'Stars'}
                     </span>
                   </td>
-                  <td className="px-4 py-4 sm:px-8 sm:py-6 max-w-[200px] sm:max-w-sm">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
+                  <td className="px-4 py-4 sm:px-8 sm:py-5 max-w-[240px] sm:max-w-md">
+                    <div className="flex flex-col gap-1.5 min-h-[72px] justify-center">
+                      <div className="flex items-start gap-2 flex-wrap">
                         {service && (
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${service.color}`}>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${service.color}`}>
                             {locale === 'tr' ? service.tr : service.en}
                           </span>
                         )}
-                        <div className="text-gray-900 font-medium line-clamp-2 leading-relaxed italic">
+                        <div className="text-gray-900 font-medium line-clamp-2 leading-snug italic">
                           {f.comment ? `"${f.comment}"` : '-'}
                         </div>
                       </div>
                       
                       {/* Aspect Ratings Row */}
                       {(f.foodRating || f.serviceRating || f.atmosphereRating) && (
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 pt-0.5">
                           {f.foodRating && (
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{locale === 'tr' ? 'Yemek' : 'Food'}:</span>
-                              <span className="text-[11px] font-black text-gray-700">{f.foodRating}/5</span>
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-50 border border-gray-100">
+                              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{locale === 'tr' ? 'Yemek' : 'Food'}</span>
+                              <span className="text-[11px] font-black text-[#111827]">{f.foodRating}/5</span>
                             </div>
                           )}
                           {f.serviceRating && (
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{locale === 'tr' ? 'Servis' : 'Service'}:</span>
-                              <span className="text-[11px] font-black text-gray-700">{f.serviceRating}/5</span>
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-50 border border-gray-100">
+                              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{locale === 'tr' ? 'Servis' : 'Service'}</span>
+                              <span className="text-[11px] font-black text-[#111827]">{f.serviceRating}/5</span>
                             </div>
                           )}
                           {f.atmosphereRating && (
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{locale === 'tr' ? 'Atmosfer' : 'Atmosphere'}:</span>
-                              <span className="text-[11px] font-black text-gray-700">{f.atmosphereRating}/5</span>
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-50 border border-gray-100">
+                              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{locale === 'tr' ? 'Atmosfer' : 'Atmosphere'}</span>
+                              <span className="text-[11px] font-black text-[#111827]">{f.atmosphereRating}/5</span>
                             </div>
                           )}
                         </div>

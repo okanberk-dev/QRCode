@@ -187,16 +187,16 @@ export default function RestaurantsPage() {
               
               <div className="p-6 sm:p-8 space-y-6 sm:space-y-8">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
                     <div
                       className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl sm:text-2xl shadow-sm"
                       style={{ backgroundColor: r.primaryColor }}
                     >
                       {r.name.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <h3 className="font-black text-[#111827] text-xl tracking-tight leading-none mb-2">{r.name}</h3>
-                      <p className="text-[13px] font-bold text-[#ada89f]">/{r.slug}</p>
+                    <div className="min-w-0">
+                      <h3 className="font-black text-[#111827] text-xl tracking-tight leading-none mb-2 truncate">{r.name}</h3>
+                      <p className="text-[12px] font-bold text-[#6b7280] truncate">/{r.slug}</p>
                     </div>
                   </div>
                   <button
@@ -212,19 +212,18 @@ export default function RestaurantsPage() {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-6 py-4 border-y-2 border-[#F7F4F0]">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest leading-none">KATEGORİ</p>
-                    <p className="text-[13px] font-black text-[#111827]">{r.category.toUpperCase()}</p>
-                  </div>
-                  <div className="w-px h-8 bg-[#e8e4de]" />
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest leading-none">YORUM</p>
-                    <p className="text-[13px] font-black text-[#ea580c]">{r._count.feedbacks} ADET</p>
-                  </div>
+                <div className="flex flex-wrap items-center gap-3 py-4 border-y border-gray-100">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#111827] text-white text-[11px] font-bold tracking-wide">
+                    <span className="text-[10px] opacity-70">KATEGORİ</span>
+                    {r.category.toUpperCase()}
+                  </span>
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FDBF1D]/15 text-[#111827] border border-[#FDBF1D]/40 text-[11px] font-bold tracking-wide">
+                    <span className="text-[10px] text-[#92400E]">YORUM</span>
+                    {r._count.feedbacks} ADET
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <Link
                     href={`/admin/restaurants/${r.id}`}
                     className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-[#111827] text-white rounded-xl shadow-sm hover:bg-gray-800 transition-all uppercase tracking-widest active:scale-95"
@@ -233,14 +232,14 @@ export default function RestaurantsPage() {
                   </Link>
                   <Link
                     href={`/admin/qr?restaurant=${r.id}`}
-                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-gray-700 border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all uppercase tracking-widest active:scale-95"
+                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-[#FFF8E1] text-[#111827] border border-[#FDBF1D]/60 rounded-xl shadow-sm hover:bg-[#FDE68A] transition-all uppercase tracking-widest active:scale-95"
                   >
                     QR KOD
                   </Link>
                   <Link
                     href={`/r/${r.slug}`}
                     target="_blank"
-                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-500 bg-white hover:text-gray-900 border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95 shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-[#6b7280] bg-white hover:text-[#111827] border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95 shrink-0"
                   >
                     <ExternalLink size={18} strokeWidth={2.5} />
                   </Link>
