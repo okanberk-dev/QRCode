@@ -27,6 +27,7 @@ function detectLocale(req: NextRequest): string {
 
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  let requestLocale: string = DEFAULT_LOCALE;
 
   // ─── Admin UI protection (unchanged from original) ───────────────────────
   if (pathname.startsWith('/admin')) {
@@ -120,6 +121,7 @@ export default async function proxy(req: NextRequest) {
       });
       return response;
     }
+    requestLocale = pathname.split('/')[1] || DEFAULT_LOCALE;
 
     // ─── User dashboard auth protection ─────────────────────────────────
     const currentLocale = pathname.split('/')[1];
@@ -146,8 +148,13 @@ export default async function proxy(req: NextRequest) {
       }
     }
   }
-
-  return NextResponse.next();
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set('x-locale', requestLocale);
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {

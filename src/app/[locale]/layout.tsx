@@ -30,6 +30,7 @@ export async function generateMetadata({
     category: 'Business',
     // GEO Tags
     other: {
+      'content-language': locale,
       'geo.region': 'TR',
       'geo.placename': 'Bursa',
       'geo.position': '40.1828;29.0667',
@@ -82,19 +83,11 @@ export async function generateMetadata({
   };
 }
 
-export function generateStaticParams() {
-  return [{ locale: 'tr' }, { locale: 'en' }];
-}
-
 export default async function LocaleLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: Locale }>;
 }) {
-  const { locale } = await params;
-
   return (
     <div className="antialiased bg-white text-[#111827] min-h-screen flex flex-col">
       {children}

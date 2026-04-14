@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import './globals.css';
+
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Buaze | Dijital İtibar Yönetimi',
@@ -15,13 +18,16 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const headersList = await headers();
+  const locale = headersList.get('x-locale') === 'en' ? 'en' : 'tr';
+
   return (
-    <html lang="tr">
+    <html lang={locale}>
       <body className="antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-screen">
         {children}
       </body>
