@@ -342,7 +342,9 @@ function QRPageContent() {
               ) : (
                 <div className="w-64 h-64 sm:w-72 sm:h-72 bg-gray-50 rounded-[24px] flex flex-col items-center justify-center border-2 border-dashed border-gray-200 text-center p-8">
                   <QrCode size={48} strokeWidth={2.5} className="text-gray-300 mb-4" />
-                  <p className="text-[13px] font-black text-[#ada89f] uppercase tracking-widest">Önizleme İçin İşletme Seçin</p>
+                  <p className="text-[13px] font-black text-[#ada89f] uppercase tracking-widest">
+                    {selectedId ? 'QR HAZIRLANIYOR / YENİLE İLE OLUŞTURUN' : 'ÖNİZLEME İÇİN İŞLETME SEÇİN'}
+                  </p>
                 </div>
               )}
             </div>
