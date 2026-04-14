@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ArrowRight, QrCode, ShieldCheck, CheckCircle2, Star, Shield, MessageSquare, BarChart3, Zap, Users, Trophy } from 'lucide-react';
+import Image from 'next/image';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import PricingFaq from '@/components/marketing/PricingFaq';
@@ -172,16 +173,22 @@ export default async function LandingPage({
                       ? '"Kullanımı süper kolay ve kusursuz çalışıyor"'
                       : '"Super easy to use and worked perfectly"'}
                   </div>
-                  <img 
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
-                    loading="lazy" 
-                    alt="" 
+                  <Image
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png"
+                    alt=""
+                    width={24}
+                    height={24}
+                    sizes="24px"
+                    priority
                     className="image-20 right white absolute -bottom-[16px] left-6 w-6 z-20"
                   />
-                  <img 
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
-                    loading="lazy" 
-                    alt="" 
+                  <Image
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png"
+                    alt=""
+                    width={32}
+                    height={32}
+                    sizes="(max-width: 1024px) 0px, 32px"
+                    priority
                     className="image-20 right absolute -bottom-[20px] left-5 w-[32px] z-10 hidden lg:block"
                   />
                 </div>
@@ -204,16 +211,22 @@ export default async function LandingPage({
                       ? '"Buaze\'yi kullanmak gerçekten çok kolay. Yorum toplamak konusunda müthiş zaman kazandırıyor"'
                       : '"Really love how easy Buaze is to use. It saves so much time collecting reviews"'}
                   </div>
-                  <img 
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
-                    loading="lazy" 
-                    alt="" 
+                  <Image
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png"
+                    alt=""
+                    width={24}
+                    height={24}
+                    sizes="24px"
+                    priority
                     className="image-20 right white absolute -bottom-[16px] right-8 w-6 z-20"
                   />
-                  <img 
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
-                    loading="lazy" 
-                    alt="" 
+                  <Image
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png"
+                    alt=""
+                    width={32}
+                    height={32}
+                    sizes="(max-width: 1024px) 0px, 32px"
+                    priority
                     className="image-20 right absolute -bottom-[20px] right-[27px] w-[32px] z-10 hidden lg:block"
                   />
                 </div>
@@ -236,16 +249,22 @@ export default async function LandingPage({
                       ? '"Buaze ile yorumları takip etmek ve yanıtlamak artık çok zahmetsiz"'
                       : '"Buaze makes tracking and replying to reviews effortless."'}
                   </div>
-                  <img 
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
-                    loading="lazy" 
-                    alt="" 
+                  <Image
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png"
+                    alt=""
+                    width={24}
+                    height={24}
+                    sizes="24px"
+                    priority
                     className="image-20 right white absolute -bottom-[16px] left-8 w-6 z-20"
                   />
-                  <img 
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
-                    loading="lazy" 
-                    alt="" 
+                  <Image
+                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png"
+                    alt=""
+                    width={32}
+                    height={32}
+                    sizes="(max-width: 1024px) 0px, 32px"
+                    priority
                     className="image-20 right absolute -bottom-[20px] left-[27px] w-[32px] z-10 hidden lg:block"
                   />
                 </div>
@@ -268,16 +287,20 @@ export default async function LandingPage({
                   ? '"Buaze\'yi kullanmak gerçekten çok kolay. Yorum toplamak konusunda müthiş zaman kazandırıyor"'
                   : '"Really love how easy Buaze is to use. It saves so much time collecting reviews"'}
               </div>
-              <img 
-                src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png" 
-                loading="lazy" 
-                alt="" 
+              <Image
+                src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png"
+                alt=""
+                width={24}
+                height={24}
+                sizes="24px"
                 className="image-20 right white absolute -bottom-[15px] right-8 w-6 z-20"
               />
-              <img 
-                src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png" 
-                loading="lazy" 
-                alt="" 
+              <Image
+                src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png"
+                alt=""
+                width={32}
+                height={32}
+                sizes="32px"
                 className="image-20 right absolute -bottom-[19px] right-[27px] w-[32px] z-10"
               />
             </div>

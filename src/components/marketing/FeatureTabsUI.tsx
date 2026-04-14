@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Sparkles, Trophy, Monitor, Star } from 'lucide-react';
+import Image from 'next/image';
 import type { Locale } from '@/lib/translations';
 
 interface FeatureTabsUIProps {
@@ -18,9 +19,13 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
       icon: <Sparkles size={18} />,
       subtitle: locale === 'tr' ? 'HERHANGİ BİR SİSTEMDEN ANINDA YORUM İSTEYİN' : 'REQUEST REVIEWS FROM ANY SYSTEM, INSTANTLY',
       content: (
-        <img
+        <Image
           src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/672c61461189d46513ffe0c4_Best-reviews.webp"
-          alt="Magic Links"
+          alt={locale === 'tr' ? 'Akıllı linklerle yorum toplama ekranı önizlemesi' : 'Preview of collecting reviews with Magic Links'}
+          width={700}
+          height={430}
+          priority={activeTab === 0}
+          sizes="(max-width: 768px) 80vw, (max-width: 1200px) 65vw, 700px"
           className="mx-auto max-w-[80%] md:max-w-[700px] h-auto object-contain drop-shadow-md"
         />
       ),
@@ -85,9 +90,12 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
       icon: <Monitor size={18} />,
       subtitle: locale === 'tr' ? 'SOSYAL KANITLARINIZI SİTENİZDE SERGİLEYİN' : 'DISPLAY YOUR SOCIAL PROOF ON YOUR SITE',
       content: (
-        <img
+        <Image
           src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/672c0958413deb5af455a7ac_Widgets-hero.png"
-          alt="Website Widgets"
+          alt={locale === 'tr' ? 'Web sitesi eklentileri ile sosyal kanıt gösterimi' : 'Website widget preview showing social proof'}
+          width={900}
+          height={520}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 85vw, 900px"
           className="mx-auto w-full max-w-[900px] h-auto object-contain drop-shadow-md"
         />
       ),
