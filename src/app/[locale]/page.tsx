@@ -120,7 +120,7 @@ export default async function LandingPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans selection:bg-[#FDBF1D]/30 selection:text-[#1f1e1d] pt-[64px]">
+    <div className="min-h-screen overflow-x-clip bg-[#FCFBF7] text-[#1f1e1d] font-sans selection:bg-[#FDBF1D]/30 selection:text-[#1f1e1d] pt-[64px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -435,7 +435,7 @@ export default async function LandingPage({
       {/* ═══════ Trust / Why Buaze Section (3D Redesign) ═══════ */}
       <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FCFBF7]">
         <div className="max-w-[1240px] mx-auto">
-          <div className="relative bg-[#1f1e1d] rounded-[32px] sm:rounded-[48px] p-8 sm:p-14 lg:p-20 border-[3px] border-[#1f1e1d] shadow-[16px_20px_0_0_#FDBF1D] overflow-visible">
+          <div className="relative bg-[#1f1e1d] rounded-[32px] sm:rounded-[48px] p-8 sm:p-14 lg:p-20 border-[3px] border-[#1f1e1d] shadow-[16px_20px_0_0_#FDBF1D] overflow-hidden lg:overflow-visible">
             {/* Background Accent */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ea580c]/10 blur-[120px] rounded-full -mr-32 -mt-32 pointer-events-none" />
             
