@@ -86,7 +86,7 @@ export default async function LandingPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans selection:bg-[#FDBF1D]/30 selection:text-[#1f1e1d] pt-[64px]">
+    <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans selection:bg-[#FDBF1D]/30 selection:text-[#1f1e1d] pt-[64px] overflow-x-clip">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -155,8 +155,8 @@ export default async function LandingPage({
                 />
 
                 {/* Box 1: Super easy (Top) */}
-                <div 
-                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-2 lg:left-0 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-10 transform hover:-translate-y-2 transition-transform self-start -mb-6 lg:mb-0"
+                <div
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-2 lg:left-0 w-[95%] max-w-[260px] mx-auto lg:mx-0 bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-10 transform hover:-translate-y-2 transition-transform self-auto lg:self-start mb-4 lg:mb-0"
                 >
                   <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
@@ -187,8 +187,8 @@ export default async function LandingPage({
                 </div>
 
                 {/* Box 2: Really love (Middle) */}
-                <div 
-                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[120px] lg:right-2 w-[98%] max-w-[290px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-30 transform hover:-translate-y-2 transition-transform self-end lg:self-auto -mb-6 lg:mb-0"
+                <div
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[120px] lg:right-2 w-[98%] max-w-[290px] mx-auto lg:mx-0 bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-30 transform hover:-translate-y-2 transition-transform self-auto lg:self-auto mb-4 lg:mb-0"
                 >
                   <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
@@ -219,8 +219,8 @@ export default async function LandingPage({
                 </div>
 
                 {/* Box 3: Buaze makes (Bottom) */}
-                <div 
-                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[250px] lg:left-6 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-20 transform hover:-translate-y-2 transition-transform self-start -mt-2 lg:mt-0"
+                <div
+                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[250px] lg:left-6 w-[95%] max-w-[260px] mx-auto lg:mx-0 bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-20 transform hover:-translate-y-2 transition-transform self-auto lg:self-start"
                 >
                   <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
@@ -383,11 +383,11 @@ export default async function LandingPage({
       <CustomerTestimonials locale={locale} />
 
       {/* ═══════ Trust / Why Buaze Section (3D Redesign) ═══════ */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FCFBF7]">
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FCFBF7] overflow-x-clip">
         <div className="max-w-[1240px] mx-auto">
-          <div className="relative bg-[#1f1e1d] rounded-[32px] sm:rounded-[48px] p-8 sm:p-14 lg:p-20 border-[3px] border-[#1f1e1d] shadow-[16px_20px_0_0_#FDBF1D] overflow-visible">
+          <div className="relative bg-[#1f1e1d] rounded-[32px] sm:rounded-[48px] p-8 sm:p-14 lg:p-20 border-[3px] border-[#1f1e1d] shadow-[16px_20px_0_0_#FDBF1D] overflow-hidden lg:overflow-visible">
             {/* Background Accent */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ea580c]/10 blur-[120px] rounded-full -mr-32 -mt-32 pointer-events-none" />
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ea580c]/10 blur-[120px] rounded-full -mt-32 sm:-mr-32 pointer-events-none" />
             
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
               {/* Left Content Column */}
@@ -437,7 +437,7 @@ export default async function LandingPage({
               {/* Right Visual Column (3D Dash) */}
               <div className="lg:col-span-6 relative flex justify-center lg:justify-end">
                 {/* Floating Metric Chips */}
-                <div className="absolute -top-10 lg:-top-20 -left-4 lg:-left-10 z-[40] transform hover:-translate-y-2 transition-transform cursor-default">
+                <div className="absolute -top-10 lg:-top-20 left-0 sm:-left-4 lg:-left-10 z-[40] transform hover:-translate-y-2 transition-transform cursor-default">
                   <div className="bg-white px-6 py-4 rounded-2xl border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#ea580c]">
                     <div className="text-[10px] font-black text-[#6b6760] uppercase mb-1">{locale === 'tr' ? 'CANLI ANALİZ' : 'LIVE ANALYTICS'}</div>
                     <div className="text-[24px] font-black text-[#1f1e1d] flex items-center gap-2">
@@ -493,7 +493,7 @@ export default async function LandingPage({
                    </div>
 
                    {/* Floating Bottom Badge */}
-                   <div className="absolute bottom-6 right-6 lg:-right-10 transform translate-x-2 z-[40]">
+                   <div className="absolute bottom-6 right-0 sm:right-6 lg:-right-10 transform sm:translate-x-2 z-[40]">
                       <div className="bg-[#FDBF1D] text-[#1f1e1d] p-5 rounded-2xl border-[3px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] flex flex-col items-center gap-1 group cursor-default">
                          <Zap size={24} fill="#1f1e1d" className="group-hover:scale-110 transition-transform" />
                          <span className="text-[11px] font-black uppercase tracking-widest">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
