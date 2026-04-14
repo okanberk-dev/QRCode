@@ -1,8 +1,8 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Check, Copy, Download, Loader2, Minus, Plus, Printer, QrCode, RefreshCw } from 'lucide-react';
+import { AlertCircle, Check, Copy, Download, Loader2, Minus, Plus, Printer, QrCode, RefreshCw } from 'lucide-react';
 
 interface Restaurant {
   id: string;
@@ -29,28 +29,32 @@ function DashboardQrContent() {
   const [loading, setLoading] = useState(true);
   const [qrSvg, setQrSvg] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [qrError, setQrError] = useState('');
   const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
   const safeEnvAppUrl = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
     ? envAppUrl
     : 'https://buaze.com';
 
+  // Fetch restaurant list once on mount (and when preselected changes from URL)
   useEffect(() => {
     fetch('/api/restaurants')
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         const list = Array.isArray(data) ? data : [];
         setRestaurants(list);
-
-        if (!selectedId && list.length > 0) {
-          setSelectedId(preselected || list[0].id);
-        }
+        // Auto-select: preselected from URL takes priority, otherwise first restaurant
+        setSelectedId((prev) => {
+          if (prev) return prev; // already set
+          return preselected || (list.length > 0 ? list[0].id : '');
+        });
       })
       .catch(() => setRestaurants([]))
       .finally(() => setLoading(false));
-  }, [preselected, selectedId]);
+  }, [preselected]);
 
   const selectedRestaurant = restaurants.find((restaurant) => restaurant.id === selectedId);
   const appUrl = safeEnvAppUrl || (typeof window !== 'undefined'
@@ -59,7 +63,6 @@ function DashboardQrContent() {
 
   const qrTargetUrl = useMemo(() => {
     if (!selectedRestaurant) return '';
-
     return `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}`;
   }, [appUrl, selectedRestaurant, tableNumber]);
 
@@ -70,7 +73,7 @@ function DashboardQrContent() {
         business: 'İşletme',
         table: 'Masa / Konum',
         target: 'Hedef Bağlantı',
-        refresh: 'Yenile',
+        refresh: 'QR Oluştur',
         copy: 'Kopyala',
         copied: 'Kopyalandı',
         history: 'Son Üretilenler',
@@ -79,6 +82,8 @@ function DashboardQrContent() {
         print: 'Yazdır',
         qrPreview: 'QR Önizleme',
         noHistory: 'Henüz QR üretim kaydı yok.',
+        selectPrompt: 'İşletme seçin ve QR Oluştur\'a tıklayın.',
+        generateBtn: 'QR Oluştur',
       }
     : {
         title: 'QR Management',
@@ -86,7 +91,7 @@ function DashboardQrContent() {
         business: 'Location',
         table: 'Table / Spot',
         target: 'Target URL',
-        refresh: 'Refresh',
+        refresh: 'Generate QR',
         copy: 'Copy',
         copied: 'Copied',
         history: 'Recent QR Codes',
@@ -95,14 +100,15 @@ function DashboardQrContent() {
         print: 'Print',
         qrPreview: 'QR Preview',
         noHistory: 'No QR history yet.',
+        selectPrompt: 'Select a location and click Generate QR.',
+        generateBtn: 'Generate QR',
       };
 
-  const fetchHistory = async (restaurantId: string) => {
+  const fetchHistory = useCallback(async (restaurantId: string) => {
     if (!restaurantId) {
       setHistory([]);
       return;
     }
-
     setHistoryLoading(true);
     try {
       const response = await fetch(`/api/restaurants/${restaurantId}/qr/history`);
@@ -110,7 +116,6 @@ function DashboardQrContent() {
         setHistory([]);
         return;
       }
-
       const data = await response.json();
       setHistory(Array.isArray(data) ? data : []);
     } catch {
@@ -118,40 +123,63 @@ function DashboardQrContent() {
     } finally {
       setHistoryLoading(false);
     }
-  };
+  }, []);
 
-  const generateQr = async () => {
-    if (!selectedId) return;
+  const generateQr = useCallback(async (restaurantId: string, table: string) => {
+    if (!restaurantId) return;
 
     setGenerating(true);
+    setQrError('');
     try {
       const query = new URLSearchParams({ format: 'svg' });
-      if (tableNumber) query.append('table', tableNumber);
+      if (table) query.append('table', table);
 
-      const response = await fetch(`/api/restaurants/${selectedId}/qr?${query.toString()}`);
-      if (!response.ok) return;
+      const response = await fetch(`/api/restaurants/${restaurantId}/qr?${query.toString()}`);
+      if (!response.ok) {
+        let errMsg = `Hata ${response.status}`;
+        try {
+          const errData = await response.json();
+          if (errData?.error) errMsg = errData.error;
+        } catch { /* ignore */ }
+        setQrError(errMsg);
+        return;
+      }
 
       const svg = await response.text();
+      if (!svg || svg.trim().length === 0) {
+        setQrError('QR kodu boş döndü. Lütfen tekrar deneyin.');
+        return;
+      }
       setQrSvg(svg);
-      await fetchHistory(selectedId);
+      await fetchHistory(restaurantId);
     } catch (error) {
-      console.error(error);
+      console.error('QR generation error:', error);
+      setQrError(locale === 'tr' ? 'Bağlantı hatası. Lütfen tekrar deneyin.' : 'Connection error. Please try again.');
     } finally {
       setGenerating(false);
     }
-  };
+  }, [fetchHistory, locale]);
 
+  // Auto-generate when selectedId changes
   useEffect(() => {
     if (selectedId) {
-      generateQr();
-    }
-  }, [selectedId, tableNumber]);
-
-  useEffect(() => {
-    if (selectedId) {
+      setQrSvg('');
+      setQrError('');
+      generateQr(selectedId, tableNumber);
       fetchHistory(selectedId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
+
+  // Re-generate when tableNumber changes (debounced-ish via user action)
+  useEffect(() => {
+    if (selectedId && tableNumber !== undefined) {
+      setQrSvg('');
+      setQrError('');
+      generateQr(selectedId, tableNumber);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableNumber]);
 
   const downloadQr = async (format: 'svg' | 'png') => {
     if (!selectedId) return;
@@ -202,7 +230,6 @@ function DashboardQrContent() {
 
   const copyUrl = async () => {
     if (!qrTargetUrl) return;
-
     await navigator.clipboard.writeText(qrTargetUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
@@ -296,22 +323,22 @@ function DashboardQrContent() {
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={generateQr}
+                onClick={() => generateQr(selectedId, tableNumber)}
                 disabled={generating || !selectedId}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#111827] px-5 py-3 text-sm font-black text-white transition-all disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#111827] px-5 py-3 text-sm font-black text-white transition-all disabled:opacity-50 hover:bg-[#1f2937]"
               >
                 {generating ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} strokeWidth={2.75} />}
                 {copy.refresh}
               </button>
-              <button type="button" onClick={() => downloadQr('svg')} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm">
+              <button type="button" onClick={() => downloadQr('svg')} disabled={!qrSvg} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm disabled:opacity-40">
                 <Download size={18} strokeWidth={2.75} />
                 {copy.downloadSvg}
               </button>
-              <button type="button" onClick={() => downloadQr('png')} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm">
+              <button type="button" onClick={() => downloadQr('png')} disabled={!qrSvg} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm disabled:opacity-40">
                 <Download size={18} strokeWidth={2.75} />
                 {copy.downloadPng}
               </button>
-              <button type="button" onClick={handlePrint} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm">
+              <button type="button" onClick={handlePrint} disabled={!qrSvg} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm disabled:opacity-40">
                 <Printer size={18} strokeWidth={2.75} />
                 {copy.print}
               </button>
@@ -348,6 +375,7 @@ function DashboardQrContent() {
           </div>
         </div>
 
+        {/* QR Preview Panel */}
         <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-5 flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#111827] text-[#FDBF1D]">
@@ -358,7 +386,28 @@ function DashboardQrContent() {
 
           <div className="flex min-h-[360px] items-center justify-center rounded-[28px] border border-dashed border-gray-200 bg-[#FCFBF7] p-6">
             {generating ? (
-              <Loader2 className="h-10 w-10 animate-spin text-[#111827]" />
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="h-10 w-10 animate-spin text-[#111827]" />
+                <p className="text-xs font-bold text-[#6b6760]">{locale === 'tr' ? 'Oluşturuluyor...' : 'Generating...'}</p>
+              </div>
+            ) : qrError ? (
+              <div className="flex flex-col items-center gap-4 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50">
+                  <AlertCircle size={28} className="text-red-500" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-red-600">{locale === 'tr' ? 'QR Oluşturulamadı' : 'Failed to Generate QR'}</p>
+                  <p className="mt-1 text-xs font-bold text-[#6b6760]">{qrError}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => generateQr(selectedId, tableNumber)}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-[#111827] px-5 py-3 text-sm font-black text-white"
+                >
+                  <RefreshCw size={16} strokeWidth={2.75} />
+                  {locale === 'tr' ? 'Tekrar Dene' : 'Retry'}
+                </button>
+              </div>
             ) : qrSvg ? (
               <div className="w-full space-y-5 text-center">
                 <div className="mx-auto max-w-[280px]" dangerouslySetInnerHTML={{ __html: qrSvg }} />
@@ -372,7 +421,25 @@ function DashboardQrContent() {
                 </div>
               </div>
             ) : (
-              <p className="text-sm font-bold text-[#6b6760]">{locale === 'tr' ? 'QR oluşturmak için işletme seçin.' : 'Select a location to generate a QR code.'}</p>
+              <div className="flex flex-col items-center gap-4 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F7F4F0]">
+                  <QrCode size={28} className="text-[#ada89f]" strokeWidth={2} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#6b6760]">{copy.selectPrompt}</p>
+                </div>
+                {selectedId && (
+                  <button
+                    type="button"
+                    onClick={() => generateQr(selectedId, tableNumber)}
+                    disabled={generating}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-[#111827] px-5 py-3 text-sm font-black text-white disabled:opacity-50"
+                  >
+                    <QrCode size={16} strokeWidth={2.75} />
+                    {copy.generateBtn}
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
