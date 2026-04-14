@@ -40,6 +40,29 @@ export async function GET(
       qrUrl += `&table=${encodeURIComponent(table)}`;
     }
 
+    await prisma.$transaction(async (tx) => {
+      await tx.qrGeneration.create({
+        data: {
+          restaurantId: restaurant.id,
+          qrUrl,
+          tableNumber: table || null,
+        },
+      });
+
+      const overflow = await tx.qrGeneration.findMany({
+        where: { restaurantId: restaurant.id },
+        orderBy: { createdAt: 'desc' },
+        skip: 50,
+        select: { id: true },
+      });
+
+      if (overflow.length > 0) {
+        await tx.qrGeneration.deleteMany({
+          where: { id: { in: overflow.map((item) => item.id) } },
+        });
+      }
+    });
+
     if (format === 'png') {
       const pngBuffer = await QRCode.toBuffer(qrUrl, {
         type: 'png',

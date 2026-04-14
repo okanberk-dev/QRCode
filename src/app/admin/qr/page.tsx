@@ -13,6 +13,13 @@ interface Restaurant {
   primaryColor: string;
 }
 
+interface QrHistoryItem {
+  id: string;
+  qrUrl: string;
+  tableNumber: string | null;
+  createdAt: string;
+}
+
 function QRPageContent() {
   const searchParams = useSearchParams();
   const preselected = searchParams.get('restaurant') || searchParams.get('restaurantId') || '';
@@ -25,6 +32,8 @@ function QRPageContent() {
   const [generating, setGenerating] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState<QrHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -58,6 +67,27 @@ function QRPageContent() {
     ? `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}`
     : '';
 
+  const fetchHistory = async (restaurantId: string) => {
+    if (!restaurantId) {
+      setHistory([]);
+      return;
+    }
+    setHistoryLoading(true);
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}/qr/history`);
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(Array.isArray(data) ? data : []);
+      } else {
+        setHistory([]);
+      }
+    } catch {
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   const generateQR = async () => {
     if (!selectedId) return;
     setGenerating(true);
@@ -68,6 +98,7 @@ function QRPageContent() {
       if (res.ok) {
         const svg = await res.text();
         setQrSvg(svg);
+        fetchHistory(selectedId);
       }
     } catch (e) {
       console.error(e);
@@ -76,8 +107,16 @@ function QRPageContent() {
   };
 
   useEffect(() => {
-    if (selectedId) generateQR();
+    if (selectedId) {
+      generateQR();
+    }
   }, [selectedId, tableNumber]);
+
+  useEffect(() => {
+    if (selectedId) {
+      fetchHistory(selectedId);
+    }
+  }, [selectedId]);
 
   const downloadQR = async (format: 'svg' | 'png') => {
     const query = new URLSearchParams({ format });
@@ -234,6 +273,41 @@ function QRPageContent() {
                   <p className="text-[9px] font-black text-[#ada89f] uppercase tracking-widest">Durum</p>
                   <p className="text-xs font-black text-[#10b981]">AKTİF ✓</p>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Last 50 QR history */}
+          {selectedRestaurant && (
+            <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 sm:p-8 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-[#111827] uppercase tracking-widest">Son 50 QR</h4>
+                <span className="text-[10px] font-black text-[#ada89f]">{history.length}/50</span>
+              </div>
+              <p className="text-[12px] text-[#6b6760] font-semibold">
+                50 kayıt aşıldığında en eski QR otomatik silinir, en yeniler tutulur.
+              </p>
+
+              <div className="max-h-[280px] overflow-auto divide-y divide-gray-100 border border-gray-100 rounded-xl">
+                {historyLoading ? (
+                  <div className="p-4 text-[12px] font-bold text-[#6b6760]">Yükleniyor...</div>
+                ) : history.length === 0 ? (
+                  <div className="p-4 text-[12px] font-bold text-[#6b6760]">Henüz kayıtlı QR yok.</div>
+                ) : (
+                  history.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setTableNumber(item.tableNumber || '')}
+                      className="w-full text-left p-3 hover:bg-[#FCFBF7] transition-colors"
+                    >
+                      <p className="text-[12px] font-black text-[#111827]">
+                        {item.tableNumber ? `Masa ${item.tableNumber}` : 'Genel QR'}
+                      </p>
+                      <p className="text-[11px] text-[#6b6760] font-mono truncate">{item.qrUrl}</p>
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           )}
