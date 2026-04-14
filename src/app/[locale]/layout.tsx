@@ -55,7 +55,7 @@ export async function generateMetadata({
       description: t.siteDescription,
       images: [
         {
-          url: '/hero-dashboard.png', // Fallback social image
+          url: '/images/hero-dashboard.png', // Fallback social image
           width: 1200,
           height: 630,
           alt: 'Buaze Platform',
@@ -67,6 +67,7 @@ export async function generateMetadata({
       title: `Buaze | ${locale === 'tr' ? 'Dijital İtibar' : 'Digital Reputation'}`,
       description: t.siteDescription,
       creator: '@buaze',
+      images: ['/images/hero-dashboard.png'],
     },
     alternates: {
       canonical: `https://buaze.com/${locale}`,
