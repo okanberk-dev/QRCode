@@ -4,6 +4,9 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Buaze | Dijital İtibar Yönetimi',
   description: 'Restoran değerlendirme ve geri bildirim yönetim platformu',
+  icons: {
+    icon: '/favicon.svg',
+  },
   verification: {
     google: 'FYUcNyiNfUTFfmZBl_Xqb_YCFqBpD-PcpHHiGDz_kZ0',
   },

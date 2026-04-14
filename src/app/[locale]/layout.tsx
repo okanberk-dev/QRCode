@@ -55,7 +55,7 @@ export async function generateMetadata({
       description: t.siteDescription,
       images: [
         {
-          url: '/hero-dashboard.png', // Fallback social image
+          url: '/assets/3d-hero.png',
           width: 1200,
           height: 630,
           alt: 'Buaze Platform',
@@ -77,7 +77,7 @@ export async function generateMetadata({
       },
     },
     icons: {
-      icon: '/favicon.ico',
+      icon: '/favicon.svg',
     },
   };
 }

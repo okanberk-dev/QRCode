@@ -45,10 +45,10 @@ export async function generateMetadata({
       description: t.siteDescription || description,
       images: [
         {
-          url: '/buaze-logo.png',
+          url: '/assets/3d-hero.png',
           width: 1200,
           height: 630,
-          alt: 'Buaze',
+          alt: 'Buaze platform dashboard preview',
         },
       ],
     },
@@ -56,7 +56,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      images: ['/buaze-logo.png'],
+      images: ['/assets/3d-hero.png'],
     },
   };
 }
