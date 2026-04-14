@@ -3,7 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, ExternalLink, Loader2, Mail, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Loader2, Mail, Save, Star, BarChart2, TrendingUp, ThumbsUp, Trash2 } from 'lucide-react';
+
+interface StatsData {
+  totalCount: number;
+  todayCount: number;
+  avgRating: string;
+  googleRedirectsCount: number;
+}
 
 export default function DashboardRestaurantDetailPage() {
   const params = useParams();
@@ -16,6 +23,7 @@ export default function DashboardRestaurantDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [stats, setStats] = useState<StatsData | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -29,23 +37,37 @@ export default function DashboardRestaurantDetailPage() {
   });
 
   useEffect(() => {
-    const fetchRestaurant = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`/api/restaurants/${id}`);
-        if (!response.ok) return;
+        const [restaurantRes, statsRes] = await Promise.all([
+          fetch(`/api/restaurants/${id}`),
+          fetch(`/api/feedback/stats?restaurantId=${id}&days=30`),
+        ]);
 
-        const data = await response.json();
-        setFormData({
-          name: data.name || '',
-          slug: data.slug || '',
-          category: data.category || 'Restoran',
-          address: data.address || '',
-          phone: data.phone || '',
-          googlePlaceId: data.googlePlaceId || '',
-          notificationEmail: data.notificationEmail || '',
-          primaryColor: data.primaryColor || '#1a73e8',
-          isActive: data.isActive ?? true,
-        });
+        if (restaurantRes.ok) {
+          const data = await restaurantRes.json();
+          setFormData({
+            name: data.name || '',
+            slug: data.slug || '',
+            category: data.category || 'Restoran',
+            address: data.address || '',
+            phone: data.phone || '',
+            googlePlaceId: data.googlePlaceId || '',
+            notificationEmail: data.notificationEmail || '',
+            primaryColor: data.primaryColor || '#1a73e8',
+            isActive: data.isActive ?? true,
+          });
+        }
+
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats({
+            totalCount: statsData.totalCount ?? 0,
+            todayCount: statsData.todayCount ?? 0,
+            avgRating: statsData.avgRating ?? '0.0',
+            googleRedirectsCount: statsData.googleRedirectsCount ?? 0,
+          });
+        }
       } catch (fetchError) {
         console.error(fetchError);
       } finally {
@@ -53,7 +75,7 @@ export default function DashboardRestaurantDetailPage() {
       }
     };
 
-    fetchRestaurant();
+    fetchData();
   }, [id]);
 
   const handleSave = async (event: React.FormEvent) => {
@@ -126,6 +148,46 @@ export default function DashboardRestaurantDetailPage() {
           <p className="text-sm font-bold text-[#6b6760]">/{formData.slug}</p>
         </div>
       </div>
+
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            {
+              label: locale === 'tr' ? 'Toplam Yorum' : 'Total Reviews',
+              value: stats.totalCount,
+              icon: <Star size={18} strokeWidth={2.75} />,
+              color: '#FDBF1D',
+            },
+            {
+              label: locale === 'tr' ? 'Bugün Gelen' : "Today's",
+              value: stats.todayCount,
+              icon: <BarChart2 size={18} strokeWidth={2.75} />,
+              color: '#3b82f6',
+            },
+            {
+              label: locale === 'tr' ? 'Ort. Puan' : 'Avg. Rating',
+              value: `${stats.avgRating}/5`,
+              icon: <TrendingUp size={18} strokeWidth={2.75} />,
+              color: '#10b981',
+            },
+            {
+              label: locale === 'tr' ? 'Google Yönl.' : 'Google Redir.',
+              value: stats.googleRedirectsCount,
+              icon: <ThumbsUp size={18} strokeWidth={2.75} />,
+              color: '#a855f7',
+            },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-white rounded-[20px] p-5 border-2 border-[#1f1e1d] shadow-[3px_5px_0_0_#1f1e1d]">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center border-2 border-[#1f1e1d] mb-3 bg-[#FCFBF7]" style={{ color: stat.color }}>
+                {stat.icon}
+              </div>
+              <div className="text-2xl font-black text-[#1f1e1d] tracking-tighter tabular-nums">{stat.value}</div>
+              <div className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest mt-1">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {error && (
         <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-600">{error}</div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Check, Copy, Download, Loader2, Minus, Plus, Printer, QrCode, RefreshCw } from 'lucide-react';
 
@@ -17,7 +17,7 @@ interface QrHistoryItem {
   createdAt: string;
 }
 
-export default function DashboardQrPage() {
+function DashboardQrContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = params.locale === 'en' ? 'en' : 'tr';
@@ -378,5 +378,17 @@ export default function DashboardQrPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DashboardQrPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-[#111827]" />
+      </div>
+    }>
+      <DashboardQrContent />
+    </Suspense>
   );
 }
