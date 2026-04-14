@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Download, Loader2, QrCode, Mail, RefreshCw, Copy, Check, Printer, Plus, Minus } from 'lucide-react';
+import { Download, Loader2, QrCode, Mail, RefreshCw, Copy, Check, Printer, Plus, Minus, Palette, Layers } from 'lucide-react';
 import { Suspense } from 'react';
 
 interface Restaurant {
@@ -35,6 +35,19 @@ function QRPageContent() {
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  // Customisation
+  const [useBrandColor, setUseBrandColor] = useState(false);
+  const [customDark, setCustomDark] = useState('#000000');
+  const [size, setSize] = useState<512 | 800 | 1200>(800);
+
+  // Batch generation
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [batchFrom, setBatchFrom] = useState('1');
+  const [batchTo, setBatchTo] = useState('10');
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [batchError, setBatchError] = useState('');
+  const [batchItems, setBatchItems] = useState<{ table: string; qrUrl: string; svg: string }[]>([]);
+
   useEffect(() => {
     Promise.all([
       fetch('/api/restaurants').then(res => res.ok ? res.json() : []),
@@ -56,6 +69,9 @@ function QRPageContent() {
   }, []);
 
   const selectedRestaurant = restaurants.find(r => r.id === selectedId);
+  const activeDark = useBrandColor && selectedRestaurant?.primaryColor
+    ? selectedRestaurant.primaryColor
+    : customDark;
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
   const safeEnvAppUrl = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
     ? envAppUrl
@@ -88,13 +104,17 @@ function QRPageContent() {
     }
   };
 
+  const buildQuery = (format: 'svg' | 'png') => {
+    const query = new URLSearchParams({ format, width: String(size), dark: activeDark });
+    if (tableNumber) query.append('table', tableNumber);
+    return query;
+  };
+
   const generateQR = async () => {
     if (!selectedId) return;
     setGenerating(true);
     try {
-      const query = new URLSearchParams({ format: 'svg' });
-      if (tableNumber) query.append('table', tableNumber);
-      const res = await fetch(`/api/restaurants/${selectedId}/qr?${query.toString()}`);
+      const res = await fetch(`/api/restaurants/${selectedId}/qr?${buildQuery('svg').toString()}`);
       if (res.ok) {
         const svg = await res.text();
         setQrSvg(svg);
@@ -110,7 +130,7 @@ function QRPageContent() {
     if (selectedId) {
       generateQR();
     }
-  }, [selectedId, tableNumber]);
+  }, [selectedId, tableNumber, activeDark, size]);
 
   useEffect(() => {
     if (selectedId) {
@@ -119,9 +139,12 @@ function QRPageContent() {
   }, [selectedId]);
 
   const downloadQR = async (format: 'svg' | 'png') => {
-    const query = new URLSearchParams({ format });
-    if (tableNumber) query.append('table', tableNumber);
-    const res = await fetch(`/api/restaurants/${selectedId}/qr?${query.toString()}`);
+    const res = await fetch(`/api/restaurants/${selectedId}/qr?${buildQuery(format).toString()}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      alert(err?.error || 'QR indirilemedi.');
+      return;
+    }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -129,6 +152,70 @@ function QRPageContent() {
     a.download = `qr-${selectedRestaurant?.slug || 'code'}${tableNumber ? `-masa-${tableNumber}` : ''}.${format}`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const runBatch = async () => {
+    if (!selectedId) return;
+    setBatchError('');
+    setBatchItems([]);
+    const fromN = Number(batchFrom);
+    const toN = Number(batchTo);
+    if (!Number.isInteger(fromN) || !Number.isInteger(toN) || fromN < 1 || toN < fromN) {
+      setBatchError('Başlangıç en az 1 olmalı ve bitiş başlangıçtan küçük olmamalıdır.');
+      return;
+    }
+    if (toN - fromN + 1 > 50) {
+      setBatchError('Tek seferde en fazla 50 masa oluşturabilirsiniz.');
+      return;
+    }
+    setBatchLoading(true);
+    try {
+      const res = await fetch(`/api/restaurants/${selectedId}/qr/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: fromN, to: toN, dark: activeDark, width: size }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setBatchError(data?.error || 'Toplu QR oluşturulamadı.');
+      } else {
+        setBatchItems(data.items || []);
+        fetchHistory(selectedId);
+      }
+    } catch (e) {
+      setBatchError('Bağlantı hatası.');
+    }
+    setBatchLoading(false);
+  };
+
+  const printBatch = () => {
+    if (batchItems.length === 0) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    const cards = batchItems.map((it) => `
+      <div class="card">
+        <div class="qr">${it.svg}</div>
+        <h3>${selectedRestaurant?.name || ''}</h3>
+        <p>Masa ${it.table}</p>
+      </div>
+    `).join('');
+    printWindow.document.write(`
+      <html><head><title>Toplu QR — ${selectedRestaurant?.name}</title>
+      <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .card { border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px; text-align: center; page-break-inside: avoid; }
+        .qr svg { width: 180px; height: 180px; }
+        h3 { margin: 8px 0 2px; font-size: 14px; color: #111827; }
+        p { margin: 0; font-size: 12px; color: #6b7280; }
+        @media print { body { padding: 0; } .grid { gap: 8px; } }
+      </style>
+      </head><body>
+        <div class="grid">${cards}</div>
+      </body></html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   const handlePrint = () => {
@@ -243,8 +330,157 @@ function QRPageContent() {
                   </button>
                 </div>
               </div>
+
+              {/* QR Size Selector */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Çözünürlük (PNG)</label>
+                <div className="flex gap-2">
+                  {[
+                    { label: 'Küçük', value: 512 },
+                    { label: 'HD', value: 800 },
+                    { label: 'XL', value: 1200 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setSize(opt.value as 512 | 800 | 1200)}
+                      className={`flex-1 py-3 rounded-xl border text-[11px] font-black uppercase tracking-widest transition-all ${
+                        size === opt.value
+                          ? 'bg-[#111827] text-white border-[#111827] shadow-sm'
+                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      {opt.label} · {opt.value}px
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Colour customisation */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1 flex items-center gap-2">
+                  <Palette size={14} strokeWidth={3} /> Renk
+                </label>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setUseBrandColor((v) => !v)}
+                    disabled={!selectedRestaurant?.primaryColor}
+                    className={`flex-1 px-4 py-3 rounded-xl border-2 text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                      useBrandColor
+                        ? 'bg-[#FDBF1D]/10 border-[#FDBF1D] text-[#111827]'
+                        : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                    } disabled:opacity-40 disabled:cursor-not-allowed`}
+                    title={selectedRestaurant?.primaryColor ? `Marka rengi: ${selectedRestaurant.primaryColor}` : 'Restoranda marka rengi tanımlı değil'}
+                  >
+                    <span
+                      className="w-4 h-4 rounded border border-gray-200"
+                      style={{ backgroundColor: selectedRestaurant?.primaryColor || '#000' }}
+                    />
+                    Marka Rengi
+                  </button>
+                  <label className="relative cursor-pointer">
+                    <input
+                      type="color"
+                      value={customDark}
+                      onChange={(e) => { setCustomDark(e.target.value); setUseBrandColor(false); }}
+                      className="sr-only"
+                    />
+                    <span
+                      className="block w-14 h-12 rounded-xl border-2 border-gray-200 shadow-sm"
+                      style={{ backgroundColor: useBrandColor ? '#f9fafb' : customDark }}
+                    />
+                  </label>
+                </div>
+                <p className="text-[10px] text-[#ada89f] font-bold pl-1">
+                  Koyu renkleri tercih edin. Tarama güvenilirliği için siyah önerilir.
+                </p>
+              </div>
             </div>
           </div>
+
+          {/* Batch Generator */}
+          {selectedRestaurant && (
+            <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 sm:p-8 space-y-5">
+              <button
+                type="button"
+                onClick={() => setBatchOpen((v) => !v)}
+                className="w-full flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">
+                    <Layers size={20} strokeWidth={3} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-black text-[#111827] uppercase tracking-widest">Toplu QR</h3>
+                    <p className="text-[11px] text-[#6b6760] font-bold">Masa aralığı için tek tıkla oluşturun.</p>
+                  </div>
+                </div>
+                <span className="text-[18px] font-black text-[#ada89f]">{batchOpen ? '−' : '+'}</span>
+              </button>
+
+              {batchOpen && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Başlangıç</label>
+                      <input
+                        type="text"
+                        value={batchFrom}
+                        onChange={(e) => setBatchFrom(e.target.value.replace(/\D/g, ''))}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#FCFBF7] outline-none text-sm font-bold text-center"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Bitiş</label>
+                      <input
+                        type="text"
+                        value={batchTo}
+                        onChange={(e) => setBatchTo(e.target.value.replace(/\D/g, ''))}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#FCFBF7] outline-none text-sm font-bold text-center"
+                      />
+                    </div>
+                  </div>
+
+                  {batchError && (
+                    <div className="bg-red-50 text-red-600 p-3 rounded-xl text-[11px] font-black text-center uppercase tracking-widest border border-red-200">
+                      {batchError}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={runBatch}
+                    disabled={batchLoading}
+                    className="w-full flex items-center justify-center gap-2 bg-[#111827] text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm hover:bg-gray-800 disabled:opacity-60 transition-all"
+                  >
+                    {batchLoading ? <Loader2 size={16} className="animate-spin" /> : <Layers size={16} strokeWidth={3} />}
+                    OLUŞTUR (Maks. 50)
+                  </button>
+
+                  {batchItems.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-2 max-h-[220px] overflow-auto p-1">
+                        {batchItems.map((it) => (
+                          <div key={it.table} className="border border-gray-100 rounded-lg p-2 text-center bg-white">
+                            <div className="w-full aspect-square [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: it.svg }} />
+                            <p className="text-[10px] font-black text-[#111827] mt-1">Masa {it.table}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={printBatch}
+                        className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm hover:bg-gray-50"
+                      >
+                        <Printer size={16} strokeWidth={2.5} /> HEPSİNİ YAZDIR
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Restaurant info */}
           {selectedRestaurant && (

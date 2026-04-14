@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
+import { isStrongPassword } from '@/lib/validations';
 import bcrypt from 'bcryptjs';
 
 export async function GET(req: NextRequest) {
@@ -41,6 +42,24 @@ export async function POST(req: NextRequest) {
 
     if (!username || !password || !role) {
       return NextResponse.json({ error: 'Eksik bilgi' }, { status: 400 });
+    }
+
+    if (typeof username !== 'string' || username.length < 3 || username.length > 64 || !/^[A-Za-z0-9._-]+$/.test(username)) {
+      return NextResponse.json(
+        { error: 'Kullanıcı adı 3-64 karakter olmalı ve sadece harf, rakam, . _ - içerebilir.' },
+        { status: 400 }
+      );
+    }
+
+    if (!isStrongPassword(password)) {
+      return NextResponse.json(
+        { error: 'Şifre en az 8 karakter, en az bir harf ve bir rakam içermelidir.' },
+        { status: 400 }
+      );
+    }
+
+    if (role !== 'superadmin' && role !== 'manager') {
+      return NextResponse.json({ error: 'Geçersiz rol' }, { status: 400 });
     }
 
     if (role === 'manager' && isNewRestaurant) {
