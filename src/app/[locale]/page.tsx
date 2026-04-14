@@ -18,13 +18,46 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = getTranslations(locale);
+  const title = locale === 'tr'
+    ? 'Buaze | Restoranınız İçin Gelişmiş Dijital İtibar Yönetimi'
+    : 'Buaze | Advanced Digital Reputation Management for Restaurants';
+  const description = locale === 'tr'
+    ? 'Buaze ile restoranınızın dijital itibarını otomatik yönetin. Google Haritalar puanınızı yükseltin, olumsuz yorumları anında filtreleyin.'
+    : 'Automate your restaurant digital reputation with Buaze. Increase your Google Maps ratings and filter out negative reviews instantly.';
+
   return {
-    title: locale === 'tr'
-      ? 'Buaze | Restoranınız İçin Gelişmiş Dijital İtibar Yönetimi'
-      : 'Buaze | Advanced Digital Reputation Management for Restaurants',
-    description: locale === 'tr'
-      ? 'Buaze ile restoranınızın dijital itibarını otomatik yönetin. Google Haritalar puanınızı yükseltin, olumsuz yorumları anında filtreleyin.'
-      : 'Automate your restaurant digital reputation with Buaze. Increase your Google Maps ratings and filter out negative reviews instantly.',
+    metadataBase: new URL('https://buaze.com'),
+    title,
+    description,
+    alternates: {
+      canonical: `/${locale}`,
+      languages: {
+        tr: '/tr',
+        en: '/en',
+      },
+    },
+    openGraph: {
+      type: 'website',
+      url: `https://buaze.com/${locale}`,
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      siteName: 'Buaze',
+      title,
+      description: t.siteDescription || description,
+      images: [
+        {
+          url: '/buaze-logo.png',
+          width: 1200,
+          height: 630,
+          alt: 'Buaze',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/buaze-logo.png'],
+    },
   };
 }
 
@@ -179,7 +212,6 @@ export default async function LandingPage({
                     width={24}
                     height={24}
                     sizes="24px"
-                    priority
                     className="image-20 right white absolute -bottom-[16px] left-6 w-6 z-20"
                   />
                   <Image
@@ -188,7 +220,6 @@ export default async function LandingPage({
                     width={32}
                     height={32}
                     sizes="(max-width: 1024px) 0px, 32px"
-                    priority
                     className="image-20 right absolute -bottom-[20px] left-5 w-[32px] z-10 hidden lg:block"
                   />
                 </div>
@@ -217,7 +248,6 @@ export default async function LandingPage({
                     width={24}
                     height={24}
                     sizes="24px"
-                    priority
                     className="image-20 right white absolute -bottom-[16px] right-8 w-6 z-20"
                   />
                   <Image
@@ -226,7 +256,6 @@ export default async function LandingPage({
                     width={32}
                     height={32}
                     sizes="(max-width: 1024px) 0px, 32px"
-                    priority
                     className="image-20 right absolute -bottom-[20px] right-[27px] w-[32px] z-10 hidden lg:block"
                   />
                 </div>
@@ -255,7 +284,6 @@ export default async function LandingPage({
                     width={24}
                     height={24}
                     sizes="24px"
-                    priority
                     className="image-20 right white absolute -bottom-[16px] left-8 w-6 z-20"
                   />
                   <Image
@@ -264,7 +292,6 @@ export default async function LandingPage({
                     width={32}
                     height={32}
                     sizes="(max-width: 1024px) 0px, 32px"
-                    priority
                     className="image-20 right absolute -bottom-[20px] left-[27px] w-[32px] z-10 hidden lg:block"
                   />
                 </div>

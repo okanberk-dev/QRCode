@@ -24,7 +24,6 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
           alt={locale === 'tr' ? 'Akıllı linklerle yorum toplama ekranı önizlemesi' : 'Preview of collecting reviews with Magic Links'}
           width={700}
           height={430}
-          priority={activeTab === 0}
           sizes="(max-width: 768px) 80vw, (max-width: 1200px) 65vw, 700px"
           className="mx-auto max-w-[80%] md:max-w-[700px] h-auto object-contain drop-shadow-md"
         />
@@ -124,7 +123,7 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
       </div>
 
       {/* Dynamic Media Content */}
-      <div className="w-full min-h-[300px] flex items-center justify-center mb-10 transition-opacity duration-500">
+      <div className="w-full min-h-[260px] sm:min-h-[320px] md:min-h-[360px] flex items-center justify-center mb-10 transition-opacity duration-500">
         {currentData.content}
       </div>
 
