@@ -60,14 +60,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Sign user JWT
-    const token = await signJwt({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      plan: user.plan,
-    });
-
-    // Determine payloadRestaurantId to also log them into the admin panel
     let payloadRestaurantId = null;
     try {
       const userRestaurant = await prisma.restaurant.findFirst({
@@ -80,10 +72,11 @@ export async function POST(req: NextRequest) {
       console.error("Kullanıcı restoranı çekilemedi");
     }
 
-    const adminToken = await signJwt({ 
-      id: user.id, 
-      username: user.email, 
-      role: 'restaurant_owner',
+    const token = await signJwt({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      plan: user.plan,
       restaurantId: payloadRestaurantId
     });
 
@@ -106,11 +99,11 @@ export async function POST(req: NextRequest) {
       path: '/',
     });
 
-    response.cookies.set('admin_token', adminToken, {
+    response.cookies.set('admin_token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 0,
       path: '/',
     });
 

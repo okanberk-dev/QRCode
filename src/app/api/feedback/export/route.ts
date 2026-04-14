@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAdminFromRequest } from '@/lib/auth';
+import { getPanelActorFromRequest } from '@/lib/auth';
+import { getScopedRestaurantIds } from '@/lib/panel-access';
 
 export async function GET(req: NextRequest) {
-  const admin = await getAdminFromRequest(req) as any;
-  if (!admin) {
+  const actor = await getPanelActorFromRequest(req);
+  if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
   }
 
@@ -13,14 +14,10 @@ export async function GET(req: NextRequest) {
     const where: any = {};
 
     // ─── IDOR Security Override ───
-    if (admin.role === 'manager') {
-      where.restaurantId = admin.restaurantId;
-    } else if (admin.role === 'restaurant_owner') {
-      const userRestaurants = await prisma.restaurant.findMany({
-        where: { userId: admin.id },
-        select: { id: true }
-      });
-      const userRestIds = userRestaurants.map((r: any) => r.id);
+    if (actor.role === 'manager') {
+      where.restaurantId = actor.restaurantId;
+    } else if (actor.role === 'restaurant_owner') {
+      const userRestIds = await getScopedRestaurantIds(actor) || [];
 
       if (restaurantId && restaurantId !== 'all') {
         if (!userRestIds.includes(restaurantId)) {

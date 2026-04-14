@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyJwt } from '@/lib/auth';
+import { isAdminRole, verifyJwt } from '@/lib/auth';
 
 const PUBLIC_LOCALES = ['tr', 'en'];
 const DEFAULT_LOCALE = 'tr';
@@ -28,7 +28,7 @@ function detectLocale(req: NextRequest): string {
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // ─── Admin UI protection (unchanged from original) ───────────────────────
+  // ─── Admin UI protection ────────────────────────────────────────────────
   if (pathname.startsWith('/admin')) {
     const token = req.cookies.get('admin_token')?.value;
 
@@ -36,7 +36,7 @@ export default async function proxy(req: NextRequest) {
       if (token) {
         try {
           const payload = await verifyJwt(token);
-          if (payload) {
+          if (payload && isAdminRole(payload.role)) {
             return NextResponse.redirect(new URL('/admin/dashboard', req.url));
           }
         } catch {
@@ -49,7 +49,7 @@ export default async function proxy(req: NextRequest) {
       }
       try {
         const payload = await verifyJwt(token);
-        if (!payload) {
+        if (!payload || !isAdminRole(payload.role)) {
           return NextResponse.redirect(new URL('/admin', req.url));
         }
       } catch {
@@ -68,7 +68,7 @@ export default async function proxy(req: NextRequest) {
     }
     try {
       const payload = await verifyJwt(token);
-      if (!payload) {
+      if (!payload || !isAdminRole(payload.role)) {
         return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
       }
     } catch {
@@ -79,15 +79,19 @@ export default async function proxy(req: NextRequest) {
   // ─── Restaurant API protection ──────────────────────────────────────────
   if (pathname.startsWith('/api/restaurants')) {
     if (req.method !== 'GET') {
-      const token = req.cookies.get('admin_token')?.value ||
-                    req.headers.get('Authorization')?.split(' ')[1];
+      const adminToken = req.cookies.get('admin_token')?.value ||
+                         req.headers.get('Authorization')?.split(' ')[1];
+      const userToken = req.cookies.get('user_token')?.value;
 
-      if (!token) {
+      if (!adminToken && !userToken) {
         return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
       }
+
       try {
-        const payload = await verifyJwt(token) as Record<string, unknown> | null;
-        if (!payload) {
+        const adminPayload = adminToken ? await verifyJwt(adminToken) as Record<string, unknown> | null : null;
+        const userPayload = userToken ? await verifyJwt(userToken) as Record<string, unknown> | null : null;
+
+        if (!(adminPayload && isAdminRole(adminPayload.role)) && !userPayload?.userId) {
           return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
         }
       } catch {

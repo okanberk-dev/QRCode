@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAdminFromRequest } from '@/lib/auth';
+import { getPanelActorFromRequest } from '@/lib/auth';
+import { canAccessRestaurant } from '@/lib/panel-access';
 import QRCode from 'qrcode';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const admin = await getAdminFromRequest(req);
-  if (!admin) {
+  const actor = await getPanelActorFromRequest(req);
+  if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
   }
 
@@ -24,6 +25,11 @@ export async function GET(
 
     if (!restaurant) {
       return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
+    }
+
+    const hasAccess = await canAccessRestaurant(actor, restaurant.id);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
     const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();

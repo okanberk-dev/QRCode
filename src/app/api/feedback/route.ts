@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendFeedbackNotification } from '@/lib/email';
-import { getAdminFromRequest } from '@/lib/auth';
+import { getPanelActorFromRequest } from '@/lib/auth';
+import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/validations';
 
 export async function POST(req: NextRequest) {
@@ -109,9 +110,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  // Check admin auth
-  const admin = await getAdminFromRequest(req);
-  if (!admin) {
+  const actor = await getPanelActorFromRequest(req);
+  if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
   }
 
@@ -133,15 +133,11 @@ export async function GET(req: NextRequest) {
   }
 
   // Security override for non-superadmin
-  if (admin.role === 'manager') {
-    where.restaurantId = admin.restaurantId;
-  } else if (admin.role === 'restaurant_owner') {
-    const userRestaurants = await prisma.restaurant.findMany({
-      where: { userId: admin.id },
-      select: { id: true }
-    });
-    const userRestIds = userRestaurants.map(r => r.id);
-    
+  if (actor.role === 'manager') {
+    where.restaurantId = actor.restaurantId;
+  } else if (actor.role === 'restaurant_owner') {
+    const userRestIds = await getScopedRestaurantIds(actor) || [];
+
     if (where.restaurantId) {
       if (!userRestIds.includes(where.restaurantId as string)) {
         return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });

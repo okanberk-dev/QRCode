@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAdminFromRequest } from '@/lib/auth';
+import { getPanelActorFromRequest } from '@/lib/auth';
 
 // GET /api/restaurants - List all restaurants (admin) or get by slug (public)
 export async function GET(req: NextRequest) {
@@ -37,17 +37,17 @@ export async function GET(req: NextRequest) {
   }
 
   // Admin: List all restaurants
-  const admin = await getAdminFromRequest(req);
-  if (!admin) {
+  const actor = await getPanelActorFromRequest(req);
+  if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
   }
 
   try {
     const where: any = {};
-    if (admin.role === 'manager' && admin.restaurantId) {
-      where.id = admin.restaurantId;
-    } else if (admin.role === 'restaurant_owner') {
-      where.userId = admin.id;
+    if (actor.role === 'manager' && actor.restaurantId) {
+      where.id = actor.restaurantId;
+    } else if (actor.role === 'restaurant_owner') {
+      where.userId = actor.id;
     }
 
     const restaurants = await prisma.restaurant.findMany({
@@ -69,12 +69,12 @@ export async function GET(req: NextRequest) {
 
 // POST /api/restaurants - Create a new restaurant (admin only)
 export async function POST(req: NextRequest) {
-  const admin = await getAdminFromRequest(req);
-  if (!admin) {
+  const actor = await getPanelActorFromRequest(req);
+  if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
   }
 
-  if (admin.role === 'manager') {
+  if (actor.role === 'manager') {
     return NextResponse.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
   }
 
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
         googlePlaceId: googlePlaceId || null,
         notificationEmail: notificationEmail || null,
         primaryColor: primaryColor || '#1a73e8',
-        ...(admin.role === 'restaurant_owner' && { userId: admin.id })
+        ...(actor.role === 'restaurant_owner' && { userId: actor.id })
       },
     });
 

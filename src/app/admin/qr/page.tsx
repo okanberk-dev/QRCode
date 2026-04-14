@@ -60,9 +60,9 @@ function QRPageContent() {
   const safeEnvAppUrl = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
     ? envAppUrl
     : 'https://buaze.com';
-  const appUrl = typeof window !== 'undefined'
-    ? window.location.origin
-    : safeEnvAppUrl;
+  const appUrl = safeEnvAppUrl || (typeof window !== 'undefined'
+    ? window.location.origin.replace(/\/+$/, '')
+    : 'https://buaze.com');
   const qrTargetUrl = selectedRestaurant
     ? `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}`
     : '';

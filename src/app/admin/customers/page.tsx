@@ -15,9 +15,15 @@ interface Customer {
   restaurants: { id: string; name: string }[];
 }
 
+interface RestaurantOption {
+  id: string;
+  name: string;
+}
+
 export default function CustomersPage() {
   const { t } = useAdminTranslation();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   
@@ -32,15 +38,25 @@ export default function CustomersPage() {
     password: '',
     plan: 'trial',
     isActive: true,
-    trialEndsAt: ''
+    trialEndsAt: '',
+    restaurantIds: [] as string[],
   });
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/customers');
-      if (res.ok) {
-        setCustomers(await res.json());
+      const [customersRes, restaurantsRes] = await Promise.all([
+        fetch('/api/admin/customers'),
+        fetch('/api/restaurants'),
+      ]);
+
+      if (customersRes.ok) {
+        setCustomers(await customersRes.json());
+      }
+
+      if (restaurantsRes.ok) {
+        const restaurantData = await restaurantsRes.json();
+        setRestaurants(Array.isArray(restaurantData) ? restaurantData : []);
       }
     } catch (e) {
       console.error(e);
@@ -60,7 +76,8 @@ export default function CustomersPage() {
       password: '', // Boş bırakıldığında şifre değişmez
       plan: customer.plan,
       isActive: customer.isActive,
-      trialEndsAt: customer.trialEndsAt ? new Date(customer.trialEndsAt).toISOString().split('T')[0] : ''
+      trialEndsAt: customer.trialEndsAt ? new Date(customer.trialEndsAt).toISOString().split('T')[0] : '',
+      restaurantIds: customer.restaurants.map((restaurant) => restaurant.id),
     });
     setShowModal(true);
   };
@@ -184,10 +201,12 @@ export default function CustomersPage() {
                         ? 'bg-[#111827] text-[#FDBF1D] border-[#FDBF1D]/30 shadow-[0_4px_12px_rgba(253,191,29,0.2)]' 
                         : customer.plan === 'monthly'
                         ? 'bg-[#FDBF1D] text-[#111827] border-transparent'
+                        : customer.plan === 'external'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         : 'bg-white text-[#ada89f] border-[#F7F4F0]'
                     }`}>
-                      {customer.plan === 'yearly' ? <Crown size={16} strokeWidth={3} /> : customer.plan === 'monthly' ? <BadgeCheck size={16} strokeWidth={3} /> : <AlertCircle size={16} strokeWidth={3} />}
-                      {customer.plan === 'yearly' ? 'PLATINUM' : customer.plan === 'monthly' ? 'PRO PLAN' : 'DENEME'}
+                      {customer.plan === 'yearly' ? <Crown size={16} strokeWidth={3} /> : customer.plan === 'monthly' ? <BadgeCheck size={16} strokeWidth={3} /> : customer.plan === 'external' ? <BadgeCheck size={16} strokeWidth={3} /> : <AlertCircle size={16} strokeWidth={3} />}
+                      {customer.plan === 'yearly' ? 'PLATINUM' : customer.plan === 'monthly' ? 'PRO PLAN' : customer.plan === 'external' ? 'MANUEL' : 'DENEME'}
                     </div>
                   </td>
                   <td className="px-4 py-4 sm:px-8 sm:py-6">
@@ -299,6 +318,7 @@ export default function CustomersPage() {
                     <option value="trial">Trial (Deneme)</option>
                     <option value="monthly">Monthly (Aylık)</option>
                     <option value="yearly">Yearly (Yıllık)</option>
+                    <option value="external">External (Manuel)</option>
                   </select>
                 </div>
 
@@ -322,6 +342,48 @@ export default function CustomersPage() {
                     onChange={(e) => setFormData({...formData, trialEndsAt: e.target.value})}
                     className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold shadow-sm transition-all text-[#6b6760]"
                   />
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-2 border-t border-gray-100">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Bağlı İşletmeler / Mağazalar</label>
+                  <p className="text-xs text-[#6b6760] font-bold">Bu kullanıcıya ait işletmeleri seçin. Seçilmemiş mevcut bağlantılar kaldırılır.</p>
+                </div>
+
+                <div className="max-h-56 overflow-y-auto rounded-2xl border border-gray-200 bg-[#FCFBF7] p-3 space-y-2">
+                  {restaurants.length === 0 ? (
+                    <div className="px-3 py-4 text-sm text-[#6b6760] font-bold">Bağlanabilir işletme bulunamadı.</div>
+                  ) : (
+                    restaurants.map((restaurant) => {
+                      const checked = formData.restaurantIds.includes(restaurant.id);
+                      return (
+                        <label
+                          key={restaurant.id}
+                          className={`flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-all ${
+                            checked
+                              ? 'border-[#111827] bg-white shadow-sm'
+                              : 'border-transparent bg-white/70 hover:border-gray-200'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                restaurantIds: e.target.checked
+                                  ? [...prev.restaurantIds, restaurant.id]
+                                  : prev.restaurantIds.filter((id) => id !== restaurant.id),
+                              }));
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-[#111827] focus:ring-[#FDBF1D]"
+                          />
+                          <span className="text-sm font-bold text-[#111827]">{restaurant.name}</span>
+                        </label>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 

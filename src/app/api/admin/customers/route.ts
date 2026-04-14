@@ -4,7 +4,7 @@ import { getAdminFromRequest } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   const admin: any = await getAdminFromRequest(req);
-  if (!admin || !['superadmin', 'manager'].includes(admin.role)) {
+  if (!admin || admin.role !== 'superadmin') {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
   }
 

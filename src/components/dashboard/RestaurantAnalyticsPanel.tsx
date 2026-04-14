@@ -1,0 +1,191 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { BarChart3, Calendar, Loader2, TrendingUp } from 'lucide-react';
+import StatsCards from '@/components/admin/StatsCards';
+import RatingChart from '@/components/admin/RatingChart';
+
+const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), {
+  ssr: false,
+  loading: () => <div className="h-[320px] w-full animate-pulse rounded-3xl bg-[#FCFBF7]" />,
+});
+
+const DayDistributionChart = dynamic(() => import('@/components/admin/DayDistributionChart'), {
+  ssr: false,
+  loading: () => <div className="h-[320px] w-full animate-pulse rounded-3xl bg-[#FCFBF7]" />,
+});
+
+interface RestaurantOption {
+  id: string;
+  name: string;
+}
+
+interface StatsResponse {
+  totalCount: number;
+  todayCount: number;
+  avgRating: string;
+  lowRatingCount: number;
+  googleRedirectsCount: number;
+  distribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+  trends: { date: string; count: number; avgRating: number }[];
+  dayDistribution: { name: string; count: number }[];
+}
+
+interface RestaurantAnalyticsPanelProps {
+  locale: 'tr' | 'en';
+  restaurants: RestaurantOption[];
+}
+
+export default function RestaurantAnalyticsPanel({ locale, restaurants }: RestaurantAnalyticsPanelProps) {
+  const [stats, setStats] = useState<StatsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [daysFilter, setDaysFilter] = useState('30');
+  const [selectedRestaurant, setSelectedRestaurant] = useState(restaurants.length > 1 ? 'all' : (restaurants[0]?.id || 'all'));
+
+  const copy = locale === 'tr'
+    ? {
+        title: 'İleri İstatistikler',
+        subtitle: 'QR performansınızı ve puan dağılımınızı buradan takip edin.',
+        all: 'Tüm İşletmeler',
+        rating: 'Puan Dağılımı',
+        trends: 'Trend Analizi',
+        days: 'Günlük Dağılım',
+      }
+    : {
+        title: 'Advanced Analytics',
+        subtitle: 'Track your QR performance and rating distribution here.',
+        all: 'All Locations',
+        rating: 'Rating Split',
+        trends: 'Trend Analysis',
+        days: 'Daily Activity',
+      };
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const query = new URLSearchParams({ days: daysFilter });
+        if (selectedRestaurant !== 'all') {
+          query.append('restaurantId', selectedRestaurant);
+        }
+
+        const response = await fetch(`/api/feedback/stats?${query.toString()}`);
+        if (!response.ok) {
+          setStats(null);
+          return;
+        }
+
+        setStats(await response.json());
+      } catch (error) {
+        console.error(error);
+        setStats(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [daysFilter, selectedRestaurant]);
+
+  return (
+    <section className="space-y-6">
+      <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <h2 className="text-xl font-black text-[#111827] sm:text-2xl">{copy.title}</h2>
+            <p className="mt-2 text-sm font-bold text-[#6b6760]">{copy.subtitle}</p>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex rounded-2xl bg-[#FCFBF7] p-1">
+              {[
+                { value: '7', label: '7G' },
+                { value: '30', label: '30G' },
+                { value: 'all', label: locale === 'tr' ? 'Tümü' : 'All' },
+              ].map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => setDaysFilter(tab.value)}
+                  className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.2em] transition-all ${
+                    daysFilter === tab.value ? 'bg-[#111827] text-white' : 'text-[#6b6760]'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {restaurants.length > 1 && (
+              <select
+                value={selectedRestaurant}
+                onChange={(event) => setSelectedRestaurant(event.target.value)}
+                className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+              >
+                <option value="all">{copy.all}</option>
+                {restaurants.map((restaurant) => (
+                  <option key={restaurant.id} value={restaurant.id}>
+                    {restaurant.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {loading && !stats ? (
+        <div className="flex min-h-[280px] items-center justify-center rounded-[28px] border border-gray-100 bg-white shadow-sm">
+          <Loader2 className="h-10 w-10 animate-spin text-[#111827]" />
+        </div>
+      ) : stats ? (
+        <>
+          <StatsCards stats={stats} />
+
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                  <TrendingUp size={20} strokeWidth={2.75} />
+                </div>
+                <h3 className="text-lg font-black text-[#111827]">{copy.trends}</h3>
+              </div>
+              <TrendsChart data={stats.trends} />
+            </div>
+
+            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
+                  <Calendar size={20} strokeWidth={2.75} />
+                </div>
+                <h3 className="text-lg font-black text-[#111827]">{copy.rating}</h3>
+              </div>
+              <RatingChart distribution={stats.distribution} totalCount={stats.totalCount} />
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                <BarChart3 size={20} strokeWidth={2.75} />
+              </div>
+              <h3 className="text-lg font-black text-[#111827]">{copy.days}</h3>
+            </div>
+            <DayDistributionChart data={stats.dayDistribution} />
+          </div>
+        </>
+      ) : (
+        <div className="rounded-[28px] border border-dashed border-gray-200 bg-white px-5 py-16 text-center text-sm font-bold text-[#6b6760] shadow-sm">
+          {locale === 'tr' ? 'Henüz analiz üretilecek veri bulunamadı.' : 'No analytics data yet.'}
+        </div>
+      )}
+    </section>
+  );
+}

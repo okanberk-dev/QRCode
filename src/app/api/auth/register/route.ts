@@ -117,15 +117,7 @@ export async function POST(req: NextRequest) {
       email: user.email,
       role: user.role,
       plan: user.plan,
-    });
-
-    const adminToken = await signJwt({ 
-      id: user.id, 
-      username: user.email, 
-      role: 'restaurant_owner',
       restaurantId: createdRestaurantId,
-      plan: user.plan,
-      trialEndsAt: user.trialEndsAt
     });
 
     const response = NextResponse.json(
@@ -150,11 +142,11 @@ export async function POST(req: NextRequest) {
       path: '/',
     });
 
-    response.cookies.set('admin_token', adminToken, {
+    response.cookies.set('admin_token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 0,
       path: '/',
     });
 

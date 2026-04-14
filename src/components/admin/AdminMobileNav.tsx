@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Store, QrCode, UsersRound, User, Menu, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Store, QrCode, UsersRound, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
 
@@ -10,9 +10,6 @@ export default function AdminMobileNav() {
   const pathname = usePathname();
   const { t } = useAdminTranslation();
   const [role, setRole] = useState('manager');
-  const localeSegment = pathname?.split('/')[1];
-  const locale = localeSegment === 'en' || localeSegment === 'tr' ? localeSegment : 'tr';
-
   useEffect(() => {
     fetch('/api/admin/me')
       .then(res => res.ok ? res.json() : { role: 'manager' })
@@ -24,7 +21,6 @@ export default function AdminMobileNav() {
     { href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
     { href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: 'Rehber', roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/customers', icon: UsersRound, label: t('customers'), roles: ['superadmin'] },
   ];
 

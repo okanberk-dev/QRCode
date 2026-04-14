@@ -6,7 +6,8 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
 import Link from 'next/link';
-import { Building2, QrCode, Star, AlertTriangle, ArrowRight, LogOut, User, ShieldCheck, Calendar } from 'lucide-react';
+import { Building2, QrCode, Star, AlertTriangle, ArrowRight, ShieldCheck, Calendar } from 'lucide-react';
+import RestaurantAnalyticsPanel from '@/components/dashboard/RestaurantAnalyticsPanel';
 
 export async function generateMetadata({
   params,
@@ -102,52 +103,7 @@ export default async function DashboardPage({
   const isTrialExpiring = user.plan === 'trial' && trialDaysLeft <= 3;
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] font-sans selection:bg-[#FDBF1D]/30">
-      {/* Header */}
-      <header className="bg-white border-b-4 border-[#1f1e1d] sticky top-0 z-20 px-6 py-5">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href={`/${locale}`} className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#111827] border-2 border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] group-hover:translate-y-0.5 group-hover:shadow-[0_2px_0_0_#1f1e1d] transition-all">
-              <span className="text-[#FDBF1D] font-black text-xl leading-none">B</span>
-            </div>
-            <span className="text-2xl font-black tracking-tight text-[#111827]">Buaze</span>
-          </Link>
-
-          <div className="flex items-center gap-3 sm:gap-6">
-            {user.plan === 'trial' && (
-              <div className={`hidden lg:flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-black border-2 ${isTrialExpiring ? 'bg-red-50 text-red-600 border-red-600 shadow-[0_3px_0_0_#ef4444]' : 'bg-[#FDBF1D]/10 text-[#ea580c] border-[#ea580c] shadow-[0_3px_0_0_#ea580c]'}`}>
-                <AlertTriangle size={14} strokeWidth={3} />
-                {t.dash_trial_banner}: {trialDaysLeft} {t.dash_trial_days}
-              </div>
-            )}
-            
-            <div className="flex items-center gap-2 sm:gap-4 border-l-2 border-[#F7F4F0] pl-6">
-              <Link
-                href={`/${locale}/dashboard/profile`}
-                className="flex items-center gap-2 text-[13px] font-black text-[#6b6760] hover:text-[#111827] transition-all px-4 py-2.5 rounded-xl border-2 border-transparent hover:border-[#1f1e1d]/10 active:translate-y-1 group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-[#FCFBF7] border-2 border-[#1f1e1d] flex items-center justify-center shadow-[2px_2px_0_0_#1f1e1d] group-hover:bg-[#FDBF1D] transition-all">
-                  <User size={16} strokeWidth={3} />
-                </div>
-                <span className="hidden sm:block uppercase tracking-wider">{t.dash_profile}</span>
-              </Link>
-
-              <form action="/api/auth/logout" method="POST">
-                <button
-                  type="submit"
-                  id="dashboard-logout-btn"
-                  className="flex items-center gap-2 text-[13px] font-black text-red-500 hover:bg-red-50 transition-all px-3 sm:px-4 py-2.5 rounded-xl border-2 border-red-500/10 hover:border-red-500/20 active:translate-y-1"
-                >
-                  <LogOut size={18} strokeWidth={3} />
-                  <span className="hidden md:block uppercase tracking-wider">{t.dash_logout}</span>
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-14 space-y-8 sm:space-y-14 pb-32">
+    <div className="mx-auto max-w-6xl space-y-8 px-3 py-6 font-sans selection:bg-[#FDBF1D]/30 sm:px-6 sm:py-10 lg:py-12">
         {/* Welcome */}
         <div className="space-y-2 sm:space-y-3">
           <div className="inline-block px-3 py-1 bg-[#FDBF1D] text-[#1f1e1d] border-2 border-[#1f1e1d] rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-widest mb-1 shadow-[2px_2px_0_0_#1f1e1d]">
@@ -204,6 +160,14 @@ export default async function DashboardPage({
           ))}
         </div>
 
+        <RestaurantAnalyticsPanel
+          locale={locale}
+          restaurants={user.restaurants.map((restaurant) => ({
+            id: restaurant.id,
+            name: restaurant.name,
+          }))}
+        />
+
         {/* Latest Feedbacks Brief Widget */}
         {latestFeedbacks.length > 0 && (
           <div className="bg-white rounded-[24px] border-2 border-[#1f1e1d] shadow-[4px_6px_0_0_#FDBF1D] overflow-hidden">
@@ -244,7 +208,7 @@ export default async function DashboardPage({
           <div className="flex items-center justify-between">
             <h2 className="text-xl sm:text-2xl font-black text-[#1f1e1d] tracking-tight">{t.dash_restaurants}</h2>
             <Link
-              href="/admin/restaurants"
+              href={`/${locale}/dashboard/restaurants`}
               className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#1f1e1d] text-white font-black rounded-xl border-2 border-[#1f1e1d] shadow-[0_3px_0_0_#000] hover:bg-[#FDBF1D] hover:text-[#111827] active:translate-y-[2px] active:shadow-[0_1px_0_0_#000] transition-all text-xs sm:text-sm uppercase tracking-wider"
             >
               {t.dash_add_restaurant} <ArrowRight size={18} strokeWidth={3} />
@@ -261,7 +225,7 @@ export default async function DashboardPage({
                 <p className="text-xs sm:text-sm text-[#6b6760] font-bold">İlk restoranınızı ekleyerek itibarınızı yönetmeye başlayın.</p>
               </div>
               <Link
-                href="/admin/restaurants"
+                href={`/${locale}/dashboard/restaurants`}
                 className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-[#FDBF1D] text-[#111827] font-black rounded-xl sm:rounded-2xl border-2 border-[#1f1e1d] shadow-[0_3px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[3px] active:shadow-none text-sm"
               >
                 {t.dash_add_restaurant} <ArrowRight size={18} />
@@ -286,13 +250,13 @@ export default async function DashboardPage({
                   </div>
                   <div className="flex gap-3 sm:gap-4">
                     <Link
-                      href={`/admin/restaurants/${restaurant.id}`}
+                      href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
                       className="flex-1 text-center py-3 text-[12px] font-black bg-[#111827] text-white rounded-xl border-2 border-[#111827] shadow-[0_3px_0_0_#000] hover:bg-[#1f1e1d] active:translate-y-1 active:shadow-none transition-all uppercase tracking-wider"
                     >
                       {t.dash_manage}
                     </Link>
                     <Link
-                      href={`/admin/qr?restaurant=${restaurant.id}`}
+                      href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
                       className="flex-1 text-center py-3 text-[12px] font-black bg-[#FDBF1D] text-[#111827] rounded-xl border-2 border-[#1f1e1d] shadow-[0_3px_0_0_#1f1e1d] hover:bg-[#EAB308] active:translate-y-1 active:shadow-none transition-all uppercase tracking-wider"
                     >
                       {t.dash_qr}
@@ -325,7 +289,6 @@ export default async function DashboardPage({
             </Link>
           </div>
         )}
-      </main>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin: any = await getAdminFromRequest(req);
-  if (!admin || !['superadmin', 'manager'].includes(admin.role)) {
+  if (!admin || admin.role !== 'superadmin') {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
   }
 
@@ -13,7 +13,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   try {
     const body = await req.json();
-    const { name, email, plan, isActive, password, trialEndsAt } = body;
+    const { name, email, plan, isActive, password, trialEndsAt, restaurantIds } = body;
     
     // Check if updating email conflicts with another user
     if (email) {
@@ -30,16 +30,56 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (email !== undefined) data.email = email.toLowerCase().trim();
     if (plan !== undefined) data.plan = plan;
     if (isActive !== undefined) data.isActive = isActive;
-    if (trialEndsAt !== undefined) data.trialEndsAt = trialEndsAt ? new Date(trialEndsAt) : null;
+    if (trialEndsAt !== undefined) {
+      data.trialEndsAt = trialEndsAt ? new Date(trialEndsAt) : null;
+    } else if (plan && plan !== 'trial') {
+      data.trialEndsAt = null;
+    }
     
     if (password) {
       data.passwordHash = await bcrypt.hash(password, 12);
     }
 
-    const user = await prisma.user.update({
-      where: { id },
-      data,
-      select: { id: true, email: true, name: true, plan: true, isActive: true }
+    const normalizedRestaurantIds = Array.isArray(restaurantIds)
+      ? restaurantIds.filter((restaurantId): restaurantId is string => typeof restaurantId === 'string' && restaurantId.trim())
+      : null;
+
+    if (normalizedRestaurantIds) {
+      const existingRestaurants = await prisma.restaurant.findMany({
+        where: { id: { in: normalizedRestaurantIds } },
+        select: { id: true },
+      });
+
+      if (existingRestaurants.length !== normalizedRestaurantIds.length) {
+        return NextResponse.json({ error: 'Seçilen işletmelerden biri bulunamadı.' }, { status: 400 });
+      }
+    }
+
+    const user = await prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.update({
+        where: { id },
+        data,
+        select: { id: true, email: true, name: true, plan: true, isActive: true }
+      });
+
+      if (normalizedRestaurantIds) {
+        await tx.restaurant.updateMany({
+          where: {
+            userId: id,
+            id: { notIn: normalizedRestaurantIds }
+          },
+          data: { userId: null }
+        });
+
+        if (normalizedRestaurantIds.length > 0) {
+          await tx.restaurant.updateMany({
+            where: { id: { in: normalizedRestaurantIds } },
+            data: { userId: id }
+          });
+        }
+      }
+
+      return updatedUser;
     });
 
     return NextResponse.json(user);

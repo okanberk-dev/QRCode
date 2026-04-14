@@ -16,7 +16,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
       desc: locale === 'tr' 
         ? 'Dashboard üzerinden "Restoranlarım" sekmesine gidin ve bir restoran ekleyin. Ardından "QR Yönetimi" kısmından size özel QR kodunuzu oluşturun.'
         : 'Go to the "My Restaurants" tab on the dashboard and add a restaurant. Then create your unique QR code from the "QR Management" section.',
-      link: '/admin/qr',
+      link: `/${locale}/dashboard/qr`,
       linkText: locale === 'tr' ? 'QR Oluşturucuyu Aç' : 'Open QR Generator'
     },
     {

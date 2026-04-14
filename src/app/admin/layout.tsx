@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileNav from '@/components/admin/AdminMobileNav';
-import { verifyJwt } from '@/lib/auth';
+import { isAdminRole, verifyJwt } from '@/lib/auth';
 import { AdminTranslationProvider } from '@/components/admin/AdminTranslationProvider';
 
 export default async function AdminLayout({
@@ -20,7 +20,7 @@ export default async function AdminLayout({
   try {
     if (token) {
       payload = await verifyJwt(token);
-      isAuthenticated = !!payload;
+      isAuthenticated = !!payload && isAdminRole(payload.role);
     }
   } catch (e) {
     isAuthenticated = false;
