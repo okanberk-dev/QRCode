@@ -1,128 +1,269 @@
-# Buaze SaaS Platform 🚀
+# Buaze QR Feedback Platform
 
-This repository contains the source code for the **Buaze QR Feedback & Restaurant Reputation Management SaaS** platform. 
+Bu repo, restoranlar ve hizmet isletmeleri icin gelistirilmis bir QR tabanli geri bildirim ve dijital itibar yonetimi platformunun kaynak kodunu icerir.
 
-> **🤖 Note to Future AI Agents:** 
-> This repository is highly customized. Please read sections related to *Authentication*, *Database*, and *API Routing* carefully before attempting architectural changes. The platform balances a robust backend securely serving multiple tenants (restaurants) with a premium Marketing/UX facade.
+Uygulama temel olarak su akisi uzerine kuruludur:
 
----
+1. Isletme icin ozel bir QR kod uretilir.
+2. Musteri QR kodu okutup geri bildirim ekranina gider.
+3. Yuksek puan veren kullanicilar Google yorum sayfasina yonlendirilir.
+4. Dusuk puanli geri bildirimler veritabanina kaydedilir ve isletmeye e-posta ile bildirilir.
+5. Isletme sahipleri ve yoneticiler panelden tum geri bildirimleri, restoranlari ve QR kodlarini yonetir.
 
-## 🏗 System Architecture & Tech Stack
+## Neler Var
 
-*   **Framework:** Next.js (App Router `src/app`)
-*   **Language:** TypeScript
-*   **Database ORM:** Prisma
-*   **Database Provider:** Supabase (PostgreSQL) - Uses `DATABASE_URL` (Port 6543 pgbouncer for connections) & `DIRECT_URL` (Port 5432 for migrations).
-*   **Styling:** Tailwind CSS + Lucide React (Icons)
-*   **Charts:** Recharts (Interactive visualization)
-*   **Authentication:** Custom JWT mechanism using `jose`. JWTs are stored in `httpOnly` secure cookies.
-*   **Internationalization (i18n):** Route-based dynamic matching (`src/app/[locale]/...`) governed by `src/lib/translations.ts`.
+- `tr` ve `en` dilleri icin route tabanli cok dilli yapi
+- Pazarlama sayfalari, kayit ve giris ekranlari
+- Superadmin, manager ve restaurant owner rollerine gore yetkilendirme
+- Restoran bazli QR kod uretimi ve SVG/PNG indirme
+- Google yorum yonlendirme akisi
+- Dusuk puanli yorumlar icin dahili feedback toplama
+- Geri bildirim analitigi, filtreleme ve export endpointleri
+- Prisma uzerinden PostgreSQL/Supabase veri modeli
+- JWT tabanli cookie authentication
+- SMTP ile bildirim gonderimi
 
----
+## Teknoloji Yigini
 
-## 🔐 Authentication & Roles (CRITICAL)
+- Next.js App Router
+- React 19
+- TypeScript
+- Prisma
+- PostgreSQL / Supabase
+- Tailwind CSS
+- Recharts
+- `jose` ile JWT
+- `qrcode` ile QR uretimi
+- Nodemailer
 
-The system bypasses standard NextAuth/Auth.js in favor of an optimized, edge-compatible JWT cookie strategy (`src/lib/auth.ts`). 
-There are multiple identity types:
-1.  **Superadmin:** Global access (from `AdminUser` model).
-2.  **Manager:** Local staff/admin for a specific operation.
-3.  **Restaurant Owner (Users):** The SaaS clients (from `User` model, role: `restaurant_owner`).
+## Uygulama Mimarisi
 
-### ⚡ Simultaneous Entity Creation
-When a Superadmin creates a new `Manager` from the Admin Panel (`src/app/admin/users/page.tsx`), the API allows for the simultaneous creation of a new `Restaurant` (passing `isNewRestaurant` and `restaurantData` containing name, slug, address, phone). This executes sequentially and binds the new `restaurantId` to the `AdminUser`.
+Proje tek bir Next.js uygulamasi icinde hem public yuzeyi hem de yonetim panelini barindirir.
 
-### 🛡️ Security & UX Enhancements
-- **Double Password Verification:** The registration form (`RegisterForm.tsx`) implements a "Confirm Password" logic to prevent user entry errors.
-- **Admin Stealth:** The Admin Panel entry points are removed from the public Marketing Footer for better security posture and cleaner client-facing UX.
-- **IDOR Protection:** Queries in `/api/feedback/*` and `/api/restaurants/*` are strictly scoped to the `admin.restaurantId` or user's authorized IDs.
+### Public alan
 
-### 📊 Advanced Analytics Dashboard
-The platform features a data-rich administration suite (`src/app/admin/dashboard/page.tsx`):
-- **Interaction Trends:** Dual-axis area/line charts showing QR scan counts vs. Average Rating development.
-- **Daily Heatmap:** Bar charts identifying peak customer engagement days.
-- **Sentiment Analysis:** Word cloud based on actual customer feedback comments.
-- **Dynamic Scoping:** Superadmins see global stats; Managers/Owners see strictly scoped data for their own establishments.
+- `src/app/[locale]`
+- Landing page, hakkimizda, fiyatlandirma, iletisim, KVKK ve diger yasal sayfalar
+- Musteri kayit ve giris akislari
+- Kullanici dashboard sayfalari
 
----
+### Admin alan
 
-## 🌎 Environment Variables
+- `src/app/admin`
+- Superadmin ve manager kullanimina yonelik ic panel
+- Musteriler, restoranlar, kullanicilar ve QR kodlari yonetimi
 
-To deploy or run the build, the following variables are strictly mapped inside the environment. *Note: `JWT_SECRET` has a hardcoded default fallback in `src/lib/auth.ts` to prevent crashing on Vercel preview environments, but must be set for real production.*
+### API katmani
 
-```env
-# Supabase DB
-DATABASE_URL="postgres://..."
-DIRECT_URL="postgres://..."
+- `src/app/api`
+- Auth, admin, restaurant, feedback, profile ve contact endpointleri
 
-# Marketing & Public Assets
-NEXT_PUBLIC_APP_URL="https://buaze.com"
-NEXT_PUBLIC_RESTAURANT_NAME="Buaze"
-NEXT_PUBLIC_GOOGLE_REVIEW_URL="..."
+### QR akisi
 
-# Nodemailer / SMTP
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT=587 # Uses TLS bypass (rejectUnauthorized: false) in route.ts
-SMTP_USER="..."
-SMTP_PASS="..."
-SMTP_FROM="Buaze <hello@buaze.com>"
-NOTIFICATION_EMAIL="..."
+- `src/app/r/[slug]`
+- Musterinin QR ile ulasacagi public geri bildirim sayfasi
+- `rating >= 4` ise Google yorum yonlendirmesi
+- `rating <= 3` ise dahili feedback formu ve e-posta bildirimi
 
-# Authentication Secret
-JWT_SECRET="your_secure_base64_secret"
+## Roller
 
-# Admin Bootstrap 
-ADMIN_USERNAME="admin"
-ADMIN_PASSWORD="..."
-```
+### `superadmin`
 
----
+- Tum sistemi gorur
+- Restoran ve admin kullanicilari yonetir
 
-## 🗂 Key Directory Structure
+### `manager`
+
+- Belirli bir restorana baglidir
+- Verilere sadece kendi restoran kapsami icinde erisir
+
+### `restaurant_owner`
+
+- SaaS musterisi roludur
+- Kendi restoranlarini ve geri bildirimlerini gorur
+
+## Veri Modeli
+
+Prisma semasi bes ana model uzerine kurulu:
+
+- `User`: restoran sahibi veya SaaS musterisi
+- `Restaurant`: isletme kaydi ve QR hedefi
+- `Feedback`: puan, yorum, servis tipi ve detayli alt puanlar
+- `AdminUser`: superadmin veya manager hesabi
+- `Settings`: sistem genel ayarlari
+
+Iliski yapisi ozetle soyledir:
+
+- Bir `User`, birden fazla `Restaurant` sahibi olabilir
+- Bir `Restaurant`, birden fazla `Feedback` kaydina sahip olabilir
+- Bir `Restaurant`, bir veya daha fazla `AdminUser` ile yonetilebilir
+
+## Dizin Yapisi
 
 ```text
 src/
-├── app/
-│   ├── [locale]/           # Public Marketing & Client Auth Pages (tr/en routes)
-│   ├── admin/              # Superadmin / Manager Internal Dashboard
-│   ├── api/                # Next.js Serverless Route Handlers
-│   ├── r/                  # Public QR Code redirection endpoints
-│   ├── robots.ts           # Configured to strictly allow modern LLMs (GPTBot, Anthropic)
-│   └── sitemap.ts          # Automated sitemap with URL localization
-├── components/
-│   ├── admin/              # Components strict to SaaS panel
-│   ├── auth/               # LoginForm, RegisterForm matching marketing UI
-│   └── marketing/          # Premium landing page UI (BuazeLogo.tsx, Hero, etc.)
-└── lib/
-    ├── auth.ts             # JWT decoding/encoding & middleware simulations
-    ├── prisma.ts           # Singleton Prisma Client
-    ├── translations.ts     # Global dictionary for dynamic routes
-    └── email.ts            # SMTP abstractions
+  app/
+    [locale]/           public sayfalar, auth ve user dashboard
+    admin/              yonetim paneli
+    api/                route handler'lar
+    r/[slug]/           public QR landing sayfasi
+  components/
+    admin/              panel bilesenleri
+    auth/               login/register bilesenleri
+    marketing/          landing page bilesenleri
+  lib/
+    auth.ts             JWT islemleri
+    prisma.ts           Prisma client
+    translations.ts     i18n sozlukleri
+    email.ts            SMTP yardimcilari
+prisma/
+  schema.prisma
+docs/
+  RESTAURANT_GUIDE_TR.md
 ```
 
----
+## Lokal Kurulum
 
-## 🎨 UI/UX Code Name: "Buaze v3"
-The main layout relies heavily on a custom color palette defined mostly inline or via standard Tailwind globals:
-*   **Primary Accent:** `#FDBF1D` (Golden Yellow).
-*   **Dark Core:** `#111827` (Deep Gray/Black), used for premium aesthetics.
-*   **Marketing Focus:** Modern glassmorphism, animated mockups without relying on standalone generic PNGs, inline SVGs (`BuazeLogo.tsx`) to avoid asset permission errors. 
-*   **Legal Compliance:** Strictly includes `/tr/kvkk`, `/tr/gizlilik`, `/tr/acik-riza`, and `/tr/ticari-ileti` for Turkish laws.
+### Gereksinimler
 
----
+- Node.js 20+
+- npm
+- PostgreSQL veya Supabase veritabani
 
-## 🔧 Build & Deploy
-This project deploys autonomously on Vercel with zero-touch database configuration.
-
-*   **Automated Database Synchronization:** The `package.json` includes a `postinstall` script (`export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && prisma generate && prisma db push --accept-data-loss`). This allows Vercel to automatically compile the Prisma Client and simultaneously deploy all missing database tables to your Supabase instance during the build phase, bypassing any manual IPv4/IPv6 pooling setups.
-*   **Auto Admin Bootstrap:** Upon successful deployment, logging into `/admin` with the configured `ADMIN_USERNAME` and `ADMIN_PASSWORD` (default: `admin`/`123456+`) will automatically bootstrap your superadmin credentials to the newly created database tables.
-*   **SSR Compliance:** Do not use dynamic browser objects inside Server Components.
+### Kurulum
 
 ```bash
-# Local execution
 npm install
-npm run dev
+```
 
-# Build for production
+`.env.example` dosyasini kopyalayip `.env` olarak duzenleyin:
+
+```bash
+cp .env.example .env
+```
+
+Gelistirme sunucusunu baslatin:
+
+```bash
+npm run dev
+```
+
+Uygulama varsayilan olarak `http://localhost:3000` uzerinden calisir.
+
+## Gerekli Ortam Degiskenleri
+
+Ornek degerler icin [`.env.example`](/Users/okanberkmanavoglu/Downloads/QRCode/.env.example) dosyasina bakin.
+
+Temel degiskenler:
+
+```env
+DATABASE_URL=
+DIRECT_URL=
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
+NOTIFICATION_EMAIL=
+ADMIN_USERNAME=
+ADMIN_PASSWORD=
+JWT_SECRET=
+NEXT_PUBLIC_APP_URL=
+NEXT_PUBLIC_RESTAURANT_NAME=
+```
+
+Notlar:
+
+- `DATABASE_URL` pooler baglantisi icin kullanilir.
+- `DIRECT_URL` migration ve dogrudan baglanti islemleri icin gereklidir.
+- `JWT_SECRET` production ortaminda mutlaka set edilmelidir.
+- `NEXT_PUBLIC_APP_URL`, uretilen QR hedef linkleri icin kullanilir.
+
+## Veritabani ve Prisma
+
+Bu proje Prisma kullanir ve `prisma/schema.prisma` dosyasinda PostgreSQL datasource tanimlidir.
+
+`package.json` icindeki `postinstall` komutu su islemi yapar:
+
+```bash
+export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && prisma generate && prisma db push --accept-data-loss
+```
+
+Bu davranis deploy sirasinda faydali olabilir; ancak `db push --accept-data-loss` kullandigi icin production ortamlarda kontrollu kullanilmalidir.
+
+## Auth Davranisi
+
+Auth yapisi NextAuth yerine custom JWT tabanlidir.
+
+- Tokenlar `httpOnly` cookie olarak tutulur
+- `src/lib/auth.ts` imzalama ve dogrulama islemlerini yonetir
+- Admin giris endpointi ilk kurulum senaryosunda environment degiskenlerinden bootstrap yapabilir
+
+Ilk calistirmada veritabaninda hic admin yoksa:
+
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
+
+ile giris yapildiginda ilk admin hesabi otomatik olusturulabilir.
+
+## Ana Akislar
+
+### 1. QR kod olusturma
+
+- Admin panelinden restoran secilir
+- Istege bagli masa numarasi eklenir
+- QR SVG veya PNG olarak uretilir
+- Hedef URL `NEXT_PUBLIC_APP_URL/r/[slug]` seklindedir
+
+### 2. Musteri geri bildirim akisi
+
+- Musteri QR kodu okutur
+- `src/app/r/[slug]/page.tsx` sayfasi acilir
+- Yuksek puanda Google yorum yonlendirmesi yapilir
+- Dusuk puanda dahili form acilir ve yorum veritabanina kaydedilir
+
+### 3. Bildirim ve operasyon
+
+- Dusuk puanli yorumlarda e-posta bildirimi gonderilir
+- Geri bildirimler panelde filtrelenebilir
+- Restoran ve kullanici bazli yetki sinirlari korunur
+
+## Build ve Deploy
+
+Production build icin:
+
+```bash
 npm run build
 npm run start
 ```
+
+Vercel hedeflenerek yazilmis bir yapi vardir, ancak herhangi bir Node.js ortamina deploy edilebilir.
+
+Deploy oncesi kontrol edilmesi gerekenler:
+
+- Tum env degiskenleri tanimli mi
+- `JWT_SECRET` guvenli bir deger mi
+- Veritabani erisimi dogru mu
+- SMTP bilgileri calisiyor mu
+- `NEXT_PUBLIC_APP_URL` dogru domaine isaret ediyor mu
+
+## Dikkat Edilmesi Gereken Noktalar
+
+- QR kod linkleri `NEXT_PUBLIC_APP_URL` degerine baglidir
+- Veritabani senkronu `postinstall` icinde otomatik tetiklenir
+- Yetkilendirme mantigi hem admin hem de restaurant owner senaryolarini kapsar
+- Public ve admin tarafi ayni repo icinde oldugu icin route yapisi dikkatli korunmalidir
+
+## Faydalı Dosyalar
+
+- [README.md](/Users/okanberkmanavoglu/Downloads/QRCode/README.md)
+- [package.json](/Users/okanberkmanavoglu/Downloads/QRCode/package.json)
+- [prisma/schema.prisma](/Users/okanberkmanavoglu/Downloads/QRCode/prisma/schema.prisma)
+- [src/lib/auth.ts](/Users/okanberkmanavoglu/Downloads/QRCode/src/lib/auth.ts)
+- [src/app/api/feedback/route.ts](/Users/okanberkmanavoglu/Downloads/QRCode/src/app/api/feedback/route.ts)
+- [src/app/api/restaurants/[id]/qr/route.ts](/Users/okanberkmanavoglu/Downloads/QRCode/src/app/api/restaurants/[id]/qr/route.ts)
+- [src/app/r/[slug]/page.tsx](/Users/okanberkmanavoglu/Downloads/QRCode/src/app/r/[slug]/page.tsx)
+
+## Kisa Ozet
+
+Bu repo, restoran odakli bir QR geri bildirim SaaS urunudur. Public landing page, auth, dashboard, admin paneli, QR generator, feedback toplama, Google review yonlendirmesi ve operasyonel bildirim akislari ayni uygulama icinde toplanmistir.
