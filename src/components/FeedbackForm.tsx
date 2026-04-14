@@ -107,7 +107,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
             <p className="text-[11px] text-gray-400 leading-tight font-medium">
-              {t('feedback_disclaimer')} Bu yorum Google Haritalar standartlarında anonim olarak işlenmektedir.
+              {t('feedback_disclaimer')} {t('feedback_private_note')}
             </p>
           </div>
         </div>
