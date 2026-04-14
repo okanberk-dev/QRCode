@@ -47,7 +47,13 @@ function QRPageContent() {
   }, []);
 
   const selectedRestaurant = restaurants.find(r => r.id === selectedId);
-  const appUrl = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin) : '';
+  const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
+  const safeEnvAppUrl = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
+    ? envAppUrl
+    : 'https://buaze.com';
+  const appUrl = typeof window !== 'undefined'
+    ? window.location.origin
+    : safeEnvAppUrl;
   const qrTargetUrl = selectedRestaurant
     ? `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}`
     : '';

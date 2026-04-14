@@ -26,7 +26,15 @@ export async function GET(
       return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+    const normalizedEnvUrl = envAppUrl?.replace(/\/+$/, '');
+    const hasLocalhostEnv = normalizedEnvUrl
+      ? /localhost|127\.0\.0\.1/i.test(normalizedEnvUrl)
+      : false;
+    const appUrl = (!hasLocalhostEnv && normalizedEnvUrl)
+      ? normalizedEnvUrl
+      : 'https://buaze.com';
+
     let qrUrl = `${appUrl}/r/${restaurant.slug}?source=qr`;
     if (table) {
       qrUrl += `&table=${encodeURIComponent(table)}`;
