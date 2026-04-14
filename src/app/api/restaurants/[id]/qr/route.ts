@@ -2,12 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
+import { isValidTableIdentifier, isValidHexColor } from '@/lib/validations';
+import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import QRCode from 'qrcode';
+
+const DEFAULT_DARK = '#000000';
+const DEFAULT_LIGHT = '#ffffff';
+const MIN_WIDTH = 200;
+const MAX_WIDTH = 2000;
+const DEFAULT_WIDTH = 800;
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  maybeSweep();
+
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
@@ -16,7 +26,45 @@ export async function GET(
   const { id } = await params;
   const { searchParams } = new URL(req.url);
   const table = searchParams.get('table') || '';
-  const format = searchParams.get('format') || 'svg'; // svg or png
+  const format = (searchParams.get('format') || 'svg').toLowerCase();
+
+  if (format !== 'svg' && format !== 'png') {
+    return NextResponse.json({ error: 'Geçersiz format' }, { status: 400 });
+  }
+
+  // Validate optional table identifier — prevents arbitrary-length or
+  // characters that would break URL parsing / bloat the DB.
+  if (!isValidTableIdentifier(table)) {
+    return NextResponse.json(
+      { error: 'Geçersiz masa numarası (yalnızca harf, rakam, tire ve alt çizgi, maks. 20 karakter)' },
+      { status: 400 }
+    );
+  }
+
+  // Optional visual customisation — gracefully ignored if invalid.
+  const darkRaw = searchParams.get('dark');
+  const lightRaw = searchParams.get('light');
+  const dark = darkRaw && isValidHexColor(darkRaw) ? darkRaw : DEFAULT_DARK;
+  const light = lightRaw && isValidHexColor(lightRaw) ? lightRaw : DEFAULT_LIGHT;
+
+  const widthRaw = searchParams.get('width');
+  let width = DEFAULT_WIDTH;
+  if (widthRaw) {
+    const parsed = Number.parseInt(widthRaw, 10);
+    if (Number.isFinite(parsed) && parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) {
+      width = parsed;
+    }
+  }
+
+  // Per-user generation rate limit. Covers both legitimate admins and
+  // compromised credentials that would otherwise flood QrGeneration rows.
+  const rl = rateLimit(`qr:gen:${actor.id}`, 120, 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Çok fazla QR isteği. Lütfen biraz bekleyin.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+    );
+  }
 
   try {
     const restaurant = await prisma.restaurant.findUnique({
@@ -25,6 +73,13 @@ export async function GET(
 
     if (!restaurant) {
       return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
+    }
+
+    if (!restaurant.isActive) {
+      return NextResponse.json(
+        { error: 'Bu işletme pasif durumda. QR oluşturmadan önce aktifleştirin.' },
+        { status: 409 }
+      );
     }
 
     const hasAccess = await canAccessRestaurant(actor, restaurant.id);
@@ -69,16 +124,17 @@ export async function GET(
       }
     });
 
+    const qrOptions = {
+      width,
+      margin: 2,
+      color: { dark, light },
+      errorCorrectionLevel: 'H' as const,
+    };
+
     if (format === 'png') {
       const pngBuffer = await QRCode.toBuffer(qrUrl, {
         type: 'png',
-        width: 800,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#ffffff',
-        },
-        errorCorrectionLevel: 'H',
+        ...qrOptions,
       });
 
       return new NextResponse(pngBuffer as any, {
@@ -86,6 +142,7 @@ export async function GET(
         headers: {
           'Content-Type': 'image/png',
           'Content-Disposition': `attachment; filename="qr-${restaurant.slug}${table ? `-masa-${table}` : ''}.png"`,
+          'Cache-Control': 'no-store',
         },
       });
     }
@@ -93,13 +150,7 @@ export async function GET(
     // Default: SVG
     const svgString = await QRCode.toString(qrUrl, {
       type: 'svg',
-      width: 800,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#ffffff',
-      },
-      errorCorrectionLevel: 'H',
+      ...qrOptions,
     });
 
     return new NextResponse(svgString, {
@@ -107,6 +158,7 @@ export async function GET(
       headers: {
         'Content-Type': 'image/svg+xml',
         'Content-Disposition': `inline; filename="qr-${restaurant.slug}${table ? `-masa-${table}` : ''}.svg"`,
+        'Cache-Control': 'no-store',
       },
     });
   } catch (error) {

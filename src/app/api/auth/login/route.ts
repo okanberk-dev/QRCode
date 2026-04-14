@@ -2,15 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { signJwt } from '@/lib/auth';
+import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    maybeSweep();
+    const ip = getClientIp(req.headers);
     const { email, password } = await req.json();
 
-    if (!email || !password) {
+    if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
       return NextResponse.json(
         { error: 'E-posta ve şifre zorunludur.' },
         { status: 400 }
+      );
+    }
+    if (email.length > 256 || password.length > 256) {
+      return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
+    }
+
+    // Burst-protection: 10 attempts per IP per 10 minutes and a tighter 5 per email.
+    const ipLimit = rateLimit(`user-login:ip:${ip}`, 10, 10 * 60 * 1000);
+    const emailLimit = rateLimit(`user-login:email:${email.toLowerCase()}`, 5, 10 * 60 * 1000);
+    if (!ipLimit.allowed || !emailLimit.allowed) {
+      const retry = Math.max(ipLimit.retryAfterSeconds, emailLimit.retryAfterSeconds);
+      return NextResponse.json(
+        { error: 'Çok fazla başarısız deneme. Lütfen bir süre sonra tekrar deneyin.' },
+        { status: 429, headers: { 'Retry-After': String(retry) } },
       );
     }
 
@@ -58,6 +75,10 @@ export async function POST(req: NextRequest) {
         { status: 402 }
       );
     }
+
+    // Successful auth — clear brute-force counters.
+    resetRateLimit(`user-login:ip:${ip}`);
+    resetRateLimit(`user-login:email:${email.toLowerCase()}`);
 
     // Sign user JWT
     let payloadRestaurantId = null;

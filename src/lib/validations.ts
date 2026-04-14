@@ -21,3 +21,32 @@ export function sanitizeText(text: string | null | undefined, maxLength = 1000):
   if (!text) return null;
   return text.trim().substring(0, maxLength);
 }
+
+/**
+ * Validate a table / location identifier used in QR URLs.
+ * Rules: 1-20 chars, alphanumeric + `-_` only. Empty/null is allowed (general QR).
+ */
+export function isValidTableIdentifier(value: unknown): value is string {
+  if (value === null || value === undefined || value === '') return true;
+  if (typeof value !== 'string') return false;
+  if (value.length > 20) return false;
+  return /^[A-Za-z0-9_-]+$/.test(value);
+}
+
+/**
+ * Validate a hex color (#RGB or #RRGGBB).
+ */
+export function isValidHexColor(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value);
+}
+
+/**
+ * Minimal password strength check used for staff / admin accounts.
+ * Requires 8+ chars plus at least one letter and one digit.
+ */
+export function isStrongPassword(password: unknown): password is string {
+  if (typeof password !== 'string') return false;
+  if (password.length < 8 || password.length > 128) return false;
+  return /[A-Za-z]/.test(password) && /\d/.test(password);
+}

@@ -14,9 +14,20 @@ export interface PanelActor {
 }
 
 function getSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET || 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs='; // Fallback for Vercel if not set
+  const secret = process.env.JWT_SECRET;
   if (!secret) {
-    throw new Error('[Buaze] JWT_SECRET environment variable is not set. Add it to your .env file.');
+    if (process.env.NODE_ENV === 'production') {
+      // Fail loudly instead of silently signing with a known public fallback
+      // which would allow attackers to forge valid admin sessions.
+      throw new Error('[Buaze] JWT_SECRET is not set in production. Refusing to sign tokens with an insecure default.');
+    }
+    // Dev-only fallback so preview branches/local do not crash immediately;
+    // still log a conspicuous warning to encourage configuration.
+    console.warn('[Buaze] JWT_SECRET not set – using development fallback. DO NOT deploy to production without JWT_SECRET.');
+    return new TextEncoder().encode('dev-only-fallback-rotate-before-production-use');
+  }
+  if (secret.length < 24) {
+    console.warn('[Buaze] JWT_SECRET is too short (< 24 chars). Use a 32+ byte random value.');
   }
   return new TextEncoder().encode(secret);
 }
