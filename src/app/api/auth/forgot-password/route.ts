@@ -62,10 +62,23 @@ export async function POST(req: NextRequest) {
         .setExpirationTime('30m')
         .sign(getSecret());
 
+      // Derive base URL from the incoming request so the email link always
+      // points back to the exact deployment the user is on (works for
+      // buaze.com, *.vercel.app preview deploys, and custom domains).
+      const forwardedProto = req.headers.get('x-forwarded-proto');
+      const forwardedHost = req.headers.get('x-forwarded-host') || req.headers.get('host');
       const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
-      const safeBase = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
-        ? envAppUrl
-        : 'https://buaze.com';
+
+      let safeBase: string;
+      if (forwardedHost && !/localhost|127\.0\.0\.1/i.test(forwardedHost)) {
+        const proto = forwardedProto || 'https';
+        safeBase = `${proto}://${forwardedHost}`;
+      } else if (envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)) {
+        safeBase = envAppUrl;
+      } else {
+        safeBase = req.nextUrl.origin;
+      }
+
       const resetUrl = `${safeBase}/${locale}/auth/reset-password?token=${encodeURIComponent(token)}`;
 
       const sent = await sendPasswordResetEmail({
