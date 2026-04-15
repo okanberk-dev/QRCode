@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Store, Loader2, MoreVertical, Mail, ExternalLink, ToggleLeft, ToggleRight, Search, X } from 'lucide-react';
+import { Plus, Store, Loader2, MoreVertical, Mail, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import Link from 'next/link';
 
@@ -36,6 +36,7 @@ export default function RestaurantsPage() {
     primaryColor: '#1a73e8',
   });
   const [isManualSlug, setIsManualSlug] = useState(false);
+  const [showGoogleInfo, setShowGoogleInfo] = useState(false);
 
   const fetchRestaurants = async () => {
     setLoading(true);
@@ -302,6 +303,62 @@ export default function RestaurantsPage() {
                     className="flex-1 min-w-0 px-3 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[13px] sm:text-[15px] font-bold tracking-tight shadow-sm transition-all"
                   />
                 </div>
+              </div>
+
+              {/* ── Google Review Link — emphasized ── */}
+              <div className="rounded-2xl border-2 border-[#FDBF1D]/50 bg-gradient-to-br from-[#FDBF1D]/15 via-[#FDBF1D]/8 to-white p-4 sm:p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#FDBF1D] shadow-sm">
+                      <MapPin size={15} strokeWidth={3} className="text-[#111827]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] sm:text-[13px] font-black uppercase tracking-wide text-[#111827] leading-tight">
+                        Google Yorum Bağlantısı
+                        <span className="ml-1 text-orange-500">*</span>
+                      </p>
+                      <p className="mt-0.5 text-[10px] font-bold text-[#6b6760] leading-tight">
+                        Olumlu yorumlar bu bağlantıya yönlendirilir
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowGoogleInfo((v) => !v)}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-[#111827] transition-all hover:bg-[#FDBF1D]/20 active:scale-95"
+                    aria-label="Info"
+                  >
+                    <Info size={15} strokeWidth={2.75} />
+                  </button>
+                </div>
+
+                {showGoogleInfo && (
+                  <div className="mb-3 rounded-xl border border-gray-200 bg-white p-3.5 text-xs font-bold text-[#6b6760] leading-relaxed">
+                    <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#111827]">Nasıl alınır?</p>
+                    <ol className="ml-4 list-decimal space-y-1">
+                      <li>Google Haritalar&apos;ı açın ve işletmenizi aratın.</li>
+                      <li>İşletmeye tıklayın, &quot;Paylaş&quot; butonuna basın.</li>
+                      <li>Bağlantıyı kopyalayın ve aşağıya yapıştırın.</li>
+                    </ol>
+                    <a
+                      href="https://www.google.com/maps"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex items-center gap-1.5 text-[#1a73e8] font-black text-[11px] uppercase tracking-widest underline underline-offset-2"
+                    >
+                      <ExternalLink size={12} strokeWidth={2.75} />
+                      Google Haritalar&apos;ı Aç
+                    </a>
+                  </div>
+                )}
+
+                <input
+                  type="text"
+                  value={formData.googlePlaceId}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, googlePlaceId: e.target.value }))}
+                  placeholder="https://maps.google.com/... veya Place ID"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm font-bold text-[#111827] outline-none transition-all placeholder:text-[#ada89f] focus:ring-2 focus:ring-[#FDBF1D]"
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

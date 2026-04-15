@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ExternalLink, Loader2, Plus, Search, Store, ToggleLeft, ToggleRight, X } from 'lucide-react';
+import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store, ToggleLeft, ToggleRight, X } from 'lucide-react';
 
 interface Restaurant {
   id: string;
@@ -27,6 +27,7 @@ export default function DashboardRestaurantsPage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [isManualSlug, setIsManualSlug] = useState(false);
+  const [showGoogleInfo, setShowGoogleInfo] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -328,6 +329,64 @@ export default function DashboardRestaurantsPage() {
                     />
                   </div>
                 </label>
+
+                {/* ── Google Review Link — emphasized ── */}
+                <div className="sm:col-span-2 rounded-2xl border-2 border-[#FDBF1D]/50 bg-gradient-to-br from-[#FDBF1D]/15 via-[#FDBF1D]/8 to-white p-4 sm:p-5 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#FDBF1D] shadow-sm">
+                        <MapPin size={15} strokeWidth={3} className="text-[#111827]" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[12px] sm:text-[13px] font-black uppercase tracking-wide text-[#111827] leading-tight">
+                          {locale === 'tr' ? 'Google Yorum Bağlantısı' : 'Google Review Link'}
+                          <span className="ml-1 text-orange-500">*</span>
+                        </p>
+                        <p className="mt-0.5 text-[10px] font-bold text-[#6b6760] leading-tight">
+                          {locale === 'tr' ? 'Olumlu yorumlar bu bağlantıya yönlendirilir' : 'Positive reviews are redirected to this link'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowGoogleInfo((v) => !v)}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-[#111827] transition-all hover:bg-[#FDBF1D]/20 active:scale-95"
+                      aria-label="Info"
+                    >
+                      <Info size={15} strokeWidth={2.75} />
+                    </button>
+                  </div>
+
+                  {showGoogleInfo && (
+                    <div className="mb-3 rounded-xl border border-gray-200 bg-white p-3.5 text-xs font-bold text-[#6b6760] leading-relaxed">
+                      <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#111827]">
+                        {locale === 'tr' ? 'Nasıl alınır?' : 'How to get it?'}
+                      </p>
+                      <ol className="ml-4 list-decimal space-y-1">
+                        <li>{locale === 'tr' ? "Google Haritalar'ı açın ve işletmenizi aratın." : 'Open Google Maps and search your business.'}</li>
+                        <li>{locale === 'tr' ? 'İşletmeye tıklayın, "Paylaş" butonuna basın.' : 'Click the business, then tap "Share".'}</li>
+                        <li>{locale === 'tr' ? 'Bağlantıyı kopyalayın ve aşağıya yapıştırın.' : 'Copy the link and paste it below.'}</li>
+                      </ol>
+                      <a
+                        href="https://www.google.com/maps"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 inline-flex items-center gap-1.5 text-[#1a73e8] font-black text-[11px] uppercase tracking-widest underline underline-offset-2"
+                      >
+                        <ExternalLink size={12} strokeWidth={2.75} />
+                        {locale === 'tr' ? "Google Haritalar'ı Aç" : 'Open Google Maps'}
+                      </a>
+                    </div>
+                  )}
+
+                  <input
+                    type="text"
+                    value={formData.googlePlaceId}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, googlePlaceId: event.target.value }))}
+                    placeholder={locale === 'tr' ? 'https://maps.google.com/... veya Place ID' : 'https://maps.google.com/... or Place ID'}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm font-bold text-[#111827] outline-none transition-all placeholder:text-[#ada89f] focus:ring-2 focus:ring-[#FDBF1D]"
+                  />
+                </div>
 
                 <label className="space-y-2">
                   <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Kategori</span>
