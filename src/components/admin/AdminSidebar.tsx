@@ -59,6 +59,7 @@ export default function AdminSidebar() {
   ];
 
   if (role === 'superadmin') {
+    menuItems.push({ href: '/admin/members', icon: Crown, label: 'Üyeler', roles: ['superadmin'] } as any);
     menuItems.push({ href: '/admin/users', icon: Users, label: t('users'), roles: ['superadmin'] } as any);
     menuItems.push({ href: '/admin/customers', icon: UsersRound, label: t('customers'), roles: ['superadmin'] } as any);
   }

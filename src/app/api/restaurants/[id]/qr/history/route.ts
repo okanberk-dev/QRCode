@@ -20,19 +20,23 @@ export async function GET(
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
-    const history = await prisma.qrGeneration.findMany({
-      where: { restaurantId: id },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-      select: {
-        id: true,
-        qrUrl: true,
-        tableNumber: true,
-        createdAt: true,
-      },
-    });
-
-    return NextResponse.json(history, { status: 200 });
+    try {
+      const history = await prisma.qrGeneration.findMany({
+        where: { restaurantId: id },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: {
+          id: true,
+          qrUrl: true,
+          tableNumber: true,
+          createdAt: true,
+        },
+      });
+      return NextResponse.json(history, { status: 200 });
+    } catch {
+      // Table may not exist yet — return empty history gracefully.
+      return NextResponse.json([], { status: 200 });
+    }
   } catch (error) {
     console.error('QR history fetch error:', error);
     return NextResponse.json({ error: 'QR geçmişi alınamadı' }, { status: 500 });

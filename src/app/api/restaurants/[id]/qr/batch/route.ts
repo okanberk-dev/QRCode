@@ -103,29 +103,33 @@ export async function POST(
       items.push({ table, qrUrl, svg });
     }
 
-    // Record a single batch entry so we don't blow past the 50-row history cap.
-    await prisma.$transaction(async (tx) => {
-      await tx.qrGeneration.create({
-        data: {
-          restaurantId: restaurant.id,
-          qrUrl: `${appUrl}/r/${restaurant.slug}?source=qr&batch=${from}-${to}`,
-          tableNumber: `${from}-${to}`,
-        },
-      });
-
-      const overflow = await tx.qrGeneration.findMany({
-        where: { restaurantId: restaurant.id },
-        orderBy: { createdAt: 'desc' },
-        skip: 50,
-        select: { id: true },
-      });
-
-      if (overflow.length > 0) {
-        await tx.qrGeneration.deleteMany({
-          where: { id: { in: overflow.map((i) => i.id) } },
+    // Record a single batch entry — non-fatal if table doesn't exist yet.
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.qrGeneration.create({
+          data: {
+            restaurantId: restaurant.id,
+            qrUrl: `${appUrl}/r/${restaurant.slug}?source=qr&batch=${from}-${to}`,
+            tableNumber: `${from}-${to}`,
+          },
         });
-      }
-    });
+
+        const overflow = await tx.qrGeneration.findMany({
+          where: { restaurantId: restaurant.id },
+          orderBy: { createdAt: 'desc' },
+          skip: 50,
+          select: { id: true },
+        });
+
+        if (overflow.length > 0) {
+          await tx.qrGeneration.deleteMany({
+            where: { id: { in: overflow.map((i) => i.id) } },
+          });
+        }
+      });
+    } catch (trackErr) {
+      console.warn('[QR] Batch tracking skipped:', (trackErr as Error).message);
+    }
 
     return NextResponse.json(
       { items, count: items.length, restaurantName: restaurant.name, slug: restaurant.slug },

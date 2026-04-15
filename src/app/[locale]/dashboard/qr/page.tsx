@@ -32,6 +32,7 @@ export default function DashboardQrPage() {
   const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [qrError, setQrError] = useState('');
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
   const safeEnvAppUrl = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
     ? envAppUrl
@@ -124,18 +125,31 @@ export default function DashboardQrPage() {
     if (!selectedId) return;
 
     setGenerating(true);
+    setQrError('');
     try {
       const query = new URLSearchParams({ format: 'svg' });
       if (tableNumber) query.append('table', tableNumber);
 
       const response = await fetch(`/api/restaurants/${selectedId}/qr?${query.toString()}`);
-      if (!response.ok) return;
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setQrSvg('');
+        if (response.status === 401) {
+          setQrError('Oturum süreniz dolmuş. Lütfen yeniden giriş yapın.');
+        } else if (response.status === 409) {
+          setQrError('Bu işletme pasif durumda. QR oluşturmak için aktifleştirin.');
+        } else {
+          setQrError(data?.error || `QR oluşturulamadı (HTTP ${response.status})`);
+        }
+        return;
+      }
 
       const svg = await response.text();
       setQrSvg(svg);
       await fetchHistory(selectedId);
     } catch (error) {
       console.error(error);
+      setQrError('Bağlantı hatası. İnternet bağlantınızı kontrol edin.');
     } finally {
       setGenerating(false);
     }
@@ -370,6 +384,20 @@ export default function DashboardQrPage() {
                     </p>
                   )}
                 </div>
+              </div>
+            ) : qrError ? (
+              <div className="flex flex-col items-center gap-3 text-center px-4">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center">
+                  <QrCode size={24} strokeWidth={2.5} className="text-red-400" />
+                </div>
+                <p className="text-sm font-black text-red-500 uppercase tracking-wide">{qrError}</p>
+                <button
+                  type="button"
+                  onClick={generateQr}
+                  className="text-xs font-black text-[#111827] underline underline-offset-2 uppercase tracking-widest"
+                >
+                  {locale === 'tr' ? 'Tekrar Dene' : 'Retry'}
+                </button>
               </div>
             ) : (
               <p className="text-sm font-bold text-[#6b6760]">{locale === 'tr' ? 'QR oluşturmak için işletme seçin.' : 'Select a location to generate a QR code.'}</p>
