@@ -84,6 +84,24 @@ function QRPageContent() {
     ? `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}`
     : '';
 
+  const LS_KEY = (id: string) => `qr_history_${id}`;
+
+  const readLocalHistory = (restaurantId: string): QrHistoryItem[] => {
+    try {
+      return JSON.parse(localStorage.getItem(LS_KEY(restaurantId)) || '[]');
+    } catch {
+      return [];
+    }
+  };
+
+  const saveToLocalHistory = (restaurantId: string, item: QrHistoryItem) => {
+    try {
+      const existing = readLocalHistory(restaurantId);
+      const updated = [item, ...existing.filter((e) => e.id !== item.id)].slice(0, 50);
+      localStorage.setItem(LS_KEY(restaurantId), JSON.stringify(updated));
+    } catch {}
+  };
+
   const fetchHistory = async (restaurantId: string) => {
     if (!restaurantId) {
       setHistory([]);
@@ -92,14 +110,21 @@ function QRPageContent() {
     setHistoryLoading(true);
     try {
       const res = await fetch(`/api/restaurants/${restaurantId}/qr/history`);
-      if (res.ok) {
-        const data = await res.json();
-        setHistory(Array.isArray(data) ? data : []);
-      } else {
-        setHistory([]);
+      const apiItems: QrHistoryItem[] = res.ok ? (await res.json()) : [];
+      const localItems = readLocalHistory(restaurantId);
+
+      const seen = new Set<string>();
+      const merged: QrHistoryItem[] = [];
+      for (const item of [...apiItems, ...localItems]) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          merged.push(item);
+        }
       }
+      merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setHistory(merged.slice(0, 50));
     } catch {
-      setHistory([]);
+      setHistory(readLocalHistory(restaurantId));
     } finally {
       setHistoryLoading(false);
     }
@@ -120,6 +145,12 @@ function QRPageContent() {
       if (res.ok) {
         const svg = await res.text();
         setQrSvg(svg);
+        saveToLocalHistory(selectedId, {
+          id: `local_${Date.now()}`,
+          qrUrl: qrTargetUrl,
+          tableNumber: tableNumber || null,
+          createdAt: new Date().toISOString(),
+        });
         fetchHistory(selectedId);
       } else {
         const data = await res.json().catch(() => null);
@@ -511,14 +542,14 @@ function QRPageContent() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
+                <div className="space-y-1 min-w-0">
                   <p className="text-[9px] font-black text-[#ada89f] uppercase tracking-widest">İşletme</p>
-                  <p className="text-xs font-black text-white">{selectedRestaurant.name.toUpperCase()}</p>
+                  <p className="text-xs font-black text-white truncate" title={selectedRestaurant.name}>{selectedRestaurant.name.toUpperCase()}</p>
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 text-right">
                   <p className="text-[9px] font-black text-[#ada89f] uppercase tracking-widest">Durum</p>
-                  <p className="text-xs font-black text-[#10b981]">AKTİF ✓</p>
+                  <p className="text-xs font-black text-[#10b981] whitespace-nowrap">AKTİF ✓</p>
                 </div>
               </div>
             </div>
@@ -546,12 +577,22 @@ function QRPageContent() {
                       key={item.id}
                       type="button"
                       onClick={() => setTableNumber(item.tableNumber || '')}
-                      className="w-full text-left p-3 hover:bg-[#FCFBF7] transition-colors"
+                      className="w-full text-left p-3 hover:bg-[#FCFBF7] transition-colors flex items-start gap-3"
                     >
-                      <p className="text-[12px] font-black text-[#111827]">
-                        {item.tableNumber ? `Masa ${item.tableNumber}` : 'Genel QR'}
-                      </p>
-                      <p className="text-[11px] text-[#6b6760] font-mono truncate">{item.qrUrl}</p>
+                      <div className="shrink-0 rounded-lg bg-[#FCFBF7] border border-gray-200 px-2 py-1.5 text-center min-w-[60px]">
+                        <p className="text-[9px] font-black uppercase tracking-wider text-[#ada89f] leading-tight">
+                          {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}
+                        </p>
+                        <p className="text-[11px] font-black text-[#111827] leading-tight">
+                          {new Date(item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] font-black text-[#111827] truncate">
+                          {item.tableNumber ? `Masa ${item.tableNumber}` : 'Genel QR'}
+                        </p>
+                        <p className="text-[11px] text-[#6b6760] font-mono truncate">{item.qrUrl}</p>
+                      </div>
                     </button>
                   ))
                 )}

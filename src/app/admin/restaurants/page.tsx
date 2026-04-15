@@ -187,22 +187,22 @@ export default function RestaurantsPage() {
               <div className="h-2 w-full" style={{ backgroundColor: r.primaryColor }} />
               
               <div className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
                     <div
-                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl sm:text-2xl shadow-sm"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl sm:text-2xl shadow-sm shrink-0"
                       style={{ backgroundColor: r.primaryColor }}
                     >
                       {r.name.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <h3 className="font-black text-[#111827] text-xl tracking-tight leading-none mb-2">{r.name}</h3>
-                      <p className="text-[13px] font-bold text-[#ada89f]">/{r.slug}</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-black text-[#111827] text-xl tracking-tight leading-none mb-2 truncate" title={r.name}>{r.name}</h3>
+                      <p className="text-[13px] font-bold text-[#ada89f] truncate">/{r.slug}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => toggleActive(r.id, r.isActive)}
-                    className={`transition-all active:scale-90 ${r.isActive ? 'text-[#10b981]' : 'text-[#ada89f]'}`}
+                    className={`shrink-0 transition-all active:scale-90 ${r.isActive ? 'text-[#10b981]' : 'text-[#ada89f]'}`}
                     title={r.isActive ? 'Pasifleştir' : 'Aktifleştir'}
                   >
                     {r.isActive ? (
