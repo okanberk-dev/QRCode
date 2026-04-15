@@ -34,6 +34,7 @@ function QRPageContent() {
   const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [qrError, setQrError] = useState('');
 
   // Customisation
   const [useBrandColor, setUseBrandColor] = useState(false);
@@ -113,15 +114,25 @@ function QRPageContent() {
   const generateQR = async () => {
     if (!selectedId) return;
     setGenerating(true);
+    setQrError('');
     try {
       const res = await fetch(`/api/restaurants/${selectedId}/qr?${buildQuery('svg').toString()}`);
       if (res.ok) {
         const svg = await res.text();
         setQrSvg(svg);
         fetchHistory(selectedId);
+      } else {
+        const data = await res.json().catch(() => null);
+        setQrSvg('');
+        if (res.status === 401) {
+          setQrError('Oturum süreniz sona erdi. Lütfen yeniden giriş yapın.');
+        } else {
+          setQrError(data?.error || `QR oluşturulamadı (HTTP ${res.status})`);
+        }
       }
     } catch (e) {
       console.error(e);
+      setQrError('Bağlantı hatası. İnternet bağlantınızı kontrol edin.');
     }
     setGenerating(false);
   };
@@ -262,18 +273,18 @@ function QRPageContent() {
   const isSingleRestaurant = userProfile?.role === 'manager' || userProfile?.role === 'restaurant_owner';
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-8 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-6 sm:p-8 rounded-[24px] border border-gray-100 shadow-sm">
+    <div className="p-3 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-6 sm:space-y-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-5 sm:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">QR Kod Oluşturucu</h1>
-          <p className="text-[#6b6760] text-[13px] sm:text-[15px] font-bold">İşletmenize özel, yüksek çözünürlüklü QR kodlar hazırlayın.</p>
+          <h1 className="text-xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">QR Kod Oluşturucu</h1>
+          <p className="text-[#6b6760] text-[12px] sm:text-[15px] font-bold">İşletmenize özel, yüksek çözünürlüklü QR kodlar hazırlayın.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 sm:gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-10">
 
         {/* ─── Left: Settings ─── */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6 sm:space-y-8 order-2 lg:order-1">
 
           {/* Settings Box */}
           <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 sm:p-8 space-y-6 sm:space-y-8">
@@ -550,14 +561,14 @@ function QRPageContent() {
         </div>
 
         {/* ─── Right: QR Preview ─── */}
-        <div className="lg:col-span-3">
-          <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 sm:p-8 flex flex-col items-center h-full">
-            <div className="flex items-center justify-between w-full mb-10">
-              <h3 className="text-2xl font-black text-[#111827] uppercase tracking-tighter">Önizleme</h3>
+        <div className="lg:col-span-3 order-1 lg:order-2">
+          <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm p-5 sm:p-8 flex flex-col items-center h-full">
+            <div className="flex items-center justify-between w-full mb-6 sm:mb-10">
+              <h3 className="text-lg sm:text-2xl font-black text-[#111827] uppercase tracking-tighter">Önizleme</h3>
               <button
                 onClick={generateQR}
                 disabled={generating || !selectedId}
-                className="flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-gray-900 transition-all disabled:opacity-30 border border-gray-200 px-5 py-2.5 rounded-xl bg-white shadow-sm hover:bg-gray-50 active:scale-95 uppercase tracking-widest"
+                className="flex items-center gap-2 text-[11px] sm:text-xs font-bold text-gray-600 hover:text-gray-900 transition-all disabled:opacity-30 border border-gray-200 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white shadow-sm hover:bg-gray-50 active:scale-95 uppercase tracking-widest"
               >
                 <RefreshCw size={14} strokeWidth={2.5} className={generating ? 'animate-spin' : ''} />
                 YENİLE
@@ -565,33 +576,45 @@ function QRPageContent() {
             </div>
 
             {/* QR Box */}
-            <div className="flex-1 flex items-center justify-center w-full min-h-[300px]">
+            <div className="flex-1 flex items-center justify-center w-full min-h-[260px] sm:min-h-[300px]">
               {generating ? (
-                <div className="flex items-center justify-center w-72 h-72">
+                <div className="flex items-center justify-center w-56 h-56 sm:w-72 sm:h-72">
                   <Loader2 className="animate-spin text-[#111827] w-12 h-12" strokeWidth={3} />
                 </div>
               ) : qrSvg ? (
                 <div
-                  className="w-64 h-64 sm:w-72 sm:h-72 [&>svg]:w-full [&>svg]:h-full rounded-[24px] overflow-hidden border border-gray-100 shadow-xl p-4 bg-white transition-transform hover:rotate-1"
+                  className="w-56 h-56 sm:w-72 sm:h-72 [&>svg]:w-full [&>svg]:h-full rounded-[20px] sm:rounded-[24px] overflow-hidden border border-gray-100 shadow-xl p-3 sm:p-4 bg-white transition-transform hover:rotate-1"
                   dangerouslySetInnerHTML={{ __html: qrSvg }}
                 />
               ) : (
-                <div className="w-64 h-64 sm:w-72 sm:h-72 bg-gray-50 rounded-[24px] flex flex-col items-center justify-center border-2 border-dashed border-gray-200 text-center p-8">
-                  <QrCode size={48} strokeWidth={2.5} className="text-gray-300 mb-4" />
-                  <p className="text-[13px] font-black text-[#ada89f] uppercase tracking-widest">
-                    {selectedId ? 'QR HAZIRLANIYOR / YENİLE İLE OLUŞTURUN' : 'ÖNİZLEME İÇİN İŞLETME SEÇİN'}
+                <div className="w-56 h-56 sm:w-72 sm:h-72 bg-gray-50 rounded-[20px] sm:rounded-[24px] flex flex-col items-center justify-center border-2 border-dashed border-gray-200 text-center p-5 sm:p-8">
+                  <QrCode size={48} strokeWidth={2.5} className={`${qrError ? 'text-red-300' : 'text-gray-300'} mb-4`} />
+                  <p className={`text-[11px] sm:text-[13px] font-black uppercase tracking-widest ${qrError ? 'text-red-500' : 'text-[#ada89f]'}`}>
+                    {qrError
+                      ? qrError
+                      : selectedId
+                      ? 'QR HAZIRLANIYOR / YENİLE İLE OLUŞTURUN'
+                      : 'ÖNİZLEME İÇİN İŞLETME SEÇİN'}
                   </p>
+                  {qrError && (
+                    <button
+                      onClick={generateQR}
+                      className="mt-4 text-[11px] font-black text-[#111827] underline underline-offset-2 uppercase tracking-widest"
+                    >
+                      Tekrar Dene
+                    </button>
+                  )}
                 </div>
               )}
             </div>
 
             {/* Instruction */}
             {qrSvg && (
-              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mt-10 mb-10 flex items-center gap-4 max-w-sm">
-                <div className="w-10 h-10 rounded-full bg-green-100 text-green-500 flex items-center justify-center flex-shrink-0">
-                  <Check size={20} strokeWidth={3} />
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-3 sm:p-4 mt-6 sm:mt-10 mb-6 sm:mb-10 flex items-center gap-3 sm:gap-4 max-w-sm">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-green-100 text-green-500 flex items-center justify-center flex-shrink-0">
+                  <Check size={18} strokeWidth={3} />
                 </div>
-                <p className="text-[12px] font-bold text-[#6b6760] leading-tight">
+                <p className="text-[11px] sm:text-[12px] font-bold text-[#6b6760] leading-tight">
                   Bu QR kodu masalara, menülere veya girişe yerleştirerek müşteri geri bildirimi toplamaya başlayın.
                 </p>
               </div>
@@ -599,27 +622,27 @@ function QRPageContent() {
 
             {/* Actions */}
             {selectedId && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-auto">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full mt-6 sm:mt-auto">
                 <button
                   onClick={() => downloadQR('png')}
-                  className="flex items-center justify-center gap-3 bg-[#111827] text-white px-8 py-4 sm:py-5 rounded-2xl text-[13px] font-bold uppercase tracking-widest border border-gray-800 shadow-md hover:bg-gray-800 active:scale-95 transition-all sm:col-span-2 group"
+                  className="col-span-2 flex items-center justify-center gap-3 bg-[#111827] text-white px-6 sm:px-8 py-4 sm:py-5 rounded-2xl text-[12px] sm:text-[13px] font-bold uppercase tracking-widest border border-gray-800 shadow-md hover:bg-gray-800 active:scale-95 transition-all group"
                 >
                   <Download size={20} strokeWidth={2.5} className="group-hover:translate-y-0.5 transition-transform" />
                   PNG OLARAK İNDİR (HD)
                 </button>
                 <button
                   onClick={() => downloadQR('svg')}
-                  className="flex items-center justify-center gap-3 bg-white text-gray-700 border border-gray-200 px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+                  className="flex items-center justify-center gap-2 sm:gap-3 bg-white text-gray-700 border border-gray-200 px-3 sm:px-6 py-3 sm:py-4 rounded-2xl text-[11px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
                 >
-                  <Download size={18} strokeWidth={2.5} />
-                  SVG İNDİR
+                  <Download size={16} strokeWidth={2.5} />
+                  SVG
                 </button>
                 <button
                   onClick={handlePrint}
-                  className="flex items-center justify-center gap-3 bg-white text-gray-700 border border-gray-200 px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+                  className="flex items-center justify-center gap-2 sm:gap-3 bg-white text-gray-700 border border-gray-200 px-3 sm:px-6 py-3 sm:py-4 rounded-2xl text-[11px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
                 >
-                  <Printer size={18} strokeWidth={2.5} />
-                  HEMEN YAZDIR
+                  <Printer size={16} strokeWidth={2.5} />
+                  YAZDIR
                 </button>
               </div>
             )}

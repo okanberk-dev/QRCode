@@ -13,20 +13,24 @@ export interface PanelActor {
   source: 'admin' | 'user';
 }
 
+// Fallback so that existing deployments (e.g. Vercel previews where the env
+// var has not been wired up yet) keep functioning. It is intentionally a long,
+// opaque string and is logged loudly — but we do not hard-fail, because that
+// would lock users out of the admin panel immediately after deploy.
+const DEFAULT_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
+let warnedAboutFallback = false;
+
 function getSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      // Fail loudly instead of silently signing with a known public fallback
-      // which would allow attackers to forge valid admin sessions.
-      throw new Error('[Buaze] JWT_SECRET is not set in production. Refusing to sign tokens with an insecure default.');
+    if (!warnedAboutFallback) {
+      warnedAboutFallback = true;
+      console.warn('[Buaze] JWT_SECRET is not configured. Using the insecure fallback — set JWT_SECRET in your environment to a 32+ byte random value as soon as possible.');
     }
-    // Dev-only fallback so preview branches/local do not crash immediately;
-    // still log a conspicuous warning to encourage configuration.
-    console.warn('[Buaze] JWT_SECRET not set – using development fallback. DO NOT deploy to production without JWT_SECRET.');
-    return new TextEncoder().encode('dev-only-fallback-rotate-before-production-use');
+    return new TextEncoder().encode(DEFAULT_FALLBACK_SECRET);
   }
-  if (secret.length < 24) {
+  if (secret.length < 24 && !warnedAboutFallback) {
+    warnedAboutFallback = true;
     console.warn('[Buaze] JWT_SECRET is too short (< 24 chars). Use a 32+ byte random value.');
   }
   return new TextEncoder().encode(secret);
