@@ -280,3 +280,117 @@ Panelde inceleyin: ${appUrl}/admin/dashboard
     console.error("Failed to send notification email:", error);
   }
 }
+
+export async function sendPasswordResetEmail(params: {
+  to: string;
+  code: string;
+  resetUrl: string;
+  locale?: 'tr' | 'en';
+}) {
+  const transporter = getTransporter();
+  if (!transporter) {
+    console.warn('[Buaze] SMTP credentials not configured — cannot send password reset email.');
+    return false;
+  }
+
+  const isTr = params.locale !== 'en';
+  const subject = isTr ? 'Buaze — Şifre Sıfırlama Kodu' : 'Buaze — Password Reset Code';
+
+  const title = isTr ? 'Şifre Sıfırlama' : 'Password Reset';
+  const intro = isTr
+    ? 'Hesabınız için bir şifre sıfırlama talebi aldık. Aşağıdaki 6 haneli kodu kullanarak şifrenizi yenileyebilirsiniz.'
+    : 'We received a request to reset your account password. Use the 6-digit code below to set a new password.';
+  const codeLabel = isTr ? 'Doğrulama Kodu' : 'Verification Code';
+  const validity = isTr ? 'Bu kod 30 dakika boyunca geçerlidir.' : 'This code is valid for 30 minutes.';
+  const cta = isTr ? 'Şifreyi Sıfırla' : 'Reset Password';
+  const ignore = isTr
+    ? 'Bu talebi siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz — hesabınıza kimse erişemez.'
+    : 'If you did not request this, you can safely ignore this email — your account remains secure.';
+  const footer = isTr
+    ? 'Bu e-posta Buaze tarafından otomatik gönderilmiştir.'
+    : 'This email was sent automatically by Buaze.';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="${isTr ? 'tr' : 'en'}">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f3f4f6;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;width:100%;">
+          <tr>
+            <td style="background:#111827;border-radius:16px 16px 0 0;padding:28px 36px;">
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background:#FDBF1D;border-radius:8px;width:36px;height:36px;text-align:center;vertical-align:middle;">
+                    <span style="font-size:20px;font-weight:900;color:#111827;line-height:36px;display:block;">B</span>
+                  </td>
+                  <td style="padding-left:12px;vertical-align:middle;">
+                    <span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">Buaze</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#ffffff;padding:32px 36px 8px;">
+              <p style="margin:0;color:#9ca3af;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">${title}</p>
+              <h1 style="margin:8px 0 16px;color:#111827;font-size:24px;font-weight:800;letter-spacing:-0.3px;">${title}</h1>
+              <p style="margin:0 0 24px;color:#4b5563;font-size:15px;line-height:1.6;">${intro}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#ffffff;padding:0 36px 24px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="background:#FDBF1D;border-radius:14px;padding:24px;text-align:center;">
+                    <p style="margin:0 0 8px;color:#111827;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;">${codeLabel}</p>
+                    <p style="margin:0;color:#111827;font-size:40px;font-weight:900;letter-spacing:12px;font-family:'Courier New',monospace;">${params.code}</p>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:16px 0 0;color:#6b7280;font-size:13px;text-align:center;">${validity}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#ffffff;padding:0 36px 32px;text-align:center;">
+              <a href="${params.resetUrl}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 32px;border-radius:12px;letter-spacing:0.3px;">${cta} →</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#ffffff;padding:0 36px 32px;">
+              <div style="border-top:1px solid #e5e7eb;padding-top:20px;">
+                <p style="margin:0;color:#9ca3af;font-size:13px;line-height:1.6;">${ignore}</p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#111827;border-radius:0 0 16px 16px;padding:20px 36px;">
+              <p style="margin:0;font-size:12px;color:#6b7280;">${footer}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const text = `${title}\n\n${intro}\n\n${codeLabel}: ${params.code}\n\n${validity}\n\n${cta}: ${params.resetUrl}\n\n${ignore}`;
+
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || `"Buaze" <hello@buaze.com>`,
+      to: params.to,
+      subject,
+      text,
+      html,
+    });
+    return true;
+  } catch (error) {
+    console.error('[Buaze] Failed to send password reset email:', error);
+    return false;
+  }
+}
