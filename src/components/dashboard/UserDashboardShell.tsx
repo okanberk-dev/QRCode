@@ -135,13 +135,13 @@ export default function UserDashboardShell({ locale, user, children }: UserDashb
   );
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] lg:flex">
+    <div className="min-h-screen bg-[#FCFBF7] lg:flex lg:h-screen lg:overflow-hidden">
       {/* Desktop sidebar */}
-      <aside className="hidden h-screen w-64 shrink-0 border-r border-white/5 lg:flex">
+      <aside className="hidden h-full w-64 shrink-0 border-r border-white/5 lg:flex">
         <SidebarContent />
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto">
         {/* Mobile top bar */}
         <div className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-200/60 bg-white/95 px-4 py-3 backdrop-blur lg:hidden shadow-sm">
           <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">

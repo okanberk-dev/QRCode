@@ -98,6 +98,24 @@ export default function DashboardQrPage() {
         noHistory: 'No QR history yet.',
       };
 
+  const LS_KEY = (id: string) => `qr_history_${id}`;
+
+  const readLocalHistory = (restaurantId: string): QrHistoryItem[] => {
+    try {
+      return JSON.parse(localStorage.getItem(LS_KEY(restaurantId)) || '[]');
+    } catch {
+      return [];
+    }
+  };
+
+  const saveToLocalHistory = (restaurantId: string, item: QrHistoryItem) => {
+    try {
+      const existing = readLocalHistory(restaurantId);
+      const updated = [item, ...existing.filter((e) => e.id !== item.id)].slice(0, 30);
+      localStorage.setItem(LS_KEY(restaurantId), JSON.stringify(updated));
+    } catch {}
+  };
+
   const fetchHistory = async (restaurantId: string) => {
     if (!restaurantId) {
       setHistory([]);
@@ -107,15 +125,22 @@ export default function DashboardQrPage() {
     setHistoryLoading(true);
     try {
       const response = await fetch(`/api/restaurants/${restaurantId}/qr/history`);
-      if (!response.ok) {
-        setHistory([]);
-        return;
-      }
+      const apiItems: QrHistoryItem[] = response.ok ? (await response.json()) : [];
+      const localItems = readLocalHistory(restaurantId);
 
-      const data = await response.json();
-      setHistory(Array.isArray(data) ? data : []);
+      // Merge: prefer API, fill in from local, dedupe by id, sort newest first
+      const seen = new Set<string>();
+      const merged: QrHistoryItem[] = [];
+      for (const item of [...apiItems, ...localItems]) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          merged.push(item);
+        }
+      }
+      merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setHistory(merged.slice(0, 30));
     } catch {
-      setHistory([]);
+      setHistory(readLocalHistory(restaurantId));
     } finally {
       setHistoryLoading(false);
     }
@@ -146,6 +171,15 @@ export default function DashboardQrPage() {
 
       const svg = await response.text();
       setQrSvg(svg);
+
+      // Persist to localStorage so history survives without the DB table
+      const newItem: QrHistoryItem = {
+        id: `local_${Date.now()}`,
+        qrUrl: qrTargetUrl,
+        tableNumber: tableNumber || null,
+        createdAt: new Date().toISOString(),
+      };
+      saveToLocalHistory(selectedId, newItem);
       await fetchHistory(selectedId);
     } catch (error) {
       console.error(error);
@@ -338,23 +372,28 @@ export default function DashboardQrPage() {
               {historyLoading && <Loader2 className="h-5 w-5 animate-spin text-[#111827]" />}
             </div>
 
-            <div className="space-y-3">
+            <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
               {history.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-gray-200 bg-[#FCFBF7] px-4 py-8 text-center text-sm font-bold text-[#6b6760]">
                   {copy.noHistory}
                 </div>
               ) : (
                 history.map((item) => (
-                  <div key={item.id} className="flex flex-col gap-2 rounded-2xl border border-gray-100 bg-[#FCFBF7] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-black text-[#111827]">{item.qrUrl}</p>
-                      <p className="mt-1 text-xs font-bold text-[#6b6760]">
+                  <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-[#FCFBF7] px-4 py-3">
+                    <div className="shrink-0 rounded-xl bg-white border border-gray-200 px-2.5 py-2 text-center min-w-[64px]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#ada89f]">
+                        {new Date(item.createdAt).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'short' })}
+                      </p>
+                      <p className="text-xs font-black text-[#111827]">
+                        {new Date(item.createdAt).toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-black text-[#111827]">{item.qrUrl}</p>
+                      <p className="mt-0.5 text-[10px] font-bold text-[#6b6760]">
                         {item.tableNumber ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}` : (locale === 'tr' ? 'Genel QR' : 'General QR')}
                       </p>
                     </div>
-                    <span className="text-xs font-black uppercase tracking-[0.18em] text-[#ada89f]">
-                      {new Date(item.createdAt).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')}
-                    </span>
                   </div>
                 ))
               )}
@@ -375,7 +414,7 @@ export default function DashboardQrPage() {
               <Loader2 className="h-10 w-10 animate-spin text-[#111827]" />
             ) : qrSvg ? (
               <div className="w-full space-y-4 sm:space-y-5 text-center">
-                <div className="mx-auto max-w-[220px] sm:max-w-[280px]" dangerouslySetInnerHTML={{ __html: qrSvg }} />
+                <div className="mx-auto w-full max-w-[220px] overflow-hidden sm:max-w-[280px] [&>svg]:h-auto [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: qrSvg }} />
                 <div>
                   <p className="text-lg font-black text-[#111827]">{selectedRestaurant?.name}</p>
                   {tableNumber && (
