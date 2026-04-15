@@ -9,8 +9,19 @@ import * as jose from 'jose';
 const DEV_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
 
 function getSecretBytes(): Uint8Array {
-  const secret = process.env.JWT_SECRET;
-  if (secret) return new TextEncoder().encode(secret);
+  const secret = process.env.JWT_SECRET?.trim();
+  if (secret) {
+    const maybeBase64 = /^[A-Za-z0-9+/=]+$/.test(secret) && secret.length % 4 === 0;
+    if (maybeBase64) {
+      const binary = atob(secret);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    }
+    return new TextEncoder().encode(secret);
+  }
   if (process.env.NODE_ENV === 'production') {
     throw new Error('[Buaze] JWT_SECRET is required in production.');
   }

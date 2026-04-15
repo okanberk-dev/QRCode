@@ -21,13 +21,19 @@ let warnedAboutFallback = false;
 let warnedAboutShortSecret = false;
 
 export function getSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET;
+  const rawSecret = process.env.JWT_SECRET;
+  const secret = rawSecret?.trim();
   if (secret) {
-    if (secret.length < 24 && !warnedAboutShortSecret) {
+    // Support base64-encoded secrets (common in deployment UIs) while also
+    // accepting plain text secrets for backwards compatibility.
+    const maybeBase64 = /^[A-Za-z0-9+/=]+$/.test(secret) && secret.length % 4 === 0;
+    const secretBytes = maybeBase64 ? Uint8Array.from(Buffer.from(secret, 'base64')) : new TextEncoder().encode(secret);
+
+    if (secretBytes.length < 24 && !warnedAboutShortSecret) {
       warnedAboutShortSecret = true;
       console.warn('[Buaze] JWT_SECRET is too short (< 24 chars). Use a 32+ byte random value.');
     }
-    return new TextEncoder().encode(secret);
+    return secretBytes;
   }
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
