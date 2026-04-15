@@ -29,10 +29,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!process.env.JWT_SECRET) {
-      console.warn('SECURITY WARNING: Using default JWT_SECRET. Please set one in Vercel.');
-    }
-
     // Only AdminUser accounts can authenticate to /admin.
     let admin = null;
     try {

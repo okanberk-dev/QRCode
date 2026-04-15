@@ -13,27 +13,34 @@ export interface PanelActor {
   source: 'admin' | 'user';
 }
 
-// Fallback so that existing deployments (e.g. Vercel previews where the env
-// var has not been wired up yet) keep functioning. It is intentionally a long,
-// opaque string and is logged loudly — but we do not hard-fail, because that
-// would lock users out of the admin panel immediately after deploy.
-const DEFAULT_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
+// Development-only fallback. Never used in production — getSecret() hard-fails
+// if JWT_SECRET is not set when NODE_ENV === 'production'. Keeping the string
+// here lets local `npm run dev` work without env setup.
+const DEV_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
 let warnedAboutFallback = false;
+let warnedAboutShortSecret = false;
 
-function getSecret(): Uint8Array {
+export function getSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    if (!warnedAboutFallback) {
-      warnedAboutFallback = true;
-      console.warn('[Buaze] JWT_SECRET is not configured. Using the insecure fallback — set JWT_SECRET in your environment to a 32+ byte random value as soon as possible.');
+  if (secret) {
+    if (secret.length < 24 && !warnedAboutShortSecret) {
+      warnedAboutShortSecret = true;
+      console.warn('[Buaze] JWT_SECRET is too short (< 24 chars). Use a 32+ byte random value.');
     }
-    return new TextEncoder().encode(DEFAULT_FALLBACK_SECRET);
+    return new TextEncoder().encode(secret);
   }
-  if (secret.length < 24 && !warnedAboutFallback) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      '[Buaze] JWT_SECRET is required in production. Set JWT_SECRET in your environment to a 32+ byte random value.',
+    );
+  }
+  if (!warnedAboutFallback) {
     warnedAboutFallback = true;
-    console.warn('[Buaze] JWT_SECRET is too short (< 24 chars). Use a 32+ byte random value.');
+    console.warn(
+      '[Buaze] JWT_SECRET is not set. Using the insecure DEVELOPMENT fallback. Set JWT_SECRET to a 32+ byte random value before deploying.',
+    );
   }
-  return new TextEncoder().encode(secret);
+  return new TextEncoder().encode(DEV_FALLBACK_SECRET);
 }
 
 export async function signJwt(payload: Record<string, unknown>) {

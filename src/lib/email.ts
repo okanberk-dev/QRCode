@@ -86,7 +86,44 @@ export async function sendFeedbackNotification(data: NotificationParams) {
   const ratingColor = getRatingColor(data.rating);
   const ratingLabel = getRatingLabel(data.rating);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
-  const subject = `⚠️ ${data.rating} Yıldız — ${restaurantName}${data.branch ? ` / ${data.branch}` : ''} yeni düşük değerlendirme`;
+
+  // Escalate the subject line by severity. Inbox scan-ability matters more
+  // than politeness for low ratings — owners need to spot 1-2 star feedback
+  // instantly so they can respond before the customer leaves a public review.
+  const isCritical = data.rating <= 2;
+  const subjectPrefix = data.rating === 1
+    ? '🚨 ACİL'
+    : data.rating === 2
+      ? '⚠️ DÜŞÜK PUAN'
+      : '⚠️';
+  const subject = `${subjectPrefix} — ${data.rating} Yıldız / ${restaurantName}${data.branch ? ` · ${data.branch}` : ''}`;
+
+  // For 1-2 star reviews, add a prominent "action required" banner at the
+  // top of the email directing the owner to respond quickly.
+  const criticalBanner = isCritical
+    ? `
+          <tr>
+            <td style="background:#ffffff;padding:20px 40px 0;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fef2f2;border:2px solid #fca5a5;border-radius:14px;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="vertical-align:middle;padding-right:12px;">
+                          <div style="background:#ef4444;border-radius:10px;width:40px;height:40px;text-align:center;line-height:40px;color:#fff;font-size:20px;font-weight:900;">!</div>
+                        </td>
+                        <td style="vertical-align:middle;">
+                          <p style="margin:0;font-size:14px;font-weight:900;color:#991b1b;letter-spacing:-0.2px;">Acil Aksiyon Gerekiyor</p>
+                          <p style="margin:3px 0 0;font-size:12px;color:#b91c1c;line-height:1.5;">Müşteri memnuniyetsiz. İlk 60 dakikada iletişime geçmek hem yorumu kurtarma şansınızı hem de müşteri sadakatini belirgin şekilde artırır.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`
+    : '';
 
   const htmlBody = `
 <!DOCTYPE html>
@@ -133,6 +170,8 @@ export async function sendFeedbackNotification(data: NotificationParams) {
               </div>
             </td>
           </tr>
+
+          ${criticalBanner}
 
           <!-- RATING SECTION -->
           <tr>
@@ -222,8 +261,8 @@ export async function sendFeedbackNotification(data: NotificationParams) {
           <!-- CTA BUTTON -->
           <tr>
             <td style="background:#ffffff;padding:0 40px 40px;text-align:center;">
-              <a href="${appUrl}/admin/dashboard" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 32px;border-radius:12px;letter-spacing:0.3px;">
-                Panelde İncele →
+              <a href="${appUrl}/admin/dashboard" style="display:inline-block;background:${isCritical ? '#ef4444' : '#111827'};color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 32px;border-radius:12px;letter-spacing:0.3px;">
+                ${isCritical ? 'Hemen İncele ve Yanıtla →' : 'Panelde İncele →'}
               </a>
               <p style="margin:12px 0 0;font-size:12px;color:#9ca3af;">Bu bildirimi değerlendirme panelinden yönetebilirsiniz.</p>
             </td>
@@ -255,7 +294,7 @@ export async function sendFeedbackNotification(data: NotificationParams) {
   `;
 
   const textBody = `
-${restaurantName} — Yeni ${data.rating} Yıldız Değerlendirme
+${isCritical ? '🚨 ACİL AKSİYON GEREKİYOR\n' : ''}${restaurantName} — Yeni ${data.rating} Yıldız Değerlendirme
 
 Puan: ${data.rating}/5 — ${ratingLabel}
 Şube: ${data.branch || 'Belirtilmedi'}
@@ -265,7 +304,7 @@ Tarih: ${new Date().toLocaleString('tr-TR')}
 Yorum:
 ${data.comment && data.comment !== 'High Rating Redirect' ? data.comment : 'Yorum bırakılmadı.'}
 
-Panelde inceleyin: ${appUrl}/admin/dashboard
+${isCritical ? 'İlk 60 dakikada iletişime geçmek yorumu kurtarma şansınızı artırır.\n\n' : ''}Panelde inceleyin: ${appUrl}/admin/dashboard
   `;
 
   try {

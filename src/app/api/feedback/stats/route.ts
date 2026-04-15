@@ -59,6 +59,41 @@ export async function GET(req: NextRequest) {
     });
     const avgRating = aggregations._avg.rating?.toFixed(1) || '0.0';
 
+    // Aspect breakdown: Food / Service / Atmosphere averages + sample size.
+    // Feedback rows where the respective aspect is null are automatically
+    // excluded from the average and counted separately.
+    const aspectAggs = await prisma.feedback.aggregate({
+      _avg: {
+        foodRating: true,
+        serviceRating: true,
+        atmosphereRating: true,
+      },
+      _count: {
+        foodRating: true,
+        serviceRating: true,
+        atmosphereRating: true,
+      },
+      where: dateFilter,
+    });
+
+    const round1 = (n: number | null | undefined) =>
+      n === null || n === undefined ? null : parseFloat(n.toFixed(1));
+
+    const aspects = {
+      food: {
+        avg: round1(aspectAggs._avg.foodRating),
+        count: aspectAggs._count.foodRating ?? 0,
+      },
+      service: {
+        avg: round1(aspectAggs._avg.serviceRating),
+        count: aspectAggs._count.serviceRating ?? 0,
+      },
+      atmosphere: {
+        avg: round1(aspectAggs._avg.atmosphereRating),
+        count: aspectAggs._count.atmosphereRating ?? 0,
+      },
+    };
+
     // Distribution
     const distributionRaw = await prisma.feedback.groupBy({
       by: ['rating'],
@@ -154,7 +189,8 @@ export async function GET(req: NextRequest) {
       distribution,
       trends, // Detailed trend (count + rating)
       dayDistribution, // Distribution by day of week
-      wordCloud
+      wordCloud,
+      aspects, // Food / Service / Atmosphere breakdown
     });
   } catch (error) {
     console.error('Failed to fetch stats:', error);

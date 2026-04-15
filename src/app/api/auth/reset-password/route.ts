@@ -4,12 +4,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
-
-const FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
-
-function getSecret(): Uint8Array {
-  return new TextEncoder().encode(process.env.JWT_SECRET || FALLBACK_SECRET);
-}
+import { getSecret } from '@/lib/auth';
 
 function hashCode(code: string): string {
   return crypto.createHash('sha256').update(code).digest('hex');

@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Download, Loader2, TrendingUp, Calendar, BarChart3, ArrowRight } from 'lucide-react';
+import { Download, Loader2, TrendingUp, Calendar, BarChart3, ArrowRight, SlidersHorizontal } from 'lucide-react';
 import StatsCards from '@/components/admin/StatsCards';
 import FeedbackTable from '@/components/admin/FeedbackTable';
 import RatingChart from '@/components/admin/RatingChart';
 import WordCloud from '@/components/admin/WordCloud';
+import AspectBreakdown from '@/components/admin/AspectBreakdown';
 
 // Recharts components must be dynamic for SSR compatibility
 const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), { ssr: false, loading: () => <div className="h-[300px] w-full bg-gray-50 animate-pulse rounded-2xl" /> });
@@ -207,6 +208,24 @@ export default function AdminDashboard() {
       <div className="w-full">
         {stats && <StatsCards stats={stats} />}
       </div>
+
+      {/* ─── Aspect Breakdown: Food / Service / Atmosphere ─── */}
+      {stats?.aspects && (
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
+          <div className="mb-4 sm:mb-6 flex items-center gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <SlidersHorizontal size={20} strokeWidth={3} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">Kategori Analizi</h3>
+              <p className="text-[11px] sm:text-xs font-bold text-[#6b6760] mt-0.5">
+                Yemek, servis ve atmosfer puanlarınızı karşılaştırın.
+              </p>
+            </div>
+          </div>
+          <AspectBreakdown aspects={stats.aspects} locale={locale as 'tr' | 'en'} />
+        </div>
+      )}
 
       {/* ─── Advanced Charts ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
