@@ -74,7 +74,7 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
             </Link>
             
             <div className="space-y-2">
-              <h1 className="text-[32px] sm:text-[40px] md:text-[56px] font-black text-[#111827] leading-[1.1] tracking-tighter uppercase italic">
+              <h1 className="text-2xl sm:text-[40px] md:text-[56px] font-black text-[#111827] leading-[1.1] tracking-tighter uppercase italic break-words">
                 {t.feedbacks_title}
               </h1>
               <p className="text-[15px] sm:text-[17px] text-[#6b6760] font-bold max-w-md italic">

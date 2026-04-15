@@ -174,7 +174,7 @@ function SlugContent() {
             </div>
           </div>
           
-          <div className="w-64 h-1.5 bg-gray-100 rounded-full overflow-hidden mb-4">
+          <div className="w-[min(100%,16rem)] h-1.5 bg-gray-100 rounded-full overflow-hidden mb-4">
             <div className="h-full bg-blue-500 rounded-full animate-[progressBar_2s_linear_forwards]" />
           </div>
           

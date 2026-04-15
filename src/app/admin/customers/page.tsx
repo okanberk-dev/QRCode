@@ -146,8 +146,8 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-8 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-6 sm:p-8 rounded-[24px] border border-gray-100 shadow-sm">
+    <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">{t('customers')}</h1>
           <p className="text-[#6b6760] text-[13px] sm:text-[15px] font-bold">Tüm kayıtlı restoran sahiplerini, aboneliklerini ve ayarlarını yönetin.</p>
@@ -156,26 +156,26 @@ export default function CustomersPage() {
 
       {/* Search Bar */}
       <div className="relative group">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#ada89f] group-focus-within:text-[#111827] transition-colors" size={20} strokeWidth={3} />
-        <input 
+        <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#ada89f] group-focus-within:text-[#111827] transition-colors" size={20} strokeWidth={3} />
+        <input
           type="text"
           placeholder={t('search_placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border border-gray-100 rounded-[20px] pl-16 pr-8 py-5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#FDBF1D] transition-all"
+          className="w-full bg-white border border-gray-100 rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-4 sm:py-5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#FDBF1D] transition-all"
         />
       </div>
 
-      <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[720px]">
             <thead>
               <tr className="bg-[#111827] text-[11px] font-bold uppercase tracking-[0.2em] text-[#ada89f]">
-                <th className="px-4 py-6 sm:px-10">{t('customers')}</th>
-                <th className="px-4 py-6 sm:px-10">ÜYELİK DURUMU</th>
-                <th className="px-4 py-6 sm:px-10">{t('restaurants')}</th>
-                <th className="px-4 py-6 sm:px-10">{t('status')}</th>
-                <th className="px-4 py-6 sm:px-10 text-right">{t('actions')}</th>
+                <th className="px-3 py-4 sm:px-6 md:px-10">{t('customers')}</th>
+                <th className="px-3 py-4 sm:px-6 md:px-10">ÜYELİK DURUMU</th>
+                <th className="px-3 py-4 sm:px-6 md:px-10">{t('restaurants')}</th>
+                <th className="px-3 py-4 sm:px-6 md:px-10">{t('status')}</th>
+                <th className="px-3 py-4 sm:px-6 md:px-10 text-right">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-[#F7F4F0] text-sm">
@@ -184,7 +184,7 @@ export default function CustomersPage() {
                 c.email.toLowerCase().includes(searchTerm.toLowerCase())
               ).map(customer => (
                 <tr key={customer.id} className="hover:bg-[#FDBF1D]/5 transition-all group border-b border-[#F7F4F0]">
-                  <td className="px-4 py-6 sm:px-10">
+                  <td className="px-3 py-4 sm:px-6 md:px-10">
                     <div className="flex items-center gap-4">
                       <div className="hidden sm:flex w-14 h-14 rounded-2xl bg-[#111827] text-[#FDBF1D] items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
                         <User size={24} strokeWidth={2.5} />
@@ -195,7 +195,7 @@ export default function CustomersPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-6 sm:px-10">
+                  <td className="px-3 py-4 sm:px-6 md:px-10">
                     <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border flex items-center gap-2 w-max shadow-sm transition-all group-hover:translate-x-1 ${
                       customer.plan === 'yearly' 
                         ? 'bg-[#111827] text-[#FDBF1D] border-[#FDBF1D]/30 shadow-[0_4px_12px_rgba(253,191,29,0.2)]' 
@@ -258,9 +258,9 @@ export default function CustomersPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6">
-          <div className="bg-white rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 sm:p-10 border-b border-gray-100 bg-[#FCFBF7]">
+        <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6">
+          <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
+            <div className="p-5 sm:p-8 md:p-10 border-b border-gray-100 bg-[#FCFBF7]">
               <h2 className="text-xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">
                 Müşteriyi Düzenle
               </h2>
@@ -268,15 +268,15 @@ export default function CustomersPage() {
                 Şifre sıfırlama, plan değiştirme ve hesap durumları.
               </p>
             </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-6 sm:space-y-8 overflow-y-auto no-scrollbar">
+
+            <form onSubmit={handleSubmit} className="p-5 sm:p-8 md:p-10 space-y-5 sm:space-y-6 md:space-y-8 overflow-y-auto no-scrollbar">
               {error && (
                 <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-xs font-bold border border-red-200 text-center uppercase tracking-widest">
                   {error}
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                 <div className="space-y-2">
                   <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Kişi Adı</label>
                   <input
@@ -284,7 +284,7 @@ export default function CustomersPage() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold transition-all shadow-sm"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold transition-all shadow-sm"
                   />
                 </div>
                 <div className="space-y-2">
@@ -294,7 +294,7 @@ export default function CustomersPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold shadow-sm transition-all"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold shadow-sm transition-all"
                   />
                 </div>
                 <div className="space-y-2">
@@ -304,7 +304,7 @@ export default function CustomersPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     placeholder="Değişmeyecekse boş bırakın"
-                    className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold shadow-sm transition-all placeholder:text-[13px] placeholder:font-medium"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold shadow-sm transition-all placeholder:text-[13px] placeholder:font-medium"
                   />
                 </div>
                 
@@ -313,7 +313,7 @@ export default function CustomersPage() {
                   <select
                     value={formData.plan}
                     onChange={(e) => setFormData({...formData, plan: e.target.value})}
-                    className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
                   >
                     <option value="trial">Trial (Deneme)</option>
                     <option value="monthly">Monthly (Aylık)</option>
@@ -327,7 +327,7 @@ export default function CustomersPage() {
                   <select
                     value={formData.isActive ? '1' : '0'}
                     onChange={(e) => setFormData({...formData, isActive: e.target.value === '1'})}
-                    className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
                   >
                     <option value="1">Aktif</option>
                     <option value="0">Askıya Alındı</option>
@@ -340,7 +340,7 @@ export default function CustomersPage() {
                     type="date"
                     value={formData.trialEndsAt}
                     onChange={(e) => setFormData({...formData, trialEndsAt: e.target.value})}
-                    className="w-full px-6 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold shadow-sm transition-all text-[#6b6760]"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold shadow-sm transition-all text-[#6b6760]"
                   />
                 </div>
               </div>
@@ -351,7 +351,7 @@ export default function CustomersPage() {
                   <p className="text-xs text-[#6b6760] font-bold">Bu kullanıcıya ait işletmeleri seçin. Seçilmemiş mevcut bağlantılar kaldırılır.</p>
                 </div>
 
-                <div className="max-h-56 overflow-y-auto rounded-2xl border border-gray-200 bg-[#FCFBF7] p-3 space-y-2">
+                <div className="max-h-64 sm:max-h-80 overflow-y-auto rounded-2xl border border-gray-200 bg-[#FCFBF7] p-2 sm:p-3 space-y-2 sm:space-y-3">
                   {restaurants.length === 0 ? (
                     <div className="px-3 py-4 text-sm text-[#6b6760] font-bold">Bağlanabilir işletme bulunamadı.</div>
                   ) : (

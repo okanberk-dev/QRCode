@@ -217,15 +217,15 @@ export default function DashboardQrPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
-      <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-        <h1 className="text-2xl font-black tracking-tight text-[#111827] sm:text-3xl">{copy.title}</h1>
+    <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8 px-3 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-10">
+      <div className="rounded-[24px] sm:rounded-[28px] border border-gray-100 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-[#111827]">{copy.title}</h1>
         <p className="mt-2 max-w-2xl text-sm font-bold text-[#6b6760] sm:text-base">{copy.subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-6">
-          <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="order-2 lg:order-1 space-y-4 sm:space-y-6">
+          <div className="rounded-[24px] sm:rounded-[28px] border border-gray-100 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
                 <QrCode size={20} strokeWidth={3} />
@@ -233,13 +233,13 @@ export default function DashboardQrPage() {
               <h2 className="text-lg font-black text-[#111827] sm:text-xl">{copy.qrPreview}</h2>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <label className="space-y-2">
+            <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2">
+              <label className="space-y-2 block">
                 <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{copy.business}</span>
                 <select
                   value={selectedId}
                   onChange={(event) => setSelectedId(event.target.value)}
-                  className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                  className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
                 >
                   <option value="">{locale === 'tr' ? 'İşletme seçin' : 'Select a location'}</option>
                   {restaurants.map((restaurant) => (
@@ -252,11 +252,11 @@ export default function DashboardQrPage() {
 
               <div className="space-y-2">
                 <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{copy.table}</span>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => setTableNumber((value) => (value && Number(value) > 1 ? String(Number(value) - 1) : ''))}
-                    className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#111827] shadow-sm"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#111827] shadow-sm"
                   >
                     <Minus size={18} strokeWidth={2.75} />
                   </button>
@@ -265,12 +265,12 @@ export default function DashboardQrPage() {
                     value={tableNumber}
                     onChange={(event) => setTableNumber(event.target.value.replace(/\D/g, ''))}
                     placeholder={locale === 'tr' ? 'Genel' : 'General'}
-                    className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-center text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                    className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-[#FCFBF7] px-3 sm:px-5 py-3.5 sm:py-4 text-center text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
                   />
                   <button
                     type="button"
                     onClick={() => setTableNumber((value) => (value ? String(Number(value) + 1) : '1'))}
-                    className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#111827] shadow-sm"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#111827] shadow-sm"
                   >
                     <Plus size={18} strokeWidth={2.75} />
                   </button>
@@ -293,32 +293,32 @@ export default function DashboardQrPage() {
               <p className="truncate text-xs font-bold text-white/70">{qrTargetUrl || 'https://buaze.com/r/...'}</p>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={generateQr}
                 disabled={generating || !selectedId}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#111827] px-5 py-3 text-sm font-black text-white transition-all disabled:opacity-50"
+                className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#111827] px-4 sm:px-5 py-3 text-xs sm:text-sm font-black text-white transition-all disabled:opacity-50"
               >
                 {generating ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} strokeWidth={2.75} />}
                 {copy.refresh}
               </button>
-              <button type="button" onClick={() => downloadQr('svg')} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm">
+              <button type="button" onClick={() => downloadQr('svg')} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#111827] shadow-sm">
                 <Download size={18} strokeWidth={2.75} />
-                {copy.downloadSvg}
+                SVG
               </button>
-              <button type="button" onClick={() => downloadQr('png')} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm">
+              <button type="button" onClick={() => downloadQr('png')} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#111827] shadow-sm">
                 <Download size={18} strokeWidth={2.75} />
-                {copy.downloadPng}
+                PNG
               </button>
-              <button type="button" onClick={handlePrint} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm">
+              <button type="button" onClick={handlePrint} className="col-span-2 sm:col-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#111827] shadow-sm">
                 <Printer size={18} strokeWidth={2.75} />
                 {copy.print}
               </button>
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+          <div className="rounded-[24px] sm:rounded-[28px] border border-gray-100 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
             <div className="mb-5 flex items-center justify-between gap-3">
               <h2 className="text-lg font-black text-[#111827] sm:text-xl">{copy.history}</h2>
               {historyLoading && <Loader2 className="h-5 w-5 animate-spin text-[#111827]" />}
@@ -348,20 +348,20 @@ export default function DashboardQrPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#111827] text-[#FDBF1D]">
+        <div className="order-1 lg:order-2 rounded-[24px] sm:rounded-[28px] border border-gray-100 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
+          <div className="mb-4 sm:mb-5 flex items-center gap-3">
+            <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#111827] text-[#FDBF1D]">
               <QrCode size={20} strokeWidth={3} />
             </div>
             <h2 className="text-lg font-black text-[#111827] sm:text-xl">{copy.qrPreview}</h2>
           </div>
 
-          <div className="flex min-h-[360px] items-center justify-center rounded-[28px] border border-dashed border-gray-200 bg-[#FCFBF7] p-6">
+          <div className="flex min-h-[260px] sm:min-h-[360px] items-center justify-center rounded-[24px] sm:rounded-[28px] border border-dashed border-gray-200 bg-[#FCFBF7] p-4 sm:p-6">
             {generating ? (
               <Loader2 className="h-10 w-10 animate-spin text-[#111827]" />
             ) : qrSvg ? (
-              <div className="w-full space-y-5 text-center">
-                <div className="mx-auto max-w-[280px]" dangerouslySetInnerHTML={{ __html: qrSvg }} />
+              <div className="w-full space-y-4 sm:space-y-5 text-center">
+                <div className="mx-auto max-w-[220px] sm:max-w-[280px]" dangerouslySetInnerHTML={{ __html: qrSvg }} />
                 <div>
                   <p className="text-lg font-black text-[#111827]">{selectedRestaurant?.name}</p>
                   {tableNumber && (

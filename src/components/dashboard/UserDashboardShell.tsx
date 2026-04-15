@@ -162,7 +162,7 @@ export default function UserDashboardShell({ locale, user, children }: UserDashb
           </button>
         </div>
 
-        <main className="min-w-0 flex-1 overflow-x-hidden pb-24 lg:pb-0">
+        <main className="min-w-0 flex-1 overflow-x-hidden pb-28 lg:pb-0">
           {children}
         </main>
       </div>
@@ -176,7 +176,10 @@ export default function UserDashboardShell({ locale, user, children }: UserDashb
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/60 bg-[#111827]/95 px-2 py-2 backdrop-blur lg:hidden">
+      <div
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/60 bg-[#111827]/95 px-2 pt-2 backdrop-blur lg:hidden"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)' }}
+      >
         <div className="flex items-center justify-between gap-1">
           {primaryMobileItems.map((item) => {
             const Icon = item.icon;

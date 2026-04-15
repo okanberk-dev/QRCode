@@ -277,10 +277,10 @@ export default function DashboardRestaurantsPage() {
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
-            <div className="relative border-b border-gray-100 bg-[#FCFBF7] p-6 sm:p-8">
-              <h2 className="text-2xl font-black text-[#111827]">{copy.add}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[20px] sm:rounded-[28px] bg-white shadow-2xl">
+            <div className="relative border-b border-gray-100 bg-[#FCFBF7] p-5 sm:p-6 md:p-8">
+              <h2 className="text-xl sm:text-2xl font-black text-[#111827] pr-10">{copy.add}</h2>
               <button
                 type="button"
                 onClick={() => {
@@ -293,7 +293,7 @@ export default function DashboardRestaurantsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-5 overflow-y-auto p-6 sm:p-8">
+            <form onSubmit={handleCreate} className="space-y-4 sm:space-y-5 overflow-y-auto p-5 sm:p-6 md:p-8">
               {error && (
                 <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm font-bold text-red-600">
                   {error}
@@ -308,14 +308,14 @@ export default function DashboardRestaurantsPage() {
                     required
                     value={formData.name}
                     onChange={(event) => handleNameChange(event.target.value)}
-                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
                   />
                 </label>
 
                 <label className="space-y-2 sm:col-span-2">
                   <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">URL Slug</span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4">
-                    <span className="shrink-0 text-xs font-black text-[#6b6760]">buaze.com/r/</span>
+                  <div className="flex items-center gap-2 sm:gap-3 rounded-2xl border border-gray-200 bg-[#FCFBF7] px-3 sm:px-4">
+                    <span className="shrink-0 text-[11px] sm:text-xs font-black text-[#6b6760]">buaze.com/r/</span>
                     <input
                       type="text"
                       required
@@ -324,7 +324,7 @@ export default function DashboardRestaurantsPage() {
                         setFormData((prev) => ({ ...prev, slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }));
                         setIsManualSlug(true);
                       }}
-                      className="w-full bg-transparent py-4 text-sm font-bold text-[#111827] outline-none"
+                      className="min-w-0 w-full bg-transparent py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none"
                     />
                   </div>
                 </label>
@@ -335,7 +335,7 @@ export default function DashboardRestaurantsPage() {
                     type="text"
                     value={formData.category}
                     onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
-                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
                   />
                 </label>
 
@@ -345,7 +345,7 @@ export default function DashboardRestaurantsPage() {
                     type="email"
                     value={formData.notificationEmail}
                     onChange={(event) => setFormData((prev) => ({ ...prev, notificationEmail: event.target.value }))}
-                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
                   />
                 </label>
 
@@ -355,7 +355,7 @@ export default function DashboardRestaurantsPage() {
                     type="text"
                     value={formData.address}
                     onChange={(event) => setFormData((prev) => ({ ...prev, address: event.target.value }))}
-                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
                   />
                 </label>
 
@@ -365,7 +365,7 @@ export default function DashboardRestaurantsPage() {
                     type="text"
                     value={formData.phone}
                     onChange={(event) => setFormData((prev) => ({ ...prev, phone: event.target.value }))}
-                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
                   />
                 </label>
 

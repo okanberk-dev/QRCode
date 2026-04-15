@@ -27,7 +27,7 @@ export default function WordCloud({ words }: WordCloudProps) {
         <span className="w-2 h-6 bg-red-500 rounded-full"></span>
         Popüler Geri Bildirimler
       </h3>
-      <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 p-4 min-h-[200px]">
+      <div className="flex flex-wrap justify-center items-center gap-x-2 sm:gap-x-4 gap-y-1 sm:gap-y-2 p-2 sm:p-4 min-h-[160px] sm:min-h-[200px]">
         {words.map((word, idx) => {
           // Normalize size (from 0.8rem to 2.5rem)
           const size = 0.8 + (word.value / maxVal) * 1.7;
