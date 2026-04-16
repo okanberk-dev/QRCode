@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         console.error('[FORGOT_PASSWORD] SMTP failed for', user.email);
       }
 
-      return NextResponse.json({ ok: true, token });
+      return NextResponse.json({ ok: true });
     }
 
     // User doesn't exist — pretend success after a small delay to blunt timing attacks

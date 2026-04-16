@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
         try {
           const adminCount = await prisma.adminUser.count();
           if (adminCount === 0) {
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const hashedPassword = await bcrypt.hash(password, 12);
             admin = await prisma.adminUser.create({
               data: {
                 username: envUsername,
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24,
+        maxAge: 60 * 60 * 24 * 7, // 7 days — matches JWT expiry
         path: '/'
       });
 
@@ -124,6 +124,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Kullanıcı adı veya şifre hatalı' }, { status: 401 });
   } catch (error: any) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: error?.message || 'Sunucu hatası veya veritabanı bağlantı sorunu' }, { status: 500 });
+    return NextResponse.json({ error: 'Sunucu hatası veya veritabanı bağlantı sorunu' }, { status: 500 });
   }
 }

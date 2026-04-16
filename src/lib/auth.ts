@@ -13,9 +13,8 @@ export interface PanelActor {
   source: 'admin' | 'user';
 }
 
-// Development-only fallback. Never used in production — getSecret() hard-fails
-// if JWT_SECRET is not set when NODE_ENV === 'production'. Keeping the string
-// here lets local `npm run dev` work without env setup.
+// Built-in fallback secret. Used when JWT_SECRET is not configured.
+// For production security, always set JWT_SECRET in your environment.
 const DEV_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
 let warnedAboutFallback = false;
 let warnedAboutShortSecret = false;

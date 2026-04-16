@@ -4,8 +4,6 @@ import * as jose from 'jose';
 
 // Mirror of lib/auth.ts secret resolution. Kept inline so the middleware
 // (edge runtime) doesn't pull in Prisma or Node-only deps.
-// In production NODE_ENV this will throw if JWT_SECRET is missing — which is
-// the desired behaviour: without a stable secret we cannot verify tokens.
 const DEV_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
 
 function getSecretBytes(): Uint8Array {
@@ -14,8 +12,8 @@ function getSecretBytes(): Uint8Array {
   return new TextEncoder().encode(DEV_FALLBACK_SECRET);
 }
 
-function isAdminRole(role: unknown): boolean {
-  return role === 'superadmin' || role === 'manager';
+function isAllowedAdminPanelRole(role: unknown): boolean {
+  return role === 'superadmin' || role === 'manager' || role === 'restaurant_owner';
 }
 
 // Admin sub-routes that DO NOT require auth.
@@ -41,10 +39,10 @@ export async function middleware(req: NextRequest) {
 
   try {
     const { payload } = await jose.jwtVerify(token, getSecretBytes());
-    if (!isAdminRole(payload.role)) {
+    if (!isAllowedAdminPanelRole(payload.role)) {
       const loginUrl = new URL('/admin', req.url);
       const res = NextResponse.redirect(loginUrl);
-      res.cookies.delete('admin_token');
+      res.cookies.set('admin_token', '', { path: '/', maxAge: 0 });
       return res;
     }
     return NextResponse.next();
@@ -52,7 +50,7 @@ export async function middleware(req: NextRequest) {
     // Invalid / expired / tampered token — clear it and send to login
     const loginUrl = new URL('/admin', req.url);
     const res = NextResponse.redirect(loginUrl);
-    res.cookies.delete('admin_token');
+    res.cookies.set('admin_token', '', { path: '/', maxAge: 0 });
     return res;
   }
 }
