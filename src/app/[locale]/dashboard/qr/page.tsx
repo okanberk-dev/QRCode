@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Check, Copy, Download, Loader2, Minus, Plus, Printer, QrCode, RefreshCw } from 'lucide-react';
+import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw } from 'lucide-react';
 
 interface Restaurant {
   id: string;
   slug: string;
   name: string;
+  primaryColor?: string;
 }
 
 interface QrHistoryItem {
@@ -33,6 +34,8 @@ export default function DashboardQrPage() {
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [qrError, setQrError] = useState('');
+  const [useBrandColor, setUseBrandColor] = useState(true);
+  const [customDark, setCustomDark] = useState('#000000');
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
   const safeEnvAppUrl = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
     ? envAppUrl
@@ -64,6 +67,10 @@ export default function DashboardQrPage() {
     return `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}`;
   }, [appUrl, selectedRestaurant, tableNumber]);
 
+  const activeDark = useBrandColor && selectedRestaurant?.primaryColor
+    ? selectedRestaurant.primaryColor
+    : customDark;
+
   const copy = locale === 'tr'
     ? {
         title: 'QR Kod Yönetimi',
@@ -80,6 +87,9 @@ export default function DashboardQrPage() {
         print: 'Yazdır',
         qrPreview: 'QR Önizleme',
         noHistory: 'Henüz QR üretim kaydı yok.',
+        brandColor: 'Marka Rengi',
+        customColor: 'Özel Renk',
+        colorLabel: 'QR Renk',
       }
     : {
         title: 'QR Management',
@@ -96,6 +106,9 @@ export default function DashboardQrPage() {
         print: 'Print',
         qrPreview: 'QR Preview',
         noHistory: 'No QR history yet.',
+        brandColor: 'Brand Color',
+        customColor: 'Custom Color',
+        colorLabel: 'QR Color',
       };
 
   const LS_KEY = (id: string) => `qr_history_${id}`;
@@ -152,7 +165,7 @@ export default function DashboardQrPage() {
     setGenerating(true);
     setQrError('');
     try {
-      const query = new URLSearchParams({ format: 'svg' });
+      const query = new URLSearchParams({ format: 'svg', dark: activeDark });
       if (tableNumber) query.append('table', tableNumber);
 
       const response = await fetch(`/api/restaurants/${selectedId}/qr?${query.toString()}`);
@@ -193,7 +206,7 @@ export default function DashboardQrPage() {
     if (selectedId) {
       generateQr();
     }
-  }, [selectedId, tableNumber]);
+  }, [selectedId, tableNumber, activeDark]);
 
   useEffect(() => {
     if (selectedId) {
@@ -204,7 +217,7 @@ export default function DashboardQrPage() {
   const downloadQr = async (format: 'svg' | 'png') => {
     if (!selectedId) return;
 
-    const query = new URLSearchParams({ format });
+    const query = new URLSearchParams({ format, dark: activeDark });
     if (tableNumber) query.append('table', tableNumber);
 
     const response = await fetch(`/api/restaurants/${selectedId}/qr?${query.toString()}`);
@@ -323,6 +336,55 @@ export default function DashboardQrPage() {
                     <Plus size={18} strokeWidth={2.75} />
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* ─── Color Picker ─── */}
+            <div className="mt-5 space-y-2">
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">
+                <Palette size={12} className="inline -mt-0.5 mr-1" />{copy.colorLabel}
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {selectedRestaurant?.primaryColor && (
+                  <button
+                    type="button"
+                    onClick={() => setUseBrandColor(true)}
+                    className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all ${
+                      useBrandColor
+                        ? 'border-[#111827] bg-[#111827] text-white shadow-md'
+                        : 'border-gray-200 bg-white text-[#6b6760] hover:border-gray-300'
+                    }`}
+                  >
+                    <span
+                      className="inline-block h-4 w-4 rounded-md border border-white/30"
+                      style={{ background: selectedRestaurant.primaryColor }}
+                    />
+                    {copy.brandColor}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setUseBrandColor(false)}
+                  className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all ${
+                    !useBrandColor
+                      ? 'border-[#111827] bg-[#111827] text-white shadow-md'
+                      : 'border-gray-200 bg-white text-[#6b6760] hover:border-gray-300'
+                  }`}
+                >
+                  <span
+                    className="inline-block h-4 w-4 rounded-md border border-gray-300"
+                    style={{ background: customDark }}
+                  />
+                  {copy.customColor}
+                </button>
+                {!useBrandColor && (
+                  <input
+                    type="color"
+                    value={customDark}
+                    onChange={(e) => setCustomDark(e.target.value)}
+                    className="h-10 w-10 cursor-pointer rounded-xl border border-gray-200 bg-transparent p-0.5"
+                  />
+                )}
               </div>
             </div>
 
