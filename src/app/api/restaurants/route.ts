@@ -44,10 +44,15 @@ export async function GET(req: NextRequest) {
 
   try {
     const where: any = {};
-    if (actor.role === 'manager' && actor.restaurantId) {
+    if (actor.role === 'superadmin') {
+      // superadmin sees all restaurants — no filter
+    } else if (actor.role === 'manager' && actor.restaurantId) {
       where.id = actor.restaurantId;
     } else if (actor.role === 'restaurant_owner') {
       where.userId = actor.id;
+    } else {
+      // Unknown role — deny access
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
     const restaurants = await prisma.restaurant.findMany({

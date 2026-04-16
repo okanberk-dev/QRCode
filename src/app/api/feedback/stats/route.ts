@@ -24,7 +24,12 @@ export async function GET(req: NextRequest) {
     }
 
     // ─── IDOR Security Override ───
-    if (actor.role === 'manager') {
+    if (actor.role === 'superadmin') {
+      // superadmin — optionally filter to a specific restaurant
+      if (restaurantIdParam && restaurantIdParam !== 'all') {
+        dateFilter.restaurantId = restaurantIdParam;
+      }
+    } else if (actor.role === 'manager') {
       dateFilter.restaurantId = actor.restaurantId;
     } else if (actor.role === 'restaurant_owner') {
       const userRestIds = await getScopedRestaurantIds(actor) || [];
@@ -37,9 +42,8 @@ export async function GET(req: NextRequest) {
       } else {
         dateFilter.restaurantId = { in: userRestIds };
       }
-    } else if (restaurantIdParam && restaurantIdParam !== 'all') {
-      // superadmin with specific restaurant selected
-      dateFilter.restaurantId = restaurantIdParam;
+    } else {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
     // Today filter
@@ -86,9 +90,16 @@ export async function GET(req: NextRequest) {
     }> = [];
 
     if (!isSingleRestaurant) {
+      // Build the groupBy where clause carefully: the dateFilter may already
+      // contain a restaurantId scope (e.g. { in: [...] } for restaurant_owner).
+      // We must NOT overwrite it with { not: null }.
+      const groupByWhere: any = { ...dateFilter, rating: { gte: 4 } };
+      if (!groupByWhere.restaurantId) {
+        groupByWhere.restaurantId = { not: null };
+      }
       const highByRest = await prisma.feedback.groupBy({
         by: ['restaurantId'],
-        where: { ...dateFilter, rating: { gte: 4 }, restaurantId: { not: null } },
+        where: groupByWhere,
         _count: true,
       });
 

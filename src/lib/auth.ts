@@ -101,9 +101,12 @@ export async function getUserFromRequest(req: NextRequest) {
 export async function getPanelActorFromRequest(req: NextRequest): Promise<PanelActor | null> {
   const adminPayload = await getAdminFromRequest(req);
   if (adminPayload) {
+    const role = getStringClaim(adminPayload, 'role');
+    // Reject tokens without an explicit role — never default to superadmin
+    if (!role || !isAdminRole(role)) return null;
     return {
       id: getStringClaim(adminPayload, 'id') || 'env-admin',
-      role: getStringClaim(adminPayload, 'role') || 'superadmin',
+      role,
       restaurantId: getStringClaim(adminPayload, 'restaurantId'),
       username: getStringClaim(adminPayload, 'username'),
       email: getStringClaim(adminPayload, 'username'),
