@@ -8,6 +8,7 @@ import FeedbackTable from '@/components/admin/FeedbackTable';
 import RatingChart from '@/components/admin/RatingChart';
 import WordCloud from '@/components/admin/WordCloud';
 import AspectBreakdown from '@/components/admin/AspectBreakdown';
+import GoogleConversionPanel from '@/components/admin/GoogleConversionPanel';
 
 // Recharts components must be dynamic for SSR compatibility
 const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), { ssr: false, loading: () => <div className="h-[300px] w-full bg-gray-50 animate-pulse rounded-2xl" /> });
@@ -224,6 +225,32 @@ export default function AdminDashboard() {
             </div>
           </div>
           <AspectBreakdown aspects={stats.aspects} locale={locale as 'tr' | 'en'} />
+        </div>
+      )}
+
+      {/* ─── Google Review Conversion ─── */}
+      {stats?.googleConversion && (
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
+          <div className="mb-4 sm:mb-6 flex items-center gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <TrendingUp size={20} strokeWidth={3} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">
+                {locale === 'en' ? 'Google Review Conversion' : 'Google Yorum Dönüşümü'}
+              </h3>
+              <p className="text-[11px] sm:text-xs font-bold text-[#6b6760] mt-0.5">
+                {locale === 'en'
+                  ? 'How many happy customers actually reach Google to leave a review.'
+                  : 'Memnun müşterilerin kaçı Google\'a yorum bırakmaya yönlendiriliyor.'}
+              </p>
+            </div>
+          </div>
+          <GoogleConversionPanel
+            data={stats.googleConversion}
+            locale={locale as 'tr' | 'en'}
+            hideLeaderboard={selectedRestaurant !== 'all'}
+          />
         </div>
       )}
 
