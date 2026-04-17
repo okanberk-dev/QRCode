@@ -430,6 +430,8 @@ export const translations = {
     dash_no_restaurant: 'You haven’t defined a business/restaurant profile yet.',
     dash_add_restaurant: 'Add New Business',
     dash_manage: 'Manage',
+    dash_qr: 'QR Code Management',
+    dash_feedbacks: 'Incoming Reviews',
     dash_logout: 'Log Out',
     dash_profile: 'Profile Settings',
     dash_total_reviews: 'Total Reviews',
