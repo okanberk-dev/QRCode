@@ -31,7 +31,7 @@ export async function generateMetadata({
     // GEO Tags
     other: {
       'geo.region': 'TR',
-      'geo.placename': 'Bursa',
+      'geo.placename': 'Ataşehir',
       'geo.position': '40.1828;29.0667',
       'ICBM': '40.1828, 29.0667',
     },

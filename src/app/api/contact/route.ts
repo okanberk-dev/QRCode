@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
     const mailOptions = {
       from: `"Buaze Web Form" <${process.env.SMTP_USER}>`,
-      to: 'berkokanm@gmail.com', // Explicit request by user
+      to: 'hello@buaze.com', // Explicit request by user
       subject: `Yeni İletişim Formu: ${safeBusiness !== '-' ? safeBusiness : safeName}`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">

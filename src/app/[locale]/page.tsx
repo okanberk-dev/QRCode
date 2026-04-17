@@ -94,12 +94,7 @@ export default async function LandingPage({
         '@type': 'Organization',
         name: 'Buaze',
         url: 'https://buaze.com',
-        logo: 'https://buaze.com/buaze-logo.png',
-        contactPoint: {
-          '@type': 'ContactPoint',
-          telephone: '+90-555-000-0000',
-          contactType: 'customer service',
-        }
+        logo: 'https://buaze.com/buaze-logo.png'
       },
       {
         '@type': 'FAQPage',

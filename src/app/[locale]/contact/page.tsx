@@ -42,12 +42,11 @@ export default async function ContactPage({
     name: 'Buaze',
     url: 'https://buaze.com',
     email: 'hello@buaze.com',
-    address: { '@type': 'PostalAddress', addressLocality: 'Bursa', addressCountry: 'TR' },
+    address: { '@type': 'PostalAddress', addressLocality: 'Ataşehir', addressCountry: 'TR' },
   };
 
   const contactItems = [
     { icon: <Mail size={19} />, label: t.contact_email_label, value: t.contact_email },
-    { icon: <Phone size={19} />, label: t.contact_phone_label, value: t.contact_phone },
     { icon: <MapPin size={19} />, label: t.contact_address_label, value: t.contact_address },
   ];
 
