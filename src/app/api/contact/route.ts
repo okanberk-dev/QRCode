@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     `;
 
     const success = await sendMail({
-      to: 'hello@buaze.com',
+      to: process.env.NOTIFICATION_EMAIL || 'hello@buaze.com',
       subject,
       text,
       html
