@@ -2,47 +2,36 @@ import { NextResponse } from 'next/server';
 
 // Temporary diagnostic endpoint - DELETE after debugging
 export async function GET() {
-  const resendKey = process.env.RESEND_API_KEY?.trim();
+  // List ALL env var names (not values) to find the issue
+  const allEnvKeys = Object.keys(process.env).sort();
   
-  const diagnostics = {
-    hasResendKey: !!resendKey && resendKey !== "",
-    keyPrefix: resendKey ? resendKey.substring(0, 8) + "..." : "NOT SET",
-    keyLength: resendKey?.length || 0,
-    // Check for common env var issues
-    hasSmtpUser: !!process.env.SMTP_USER,
-    hasSmtpPass: !!process.env.SMTP_PASS,
-    nodeEnv: process.env.NODE_ENV,
-    // Test send
-    testResult: null as any,
-  };
+  // Filter for relevant ones
+  const relevantKeys = allEnvKeys.filter(key => 
+    key.includes('RESEND') || 
+    key.includes('SMTP') || 
+    key.includes('EMAIL') || 
+    key.includes('MAIL') ||
+    key.includes('API_KEY') ||
+    key.includes('DATABASE') ||
+    key.includes('NEXT_PUBLIC')
+  );
 
-  // Try a test send
-  if (resendKey) {
-    try {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${resendKey}`,
-        },
-        body: JSON.stringify({
-          from: "Buaze <hello@buaze.com>",
-          to: "okanberk16@gmail.com",
-          subject: "Vercel Diagnostik Test ✅",
-          html: "<h1>Vercel'den test maili başarılı!</h1>",
-          text: "Vercel'den test maili başarılı!",
-        }),
-      });
-      const body = await response.text();
-      diagnostics.testResult = {
-        status: response.status,
-        ok: response.ok,
-        body,
-      };
-    } catch (err: any) {
-      diagnostics.testResult = { error: err.message };
-    }
+  // Check each key with its first few chars
+  const envSnapshot: Record<string, string> = {};
+  for (const key of relevantKeys) {
+    const val = process.env[key] || '';
+    envSnapshot[key] = val ? `${val.substring(0, 6)}... (len=${val.length})` : 'EMPTY';
   }
 
-  return NextResponse.json(diagnostics);
+  const resendKey = process.env.RESEND_API_KEY;
+  const resendKeyTrimmed = resendKey?.trim();
+
+  return NextResponse.json({
+    totalEnvVars: allEnvKeys.length,
+    relevantEnvVars: envSnapshot,
+    resendKeyRaw: resendKey === undefined ? 'UNDEFINED' : resendKey === '' ? 'EMPTY_STRING' : `EXISTS (len=${resendKey.length})`,
+    resendKeyTrimmed: resendKeyTrimmed === undefined ? 'UNDEFINED' : resendKeyTrimmed === '' ? 'EMPTY_STRING' : `EXISTS (len=${resendKeyTrimmed.length})`,
+    // Check if maybe it's under a different name
+    possibleResendKeys: allEnvKeys.filter(k => k.toLowerCase().includes('resend')),
+  });
 }
