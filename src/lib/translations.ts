@@ -11,7 +11,9 @@ export const translations = {
     siteDescription: 'Restoranlar ve işletmeler için Google Haritalar puanı yükseltme ve dijital itibar yönetimi. QR kod teknolojisiyle organik 5 yıldızlı yorumları artırın, olumsuz geri bildirimleri akıllı filtreleme ile daha internete düşmeden çözün.',
 
     // Navbar
-    nav_howItWorks: 'Nasıl Çalışır?',
+    nav_howItWorks: 'Öğrenin',
+    nav_learn_features: 'Nasıl Çalışır?',
+    nav_learn_blog: 'Blog & Rehberler',
     nav_solutions: 'Çözümler',
     nav_sol_restaurants: 'Restoran ve Kafeler',
     nav_sol_hotels: 'Otel ve Konaklama',
@@ -292,7 +294,9 @@ export const translations = {
     siteDescription: 'Boost your Google Maps ratings and manage your digital reputation effortlessly. Use our smart QR code system to automate 5-star customer reviews, while privately resolving negative feedback before it goes public.',
 
     // Navbar
-    nav_howItWorks: 'How It Works',
+    nav_howItWorks: 'Learn',
+    nav_learn_features: 'How It Works',
+    nav_learn_blog: 'Blog & Guides',
     nav_solutions: 'Solutions',
     nav_sol_restaurants: 'Restaurants & Cafes',
     nav_sol_hotels: 'Hotels & Hospitality',

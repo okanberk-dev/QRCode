@@ -6,6 +6,7 @@ export interface BlogPost {
   date: string;
   readTime: string;
   author: string;
+  coverImage: string;
 }
 
 export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
@@ -13,68 +14,88 @@ export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
     {
       slug: 'googleda-5-yildiz-nasil-alinir',
       title: 'Google\'da İşletmeniz İçin Daha Fazla 5 Yıldız Nasıl Alınır?',
-      description: 'Müşterilerinizin %90\'ından fazlası gelmeden önce Google Haritalar yorumlarınızı okuyor. İşletmenizin Google puanını organik ve hızlı bir şekilde artırmanın kanıtlanmış yolları.',
+      description: 'Müşterilerinizin %90\'ından fazlası kapıdan içeri girmeden önce Google Haritalar yorumlarınızı okuyor. İşletmenizin puanını 4.8 ve üzerine çıkarmanın kanıtlanmış yolları.',
       date: '15 Nisan 2024',
       readTime: '4 dk okuma',
       author: 'Buaze İçerik Ekibi',
+      coverImage: 'https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&q=80&w=1200&h=600',
       content: `
-        <h2>Google Haritalar Puanı Neden Önemlidir?</h2>
-        <p>Bugün bir yemeğe çıkmadan, bir otel rezervasyonu yapmadan veya bir kliniğe gitmeden önce insanların %93'ü ilk olarak Google Haritalar'ı açıp işletmenin yorumlarına bakıyor. Puanınız 4.0'ın altındaysa, potansiyel müşterilerinizin yarısını daha kapıdan girmeden kaybediyorsunuz demektir.</p>
+        <h2>Google Haritalar Puanı Neden Hayati Önem Taşır?</h2>
+        <p>Araştırmalara göre, potansiyel müşterilerin <strong>%93'ü</strong> bir restoran, otel veya kliniğe gitmeden önce doğrudan Google Haritalar'ı açarak daha önce hizmet alanların yorumlarına bakıyor. Eğer genel puanınız <strong>4.0'ın altındaysa</strong>, rakiplerinize kıyasla büyük bir dezavantajınız var demektir. Kullanıcılar artık yalnızca "ucuz" veya "yakın" olanı değil, "en yüksek yıldıza" sahip olanı seçiyor.</p>
         
-        <h2>5 Yıldızlı Yorumları Artırmanın Yolları</h2>
-        <h3>1. Doğru Zamanda İsteyin</h3>
-        <p>Geri bildirim istemenin en doğru zamanı, müşterinin hizmetten en çok memnun olduğu andır. Restoranlar için hesabı öderken, oteller için check-out sırasında, klinikler için ise tedavi bitimindedir.</p>
+        <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800&h=400" alt="Müşteri memnuniyeti analizi" style="border-radius: 12px; margin: 2rem 0;" />
 
-        <h3>2. İşlemi Kolaylaştırın</h3>
-        <p>Kimse yorum bırakmak için Google'ı açıp sizin işletmenizi aratmakla uğraşmaz. Masalarınızda veya bankolarda bulunan QR kodlu yönlendirmeler sayesinde müşteriler tek saniyede yorum yapma ekranına ulaşmalıdır.</p>
+        <h2>5 Yıldızlı Yorumları Artırmanın Gizli Yolları</h2>
         
-        <h3>3. Olumsuzlukları İnternete Düşmeden Çözün</h3>
-        <p>Her müşteri mükemmel deneyim yaşayamayabilir. Önemli olan, memnuniyetsiz müşterinin şikayetini Google'a yazmadan önce size iletebilmesidir. Buaze gibi akıllı sistemler, 1-3 yıldız veren müşterileri gizli bir form sayfasına yönlendirerek krizleri büyümeden çözer.</p>
+        <h3>1. "Doğru Anda" İstemek Her Şeydir</h3>
+        <p>Geri bildirim istemenin en kritik zamanı, müşterinin hizmetten mutlu olduğu o andır. Bir restoranda kahve ikramı sonrası hesap ödenirken, bir otelde check-out esnasında, klinikte ise hastanın ağrısının geçtiği taburcu anında. İşletmeden çıktıktan veya eve gittikten sonra gönderilen SMS'lerin yorumlara dönüşme oranı %2'lerde kalırken, <strong>hizmet anındaki taleplerin dönüşümü %40'ı bulur</strong>.</p>
+
+        <h3>2. QR Kodların Gücünü Hafife Almayın</h3>
+        <p>Eskiden "Bize Google'dan yorum yazar mısınız?" cümlesi çalışırdı. Şimdi kimse telefonunu çıkarıp arama yapmaya üşeniyor. Masalarınızda, standlarınızda veya hesaba eşlik eden ufak bir kartta yer alan <strong>QR Tabela</strong> ile müşteriyi bir saniyede yorum ekranına göndermelisiniz.</p>
+        
+        <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&q=80&w=800&h=400" alt="Dijital ödeme ve müşteri hizmetleri" style="border-radius: 12px; margin: 2rem 0;" />
+
+        <h3>3. Olumsuzlukları "Kalkan" ile Önleyin</h3>
+        <p>Hiçbir işletme kusursuz olamaz; servis gecikebilir, garson gününde olmayabilir. Önemli olan, memnuniyetsiz olan müşteriyi dinlemektir. <strong>Buaze gibi dijital itibar sistemleri</strong>, QR kodu okutarak yorum yapmak isteyen müşteriye 1 ila 5 arası bir yıldız sorar. Müşteri 1, 2 veya 3 yıldız seçerse sistem onu Google'a DEĞİL, işletme sahibinin cep telefonuna düşecek bir şikayet formuna yönlendirir. Kriz internete düşmeden çözülür.</p>
 
         <h2>Sonuç</h2>
-        <p>Google'da 5 yıldız almak şans değil, stratejidir. Müşterilerinize mükemmel hizmet vermenin yanında, bu memnuniyeti dijital ortama aktaracak doğru araçları kullandığınızdan emin olun.</p>
+        <p>Google'da 5 yıldız almak rastgele bir şans oyunu değildir. Mükemmel bir hizmet verin, doğru anda yorum isteyin ve şikayetleri dijital kalkanınızla toplayıp çözüme ulaştırın. Buaze, bu ekosistemin merkezinde yer alarak puanınızı organik şekilde uçuşa geçirir.</p>
       `
     },
     {
       slug: 'restoran-yorumlari-nasil-artirilir',
-      title: 'Restoranlar İçin Google Haritalar Yorumlarını Artırma Stratejileri',
-      description: 'Restoranınızın kapısındaki kuyruğu uzatmak ister misiniz? Yemek platformlarına yüksek komisyonlar ödemek yerine kendi organik kitlenizi oluşturun.',
+      title: 'Restoranlar İçin Google Yorumlarını Artırma ve Satış Stratejileri',
+      description: 'Yemek platformlarına %30 komisyon ödemek zorunda değilsiniz. Google üzerinde güçlü bir profil oluşturarak organik "paket servis" ve "gel-al" kitlenizi büyütün.',
       date: '12 Nisan 2024',
       readTime: '5 dk okuma',
       author: 'Buaze İçerik Ekibi',
+      coverImage: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=1200&h=600',
       content: `
-        <h2>Yemek Platformlarına Karşı Kendi İtibarınız</h2>
-        <p>Birçok restoran, yeni müşteri bulmak için Yemeksepeti veya Getir gibi platformlara güveniyor ve her siparişte %30'a varan komisyonlar ödüyor. Oysa kendi lokasyonunuz (Google Maps) etrafında güçlü bir profil çizerseniz, doğrudan paket servis ve gel-al müşterilerinizi organik olarak artırabilirsiniz.</p>
+        <h2>Neden Sadece Yemek Platformlarına Odaklanmamalısınız?</h2>
+        <p>Bir restoran işletiyorsanız müşteri kazanmak için paket servis uygulamalarında yüksek bütçeli reklamlar ve %30'u bulan komisyonlar veriyorsunuz. Oysa mekanınızı Maps (Haritalar) üzerinden aratan insanlar doğrudan size komisyonsuz ulaşmak isterler.</p>
 
-        <h2>Nasıl Yorum Toplayacaksınız?</h2>
-        <h3>Masa Üstü QR Menüler / Standlar</h3>
-        <p>Yemek beklerken insanların en çok yaptığı şey telefonlarıyla oynamaktır. Masanın köşesinde duran şık bir QR kod standı ("Yemeğimizi nasıl buldunuz?") harika bir tetikleyicidir.</p>
+        <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800&h=400" alt="Restoran masa ortamı" style="border-radius: 12px; margin: 2rem 0;" />
 
-        <h3>Hesap Sümenleri</h3>
-        <p>Müşteri hesabı ödemek için sümene baktığında bir teşekkür mesajı ve yorum QR kodu görmek geri dönüşüm oranını muazzam derecede yükseltir.</p>
+        <h2>Yorum Toplama Sanatı</h2>
         
-        <h3>Ödüllendirme Stratejisi</h3>
-        <p>Personelinizi teşvik edin. Garsonlarınız mutlu ayrılan bir masaya "Yemeklerimizi beğendiyseniz bize Google üzerinden destek olabilirsiniz" dediğinde ve kodu gösterdiğinde dönüşüm oranı en yüksek seviyeye ulaşır.</p>
+        <h3>Masa İçi QR Menüler ve Pleksi Standlar</h3>
+        <p>Yemek beklerken ziyaretçiler genellikle telefonlarına bakarlar. Masanın köşesine koyacağınız, "Hizmetimizi değerlendirmek ister misiniz?" mesajlı, renkli ve cazip küçük bir QR pleksi stand inanılmaz bir performans gösterir.</p>
+
+        <h3>Hesap Ödeme (Tatlı) Anı</h3>
+        <p>Hesap sümenini masaya götürürken içeriğine işletmenizi ve ekibinizin emeğini öven sıcak bir mesaj ekleyin. Çay veya kahve ikramınız sırasında doğrudan garsonlarınızın yönlendirmesiyle 10 kişiden 4'ünün size saniyeler içinde 5 yıldız verdiğini göreceksiniz.</p>
+        
+        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=800&h=400" alt="Kafede garson ve müşteri" style="border-radius: 12px; margin: 2rem 0;" />
+
+        <h3>Personeli Oyunun İçine Katın</h3>
+        <p>Personellerinizi bir oyunlaştırma kurgusuna sokun. İşletmeniz hakkında kendi isiyle en çok teşekkür yorumu aldıran personele ay sonunda minik hediyeler verin. Çalışanlarınız müşterilerle daha iyi bağ kuracak ve bu doğrudan dijital hanenize Google puanı olarak yazılacaktır.</p>
+        <p>Buaze'nin gelişmiş altyapısı zaten müşteriyi en pürüzsüz şekide Google sayfanıza odaklar ve dönüşümü roketler.</p>
       `
     },
     {
       slug: 'olumsuz-musteri-yorumlariyla-basa-cikmak',
-      title: 'Olumsuz Online Yorumlarla Nasıl Profesyonelce Başa Çıkılır?',
-      description: '1 yıldızlı bir Google yorumu işletmenizin sonu değildir. Eğer süreci doğru yönetirseniz, krizi fırsata çevirebilir, müşterinin o yorumu silmesini hatta 5 yıldıza çevirmesini sağlayabilirsiniz.',
+      title: 'Kötü ve Olumsuz Yorumlarla Nasıl Başa Çıkılır?',
+      description: 'Zayıf 1 yıldızlı bir Google yorumu tüm itibarınızı lekeleyebilir. İşletmenize zarar veren yorumları profesyonel bir nezaket ve sistem araçlarıyla ortadan kaldırın.',
       date: '10 Nisan 2024',
       readTime: '3 dk okuma',
       author: 'Buaze İçerik Ekibi',
+      coverImage: 'https://images.unsplash.com/photo-1573164574572-cb89e39749b4?auto=format&fit=crop&q=80&w=1200&h=600',
       content: `
-        <h2>Şikayeti Göz Ardı Etmeyin</h2>
-        <p>En büyük hata olumsuz yoruma cevap vermemektir. Potansiyel müşteriler, sadece şikayeti değil, sizin işletme olarak o şikayete nasıl yaklaştığınızı da değerlendirir. Agresif veya umursamaz cevaplar işletmenize yazarın yorumundan daha fazla zarar verir.</p>
+        <h2>Olumsuz Bir Yorum Aldınız, Şimdi Ne Olacak?</h2>
+        <p>Hepimizin başına geliyor. Belki yoğun bir akşamdı, servis gecikti ya da misafir o gün çok gergindi. Google hesabınıza sinirli bir 1 yıldız düşüverdi. Geleneksel içgüdü hiddetlenip kendinizi savunmaktır; ancak <strong>bunu asla yapmamanız gerekir.</strong></p>
         
-        <h2>Nasıl Cevap Verilmeli?</h2>
-        <p>1. <strong>Özür dileyin ve empati yapın:</strong> Haklı olsun ya da olmasın, kişinin kötü bir deneyim yaşadığını kabul edin.</p>
-        <p>2. <strong>Çevrimdışına alın:</strong> Konuyu Google üzerinden tartışmayın. "Konuyu detaylı inceleyebilmemiz için bize [iletişim adresi] üzerinden ulaşabilir misiniz?" diyerek iletişim kanalını değiştirin.</p>
-        <p>3. <strong>Sistemsel çözümler bulun:</strong> Şikayetteki sorunu içeride çözün ve bunu yaparken süreci iyileştirin.</p>
+        <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&q=80&w=800&h=400" alt="Ofiste düşünen profesyonel" style="border-radius: 12px; margin: 2rem 0;" />
 
-        <h2>Buaze ile Kriz Önleme (Filtreleme)</h2>
-        <p>Buaze'nin akıllı yönlendirme sistemi sayesinde, size düşük puan vermek isteyen müşteriler Google'a değil, direkt işletme yöneticisinin paneline yönlendirilir. Böylece müşteri dert yanar ve deşarj olur, siz hatayı telafi edersiniz, ve en önemlisi bu durum herkese açık olan internet alemine düşmez.</p>
+        <h2>Başa Çıkma Kılavuzu:</h2>
+        <ul>
+            <li><strong>Derin Bir Nefes Alın:</strong> Kişisel algılamayın. Onlar size değil, aksayan hizmete veya kendi ruh hallerine kızgınlar. Gelecekte sayfanızı okuyan potansiyel müşterilerin sizin "soğukkanlı profesyonelliğinizi" göreceğini unutmayın.</li>
+            <li><strong>Derhal Özür Dileyin:</strong> Eğer müşteri sistemde mağdur edilmişse şeffaf olun. "Bugün yaşadığınız gecikme için özür dileriz. Operasyonel bir aksaklıktı." gibi yumuşatıcı bir giriş her şeyi soğutur.</li>
+            <li><strong>Durumu Çevrim Dışına Taşıyın:</strong> "Sizinle bu konuyu çözmek ve telafi etmek istiyoruz. Lütfen [mail/telefon] üzerinden iletişime geçin." diyerek topu Google gibi herkese açık bir arenadan çıkartın. Çoğu müşteri telafi hamlenizi görünce o kötü puanı silecektir.</li>
+        </ul>
+
+        <h2>Peki Ya Baştan Önlemek Mümkünse?</h2>
+        <p>Tedavi iyi ancak koruma çok daha etkilidir. <strong>Buaze Akıllı Filtre teknolojisi</strong> tam da bu durumlarda hayat kurtarır.</p>
+        <p>Müşterinin öfkelendiği noktada telefonuyla QR kodunuza okuttuğunu hayal edin. Sinirle 1 yıldıza dokunuyor. Normal şartlarda doğrudan Google sayfanıza düşecekken; Buaze araya girerek "Deneyiminizi daha iyi hale getirmemiz için bize sorunu anlatır mısınız?" diyerek onu kendi iç formunuza çeker.</p>
+        <p>Müşteri yazar, o send butonuna basar bastığı an cep telefonunuza bildirim gelir... Ancak Google'da o 1 yıldız yoktur. O kişi zaten deşarj olduğu için Google'a gitmeyi unutur. Siz onu yolcu etmeden yakalayıp hesaptan ikram yaparsınız, sorun sihirli bir şekilde çözülür.</p>
       `
     }
   ],
@@ -82,68 +103,79 @@ export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
     {
       slug: 'how-to-get-5-stars-on-google',
       title: 'How to Get More 5-Star Reviews for Your Business on Google?',
-      description: 'Over 90% of your customers read your Google Maps reviews before visiting. Discover proven ways to boost your business\'s Google rating organically and quickly.',
+      description: 'Over 90% of your customers read your Google Maps reviews before visiting. Discover proven aesthetic ways to boost your business\'s Google rating directly to 4.8+. ',
       date: 'April 15, 2024',
       readTime: '4 min read',
       author: 'Buaze Content Team',
+      coverImage: 'https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&q=80&w=1200&h=600',
       content: `
         <h2>Why Do Google Maps Ratings Matter?</h2>
-        <p>Before dining out, booking a hotel, or visiting a clinic today, 93% of people first open Google Maps and look at the business reviews. If your rating is below 4.0, you are losing half of your potential customers before they even walk through the door.</p>
+        <p>Research indicates that a staggering <strong>93%</strong> of potential customers first open Google Maps and look at the business reviews. If your rating is below 4.0, you are bleeding customers to competitors with higher stars.</p>
         
-        <h2>Ways to Increase 5-Star Reviews</h2>
-        <h3>1. Ask at the Right Time</h3>
-        <p>The best time to ask for feedback is the exact moment the customer is most satisfied with the service. For restaurants, this is while paying the bill; for hotels, during check-out; and for clinics, at the end of the treatment.</p>
+        <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800&h=400" alt="Customer success analytics" style="border-radius: 12px; margin: 2rem 0;" />
 
-        <h3>2. Make the Process Easy</h3>
-        <p>Nobody wants to bother opening Google and searching for your business just to leave a review. With QR code prompts on your tables or counters, customers should be able to reach the review screen in a single second.</p>
+        <h2>Ways to Organically Increase Reviews</h2>
+        <h3>1. Ask at the Right "Peak" Time</h3>
+        <p>The best time to ask for feedback is the exact moment the customer is most satisfied with the service. For restaurants, this is while paying the bill; for hotels, during check-out; and for clinics, at the end of the treatment when relief is felt.</p>
+
+        <h3>2. Leverage Smart QR Assets</h3>
+        <p>Asking verbally simply doesn't convert well anymore. Provide a frictionless experience using branded QR code stands. We direct the customer to the exact review writing input in their app within one second.</p>
         
+        <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&q=80&w=800&h=400" alt="Customer success desk" style="border-radius: 12px; margin: 2rem 0;" />
+
         <h3>3. Resolve Issues Before They Hit the Internet</h3>
-        <p>Not every customer will have a perfect experience. The crucial part is allowing dissatisfied customers to communicate their complaints to you before writing them on Google. Smart systems like Buaze solve crises before they grow by directing customers who give 1-3 stars to a private form page.</p>
+        <p>Not every customer will have a perfect experience. Smart systems like Buaze solve crises before they grow by directing customers who rate 1-3 stars to a private internal feedback form. The manager gets notified instantly while keeping the reputation intact.</p>
 
         <h2>Conclusion</h2>
-        <p>Getting 5 stars on Google is not luck; it's strategy. Besides providing excellent service, make sure you use the right tools to transfer this satisfaction into the digital space.</p>
+        <p>Getting 5 stars on Google is not luck; it's proper system architecture. Ensure you capture the positive friction, filter the negative sentiment locally, and automate growth.</p>
       `
     },
     {
       slug: 'how-to-increase-restaurant-reviews',
-      title: 'Strategies for Restaurants to Increase Google Maps Reviews',
-      description: 'Do you want to lengthen the queue outside your restaurant? Build your own organic audience instead of paying high commissions to food delivery platforms.',
+      title: 'Growth Hacks: Strategies for Restaurants to Increase Reviews',
+      description: 'Stop paying heavy 30% delivery margins! Build your own organic local audience through Google Maps supremacy and local SEO dominance.',
       date: 'April 12, 2024',
       readTime: '5 min read',
       author: 'Buaze Content Team',
+      coverImage: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=1200&h=600',
       content: `
-        <h2>Your Own Reputation vs. Food Delivery Platforms</h2>
-        <p>Many restaurants rely on food delivery platforms to find new customers, paying commissions up to 30% per order. However, if you build a strong profile around your own location (Google Maps), you can organically increase your direct delivery and takeaway customers.</p>
+        <h2>Build Your Local Monopoly</h2>
+        <p>Do you rely heavily on 3rd party apps for your ticket volume? By prioritizing your Google local search algorithm through review volume, you intercept local searches for "pizza near me" before they even open the aggregator app.</p>
 
-        <h2>How Will You Collect Reviews?</h2>
-        <h3>Tabletop QR Menus / Stands</h3>
-        <p>The number one thing people do while waiting for food is play with their phones. A stylish QR code stand on the corner of the table ("How was your meal?") is a great trigger.</p>
+        <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800&h=400" alt="Restaurant atmosphere" style="border-radius: 12px; margin: 2rem 0;" />
 
-        <h3>Check Holders</h3>
-        <p>When the customer looks at the folder to pay the bill, seeing a thank you message and a review QR code significantly increases the conversion rate.</p>
+        <h2>Tactics for Restaurants</h2>
+        <h3>Interactive Menus and Stands</h3>
+        <p>Waiting for food equals phone time. A stylish QR stand positioned correctly converts their idle time into lasting permanent SEO value for your business.</p>
+
+        <h3>The "Bill" Checkpoint</h3>
+        <p>When the bill arrives is a reflection point. Attach a warm greeting alongside a call to action. Add complementary tea or coffee and instruct your waiters to seal the 5-star transaction.</p>
         
-        <h3>Rewarding Strategy</h3>
-        <p>Incentivize your staff. When your waiters say to a happily departing table, "If you liked our food, you can support us on Google," and show the code, the conversion rate reaches its peak.</p>
+        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=800&h=400" alt="Barista and customer smiling" style="border-radius: 12px; margin: 2rem 0;" />
+        
+        <p>Gamify the process with your staff. Reward waiters who bring in the highest number of named reviews in Google. The culture shifts towards extreme hospitality immediately.</p>
       `
     },
     {
       slug: 'handling-negative-customer-reviews',
-      title: 'How to Professionally Handle Negative Online Reviews?',
-      description: 'A 1-star Google review is not the end of your business. If you manage the process correctly, you can turn the crisis into an opportunity, making the customer delete that review or even turn it into 5 stars.',
+      title: 'Damage Control: How to Professionally Defeat 1-Star Reviews',
+      description: 'A 1-star Google review is terrifying. If you manage the process correctly, you can make the customer delete that review or even turn it into 5 stars.',
       date: 'April 10, 2024',
       readTime: '3 min read',
       author: 'Buaze Content Team',
+      coverImage: 'https://images.unsplash.com/photo-1573164574572-cb89e39749b4?auto=format&fit=crop&q=80&w=1200&h=600',
       content: `
-        <h2>Don't Ignore the Complaint</h2>
-        <p>The biggest mistake is not responding to a negative review. Potential customers evaluate not only the complaint itself but also how you, as a business, approach that complaint. Aggressive or dismissive responses damage your business more than the author's review.</p>
+        <h2>The Anatomy of an Angry Review</h2>
+        <p>Everyone makes mistakes. But what happens when that mistake gets permanently etched into your public profile? Defending yourself emotionally is a guaranteed disaster. <strong>You are on stage.</strong> Future customers are watching your reaction.</p>
         
-        <h2>How Should You Respond?</h2>
-        <p>1. <strong>Apologize and empathize:</strong> Whether they are right or wrong, acknowledge that the person had a bad experience.</p>
-        <p>2. <strong>Take it offline:</strong> Don't argue the matter on Google. Change the communication channel by saying, "Could you please contact us at [contact address] so we can investigate the issue in detail?"</p>
-        <p>3. <strong>Find systemic solutions:</strong> Solve the problem mentioned in the complaint internally, and improve your process while doing so.</p>
+        <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&q=80&w=800&h=400" alt="Stressful situations" style="border-radius: 12px; margin: 2rem 0;" />
 
-        <h2>Crisis Prevention (Filtering) with Buaze</h2>
-        <p>Thanks to Buaze's smart routing system, customers who want to give you a low rating are directed to the business manager's panel directly, not to Google. This way, the customer vents and unburdens themselves, you make up for the mistake, and most importantly, this situation doesn't fall into the public internet domain.</p>
+        <h2>The Playbook</h2>
+        <p>1. <strong>Apologize immediately:</strong> Dissipate the tension.</p>
+        <p>2. <strong>Take it offline:</strong> Say, "Could you please contact us at hello@buaze.com so we can investigate the issue in detail?" When they contact you, grant them a refund or a free meal, ask them politely to update their review.</p>
+
+        <h2>Prevent it with Buaze Filtration</h2>
+        <p>Imagine reading the angry feedback internally on your WhatsApp notification rather than the public sphere. When a user clicks 1 star on Buaze platforms, they are seamlessly guided to a private complaint mechanism. It saves brands from catastrophic PR scenarios automatically.</p>
       `
     }
   ]

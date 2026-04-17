@@ -11,6 +11,8 @@ interface MarketingNavbarProps {
   locale: Locale;
   t: {
     nav_howItWorks: string;
+    nav_learn_features: string;
+    nav_learn_blog: string;
     nav_solutions: string;
     nav_sol_restaurants: string;
     nav_sol_hotels: string;
@@ -29,11 +31,15 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [solutionsOpen, setSolutionsOpen] = useState(false);
   const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
+  const [learnOpen, setLearnOpen] = useState(false);
+  const [mobileLearnOpen, setMobileLearnOpen] = useState(false);
   const [, startTransition] = useTransition();
   const router = useRouter();
   const pathname = usePathname();
   const solutionsRef = useRef<HTMLDivElement>(null);
+  const learnRef = useRef<HTMLDivElement>(null);
   const solutionsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const learnTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const otherLocale: Locale = locale === 'tr' ? 'en' : 'tr';
 
@@ -75,11 +81,15 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
     },
   ];
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (solutionsRef.current && !solutionsRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (solutionsRef.current && !solutionsRef.current.contains(target)) {
         setSolutionsOpen(false);
+      }
+      if (learnRef.current && !learnRef.current.contains(target)) {
+        setLearnOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -88,12 +98,27 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
 
   const handleSolutionsEnter = () => {
     if (solutionsTimeoutRef.current) clearTimeout(solutionsTimeoutRef.current);
+    if (learnTimeoutRef.current) clearTimeout(learnTimeoutRef.current);
+    setLearnOpen(false);
     setSolutionsOpen(true);
   };
 
   const handleSolutionsLeave = () => {
     solutionsTimeoutRef.current = setTimeout(() => {
       setSolutionsOpen(false);
+    }, 200);
+  };
+
+  const handleLearnEnter = () => {
+    if (learnTimeoutRef.current) clearTimeout(learnTimeoutRef.current);
+    if (solutionsTimeoutRef.current) clearTimeout(solutionsTimeoutRef.current);
+    setSolutionsOpen(false);
+    setLearnOpen(true);
+  };
+
+  const handleLearnLeave = () => {
+    learnTimeoutRef.current = setTimeout(() => {
+      setLearnOpen(false);
     }, 200);
   };
 
@@ -110,7 +135,58 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-7">
-          <Link href={`${base}/#how-it-works`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_howItWorks}</Link>
+          
+          {/* Learn Dropdown */}
+          <div
+            ref={learnRef}
+            className="relative"
+            onMouseEnter={handleLearnEnter}
+            onMouseLeave={handleLearnLeave}
+          >
+            <button
+              className="flex items-center gap-1 text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors"
+              onClick={() => setLearnOpen(!learnOpen)}
+            >
+              {t.nav_howItWorks}
+              <ChevronDown
+                size={14}
+                className={`transition-transform duration-200 ${learnOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {/* Dropdown Panel */}
+            <div
+              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[260px] bg-white border-[2.5px] border-[#1f1e1d] rounded-2xl shadow-[6px_8px_0_0_#1f1e1d] overflow-hidden transition-all duration-200 origin-top ${
+                learnOpen
+                  ? 'opacity-100 scale-100 pointer-events-auto'
+                  : 'opacity-0 scale-95 pointer-events-none'
+              }`}
+            >
+              <div className="p-2 space-y-1">
+                <Link
+                  href={`${base}/#how-it-works`}
+                  onClick={() => setLearnOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F7F4F0] transition-colors group"
+                >
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#ea580c]/10 rounded-lg flex items-center justify-center text-[#ea580c] group-hover:scale-110 transition-transform">
+                    <Utensils size={15} />
+                  </div>
+                  <div className="text-[14px] font-bold text-[#1f1e1d]">{t.nav_learn_features}</div>
+                </Link>
+                
+                <Link
+                  href={`${base}/blog`}
+                  onClick={() => setLearnOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F7F4F0] transition-colors group"
+                >
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#10b981]/10 rounded-lg flex items-center justify-center text-[#10b981] group-hover:scale-110 transition-transform">
+                    <BookOpen size={15} />
+                  </div>
+                  <div className="text-[14px] font-bold text-[#1f1e1d]">{t.nav_learn_blog}</div>
+                </Link>
+              </div>
+            </div>
+          </div>
           
           {/* Solutions Dropdown */}
           <div
@@ -169,7 +245,6 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
           </div>
 
           <Link href={`${base}/about`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_about}</Link>
-          <Link href={`${base}/blog`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_blog}</Link>
           <Link href={`${base}/pricing`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_pricing}</Link>
           <Link href={`${base}/contact`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_contact}</Link>
         </div>
@@ -228,7 +303,42 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
         <>
           <div className="fixed inset-0 bg-black/10 z-[98]" onClick={() => setMobileMenuOpen(false)} />
           <div className="md:hidden absolute top-[64px] left-0 right-0 bg-white border-b border-[#e8e4de] p-5 flex flex-col gap-0.5 z-[99] shadow-lg max-h-[calc(100vh-64px)] overflow-y-auto">
-            <Link href={`${base}/#how-it-works`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_howItWorks}</Link>
+            
+            {/* Mobile Learn Accordion */}
+            <button
+              onClick={() => setMobileLearnOpen(!mobileLearnOpen)}
+              className="flex items-center justify-between text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors w-full text-left"
+            >
+              {t.nav_howItWorks}
+              <ChevronDown
+                size={16}
+                className={`transition-transform duration-200 text-[#ada89f] ${mobileLearnOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+            {mobileLearnOpen && (
+              <div className="pl-3 space-y-0.5 pb-1">
+                <Link
+                  href={`${base}/#how-it-works`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors"
+                >
+                  <div className="w-8 h-8 bg-[#ea580c]/10 rounded-lg flex items-center justify-center text-[#ea580c]">
+                    <Utensils size={15} />
+                  </div>
+                  <div className="text-[14px] font-semibold text-[#1f1e1d]">{t.nav_learn_features}</div>
+                </Link>
+                <Link
+                  href={`${base}/blog`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors"
+                >
+                  <div className="w-8 h-8 bg-[#10b981]/10 rounded-lg flex items-center justify-center text-[#10b981]">
+                    <BookOpen size={15} />
+                  </div>
+                  <div className="text-[14px] font-semibold text-[#1f1e1d]">{t.nav_learn_blog}</div>
+                </Link>
+              </div>
+            )}
             
             {/* Mobile Solutions Accordion */}
             <button
@@ -263,7 +373,6 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
             )}
 
             <Link href={`${base}/about`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_about}</Link>
-            <Link href={`${base}/blog`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_blog}</Link>
             <Link href={`${base}/pricing`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_pricing}</Link>
             <Link href={`${base}/contact`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_contact}</Link>
             <div className="pt-3 mt-2 border-t border-[#e8e4de] space-y-0.5">
