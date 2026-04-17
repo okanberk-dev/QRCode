@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, X, Globe, ChevronDown, Utensils, BedDouble, HeartPulse } from 'lucide-react';
+import { Menu, X, Globe, ChevronDown, Utensils, BedDouble, HeartPulse, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useTransition, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
