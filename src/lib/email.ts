@@ -10,7 +10,7 @@ async function sendResendEmail({
   text,
   replyTo,
 }: {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
   text: string;
@@ -78,7 +78,7 @@ async function sendResendEmail({
 /**
  * Generic mail sender for other parts of the app.
  */
-export async function sendMail({ to, subject, html, text, replyTo }: { to: string, subject: string, html: string, text: string, replyTo?: string }) {
+export async function sendMail({ to, subject, html, text, replyTo }: { to: string | string[], subject: string, html: string, text: string, replyTo?: string }) {
   return await sendResendEmail({ to, subject, html, text, replyTo });
 }
 

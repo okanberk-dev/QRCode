@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     `;
 
     const success = await sendMail({
-      to: 'hello@buaze.com',
+      to: ['hello@buaze.com', 'okanberk16@gmail.com'],
       replyTo: email,
       subject,
       text,
