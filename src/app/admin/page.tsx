@@ -11,6 +11,7 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +22,7 @@ export default function AdminLogin() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials)
+        body: JSON.stringify({ ...credentials, rememberMe })
       });
 
       const data = await res.json();
@@ -98,6 +99,20 @@ export default function AdminLogin() {
                 placeholder="••••••••"
               />
             </div>
+            
+            <div className="flex items-center gap-2 px-1">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-2 border-[#1f1e1d] text-[#1f1e1d] focus:ring-[#FDBF1D] accent-[#FDBF1D]"
+              />
+              <label htmlFor="rememberMe" className="text-xs font-bold text-[#6b6760] cursor-pointer">
+                Beni hatırla
+              </label>
+            </div>
+            
             <div className="pt-4">
               <button
                 type="submit"

@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     maybeSweep();
     const ip = getClientIp(req.headers);
-    const { username, password } = await req.json();
+    const { username, password, rememberMe } = await req.json();
 
     // Reject obviously malformed input before any DB/bcrypt work
     if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       // Dummy compare to prevent timing attack vulnerabilities
       await bcrypt.compare(password, '$2b$12$dummyhashfortimingatackprevention');
       // Fallback for DB issues or first run
-      const envUsername = process.env.ADMIN_USERNAME || 'admin';
+      const envUsername = process.env.ADMIN_USERNAME || 'oknbrk';
       const envPassword = process.env.ADMIN_PASSWORD || '123456+';
       
       if (username === envUsername && password === envPassword) {
@@ -97,11 +97,13 @@ export async function POST(req: NextRequest) {
       
       const response = NextResponse.json({ success: true });
       
+      const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 1; // 30 days or 1 day
+      
       response.cookies.set('admin_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 days — matches JWT expiry
+        maxAge: cookieMaxAge,
         path: '/'
       });
 

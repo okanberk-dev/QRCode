@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     maybeSweep();
     const ip = getClientIp(req.headers);
-    const { email, password } = await req.json();
+    const { email, password, rememberMe } = await req.json();
 
     if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
       return NextResponse.json(
@@ -112,11 +112,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 1; // 30 days or 1 day
+
     response.cookies.set('user_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: cookieMaxAge,
       path: '/',
     });
 

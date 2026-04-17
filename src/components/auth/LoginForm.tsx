@@ -25,7 +25,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ email: '', password: '', rememberMe: false });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,6 +119,19 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
             {showPassword ? <EyeOff size={20} strokeWidth={2.5} /> : <Eye size={20} strokeWidth={2.5} />}
           </button>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2 px-1">
+        <input
+          type="checkbox"
+          id="rememberMe"
+          checked={form.rememberMe}
+          onChange={(e) => setForm(prev => ({ ...prev, rememberMe: e.target.checked }))}
+          className="w-4 h-4 rounded border-2 border-[#1f1e1d] text-[#1f1e1d] focus:ring-[#FDBF1D] accent-[#FDBF1D]"
+        />
+        <label htmlFor="rememberMe" className="text-xs font-bold text-[#6b6760] cursor-pointer">
+          {locale === 'tr' ? 'Beni hatırla' : 'Remember me'}
+        </label>
       </div>
 
       <button
