@@ -4,7 +4,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import ContactForm from '@/components/marketing/ContactForm';
-import { Mail, Phone, MapPin, ShieldCheck } from 'lucide-react';
+import { Mail, MapPin, ShieldCheck } from 'lucide-react';
 
 export async function generateMetadata({
   params,
@@ -42,12 +42,11 @@ export default async function ContactPage({
     name: 'Buaze',
     url: 'https://buaze.com',
     email: 'hello@buaze.com',
-    address: { '@type': 'PostalAddress', addressLocality: 'Bursa', addressCountry: 'TR' },
+    address: { '@type': 'PostalAddress', addressLocality: 'Ataşehir, İstanbul', addressCountry: 'TR' },
   };
 
   const contactItems = [
     { icon: <Mail size={19} />, label: t.contact_email_label, value: t.contact_email },
-    { icon: <Phone size={19} />, label: t.contact_phone_label, value: t.contact_phone },
     { icon: <MapPin size={19} />, label: t.contact_address_label, value: t.contact_address },
   ];
 

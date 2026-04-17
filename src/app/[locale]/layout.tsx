@@ -30,10 +30,10 @@ export async function generateMetadata({
     category: 'Business',
     // GEO Tags
     other: {
-      'geo.region': 'TR',
-      'geo.placename': 'Bursa',
-      'geo.position': '40.1828;29.0667',
-      'ICBM': '40.1828, 29.0667',
+      'geo.region': 'TR-34',
+      'geo.placename': 'Ataşehir, İstanbul',
+      'geo.position': '40.9923;29.1244',
+      'ICBM': '40.9923, 29.1244',
     },
     robots: {
       index: true,
