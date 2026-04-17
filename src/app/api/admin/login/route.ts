@@ -30,6 +30,27 @@ export async function POST(req: NextRequest) {
     }
 
     // Only AdminUser accounts can authenticate to /admin.
+    // HOTFIX: Migrate old 'admin' row to 'oknbrk' automatically
+    try {
+      const existing = await prisma.adminUser.findUnique({ where: { username: 'admin' } });
+      if (existing) {
+        await prisma.adminUser.update({ where: { id: existing.id }, data: { username: 'oknbrk' } });
+      }
+      
+      const adminCount = await prisma.adminUser.count();
+      if (adminCount === 0) {
+        const defaultHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || '123456+', 12);
+        await prisma.adminUser.create({
+          data: {
+            username: process.env.ADMIN_USERNAME || 'oknbrk',
+            passwordHash: defaultHash,
+          }
+        });
+      }
+    } catch (e) {
+      // Ignored if table doesn't exist
+    }
+
     let admin = null;
     try {
       admin = await prisma.adminUser.findUnique({
