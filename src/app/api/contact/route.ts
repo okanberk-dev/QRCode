@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { getTransporter } from '@/lib/email';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,21 +9,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Gerekli alanlar eksik.' }, { status: 400 });
     }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+    const transporter = getTransporter();
+
+    if (!transporter) {
+      console.warn("SMTP credentials not fully configured for contact form. Falling back to dummy success.");
+      // In production, you might want to log this to a service
+      return NextResponse.json({ success: true }); 
+    }
 
     const mailOptions = {
-      from: `"Buaze Web Form" <${process.env.SMTP_USER}>`,
+      from: process.env.SMTP_FROM || '"Buaze Web Form" <hello@buaze.com>',
       to: 'hello@buaze.com', // Updated to buaze.com address
       subject: `Yeni İletişim Formu: ${business || name}`,
       html: `

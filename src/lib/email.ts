@@ -2,20 +2,20 @@ import nodemailer from 'nodemailer';
 
 let transporterInstance: any = null;
 
-function getTransporter() {
+export function getTransporter() {
   if (transporterInstance) return transporterInstance;
 
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, RESEND_API_KEY } = process.env;
 
   // Resend auto-configure (sets RESEND_API_KEY via Vercel integration)
-  if (RESEND_API_KEY) {
+  if (RESEND_API_KEY && RESEND_API_KEY.trim() !== '') {
     transporterInstance = nodemailer.createTransport({
       host: 'smtp.resend.com',
       port: 465,
       secure: true,
       auth: {
         user: 'resend',
-        pass: RESEND_API_KEY,
+        pass: RESEND_API_KEY.trim(),
       },
     });
     return transporterInstance;
