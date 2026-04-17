@@ -35,8 +35,11 @@ export default function ContactForm({ t }: ContactFormProps) {
     const data = {
       name: formData.get('name'),
       email: formData.get('email'),
+      phone: formData.get('phone'),
       business: formData.get('business'),
       message: formData.get('message'),
+      kvkk: formData.get('kvkk') === 'on',
+      marketing: formData.get('marketing') === 'on',
     };
 
     try {
@@ -111,15 +114,27 @@ export default function ContactForm({ t }: ContactFormProps) {
             </div>
           </div>
 
-          <div>
-            <label className={labelClass}>{t.contact_form_business}</label>
-            <input
-              type="text"
-              name="business"
-              id="contact-business"
-              className={inputClass}
-              placeholder={t.contact_business_placeholder}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>{t.contact_form_business}</label>
+              <input
+                type="text"
+                name="business"
+                id="contact-business"
+                className={inputClass}
+                placeholder={t.contact_business_placeholder}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>TELEFON NUMARASI / PHONE</label>
+              <input
+                type="tel"
+                name="phone"
+                id="contact-phone"
+                className={inputClass}
+                placeholder="+90 (5XX) XXX XX XX"
+              />
+            </div>
           </div>
 
           <div>
@@ -132,6 +147,32 @@ export default function ContactForm({ t }: ContactFormProps) {
               className={`${inputClass} resize-none`}
               placeholder={t.contact_message_placeholder}
             />
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                required
+                name="kvkk"
+                id="contact-kvkk"
+                className="mt-1 w-4 h-4 rounded border-2 border-[#1f1e1d] text-[#1f1e1d] focus:ring-[#FDBF1D] accent-[#FDBF1D] cursor-pointer"
+              />
+              <label htmlFor="contact-kvkk" className="text-[12px] font-medium text-[#6b6760] leading-tight cursor-pointer">
+                KVKK ve Gizlilik Politikası kapsamında kişisel verilerimin işlenmesini okudum ve  <span className="font-bold border-b border-[#6b6760]">kabul ediyorum</span>.
+              </label>
+            </div>
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                name="marketing"
+                id="contact-marketing"
+                className="mt-1 w-4 h-4 rounded border-2 border-[#1f1e1d] text-[#1f1e1d] focus:ring-[#FDBF1D] accent-[#FDBF1D] cursor-pointer"
+              />
+              <label htmlFor="contact-marketing" className="text-[12px] font-medium text-[#6b6760] leading-tight cursor-pointer">
+                Kampanya, duyuru ve yenilikler hakkında <span className="font-bold border-b border-[#6b6760]">ticari elektronik ileti</span> almayı kabul ediyorum.
+              </label>
+            </div>
           </div>
 
           <button
