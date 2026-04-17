@@ -130,7 +130,7 @@ export default async function ContactPage({
           <div className="relative group lg:mt-0">
              <div className="absolute inset-0 bg-[#FDBF1D] rounded-[48px] translate-x-4 translate-y-4 -z-10 border-[3px] border-[#1f1e1d]" />
              <div className="bg-white p-1 pb-1 rounded-[48px] border-[4px] border-[#1f1e1d] overflow-hidden shadow-[12px_14px_40px_-15px_rgba(0,0,0,0.1)]">
-                <ContactForm t={t} />
+                <ContactForm t={t} locale={locale} />
              </div>
           </div>
         </div>

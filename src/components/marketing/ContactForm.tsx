@@ -18,9 +18,10 @@ interface ContactFormProps {
     contact_business_placeholder: string;
     contact_message_placeholder: string;
   };
+  locale: string;
 }
 
-export default function ContactForm({ t }: ContactFormProps) {
+export default function ContactForm({ t, locale }: ContactFormProps) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -160,7 +161,11 @@ export default function ContactForm({ t }: ContactFormProps) {
                 className="mt-1 w-4 h-4 rounded border-2 border-[#1f1e1d] text-[#1f1e1d] focus:ring-[#FDBF1D] accent-[#FDBF1D] cursor-pointer"
               />
               <label htmlFor="contact-kvkk" className="text-[12px] font-medium text-[#6b6760] leading-tight cursor-pointer">
-                <span onClick={(e) => { e.preventDefault(); setModal('kvkk'); }} className="font-bold border-b border-[#6b6760] hover:text-[#1f1e1d] hover:border-[#1f1e1d] transition-colors">KVKK ve Gizlilik Politikası</span> kapsamında kişisel verilerimin işlenmesini okudum ve kabul ediyorum.
+                {locale === 'en' ? (
+                  <>I have read and <span onClick={(e) => { e.preventDefault(); setModal('kvkk'); }} className="font-bold border-b border-[#6b6760] hover:text-[#1f1e1d] hover:border-[#1f1e1d] transition-colors">accept</span> the processing of my personal data under the Privacy Policy.</>
+                ) : (
+                  <><span onClick={(e) => { e.preventDefault(); setModal('kvkk'); }} className="font-bold border-b border-[#6b6760] hover:text-[#1f1e1d] hover:border-[#1f1e1d] transition-colors">KVKK ve Gizlilik Politikası</span> kapsamında kişisel verilerimin işlenmesini okudum ve kabul ediyorum.</>
+                )}
               </label>
             </div>
             <div className="flex items-start gap-3">
@@ -171,7 +176,11 @@ export default function ContactForm({ t }: ContactFormProps) {
                 className="mt-1 w-4 h-4 rounded border-2 border-[#1f1e1d] text-[#1f1e1d] focus:ring-[#FDBF1D] accent-[#FDBF1D] cursor-pointer"
               />
               <label htmlFor="contact-marketing" className="text-[12px] font-medium text-[#6b6760] leading-tight cursor-pointer">
-                Kampanya, duyuru ve yenilikler hakkında <span onClick={(e) => { e.preventDefault(); setModal('marketing'); }} className="font-bold border-b border-[#6b6760] hover:text-[#1f1e1d] hover:border-[#1f1e1d] transition-colors">ticari elektronik ileti</span> almayı kabul ediyorum.
+                {locale === 'en' ? (
+                  <>I agree to receive <span onClick={(e) => { e.preventDefault(); setModal('marketing'); }} className="font-bold border-b border-[#6b6760] hover:text-[#1f1e1d] hover:border-[#1f1e1d] transition-colors">commercial electronic messages</span> regarding campaigns, announcements, and updates.</>
+                ) : (
+                  <>Kampanya, duyuru ve yenilikler hakkında <span onClick={(e) => { e.preventDefault(); setModal('marketing'); }} className="font-bold border-b border-[#6b6760] hover:text-[#1f1e1d] hover:border-[#1f1e1d] transition-colors">ticari elektronik ileti</span> almayı kabul ediyorum.</>
+                )}
               </label>
             </div>
           </div>
@@ -195,7 +204,9 @@ export default function ContactForm({ t }: ContactFormProps) {
           <div className="relative w-full max-w-2xl max-h-[85vh] bg-white rounded-3xl border-[4px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex-shrink-0 flex items-center justify-between p-6 border-b-2 border-[#e8e4de] bg-[#F7F4F0]">
               <h3 className="text-xl font-black tracking-tight text-[#111827]">
-                {modal === 'kvkk' ? 'KVKK Aydınlatma Metni' : 'Ticari Elektronik İleti Onayı'}
+                {modal === 'kvkk' 
+                  ? (locale === 'en' ? 'Privacy Policy & Terms' : 'KVKK Aydınlatma Metni') 
+                  : (locale === 'en' ? 'Commercial Electronic Message Consent' : 'Ticari Elektronik İleti Onayı')}
               </h3>
               <button 
                 onClick={() => setModal(null)}
@@ -206,20 +217,38 @@ export default function ContactForm({ t }: ContactFormProps) {
             </div>
             <div className="flex-1 overflow-y-auto p-6 sm:p-8 text-sm font-medium text-[#4a4741] space-y-4 leading-relaxed">
               {modal === 'kvkk' && (
-                <>
-                  <p><strong>1. Veri Sorumlusunun Kimliği:</strong> Buaze olarak (bundan böyle “Şirket” olarak anılacaktır), 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) uyarınca veri sorumlusu sıfatıyla kişisel verilerinizi işlemekteyiz.</p>
-                  <p><strong>2. İşlenen Kişisel Verileriniz ve İşlenme Amaçları:</strong> Ad soyad, e-posta, telefon numarası ve mesaj içeriği gibi bize iletişim formu aracılığıyla ilettiğiniz verileriniz; taleplerinizin değerlendirilmesi, sizinle iletişime geçilmesi, gerekli destek hizmetinin sağlanması ve hizmet süreçlerimizin yürütülmesi amaçlarıyla sınırlı olarak işlenmektedir.</p>
-                  <p><strong>3. Kişisel Veri Toplamanın Yöntemi ve Hukuki Sebebi:</strong> Kişisel verileriniz, web sitemizde yer alan Formlar aracılığıyla elektronik ortamda toplanmaktadır. Bu veriler KVKK madde 5/2 uyarınca "ilgili kişinin temel hak ve özgürlüklerine zarar vermemek kaydıyla, veri sorumlusunun meşru menfaatleri için veri işlenmesinin zorunlu olması" ve "bir sözleşmenin kurulması veya ifasıyla doğrudan doğruya ilgili olması" hukuki sebeplerine dayanılarak işlenmektedir.</p>
-                  <p><strong>4. Kişisel Verilerin Aktarımı:</strong> İşlenen kişisel verileriniz, yasal yükümlülüklerin yerine getirilmesi amacıyla yetkili kamu kurum ve kuruluşları ile sözleşmesel yükümlülüklerimizin ifası için hizmet aldığımız altyapı/sunucu sağlayıcılarına (örnek: veri barındırma hizmetleri) KVKK md. 8 ve 9 çerçevesinde aktarılabilecektir.</p>
-                  <p><strong>5. Haklarınız:</strong> KVKK madde 11 uyarınca, veri sorumlusuna başvurarak kişisel verilerinizin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme, işlenme amacına uygun kullanılıp kullanılmadığını öğrenme, aktarıldığı 3. kişileri bilme, eksik/yanlış düzeltilmesini isteme, silinmesini isteme hakkına sahipsiniz.</p>
-                </>
+                locale === 'en' ? (
+                  <>
+                    <p><strong>1. Data Controller:</strong> As Buaze (hereinafter referred to as the "Company"), we process your personal data in our capacity as the data controller in accordance with applicable data protection laws, including the GDPR and KVKK.</p>
+                    <p><strong>2. Processed Personal Data and Purposes:</strong> Data you provide via our contact forms (such as your name, email, phone number, and message content) is processed strictly for the purposes of evaluating your requests, getting in touch with you, providing necessary support services, and managing our service processes.</p>
+                    <p><strong>3. Method and Legal Basis for Data Collection:</strong> Your personal data is collected electronically via our website. This data is processed based on the legal grounds that "processing is necessary for the legitimate interests pursued by the controller" provided that it does not harm the fundamental rights and freedoms of the data subject, and "processing is directly related to the establishment or performance of a contract".</p>
+                    <p><strong>4. Transfer of Personal Data:</strong> Your processed personal data may be transferred to authorized public institutions to fulfill legal obligations, and securely to infrastructure/server providers (e.g., data hosting services) we utilize to fulfill our contractual obligations.</p>
+                    <p><strong>5. Your Rights:</strong> By applying to the data controller, you have the right to learn whether your personal data is being processed, request information if it has been processed, learn the purpose of the processing, know the third parties to whom it was transferred, request correction of incomplete/incorrect data, and request its deletion.</p>
+                  </>
+                ) : (
+                  <>
+                    <p><strong>1. Veri Sorumlusunun Kimliği:</strong> Buaze olarak (bundan böyle “Şirket” olarak anılacaktır), 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) uyarınca veri sorumlusu sıfatıyla kişisel verilerinizi işlemekteyiz.</p>
+                    <p><strong>2. İşlenen Kişisel Verileriniz ve İşlenme Amaçları:</strong> Ad soyad, e-posta, telefon numarası ve mesaj içeriği gibi bize iletişim formu aracılığıyla ilettiğiniz verileriniz; taleplerinizin değerlendirilmesi, sizinle iletişime geçilmesi, gerekli destek hizmetinin sağlanması ve hizmet süreçlerimizin yürütülmesi amaçlarıyla sınırlı olarak işlenmektedir.</p>
+                    <p><strong>3. Kişisel Veri Toplamanın Yöntemi ve Hukuki Sebebi:</strong> Kişisel verileriniz, web sitemizde yer alan Formlar aracılığıyla elektronik ortamda toplanmaktadır. Bu veriler KVKK madde 5/2 uyarınca "ilgili kişinin temel hak ve özgürlüklerine zarar vermemek kaydıyla, veri sorumlusunun meşru menfaatleri için veri işlenmesinin zorunlu olması" ve "bir sözleşmenin kurulması veya ifasıyla doğrudan doğruya ilgili olması" hukuki sebeplerine dayanılarak işlenmektedir.</p>
+                    <p><strong>4. Kişisel Verilerin Aktarımı:</strong> İşlenen kişisel verileriniz, yasal yükümlülüklerin yerine getirilmesi amacıyla yetkili kamu kurum ve kuruluşları ile sözleşmesel yükümlülüklerimizin ifası için hizmet aldığımız altyapı/sunucu sağlayıcılarına (örnek: veri barındırma hizmetleri) KVKK md. 8 ve 9 çerçevesinde aktarılabilecektir.</p>
+                    <p><strong>5. Haklarınız:</strong> KVKK madde 11 uyarınca, veri sorumlusuna başvurarak kişisel verilerinizin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme, işlenme amacına uygun kullanılıp kullanılmadığını öğrenme, aktarıldığı 3. kişileri bilme, eksik/yanlış düzeltilmesini isteme, silinmesini isteme hakkına sahipsiniz.</p>
+                  </>
+                )
               )}
               {modal === 'marketing' && (
-                <>
-                  <p>Bize iletişim formu üzerinden sağlamış olduğunuz iletişim adresinize, 6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun uyarınca Şirketimiz (Buaze) tarafından sunulan ürün ve hizmetlerle ilgili kampanyalar, promosyonlar, duyurular ve yeni özellikler hakkında bilgilendirme yapılması amacıyla SMS, e-posta veya arama gibi yöntemlerle ticari elektronik ileti gönderilmesine onay vermektesiniz.</p>
-                  <p>İletişim bilgileriniz sadece bu amaca yönelik olarak işlenecek ve pazarlama veya tanıtım faaliyetlerinde kullanılacaktır. Altyapı, teknik destek ve ileti gönderimi süreçlerinde iş birliği yaptığımız güvenilir iş ortaklarına aktarılmasına (salt bülten ve duyuru gönderme amacıyla) peşinen muvafakat ediyorsunuz.</p>
-                  <p>Bu onayı istediğiniz zaman hiçbir gerekçe göstermeksizin iptal edebilir ve iletilerin size gönderilmesini ücretsiz olarak durdurabilirsiniz. Reddetme hakkınızı size gönderilen e-postaların altındaki "Abonelikten Çık" (Unsubscribe) linkine tıklayarak veya doğrudan tarafımıza ulaşarak kullanabilirsiniz.</p>
-                </>
+                locale === 'en' ? (
+                  <>
+                    <p>In accordance with applicable laws, you hereby give your consent for our Company (Buaze) to send commercial electronic messages via methods such as SMS, email, or direct calling to the contact address you have provided through the contact form, in order to inform you about campaigns, promotions, announcements, and new features related to our products and services.</p>
+                    <p>Your contact information will be processed strictly for this purpose and utilized exclusively in marketing or promotional activities. You consent in advance to its transfer to reliable business partners we collaborate with for infrastructure, technical support, and message delivery processes (solely for the purpose of sending newsletters and announcements).</p>
+                    <p>You can revoke this consent and stop the messages entirely free of charge at any time without giving any reason. You can exercise your opt-out right by clicking the "Unsubscribe" link at the bottom of the emails sent to you or by contacting us directly.</p>
+                  </>
+                ) : (
+                  <>
+                    <p>Bize iletişim formu üzerinden sağlamış olduğunuz iletişim adresinize, 6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun uyarınca Şirketimiz (Buaze) tarafından sunulan ürün ve hizmetlerle ilgili kampanyalar, promosyonlar, duyurular ve yeni özellikler hakkında bilgilendirme yapılması amacıyla SMS, e-posta veya arama gibi yöntemlerle ticari elektronik ileti gönderilmesine onay vermektesiniz.</p>
+                    <p>İletişim bilgileriniz sadece bu amaca yönelik olarak işlenecek ve pazarlama veya tanıtım faaliyetlerinde kullanılacaktır. Altyapı, teknik destek ve ileti gönderimi süreçlerinde iş birliği yaptığımız güvenilir iş ortaklarına aktarılmasına (salt bülten ve duyuru gönderme amacıyla) peşinen muvafakat ediyorsunuz.</p>
+                    <p>Bu onayı istediğiniz zaman hiçbir gerekçe göstermeksizin iptal edebilir ve iletilerin size gönderilmesini ücretsiz olarak durdurabilirsiniz. Reddetme hakkınızı size gönderilen e-postaların altındaki "Abonelikten Çık" (Unsubscribe) linkine tıklayarak veya doğrudan tarafımıza ulaşarak kullanabilirsiniz.</p>
+                  </>
+                )
               )}
             </div>
             <div className="flex-shrink-0 p-6 border-t-2 border-[#e8e4de] flex justify-end">
@@ -227,7 +256,7 @@ export default function ContactForm({ t }: ContactFormProps) {
                 onClick={() => setModal(null)}
                 className="px-6 py-2.5 bg-[#111827] text-white font-black text-sm rounded-xl border-2 border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] active:shadow-none active:translate-y-[4px] hover:bg-[#1f1e1d] transition-all"
               >
-                Anladım
+                {locale === 'en' ? 'I Understand' : 'Anladım'}
               </button>
             </div>
           </div>
