@@ -25,6 +25,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const [kvkkChecked, setKvkkChecked] = useState(false);
   const [modal, setModal] = useState<'kvkk' | 'marketing' | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -158,6 +159,8 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
                 required
                 name="kvkk"
                 id="contact-kvkk"
+                checked={kvkkChecked}
+                onChange={(e) => setKvkkChecked(e.target.checked)}
                 className="mt-1 w-4 h-4 rounded border-2 border-[#1f1e1d] text-[#1f1e1d] focus:ring-[#FDBF1D] accent-[#FDBF1D] cursor-pointer"
               />
               <label htmlFor="contact-kvkk" className="text-[12px] font-medium text-[#6b6760] leading-tight cursor-pointer">
@@ -188,8 +191,10 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
           <button
             type="submit"
             id="contact-submit-btn"
-            disabled={loading}
-            className="w-full py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 active:translate-y-[4px] active:shadow-none"
+            disabled={loading || !kvkkChecked}
+            className={`w-full py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] flex items-center justify-center gap-2.5 transition-all ${
+              !kvkkChecked ? 'opacity-40 cursor-not-allowed bg-gray-200 border-gray-400 text-gray-500' : 'shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] active:translate-y-[4px] active:shadow-none'
+            }`}
           >
             {loading ? <Loader2 className="animate-spin" size={17} /> : <Send size={16} />}
             {t.contact_form_submit}
@@ -199,23 +204,23 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
 
       {/* MODALS */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 pb-20 sm:pb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 pb-6 sm:pb-6">
           <div className="absolute inset-0 bg-[#111827]/40 backdrop-blur-sm" onClick={() => setModal(null)} />
-          <div className="relative w-full max-w-2xl max-h-[85vh] bg-white rounded-3xl border-[4px] border-[#1f1e1d] shadow-[12px_14px_0_0_#1f1e1d] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex-shrink-0 flex items-center justify-between p-6 border-b-2 border-[#e8e4de] bg-[#F7F4F0]">
-              <h3 className="text-xl font-black tracking-tight text-[#111827]">
+          <div className="relative w-[calc(100%-1rem)] sm:w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] bg-white rounded-2xl sm:rounded-3xl border-2 sm:border-[4px] border-[#1f1e1d] shadow-[4px_6px_0_0_#1f1e1d] sm:shadow-[12px_14px_0_0_#1f1e1d] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex-shrink-0 flex items-center justify-between p-4 sm:p-6 border-b-2 border-[#e8e4de] bg-[#F7F4F0]">
+              <h3 className="text-lg sm:text-xl font-black tracking-tight text-[#111827] pr-4 leading-tight">
                 {modal === 'kvkk' 
                   ? (locale === 'en' ? 'Privacy Policy & Terms' : 'KVKK Aydınlatma Metni') 
                   : (locale === 'en' ? 'Commercial Electronic Message Consent' : 'Ticari Elektronik İleti Onayı')}
               </h3>
               <button 
                 onClick={() => setModal(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-xl bg-white border-2 border-[#1f1e1d] hover:bg-[#FDBF1D] transition-colors shadow-[2px_2px_0_0_#1f1e1d]"
+                className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-xl bg-white border-2 border-[#1f1e1d] hover:bg-[#FDBF1D] transition-colors shadow-[2px_2px_0_0_#1f1e1d]"
               >
                 <span className="font-bold leading-none select-none -mt-0.5" style={{ fontSize: '18px' }}>×</span>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 sm:p-8 text-sm font-medium text-[#4a4741] space-y-4 leading-relaxed">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 text-[13px] sm:text-sm font-medium text-[#4a4741] space-y-3 sm:space-y-4 leading-relaxed">
               {modal === 'kvkk' && (
                 locale === 'en' ? (
                   <>
@@ -251,10 +256,10 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
                 )
               )}
             </div>
-            <div className="flex-shrink-0 p-6 border-t-2 border-[#e8e4de] flex justify-end">
+            <div className="flex-shrink-0 p-4 sm:p-6 border-t-2 border-[#e8e4de] flex justify-end bg-white">
               <button 
                 onClick={() => setModal(null)}
-                className="px-6 py-2.5 bg-[#111827] text-white font-black text-sm rounded-xl border-2 border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] active:shadow-none active:translate-y-[4px] hover:bg-[#1f1e1d] transition-all"
+                className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-[#111827] text-white font-black text-sm rounded-xl border-2 border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] active:shadow-none active:translate-y-[4px] hover:bg-[#1f1e1d] transition-all"
               >
                 {locale === 'en' ? 'I Understand' : 'Anladım'}
               </button>
