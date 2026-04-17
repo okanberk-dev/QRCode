@@ -14,10 +14,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Fiyatlandırma — Buaze' : 'Pricing — Buaze',
+    title: locale === 'tr' ? 'Fiyatlandırma | Google Puanı Yükseltme Hizmeti — Buaze' : 'Pricing | Google Ratings Boost Service — Buaze',
     description: locale === 'tr'
-      ? 'Buaze itibar yönetim platformunun şeffaf fiyatlandırması. 14 gün ücretsiz deneyin, kredi kartı gerekmez.'
-      : 'Transparent pricing for Buaze reputation management platform. Try free for 14 days, no credit card required.',
+      ? 'Buaze itibar yönetim platformu ile Google Haritalar puanınızı en uygun maliyetle artırın. 14 gün ücretsiz deneyin, kredi kartı gerekmez.'
+      : 'Boost your Google Maps rating affordably with the Buaze reputation management platform. Try free for 14 days, no credit card required.',
     alternates: {
       canonical: `https://buaze.com/${locale}/pricing`,
       languages: { 'tr': 'https://buaze.com/tr/pricing', 'en': 'https://buaze.com/en/pricing' },

@@ -19,11 +19,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = getTranslations(locale);
   const title = locale === 'tr'
-    ? 'Buaze | Restoranınız İçin Gelişmiş Dijital İtibar Yönetimi'
-    : 'Buaze | Advanced Digital Reputation Management for Restaurants';
+    ? 'Buaze | Google Puanınızı Yükseltin, Rekabette Öne Geçin'
+    : 'Buaze | Boost Your Google Ratings & Outperform the Competition';
   const description = locale === 'tr'
-    ? 'Buaze ile restoranınızın dijital itibarını otomatik yönetin. Google Haritalar puanınızı yükseltin, olumsuz yorumları anında filtreleyin.'
-    : 'Automate your restaurant digital reputation with Buaze. Increase your Google Maps ratings and filter out negative reviews instantly.';
+    ? 'Buaze ile organik Google Haritalar yorumlarınızı artırın ve puanınızı yükseltin. İşletmenizin dijital itibarını otomatik olarak güvenle yönetin.'
+    : 'Boost your organic Google Maps reviews and ratings with Buaze. Automate your business reputation management effortlessly and securely.';
 
   return {
     metadataBase: new URL('https://buaze.com'),
@@ -114,6 +114,15 @@ export default async function LandingPage({
             acceptedAnswer: { '@type': 'Answer', text: t.faq_a3 }
           }
         ]
+      },
+      {
+        '@type': 'Service',
+        name: locale === 'tr' ? 'Google Puan Yükseltme Hizmeti' : 'Google Ratings Boost Service',
+        provider: {
+          '@type': 'Organization',
+          name: 'Buaze'
+        },
+        description: locale === 'tr' ? 'Restoranlar ve işletmeler için otomatik olarak Google Haritalar 5 yıldızlı yorumlarını artırma ve itibar yönetimi hizmeti.' : 'Automatic service for restaurants and businesses to increase Google Maps 5-star reviews and manage reputation.',
       }
     ]
   };
@@ -136,12 +145,12 @@ export default async function LandingPage({
             {/* Left: Content */}
             <div className="text-left space-y-6">
               <h1 className="text-[32px] sm:text-[42px] lg:text-[56px] font-extrabold leading-[1.1] tracking-[-0.04em] text-[#1f1e1d]">
-                {locale === 'tr' ? (
-                  <>İşletmeniz İçin Kusursuz Dijital İtibar Yönetimi <br /><span className="text-[#FDBF1D]">Yeni Müşteriler Kazanmanın</span> En Hızlı Yolu</>
-                ) : (
-                  <>Flawless Digital Reputation Management <br />The Fastest Way to <span className="text-[#FDBF1D]">Win New Customers</span></>
-                )}
+                {t.hero_title_1} <br />
+                <span className="text-[#FDBF1D]">{t.hero_title_2}</span>
               </h1>
+              <p className="text-[17px] text-[#6b6760] font-medium leading-relaxed max-w-[500px]">
+                {t.hero_subtitle}
+              </p>
 
               <div className="space-y-1.5 pt-1">
                 <p className="text-[15px] text-[#6b6760] font-normal">

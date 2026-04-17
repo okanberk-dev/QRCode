@@ -1,8 +1,8 @@
 'use client';
 
-import { Menu, X, Globe, ChevronDown } from 'lucide-react';
+import { Menu, X, Globe, ChevronDown, Utensils, BedDouble, HeartPulse } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { Locale } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
@@ -11,6 +11,10 @@ interface MarketingNavbarProps {
   locale: Locale;
   t: {
     nav_howItWorks: string;
+    nav_solutions: string;
+    nav_sol_restaurants: string;
+    nav_sol_hotels: string;
+    nav_sol_healthcare: string;
     nav_about: string;
     nav_pricing: string;
     nav_contact: string;
@@ -22,9 +26,13 @@ interface MarketingNavbarProps {
 export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [solutionsOpen, setSolutionsOpen] = useState(false);
+  const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
   const [, startTransition] = useTransition();
   const router = useRouter();
   const pathname = usePathname();
+  const solutionsRef = useRef<HTMLDivElement>(null);
+  const solutionsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const otherLocale: Locale = locale === 'tr' ? 'en' : 'tr';
 
@@ -38,6 +46,55 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
   };
 
   const base = `/${locale}`;
+
+  const solutionItems = [
+    {
+      href: `${base}/solutions/restaurants`,
+      icon: <Utensils size={18} />,
+      label: t.nav_sol_restaurants,
+      desc: locale === 'tr' ? 'QR ile yorum toplama ve Google puan artırma' : 'Collect reviews via QR & boost Google ratings',
+      color: 'text-[#ea580c]',
+      bgColor: 'bg-[#ea580c]/10',
+    },
+    {
+      href: `${base}/solutions/hotels`,
+      icon: <BedDouble size={18} />,
+      label: t.nav_sol_hotels,
+      desc: locale === 'tr' ? 'TripAdvisor & Google entegre itibar yönetimi' : 'TripAdvisor & Google integrated reputation',
+      color: 'text-[#FDBF1D]',
+      bgColor: 'bg-[#FDBF1D]/10',
+    },
+    {
+      href: `${base}/solutions/healthcare`,
+      icon: <HeartPulse size={18} />,
+      label: t.nav_sol_healthcare,
+      desc: locale === 'tr' ? 'KVKK uyumlu hasta geri bildirim sistemi' : 'GDPR-compliant patient feedback system',
+      color: 'text-[#10b981]',
+      bgColor: 'bg-[#10b981]/10',
+    },
+  ];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (solutionsRef.current && !solutionsRef.current.contains(e.target as Node)) {
+        setSolutionsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSolutionsEnter = () => {
+    if (solutionsTimeoutRef.current) clearTimeout(solutionsTimeoutRef.current);
+    setSolutionsOpen(true);
+  };
+
+  const handleSolutionsLeave = () => {
+    solutionsTimeoutRef.current = setTimeout(() => {
+      setSolutionsOpen(false);
+    }, 200);
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/90 backdrop-blur-lg border-b border-[#e8e4de]/60 h-[64px]">
@@ -53,6 +110,63 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-7">
           <Link href={`${base}/#how-it-works`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_howItWorks}</Link>
+          
+          {/* Solutions Dropdown */}
+          <div
+            ref={solutionsRef}
+            className="relative"
+            onMouseEnter={handleSolutionsEnter}
+            onMouseLeave={handleSolutionsLeave}
+          >
+            <button
+              className="flex items-center gap-1 text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors"
+              onClick={() => setSolutionsOpen(!solutionsOpen)}
+            >
+              {t.nav_solutions}
+              <ChevronDown
+                size={14}
+                className={`transition-transform duration-200 ${solutionsOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {/* Dropdown Panel */}
+            <div
+              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[360px] bg-white border-[2.5px] border-[#1f1e1d] rounded-2xl shadow-[6px_8px_0_0_#1f1e1d] overflow-hidden transition-all duration-200 origin-top ${
+                solutionsOpen
+                  ? 'opacity-100 scale-100 pointer-events-auto'
+                  : 'opacity-0 scale-95 pointer-events-none'
+              }`}
+            >
+              <div className="p-2">
+                {solutionItems.map((item, i) => (
+                  <Link
+                    key={i}
+                    href={item.href}
+                    onClick={() => setSolutionsOpen(false)}
+                    className="flex items-start gap-3 p-3.5 rounded-xl hover:bg-[#F7F4F0] transition-colors group"
+                  >
+                    <div className={`flex-shrink-0 w-10 h-10 ${item.bgColor} rounded-xl flex items-center justify-center ${item.color} group-hover:scale-110 transition-transform`}>
+                      {item.icon}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[14px] font-bold text-[#1f1e1d] leading-tight">{item.label}</div>
+                      <div className="text-[11px] text-[#ada89f] font-medium mt-0.5 leading-snug">{item.desc}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <div className="border-t border-[#e8e4de] px-4 py-3 bg-[#FCFBF7]">
+                <Link
+                  href={`${base}/pricing`}
+                  onClick={() => setSolutionsOpen(false)}
+                  className="text-[11px] font-bold text-[#ada89f] hover:text-[#1f1e1d] transition-colors uppercase tracking-widest"
+                >
+                  {locale === 'tr' ? 'TÜM PLANLARI GÖRÜNTÜLE →' : 'VIEW ALL PLANS →'}
+                </Link>
+              </div>
+            </div>
+          </div>
+
           <Link href={`${base}/about`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_about}</Link>
           <Link href={`${base}/pricing`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_pricing}</Link>
           <Link href={`${base}/contact`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_contact}</Link>
@@ -111,8 +225,41 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
       {mobileMenuOpen && (
         <>
           <div className="fixed inset-0 bg-black/10 z-[98]" onClick={() => setMobileMenuOpen(false)} />
-          <div className="md:hidden absolute top-[64px] left-0 right-0 bg-white border-b border-[#e8e4de] p-5 flex flex-col gap-0.5 z-[99] shadow-lg">
+          <div className="md:hidden absolute top-[64px] left-0 right-0 bg-white border-b border-[#e8e4de] p-5 flex flex-col gap-0.5 z-[99] shadow-lg max-h-[calc(100vh-64px)] overflow-y-auto">
             <Link href={`${base}/#how-it-works`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_howItWorks}</Link>
+            
+            {/* Mobile Solutions Accordion */}
+            <button
+              onClick={() => setMobileSolutionsOpen(!mobileSolutionsOpen)}
+              className="flex items-center justify-between text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors w-full text-left"
+            >
+              {t.nav_solutions}
+              <ChevronDown
+                size={16}
+                className={`transition-transform duration-200 text-[#ada89f] ${mobileSolutionsOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+            {mobileSolutionsOpen && (
+              <div className="pl-3 space-y-0.5 pb-1">
+                {solutionItems.map((item, i) => (
+                  <Link
+                    key={i}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors"
+                  >
+                    <div className={`w-8 h-8 ${item.bgColor} rounded-lg flex items-center justify-center ${item.color}`}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <div className="text-[14px] font-semibold text-[#1f1e1d]">{item.label}</div>
+                      <div className="text-[11px] text-[#ada89f] font-medium">{item.desc}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+
             <Link href={`${base}/about`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_about}</Link>
             <Link href={`${base}/pricing`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_pricing}</Link>
             <Link href={`${base}/contact`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_contact}</Link>

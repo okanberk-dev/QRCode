@@ -13,10 +13,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Hakkımızda — Buaze' : 'About Us — Buaze',
+    title: locale === 'tr' ? 'Hakkımızda | Google Yorum ve İtibar Yönetimi — Buaze' : 'About Us | Google Reviews & Reputation Management — Buaze',
     description: locale === 'tr'
-      ? 'Buaze olarak işletmelerin dijital itibarını yönetmelerine yardımcı olmak için çalışıyoruz.'
-      : 'At Buaze, we help businesses manage their digital reputation.',
+      ? 'Buaze olarak işletmelerin dijital itibarını yönetmelerine, Google Haritalar yıldızlarını ve organik yorumlarını artırmalarına teknolojiyle güç veriyoruz.'
+      : 'At Buaze, we empower businesses with technology to manage their digital reputation, increase Google Maps stars, and boost organic reviews.',
     alternates: {
       canonical: `https://buaze.com/${locale}/about`,
       languages: { 'tr': 'https://buaze.com/tr/about', 'en': 'https://buaze.com/en/about' },

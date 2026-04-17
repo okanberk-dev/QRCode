@@ -14,13 +14,13 @@ export async function generateMetadata({
   return {
     metadataBase: new URL('https://buaze.com'),
     title: {
-      default: `${t.siteName} | ${locale === 'tr' ? 'Restoranınızın Dijital İtibar Yönetim Platformu' : 'Restaurant Digital Reputation Management Platform'}`,
+      default: `${t.siteName} | ${locale === 'tr' ? 'Google Puanınızı Yükseltin & İtibarınızı Yönetin' : 'Boost Your Google Ratings & Manage Reputation'}`,
       template: `%s | ${t.siteName}`,
     },
     description: t.siteDescription,
     keywords: locale === 'tr'
-      ? ['QR yorum sistemi', 'restoran itibar yönetimi', 'Google yorum toplama', 'dijital itibar', 'restoran yazılımı', 'müşteri memnuniyeti', 'buaze']
-      : ['QR review system', 'restaurant reputation management', 'Google review collection', 'digital reputation', 'restaurant software', 'customer feedback', 'buaze'],
+      ? ['Google puan yükseltme', 'Google haritalar yorum toplama', 'Google yıldız arttırma', 'QR yorum sistemi', 'restoran itibar yönetimi', 'dijital itibar', 'restoran Google puanı arttırma', 'müşteri memnuniyeti', 'buaze']
+      : ['Boost Google ratings', 'Increase Google Maps reviews', 'Google 5 star reviews', 'QR review system', 'restaurant reputation management', 'digital reputation', 'Google review collection', 'customer feedback', 'buaze'],
     authors: [{ name: 'Buaze', url: 'https://buaze.com' }],
     creator: 'Buaze',
     publisher: 'Buaze',
@@ -51,7 +51,7 @@ export async function generateMetadata({
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       url: `https://buaze.com/${locale}`,
       siteName: 'Buaze',
-      title: `Buaze | ${locale === 'tr' ? 'Dijital İtibar Yönetim Platformu' : 'Digital Reputation Management Platform'}`,
+      title: `Buaze | ${locale === 'tr' ? 'Google Puanınızı Yükseltin' : 'Boost Your Google Ratings'}`,
       description: t.siteDescription,
       images: [
         {
@@ -64,7 +64,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `Buaze | ${locale === 'tr' ? 'Dijital İtibar' : 'Digital Reputation'}`,
+      title: `Buaze | ${locale === 'tr' ? 'Google Puanınızı Yükseltin' : 'Boost Your Google Ratings'}`,
       description: t.siteDescription,
       creator: '@buaze',
     },

@@ -8,10 +8,14 @@ export const translations = {
     // Meta
     siteName: 'Buaze',
     siteUrl: 'https://buaze.com',
-    siteDescription: 'Restoranlar ve işletmeler için hepsi bir arada dijital itibar yönetimi. QR kod teknolojisiyle müşteri geri bildirimlerini otomatiğe bağlayın, Google Haritalar puanınızı artırın ve olumsuz yorumları akıllı filtreleme ile yönetin.',
+    siteDescription: 'Restoranlar ve işletmeler için Google Haritalar puanı yükseltme ve dijital itibar yönetimi. QR kod teknolojisiyle organik 5 yıldızlı yorumları artırın, olumsuz geri bildirimleri akıllı filtreleme ile daha internete düşmeden çözün.',
 
     // Navbar
     nav_howItWorks: 'Nasıl Çalışır?',
+    nav_solutions: 'Çözümler',
+    nav_sol_restaurants: 'Restoran ve Kafeler',
+    nav_sol_hotels: 'Otel ve Konaklama',
+    nav_sol_healthcare: 'Klinik ve Sağlık',
     nav_about: 'Hakkımızda',
     nav_pricing: 'Fiyatlandırma',
     nav_contact: 'İletişim',
@@ -19,9 +23,9 @@ export const translations = {
     nav_register: 'Ücretsiz Başla',
 
     // Hero
-    hero_title_1: 'İşletmenizin Dijital',
-    hero_title_2: 'Gücünü Keşfedin',
-    hero_subtitle: 'Müşteri güvenini saniyeler içinde inşa edin. Akıllı QR sistemimizle otomatik olarak daha fazla olumlu yorum toplayın ve markanızı olumsuz geri bildirimlerden proaktif olarak koruyun.',
+    hero_title_1: 'Google Puanınızı Hızla',
+    hero_title_2: 'Zirveye Taşıyın',
+    hero_subtitle: 'İşletmenizin Google Haritalar sıralamasını yükseltin ve daha fazla müşteri kazanın. Akıllı QR sistemimizle 5 yıldızlı yorumları artırırken, olumsuz geri bildirimleri kamuoyuna yansımadan kolayca çözün.',
     hero_cta: '14 Gün Ücretsiz Deneyin',
     hero_rating: '4.9/5 Kullanıcı Memnuniyeti',
     hero_platforms_title: 'Global platformlardaki tüm yorumlarınızı tek bir akıllı merkezde yönetiyoruz:',
@@ -257,15 +261,35 @@ export const translations = {
     feedback_google_direct_sub: 'İşletmeyi haritalar üzerinden destekleyin',
     feedback_page_not_found: 'Sayfa Bulunamadı',
     feedback_page_inactive: 'Bu işletme aktif değil veya bağlantı hatalı.',
+
+    // Solutions Pages
+    sol_res_title: 'Restoranlar İçin Google İtibar Yönetimi',
+    sol_res_desc: 'Google Haritalar\'da üst sıralara çıkın, organik 5 yıldızlı yorumları artırın ve restoranınızın kapısındaki kuyruğu uzatın.',
+    sol_res_h1: 'Restoranınızın Yıldızını Parlatın',
+    sol_res_p: 'Yemek sepeti veya benzeri platformlara komisyon ödemek yerine, kendi direkt müşterilerinizi sadık elçilere dönüştürün. Masalardaki QR menülerle veya hesap sümenlerindeki özel etiketlerimizle anında yorum toplayın.',
+    
+    sol_hot_title: 'Oteller İçin Entegre İtibar Optimizasyonu',
+    sol_hot_desc: 'TripAdvisor ve Google entegrasyonuyla otelinizin dijital yüzünü parlatın. Şikayetleri odadan çıkmadan çözün.',
+    sol_hot_h1: 'Mükemmel Misafir Deneyimi',
+    sol_hot_p: 'Resepsiyona yerleştireceğiniz akıllı QR kodlar ile check-out esnasında otomatik yorum alın. Olumsuz bir deneyim yaşandıysa direkt yönetime bildirim gitsin ve internete düşmeden çözülsün.',
+
+    sol_hea_title: 'Klinikler İçin Dijital Güven İnşası',
+    sol_hea_desc: 'Sağlık sektöründe kararı belirleyen en önemli faktör güvendir. Doğrulanmış hasta yorumlarıyla rakiplerinizin önüne geçin.',
+    sol_hea_h1: 'Hasta Güvenini Otomatiğe Bağlayın',
+    sol_hea_p: 'Tedavi sonrası bekleme salonunda veya çıkış bankosunda hastalarınızdan en taze geri bildirimleri alın. Gizliliği koruyarak etik çerçevede en yüksek puanlara organik olarak ulaşın.'
   },
   en: {
     // Meta
     siteName: 'Buaze',
     siteUrl: 'https://buaze.com',
-    siteDescription: 'All-in-one digital reputation management for restaurants and businesses. Automate customer feedback with QR code technology, boost your Google Maps rating, and manage negative reviews with smart filtering.',
+    siteDescription: 'Boost your Google Maps ratings and manage your digital reputation effortlessly. Use our smart QR code system to automate 5-star customer reviews, while privately resolving negative feedback before it goes public.',
 
     // Navbar
     nav_howItWorks: 'How It Works',
+    nav_solutions: 'Solutions',
+    nav_sol_restaurants: 'Restaurants & Cafes',
+    nav_sol_hotels: 'Hotels & Hospitality',
+    nav_sol_healthcare: 'Clinics & Healthcare',
     nav_about: 'About Us',
     nav_pricing: 'Pricing',
     nav_contact: 'Contact',
@@ -273,9 +297,9 @@ export const translations = {
     nav_register: 'Start Free',
 
     // Hero
-    hero_title_1: 'Elevate Your Digital',
-    hero_title_2: 'Authority Today',
-    hero_subtitle: 'Build unshakeable customer trust in seconds. Automatically collect more 5-star reviews with our smart QR system and proactively shield your brand from negative public feedback.',
+    hero_title_1: 'Rapidly Boost Your',
+    hero_title_2: 'Google Ratings',
+    hero_subtitle: 'Increase your Google Maps ranking and attract more customers. Our smart QR system helps you multiply 5-star reviews while resolving negative feedback privately before it hits the web.',
     hero_cta: 'Start Your 14-Day Free Trial',
     hero_rating: '4.9/5 User Satisfaction Rating',
     hero_platforms_title: 'We manage all your reviews from global platforms in one intelligent command center:',
@@ -511,6 +535,22 @@ export const translations = {
     feedback_google_direct_sub: 'Support the business via maps',
     feedback_page_not_found: 'Page Not Found',
     feedback_page_inactive: 'This business is not active or the link is incorrect.',
+
+    // Solutions Pages
+    sol_res_title: 'Google Reputation Management for Restaurants',
+    sol_res_desc: 'Climb to the top of Google Maps, increase organic 5-star reviews, and extend the queue right outside your restaurant.',
+    sol_res_h1: 'Make Your Restaurant\'s Stars Shine',
+    sol_res_p: 'Instead of paying high commissions to delivery apps, turn your direct customers into loyal brand ambassadors. Instantly collect reviews with our custom labels on tables or check holders.',
+    
+    sol_hot_title: 'Integrated Reputation Optimization for Hotels',
+    sol_hot_desc: 'Shine your hotel\'s digital face with TripAdvisor and Google integration. Resolve complaints before the guest leaves their room.',
+    sol_hot_h1: 'Flawless Guest Experience',
+    sol_hot_p: 'Automatically collect reviews during check-out using smart QR codes placed at the reception. If a negative experience occurs, management gets notified to resolve it before it hits the internet.',
+
+    sol_hea_title: 'Digital Trust Building for Clinics',
+    sol_hea_desc: 'In healthcare, trust is the deciding factor. Outperform your competitors with verified patient reviews.',
+    sol_hea_h1: 'Automate Patient Trust',
+    sol_hea_p: 'Gather the freshest feedback from your patients in the waiting room or at the discharge desk. Achieve the highest ratings organically and ethically while maintaining confidentiality.'
   },
 } as const;
 
