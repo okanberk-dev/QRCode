@@ -8,11 +8,13 @@ async function sendResendEmail({
   subject,
   html,
   text,
+  replyTo,
 }: {
   to: string;
   subject: string;
   html: string;
   text: string;
+  replyTo?: string;
 }) {
   const resendKey = process.env.RESEND_API_KEY?.trim();
 
@@ -26,13 +28,17 @@ async function sendResendEmail({
     console.log("[Buaze Email] Sending via Resend API. To:", to, "Subject:", subject);
     console.log("[Buaze Email] API Key prefix:", resendKey.substring(0, 8) + "...");
 
-    const payload = {
-      from: "Buaze <hello@buaze.com>",
+    const payload: any = {
+      from: "Buaze <noreply@buaze.com>",
       to,
       subject,
       html,
       text,
     };
+
+    if (replyTo) {
+      payload.reply_to = replyTo;
+    }
 
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -72,8 +78,8 @@ async function sendResendEmail({
 /**
  * Generic mail sender for other parts of the app.
  */
-export async function sendMail({ to, subject, html, text }: { to: string, subject: string, html: string, text: string }) {
-  return await sendResendEmail({ to, subject, html, text });
+export async function sendMail({ to, subject, html, text, replyTo }: { to: string, subject: string, html: string, text: string, replyTo?: string }) {
+  return await sendResendEmail({ to, subject, html, text, replyTo });
 }
 
 // Helper for 3D UI elements in Email

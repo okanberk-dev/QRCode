@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
 
     const success = await sendMail({
       to: process.env.NOTIFICATION_EMAIL || 'hello@buaze.com',
+      replyTo: email,
       subject,
       text,
       html
