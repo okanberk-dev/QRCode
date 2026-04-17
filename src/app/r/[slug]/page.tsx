@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense, useRef } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, notFound } from 'next/navigation';
 import { Star, Loader2, MapPin, ChevronRight, X } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import FeedbackForm, { FeedbackFormHandle } from '@/components/FeedbackForm';
@@ -48,7 +48,7 @@ function SlugContent() {
 
   const [restaurant, setRestaurant] = useState<RestaurantData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const [isNotFound, setIsNotFound] = useState(false);
 
   const [rating, setRating] = useState<number>(0);
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -62,10 +62,10 @@ function SlugContent() {
           const data = await res.json();
           setRestaurant(data);
         } else {
-          setNotFound(true);
+          setIsNotFound(true);
         }
       } catch {
-        setNotFound(true);
+        setIsNotFound(true);
       }
       setLoading(false);
     };
@@ -136,20 +136,8 @@ function SlugContent() {
   }
 
   // --- Not Found State ---
-  if (notFound || !restaurant) {
-    return (
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-gray-50 px-6">
-        <div className="text-center max-w-xs p-8 bg-white rounded-[2rem] shadow-sm border border-gray-100">
-          <div className="w-16 h-16 bg-red-50 text-red-400 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <X size={32} strokeWidth={2.5} />
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">{t('feedback_page_not_found')}</h1>
-          <p className="text-sm text-gray-500 leading-relaxed">
-            {t('feedback_page_inactive')}
-          </p>
-        </div>
-      </div>
-    );
+  if (isNotFound || !restaurant) {
+    return notFound();
   }
 
   return (

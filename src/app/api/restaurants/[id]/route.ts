@@ -138,11 +138,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
-    // Soft delete: set isActive to false
-    await prisma.restaurant.update({
-      where: { id },
-      data: { isActive: false },
-    });
+    // Hard delete: delete related records first to avoid foreign key constraints
+    await prisma.$transaction([
+      prisma.feedback.deleteMany({ where: { restaurantId: id } }),
+      prisma.qrGeneration.deleteMany({ where: { restaurantId: id } }),
+      prisma.adminUser.deleteMany({ where: { restaurantId: id } }),
+      prisma.restaurant.delete({ where: { id } })
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

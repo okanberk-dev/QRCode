@@ -83,7 +83,7 @@ export default function RestaurantDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Bu restoranı pasifleştirmek istediğinize emin misiniz?')) return;
+    if (!confirm('DİKKAT: Bu restoran kalıcı olarak silinecek ve geri alınamayacaktır! Tüm verileri (qr, feedback vb.) YOK OLACAKTIR. Onaylıyor musunuz?')) return;
     setDeleting(true);
     try {
       await fetch(`/api/restaurants/${id}`, { method: 'DELETE' });
@@ -269,7 +269,7 @@ export default function RestaurantDetailPage() {
             className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 border border-red-200 rounded-xl transition-colors disabled:opacity-50"
           >
             <Trash2 size={16} />
-            {deleting ? 'Siliniyor...' : 'Pasifleştir'}
+            {deleting ? 'Siliniyor...' : 'Restoranı Kalıcı Olarak Sil'}
           </button>
 
           <div className="flex gap-3">
