@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://buaze.com'),
   title: 'Buaze - Dijital İtibar Yönetimi',
   description: 'Restoran değerlendirme ve geri bildirim yönetim platformu',
   icons: {
