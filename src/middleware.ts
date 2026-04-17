@@ -34,6 +34,7 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value;
   if (!token) {
     const loginUrl = new URL('/admin', req.url);
+    loginUrl.searchParams.set('redirect', encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search));
     return NextResponse.redirect(loginUrl);
   }
 
@@ -41,6 +42,7 @@ export async function middleware(req: NextRequest) {
     const { payload } = await jose.jwtVerify(token, getSecretBytes());
     if (!isAllowedAdminPanelRole(payload.role)) {
       const loginUrl = new URL('/admin', req.url);
+      loginUrl.searchParams.set('redirect', encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search));
       const res = NextResponse.redirect(loginUrl);
       res.cookies.set('admin_token', '', { path: '/', maxAge: 0 });
       return res;
@@ -49,6 +51,7 @@ export async function middleware(req: NextRequest) {
   } catch {
     // Invalid / expired / tampered token — clear it and send to login
     const loginUrl = new URL('/admin', req.url);
+    loginUrl.searchParams.set('redirect', encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search));
     const res = NextResponse.redirect(loginUrl);
     res.cookies.set('admin_token', '', { path: '/', maxAge: 0 });
     return res;

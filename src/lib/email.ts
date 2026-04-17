@@ -58,6 +58,7 @@ export interface NotificationParams {
     service?: number;
     atmosphere?: number;
   } | null;
+  feedbackId?: string;
 }
 
 function renderStars(rating: number): string {
@@ -276,7 +277,7 @@ export async function sendFeedbackNotification(data: NotificationParams) {
           <!-- CTA BUTTON -->
           <tr>
             <td style="background:#ffffff;padding:0 40px 40px;text-align:center;">
-              <a href="${appUrl}/admin/dashboard" style="display:inline-block;background:${isCritical ? '#ef4444' : '#111827'};color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 32px;border-radius:12px;letter-spacing:0.3px;">
+              <a href="${appUrl}/admin/dashboard${data.feedbackId ? `?highlight=${data.feedbackId}` : ''}" style="display:inline-block;background:${isCritical ? '#ef4444' : '#111827'};color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 32px;border-radius:12px;letter-spacing:0.3px;">
                 ${isCritical ? 'Hemen İncele ve Yanıtla →' : 'Panelde İncele →'}
               </a>
               <p style="margin:12px 0 0;font-size:12px;color:#9ca3af;">Bu bildirimi değerlendirme panelinden yönetebilirsiniz.</p>
@@ -319,7 +320,7 @@ Tarih: ${new Date().toLocaleString('tr-TR')}
 Yorum:
 ${data.comment && data.comment !== 'High Rating Redirect' ? data.comment : 'Yorum bırakılmadı.'}
 
-${isCritical ? 'İlk 60 dakikada iletişime geçmek yorumu kurtarma şansınızı artırır.\n\n' : ''}Panelde inceleyin: ${appUrl}/admin/dashboard
+${isCritical ? 'İlk 60 dakikada iletişime geçmek yorumu kurtarma şansınızı artırır.\n\n' : ''}Panelde inceleyin: ${appUrl}/admin/dashboard${data.feedbackId ? `?highlight=${data.feedbackId}` : ''}
   `;
 
   try {

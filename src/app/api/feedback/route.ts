@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
           toEmail: notificationEmail,
           serviceType,
           aspects,
+          feedbackId: feedback.id,
         });
       } catch (err) {
         // Log but don't fail the entire request - the feedback IS in the DB!
