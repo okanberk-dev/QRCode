@@ -1,3 +1,5 @@
+import nodemailer from 'nodemailer';
+
 /**
  * Sends an email via Resend HTTP API.
  * This is more reliable than SMTP in serverless environments.
@@ -18,7 +20,7 @@ async function sendResendEmail({
 
   if (resendKey && resendKey !== "") {
     try {
-      console.log("[Buaze Email] Attempting to send via Resend API");
+      console.log("[Buaze Email] Attempting to send via Resend API. To:", to);
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -34,18 +36,21 @@ async function sendResendEmail({
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Resend API error: ${JSON.stringify(errorData)}`);
+      if (response.ok) {
+        console.log("[Buaze Email] Successfully sent via Resend API");
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error(`[Buaze Email] Resend API error (${response.status}):`, errorText);
+        console.warn("[Buaze Email] Possible cause: Domain (buaze.com) might not be verified in Resend dashboard.");
+        // We do NOT return false here; we fall back to SMTP below if available
       }
-
-      console.log("[Buaze Email] Successfully sent via Resend API");
-      return true;
     } catch (error) {
-      console.error("[Buaze Email] Resend API failed:", error);
-      // If Resend fails, we should still try the fallback if allowed, 
-      // but usually the key being present means we want Resend.
+      console.error("[Buaze Email] Fetch exception:", error);
+      // Fall through to SMTP
     }
+  } else {
+    console.warn("[Buaze Email] RESEND_API_KEY is missing or empty. Skipping Resend API path.");
   }
 
   // Fallback to Nodemailer/SMTP if Resend is not configured correctly
