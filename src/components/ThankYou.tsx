@@ -9,7 +9,7 @@ interface ThankYouProps {
 }
 
 export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) {
-  const hasGoogleUrl = !!googleReviewUrl;
+  const hasGoogleUrl = !!googleReviewUrl && (rating === undefined || rating >= 4);
 
   return (
     <div className="w-full max-w-sm mx-auto text-center py-6 animate-in zoom-in-95 duration-500">
