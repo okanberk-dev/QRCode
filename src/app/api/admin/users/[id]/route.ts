@@ -17,7 +17,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const data: any = { role, restaurantId: role === 'manager' ? restaurantId : null };
     
     if (password) {
-      data.passwordHash = await bcrypt.hash(password, 10);
+      data.passwordHash = await bcrypt.hash(password, 12);
     }
 
     const user = await prisma.adminUser.update({

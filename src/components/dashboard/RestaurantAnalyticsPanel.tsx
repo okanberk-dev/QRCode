@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { BarChart3, Calendar, Loader2, TrendingUp } from 'lucide-react';
+import { BarChart3, Calendar, Loader2, SlidersHorizontal, TrendingUp } from 'lucide-react';
 import StatsCards from '@/components/admin/StatsCards';
 import RatingChart from '@/components/admin/RatingChart';
+import AspectBreakdown from '@/components/admin/AspectBreakdown';
+import GoogleConversionPanel from '@/components/admin/GoogleConversionPanel';
 
 const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), {
   ssr: false,
@@ -36,6 +38,26 @@ interface StatsResponse {
   };
   trends: { date: string; count: number; avgRating: number }[];
   dayDistribution: { name: string; count: number }[];
+  aspects?: {
+    food: { avg: number | null; count: number };
+    service: { avg: number | null; count: number };
+    atmosphere: { avg: number | null; count: number };
+  };
+  googleConversion?: {
+    totalResponses: number;
+    highRatings: number;
+    sentToGoogle: number;
+    missedOpportunities: number;
+    conversionRate: number | null;
+    byRestaurant: Array<{
+      id: string;
+      name: string;
+      hasGoogleLink: boolean;
+      highRatings: number;
+      sentToGoogle: number;
+      conversionRate: number | null;
+    }>;
+  };
 }
 
 interface RestaurantAnalyticsPanelProps {
@@ -57,6 +79,10 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
         rating: 'Puan Dağılımı',
         trends: 'Trend Analizi',
         days: 'Günlük Dağılım',
+        aspects: 'Kategori Analizi',
+        aspectsSub: 'Yemek, servis ve atmosfer puanlarınızı karşılaştırın.',
+        google: 'Google Yorum Dönüşümü',
+        googleSub: 'Memnun müşterilerin kaçı Google\'a yorum bırakmaya yönlendiriliyor.',
       }
     : {
         title: 'Advanced Analytics',
@@ -65,6 +91,10 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
         rating: 'Rating Split',
         trends: 'Trend Analysis',
         days: 'Daily Activity',
+        aspects: 'Aspect Breakdown',
+        aspectsSub: 'Compare your food, service and atmosphere scores.',
+        google: 'Google Review Conversion',
+        googleSub: 'How many happy customers actually reach Google to leave a review.',
       };
 
   useEffect(() => {
@@ -148,6 +178,40 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
       ) : stats ? (
         <>
           <StatsCards stats={stats} />
+
+          {stats.aspects && (
+            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-4 flex items-center gap-3 sm:mb-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                  <SlidersHorizontal size={20} strokeWidth={2.75} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-black text-[#111827]">{copy.aspects}</h3>
+                  <p className="mt-0.5 text-xs font-bold text-[#6b6760]">{copy.aspectsSub}</p>
+                </div>
+              </div>
+              <AspectBreakdown aspects={stats.aspects} locale={locale} />
+            </div>
+          )}
+
+          {stats.googleConversion && (
+            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-4 flex items-center gap-3 sm:mb-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                  <TrendingUp size={20} strokeWidth={2.75} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-black text-[#111827]">{copy.google}</h3>
+                  <p className="mt-0.5 text-xs font-bold text-[#6b6760]">{copy.googleSub}</p>
+                </div>
+              </div>
+              <GoogleConversionPanel
+                data={stats.googleConversion}
+                locale={locale}
+                hideLeaderboard={selectedRestaurant !== 'all'}
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_0.7fr]">
             <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">

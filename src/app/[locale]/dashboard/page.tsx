@@ -235,12 +235,12 @@ export default async function DashboardPage({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {user.restaurants.map(restaurant => (
                 <div key={restaurant.id} className="bg-white rounded-[20px] border-2 border-[#1f1e1d] shadow-[3px_5px_0_0_#1f1e1d] p-6 sm:p-8 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all group">
-                  <div className="flex items-start justify-between mb-4 sm:mb-6">
-                    <div>
-                      <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d] group-hover:text-[#ea580c] transition-colors">{restaurant.name}</h3>
-                      <p className="text-[11px] sm:text-[13px] font-bold text-[#ada89f] mt-1">/{restaurant.slug}</p>
+                  <div className="flex items-start justify-between gap-3 mb-4 sm:mb-6">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d] group-hover:text-[#ea580c] transition-colors truncate">{restaurant.name}</h3>
+                      <p className="text-[11px] sm:text-[13px] font-bold text-[#ada89f] mt-1 truncate">/{restaurant.slug}</p>
                     </div>
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border-2 ${restaurant.isActive ? 'bg-green-50 text-green-600 border-green-200' : 'bg-gray-50 text-[#ada89f] border-gray-200'}`}>
+                    <span className={`shrink-0 whitespace-nowrap text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border-2 ${restaurant.isActive ? 'bg-green-50 text-green-600 border-green-200' : 'bg-gray-50 text-[#ada89f] border-gray-200'}`}>
                       {restaurant.isActive ? (locale === 'tr' ? 'AKTİF' : 'ACTIVE') : (locale === 'tr' ? 'PASİF' : 'INACTIVE')}
                     </span>
                   </div>

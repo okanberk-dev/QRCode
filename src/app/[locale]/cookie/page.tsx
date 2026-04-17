@@ -14,7 +14,7 @@ export async function generateMetadata({
   const isTr = locale === 'tr';
   
   return {
-    title: isTr ? 'Çerez Politikası | Buaze' : 'Cookie Policy | Buaze',
+    title: isTr ? 'Çerez Politikası - Buaze' : 'Cookie Policy - Buaze',
     description: isTr 
       ? 'Daha iyi bir deneyim sunmak için kullandığımız çerezler hakkında bilgi.'
       : 'Information about the cookies we use to provide a better experience.',

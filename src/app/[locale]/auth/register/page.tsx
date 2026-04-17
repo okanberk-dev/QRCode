@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Ücretsiz Kayıt Ol — Buaze' : 'Sign Up for Free — Buaze',
+    title: locale === 'tr' ? 'Ücretsiz Kayıt Ol - Buaze' : 'Sign Up for Free - Buaze',
     description: locale === 'tr'
       ? '14 gün boyunca Buaze\'yi ücretsiz deneyin. Kredi kartı gerekmez, anında başlayın.'
       : 'Try Buaze free for 14 days. No credit card required, start instantly.',
@@ -88,7 +88,7 @@ export default async function RegisterPage({
             <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8 sm:p-10 mb-6">
               <div className="mb-8 space-y-3 text-center lg:text-left">
                 <div className="inline-flex lg:hidden items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-2">
-                  ✦ {t.auth_trial_badge} · {t.auth_no_cc}
+                  ✦ {t.auth_trial_badge} - {t.auth_no_cc}
                 </div>
                 <h1 className="text-3xl font-black text-[#111827]">{t.auth_register_title}</h1>
                 <p className="text-gray-500 font-medium">{t.auth_register_subtitle}</p>

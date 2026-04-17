@@ -101,28 +101,34 @@ export async function GET(
       qrUrl += `&table=${encodeURIComponent(table)}`;
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.qrGeneration.create({
-        data: {
-          restaurantId: restaurant.id,
-          qrUrl,
-          tableNumber: table || null,
-        },
-      });
-
-      const overflow = await tx.qrGeneration.findMany({
-        where: { restaurantId: restaurant.id },
-        orderBy: { createdAt: 'desc' },
-        skip: 50,
-        select: { id: true },
-      });
-
-      if (overflow.length > 0) {
-        await tx.qrGeneration.deleteMany({
-          where: { id: { in: overflow.map((item) => item.id) } },
+    // Track generation — non-fatal if the qr_generations table hasn't been
+    // provisioned yet (e.g. first deploy before `prisma db push`).
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.qrGeneration.create({
+          data: {
+            restaurantId: restaurant.id,
+            qrUrl,
+            tableNumber: table || null,
+          },
         });
-      }
-    });
+
+        const overflow = await tx.qrGeneration.findMany({
+          where: { restaurantId: restaurant.id },
+          orderBy: { createdAt: 'desc' },
+          skip: 50,
+          select: { id: true },
+        });
+
+        if (overflow.length > 0) {
+          await tx.qrGeneration.deleteMany({
+            where: { id: { in: overflow.map((item) => item.id) } },
+          });
+        }
+      });
+    } catch (trackErr) {
+      console.warn('[QR] Generation tracking skipped (table may not exist):', (trackErr as Error).message);
+    }
 
     const qrOptions = {
       width,

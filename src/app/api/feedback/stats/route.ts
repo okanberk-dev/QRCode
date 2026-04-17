@@ -24,7 +24,12 @@ export async function GET(req: NextRequest) {
     }
 
     // ─── IDOR Security Override ───
-    if (actor.role === 'manager') {
+    if (actor.role === 'superadmin') {
+      // superadmin — optionally filter to a specific restaurant
+      if (restaurantIdParam && restaurantIdParam !== 'all') {
+        dateFilter.restaurantId = restaurantIdParam;
+      }
+    } else if (actor.role === 'manager') {
       dateFilter.restaurantId = actor.restaurantId;
     } else if (actor.role === 'restaurant_owner') {
       const userRestIds = await getScopedRestaurantIds(actor) || [];
@@ -37,9 +42,8 @@ export async function GET(req: NextRequest) {
       } else {
         dateFilter.restaurantId = { in: userRestIds };
       }
-    } else if (restaurantIdParam && restaurantIdParam !== 'all') {
-      // superadmin with specific restaurant selected
-      dateFilter.restaurantId = restaurantIdParam;
+    } else {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
     // Today filter
@@ -53,11 +57,138 @@ export async function GET(req: NextRequest) {
       where: { ...dateFilter, rating: { gte: 4 }, comment: 'High Rating Redirect' }
     });
 
+    // ─── Google Review Conversion ───
+    // A 4-5★ rating is a "conversion opportunity". We count it as actually
+    // sent to Google only if the parent Restaurant has a googlePlaceId set
+    // (otherwise /r/[slug] shows a thank-you page and no redirect happens).
+    const highRatingCount = await prisma.feedback.count({
+      where: { ...dateFilter, rating: { gte: 4 } },
+    });
+    const sentToGoogleCount = await prisma.feedback.count({
+      where: {
+        ...dateFilter,
+        rating: { gte: 4 },
+        restaurant: { googlePlaceId: { not: null } },
+      },
+    });
+    const missedHighRatings = highRatingCount - sentToGoogleCount;
+    const conversionRate = highRatingCount > 0
+      ? parseFloat(((sentToGoogleCount / highRatingCount) * 100).toFixed(1))
+      : null;
+
+    // Per-restaurant breakdown — only useful when the caller is looking at
+    // more than one restaurant. We still compute it always (≤ 3 quick
+    // queries) so the frontend can decide whether to show the leaderboard.
+    const isSingleRestaurant = typeof dateFilter.restaurantId === 'string';
+    let byRestaurant: Array<{
+      id: string;
+      name: string;
+      hasGoogleLink: boolean;
+      highRatings: number;
+      sentToGoogle: number;
+      conversionRate: number | null;
+    }> = [];
+
+    if (!isSingleRestaurant) {
+      // Build the groupBy where clause carefully: the dateFilter may already
+      // contain a restaurantId scope (e.g. { in: [...] } for restaurant_owner).
+      // We must NOT overwrite it with { not: null }.
+      const groupByWhere: any = { ...dateFilter, rating: { gte: 4 } };
+      if (!groupByWhere.restaurantId) {
+        groupByWhere.restaurantId = { not: null };
+      }
+      const highByRest = await prisma.feedback.groupBy({
+        by: ['restaurantId'],
+        where: groupByWhere,
+        _count: true,
+      });
+
+      if (highByRest.length > 0) {
+        const restaurantIds = highByRest
+          .map((r: any) => r.restaurantId as string | null)
+          .filter((id): id is string => !!id);
+
+        const restaurants = await prisma.restaurant.findMany({
+          where: { id: { in: restaurantIds } },
+          select: { id: true, name: true, googlePlaceId: true },
+        });
+
+        const restMap = new Map(restaurants.map((r: any) => [r.id, r]));
+
+        byRestaurant = highByRest
+          .map((row: any) => {
+            const rest = restMap.get(row.restaurantId);
+            if (!rest) return null;
+            const hasGoogleLink = !!rest.googlePlaceId;
+            const sent = hasGoogleLink ? row._count : 0;
+            const rate = row._count > 0
+              ? parseFloat(((sent / row._count) * 100).toFixed(1))
+              : null;
+            return {
+              id: rest.id,
+              name: rest.name,
+              hasGoogleLink,
+              highRatings: row._count,
+              sentToGoogle: sent,
+              conversionRate: rate,
+            };
+          })
+          .filter(Boolean) as typeof byRestaurant;
+
+        // Sort: biggest opportunity first (highest highRatings, lowest rate)
+        byRestaurant.sort((a, b) => b.highRatings - a.highRatings);
+      }
+    }
+
+    const googleConversion = {
+      totalResponses: totalCount,
+      highRatings: highRatingCount,
+      sentToGoogle: sentToGoogleCount,
+      missedOpportunities: missedHighRatings,
+      conversionRate,
+      byRestaurant,
+    };
+
     const aggregations = await prisma.feedback.aggregate({
       _avg: { rating: true },
       where: dateFilter
     });
     const avgRating = aggregations._avg.rating?.toFixed(1) || '0.0';
+
+    // Aspect breakdown: Food / Service / Atmosphere averages + sample size.
+    // Feedback rows where the respective aspect is null are automatically
+    // excluded from the average and counted separately.
+    const aspectAggs = await prisma.feedback.aggregate({
+      _avg: {
+        foodRating: true,
+        serviceRating: true,
+        atmosphereRating: true,
+      },
+      _count: {
+        foodRating: true,
+        serviceRating: true,
+        atmosphereRating: true,
+      },
+      where: dateFilter,
+    });
+
+    const round1 = (n: number | null | undefined) =>
+      n === null || n === undefined ? null : parseFloat(n.toFixed(1));
+
+    const aspects = {
+      food: {
+        avg: round1(aspectAggs._avg.foodRating),
+        count: aspectAggs._count.foodRating ?? 0,
+      },
+      service: {
+        avg: round1(aspectAggs._avg.serviceRating),
+        count: aspectAggs._count.serviceRating ?? 0,
+      },
+      atmosphere: {
+        avg: round1(aspectAggs._avg.atmosphereRating),
+        count: aspectAggs._count.atmosphereRating ?? 0,
+      },
+    };
 
     // Distribution
     const distributionRaw = await prisma.feedback.groupBy({
@@ -154,7 +285,9 @@ export async function GET(req: NextRequest) {
       distribution,
       trends, // Detailed trend (count + rating)
       dayDistribution, // Distribution by day of week
-      wordCloud
+      wordCloud,
+      aspects, // Food / Service / Atmosphere breakdown
+      googleConversion, // Google review conversion funnel + per-restaurant breakdown
     });
   } catch (error) {
     console.error('Failed to fetch stats:', error);

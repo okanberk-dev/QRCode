@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Bu kullanıcı adı zaten alınmış' }, { status: 400 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     let finalRestaurantId = restaurantId;
 
@@ -108,6 +108,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(user, { status: 201 });
   } catch (error: any) {
     console.error('[ADMIN_USER_CREATE]', error);
-    return NextResponse.json({ error: error?.message || 'Kullanıcı oluşturulamadı' }, { status: 500 });
+    return NextResponse.json({ error: 'Kullanıcı oluşturulamadı' }, { status: 500 });
   }
 }

@@ -83,7 +83,7 @@ export default function RestaurantDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Bu restoranı pasifleştirmek istediğinize emin misiniz?')) return;
+    if (!confirm('DİKKAT: Bu restoran kalıcı olarak silinecek ve geri alınamayacaktır! Tüm verileri (qr, feedback vb.) YOK OLACAKTIR. Onaylıyor musunuz?')) return;
     setDeleting(true);
     try {
       await fetch(`/api/restaurants/${id}`, { method: 'DELETE' });
@@ -104,13 +104,13 @@ export default function RestaurantDetailPage() {
 
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-8">
-        <Link href="/admin/restaurants" className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white">
+      <div className="flex items-center gap-3 mb-6 sm:mb-8">
+        <Link href="/admin/restaurants" className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white shrink-0">
           <ArrowLeft size={20} className="text-[#111827]" />
         </Link>
-        <div>
-          <h1 className="text-2xl font-black text-[#111827] tracking-tight">Restoran Düzenle</h1>
-          <p className="text-gray-500 text-sm font-medium">{formData.name}</p>
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-black text-[#111827] tracking-tight">Restoran Düzenle</h1>
+          <p className="text-gray-500 text-sm font-medium truncate">{formData.name}</p>
         </div>
       </div>
 
@@ -123,7 +123,7 @@ export default function RestaurantDetailPage() {
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
           <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <div className="w-1.5 h-5 rounded-full" style={{ backgroundColor: formData.primaryColor }} />
             Temel Bilgiler
@@ -203,7 +203,7 @@ export default function RestaurantDetailPage() {
         </div>
 
         {/* Contact Info */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
           <h3 className="font-semibold text-gray-800 mb-4">İletişim Bilgileri</h3>
           <div className="space-y-4">
             <div>
@@ -229,7 +229,7 @@ export default function RestaurantDetailPage() {
         </div>
 
         {/* Notification & Google */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
           <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <Mail size={16} className="text-[#111827]" />
             Bildirim & Google Ayarları
@@ -269,7 +269,7 @@ export default function RestaurantDetailPage() {
             className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 border border-red-200 rounded-xl transition-colors disabled:opacity-50"
           >
             <Trash2 size={16} />
-            {deleting ? 'Siliniyor...' : 'Pasifleştir'}
+            {deleting ? 'Siliniyor...' : 'Restoranı Kalıcı Olarak Sil'}
           </button>
 
           <div className="flex gap-3">

@@ -14,7 +14,7 @@ export async function generateMetadata({
   const isTr = locale === 'tr';
   
   return {
-    title: isTr ? 'Kullanım Koşulları | Buaze' : 'Terms of Service | Buaze',
+    title: isTr ? 'Kullanım Koşulları - Buaze' : 'Terms of Service - Buaze',
     description: isTr 
       ? 'Buaze hizmetlerinin kullanım koşulları ve yasal şartları.'
       : 'Terms of service and legal conditions for using Buaze.',

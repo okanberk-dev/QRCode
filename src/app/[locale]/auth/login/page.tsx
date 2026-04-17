@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Giriş Yap — Buaze' : 'Log In — Buaze',
+    title: locale === 'tr' ? 'Giriş Yap - Buaze' : 'Log In - Buaze',
     description: locale === 'tr'
       ? 'Buaze hesabınıza giriş yapın ve restoranınızın itibarını yönetmeye devam edin.'
       : 'Log in to your Buaze account and continue managing your restaurant\'s reputation.',
@@ -84,12 +84,23 @@ export default async function LoginPage({
         </div>
 
         {/* Right Panel - Form */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-[#FCFBF7]">
-          <div className="w-full max-w-[400px]">
-            <div className="bg-white rounded-xl border border-[#e8e4de] p-8 sm:p-9 mb-5 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.06)]">
-              <div className="mb-7">
-                <h1 className="text-[24px] font-extrabold text-[#1f1e1d] tracking-[-0.01em]">{t.auth_login_title}</h1>
-                <p className="text-[13px] text-[#6b6760] mt-1">{t.auth_login_subtitle}</p>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 bg-[#FCFBF7]">
+          
+          {/* Header/Logo for mobile */}
+          <div className="flex lg:hidden justify-center mb-8">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#111827] border-2 border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] group-hover:translate-y-0.5 group-hover:shadow-[0_2px_0_0_#1f1e1d] transition-all">
+                <span className="text-[#FDBF1D] font-black text-xl leading-none">B</span>
+              </div>
+              <span className="text-2xl font-black tracking-tight text-[#111827]">Buaze</span>
+            </Link>
+          </div>
+
+          <div className="w-full max-w-sm mx-auto">
+            <div className="bg-white rounded-[32px] border-[3px] border-[#1f1e1d] p-8 sm:p-10 mb-5 shadow-[12px_14px_0_0_#1f1e1d]">
+              <div className="mb-8 text-center lg:text-left">
+                <h1 className="text-[28px] font-black text-[#1f1e1d] tracking-tight leading-tight">{t.auth_login_title}</h1>
+                <p className="text-[13px] font-bold text-[#6b6760] mt-2">{t.auth_login_subtitle}</p>
               </div>
 
               <Suspense fallback={<div className="h-52 animate-pulse bg-[#F7F4F0] rounded-lg" />}>
@@ -97,15 +108,17 @@ export default async function LoginPage({
               </Suspense>
             </div>
 
-            <p className="text-center text-[13px] text-[#6b6760]">
-              {locale === 'tr' ? 'Hesabınız yok mu?' : "Don't have an account?"}{' '}
+            <div className="text-center mt-8">
+              <p className="text-[13px] font-black text-[#6b6760]">
+                {locale === 'tr' ? 'Hesabınız yok mu?' : "Don't have an account?"}
+              </p>
               <Link
                 href={`/${locale}/auth/register`}
-                className="font-semibold text-[#1f1e1d] hover:text-[#FDBF1D] transition-colors underline underline-offset-4 decoration-dotted decoration-[#ada89f] hover:decoration-[#FDBF1D]"
-              >
-                {locale === 'tr' ? '14 gün ücretsiz dene →' : 'Try free for 14 days →'}
+                 className="inline-flex items-center gap-2 text-[14px] font-black text-[#ea580c] hover:text-[#111827] mt-2 transition-colors border-b-2 border-transparent hover:border-[#111827]/30 pb-1"
+               >
+                 {locale === 'tr' ? '14 gün ücretsiz dene →' : 'Try free for 14 days →'}
               </Link>
-            </p>
+            </div>
           </div>
         </div>
       </main>

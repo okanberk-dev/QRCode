@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminFromRequest } from '@/lib/auth';
+import { getPanelActorFromRequest } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
-  const admin = await getAdminFromRequest(req) as any;
+  const actor = await getPanelActorFromRequest(req);
 
-  if (!admin) {
+  if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
   }
 
-  // If this is a restaurant_owner (came from the users table), fetch their extra info
-  if (admin.role === 'restaurant_owner') {
+  // If this is a restaurant_owner, fetch their extra info from the users table
+  if (actor.role === 'restaurant_owner') {
     try {
       const user = await prisma.user.findUnique({
-        where: { id: admin.id },
+        where: { id: actor.id },
         select: {
           id: true,
           email: true,
@@ -25,7 +25,6 @@ export async function GET(req: NextRequest) {
       });
 
       if (user) {
-        // Also get their first restaurant for restaurantId
         const restaurant = await prisma.restaurant.findFirst({
           where: { userId: user.id },
           select: { id: true }
@@ -39,7 +38,7 @@ export async function GET(req: NextRequest) {
           role: 'restaurant_owner',
           plan: user.plan,
           trialEndsAt: user.trialEndsAt,
-          restaurantId: restaurant?.id || admin.restaurantId || null
+          restaurantId: restaurant?.id || actor.restaurantId || null
         });
       }
     } catch (e) {
@@ -50,7 +49,7 @@ export async function GET(req: NextRequest) {
   // Default — AdminUser (superadmin / manager)
   try {
     const adminUser = await prisma.adminUser.findUnique({
-      where: { id: admin.id },
+      where: { id: actor.id },
       select: { id: true, username: true, role: true, restaurantId: true }
     });
 
@@ -72,13 +71,13 @@ export async function GET(req: NextRequest) {
 
   // Fallback (e.g. env-admin)
   return NextResponse.json({
-    id: admin.id,
-    username: admin.username,
-    email: admin.username,
-    name: admin.username,
-    role: admin.role || 'superadmin',
-    plan: null,
+    id: actor.id,
+    username: actor.username,
+    email: actor.email,
+    name: actor.username,
+    role: actor.role || 'superadmin',
+    plan: actor.plan,
     trialEndsAt: null,
-    restaurantId: admin.restaurantId || null
+    restaurantId: actor.restaurantId || null
   });
 }

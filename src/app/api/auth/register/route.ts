@@ -2,9 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { signJwt } from '@/lib/auth';
+import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    maybeSweep();
+    const ip = getClientIp(req.headers);
+
+    // Rate limit: 5 registrations per IP per 30 minutes
+    const ipLimit = rateLimit(`register:ip:${ip}`, 5, 30 * 60 * 1000);
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Çok fazla kayıt denemesi. Lütfen bir süre sonra tekrar deneyin.' },
+        { status: 429, headers: { 'Retry-After': String(ipLimit.retryAfterSeconds) } },
+      );
+    }
+
     const { email, password, name, restaurantName } = await req.json();
 
     // Validate required fields
@@ -170,7 +183,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: error?.message || 'Bir hata oluştu. Lütfen tekrar deneyin.' },
+      { error: 'Bir hata oluştu. Lütfen tekrar deneyin.' },
       { status: 500 }
     );
   }

@@ -43,9 +43,9 @@ export default async function AdminLayout({
 
   return (
     <AdminTranslationProvider initialLocale={adminLocale as any}>
-      <div className="flex flex-col lg:flex-row h-screen bg-[#FCFBF7] overflow-hidden font-sans selection:bg-[#FDBF1D]/30">
+      <div className="flex flex-col lg:flex-row min-h-[100dvh] lg:h-screen bg-[#FCFBF7] lg:overflow-hidden font-sans selection:bg-[#FDBF1D]/30">
         {showSidebar && <AdminSidebar />}
-        <div className={`flex-1 overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center' : 'p-3 sm:p-10 mb-14 lg:mb-0 pb-10 lg:pb-0'}`}>
+        <div className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-28 lg:pb-0 pt-2 sm:pt-6'}`}>
           <div className={showSidebar ? "max-w-7xl mx-auto w-full" : "w-full max-w-full"}>
             {children}
           </div>

@@ -93,9 +93,12 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
           <label htmlFor="login-password" className="block text-[11px] font-black uppercase tracking-widest text-[#ada89f]">
             {t.auth_password}
           </label>
-          <button type="button" className="text-[11px] font-black text-[#6b6760] hover:text-[#ea580c] transition-colors uppercase tracking-widest">
+          <Link
+            href={`/${locale}/auth/forgot-password`}
+            className="text-[11px] font-black text-[#6b6760] hover:text-[#ea580c] transition-colors uppercase tracking-widest"
+          >
             {t.auth_forgot}
-          </button>
+          </Link>
         </div>
         <div className="relative">
           <input

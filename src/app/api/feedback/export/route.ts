@@ -14,7 +14,11 @@ export async function GET(req: NextRequest) {
     const where: any = {};
 
     // ─── IDOR Security Override ───
-    if (actor.role === 'manager') {
+    if (actor.role === 'superadmin') {
+      if (restaurantId && restaurantId !== 'all') {
+        where.restaurantId = restaurantId;
+      }
+    } else if (actor.role === 'manager') {
       where.restaurantId = actor.restaurantId;
     } else if (actor.role === 'restaurant_owner') {
       const userRestIds = await getScopedRestaurantIds(actor) || [];
@@ -27,8 +31,8 @@ export async function GET(req: NextRequest) {
       } else {
         where.restaurantId = { in: userRestIds };
       }
-    } else if (restaurantId && restaurantId !== 'all') {
-      where.restaurantId = restaurantId;
+    } else {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
     const feedbacks = await prisma.feedback.findMany({

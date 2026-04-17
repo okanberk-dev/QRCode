@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ShieldCheck, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminLogin() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -31,7 +32,13 @@ export default function AdminLogin() {
         return;
       }
 
-      router.push('/admin/dashboard');
+      const redirectPath = searchParams.get('redirect');
+      if (redirectPath) {
+        // Need to decode since we encoded it in middleware
+        router.push(decodeURIComponent(redirectPath));
+      } else {
+        router.push('/admin/dashboard');
+      }
       router.refresh();
     } catch (err) {
       setError('Bağlantı hatası.');

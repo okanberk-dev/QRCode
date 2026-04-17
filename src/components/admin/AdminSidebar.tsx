@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, LogOut, Store, QrCode, Users, Clock, Crown, UsersRound, Globe } from 'lucide-react';
+import { LayoutDashboard, LogOut, Store, QrCode, Users, Clock, Crown, UsersRound, Globe, User } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
 
@@ -56,9 +56,11 @@ export default function AdminSidebar() {
     { href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
     { href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { href: '/admin/profile', icon: User, label: 'Profilim', roles: ['superadmin', 'manager', 'restaurant_owner'] },
   ];
 
   if (role === 'superadmin') {
+    menuItems.push({ href: '/admin/members', icon: Crown, label: 'Üyeler', roles: ['superadmin'] } as any);
     menuItems.push({ href: '/admin/users', icon: Users, label: t('users'), roles: ['superadmin'] } as any);
     menuItems.push({ href: '/admin/customers', icon: UsersRound, label: t('customers'), roles: ['superadmin'] } as any);
   }

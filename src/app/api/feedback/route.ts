@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
           toEmail: notificationEmail,
           serviceType,
           aspects,
+          feedbackId: feedback.id,
         });
       } catch (err) {
         // Log but don't fail the entire request - the feedback IS in the DB!
@@ -132,8 +133,10 @@ export async function GET(req: NextRequest) {
     where.restaurantId = restaurantId;
   }
 
-  // Security override for non-superadmin
-  if (actor.role === 'manager') {
+  // Security override: scope by role
+  if (actor.role === 'superadmin') {
+    // superadmin — keep any explicit restaurantId filter or show all
+  } else if (actor.role === 'manager') {
     where.restaurantId = actor.restaurantId;
   } else if (actor.role === 'restaurant_owner') {
     const userRestIds = await getScopedRestaurantIds(actor) || [];
@@ -145,6 +148,8 @@ export async function GET(req: NextRequest) {
     } else {
       where.restaurantId = { in: userRestIds };
     }
+  } else {
+    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
   }
 
   // Rating filter

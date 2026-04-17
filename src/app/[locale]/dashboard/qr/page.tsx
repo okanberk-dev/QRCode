@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Check, Copy, Download, Loader2, Minus, Plus, Printer, QrCode, RefreshCw } from 'lucide-react';
+import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw } from 'lucide-react';
 
 interface Restaurant {
   id: string;
   slug: string;
   name: string;
+  primaryColor?: string;
 }
 
 interface QrHistoryItem {
@@ -32,6 +33,9 @@ export default function DashboardQrPage() {
   const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [qrError, setQrError] = useState('');
+  const [useBrandColor, setUseBrandColor] = useState(true);
+  const [customDark, setCustomDark] = useState('#000000');
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
   const safeEnvAppUrl = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
     ? envAppUrl
@@ -63,6 +67,10 @@ export default function DashboardQrPage() {
     return `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}`;
   }, [appUrl, selectedRestaurant, tableNumber]);
 
+  const activeDark = useBrandColor && selectedRestaurant?.primaryColor
+    ? selectedRestaurant.primaryColor
+    : customDark;
+
   const copy = locale === 'tr'
     ? {
         title: 'QR Kod Yönetimi',
@@ -79,6 +87,9 @@ export default function DashboardQrPage() {
         print: 'Yazdır',
         qrPreview: 'QR Önizleme',
         noHistory: 'Henüz QR üretim kaydı yok.',
+        brandColor: 'Marka Rengi',
+        customColor: 'Özel Renk',
+        colorLabel: 'QR Renk',
       }
     : {
         title: 'QR Management',
@@ -95,7 +106,28 @@ export default function DashboardQrPage() {
         print: 'Print',
         qrPreview: 'QR Preview',
         noHistory: 'No QR history yet.',
+        brandColor: 'Brand Color',
+        customColor: 'Custom Color',
+        colorLabel: 'QR Color',
       };
+
+  const LS_KEY = (id: string) => `qr_history_${id}`;
+
+  const readLocalHistory = (restaurantId: string): QrHistoryItem[] => {
+    try {
+      return JSON.parse(localStorage.getItem(LS_KEY(restaurantId)) || '[]');
+    } catch {
+      return [];
+    }
+  };
+
+  const saveToLocalHistory = (restaurantId: string, item: QrHistoryItem) => {
+    try {
+      const existing = readLocalHistory(restaurantId);
+      const updated = [item, ...existing.filter((e) => e.id !== item.id)].slice(0, 30);
+      localStorage.setItem(LS_KEY(restaurantId), JSON.stringify(updated));
+    } catch {}
+  };
 
   const fetchHistory = async (restaurantId: string) => {
     if (!restaurantId) {
@@ -106,15 +138,22 @@ export default function DashboardQrPage() {
     setHistoryLoading(true);
     try {
       const response = await fetch(`/api/restaurants/${restaurantId}/qr/history`);
-      if (!response.ok) {
-        setHistory([]);
-        return;
-      }
+      const apiItems: QrHistoryItem[] = response.ok ? (await response.json()) : [];
+      const localItems = readLocalHistory(restaurantId);
 
-      const data = await response.json();
-      setHistory(Array.isArray(data) ? data : []);
+      // Merge: prefer API, fill in from local, dedupe by id, sort newest first
+      const seen = new Set<string>();
+      const merged: QrHistoryItem[] = [];
+      for (const item of [...apiItems, ...localItems]) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          merged.push(item);
+        }
+      }
+      merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setHistory(merged.slice(0, 30));
     } catch {
-      setHistory([]);
+      setHistory(readLocalHistory(restaurantId));
     } finally {
       setHistoryLoading(false);
     }
@@ -124,18 +163,40 @@ export default function DashboardQrPage() {
     if (!selectedId) return;
 
     setGenerating(true);
+    setQrError('');
     try {
-      const query = new URLSearchParams({ format: 'svg' });
+      const query = new URLSearchParams({ format: 'svg', dark: activeDark });
       if (tableNumber) query.append('table', tableNumber);
 
       const response = await fetch(`/api/restaurants/${selectedId}/qr?${query.toString()}`);
-      if (!response.ok) return;
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setQrSvg('');
+        if (response.status === 401) {
+          setQrError('Oturum süreniz dolmuş. Lütfen yeniden giriş yapın.');
+        } else if (response.status === 409) {
+          setQrError('Bu işletme pasif durumda. QR oluşturmak için aktifleştirin.');
+        } else {
+          setQrError(data?.error || `QR oluşturulamadı (HTTP ${response.status})`);
+        }
+        return;
+      }
 
       const svg = await response.text();
       setQrSvg(svg);
+
+      // Persist to localStorage so history survives without the DB table
+      const newItem: QrHistoryItem = {
+        id: `local_${Date.now()}`,
+        qrUrl: qrTargetUrl,
+        tableNumber: tableNumber || null,
+        createdAt: new Date().toISOString(),
+      };
+      saveToLocalHistory(selectedId, newItem);
       await fetchHistory(selectedId);
     } catch (error) {
       console.error(error);
+      setQrError('Bağlantı hatası. İnternet bağlantınızı kontrol edin.');
     } finally {
       setGenerating(false);
     }
@@ -145,7 +206,7 @@ export default function DashboardQrPage() {
     if (selectedId) {
       generateQr();
     }
-  }, [selectedId, tableNumber]);
+  }, [selectedId, tableNumber, activeDark]);
 
   useEffect(() => {
     if (selectedId) {
@@ -156,7 +217,7 @@ export default function DashboardQrPage() {
   const downloadQr = async (format: 'svg' | 'png') => {
     if (!selectedId) return;
 
-    const query = new URLSearchParams({ format });
+    const query = new URLSearchParams({ format, dark: activeDark });
     if (tableNumber) query.append('table', tableNumber);
 
     const response = await fetch(`/api/restaurants/${selectedId}/qr?${query.toString()}`);
@@ -217,15 +278,15 @@ export default function DashboardQrPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
-      <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-        <h1 className="text-2xl font-black tracking-tight text-[#111827] sm:text-3xl">{copy.title}</h1>
+    <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8 px-3 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-10">
+      <div className="rounded-[24px] sm:rounded-[28px] border border-gray-100 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-[#111827]">{copy.title}</h1>
         <p className="mt-2 max-w-2xl text-sm font-bold text-[#6b6760] sm:text-base">{copy.subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-6">
-          <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="order-2 lg:order-1 space-y-4 sm:space-y-6">
+          <div className="rounded-[24px] sm:rounded-[28px] border border-gray-100 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
                 <QrCode size={20} strokeWidth={3} />
@@ -233,13 +294,13 @@ export default function DashboardQrPage() {
               <h2 className="text-lg font-black text-[#111827] sm:text-xl">{copy.qrPreview}</h2>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <label className="space-y-2">
+            <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2">
+              <label className="space-y-2 block">
                 <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{copy.business}</span>
                 <select
                   value={selectedId}
                   onChange={(event) => setSelectedId(event.target.value)}
-                  className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                  className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
                 >
                   <option value="">{locale === 'tr' ? 'İşletme seçin' : 'Select a location'}</option>
                   {restaurants.map((restaurant) => (
@@ -252,11 +313,11 @@ export default function DashboardQrPage() {
 
               <div className="space-y-2">
                 <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{copy.table}</span>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => setTableNumber((value) => (value && Number(value) > 1 ? String(Number(value) - 1) : ''))}
-                    className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#111827] shadow-sm"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#111827] shadow-sm"
                   >
                     <Minus size={18} strokeWidth={2.75} />
                   </button>
@@ -265,16 +326,65 @@ export default function DashboardQrPage() {
                     value={tableNumber}
                     onChange={(event) => setTableNumber(event.target.value.replace(/\D/g, ''))}
                     placeholder={locale === 'tr' ? 'Genel' : 'General'}
-                    className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-center text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                    className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-[#FCFBF7] px-3 sm:px-5 py-3.5 sm:py-4 text-center text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
                   />
                   <button
                     type="button"
                     onClick={() => setTableNumber((value) => (value ? String(Number(value) + 1) : '1'))}
-                    className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#111827] shadow-sm"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#111827] shadow-sm"
                   >
                     <Plus size={18} strokeWidth={2.75} />
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* ─── Color Picker ─── */}
+            <div className="mt-5 space-y-2">
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">
+                <Palette size={12} className="inline -mt-0.5 mr-1" />{copy.colorLabel}
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {selectedRestaurant?.primaryColor && (
+                  <button
+                    type="button"
+                    onClick={() => setUseBrandColor(true)}
+                    className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all ${
+                      useBrandColor
+                        ? 'border-[#111827] bg-[#111827] text-white shadow-md'
+                        : 'border-gray-200 bg-white text-[#6b6760] hover:border-gray-300'
+                    }`}
+                  >
+                    <span
+                      className="inline-block h-4 w-4 rounded-md border border-white/30"
+                      style={{ background: selectedRestaurant.primaryColor }}
+                    />
+                    {copy.brandColor}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setUseBrandColor(false)}
+                  className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all ${
+                    !useBrandColor
+                      ? 'border-[#111827] bg-[#111827] text-white shadow-md'
+                      : 'border-gray-200 bg-white text-[#6b6760] hover:border-gray-300'
+                  }`}
+                >
+                  <span
+                    className="inline-block h-4 w-4 rounded-md border border-gray-300"
+                    style={{ background: customDark }}
+                  />
+                  {copy.customColor}
+                </button>
+                {!useBrandColor && (
+                  <input
+                    type="color"
+                    value={customDark}
+                    onChange={(e) => setCustomDark(e.target.value)}
+                    className="h-10 w-10 cursor-pointer rounded-xl border border-gray-200 bg-transparent p-0.5"
+                  />
+                )}
               </div>
             </div>
 
@@ -293,54 +403,59 @@ export default function DashboardQrPage() {
               <p className="truncate text-xs font-bold text-white/70">{qrTargetUrl || 'https://buaze.com/r/...'}</p>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={generateQr}
                 disabled={generating || !selectedId}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#111827] px-5 py-3 text-sm font-black text-white transition-all disabled:opacity-50"
+                className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#111827] px-4 sm:px-5 py-3 text-xs sm:text-sm font-black text-white transition-all disabled:opacity-50"
               >
                 {generating ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} strokeWidth={2.75} />}
                 {copy.refresh}
               </button>
-              <button type="button" onClick={() => downloadQr('svg')} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm">
+              <button type="button" onClick={() => downloadQr('svg')} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#111827] shadow-sm">
                 <Download size={18} strokeWidth={2.75} />
-                {copy.downloadSvg}
+                SVG
               </button>
-              <button type="button" onClick={() => downloadQr('png')} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm">
+              <button type="button" onClick={() => downloadQr('png')} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#111827] shadow-sm">
                 <Download size={18} strokeWidth={2.75} />
-                {copy.downloadPng}
+                PNG
               </button>
-              <button type="button" onClick={handlePrint} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827] shadow-sm">
+              <button type="button" onClick={handlePrint} className="col-span-2 sm:col-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#111827] shadow-sm">
                 <Printer size={18} strokeWidth={2.75} />
                 {copy.print}
               </button>
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+          <div className="rounded-[24px] sm:rounded-[28px] border border-gray-100 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
             <div className="mb-5 flex items-center justify-between gap-3">
               <h2 className="text-lg font-black text-[#111827] sm:text-xl">{copy.history}</h2>
               {historyLoading && <Loader2 className="h-5 w-5 animate-spin text-[#111827]" />}
             </div>
 
-            <div className="space-y-3">
+            <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
               {history.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-gray-200 bg-[#FCFBF7] px-4 py-8 text-center text-sm font-bold text-[#6b6760]">
                   {copy.noHistory}
                 </div>
               ) : (
                 history.map((item) => (
-                  <div key={item.id} className="flex flex-col gap-2 rounded-2xl border border-gray-100 bg-[#FCFBF7] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-black text-[#111827]">{item.qrUrl}</p>
-                      <p className="mt-1 text-xs font-bold text-[#6b6760]">
+                  <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-[#FCFBF7] px-4 py-3">
+                    <div className="shrink-0 rounded-xl bg-white border border-gray-200 px-2.5 py-2 text-center min-w-[64px]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#ada89f]">
+                        {new Date(item.createdAt).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'short' })}
+                      </p>
+                      <p className="text-xs font-black text-[#111827]">
+                        {new Date(item.createdAt).toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-black text-[#111827]">{item.qrUrl}</p>
+                      <p className="mt-0.5 text-[10px] font-bold text-[#6b6760]">
                         {item.tableNumber ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}` : (locale === 'tr' ? 'Genel QR' : 'General QR')}
                       </p>
                     </div>
-                    <span className="text-xs font-black uppercase tracking-[0.18em] text-[#ada89f]">
-                      {new Date(item.createdAt).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')}
-                    </span>
                   </div>
                 ))
               )}
@@ -348,20 +463,20 @@ export default function DashboardQrPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#111827] text-[#FDBF1D]">
+        <div className="order-1 lg:order-2 rounded-[24px] sm:rounded-[28px] border border-gray-100 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
+          <div className="mb-4 sm:mb-5 flex items-center gap-3">
+            <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#111827] text-[#FDBF1D]">
               <QrCode size={20} strokeWidth={3} />
             </div>
             <h2 className="text-lg font-black text-[#111827] sm:text-xl">{copy.qrPreview}</h2>
           </div>
 
-          <div className="flex min-h-[360px] items-center justify-center rounded-[28px] border border-dashed border-gray-200 bg-[#FCFBF7] p-6">
+          <div className="flex min-h-[260px] sm:min-h-[360px] items-center justify-center rounded-[24px] sm:rounded-[28px] border border-dashed border-gray-200 bg-[#FCFBF7] p-4 sm:p-6">
             {generating ? (
               <Loader2 className="h-10 w-10 animate-spin text-[#111827]" />
             ) : qrSvg ? (
-              <div className="w-full space-y-5 text-center">
-                <div className="mx-auto max-w-[280px]" dangerouslySetInnerHTML={{ __html: qrSvg }} />
+              <div className="w-full space-y-4 sm:space-y-5 text-center">
+                <div className="mx-auto w-full max-w-[220px] overflow-hidden sm:max-w-[280px] [&>svg]:h-auto [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: qrSvg }} />
                 <div>
                   <p className="text-lg font-black text-[#111827]">{selectedRestaurant?.name}</p>
                   {tableNumber && (
@@ -370,6 +485,20 @@ export default function DashboardQrPage() {
                     </p>
                   )}
                 </div>
+              </div>
+            ) : qrError ? (
+              <div className="flex flex-col items-center gap-3 text-center px-4">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center">
+                  <QrCode size={24} strokeWidth={2.5} className="text-red-400" />
+                </div>
+                <p className="text-sm font-black text-red-500 uppercase tracking-wide">{qrError}</p>
+                <button
+                  type="button"
+                  onClick={generateQr}
+                  className="text-xs font-black text-[#111827] underline underline-offset-2 uppercase tracking-widest"
+                >
+                  {locale === 'tr' ? 'Tekrar Dene' : 'Retry'}
+                </button>
               </div>
             ) : (
               <p className="text-sm font-bold text-[#6b6760]">{locale === 'tr' ? 'QR oluşturmak için işletme seçin.' : 'Select a location to generate a QR code.'}</p>
