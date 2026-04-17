@@ -16,6 +16,7 @@ interface MarketingNavbarProps {
     nav_sol_hotels: string;
     nav_sol_healthcare: string;
     nav_about: string;
+    nav_blog: string;
     nav_pricing: string;
     nav_contact: string;
     nav_login: string;
@@ -168,6 +169,7 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
           </div>
 
           <Link href={`${base}/about`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_about}</Link>
+          <Link href={`${base}/blog`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_blog}</Link>
           <Link href={`${base}/pricing`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_pricing}</Link>
           <Link href={`${base}/contact`} className="text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors">{t.nav_contact}</Link>
         </div>
@@ -261,6 +263,7 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
             )}
 
             <Link href={`${base}/about`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_about}</Link>
+            <Link href={`${base}/blog`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_blog}</Link>
             <Link href={`${base}/pricing`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_pricing}</Link>
             <Link href={`${base}/contact`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1f1e1d] py-3 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors">{t.nav_contact}</Link>
             <div className="pt-3 mt-2 border-t border-[#e8e4de] space-y-0.5">

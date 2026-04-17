@@ -16,6 +16,7 @@ export const translations = {
     nav_sol_restaurants: 'Restoran ve Kafeler',
     nav_sol_hotels: 'Otel ve Konaklama',
     nav_sol_healthcare: 'Klinik ve Sağlık',
+    nav_blog: 'Blog',
     nav_about: 'Hakkımızda',
     nav_pricing: 'Fiyatlandırma',
     nav_contact: 'İletişim',
@@ -276,7 +277,13 @@ export const translations = {
     sol_hea_title: 'Klinikler İçin Dijital Güven İnşası',
     sol_hea_desc: 'Sağlık sektöründe kararı belirleyen en önemli faktör güvendir. Doğrulanmış hasta yorumlarıyla rakiplerinizin önüne geçin.',
     sol_hea_h1: 'Hasta Güvenini Otomatiğe Bağlayın',
-    sol_hea_p: 'Tedavi sonrası bekleme salonunda veya çıkış bankosunda hastalarınızdan en taze geri bildirimleri alın. Gizliliği koruyarak etik çerçevede en yüksek puanlara organik olarak ulaşın.'
+    sol_hea_p: 'Tedavi sonrası bekleme salonunda veya çıkış bankosunda hastalarınızdan en taze geri bildirimleri alın. Gizliliği koruyarak etik çerçevede en yüksek puanlara organik olarak ulaşın.',
+
+    // Blog
+    blog_title: 'Blog',
+    blog_desc: 'İtibar yönetimi, müşteri deneyimi ve dijital büyüme üzerine uzman makaleleri ve rehberler.',
+    blog_readMore: 'Yazıyı Oku',
+    blog_backToBlog: 'Blog\'a Dön',
   },
   en: {
     // Meta
@@ -290,6 +297,7 @@ export const translations = {
     nav_sol_restaurants: 'Restaurants & Cafes',
     nav_sol_hotels: 'Hotels & Hospitality',
     nav_sol_healthcare: 'Clinics & Healthcare',
+    nav_blog: 'Blog',
     nav_about: 'About Us',
     nav_pricing: 'Pricing',
     nav_contact: 'Contact',
@@ -550,7 +558,13 @@ export const translations = {
     sol_hea_title: 'Digital Trust Building for Clinics',
     sol_hea_desc: 'In healthcare, trust is the deciding factor. Outperform your competitors with verified patient reviews.',
     sol_hea_h1: 'Automate Patient Trust',
-    sol_hea_p: 'Gather the freshest feedback from your patients in the waiting room or at the discharge desk. Achieve the highest ratings organically and ethically while maintaining confidentiality.'
+    sol_hea_p: 'Gather the freshest feedback from your patients in the waiting room or at the discharge desk. Achieve the highest ratings organically and ethically while maintaining confidentiality.',
+
+    // Blog
+    blog_title: 'Blog',
+    blog_desc: 'Expert articles and guides on reputation management, customer experience, and digital growth.',
+    blog_readMore: 'Read Article',
+    blog_backToBlog: 'Back to Blog',
   },
 } as const;
 
