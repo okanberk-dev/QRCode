@@ -1,8 +1,7 @@
-import nodemailer from 'nodemailer';
-
 /**
  * Sends an email via Resend HTTP API.
- * This is more reliable than SMTP in serverless environments.
+ * This is the ONLY email sending method — no SMTP fallback.
+ * Emails are sent from hello@buaze.com via Resend.
  */
 async function sendResendEmail({
   to,
@@ -15,70 +14,59 @@ async function sendResendEmail({
   html: string;
   text: string;
 }) {
-  const { RESEND_API_KEY, SMTP_USER, SMTP_PASS, SMTP_HOST, SMTP_PORT } = process.env;
-  const resendKey = RESEND_API_KEY?.trim();
+  const resendKey = process.env.RESEND_API_KEY?.trim();
 
-  if (resendKey && resendKey !== "") {
-    try {
-      console.log("[Buaze Email] Attempting to send via Resend API. To:", to);
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${resendKey}`,
-        },
-        body: JSON.stringify({
-          from: "Buaze <hello@buaze.com>",
-          to,
-          subject,
-          html,
-          text,
-        }),
-      });
-
-      if (response.ok) {
-        console.log("[Buaze Email] Successfully sent via Resend API");
-        return true;
-      } else {
-        const errorText = await response.text();
-        console.error(`[Buaze Email] Resend API error (${response.status}):`, errorText);
-        console.warn("[Buaze Email] Possible cause: Domain (buaze.com) might not be verified in Resend dashboard.");
-        // We do NOT return false here; we fall back to SMTP below if available
-      }
-    } catch (error) {
-      console.error("[Buaze Email] Fetch exception:", error);
-      // Fall through to SMTP
-    }
-  } else {
-    console.warn("[Buaze Email] RESEND_API_KEY is missing or empty. Skipping Resend API path.");
+  if (!resendKey || resendKey === "") {
+    console.error("[Buaze Email] ❌ RESEND_API_KEY is missing or empty! Cannot send email.");
+    console.error("[Buaze Email] Make sure RESEND_API_KEY is set in Vercel Environment Variables.");
+    return false;
   }
 
-  // Fallback to Nodemailer/SMTP if Resend is not configured correctly
-  if (SMTP_USER && SMTP_PASS) {
-    try {
-      console.log("[Buaze Email] Falling back to SMTP");
-      const transporter = nodemailer.createTransport({
-        host: SMTP_HOST || "smtp.gmail.com",
-        port: Number(SMTP_PORT) || 587,
-        secure: Number(SMTP_PORT) === 465,
-        auth: { user: SMTP_USER, pass: SMTP_PASS },
-      });
+  try {
+    console.log("[Buaze Email] Sending via Resend API. To:", to, "Subject:", subject);
+    console.log("[Buaze Email] API Key prefix:", resendKey.substring(0, 8) + "...");
 
-      await transporter.sendMail({
-        from: `"Buaze" <hello@buaze.com>`,
-        to,
-        subject,
-        html,
-        text,
-      });
+    const payload = {
+      from: "Buaze <hello@buaze.com>",
+      to,
+      subject,
+      html,
+      text,
+    };
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${resendKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const responseText = await response.text();
+
+    if (response.ok) {
+      console.log("[Buaze Email] ✅ Successfully sent via Resend API. Response:", responseText);
       return true;
-    } catch (error) {
-      console.error("[Buaze Email] SMTP fallback failed:", error);
+    } else {
+      console.error(`[Buaze Email] ❌ Resend API error (HTTP ${response.status}):`, responseText);
+      
+      if (response.status === 403) {
+        console.error("[Buaze Email] 🔑 API key may be invalid or domain not verified.");
+        console.error("[Buaze Email] → Go to https://resend.com/domains and verify buaze.com");
+      } else if (response.status === 422) {
+        console.error("[Buaze Email] 📧 Invalid email parameters. Check 'from' domain is verified in Resend.");
+        console.error("[Buaze Email] → The 'from' domain (buaze.com) must be added and DNS verified at https://resend.com/domains");
+      } else if (response.status === 401) {
+        console.error("[Buaze Email] 🔐 Unauthorized. RESEND_API_KEY is invalid.");
+      }
+      
+      return false;
     }
+  } catch (error) {
+    console.error("[Buaze Email] ❌ Network/fetch exception:", error);
+    return false;
   }
-
-  console.warn("[Buaze Email] No email configuration found.");
-  return false;
 }
 
 /**
