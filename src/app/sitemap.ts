@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
-import { blogPosts } from '@/lib/blogData';
+import { prisma } from '@/lib/prisma';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://buaze.com';
 
   const staticPages = [
@@ -44,18 +44,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
   });
 
   // Dynamic Blog URLs
-  const locales = ['tr', 'en'] as const;
-  locales.forEach((locale) => {
-    const posts = blogPosts[locale];
+  try {
+    const posts = await prisma.blogPost.findMany({
+      where: { isActive: true },
+      select: { slug: true, locale: true, updatedAt: true }
+    });
+
     posts.forEach((post) => {
       sitemapEntries.push({
-        url: `${baseUrl}/${locale}/blog/${post.slug}`,
-        lastModified: new Date(), // In a real app this would be post.updatedAt
+        url: `${baseUrl}/${post.locale}/blog/${post.slug}`,
+        lastModified: post.updatedAt,
         changeFrequency: 'monthly',
         priority: 0.8,
       });
     });
-  });
+  } catch (error) {
+    console.error('Sitemap blog fetch error:', error);
+  }
 
   // TR-only legal pages
   const trOnlyPages = ['/kvkk', '/gizlilik', '/acik-riza', '/ticari-ileti'];

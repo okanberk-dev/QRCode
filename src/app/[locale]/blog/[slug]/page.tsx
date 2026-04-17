@@ -3,22 +3,24 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import { blogPosts } from '@/lib/blogData';
+import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Clock, User, ArrowRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
+
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: Locale; slug: string }>;
-}, parent: ResolvingMetadata): Promise<Metadata> {
+}, _parent: ResolvingMetadata): Promise<Metadata> {
   const { locale, slug } = await params;
-  const post = blogPosts[locale].find(p => p.slug === slug);
+  const post = await prisma.blogPost.findUnique({
+    where: { slug_locale: { slug, locale } },
+  });
   
-  if (!post) {
-    return { title: 'Post Not Found' };
-  }
+  if (!post) return { title: 'Post Not Found' };
 
   return {
     title: `${post.title} — Buaze Blog`,
@@ -33,29 +35,9 @@ export async function generateMetadata({
       description: post.description,
       publishedTime: post.date,
       authors: [post.author],
-      images: [
-        {
-          url: post.coverImage,
-          width: 1200,
-          height: 600,
-          alt: post.title,
-        }
-      ],
+      images: [{ url: post.coverImage, width: 1200, height: 600, alt: post.title }],
     },
   };
-}
-
-export function generateStaticParams() {
-  const params: { locale: string; slug: string }[] = [];
-  
-  ['tr', 'en'].forEach((locale) => {
-    const posts = blogPosts[locale as 'tr' | 'en'];
-    posts.forEach((post) => {
-      params.push({ locale, slug: post.slug });
-    });
-  });
-
-  return params;
 }
 
 export default async function BlogPostPage({
@@ -67,21 +49,19 @@ export default async function BlogPostPage({
   const t = getTranslations(locale);
   const base = `/${locale}`;
   
-  const post = blogPosts[locale].find(p => p.slug === slug);
+  const post = await prisma.blogPost.findUnique({
+    where: { slug_locale: { slug, locale }, isActive: true } as any,
+  });
+
   if (!post) notFound();
 
-  // JsonLd Article Schema
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title,
     description: post.description,
     image: [post.coverImage],
-    author: [{
-      '@type': 'Organization',
-      name: post.author,
-      url: 'https://buaze.com',
-    }],
+    author: [{ '@type': 'Organization', name: post.author, url: 'https://buaze.com' }],
     datePublished: post.date,
   };
 
@@ -118,7 +98,6 @@ export default async function BlogPostPage({
 
       <main className="px-5 sm:px-8 max-w-[800px] mx-auto -mt-16 relative z-10 pb-20">
         <div className="bg-white p-8 sm:p-12 rounded-3xl border-[2.5px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d]">
-          {/* Main Cover Image */}
           <div className="w-full h-[300px] sm:h-[400px] rounded-2xl overflow-hidden border-[2.5px] border-[#1f1e1d] mb-12 shadow-[4px_4px_0_0_#1f1e1d]">
             <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
           </div>

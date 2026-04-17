@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, LogOut, Store, QrCode, Users, Clock, Crown, UsersRound, Globe, User } from 'lucide-react';
+import { LayoutDashboard, LogOut, Store, QrCode, Users, Clock, Crown, UsersRound, Globe, User, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
 
@@ -63,6 +63,7 @@ export default function AdminSidebar() {
     menuItems.push({ href: '/admin/members', icon: Crown, label: 'Üyeler', roles: ['superadmin'] } as any);
     menuItems.push({ href: '/admin/users', icon: Users, label: t('users'), roles: ['superadmin'] } as any);
     menuItems.push({ href: '/admin/customers', icon: UsersRound, label: t('customers'), roles: ['superadmin'] } as any);
+    menuItems.push({ href: '/admin/blog', icon: BookOpen, label: 'Blog Yönetimi', roles: ['superadmin'] } as any);
   }
 
   const roleLabel = role === 'superadmin' ? 'Superadmin' : role === 'restaurant_owner' ? 'Restoran Sahibi' : 'Restoran Yetkilisi';
