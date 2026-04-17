@@ -522,5 +522,5 @@ export type TranslationKey = keyof typeof translations.tr;
 export type Translations = typeof translations.tr;
 
 export function getTranslations(locale: Locale): Translations {
-  return translations[locale] ?? translations[defaultLocale];
+  return (translations[locale] ?? translations[defaultLocale]) as Translations;
 }
