@@ -12,10 +12,10 @@ export interface BlogPost {
 export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
   tr: [
     {
-      slug: 'googleda-5-yildiz-nasil-alinir',
+      slug: 'how-to-get-5-stars-on-google',
       title: 'Google\'da İşletmeniz İçin Daha Fazla 5 Yıldız Nasıl Alınır?',
       description: 'Müşterilerinizin %90\'ından fazlası kapıdan içeri girmeden önce Google Haritalar yorumlarınızı okuyor. İşletmenizin puanını 4.8 ve üzerine çıkarmanın kanıtlanmış yolları.',
-      date: '15 Nisan 2024',
+      date: '15 Mart 2026',
       readTime: '4 dk okuma',
       author: 'Buaze İçerik Ekibi',
       coverImage: 'https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&q=80&w=1200&h=600',
@@ -43,10 +43,10 @@ export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
       `
     },
     {
-      slug: 'restoran-yorumlari-nasil-artirilir',
+      slug: 'how-to-increase-restaurant-reviews',
       title: 'Restoranlar İçin Google Yorumlarını Artırma ve Satış Stratejileri',
       description: 'Yemek platformlarına %30 komisyon ödemek zorunda değilsiniz. Google üzerinde güçlü bir profil oluşturarak organik "paket servis" ve "gel-al" kitlenizi büyütün.',
-      date: '12 Nisan 2024',
+      date: '2 Şubat 2026',
       readTime: '5 dk okuma',
       author: 'Buaze İçerik Ekibi',
       coverImage: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=1200&h=600',
@@ -72,10 +72,10 @@ export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
       `
     },
     {
-      slug: 'olumsuz-musteri-yorumlariyla-basa-cikmak',
+      slug: 'handling-negative-customer-reviews',
       title: 'Kötü ve Olumsuz Yorumlarla Nasıl Başa Çıkılır?',
       description: 'Zayıf 1 yıldızlı bir Google yorumu tüm itibarınızı lekeleyebilir. İşletmenize zarar veren yorumları profesyonel bir nezaket ve sistem araçlarıyla ortadan kaldırın.',
-      date: '10 Nisan 2024',
+      date: '18 Ocak 2026',
       readTime: '3 dk okuma',
       author: 'Buaze İçerik Ekibi',
       coverImage: 'https://images.unsplash.com/photo-1573164574572-cb89e39749b4?auto=format&fit=crop&q=80&w=1200&h=600',
@@ -97,6 +97,30 @@ export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
         <p>Müşterinin öfkelendiği noktada telefonuyla QR kodunuza okuttuğunu hayal edin. Sinirle 1 yıldıza dokunuyor. Normal şartlarda doğrudan Google sayfanıza düşecekken; Buaze araya girerek "Deneyiminizi daha iyi hale getirmemiz için bize sorunu anlatır mısınız?" diyerek onu kendi iç formunuza çeker.</p>
         <p>Müşteri yazar, o send butonuna basar bastığı an cep telefonunuza bildirim gelir... Ancak Google'da o 1 yıldız yoktur. O kişi zaten deşarj olduğu için Google'a gitmeyi unutur. Siz onu yolcu etmeden yakalayıp hesaptan ikram yaparsınız, sorun sihirli bir şekilde çözülür.</p>
       `
+    },
+    {
+      slug: 'the-power-of-google-reviews-for-hotels',
+      title: 'Oteller İçin Dijital İtibar: Rezervasyonları Yorumlarla Uçurun',
+      description: 'Düşük yorum puanı kâbusundan kurtulun. Google Haritalar varlığınızı güçlendirerek Booking ve Expedia komisyonlarından arının, doğrudan doluluk sağlayın.',
+      date: '5 Ocak 2026',
+      readTime: '4 dk okuma',
+      author: 'Buaze İçerik Ekibi',
+      coverImage: 'https://images.unsplash.com/photo-1542314831-c6a4d27ece50?auto=format&fit=crop&q=80&w=1200&h=600',
+      content: `
+        <h2>Oda Dolulukları İtibarınızla Eş Değerdir</h2>
+        <p>Bir otel müşterisi için tatil hayali, aylarca çalışılarak kazanılmış paranın tek haftalık konforudur. Kimse tatilini ve parasını riske atmak istemez. Kullanıcılar Google üzerinde sizin hakkınızda ufak bir hijyen problemi okuduğunda, devasa otel fotoğrafınız bir saniyede değerini kaybeder.</p>
+        
+        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800&h=400" alt="Lüks otel odası" style="border-radius: 12px; margin: 2rem 0;" />
+
+        <h2>OTA Acentelerine Komisyon Ödemeyi Azaltın</h2>
+        <p>Turizmde Google, artık tüm rezervasyon ağlarının merkezi. Müşteri sizi acentede görse dahi doğrudan Google Haritalar'dan sorguluyor. Burada sahip olacağınız <strong>4.7 ve üzeri</strong> bir puan, onlara doğrudan sitenizin linkine tıklayıp acentesiz rezervasyon yapma güvenini aşılar.</p>
+
+        <h3>Lobi, Spa ve Check-out Stratejileri</h3>
+        <p>Misafirleriniz lobiye indiklerinde memnun görünüyorlarsa, resepsiyonistinizin bir ufak pleksi standındaki QR koda yönlendirmesiyle otelinize paha biçilmez bir 5 yıldız yorum kazandırabilirsiniz. Unutmayın, dijital varlık görünmez bir lobidir.</p>
+
+        <h3>Buaze ile Akıllı Yorum Filtreleme</h3>
+        <p>Memnun olmayan misafir check-out sırasında QR'ı okuttuğunda Buaze sistemi onu Google'a değil, size özel şikayet formuna yönlendirir. Sorunu kapalı kapılar ardında çözün, itibarınızı koruyun.</p>
+      `
     }
   ],
   en: [
@@ -104,7 +128,7 @@ export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
       slug: 'how-to-get-5-stars-on-google',
       title: 'How to Get More 5-Star Reviews for Your Business on Google?',
       description: 'Over 90% of your customers read your Google Maps reviews before visiting. Discover proven aesthetic ways to boost your business\'s Google rating directly to 4.8+. ',
-      date: 'April 15, 2024',
+      date: 'March 15, 2026',
       readTime: '4 min read',
       author: 'Buaze Content Team',
       coverImage: 'https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&q=80&w=1200&h=600',
@@ -134,7 +158,7 @@ export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
       slug: 'how-to-increase-restaurant-reviews',
       title: 'Growth Hacks: Strategies for Restaurants to Increase Reviews',
       description: 'Stop paying heavy 30% delivery margins! Build your own organic local audience through Google Maps supremacy and local SEO dominance.',
-      date: 'April 12, 2024',
+      date: 'February 2, 2026',
       readTime: '5 min read',
       author: 'Buaze Content Team',
       coverImage: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=1200&h=600',
@@ -160,7 +184,7 @@ export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
       slug: 'handling-negative-customer-reviews',
       title: 'Damage Control: How to Professionally Defeat 1-Star Reviews',
       description: 'A 1-star Google review is terrifying. If you manage the process correctly, you can make the customer delete that review or even turn it into 5 stars.',
-      date: 'April 10, 2024',
+      date: 'January 18, 2026',
       readTime: '3 min read',
       author: 'Buaze Content Team',
       coverImage: 'https://images.unsplash.com/photo-1573164574572-cb89e39749b4?auto=format&fit=crop&q=80&w=1200&h=600',
@@ -176,6 +200,27 @@ export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
 
         <h2>Prevent it with Buaze Filtration</h2>
         <p>Imagine reading the angry feedback internally on your WhatsApp notification rather than the public sphere. When a user clicks 1 star on Buaze platforms, they are seamlessly guided to a private complaint mechanism. It saves brands from catastrophic PR scenarios automatically.</p>
+      `
+    },
+    {
+      slug: 'the-power-of-google-reviews-for-hotels',
+      title: 'Digital Reputation for Hotels: Skyrocket Direct Bookings',
+      description: 'Escape the nightmare of low review scoring. By maximizing your Google Maps presence, you gain direct visibility and stop paying massive OTA commissions.',
+      date: 'January 5, 2026',
+      readTime: '4 min read',
+      author: 'Buaze Content Team',
+      coverImage: 'https://images.unsplash.com/photo-1542314831-c6a4d27ece50?auto=format&fit=crop&q=80&w=1200&h=600',
+      content: `
+        <h2>Occupancy Means Reputation</h2>
+        <p>A vacation is a significant financial and emotional investment for your guests. Nobody wants to risk their once-a-year escape. When users search for you on Google and see poor hygiene reviews, your massive hotel photography instantly loses its charm.</p>
+        
+        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800&h=400" alt="Luxury Hotel Room" style="border-radius: 12px; margin: 2rem 0;" />
+
+        <h2>Bypass OTA Commissions</h2>
+        <p>Google is the nexus of travel now. Even if a customer discovers you on an OTA, they verify you on Google Maps. Having a stellar 4.7+ rating right on the map gives them the localized trust to click directly to your website infrastructure and finalize their booking, commission-free.</p>
+
+        <h3>Check-out Strategy</h3>
+        <p>Your lobby is the ultimate checkpoint. Implement a sleek QR stand. When guests look relaxed and satisfied, prompt them to review before they hop in their taxi. A digital asset is fundamentally an invisible lobby.</p>
       `
     }
   ]
