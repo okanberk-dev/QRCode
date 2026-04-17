@@ -103,23 +103,33 @@ export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
       title: 'Oteller İçin Dijital İtibar: Rezervasyonları Yorumlarla Uçurun',
       description: 'Düşük yorum puanı kâbusundan kurtulun. Google Haritalar varlığınızı güçlendirerek Booking ve Expedia komisyonlarından arının, doğrudan doluluk sağlayın.',
       date: '5 Ocak 2026',
-      readTime: '4 dk okuma',
+      readTime: '6 dk okuma',
       author: 'Buaze İçerik Ekibi',
       coverImage: 'https://images.unsplash.com/photo-1542314831-c6a4d27ece50?auto=format&fit=crop&q=80&w=1200&h=600',
       content: `
-        <h2>Oda Dolulukları İtibarınızla Eş Değerdir</h2>
-        <p>Bir otel müşterisi için tatil hayali, aylarca çalışılarak kazanılmış paranın tek haftalık konforudur. Kimse tatilini ve parasını riske atmak istemez. Kullanıcılar Google üzerinde sizin hakkınızda ufak bir hijyen problemi okuduğunda, devasa otel fotoğrafınız bir saniyede değerini kaybeder.</p>
+        <h2>Otel Doluluk Oranları Dijital İtibarınızla Eş Değerdir</h2>
+        <p>Geleneksel otelcilikte "konum" her şeyken, modern turizmde <strong>"Google Haritalar (Maps) puanı" her şeydir</strong>. Bir otel müşterisi için tatil hayali, aylarca çalışılarak kazanılmış paranın tek haftalık, belki de bir kaç günlük konforudur. Hiçbir müşteri, tatilini ve parasını riske atmak istemez.</p>
+        <p>Kullanıcılar Google üzerinde oteliniz hakkında ufak bir "hijyen" veya "personel kaba" problemi okuduğunda, devasa bütçelerle çektirdiğiniz o harika lüks oda fotoğrafları bir saniyede değerini kaybeder. Bu noktada <strong>Otel SEO stratejisi</strong> tamamen misafir yorumları üzerine kurulmak zorundadır.</p>
         
-        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800&h=400" alt="Lüks otel odası" style="border-radius: 12px; margin: 2rem 0;" />
+        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800&h=400" alt="Lüks otel odası deneyimi" style="border-radius: 12px; margin: 2rem 0;" />
 
-        <h2>OTA Acentelerine Komisyon Ödemeyi Azaltın</h2>
-        <p>Turizmde Google, artık tüm rezervasyon ağlarının merkezi. Müşteri sizi acentede görse dahi doğrudan Google Haritalar'dan sorguluyor. Burada sahip olacağınız <strong>4.7 ve üzeri</strong> bir puan, onlara doğrudan sitenizin linkine tıklayıp acentesiz rezervasyon yapma güvenini aşılar.</p>
+        <h2>OTA (Booking, Expedia) Komisyonlarına Son Verin</h2>
+        <p>Turizm ekosisteminde Google, artık tüm rezervasyon ağlarının mutlak merkezidir. Bir müşteri sizi Booking.com veya ETS Tur'da görse dahi, rezervasyonu tamamlamadan önce doğrudan <strong>Google Haritalar'da (Google My Business profilinizde)</strong> gerçek müşteri yorumlarını okumak için otelinizi sorguluyor.</p>
+        <p>İşte altın fırsat tam burada başlar: Burada sahip olacağınız <strong>4.7 ve üzeri tescilli bir puan</strong>, onlara doğrudan sizin kendi web sitenizin linkine tıklayıp aracı acente (OTA) olmadan, komisyonsuz rezervasyon yapma güvenini aşılar.</p>
 
-        <h3>Lobi, Spa ve Check-out Stratejileri</h3>
-        <p>Misafirleriniz lobiye indiklerinde memnun görünüyorlarsa, resepsiyonistinizin bir ufak pleksi standındaki QR koda yönlendirmesiyle otelinize paha biçilmez bir 5 yıldız yorum kazandırabilirsiniz. Unutmayın, dijital varlık görünmez bir lobidir.</p>
+        <h2>Oteller İçin Geri Bildirim Toplama Taktikleri</h2>
+        <h3>1. Kusursuz Bir Lobi ve Check-out Stratejisi</h3>
+        <p>Otelinizin lobisi en önemli "dönüşüm" noktasıdır. Misafirleriniz otelden ayrılırken ve check-out işlemleri yapılırken mutlu görünüyorlarsa, resepsiyonistin nazik bir yönlendirmesiyle masadaki şık, <strong>QR kodlu akıllı standa</strong> telefonlarını okutmalarını sağlayın. Unutmayın, dijital varlığınız aslında internetteki görünmez lobinizdir.</p>
+        
+        <img src="https://images.unsplash.com/photo-1551882547-ff40c0d120fb?auto=format&fit=crop&q=80&w=800&h=400" alt="Otel lobi ve resepsiyon alanı" style="border-radius: 12px; margin: 2rem 0;" />
 
-        <h3>Buaze ile Akıllı Yorum Filtreleme</h3>
-        <p>Memnun olmayan misafir check-out sırasında QR'ı okuttuğunda Buaze sistemi onu Google'a değil, size özel şikayet formuna yönlendirir. Sorunu kapalı kapılar ardında çözün, itibarınızı koruyun.</p>
+        <h3>2. Spa, Havuz ve Restoran Bölgelerini Kullanın</h3>
+        <p>Otel içinde en yüksek memnuniyetin sağlandığı anlar genellikle masaj sonrası veya harika bir akşam yemeği sonrasıdır. Bu noktalarda masalara yerleştirilecek minimal QR kartlar ile Google Haritalar'daki yıldızlarınızı katlayabilirsiniz.</p>
+
+        <h3>3. Negatif Yorumları "Buaze Akıllı Kalkan" İle Durdurun</h3>
+        <p>Her şey her zaman mükemmel gitmeyebilir. Odasında veya serviste sorun yaşayan sinirli bir misafir check-out sırasında QR'ı okuttuğunda ve 1 veya 2 yıldıza dokunduğunda ne olacak? <strong>Buaze sistemi onu herkese açık Google ekranına değil, sadece otel yönetimine giden dijital ve özel bir şikayet formuna yönlendirir.</strong></p>
+        <p>Müşteri deşarj olur, sorunu kapalı kapılar ardında, o henüz kapıdan çıkmadan telafi eder ve markanızın genel prestijini korumuş olursunuz.</p>
+        <p>Güçlü bir dijital itibar ile hem doluluk oranlarınızı maksimuma çıkarın hem de fahiş komisyon ödemelerine elveda deyin.</p>
       `
     }
   ],
@@ -207,20 +217,29 @@ export const blogPosts: Record<'tr' | 'en', BlogPost[]> = {
       title: 'Digital Reputation for Hotels: Skyrocket Direct Bookings',
       description: 'Escape the nightmare of low review scoring. By maximizing your Google Maps presence, you gain direct visibility and stop paying massive OTA commissions.',
       date: 'January 5, 2026',
-      readTime: '4 min read',
+      readTime: '6 min read',
       author: 'Buaze Content Team',
       coverImage: 'https://images.unsplash.com/photo-1542314831-c6a4d27ece50?auto=format&fit=crop&q=80&w=1200&h=600',
       content: `
         <h2>Occupancy Means Reputation</h2>
-        <p>A vacation is a significant financial and emotional investment for your guests. Nobody wants to risk their once-a-year escape. When users search for you on Google and see poor hygiene reviews, your massive hotel photography instantly loses its charm.</p>
+        <p>While location used to be the only metric that mattered in hospitality, today <strong>Google Maps rating is the new prime real estate</strong>. A vacation is a significant financial and emotional investment for your guests. Nobody wants to risk their once-a-year escape.</p>
+        <p>When users search for you on Google and see poor hygiene or bad service reviews, your massive hotel photography and expensive marketing material instantly lose their charm. Your hotel SEO strategy must revolve around authentic guest reviews.</p>
         
-        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800&h=400" alt="Luxury Hotel Room" style="border-radius: 12px; margin: 2rem 0;" />
+        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800&h=400" alt="Luxury Hotel Room Experience" style="border-radius: 12px; margin: 2rem 0;" />
 
-        <h2>Bypass OTA Commissions</h2>
-        <p>Google is the nexus of travel now. Even if a customer discovers you on an OTA, they verify you on Google Maps. Having a stellar 4.7+ rating right on the map gives them the localized trust to click directly to your website infrastructure and finalize their booking, commission-free.</p>
+        <h2>Bypass OTA Commissions (Booking, Expedia)</h2>
+        <p>Google is the absolute nexus of travel planning now. Even if a customer discovers your property on an OTA platform initially, they will verify you on your <strong>Google My Business profile</strong> before swiping their credit card.</p>
+        <p>Here is where the magic happens: Having a stellar <strong>4.7+ rating</strong> right on the map gives them the localized trust to click directly to your website infrastructure and finalize their booking, saving you 15-20% in OTA commissions.</p>
 
-        <h3>Check-out Strategy</h3>
-        <p>Your lobby is the ultimate checkpoint. Implement a sleek QR stand. When guests look relaxed and satisfied, prompt them to review before they hop in their taxi. A digital asset is fundamentally an invisible lobby.</p>
+        <h2>Strategic Reputation Collection</h2>
+        <h3>1. The Lobby and Check-out Checkpoint</h3>
+        <p>Your lobby is the ultimate conversion checkpoint. Implement a sleek, branded <strong>QR code stand</strong> at the reception desk. When guests look relaxed and satisfied while checking out, prompt them to scan and review before they hop in their taxi. A strong digital asset is fundamentally an invisible lobby on the internet.</p>
+
+        <img src="https://images.unsplash.com/photo-1551882547-ff40c0d120fb?auto=format&fit=crop&q=80&w=800&h=400" alt="Hotel reception desk" style="border-radius: 12px; margin: 2rem 0;" />
+
+        <h3>2. Defeat the 1-Star Nightmare Automatically</h3>
+        <p>What happens when an angry guest scans the QR code? If you use a smart system like Buaze, when they select 1 or 2 stars, they are <strong>NOT directed to the public Google page</strong>. Instead, they land on a private, internal feedback form sent only to the hotel manager.</p>
+        <p>This allows your staff to intercept the complaint, offer a complimentary drink or apology, and resolve the issue privately. Maximize your occupancy and take ultimate control of your narrative.</p>
       `
     }
   ]
