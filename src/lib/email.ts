@@ -3,29 +3,38 @@ import nodemailer from 'nodemailer';
 let transporterInstance: any = null;
 
 export function getTransporter() {
-  if (transporterInstance) return transporterInstance;
-
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, RESEND_API_KEY } = process.env;
-
+  const resendKey = RESEND_API_KEY?.trim();
+  
   // Resend auto-configure (sets RESEND_API_KEY via Vercel integration)
-  if (RESEND_API_KEY && RESEND_API_KEY.trim() !== '') {
+  if (resendKey && resendKey !== '') {
+    // If we have a Resend key, we ALWAYS use it and ignore Gmail/SMTP fallback
+    if (transporterInstance && transporterInstance._resend) return transporterInstance;
+
+    console.log('[Buaze Email] Using Resend SMTP');
     transporterInstance = nodemailer.createTransport({
       host: 'smtp.resend.com',
       port: 465,
       secure: true,
       auth: {
         user: 'resend',
-        pass: RESEND_API_KEY.trim(),
+        pass: resendKey,
       },
     });
+    (transporterInstance as any)._resend = true;
     return transporterInstance;
   }
 
   // Fallback: custom SMTP_* env vars
   if (!SMTP_USER || !SMTP_PASS) {
+    console.warn('[Buaze Email] No email credentials found (no RESEND_API_KEY or SMTP_USER)');
     return null;
   }
 
+  // If we already have a custom SMTP transporter, reuse it
+  if (transporterInstance && !(transporterInstance as any)._resend) return transporterInstance;
+
+  console.log('[Buaze Email] Falling back to custom/Gmail SMTP - User:', SMTP_USER);
   transporterInstance = nodemailer.createTransport({
     host: SMTP_HOST || 'smtp.gmail.com',
     port: Number(SMTP_PORT) || 587,
@@ -38,7 +47,7 @@ export function getTransporter() {
       rejectUnauthorized: false
     }
   });
-
+  (transporterInstance as any)._resend = false;
   return transporterInstance;
 }
 
@@ -323,9 +332,10 @@ ${data.comment && data.comment !== 'High Rating Redirect' ? data.comment : 'Yoru
 ${isCritical ? 'İlk 60 dakikada iletişime geçmek yorumu kurtarma şansınızı artırır.\n\n' : ''}Panelde inceleyin: ${appUrl}/tr/auth/login?redirect=${encodeURIComponent('/tr/dashboard/feedbacks' + (data.feedbackId ? `?highlight=${data.feedbackId}` : ''))}
   `;
 
+  const resendKey = process.env.RESEND_API_KEY?.trim();
   try {
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Buaze" <hello@buaze.com>`,
+      from: (resendKey ? '"Buaze" <hello@buaze.com>' : (process.env.SMTP_FROM || '"Buaze" <hello@buaze.com>')),
       to: recipientEmail,
       subject,
       text: textBody,
@@ -620,9 +630,10 @@ ${copy.dist}:
 ${copy.cta}: ${appUrl}/admin/dashboard
   `;
 
+  const resendKey = process.env.RESEND_API_KEY?.trim();
   try {
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Buaze" <hello@buaze.com>`,
+      from: (resendKey ? '"Buaze" <hello@buaze.com>' : (process.env.SMTP_FROM || '"Buaze" <hello@buaze.com>')),
       to,
       subject,
       text,
@@ -734,9 +745,10 @@ export async function sendPasswordResetEmail(params: {
 
   const text = `${title}\n\n${intro}\n\n${codeLabel}: ${params.code}\n\n${validity}\n\n${cta}: ${params.resetUrl}\n\n${ignore}`;
 
+  const resendKey = process.env.RESEND_API_KEY?.trim();
   try {
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Buaze" <hello@buaze.com>`,
+      from: (resendKey ? '"Buaze" <hello@buaze.com>' : (process.env.SMTP_FROM || '"Buaze" <hello@buaze.com>')),
       to: params.to,
       subject,
       text,
