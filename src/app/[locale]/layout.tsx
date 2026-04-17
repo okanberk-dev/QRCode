@@ -51,7 +51,7 @@ export async function generateMetadata({
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       url: `https://buaze.com/${locale}`,
       siteName: 'Buaze',
-      title: `Buaze | ${locale === 'tr' ? 'Dijital İtibar Yönetim Platformu' : 'Digital Reputation Management Platform'}`,
+      title: `Buaze - ${locale === 'tr' ? 'Dijital İtibar Yönetim Platformu' : 'Digital Reputation Management Platform'}`,
       description: t.siteDescription,
       images: [
         {
@@ -64,7 +64,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `Buaze | ${locale === 'tr' ? 'Dijital İtibar' : 'Digital Reputation'}`,
+      title: `Buaze - ${locale === 'tr' ? 'Dijital İtibar' : 'Digital Reputation'}`,
       description: t.siteDescription,
       creator: '@buaze',
     },

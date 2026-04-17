@@ -14,7 +14,7 @@ export async function generateMetadata({
   const isTr = locale === 'tr';
   
   return {
-    title: isTr ? 'Gizlilik Politikası | Buaze' : 'Privacy Policy | Buaze',
+    title: isTr ? 'Gizlilik Politikası - Buaze' : 'Privacy Policy - Buaze',
     description: isTr 
       ? 'Kişisel verilerinizin korunması ve güvenliğine dair gizlilik politikamız.'
       : 'Our privacy policy regarding the protection and security of your personal data.',

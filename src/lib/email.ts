@@ -76,7 +76,7 @@ export async function sendFeedbackNotification(data: NotificationParams) {
     return;
   }
 
-  const recipientEmail = data.toEmail || process.env.NOTIFICATION_EMAIL;
+  const recipientEmail = data.toEmail || process.env.NOTIFICATION_EMAIL || 'hello@buaze.com';
   if (!recipientEmail) {
     console.warn("No notification email configured. Skipping email.");
     return;
@@ -96,7 +96,7 @@ export async function sendFeedbackNotification(data: NotificationParams) {
     : data.rating === 2
       ? '⚠️ DÜŞÜK PUAN'
       : '⚠️';
-  const subject = `${subjectPrefix} — ${data.rating} Yıldız / ${restaurantName}${data.branch ? ` · ${data.branch}` : ''}`;
+  const subject = `${subjectPrefix} - ${data.rating} Yıldız / ${restaurantName}${data.branch ? ` - ${data.branch}` : ''}`;
 
   // For 1-2 star reviews, add a prominent "action required" banner at the
   // top of the email directing the owner to respond quickly.
@@ -131,7 +131,7 @@ export async function sendFeedbackNotification(data: NotificationParams) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Buaze — Yeni Değerlendirme</title>
+  <title>Buaze - Yeni Değerlendirme</title>
 </head>
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
   <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f3f4f6;padding:40px 16px;">
@@ -166,7 +166,7 @@ export async function sendFeedbackNotification(data: NotificationParams) {
               <div style="margin-top:24px;">
                 <p style="margin:0;color:#9ca3af;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:1px;">Yeni Değerlendirme</p>
                 <h1 style="margin:6px 0 0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">${restaurantName}</h1>
-                ${data.branch ? `<p style="margin:4px 0 0;color:#6b7280;font-size:14px;">${data.branch}${data.tableNumber ? ` · Masa ${data.tableNumber}` : ''}</p>` : ''}
+                ${data.branch ? `<p style="margin:4px 0 0;color:#6b7280;font-size:14px;">${data.branch}${data.tableNumber ? ` - Masa ${data.tableNumber}` : ''}</p>` : ''}
               </div>
             </td>
           </tr>
@@ -294,9 +294,9 @@ export async function sendFeedbackNotification(data: NotificationParams) {
   `;
 
   const textBody = `
-${isCritical ? '🚨 ACİL AKSİYON GEREKİYOR\n' : ''}${restaurantName} — Yeni ${data.rating} Yıldız Değerlendirme
+${isCritical ? '🚨 ACİL AKSİYON GEREKİYOR\n' : ''}${restaurantName} - Yeni ${data.rating} Yıldız Değerlendirme
 
-Puan: ${data.rating}/5 — ${ratingLabel}
+Puan: ${data.rating}/5 - ${ratingLabel}
 Şube: ${data.branch || 'Belirtilmedi'}
 Masa: ${data.tableNumber || 'Belirtilmedi'}
 Tarih: ${new Date().toLocaleString('tr-TR')}
@@ -356,11 +356,11 @@ export async function sendWeeklyDigest(params: WeeklyDigestParams) {
   const formatDate = (d: Date) =>
     d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'short' });
 
-  const periodStr = `${formatDate(period.from)} – ${formatDate(period.to)}`;
+  const periodStr = `${formatDate(period.from)} - ${formatDate(period.to)}`;
 
   const subject = isTr
-    ? `📊 Haftalık Rapor — ${restaurantName} (${periodStr})`
-    : `📊 Weekly Report — ${restaurantName} (${periodStr})`;
+    ? `📊 Haftalık Rapor - ${restaurantName} (${periodStr})`
+    : `📊 Weekly Report - ${restaurantName} (${periodStr})`;
 
   const copy = isTr
     ? {
@@ -585,7 +585,7 @@ export async function sendWeeklyDigest(params: WeeklyDigestParams) {
   `;
 
   const text = `
-${copy.title} — ${restaurantName}
+${copy.title} - ${restaurantName}
 ${copy.period}: ${periodStr}
 
 ${copy.avg}: ${stats.avgRating}/5
@@ -632,7 +632,7 @@ export async function sendPasswordResetEmail(params: {
   }
 
   const isTr = params.locale !== 'en';
-  const subject = isTr ? 'Buaze — Şifre Sıfırlama Kodu' : 'Buaze — Password Reset Code';
+  const subject = isTr ? 'Buaze - Şifre Sıfırlama Kodu' : 'Buaze - Password Reset Code';
 
   const title = isTr ? 'Şifre Sıfırlama' : 'Password Reset';
   const intro = isTr

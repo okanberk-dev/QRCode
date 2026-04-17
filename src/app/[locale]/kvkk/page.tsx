@@ -13,7 +13,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
   return {
-    title: isTr ? 'KVKK Aydınlatma Metni | Buaze' : 'KVKK Clarification Text | Buaze',
+    title: isTr ? 'KVKK Aydınlatma Metni - Buaze' : 'KVKK Clarification Text - Buaze',
     description: isTr 
       ? '6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında aydınlatma metnimiz.'
       : 'Our clarification text within the scope of the Personal Data Protection Law (KVKK).',

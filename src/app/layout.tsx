@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Buaze | Dijital İtibar Yönetimi',
+  title: 'Buaze - Dijital İtibar Yönetimi',
   description: 'Restoran değerlendirme ve geri bildirim yönetim platformu',
   icons: {
     icon: '/favicon.svg',

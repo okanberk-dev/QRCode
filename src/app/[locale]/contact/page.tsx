@@ -13,7 +13,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'İletişim — Buaze' : 'Contact — Buaze',
+    title: locale === 'tr' ? 'İletişim - Buaze' : 'Contact - Buaze',
     description: locale === 'tr'
       ? 'Buaze ekibiyle iletişime geçin. Sorularınızı, demo taleplerinizi veya destek isteklerinizi iletin.'
       : 'Get in touch with the Buaze team. Send your questions, demo requests, or support inquiries.',

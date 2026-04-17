@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Giriş Yap — Buaze' : 'Log In — Buaze',
+    title: locale === 'tr' ? 'Giriş Yap - Buaze' : 'Log In - Buaze',
     description: locale === 'tr'
       ? 'Buaze hesabınıza giriş yapın ve restoranınızın itibarını yönetmeye devam edin.'
       : 'Log in to your Buaze account and continue managing your restaurant\'s reputation.',

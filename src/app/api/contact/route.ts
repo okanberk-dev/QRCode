@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     const safeMessage = escapeHtml(String(message));
 
     const mailOptions = {
-      from: `"Buaze Web Form" <${process.env.SMTP_USER}>`,
+      from: process.env.SMTP_FROM || '"Buaze" <hello@buaze.com>',
       to: 'hello@buaze.com', // Explicit request by user
       subject: `Yeni İletişim Formu: ${safeBusiness !== '-' ? safeBusiness : safeName}`,
       html: `

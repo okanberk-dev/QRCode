@@ -14,7 +14,7 @@ export async function generateMetadata({
   const isTr = locale === 'tr';
   
   return {
-    title: isTr ? 'Sıkça Sorulan Sorular | Buaze' : 'Frequently Asked Questions | Buaze',
+    title: isTr ? 'Sıkça Sorulan Sorular - Buaze' : 'Frequently Asked Questions - Buaze',
     description: isTr 
       ? 'Buaze hakkında merak ettiğiniz tüm soruların cevapları. İtibar yönetimi, otomasyonlar ve fiyatlandırma hakkında bilgi alın.'
       : 'Find answers to all your questions about Buaze. Learn more about reputation management, automations, and pricing.',

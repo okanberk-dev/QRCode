@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Şifreyi Sıfırla — Buaze' : 'Reset Password — Buaze',
+    title: locale === 'tr' ? 'Şifreyi Sıfırla - Buaze' : 'Reset Password - Buaze',
     robots: { index: false, follow: false },
   };
 }
