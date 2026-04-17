@@ -53,19 +53,12 @@ export async function generateMetadata({
       siteName: 'Buaze',
       title: `Buaze | ${locale === 'tr' ? 'Google Puanınızı Yükseltin' : 'Boost Your Google Ratings'}`,
       description: t.siteDescription,
-      images: [
-        {
-          url: '/assets/3d-hero.png',
-          width: 1200,
-          height: 630,
-          alt: 'Buaze Platform',
-        },
-      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: `Buaze | ${locale === 'tr' ? 'Google Puanınızı Yükseltin' : 'Boost Your Google Ratings'}`,
       description: t.siteDescription,
+      site: '@buaze',
       creator: '@buaze',
     },
     alternates: {
