@@ -204,7 +204,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
 
       {/* MODALS */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 pb-6 sm:pb-6">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-2 sm:p-6 pb-6 sm:pb-6">
           <div className="absolute inset-0 bg-[#111827]/40 backdrop-blur-sm" onClick={() => setModal(null)} />
           <div className="relative w-[calc(100%-1rem)] sm:w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] bg-white rounded-2xl sm:rounded-3xl border-2 sm:border-[4px] border-[#1f1e1d] shadow-[4px_6px_0_0_#1f1e1d] sm:shadow-[12px_14px_0_0_#1f1e1d] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex-shrink-0 flex items-center justify-between p-4 sm:p-6 border-b-2 border-[#e8e4de] bg-[#F7F4F0]">
