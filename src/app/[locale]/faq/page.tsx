@@ -33,8 +33,52 @@ export default async function FaqPage({
   const { locale } = await params;
   const t = getTranslations(locale);
 
+  // Generate FAQ Schema (JSON-LD) for rich snippets
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: t.faq_q1,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: t.faq_a1,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: t.faq_q2,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: t.faq_a2,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: t.faq_q3,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: t.faq_a3,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: t.faq_q4,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: t.faq_a4,
+        },
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-[#FCFBF7] selection:bg-[#FDBF1D]/30">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       <main className="flex-1 pt-[100px] sm:pt-[120px] pb-16 sm:pb-24">
