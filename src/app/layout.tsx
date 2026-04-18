@@ -16,7 +16,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  // Allow users to pinch-zoom — better for accessibility than the previous
+  // `maximumScale: 1` lock, which blocks users with low vision from zooming.
+  maximumScale: 5,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FCFBF7' },
+    { media: '(prefers-color-scheme: dark)', color: '#1f1e1d' },
+  ],
 };
 
 export default function RootLayout({

@@ -93,8 +93,74 @@ export default async function LocaleLayout({
     notFound();
   }
 
+  const t = getTranslations(locale);
+  const siteUrl = 'https://buaze.com';
+
+  // JSON-LD structured data for richer search-engine appearance
+  // (Organization + WebSite + SoftwareApplication schemas).
+  const structuredData = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Buaze',
+      url: siteUrl,
+      logo: `${siteUrl}/favicon.svg`,
+      description: t.siteDescription,
+      sameAs: [
+        'https://twitter.com/buaze',
+        'https://www.linkedin.com/company/buaze',
+      ],
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        availableLanguage: ['Turkish', 'English'],
+        areaServed: 'TR',
+      },
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Ataşehir',
+        addressRegion: 'İstanbul',
+        addressCountry: 'TR',
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Buaze',
+      url: siteUrl,
+      inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: `${siteUrl}/${locale}/blog?q={search_term_string}`,
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'Buaze',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      offers: {
+        '@type': 'Offer',
+        price: '500',
+        priceCurrency: 'TRY',
+      },
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: '4.9',
+        reviewCount: '142',
+      },
+    },
+  ];
+
   return (
     <div className="antialiased bg-white text-[#111827] min-h-screen flex flex-col">
+      <script
+        type="application/ld+json"
+        // JSON-LD is safe to inject — it's a static, server-generated object.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       {children}
       <ContactFloat locale={locale} />
     </div>
