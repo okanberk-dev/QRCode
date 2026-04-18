@@ -4,39 +4,45 @@
 import type { ReactNode } from 'react';
 
 interface Props {
-  label:    string;
-  children: ReactNode;
-  badge?:   string;
-  badgeColor?: 'primary' | 'accent';
-  isEmpty?: boolean;
+  label:        string;
+  icon:         string;
+  children:     ReactNode;
+  badge?:       string;
+  badgeVariant?: 'primary' | 'accent';
+  isEmpty?:     boolean;
   emptyMessage?: string;
 }
 
-export function RoiResultCard({
-  label,
-  children,
-  badge,
-  badgeColor = 'primary',
-  isEmpty = false,
-  emptyMessage,
+export function ResultCard({
+  label, icon, children, badge, badgeVariant = 'primary', isEmpty, emptyMessage,
 }: Props) {
   return (
     <div
-      className="rounded-xl border border-white/10 bg-white/5 p-5 flex flex-col gap-3
-                 backdrop-blur-sm transition-all duration-200"
+      className="rounded-xl border border-gray-200 bg-white p-4 transition-all duration-150"
       role="region"
       aria-label={label}
+      aria-live="polite"
+      aria-atomic="true"
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-widest text-white/40">
-          {label}
-        </span>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <span
+            className="flex h-6 w-6 items-center justify-center rounded-md
+                       bg-[#1F1E1D] text-[10px] text-[#FDBF1D]"
+            aria-hidden="true"
+          >
+            {icon}
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+            {label}
+          </span>
+        </div>
         {badge && (
           <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide
-              ${badgeColor === 'accent'
-                ? 'bg-[#EA580C]/20 text-[#EA580C]'
-                : 'bg-[#FDBF1D]/20 text-[#FDBF1D]'
+            className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide
+              ${badgeVariant === 'accent'
+                ? 'bg-[#EA580C]/10 text-[#EA580C]'
+                : 'bg-[#FDBF1D]/20 text-[#B38A00]'
               }`}
           >
             {badge}
@@ -45,9 +51,12 @@ export function RoiResultCard({
       </div>
 
       {isEmpty ? (
-        <p className="text-sm text-white/30 italic">{emptyMessage}</p>
+        <div className="flex items-center gap-2 py-1">
+          <div className="h-6 w-16 rounded animate-pulse bg-gray-100" />
+          <p className="text-xs text-gray-300 italic truncate">{emptyMessage}</p>
+        </div>
       ) : (
-        <div className="text-white">{children}</div>
+        children
       )}
     </div>
   );

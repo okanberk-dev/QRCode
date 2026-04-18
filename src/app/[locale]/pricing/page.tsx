@@ -102,8 +102,8 @@ export default async function PricingPage({
         </div>
       </section>
 
-      {/* ─── ROI Calculator ─── */}
-      <div className="mx-auto mb-20 max-w-5xl px-4">
+      {/* ROI Calculator */}
+      <div className="mx-auto mt-12 mb-16 max-w-5xl px-4 sm:px-6 lg:px-8" id="roi-calculator">
         <RoiCalculator />
       </div>
 
