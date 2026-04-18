@@ -8,6 +8,7 @@ export interface RoiInputs {
   currentRating:    number;
   currentReviews:   number;
   targetRating:     number;
+  avgCustomerValue: number;
   businessType:     BusinessType;
 }
 
@@ -23,10 +24,19 @@ export interface LeadPotential {
   max: number;
 }
 
+export interface RevenuePotential {
+  min: number;
+  max: number;
+}
+
+export type PaybackDaysResult = { min: number; max: number };
+
 export interface RoiResults {
-  reviewsNeeded:    ReviewsNeededResult;
-  visibilityLevel:  VisibilityLevel;
-  leadPotential:    LeadPotential;
+  reviewsNeeded:     ReviewsNeededResult;
+  visibilityLevel:   VisibilityLevel;
+  leadPotential:     LeadPotential;
+  revenuePotential:  RevenuePotential;
+  paybackDays:       PaybackDaysResult;
 }
 
 // Raw string form values before parsing
@@ -35,5 +45,6 @@ export interface RoiFormValues {
   currentRating:    string;
   currentReviews:   string;
   targetRating:     string;
+  avgCustomerValue: string;
   businessType:     BusinessType;
 }

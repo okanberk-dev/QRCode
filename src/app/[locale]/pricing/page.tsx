@@ -255,13 +255,13 @@ export default async function PricingPage({
                 {locale === 'tr' ? 'YATIRIM GETİRİSİ' : 'RETURN ON INVESTMENT'}
               </span>
             </div>
-            <h2 className="text-[30px] sm:text-[52px] font-black text-[#111827] tracking-tight leading-none">
-              {locale === 'tr' ? 'Kaç Günde Amorti Eder?' : 'How Fast Will It Pay Off?'}
+            <h2 className="text-[30px] sm:text-[52px] font-black text-[#111827] tracking-tight leading-[1.1]">
+              {locale === 'tr' ? 'Rakamlarla Görün: Buaze Size Ne Kazandırır?' : 'See It in Numbers: What Buaze Delivers'}
             </h2>
-            <p className="text-[15px] sm:text-[18px] text-[#6b6760] font-bold max-w-[560px] mx-auto leading-relaxed">
+            <p className="text-[15px] sm:text-[18px] text-[#6b6760] font-bold max-w-[640px] mx-auto leading-relaxed">
               {locale === 'tr'
-                ? 'İşletmenizin verilerini girerek tahmini yatırım getirinizi hesaplayın.'
-                : 'Enter your business data to calculate your estimated return on investment.'}
+                ? 'Kendi işletme verilerinizi girin; aylık ek müşteri, tahmini ek ciro ve ne kadar sürede amorti edeceğinizi sektör benchmarks üzerinden şeffafça görün.'
+                : 'Enter your own business data and see your monthly new customers, estimated extra revenue and payback period calculated transparently against industry benchmarks.'}
             </p>
           </div>
           <RoiCalculator locale={locale} />
