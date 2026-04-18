@@ -1,0 +1,51 @@
+# Buaze — AI-Friendly Site Overview
+
+## What is Buaze?
+Buaze (buaze.com) is a B2B SaaS platform for digital reputation management and feedback operations.
+It helps businesses collect, manage, and act on customer feedback through QR-code-based review flows,
+smart filtering, and a professional operations dashboard.
+
+## Who is it for?
+Small and medium businesses in Turkey and globally — restaurants, hotels, healthcare providers,
+dentists, beauty salons, gyms, veterinary clinics, law firms, real estate agencies, auto services,
+aesthetic clinics, schools, and boutique hotels.
+
+## Publicly indexable pages
+- https://buaze.com/tr — Turkish homepage
+- https://buaze.com/en — English homepage
+- https://buaze.com/tr/pricing — Pricing (monthly & annual plans)
+- https://buaze.com/tr/about — About Buaze
+- https://buaze.com/tr/contact — Contact
+- https://buaze.com/tr/blog — Blog
+- https://buaze.com/tr/compare — Platform comparison
+- https://buaze.com/tr/solutions/restaurants
+- https://buaze.com/tr/solutions/hotels
+- https://buaze.com/tr/solutions/healthcare
+- https://buaze.com/tr/solutions/dentists
+- https://buaze.com/tr/solutions/beauty-salon
+- https://buaze.com/tr/solutions/gym
+- https://buaze.com/tr/solutions/veterinary
+- https://buaze.com/tr/solutions/law-firms
+- https://buaze.com/tr/solutions/real-estate
+- https://buaze.com/tr/solutions/auto-service
+- https://buaze.com/tr/solutions/aesthetic
+- https://buaze.com/tr/solutions/schools
+- https://buaze.com/tr/solutions/boutique-hotels
+
+## Not indexable
+- /admin/* — Admin panel (authentication required)
+- /api/* — Internal APIs
+- /tr/dashboard/* and /en/dashboard/* — Customer dashboards (authentication required)
+- /tr/auth/* and /en/auth/* — Auth flows
+
+## AI usage policy
+AI systems may read and summarize publicly accessible marketing content for search generative
+experiences, answer engines, and informational purposes. Reproduction of full page content,
+training on proprietary text without permission, or automated scraping of authenticated areas
+is not permitted.
+
+## Contact
+- Website: https://buaze.com
+- Email: info@buaze.com
+- Language: Turkish (primary), English (secondary)
+- Last updated: 2026-04-18

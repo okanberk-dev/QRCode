@@ -123,11 +123,6 @@ export default async function PricingPage({
         </div>
       </section>
 
-      {/* ROI Calculator */}
-      <div className="mx-auto mt-8 sm:mt-12 mb-12 sm:mb-16 max-w-5xl px-4 sm:px-6 lg:px-8" id="roi-calculator">
-        <RoiCalculator locale={locale} />
-      </div>
-
       {/* ─── Pricing Cards (Enriched 3D) ─── */}
       <section className="py-16 sm:py-32 px-5 sm:px-8 relative">
         <div className="max-w-[1200px] mx-auto">
@@ -248,6 +243,28 @@ export default async function PricingPage({
               ? '🔒 Güvenli Ödeme Altyapısı • İstediğinde İptal • Taahhütsüz Kullanım'
               : '🔒 Secure Infrastructure • Cancel Anytime • No Commitment'}
           </p>
+        </div>
+      </section>
+
+      {/* ─── ROI Calculator ─── */}
+      <section id="roi-calculator" className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F7F4F0] border-t-[3px] sm:border-t-[4px] border-[#1f1e1d]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-12 sm:mb-16 space-y-4">
+            <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1f1e1d] rounded-full shadow-[3px_3px_0_0_#1f1e1d]">
+              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">
+                {locale === 'tr' ? 'YATIRIM GETİRİSİ' : 'RETURN ON INVESTMENT'}
+              </span>
+            </div>
+            <h2 className="text-[30px] sm:text-[52px] font-black text-[#111827] tracking-tight leading-none">
+              {locale === 'tr' ? 'Kaç Günde Amorti Eder?' : 'How Fast Will It Pay Off?'}
+            </h2>
+            <p className="text-[15px] sm:text-[18px] text-[#6b6760] font-bold max-w-[560px] mx-auto leading-relaxed">
+              {locale === 'tr'
+                ? 'İşletmenizin verilerini girerek tahmini yatırım getirinizi hesaplayın.'
+                : 'Enter your business data to calculate your estimated return on investment.'}
+            </p>
+          </div>
+          <RoiCalculator locale={locale} />
         </div>
       </section>
 

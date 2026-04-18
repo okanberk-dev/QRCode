@@ -9,15 +9,17 @@ import { CtaButton } from '@/components/ui/CtaButton';
 interface SolutionPageLayoutProps {
   locale: Locale;
   t: Translations;
-  industryKey: string; // e.g., 'res', 'hot', 'hea', 'den', etc.
+  industryKey: string;
   icon: ReactNode;
   industryBadge: string;
   h1Prefix: string;
   h1Suffix: string;
   description: string;
-  stats?: { num: string; label: string }[];
+  accentColor?: string;
+  stats?: { num: string; label: string; context?: string }[];
   steps?: { title: string; desc: string; icon: ReactNode }[];
   benefits?: { title: string; desc: string; icon: ReactNode }[];
+  faqs?: { q: string; a: string }[];
   isLoggedIn?: boolean;
 }
 
@@ -29,9 +31,11 @@ export default function SolutionPageLayout({
   h1Prefix,
   h1Suffix,
   description,
+  accentColor = '#ea580c',
   stats,
   steps,
   benefits,
+  faqs,
   isLoggedIn,
 }: SolutionPageLayoutProps) {
   const base = `/${locale}`;
@@ -99,7 +103,7 @@ export default function SolutionPageLayout({
 
       {/* Hero */}
       <section className="pt-20 sm:pt-32 pb-12 sm:pb-16 px-5 sm:px-8 bg-[#F7F4F0] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#ea580c]/5 rounded-full blur-[150px] translate-x-1/3 -translate-y-1/3" />
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-[150px] translate-x-1/3 -translate-y-1/3" style={{ backgroundColor: `${accentColor}0d` }} />
         <div className="max-w-[1200px] mx-auto relative content-left">
           <div className="max-w-[720px] space-y-6">
             <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1f1e1d] rounded-full shadow-[4px_4px_0_0_#1f1e1d]">
@@ -107,7 +111,7 @@ export default function SolutionPageLayout({
               <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">{industryBadge}</span>
             </div>
             <h1 className="text-[34px] sm:text-[72px] font-black leading-[1] sm:leading-[0.95] tracking-tight text-[#1f1e1d]">
-              {h1Prefix} <span className="text-[#ea580c]">{h1Suffix}</span>
+              {h1Prefix} <span style={{ color: accentColor }}>{h1Suffix}</span>
             </h1>
             <p className="text-[16px] sm:text-[20px] text-[#6b6760] font-bold leading-relaxed max-w-[600px]">
               {description}
@@ -193,14 +197,42 @@ export default function SolutionPageLayout({
         </div>
       </section>
 
+      {/* FAQ */}
+      {faqs && faqs.length > 0 && (
+        <section className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-t border-[#e8e4de]">
+          <div className="max-w-[800px] mx-auto">
+            <div className="text-center mb-10 sm:mb-14">
+              <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-widest mb-3" style={{ color: accentColor }}>
+                {locale === 'tr' ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
+              </p>
+              <h2 className="text-[26px] sm:text-[38px] font-black text-[#1f1e1d] tracking-tight">
+                {locale === 'tr' ? 'Merak Ettikleriniz' : 'Common Questions'}
+              </h2>
+            </div>
+            <div className="space-y-4">
+              {faqs.map((faq, i) => (
+                <div key={i} className="bg-[#FCFBF7] border-2 border-[#e8e4de] rounded-2xl p-6 sm:p-8">
+                  <h3 className="text-[15px] sm:text-[16px] font-black text-[#1f1e1d] mb-3">{faq.q}</h3>
+                  <p className="text-[13px] sm:text-[14px] text-[#6b6760] leading-relaxed font-medium">{faq.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* CTA */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FCFBF7]">
-        <div className="max-w-[800px] mx-auto text-center space-y-8">
-          <h2 className="text-[28px] sm:text-[48px] font-black text-[#1f1e1d] tracking-tight leading-tight">
-             {locale === 'tr' ? 'İşletmenizi Bugün Büyütün' : 'Grow Your Business Today'}
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#1f1e1d] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div className="relative z-10 max-w-[800px] mx-auto text-center space-y-8">
+          <h2 className="text-[28px] sm:text-[48px] font-black text-white tracking-tight leading-tight">
+            {locale === 'tr' ? 'İşletmenizi Bugün Büyütün' : 'Grow Your Business Today'}
           </h2>
+          <p className="text-[15px] sm:text-[18px] text-[#ada89f] font-bold">
+            {locale === 'tr' ? '14 gün ücretsiz dene. Kredi kartı gerekmez.' : '14-day free trial. No credit card required.'}
+          </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-            <CtaButton variant="dark" href={`${base}/auth/register`} className="w-full sm:w-auto">
+            <CtaButton variant="primary" href={`${base}/auth/register`} className="w-full sm:w-auto">
               {locale === 'tr' ? 'Hemen Başlayın' : 'Get Started Now'} <ArrowRight size={18} className="ml-2" />
             </CtaButton>
             <CtaButton variant="secondary" href={`${base}/pricing`} className="w-full sm:w-auto">

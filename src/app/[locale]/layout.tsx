@@ -2,6 +2,9 @@ import '../globals.css';
 import { ContactFloat } from '@/components/marketing/ContactFloat';
 import type { Metadata } from 'next';
 import { getTranslations, type Locale } from '@/lib/translations';
+import { notFound } from 'next/navigation';
+
+const VALID_LOCALES = ['tr', 'en'] as const;
 
 export const dynamic = 'force-dynamic';
 
@@ -85,6 +88,10 @@ export default async function LocaleLayout({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
+
+  if (!VALID_LOCALES.includes(locale as typeof VALID_LOCALES[number])) {
+    notFound();
+  }
 
   return (
     <div className="antialiased bg-white text-[#111827] min-h-screen flex flex-col">

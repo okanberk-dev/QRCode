@@ -13,6 +13,9 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { CtaButton } from '@/components/ui/CtaButton';
 import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
+
+const VALID_LOCALES = ['tr', 'en'] as const;
 
 export const dynamic = 'force-dynamic';
 
@@ -73,6 +76,11 @@ export default async function LandingPage({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
+
+  if (!VALID_LOCALES.includes(locale as typeof VALID_LOCALES[number])) {
+    notFound();
+  }
+
   const t = getTranslations(locale);
   const base = `/${locale}`;
 

@@ -1,4 +1,4 @@
-import { Bed } from 'lucide-react';
+import { Bed, Star, ShieldCheck, TrendingUp, QrCode, Users, Heart, BarChart3 } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
@@ -6,37 +6,116 @@ import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = getTranslations(locale);
+  const title = locale === 'tr'
+    ? 'Butik Otel İtibar Yönetimi — Buaze'
+    : 'Boutique Hotel Reputation Management — Buaze';
+  const description = locale === 'tr'
+    ? 'Kişisel konaklama deneyimini dijital itibara dönüştürün. TripAdvisor ve Google\'da öne çıkın, misafir dönüşünü artırın.'
+    : 'Turn personalized hospitality experience into digital reputation. Stand out on TripAdvisor and Google, increase guest return.';
   return {
-    title: t.sol_bou_title,
-    description: t.sol_bou_desc,
+    title,
+    description,
+    keywords: locale === 'tr'
+      ? ['butik otel itibar', 'butik otel google yorumları', 'misafir memnuniyeti otel', 'küçük otel feedback']
+      : ['boutique hotel reputation', 'boutique hotel google reviews', 'guest satisfaction small hotel'],
+    alternates: {
+      canonical: `https://buaze.com/${locale}/solutions/boutique-hotels`,
+      languages: { tr: 'https://buaze.com/tr/solutions/boutique-hotels', en: 'https://buaze.com/en/solutions/boutique-hotels' },
+    },
+    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/boutique-hotels` },
   };
 }
 
-export default async function BoutiqueHotelSolutionPage({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}) {
+export default async function BoutiqueHotelsSolutionPage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
   const t = getTranslations(locale);
+  const isTr = locale === 'tr';
+
+  const stats = [
+    { num: '+%120', label: isTr ? 'TRİPADVISOR YORUMU' : 'TRIPADVISOR REVIEWS', context: isTr ? '90 günde' : 'In 90 days' },
+    { num: '%93', label: isTr ? 'MİSAFİR MEMNUNİYETİ' : 'GUEST SATISFACTION', context: isTr ? 'Kişisel deneyim' : 'Personal experience' },
+    { num: '%82', label: isTr ? 'TEKKERARİ REZ.' : 'REPEAT BOOKINGS', context: isTr ? 'Sadık misafirler' : 'Loyal guests' },
+    { num: '<4dk', label: isTr ? 'KURULUM' : 'SETUP', context: isTr ? 'Hızlı başlangıç' : 'Quick start' },
+  ];
+
+  const steps = [
+    {
+      icon: <QrCode size={24} />,
+      title: isTr ? 'Odaya Kişiselleştirilmiş QR Koy' : 'Place Personalized QR in Room',
+      desc: isTr
+        ? 'Her oda için kişiselleştirilmiş QR kodu ve karşılama notu. Misafir adıyla kişiselleştirilmiş geri bildirim formu.'
+        : 'Personalized QR code and welcome note for each room. Feedback form personalized with guest name.',
+    },
+    {
+      icon: <Heart size={24} />,
+      title: isTr ? 'Konaklamanın Ortasında Bile Al' : 'Get Feedback Even Mid-Stay',
+      desc: isTr
+        ? 'Check-out beklemek zorunda değilsiniz. Konaklama süresinde orta nokta geri bildirimi alın, sorunları anında çözün.'
+        : 'No need to wait for check-out. Get mid-stay feedback and resolve issues instantly.',
+    },
+    {
+      icon: <BarChart3 size={24} />,
+      title: isTr ? 'Misafir Hikayesi Oluştur' : 'Create Guest Story',
+      desc: isTr
+        ? 'Check-out sonrası memnun misafiri TripAdvisor, Google ve Booking\'e yönlendirin. Kişisel deneyimini paylaşmasını kolaylaştırın.'
+        : 'After check-out, direct satisfied guests to TripAdvisor, Google and Booking. Make it easy for them to share their personal experience.',
+    },
+  ];
+
+  const benefits = [
+    {
+      title: isTr ? 'Kişisel Dokunuş' : 'Personal Touch',
+      desc: isTr ? 'Butik otelin en büyük avantajı kişisel hizmet. Geri bildirim sisteminiz de bu kişiselliği yansıtmalı.' : 'The biggest advantage of a boutique hotel is personal service. Your feedback system should also reflect this personalization.',
+      icon: <Heart size={20} className="text-[#d97706]" />,
+    },
+    {
+      title: isTr ? 'TripAdvisor Sıralaması' : 'TripAdvisor Ranking',
+      desc: isTr ? 'Düzenli ve güncel yorumlar TripAdvisor algoritmasını besler. Bölgenizde üst sıralara çıkın.' : 'Regular and recent reviews feed the TripAdvisor algorithm. Rise to the top in your region.',
+      icon: <TrendingUp size={20} className="text-[#d97706]" />,
+    },
+    {
+      title: isTr ? 'Erken Şikayet Çözümü' : 'Early Complaint Resolution',
+      desc: isTr ? 'Konaklama süresinde alınan geri bildirim, check-out\'ta kaybetme riskini ortadan kaldırır.' : 'Feedback received during stay eliminates the risk of losing guests at check-out.',
+      icon: <ShieldCheck size={20} className="text-[#d97706]" />,
+    },
+    {
+      title: isTr ? 'Sadık Misafir Kitlesi' : 'Loyal Guest Base',
+      desc: isTr ? 'Kişisel ilgi gören misafir tekrar aynı oteli tercih eder. Sadakat programını dijital geri bildirimle destekleyin.' : 'Guests who receive personal attention return to the same hotel. Support your loyalty program with digital feedback.',
+      icon: <Star size={20} className="text-[#FDBF1D]" />,
+    },
+  ];
+
+  const faqs = [
+    {
+      q: isTr ? 'Check-out öncesi geri bildirim alabilir miyim?' : 'Can I get feedback before check-out?',
+      a: isTr ? 'Evet. Buaze mid-stay (konaklama ortası) geri bildirim özelliği sunar. Konaklama 3. günü veya belirlediğiniz bir günde misafire otomatik geri bildirim talebi gönderilir. Sorunları çıkmadan önce çözebilirsiniz.' : 'Yes. Buaze offers mid-stay feedback feature. An automatic feedback request is sent to the guest on the 3rd day of stay or a day you specify. You can resolve issues before they arise.',
+    },
+    {
+      q: isTr ? 'TripAdvisor\'a yönlendirme yapabilir miyim?' : 'Can I direct guests to TripAdvisor?',
+      a: isTr ? 'Evet. Memnun misafirler geri bildirim sonunda Google, TripAdvisor veya Booking\'e yönlendirilebilir. Platform tercihini siz belirlersiniz.' : 'Yes. Satisfied guests can be directed to Google, TripAdvisor or Booking at the end of the feedback flow. You decide the platform preference.',
+    },
+  ];
 
   return (
     <SolutionPageLayout
       locale={locale}
       t={t}
-      industryKey="bou"
+      industryKey="bho"
       icon={<Bed size={14} />}
-      industryBadge={t.sol_bou_badge}
-      h1Prefix={t.sol_bou_h1.split(' ').slice(0, -1).join(' ')}
-      h1Suffix={t.sol_bou_h1.split(' ').slice(-1)[0]}
-      description={t.sol_bou_p}
+      industryBadge={isTr ? 'BUTİK OTELLER İÇİN' : 'FOR BOUTIQUE HOTELS'}
+      h1Prefix={isTr ? 'Kişisel Deneyimi' : 'Turn Personal'}
+      h1Suffix={isTr ? 'İtibara Dönüştür' : 'Experience to Reputation'}
+      description={isTr
+        ? 'Misafir memnuniyetini TripAdvisor ve Google\'a yansıtın. Butik otelinizin özgün hikayesini dijital itibarla destekleyin.'
+        : "Reflect guest satisfaction to TripAdvisor and Google. Support your boutique hotel's unique story with digital reputation."}
+      accentColor="#d97706"
+      stats={stats}
+      steps={steps}
+      benefits={benefits}
+      faqs={faqs}
     />
   );
 }

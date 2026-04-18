@@ -17,9 +17,22 @@ export default function robots(): MetadataRoute.Robots {
           '/*/dashboard/',
         ],
       },
-      // Allow AI bots to read the marketing pages for search generative experiences
+      // Allow AI bots to read marketing pages for search generative experiences
       {
-        userAgent: ['GPTBot', 'ChatGPT-User', 'Google-Extended', 'Anthropic-ai', 'PerplexityBot'],
+        userAgent: [
+          'GPTBot',
+          'ChatGPT-User',
+          'Google-Extended',
+          'Anthropic-ai',
+          'Claude-Web',
+          'PerplexityBot',
+          'CCBot',
+          'cohere-ai',
+          'Applebot-Extended',
+          'Meta-ExternalAgent',
+          'YouBot',
+          'OAI-SearchBot',
+        ],
         allow: ['/', '/tr/', '/en/'],
         disallow: ['/admin/', '/api/', '/tr/auth/', '/en/auth/'],
       }
