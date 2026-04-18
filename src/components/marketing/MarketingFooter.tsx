@@ -83,10 +83,18 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
         </div>
 
         {/* Bottom */}
-        <div className="pt-6 border-t border-[#3d3a36] flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="pt-6 border-t border-[#3d3a36] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <p className="text-[#6b6760] text-[11px] font-medium">
             © {new Date().getFullYear()} Buaze. {t.footer_copyright}
           </p>
+          <div className="flex items-center gap-6">
+             <Link href={`${base}/terms`} className="text-[#6b6760] text-[10px] font-bold hover:text-white transition-colors uppercase tracking-widest">
+               {locale === 'tr' ? 'Şartlar' : 'Terms'}
+             </Link>
+             <Link href={`${base}/privacy`} className="text-[#6b6760] text-[10px] font-bold hover:text-white transition-colors uppercase tracking-widest">
+               {locale === 'tr' ? 'Gizlilik' : 'Privacy'}
+             </Link>
+          </div>
         </div>
       </div>
     </footer>

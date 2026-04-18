@@ -150,7 +150,7 @@ export function RoiCalculator() {
             {t.inputsSectionLabel}
           </p>
 
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-5 sm:gap-6">
             {/* monthlyCustomers */}
             <InputField
               id="monthlyCustomers"
