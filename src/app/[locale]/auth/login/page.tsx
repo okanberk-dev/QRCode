@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import LoginForm from '@/components/auth/LoginForm';
