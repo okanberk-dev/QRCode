@@ -25,10 +25,6 @@ export async function generateMetadata({
   };
 }
 
-export function generateStaticParams() {
-  return [{ locale: 'tr' }, { locale: 'en' }];
-}
-
 export default async function ComparisonPage({
   params,
 }: {

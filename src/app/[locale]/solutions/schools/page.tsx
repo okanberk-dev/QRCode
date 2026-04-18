@@ -6,10 +6,6 @@ import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 
-export function generateStaticParams() {
-  return [{ locale: 'tr' }, { locale: 'en' }];
-}
-
 export async function generateMetadata({
   params,
 }: {
