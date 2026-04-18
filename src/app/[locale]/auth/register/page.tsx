@@ -7,6 +7,8 @@ import { CheckCircle2, Shield } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 
+export const dynamic = 'force-static';
+
 export async function generateMetadata({
   params,
 }: {

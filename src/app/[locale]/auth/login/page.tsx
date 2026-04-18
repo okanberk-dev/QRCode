@@ -7,6 +7,8 @@ import { Shield, Star } from 'lucide-react';
 import { Suspense } from 'react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 
+export const dynamic = 'force-static';
+
 export async function generateMetadata({
   params,
 }: {

@@ -1,5 +1,9 @@
 import '../globals.css';
 import { ContactFloat } from '@/components/marketing/ContactFloat';
+import type { Metadata } from 'next';
+import { getTranslations, type Locale } from '@/lib/translations';
+
+export const dynamic = 'force-static';
 
 export async function generateMetadata({
   params,
