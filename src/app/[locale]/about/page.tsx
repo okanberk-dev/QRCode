@@ -46,24 +46,6 @@ export default async function AboutPage({
     { icon: <Users size={22} />, title: t.about_val4_title, desc: t.about_val4_desc },
   ];
 
-  function FounderCard({
-    name, title, initials
-  }: { name: string; title: string; initials: string }) {
-    return (
-      <div className="flex items-center gap-4 rounded-xl border border-white/10
-                      bg-white/5 p-5 backdrop-blur-sm">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full
-                        bg-[#FDBF1D] text-lg font-bold text-[#1F1E1D]">
-          {initials}
-        </div>
-        <div>
-          <p className="font-semibold text-white">{name}</p>
-          <p className="text-sm text-white/50">{title}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans pt-[64px] selection:bg-[#FDBF1D]/30">
       <MarketingNavbar locale={locale} t={t} />
@@ -88,69 +70,14 @@ export default async function AboutPage({
         </div>
       </section>
 
-      {/* ─── Founder & Story ─── */}
-      <section className="py-16 sm:py-32 px-5 sm:px-8 bg-[#1B1A19] relative text-white border-y border-white/5">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-24 items-center">
-          
-          <div className="space-y-8 sm:space-y-10">
-            <h2 className="text-[30px] sm:text-[48px] font-black text-white tracking-tight leading-[1.1] sm:leading-tight">
-              {locale === 'tr' ? 'Dijital İtibarı İnsan Odaklı Yapmak' : 'Humanizing Digital Reputation'}
-            </h2>
-            <div className="space-y-6 text-[15px] sm:text-[18px] text-white/70 leading-relaxed font-medium">
-              <p>
-                {locale === 'tr' 
-                   ? 'Buaze, modern işletmelerin dijital dünyadaki yankısını kontrol altına alabilmesi için doğdu. Biz sadece bir yazılım değil, işletme sahiplerinin her gün karşılaştığı "gerçek geri bildirime nasıl ulaşırım?" sorusuna verilmiş teknolojik bir cevabız.' 
-                   : 'Buaze was born so that modern businesses could take control of their digital echo. We are not just software; we are a technological answer to the daily question of "how do I reach genuine feedback?"'}
-              </p>
-              
-              <div className="pt-6 sm:pt-8 space-y-4">
-                 <p className="text-[11px] font-black uppercase tracking-widest text-[#FDBF1D] mb-4">
-                   {locale === 'tr' ? 'KURUCU EKİBİMİZ' : 'OUR FOUNDER'}
-                 </p>
-                 <FounderCard 
-                   name="Okan Berk Manavoğlu" 
-                   title={locale === 'tr' ? 'Kurucu & CEO' : 'Founder & CEO'} 
-                   initials="OM" 
-                 />
-              </div>
-
-              <div className="pt-8 grid grid-cols-2 gap-6 sm:gap-10 border-t border-white/10">
-                 <div className="space-y-1">
-                    <div className="text-[36px] sm:text-[44px] font-black text-[#FDBF1D] leading-none tracking-tighter">500+</div>
-                    <div className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-widest">{locale === 'tr' ? 'MUTLU İŞLETME' : 'HAPPY BUSINESSES'}</div>
-                    <p className="text-[9px] text-white/30 italic">{locale === 'tr' ? 'Pilot müşteri verisi' : 'Pilot customer data'}</p>
-                 </div>
-                 <div className="space-y-1">
-                    <div className="text-[36px] sm:text-[44px] font-black text-[#FDBF1D] leading-none tracking-tighter">1.2M</div>
-                    <div className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-widest">{locale === 'tr' ? 'İŞLENEN GERİ BİLDİRİM' : 'FEEDBACK PROCESSED'}</div>
-                    <p className="text-[9px] text-white/30 italic">{locale === 'tr' ? 'Toplam ağ verisi' : 'Total network data'}</p>
-                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative group lg:order-last order-first mb-8 sm:mb-0">
-             <div className="bg-[#111827] rounded-[32px] sm:rounded-[40px] border-[3px] sm:border-[4px] border-white/10 p-8 sm:p-12 shadow-[12px_14px_40px_-10px_rgba(0,0,0,0.5)] transition-all duration-500 overflow-hidden text-center space-y-6 sm:space-y-8 flex flex-col items-center justify-center min-h-[360px] sm:min-h-[400px]">
-                <div className="w-24 h-24 sm:w-32 sm:h-32 bg-[#FDBF1D] rounded-full border-[5px] sm:border-[6px] border-[#1F1E1D] flex items-center justify-center text-[36px] sm:text-[48px] font-black text-[#1F1E1D] shadow-[0_0_30px_rgba(253,191,29,0.2)]">
-                   OM
-                </div>
-                <div>
-                   <h3 className="text-[24px] sm:text-[28px] font-black text-white mb-2 underline decoration-[#FDBF1D] decoration-4 underline-offset-4">Okan Berk Manavoğlu</h3>
-                   <p className="text-[#FDBF1D] font-black uppercase tracking-widest text-[11px] sm:text-[12px]">{locale === 'tr' ? 'Kurucu & CEO' : 'Founder & CEO'}</p>
-                </div>
-                <p className="text-[13px] sm:text-[14px] text-white/50 leading-relaxed max-w-[320px] font-medium italic">
-                   {locale === 'tr' 
-                     ? '"Amacımız, her işletmenin kendi hikayesini en şeffaf ve güçlü şekilde anlatmasını sağlamak."'
-                     : '"Our goal is to ensure every business tells its story in the most transparent and powerful way."'}
-                </p>
-             </div>
-          </div>
-
-        </div>
-      </section>
-
       {/* ─── Mission & Vision (3D Cards) ─── */}
-      <section className="py-16 sm:py-32 px-5 sm:px-8 bg-[#F7F4F0]">
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F7F4F0] border-t border-[#e8e4de]">
+        <div className="max-w-[1200px] mx-auto text-center mb-16 sm:mb-20">
+           <p className="text-[12px] font-black uppercase tracking-widest text-[#ea580c] mb-4">{locale === 'tr' ? 'GELECEĞİ ŞEKİLLENDİRİYORUZ' : 'SHAPING THE FUTURE'}</p>
+           <h2 className="text-[34px] sm:text-[56px] font-black text-[#111827] tracking-tight leading-[1.1] sm:leading-none">
+              {locale === 'tr' ? 'Amacımız ve Vizyonumuz' : 'Our Purpose & Vision'}
+           </h2>
+        </div>
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
           {/* Mission */}
           <div className="bg-white p-8 sm:p-14 rounded-[32px] sm:rounded-[40px] border-[2.5px] sm:border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] sm:shadow-[12px_14px_0_0_#1f1e1d] space-y-6 flex flex-col items-start transition-transform hover:-translate-y-2">
