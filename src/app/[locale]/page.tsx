@@ -10,7 +10,6 @@ import CtaBanner from '@/components/marketing/CtaBanner';
 import CustomerTestimonials from '@/components/marketing/CustomerTestimonials';
 import CaseStudies from '@/components/marketing/CaseStudies';
 import ProductShowcase from '@/components/marketing/ProductShowcase';
-import InteractiveQRShowcase from '@/components/marketing/InteractiveQRShowcase';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { CtaButton } from '@/components/ui/CtaButton';
@@ -379,8 +378,60 @@ export default async function LandingPage({
       {/* ═══════ Desktop-only Product Showcase (hidden on mobile) ═══════ */}
       <ProductShowcase locale={locale} />
 
-      {/* ═══════ Interactive QR code generator (all viewports) ═══════ */}
-      <InteractiveQRShowcase locale={locale} />
+      {/* ═══════ Free QR Generator CTA — links to dedicated solution page ═══════ */}
+      <section
+        id="qr-generator"
+        aria-labelledby="qr-generator-cta-title"
+        className="py-16 sm:py-24 px-5 sm:px-8"
+      >
+        <div className="max-w-[1040px] mx-auto">
+          <div className="relative bg-white border-[2.5px] border-[#1f1e1d] rounded-[24px] sm:rounded-[32px] shadow-[10px_12px_0_0_#FDBF1D] p-6 sm:p-10 lg:p-14 overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 items-center">
+              <div className="md:col-span-2 space-y-4 text-left">
+                <div className="inline-flex items-center gap-2 bg-[#FDBF1D] text-[#1f1e1d] px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em] border-[2px] border-[#1f1e1d] shadow-[3px_4px_0_0_#1f1e1d]">
+                  <QrCode size={14} />
+                  {locale === 'tr' ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
+                </div>
+                <h2
+                  id="qr-generator-cta-title"
+                  className="text-[26px] sm:text-[36px] lg:text-[42px] font-extrabold text-[#1f1e1d] leading-[1.1] tracking-[-0.02em] text-balance"
+                >
+                  {locale === 'tr'
+                    ? 'Kendi QR Kodunuzu Saniyeler İçinde Oluşturun'
+                    : 'Build Your Own QR Code in Seconds'}
+                </h2>
+                <p className="text-[15px] sm:text-[16px] text-[#6b6760] font-medium leading-relaxed max-w-[560px]">
+                  {locale === 'tr'
+                    ? 'Menü, rezervasyon veya web sitenizin bağlantısını girin — biz de size özel, yüksek çözünürlüklü bir QR kodu üretelim.'
+                    : 'Paste your menu, reservation page, or website URL — and we\'ll generate a high-resolution QR code tailored to it.'}
+                </p>
+                <div className="pt-2">
+                  <Link
+                    href={`${base}/solutions/qr-generator`}
+                    className="inline-flex items-center gap-2 bg-[#1f1e1d] text-white font-extrabold text-[14px] sm:text-[15px] px-6 sm:px-7 py-3.5 sm:py-4 rounded-xl border-[2.5px] border-[#1f1e1d] shadow-[5px_6px_0_0_#FDBF1D] hover:-translate-y-0.5 hover:shadow-[6px_7px_0_0_#FDBF1D] active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
+                  >
+                    {locale === 'tr' ? 'QR Kod Oluştur' : 'Generate a QR Code'}
+                    <ArrowRight size={16} />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Decorative QR glyph — pure CSS, no runtime */}
+              <div className="hidden md:flex justify-center">
+                <div
+                  aria-hidden
+                  className="relative w-[180px] h-[180px] bg-[#FCFBF7] border-[2.5px] border-[#1f1e1d] rounded-2xl shadow-[6px_8px_0_0_#1f1e1d] rotate-[4deg] flex items-center justify-center"
+                >
+                  <QrCode size={112} className="text-[#1f1e1d]" strokeWidth={1.5} />
+                  <span className="absolute -top-2 -right-2 bg-[#FDBF1D] text-[#1f1e1d] text-[10px] font-black uppercase tracking-widest border-[2px] border-[#1f1e1d] rounded-full px-2.5 py-1 shadow-[2px_3px_0_0_#1f1e1d]">
+                    {locale === 'tr' ? 'YENİ' : 'NEW'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ═══════ How It Works (3D Cards) ═══════ */}
       <section id="how-it-works" className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-y border-[#e8e4de]">
@@ -466,51 +517,67 @@ export default async function LandingPage({
       <CustomerTestimonials locale={locale} />
 
       {/* ═══════ Trust / Why Buaze Section (3D Redesign) ═══════ */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FCFBF7]">
+      <section
+        aria-labelledby="command-center-title"
+        className="py-16 sm:py-24 lg:py-32 px-4 sm:px-8 bg-[#FCFBF7]"
+      >
         <div className="max-w-[1240px] mx-auto">
-          <div className="relative bg-[#1f1e1d] rounded-[32px] sm:rounded-[48px] p-8 sm:p-14 lg:p-20 border-[3px] border-[#1f1e1d] shadow-[16px_20px_0_0_#FDBF1D] overflow-hidden lg:overflow-visible">
+          <div className="relative bg-[#1f1e1d] rounded-[24px] sm:rounded-[32px] lg:rounded-[48px] p-6 sm:p-10 lg:p-20 border-[2.5px] sm:border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#FDBF1D] sm:shadow-[12px_14px_0_0_#FDBF1D] lg:shadow-[16px_20px_0_0_#FDBF1D] overflow-hidden">
             {/* Background Accent */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ea580c]/10 blur-[120px] rounded-full -mr-32 -mt-32 pointer-events-none" />
-            
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
+
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20 items-center">
               {/* Left Content Column */}
-              <div className="lg:col-span-6 space-y-10">
+              <div className="lg:col-span-6 space-y-8 sm:space-y-10">
                 <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 bg-[#FDBF1D] text-[#1f1e1d] px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.1em] border-2 border-[#1f1e1d] shadow-[3px_4px_0_0_#1f1e1d]">
-                    <ShieldCheck size={16} />
+                  <div className="inline-flex items-center gap-2 bg-[#FDBF1D] text-[#1f1e1d] px-3.5 py-1.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-[0.1em] border-2 border-[#1f1e1d] shadow-[3px_4px_0_0_#1f1e1d]">
+                    <ShieldCheck size={14} />
                     {locale === 'tr' ? 'RAKİPSİZ KORUMA' : 'UNRIVALED PROTECTION'}
                   </div>
-                  <h2 className="text-[36px] sm:text-[48px] lg:text-[56px] font-extrabold text-white leading-[1.05] tracking-[-0.04em]">
-                    {locale === 'tr' ? 'Dijital İtibarınızın' : 'Your Digital Reputation\'s'}<br />
-                    <span className="text-[#FDBF1D]">{locale === 'tr' ? 'Komuta Merkezi' : 'Command Center'}</span>
+                  <h2
+                    id="command-center-title"
+                    className="text-[28px] sm:text-[40px] lg:text-[56px] font-extrabold text-white leading-[1.05] tracking-[-0.03em] text-balance"
+                  >
+                    {locale === 'tr' ? 'Dijital İtibarınızın' : 'Your Digital Reputation\'s'}
+                    <br />
+                    <span className="text-[#FDBF1D]">
+                      {locale === 'tr' ? 'Komuta Merkezi' : 'Command Center'}
+                    </span>
                   </h2>
-                  <p className="text-[16px] sm:text-[18px] text-[#ada89f] font-medium leading-relaxed max-w-[500px]">
+                  <p className="text-[15px] sm:text-[17px] lg:text-[18px] text-[#ada89f] font-medium leading-relaxed max-w-[520px] text-pretty">
                     {locale === 'tr'
                       ? 'Buaze sadece veri toplamaz; itibarınızı proaktif bir zırh gibi korur ve her etkileşimi kalıcı bir güvene dönüştürür.'
                       : 'Buaze doesn\'t just collect data; it protects your reputation like a proactive shield and turns every interaction into lasting trust.'}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6">
+                <div className="grid grid-cols-1 gap-4 sm:gap-5">
                   {[
-                    { 
-                      title: locale === 'tr' ? 'Anlık Deneyim Takibi' : 'Real-Time Experience Tracking', 
+                    {
+                      title: locale === 'tr' ? 'Anlık Deneyim Takibi' : 'Real-Time Experience Tracking',
                       desc: locale === 'tr' ? 'Müşteri deneyimini anlık olarak yapılandırılmış veriye dönüştüren akıllı sistem.' : 'An intelligent system that converts customer experience into structured data in real-time.',
-                      icon: <Zap size={20} className="text-[#FDBF1D]" />
+                      icon: <Zap size={20} className="text-[#FDBF1D]" />,
                     },
-                    { 
-                      title: locale === 'tr' ? 'İtibarınızı Zirveye Taşıyın' : 'Elevate Your Reputation', 
+                    {
+                      title: locale === 'tr' ? 'İtibarınızı Zirveye Taşıyın' : 'Elevate Your Reputation',
                       desc: locale === 'tr' ? 'Google, TripAdvisor ve Yelp üzerinde organik ve güvenli bir itibar artışı sağlayın.' : 'Achieve organic and secure reputation growth on Google, TripAdvisor, and Yelp.',
-                      icon: <Trophy size={20} className="text-[#ea580c]" />
-                    }
+                      icon: <Trophy size={20} className="text-[#ea580c]" />,
+                    },
                   ].map((item, i) => (
-                    <div key={i} className="group flex gap-5 bg-white/5 border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-all hover:translate-x-2">
-                      <div className="flex-shrink-0 w-12 h-12 bg-white/5 rounded-xl border border-white/20 flex items-center justify-center">
+                    <div
+                      key={i}
+                      className="group flex gap-4 sm:gap-5 bg-white/5 border border-white/10 p-4 sm:p-6 rounded-2xl hover:bg-white/10 transition-all hover:translate-x-2"
+                    >
+                      <div className="flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 bg-white/5 rounded-xl border border-white/20 flex items-center justify-center">
                         {item.icon}
                       </div>
-                      <div className="space-y-1">
-                        <h4 className="text-[17px] font-extrabold text-white">{item.title}</h4>
-                        <p className="text-[13px] text-[#6b6760]">{item.desc}</p>
+                      <div className="space-y-1 min-w-0">
+                        <h3 className="text-[16px] sm:text-[17px] font-extrabold text-white">
+                          {item.title}
+                        </h3>
+                        <p className="text-[13px] text-[#ada89f] leading-relaxed">
+                          {item.desc}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -518,20 +585,22 @@ export default async function LandingPage({
               </div>
 
               {/* Right Visual Column (3D Dash) */}
-              <div className="lg:col-span-6 relative flex justify-center lg:justify-end">
-                {/* Floating Metric Chips */}
-                <div className="absolute -top-10 lg:-top-20 -left-4 lg:-left-10 z-[40] transform hover:-translate-y-2 transition-transform cursor-default">
-                  <div className="bg-white px-6 py-4 rounded-2xl border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#ea580c]">
-                    <div className="text-[10px] font-black text-[#6b6760] uppercase mb-1">{locale === 'tr' ? 'CANLI ANALİZ' : 'LIVE ANALYTICS'}</div>
-                    <div className="text-[24px] font-black text-[#1f1e1d] flex items-center gap-2">
-                       <span className="w-2.5 h-2.5 bg-[#16A34A] rounded-full animate-pulse" />
-                       98.5%
+              <div className="lg:col-span-6 relative flex justify-center lg:justify-end mt-4 lg:mt-0">
+                {/* Floating Metric Chips — constrained to parent on mobile via left-0 instead of -left-X */}
+                <div className="absolute -top-6 sm:-top-8 lg:-top-16 left-0 sm:left-2 lg:-left-6 z-[40] transform hover:-translate-y-1 transition-transform cursor-default">
+                  <div className="bg-white px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[5px_6px_0_0_#ea580c] sm:shadow-[8px_10px_0_0_#ea580c]">
+                    <div className="text-[9px] sm:text-[10px] font-black text-[#6b6760] uppercase mb-0.5 sm:mb-1 tracking-wider">
+                      {locale === 'tr' ? 'CANLI ANALİZ' : 'LIVE ANALYTICS'}
+                    </div>
+                    <div className="text-[18px] sm:text-[22px] lg:text-[24px] font-black text-[#1f1e1d] flex items-center gap-1.5 sm:gap-2">
+                      <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-[#16A34A] rounded-full animate-pulse" />
+                      98.5%
                     </div>
                   </div>
                 </div>
 
-                {/* Main 3D Browser Mockup */}
-                <div className="relative w-full max-w-[500px] h-[360px] sm:h-[440px] bg-[#1a1a1a] rounded-[32px] border-[3px] border-[#3d3a36] shadow-[24px_32px_0_0_rgba(0,0,0,0.5)] transform lg:rotate-[-2deg] flex flex-col overflow-hidden">
+                {/* Main 3D Browser Mockup — full width on mobile, capped on desktop */}
+                <div className="relative w-full max-w-[500px] h-[340px] sm:h-[420px] lg:h-[440px] bg-[#1a1a1a] rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#3d3a36] shadow-[10px_14px_0_0_rgba(0,0,0,0.4)] sm:shadow-[16px_22px_0_0_rgba(0,0,0,0.45)] lg:shadow-[24px_32px_0_0_rgba(0,0,0,0.5)] transform lg:rotate-[-2deg] flex flex-col overflow-hidden">
                    {/* Browser Bar */}
                    <div className="bg-[#1f1e1d] border-b border-[#3d3a36] p-4 flex gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
@@ -575,11 +644,11 @@ export default async function LandingPage({
                       </div>
                    </div>
 
-                   {/* Floating Bottom Badge */}
-                   <div className="absolute bottom-6 right-6 lg:-right-10 transform translate-x-2 z-[40]">
-                      <div className="bg-[#FDBF1D] text-[#1f1e1d] p-5 rounded-2xl border-[3px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] flex flex-col items-center gap-1 group cursor-default">
-                         <Zap size={24} fill="#1f1e1d" className="group-hover:scale-110 transition-transform" />
-                         <span className="text-[11px] font-black uppercase tracking-widest">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
+                   {/* Floating Bottom Badge — inside-bounds on mobile, overflowing on desktop */}
+                   <div className="absolute bottom-3 sm:bottom-5 right-3 sm:right-5 lg:-right-8 z-[40]">
+                      <div className="bg-[#FDBF1D] text-[#1f1e1d] p-3 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl border-[2.5px] sm:border-[3px] border-[#1f1e1d] shadow-[4px_5px_0_0_#1f1e1d] sm:shadow-[6px_8px_0_0_#1f1e1d] flex flex-col items-center gap-1 group cursor-default">
+                         <Zap size={20} fill="#1f1e1d" className="group-hover:scale-110 transition-transform sm:w-6 sm:h-6" />
+                         <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.1em] sm:tracking-widest whitespace-nowrap">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
                       </div>
                    </div>
                 </div>

@@ -3,8 +3,18 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://buaze.com'),
-  title: 'Buaze - Dijital İtibar Yönetimi',
-  description: 'Restoran değerlendirme ve geri bildirim yönetim platformu',
+  title: {
+    // Descriptive site-wide default title for pages that don't override it,
+    // plus a "%s | Buaze" template so child routes get a clean suffix.
+    default: 'Buaze | Dijital İtibar ve Geri Bildirim Yönetimi',
+    template: '%s | Buaze',
+  },
+  description:
+    'Buaze, işletmeler için QR kod tabanlı dijital itibar ve müşteri geri bildirim yönetim platformudur. Google yorumlarınızı büyütün, müşteri deneyimini ölçün.',
+  alternates: {
+    // Site-wide canonical fallback pointing to the preferred locale home.
+    canonical: 'https://buaze.com',
+  },
   icons: {
     icon: '/favicon.svg',
   },

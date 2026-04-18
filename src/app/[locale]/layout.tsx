@@ -3,6 +3,8 @@ import { ContactFloat } from '@/components/marketing/ContactFloat';
 import type { Metadata } from 'next';
 import { getTranslations, type Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { verifyJwt } from '@/lib/auth';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
 
@@ -96,6 +98,19 @@ export default async function LocaleLayout({
   const t = getTranslations(locale);
   const siteUrl = 'https://buaze.com';
 
+  // Detect whether the visitor is authenticated so we can hide chat-style
+  // floating support affordances (the ContactFloat) for signed-in users —
+  // they have proper in-app support channels from the dashboard.
+  let isLoggedIn = false;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('user_token')?.value;
+  if (token) {
+    const payload = await verifyJwt(token);
+    if (payload && typeof payload.userId === 'string') {
+      isLoggedIn = true;
+    }
+  }
+
   // JSON-LD structured data for richer search-engine appearance
   // (Organization + WebSite + SoftwareApplication schemas).
   const structuredData = [
@@ -162,7 +177,8 @@ export default async function LocaleLayout({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       {children}
-      <ContactFloat locale={locale} />
+      {/* ContactFloat is only shown to visitors (unauthenticated users). */}
+      {!isLoggedIn && <ContactFloat locale={locale} />}
     </div>
   );
 }
