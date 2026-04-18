@@ -4,7 +4,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import type { Metadata } from 'next';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export function generateStaticParams() {
   return [{ locale: 'tr' }, { locale: 'en' }];

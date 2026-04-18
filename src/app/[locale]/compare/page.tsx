@@ -3,7 +3,7 @@ import { Check, X, Info, Zap, Shield, BarChart3, Users, Smartphone, Globe, Arrow
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';

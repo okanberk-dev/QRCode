@@ -10,10 +10,10 @@ import CustomerTestimonials from '@/components/marketing/CustomerTestimonials';
 import CaseStudies from '@/components/marketing/CaseStudies';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import Link from 'next/link';
 import { CtaButton } from '@/components/ui/CtaButton';
+import { cookies } from 'next/headers';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
@@ -65,9 +65,6 @@ export async function generateMetadata({
   };
 }
 
-export function generateStaticParams() {
-  return [{ locale: 'tr' }, { locale: 'en' }];
-}
 
 export default async function LandingPage({
   params,

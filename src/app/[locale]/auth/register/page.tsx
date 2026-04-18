@@ -6,8 +6,11 @@ import Link from 'next/link';
 import { CheckCircle2, Shield } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { verifyJwt } from '@/lib/auth';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
@@ -24,9 +27,6 @@ export async function generateMetadata({
   };
 }
 
-export function generateStaticParams() {
-  return [{ locale: 'tr' }, { locale: 'en' }];
-}
 
 export default async function RegisterPage({
   params,
@@ -34,6 +34,17 @@ export default async function RegisterPage({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
+
+  // Auth check: Redirect to dashboard if already logged in
+  const cookieStore = await cookies();
+  const token = cookieStore.get('user_token')?.value;
+  if (token) {
+    const payload = await verifyJwt(token);
+    if (payload && typeof payload.userId === 'string') {
+      redirect(`/${locale}/dashboard`);
+    }
+  }
+
   const t = getTranslations(locale);
 
   const trialFeatures = locale === 'tr'

@@ -24,6 +24,7 @@ export const translations = {
     nav_contact: 'İletişim',
     nav_login: 'Giriş Yap',
     nav_register: 'Ücretsiz Başla',
+    nav_dashboard: 'Panele Git',
 
     // Hero
     hero_title_1: 'Dijital İtibarınızı',
@@ -476,6 +477,7 @@ export const translations = {
     nav_contact: 'Contact',
     nav_login: 'Log In',
     nav_register: 'Start Free',
+    nav_dashboard: 'Go to Dashboard',
 
     // Hero
     hero_title_1: 'Manage Your Digital',

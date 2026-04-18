@@ -2,12 +2,13 @@ import type { Metadata } from 'next';
 import { CheckCircle2, Star } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import PricingFaq from '@/components/marketing/PricingFaq';
+import { cookies } from 'next/headers';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
-import PricingFaq from '@/components/marketing/PricingFaq';
 import { RoiCalculator } from '@/components/roi-calculator/RoiCalculator';
 
 export async function generateMetadata({
@@ -17,10 +18,16 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Fiyatlandırma | Kurumsal İtibar Yönetimi Platformu — Buaze' : 'Pricing | Enterprise Reputation Management Platform — Buaze',
+    title: {
+      absolute: locale === 'tr' ? 'Fiyatlandırma | Buaze' : 'Pricing | Buaze',
+    },
     description: locale === 'tr'
-      ? 'Buaze itibar yönetim platformu ile dijital varlığınızı ve müşteri geri bildirimlerinizi en uygun maliyetle yönetin. 14 gün ücretsiz deneyin.'
-      : 'Manage your digital presence and customer feedback affordably with the Buaze reputation management platform. Try free for 14 days.',
+      ? 'Aylık ve yıllık planları karşılaştırın, işletmeniz için en uygun itibar yönetimi çözümünü seçin.'
+      : 'Compare monthly and annual plans, choose the best reputation management solution for your business.',
+    openGraph: {
+      title: locale === 'tr' ? 'Fiyatlandırma | Buaze' : 'Pricing | Buaze',
+      description: locale === 'tr' ? 'Aylık ve yıllık planları karşılaştır...' : 'Compare monthly and annual plans...',
+    },
     alternates: {
       canonical: `https://buaze.com/${locale}/pricing`,
       languages: { 'tr': 'https://buaze.com/tr/pricing', 'en': 'https://buaze.com/en/pricing' },
@@ -28,9 +35,6 @@ export async function generateMetadata({
   };
 }
 
-export function generateStaticParams() {
-  return [{ locale: 'tr' }, { locale: 'en' }];
-}
 
 export default async function PricingPage({
   params,

@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { ArrowRight, Calendar, Clock, BookOpen } from 'lucide-react';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
@@ -17,8 +17,16 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = getTranslations(locale);
   return {
-    title: `${t.blog_title} — Buaze`,
-    description: t.blog_desc,
+    title: {
+      absolute: locale === 'tr' ? 'Blog & Rehberler | Buaze' : 'Blog & Guides | Buaze',
+    },
+    description: locale === 'tr' 
+      ? 'Dijital itibar yönetimi ve müşteri deneyimi üzerine güncel içerikler.'
+      : 'Latest articles on digital reputation management and customer experience.',
+    openGraph: {
+      title: locale === 'tr' ? 'Blog & Rehberler | Buaze' : 'Blog & Guides | Buaze',
+      description: locale === 'tr' ? 'İtibar yönetimi rehberleri...' : 'Reputation management guides...',
+    },
     alternates: {
       canonical: `https://buaze.com/${locale}/blog`,
       languages: {
@@ -29,9 +37,6 @@ export async function generateMetadata({
   };
 }
 
-export function generateStaticParams() {
-  return [{ locale: 'tr' }, { locale: 'en' }];
-}
 
 export default async function BlogIndexPage({
   params,

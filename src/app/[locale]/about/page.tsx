@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { Target, Eye, ShieldCheck, Heart, Users, Zap } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import { cookies } from 'next/headers';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
@@ -15,10 +16,16 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Hakkımızda | Google Yorum ve İtibar Yönetimi — Buaze' : 'About Us | Google Reviews & Reputation Management — Buaze',
+    title: {
+      absolute: locale === 'tr' ? 'Hakkımızda | Buaze' : 'About Us | Buaze'
+    },
     description: locale === 'tr'
-      ? 'Buaze olarak işletmelerin dijital itibar operasyonlarını profesyonelleştirmelerine ve geri bildirim süreçlerini güçlendirmelerine teknolojiyle destek oluyoruz.'
-      : 'At Buaze, we empower businesses to professionalize their digital reputation operations and strengthen their feedback processes with technology.',
+      ? 'Buaze ekibini tanıyın ve işletmelerin dijital itibarını nasıl profesyonelleştirdiğimizi keşfedin.'
+      : 'Meet the Buaze team and discover how we professionalize digital reputation for businesses.',
+    openGraph: {
+      title: locale === 'tr' ? 'Hakkımızda | Buaze' : 'About Us | Buaze',
+      description: locale === 'tr' ? 'Buaze ekibini tanıyın...' : 'Meet the Buaze team...',
+    },
     alternates: {
       canonical: `https://buaze.com/${locale}/about`,
       languages: { 'tr': 'https://buaze.com/tr/about', 'en': 'https://buaze.com/en/about' },
@@ -26,9 +33,6 @@ export async function generateMetadata({
   };
 }
 
-export function generateStaticParams() {
-  return [{ locale: 'tr' }, { locale: 'en' }];
-}
 
 export default async function AboutPage({
   params,

@@ -4,7 +4,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import ComparisonLayout from '@/components/marketing/ComparisonLayout';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,

@@ -18,6 +18,7 @@ interface SolutionPageLayoutProps {
   stats?: { num: string; label: string }[];
   steps?: { title: string; desc: string; icon: ReactNode }[];
   benefits?: { title: string; desc: string; icon: ReactNode }[];
+  isLoggedIn?: boolean;
 }
 
 export default function SolutionPageLayout({
@@ -31,6 +32,7 @@ export default function SolutionPageLayout({
   stats,
   steps,
   benefits,
+  isLoggedIn,
 }: SolutionPageLayoutProps) {
   const base = `/${locale}`;
 

@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { ArrowLeft, Calendar, Clock, User, ArrowRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export async function generateStaticParams() {
   const posts = await prisma.blogPost.findMany({
