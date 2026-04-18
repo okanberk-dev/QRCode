@@ -56,7 +56,6 @@ export default function AdminSidebar() {
     { href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
     { href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/profile', icon: User, label: 'Profilim', roles: ['superadmin', 'manager', 'restaurant_owner'] },
   ];
 
   if (role === 'superadmin') {
@@ -65,6 +64,9 @@ export default function AdminSidebar() {
     menuItems.push({ href: '/admin/customers', icon: UsersRound, label: t('customers'), roles: ['superadmin'] } as any);
     menuItems.push({ href: '/admin/blog', icon: BookOpen, label: 'Blog Yönetimi', roles: ['superadmin'] } as any);
   }
+
+  // Profilim her zaman en altta olsun
+  menuItems.push({ href: '/admin/profile', icon: User, label: 'Profilim', roles: ['superadmin', 'manager', 'restaurant_owner'] });
 
   const roleLabel = role === 'superadmin' ? 'Superadmin' : role === 'restaurant_owner' ? 'Restoran Sahibi' : 'Restoran Yetkilisi';
   const displayName = profile?.name || profile?.username || profile?.email?.split('@')[0] || 'Kullanıcı';
