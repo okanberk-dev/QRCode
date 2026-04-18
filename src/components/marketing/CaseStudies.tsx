@@ -1,5 +1,6 @@
 import { TrendingUp, BarChart3, Users2, Zap, ArrowRight, Quote } from 'lucide-react';
 import type { Locale, Translations } from '@/lib/translations';
+import Link from 'next/link';
 
 interface CaseStudiesProps {
   locale: Locale;

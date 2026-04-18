@@ -1,5 +1,6 @@
 import { Star, ShieldCheck } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
+import Link from 'next/link';
 
 interface CustomerTestimonialsProps {
   locale: Locale;
