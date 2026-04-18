@@ -10,17 +10,6 @@ import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateStaticParams() {
-  const posts = await prisma.blogPost.findMany({
-    select: { locale: true, slug: true },
-  });
-
-  return posts.map((post) => ({
-    locale: post.locale as Locale,
-    slug: post.slug,
-  }));
-}
-
 export async function generateMetadata({
   params,
 }: {
