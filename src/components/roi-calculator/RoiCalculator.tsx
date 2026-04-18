@@ -57,6 +57,50 @@ const COPY = {
       visibilityBadges:     { low: 'Düşük', medium: 'Orta', strong: 'Güçlü' },
     },
   },
+  en: {
+    sectionTag:    'ROI Calculator',
+    title:         'Analyze the impact of an improved review flow',
+    description:   'Enter your current data to see how a more organized feedback and review request flow could reflect on your business.',
+    disclaimer:    'This calculation presents estimated scenarios. Results may vary by industry, location, competition level, and customer experience.',
+    cta:           'See Plans',
+    inputsSectionLabel:  'Business Information',
+    resultsSectionLabel: 'Estimated Impact',
+    fields: {
+      monthlyCustomers: { 
+        label: 'Monthly customers', 
+        placeholder: 'e.g. 300',
+        hint: 'Average monthly visitors/customers'
+      },
+      currentRating:    { label: 'Current Google rating', placeholder: 'e.g. 4.1' },
+      currentReviews:   { 
+        label: 'Current review count', 
+        placeholder: 'e.g. 87',
+        hint: 'Current number of reviews on Google'
+      },
+      targetRating:     { label: 'Target rating',         placeholder: 'e.g. 4.5' },
+      businessType:     { label: 'Business type' },
+    },
+    businessTypes: {
+      restaurant: 'Restaurant',
+      cafe:       'Cafe',
+      hotel:      'Hotel',
+      clinic:     'Clinic',
+      other:      'Other',
+    },
+    results: {
+      reviewsLabel:         'Estimated Reviews Needed',
+      visibilityLabel:      'Visibility Potential',
+      leadLabel:            'Profile Lead Potential',
+      targetMetMessage:     'Target reached! Your current rating is above your target.',
+      emptyMessage:         'Fill in the fields on the left to see results.',
+      reviewsBody:          (range: string) =>
+        `You might need approximately ${range} new reviews to approach your target rating.`,
+      leadBody:             (range: string) =>
+        `Additional ${range} monthly profile leads potential`,
+      visibilityBody:       'A fresher review flow and stronger rating signals can support your visibility.',
+      visibilityBadges:     { low: 'Low', medium: 'Medium', strong: 'Strong' },
+    },
+  },
 } as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -102,8 +146,8 @@ function parseInputs(f: RoiFormValues) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function RoiCalculator() {
-  const t = COPY.tr;
+export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
+  const t = COPY[locale as keyof typeof COPY] || COPY.tr;
   const [form, setForm] = useState<RoiFormValues>(DEFAULT_FORM);
 
   const filled  = isFormFilled(form);

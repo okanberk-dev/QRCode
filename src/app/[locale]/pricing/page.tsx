@@ -106,7 +106,7 @@ export default async function PricingPage({
 
       {/* ROI Calculator */}
       <div className="mx-auto mt-8 sm:mt-12 mb-12 sm:mb-16 max-w-5xl px-4 sm:px-6 lg:px-8" id="roi-calculator">
-        <RoiCalculator />
+        <RoiCalculator locale={locale} />
       </div>
 
       {/* ─── Pricing Cards (Enriched 3D) ─── */}
