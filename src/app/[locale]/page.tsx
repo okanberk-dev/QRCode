@@ -89,8 +89,8 @@ export default async function LandingPage({
         description: t.siteDescription,
         offers: {
           '@type': 'Offer',
-          price: '500',
-          priceCurrency: 'TRY',
+          price: locale === 'tr' ? '500' : '10',
+          priceCurrency: locale === 'tr' ? 'TRY' : 'USD',
         },
         operatingSystem: 'Web',
       },

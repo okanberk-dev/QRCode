@@ -50,12 +50,27 @@ export default async function PricingPage({
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqs.map(faq => ({
-      '@type': 'Question',
-      name: faq.q,
-      acceptedAnswer: { '@type': 'Answer', text: faq.a },
-    })),
+    '@graph': [
+      {
+        '@type': 'FAQPage',
+        mainEntity: faqs.map(faq => ({
+          '@type': 'Question',
+          name: faq.q,
+          acceptedAnswer: { '@type': 'Answer', text: faq.a },
+        })),
+      },
+      {
+        '@type': 'Product',
+        name: 'Buaze Reputation Management',
+        description: t.pricing_subtitle,
+        offers: {
+          '@type': 'Offer',
+          price: locale === 'tr' ? '500' : '10',
+          priceCurrency: locale === 'tr' ? 'TRY' : 'USD',
+          availability: 'https://schema.org/InStock',
+        }
+      }
+    ]
   };
 
   const testimonials = [
