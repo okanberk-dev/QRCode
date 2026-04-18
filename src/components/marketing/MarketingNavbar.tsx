@@ -271,6 +271,14 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
                   <div className="text-[14px] font-bold text-[#1f1e1d]">{t.nav_learn_features}</div>
                 </Link>
                 
+                <Link
+                  href={`${base}/blog`}
+                  onClick={() => setLearnOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F7F4F0] transition-colors group"
+                >
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#10b981]/10 rounded-lg flex items-center justify-center text-[#10b981] group-hover:scale-110 transition-transform">
+                    <BookOpen size={15} />
+                  </div>
                   <div className="text-[14px] font-bold text-[#1f1e1d]">{t.nav_learn_blog}</div>
                 </Link>
 
@@ -435,6 +443,14 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
                   </div>
                   <div className="text-[14px] font-semibold text-[#1f1e1d]">{t.nav_learn_features}</div>
                 </Link>
+                <Link
+                  href={`${base}/blog`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors"
+                >
+                  <div className="w-8 h-8 bg-[#10b981]/10 rounded-lg flex items-center justify-center text-[#10b981]">
+                    <BookOpen size={15} />
+                  </div>
                   <div className="text-[14px] font-semibold text-[#1f1e1d]">{t.nav_learn_blog}</div>
                 </Link>
                 <Link
