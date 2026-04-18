@@ -9,7 +9,6 @@ import { cookies } from 'next/headers';
 export const dynamic = 'force-dynamic';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import Link from 'next/link';
 import { RoiCalculator } from '@/components/roi-calculator/RoiCalculator';
 
 export async function generateMetadata({
