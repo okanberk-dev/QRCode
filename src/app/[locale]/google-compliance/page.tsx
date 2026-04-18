@@ -5,6 +5,9 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
 
+export const dynamic = 'force-static';
+
+
 export async function generateMetadata({
   params,
 }: {
@@ -125,4 +128,8 @@ export default async function GoogleCompliancePage({
       <MarketingFooter locale={locale} t={t} />
     </div>
   );
+}
+
+export function generateStaticParams() {
+  return [{ locale: 'tr' }, { locale: 'en' }];
 }

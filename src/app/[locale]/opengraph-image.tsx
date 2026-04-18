@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import type { Locale } from '@/lib/translations';
 
-export const runtime = 'edge';
+// export const runtime = 'edge';
 
 export const alt = 'Buaze — Google İtibar Yönetimi';
 export const size = {
