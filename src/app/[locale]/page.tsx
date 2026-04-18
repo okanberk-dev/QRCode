@@ -149,45 +149,150 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           HERO SECTION
       ═══════════════════════════════════════════════════════════ */}
-      <section className="pt-10 sm:pt-16 lg:pt-20 pb-4 sm:pb-8 px-5 sm:px-8">
+      <section className="pt-8 sm:pt-16 lg:pt-20 pb-8 sm:pb-12 px-5 sm:px-8">
         <div className="max-w-[1200px] mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mt-4 sm:mt-8">
             {/* Left: Content */}
-            <div className="text-left space-y-6">
-              <h1 className="text-[32px] sm:text-[42px] lg:text-[56px] font-extrabold leading-[1.1] tracking-[-0.04em] text-[#1f1e1d]">
+            <div className="text-left space-y-5 sm:space-y-6">
+              <h1 className="text-[30px] sm:text-[42px] lg:text-[56px] font-extrabold leading-[1.1] tracking-[-0.04em] text-[#1f1e1d] text-balance">
                 {t.hero_title_1} <br />
                 <span className="text-[#FDBF1D]">{t.hero_title_2}</span>
               </h1>
-              <p className="text-[17px] text-[#6b6760] font-medium leading-relaxed max-w-[500px]">
+              <p className="text-[16px] sm:text-[17px] text-[#6b6760] font-medium leading-relaxed max-w-[500px] text-pretty">
                 {t.hero_subtitle}
               </p>
 
               <div className="space-y-1.5 pt-1">
-                <p className="text-[15px] text-[#6b6760] font-normal">
+                <p className="text-[14px] sm:text-[15px] text-[#6b6760] font-normal flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-[#16A34A] flex-shrink-0" />
                   {locale === 'tr' ? 'Dakikalar içinde kurulun ve başlayın' : 'Get up and running in minutes'}
                 </p>
-                <p className="text-[15px] text-[#6b6760] font-normal">
+                <p className="text-[14px] sm:text-[15px] text-[#6b6760] font-normal flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-[#16A34A] flex-shrink-0" />
                   {locale === 'tr' ? 'Hazır olduğunuzda yükseltin' : 'Upgrade when you\'re ready'}
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-5 pt-4">
-                <CtaButton variant="primary" href={`${base}/auth/register`}>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-5 pt-3 sm:pt-4">
+                <CtaButton variant="primary" href={`${base}/auth/register`} className="w-full sm:w-auto">
                   {t.hero_cta}
                 </CtaButton>
-                <CtaButton variant="secondary" href={`${base}/pricing`}>
+                <CtaButton variant="secondary" href={`${base}/pricing`} className="w-full sm:w-auto">
                   {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
                 </CtaButton>
               </div>
 
-              <p className="text-[12px] text-[#ada89f] font-bold tracking-wide">
+              <p className="text-[11px] sm:text-[12px] text-[#ada89f] font-bold tracking-wide">
                 {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
               </p>
             </div>
 
-            {/* Right: Floating Quote Bubbles with dot pattern */}
-              {/* Right: Floating Quote Bubbles with layout matching the image */}
-              <div className="relative w-full flex flex-col gap-0 lg:block min-h-[400px] lg:h-[460px] mt-10 lg:mt-0 items-center lg:items-start px-2 lg:px-0">
+            {/* Right: Visual Column */}
+            <div className="relative w-full mt-6 lg:mt-0">
+
+              {/* ─── MOBILE-ONLY visual (hidden on lg+) ─── */}
+              <div className="lg:hidden relative mx-auto max-w-[420px] px-2">
+                {/* Dot pattern bg */}
+                <div
+                  className="absolute inset-0 opacity-[0.1] pointer-events-none"
+                  style={{
+                    backgroundImage: 'radial-gradient(circle, #ada89f 1px, transparent 1px)',
+                    backgroundSize: '16px 16px',
+                  }}
+                />
+
+                {/* Neobrutalist "review card" mockup — styled visual */}
+                <div className="relative bg-white rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] p-5 space-y-4">
+                  {/* Browser dots */}
+                  <div className="flex items-center justify-between pb-3 border-b border-[#e8e4de]">
+                    <div className="flex gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#ea580c]" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#FDBF1D]" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]" />
+                    </div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-[#ada89f]">
+                      buaze.com
+                    </div>
+                  </div>
+
+                  {/* Stars + rating */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-0.5">
+                      {[1,2,3,4,5].map(i => (
+                        <Star key={i} size={20} fill="#FDBF1D" strokeWidth={0} />
+                      ))}
+                    </div>
+                    <div className="text-[13px] font-black text-[#1f1e1d]">4.9 / 5.0</div>
+                  </div>
+
+                  {/* Metric chips */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#FCFBF7] border-[2px] border-[#1f1e1d] rounded-lg p-3 shadow-[3px_3px_0_0_#1f1e1d]">
+                      <div className="text-[9px] font-black uppercase tracking-wider text-[#6b6760] mb-1">
+                        {locale === 'tr' ? 'YORUMLAR' : 'REVIEWS'}
+                      </div>
+                      <div className="text-[20px] font-black text-[#1f1e1d] flex items-center gap-1">
+                        +142
+                        <span className="text-[11px] text-[#16A34A]">↑</span>
+                      </div>
+                    </div>
+                    <div className="bg-[#FDBF1D] border-[2px] border-[#1f1e1d] rounded-lg p-3 shadow-[3px_3px_0_0_#1f1e1d]">
+                      <div className="text-[9px] font-black uppercase tracking-wider text-[#1f1e1d] mb-1">
+                        {locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION'}
+                      </div>
+                      <div className="text-[20px] font-black text-[#1f1e1d]">99%</div>
+                    </div>
+                  </div>
+
+                  {/* Progress bar block */}
+                  <div className="bg-[#FCFBF7] border-[2px] border-[#1f1e1d] rounded-lg p-3 shadow-[3px_3px_0_0_#1f1e1d]">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-[#6b6760]">
+                        {locale === 'tr' ? 'BU HAFTA' : 'THIS WEEK'}
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] font-black text-[#16A34A]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse" />
+                        {locale === 'tr' ? 'CANLI' : 'LIVE'}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="h-1.5 bg-[#e8e4de] rounded-full overflow-hidden">
+                        <div className="h-full w-[88%] bg-[#FDBF1D] rounded-full" />
+                      </div>
+                      <div className="h-1.5 bg-[#e8e4de] rounded-full overflow-hidden">
+                        <div className="h-full w-[64%] bg-[#ea580c] rounded-full" />
+                      </div>
+                      <div className="h-1.5 bg-[#e8e4de] rounded-full overflow-hidden">
+                        <div className="h-full w-[42%] bg-[#1f1e1d] rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating QR chip */}
+                <div className="absolute -top-4 -right-1 bg-[#1f1e1d] text-white p-3 rounded-xl border-[2.5px] border-[#1f1e1d] shadow-[4px_4px_0_0_#FDBF1D] rotate-[6deg] z-10">
+                  <QrCode size={28} className="text-[#FDBF1D]" />
+                </div>
+
+                {/* Floating testimonial bubble (single) */}
+                <div className="relative bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-4 shadow-[4px_6px_0_0_#FDBF1D] mt-5 mx-auto max-w-[320px]">
+                  <div className="flex gap-[2px] mb-2">
+                    {[1,2,3,4,5].map(i => (
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                      </svg>
+                    ))}
+                  </div>
+                  <div className="text-[13px] text-[#1f1e1d] font-semibold leading-[1.5]">
+                    {locale === 'tr'
+                      ? '"Buaze\'yi kullanmak gerçekten çok kolay. Müthiş zaman kazandırıyor."'
+                      : '"Really love how easy Buaze is to use. It saves so much time."'}
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── DESKTOP-ONLY: absolute-positioned testimonials (unchanged) ─── */}
+              <div className="hidden lg:block relative w-full h-[460px]">
                 {/* Dot pattern */}
                 <div
                   className="absolute inset-0 w-full h-full opacity-[0.08]"
@@ -198,165 +303,55 @@ export default async function LandingPage({
                 />
 
                 {/* Box 1: Super easy (Top) */}
-                <div 
-                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-2 lg:left-0 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-10 transform hover:-translate-y-2 transition-transform self-start -mb-6 lg:mb-0"
-                >
-                  <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
+                <div className="absolute top-2 left-0 w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-10 transform hover:-translate-y-2 transition-transform">
+                  <div className="flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
-                      <div key={i} className="f-icon-regular w-embed">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                          <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
-                        </svg>
-                      </div>
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                      </svg>
                     ))}
                   </div>
-                  <div className="paragraph-small text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
+                  <div className="text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
                     {locale === 'tr'
                       ? '"Kullanımı süper kolay ve kusursuz çalışıyor"'
                       : '"Super easy to use and worked perfectly"'}
                   </div>
-                  <Image
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png"
-                    alt=""
-                    width={24}
-                    height={24}
-                    sizes="24px"
-                    className="image-20 right white absolute -bottom-[16px] left-6 w-6 z-20"
-                  />
-                  <Image
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png"
-                    alt=""
-                    width={32}
-                    height={32}
-                    sizes="(max-width: 1024px) 0px, 32px"
-                    className="image-20 right absolute -bottom-[20px] left-5 w-[32px] z-10 hidden lg:block"
-                  />
                 </div>
 
                 {/* Box 2: Really love (Middle) */}
-                <div 
-                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[120px] lg:right-2 w-[98%] max-w-[290px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-30 transform hover:-translate-y-2 transition-transform self-end lg:self-auto -mb-6 lg:mb-0"
-                >
-                  <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
+                <div className="absolute top-[120px] right-2 w-[290px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-30 transform hover:-translate-y-2 transition-transform">
+                  <div className="flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
-                      <div key={i} className="f-icon-regular w-embed">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                          <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
-                        </svg>
-                      </div>
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                      </svg>
                     ))}
                   </div>
-                  <div className="paragraph-small text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
+                  <div className="text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
                     {locale === 'tr'
                       ? '"Buaze\'yi kullanmak gerçekten çok kolay. Yorum toplamak konusunda müthiş zaman kazandırıyor"'
                       : '"Really love how easy Buaze is to use. It saves so much time collecting reviews"'}
                   </div>
-                  <Image
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png"
-                    alt=""
-                    width={24}
-                    height={24}
-                    sizes="24px"
-                    className="image-20 right white absolute -bottom-[16px] right-8 w-6 z-20"
-                  />
-                  <Image
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png"
-                    alt=""
-                    width={32}
-                    height={32}
-                    sizes="(max-width: 1024px) 0px, 32px"
-                    className="image-20 right absolute -bottom-[20px] right-[27px] w-[32px] z-10 hidden lg:block"
-                  />
                 </div>
 
                 {/* Box 3: Buaze makes (Bottom) */}
-                <div 
-                  className="hero-quote-wrapper _7 relative lg:absolute lg:top-[250px] lg:left-6 w-[95%] max-w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-20 transform hover:-translate-y-2 transition-transform self-start -mt-2 lg:mt-0"
-                >
-                  <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
+                <div className="absolute top-[250px] left-6 w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-20 transform hover:-translate-y-2 transition-transform">
+                  <div className="flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
-                      <div key={i} className="f-icon-regular w-embed">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                          <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
-                        </svg>
-                      </div>
+                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                      </svg>
                     ))}
                   </div>
-                  <div className="paragraph-small text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
+                  <div className="text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
                     {locale === 'tr'
                       ? '"Buaze ile yorumları takip etmek ve yanıtlamak artık çok zahmetsiz"'
                       : '"Buaze makes tracking and replying to reviews effortless."'}
                   </div>
-                  <Image
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png"
-                    alt=""
-                    width={24}
-                    height={24}
-                    sizes="24px"
-                    className="image-20 right white absolute -bottom-[16px] left-8 w-6 z-20"
-                  />
-                  <Image
-                    src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png"
-                    alt=""
-                    width={32}
-                    height={32}
-                    sizes="(max-width: 1024px) 0px, 32px"
-                    className="image-20 right absolute -bottom-[20px] left-[27px] w-[32px] z-10 hidden lg:block"
-                  />
                 </div>
               </div>
-            </div>
 
-            {/* Mobile-only: Single testimonial */}
-            <div className="hero-quote-wrapper _7 lg:hidden mt-10 relative max-w-sm mx-auto bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d]">
-              <div className="f-testimonial-star-wrapper flex gap-[2px] mb-3">
-                {[1,2,3,4,5].map(i => (
-                  <div key={i} className="f-icon-regular w-embed">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
-                    </svg>
-                  </div>
-                ))}
-              </div>
-              <div className="paragraph-small text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
-                {locale === 'tr'
-                  ? '"Buaze\'yi kullanmak gerçekten çok kolay. Yorum toplamak konusunda müthiş zaman kazandırıyor"'
-                  : '"Really love how easy Buaze is to use. It saves so much time collecting reviews"'}
-              </div>
-              <Image
-                src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671b9cc7ca4194d481c266fd_speech-triangle-white.png"
-                alt=""
-                width={24}
-                height={24}
-                sizes="24px"
-                className="image-20 right white absolute -bottom-[15px] right-8 w-6 z-20"
-              />
-              <Image
-                src="https://cdn.prod.website-files.com/670d34b0d540e323cbcbb352/671bb0c86380dac30cb9f805_Triangle-dark.png"
-                alt=""
-                width={32}
-                height={32}
-                sizes="32px"
-                className="image-20 right absolute -bottom-[19px] right-[27px] w-[32px] z-10"
-              />
             </div>
-
-          {/* Mobile hero CTA repeat */}
-          <div className="lg:hidden mt-6 pt-5 border-t border-[#e8e4de]/50 text-center space-y-3">
-            <p className="text-[13px] font-bold text-[#6b6760]">
-              {locale === 'tr' ? 'Dakikalar içinde kurulun • Hazır olduğunuzda yükseltin' : 'Get up and running in minutes • Upgrade when you\'re ready'}
-            </p>
-            <div className="flex flex-col gap-4">
-              <CtaButton variant="primary" href={`${base}/auth/register`}>
-                {locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}
-              </CtaButton>
-              <CtaButton variant="secondary" href={`${base}/pricing`}>
-                {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
-              </CtaButton>
-            </div>
-            <p className="text-[11px] text-[#ada89f] font-bold">
-              {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
-            </p>
           </div>
         </div>
       </section>
@@ -590,55 +585,58 @@ export default async function LandingPage({
       <section id="pricing" className="py-16 sm:py-24 px-5 sm:px-8 bg-[#F7F4F0]">
         <div className="max-w-[900px] mx-auto">
           <div className="text-center mb-12 sm:mb-16 space-y-3">
-            <h2 className="text-[32px] sm:text-[42px] font-extrabold text-[#1f1e1d] tracking-[-0.02em]">{t.pricing_title}</h2>
-            <p className="text-[15px] text-[#FDBF1D] font-semibold">{t.pricing_subtitle}</p>
+            <h2 className="text-[28px] sm:text-[42px] font-extrabold text-[#1f1e1d] tracking-[-0.02em] text-balance">{t.pricing_title}</h2>
+            <p className="text-[14px] sm:text-[15px] text-[#FDBF1D] font-semibold">{t.pricing_subtitle}</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Single, responsive grid — renders plans exactly once on all sizes */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 md:pt-4">
             {/* Monthly Plan */}
-            <div className="bg-white p-8 sm:p-10 rounded-xl border border-[#e8e4de] hover:border-[#FDBF1D]/30 transition-all flex flex-col">
-              <h3 className="text-xl font-extrabold mb-1.5">{t.pricing_monthly_title}</h3>
-              <p className="text-[#6b6760] text-[13px] mb-7">{t.pricing_monthly_desc}</p>
-              <div className="mb-8">
-                <span className="text-[48px] font-extrabold tracking-tighter">{t.pricing_monthly_price}</span>
+            <div className="bg-white p-6 sm:p-8 md:p-10 rounded-2xl border-[2px] border-[#1f1e1d] shadow-[4px_6px_0_0_#1f1e1d] hover:-translate-y-1 transition-transform flex flex-col">
+              <h3 className="text-[20px] font-extrabold mb-1.5 text-[#1f1e1d]">{t.pricing_monthly_title}</h3>
+              <p className="text-[#6b6760] text-[13px] mb-6">{t.pricing_monthly_desc}</p>
+              <div className="mb-6 sm:mb-8">
+                <span className="text-[40px] sm:text-[48px] font-extrabold tracking-tighter text-[#1f1e1d]">{t.pricing_monthly_price}</span>
                 <span className="text-[#ada89f] font-medium ml-1 text-[14px]">{t.pricing_monthly_period}</span>
               </div>
-              <ul className="space-y-4 mb-10 flex-1">
+              <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-1">
                 {[t.pricing_feature_unlimited_qr, t.pricing_feature_feedback, t.pricing_feature_panel, t.pricing_feature_mobile].map(feat => (
-                  <li key={feat} className="flex items-center gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#1f1e1d]">
-                    <CheckCircle2 size={16} className="text-[#ada89f] flex-shrink-0" /> {feat}
+                  <li key={feat} className="flex items-start gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#1f1e1d]">
+                    <CheckCircle2 size={16} className="text-[#ada89f] flex-shrink-0 mt-0.5" />
+                    <span>{feat}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-white text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-gray-50 transition-all active:translate-y-[4px] active:shadow-none"
+                className="block w-full text-center py-3.5 bg-white text-[#1f1e1d] font-extrabold text-[14px] sm:text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#FCFBF7] transition-all active:translate-y-[4px] active:shadow-none"
               >
                 {t.pricing_monthly_cta}
               </Link>
             </div>
 
             {/* Yearly Plan */}
-            <div className="bg-[#1f1e1d] p-8 sm:p-10 rounded-xl border border-[#3d3a36] relative md:scale-[1.03] flex flex-col text-white shadow-[0_8px_30px_-8px_rgba(0,0,0,0.3)]">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#FDBF1D] text-[#1f1e1d] px-5 py-1.5 rounded-full font-bold text-[11px] uppercase tracking-widest shadow-md">
+            <div className="bg-[#1f1e1d] p-6 sm:p-8 md:p-10 pt-10 sm:pt-10 md:pt-10 rounded-2xl border-[2px] border-[#1f1e1d] relative flex flex-col text-white shadow-[4px_6px_0_0_#FDBF1D] hover:-translate-y-1 transition-transform">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#FDBF1D] text-[#1f1e1d] px-4 py-1.5 rounded-full font-black text-[10px] sm:text-[11px] uppercase tracking-widest border-[2px] border-[#1f1e1d] whitespace-nowrap">
                 {t.pricing_yearly_badge}
               </div>
-              <h3 className="text-xl font-extrabold mb-1.5">{t.pricing_yearly_title}</h3>
-              <p className="text-[#6b6760] text-[13px] mb-7">{t.pricing_yearly_desc}</p>
-              <div className="mb-8">
-                <span className="text-[48px] font-extrabold tracking-tighter">{t.pricing_yearly_price}</span>
-                <span className="text-[#6b6760] font-medium ml-1 text-[14px]">{t.pricing_yearly_period}</span>
+              <h3 className="text-[20px] font-extrabold mb-1.5">{t.pricing_yearly_title}</h3>
+              <p className="text-[#ada89f] text-[13px] mb-6">{t.pricing_yearly_desc}</p>
+              <div className="mb-6 sm:mb-8">
+                <span className="text-[40px] sm:text-[48px] font-extrabold tracking-tighter">{t.pricing_yearly_price}</span>
+                <span className="text-[#ada89f] font-medium ml-1 text-[14px]">{t.pricing_yearly_period}</span>
               </div>
-              <ul className="space-y-4 mb-10 flex-1">
+              <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-1">
                 {[t.pricing_feature_all, t.pricing_feature_free_months, t.pricing_feature_priority, t.pricing_feature_google].map(feat => (
-                  <li key={feat} className="flex items-center gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#ada89f]">
-                    <CheckCircle2 size={16} className="text-[#FDBF1D] flex-shrink-0" /> {feat}
+                  <li key={feat} className="flex items-start gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#ada89f]">
+                    <CheckCircle2 size={16} className="text-[#FDBF1D] flex-shrink-0 mt-0.5" />
+                    <span>{feat}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none"
+                className="block w-full text-center py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold text-[14px] sm:text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#000000] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none"
               >
                 {t.pricing_yearly_cta}
               </Link>
