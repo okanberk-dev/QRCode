@@ -95,6 +95,10 @@ export default function ComparisonLayout({
         </div>
       </section>
 
+          </div>
+        </div>
+      </section>
+
       {/* Deep Argument Section */}
       <section className="py-32 px-5 sm:px-8 bg-[#FCFBF7]">
          <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
@@ -139,6 +143,30 @@ export default function ComparisonLayout({
                      ))}
                   </div>
                </div>
+            </div>
+         </div>
+      </section>
+
+      {/* NEW: SEO Deep Content (Pain Points & Verdict) */}
+      <section className="py-24 px-5 sm:px-8 bg-white border-t border-[#e8e4de]">
+         <div className="max-w-[1000px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-16">
+            <div className="space-y-6">
+               <h3 className="text-[24px] font-black flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-[16px]">!</span>
+                  {t.compare_pain_title}
+               </h3>
+               <p className="text-[#6b6760] font-medium leading-relaxed">
+                  {vsName === 'Spreadsheet' ? t.compare_pain_spreadsheet : t.compare_pain_static}
+               </p>
+            </div>
+            <div className="space-y-6 p-8 bg-[#FCFBF7] rounded-[32px] border-2 border-[#1f1e1d] shadow-[6px_8px_0_0_#FDBF1D]">
+               <h3 className="text-[24px] font-black flex items-center gap-2">
+                  <Zap size={24} className="text-[#ea580c]" />
+                  {t.compare_verdict_title}
+               </h3>
+               <p className="text-[15px] text-[#1f1e1d] font-bold leading-relaxed">
+                  {t.compare_verdict_desc}
+               </p>
             </div>
          </div>
       </section>

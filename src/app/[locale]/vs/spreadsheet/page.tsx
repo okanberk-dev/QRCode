@@ -74,15 +74,15 @@ export default async function VsSpreadsheetPage({
       locale={locale}
       t={t}
       vsName={locale === 'tr' ? 'Spreadsheet' : 'Spreadsheet'}
-      heroTitle={locale === 'tr' ? 'Excel Tabloları Yorum Yapmaz' : 'Spreadsheets Don\'t Write Reviews'}
+      heroTitle={locale === 'tr' ? 'Excel Tabloları Yorum Yapmaz, Buaze Yapar.' : 'Spreadsheets Don\'t Write Reviews, Buaze Does.'}
       heroDesc={locale === 'tr' 
-        ? 'Geri bildirimleri biriktirmek yetmez, onları birer büyüme fırsatına dönüştürmek gerekir. Manuel takibi bırakın, profesyonelliğe geçin.'
-        : 'Collecting feedback isn\'t enough; you need to turn them into growth opportunities. Leave manual tracking behind and go professional.'}
+        ? 'Geri bildirimleri pasif birer satır olarak tutmayı bırakın. Manuel veri girişinin yarattığı operasyonel kör noktaları, gerçek zamanlı otomasyonla aşın.'
+        : 'Stop keeping feedback as passive rows of data. Overcome the operational blind spots created by manual data entry with real-time automation.'}
       rows={rows}
-      argumentTitle={locale === 'tr' ? 'Siz Veri Girişi mi Yapıyorsunuz, İş mi Yönetiyorsunuz?' : 'Are You Entering Data or Managing a Business?'}
+      argumentTitle={locale === 'tr' ? 'Veri mi Giriyorsunuz, İş mi Yönetiyorsunuz?' : 'Are You Entering Data or Managing a Business?'}
       argumentDesc={locale === 'tr'
-        ? 'Excel ve kağıt formlar statiktir. Bir müşteri mutsuz ayrıldığında Excel size haber vermez. Buaze ise o müşteriyi daha kapıdan çıkmadan yakalamanızı sağlar.\nTablolarda kaybolan veriler yerine, grafiklerde yükselen itibarınızı izleyin. Manuel hatayı sıfırlayın.'
-        : 'Spreadsheets and paper forms are static. When a customer leaves unhappy, Excel won\'t notify you. Buaze allows you to catch that customer before they even walk out the door.\nInstead of data lost in tables, watch your rising reputation in charts. Eliminate manual error.'}
+        ? 'Excel ve kağıt formlar statiktir. Bir müşteri mutsuz ayrıldığında Excel size haber vermez. Buaze ise o müşteriyi daha kapıdan çıkmadan yakalamanızı sağlar.\nTablolarda kaybolan veriler yerine, grafiklerde yükselen itibarınızı izleyin. Manuel hatayı ve veri kaybı riskini profesyonel bir SaaS altyapısı ile sıfırlayın.'
+        : 'Spreadsheets and paper forms are static. When a customer leaves unhappy, Excel won\'t notify you. Buaze allows you to catch that customer before they even walk out the door.\nInstead of data lost in tables, watch your rising reputation in charts. Eliminate manual error and data loss risk with a professional SaaS infrastructure.'}
     />
   );
 }

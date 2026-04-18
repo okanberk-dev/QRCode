@@ -74,15 +74,15 @@ export default async function VsIndividualQrPage({
       locale={locale}
       t={t}
       vsName={locale === 'tr' ? 'Bireysel QR' : 'Individual QR'}
-      heroTitle={locale === 'tr' ? 'Sadece Bir Link Değil, Bir Akıllı Akış' : 'Not Just a Link, a Smart Workflow'}
+      heroTitle={locale === 'tr' ? 'Statik Linkler İşletmenizi Koruyamaz.' : 'Static Links Can\'t Protect Your Business.'}
       heroDesc={locale === 'tr' 
-        ? 'Durağan QR kodları eskidi. İşletmenizin değişen ihtiyaçlarına uyum sağlayan, yorumlarınızı filtreleyen ve size veri getiren dinamik altyapıya geçin.'
-        : 'Static QR codes are obsolete. Switch to a dynamic infrastructure that adapts to your business needs, filters your reviews, and brings you data.'}
+        ? 'Durağan QR kodları eskidi. İşletmenizin değişen ihtiyaçlarına uyum sağlayan, yorumlarınızı optimize eden ve size anlık veri getiren akıllı Buaze altyapısına geçin.'
+        : 'Static QR codes are obsolete. Switch to the smart Buaze infrastructure that adapts to your business needs, optimizes your reviews, and brings you real-time data.'}
       rows={rows}
-      argumentTitle={locale === 'tr' ? 'Statik QR Kodları Neden Tehlikelidir?' : 'Why Are Static QR Codes Dangerous?'}
+      argumentTitle={locale === 'tr' ? 'Ücretsiz QR Kodların Gizli Maliyeti' : 'The Hidden Cost of Free QR Codes'}
       argumentDesc={locale === 'tr'
-        ? 'Ücretsiz oluşturulan statik QR kodları bir kez basıldıktan sonra değiştirilemez. Google Maps linkiniz değiştiğinde veya kampanya bittiğinde tüm baskıları çöpe atmanız gerekir.\nEn kritiği: Statik kodlar "ayrım" yapamaz. Memnun olmayan bir müşteriyi anlık yakalamak yerine doğrudan Google\'a göndererek puanınızın düşmesine seyirci kalırsınız.'
-        : 'Static QR codes created for free cannot be changed once printed. When your Google Maps link changes or a campaign ends, you have to throw away all prints.\nMost critically: Static codes cannot "differentiate." Instead of catching an unhappy customer instantly, they send them directly to Google, leaving you to watch your score drop.'}
+        ? 'Ücretsiz oluşturulan statik QR kodları bir kez basıldıktan sonra değiştirilemez. Google Maps linkiniz güncellendiğinde veya şube yapınız değiştiğinde tüm baskıları çöpe atmanız gerekir.\nEn kritiği: Statik kodlar "akıllı filtreleme" yapamaz. Memnun olmayan bir müşteriyi anlık dijital operasyonla yakalamak yerine doğrudan Google\'a göndererek puanınızın düşmesine zemin hazırlarsınız.'
+        : 'Static QR codes created for free cannot be changed once printed. When your Google Maps link is updated or your branch structure changes, you have to throw away all prints.\nMost critically: Static codes cannot perform "smart filtering." Instead of catching an unhappy customer with an instant digital operation, you pave the way for your score to drop by sending them directly to Google.'}
     />
   );
 }

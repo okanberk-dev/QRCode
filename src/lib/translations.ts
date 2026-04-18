@@ -422,12 +422,19 @@ export const translations = {
     pl_case_metric_growth_label: 'Etkileşim Artışı',
     pl_case_metric_speed_label: 'Yanıt Süresi',
     pl_case_metric_locations_label: 'Lokasyon',
-    pl_case_challenge_title: 'Zorluk: Parçalanmış İtibar',
-    pl_case_challenge_desc: 'Hızlı büyüme sürecinde her şubede aynı kaliteyi korumak ve müşterilerin sessiz kalmamasını sağlamak en büyük zorluktu. Manuel yöntemlerle geri bildirimleri toplamak operasyonel bir kör nokta yaratıyordu.',
-    pl_case_solution_title: 'Çözüm: Buaze Akıllı Akış',
-    pl_case_solution_desc: 'Tüm şubelerdeki masalara yerleştirilen akıllı QR kodlar ile geri bildirim toplama süreci otomatiğe bağlandı. Olumsuz geri bildirimler anında bölge sorumlusuna iletilirken, olumlu deneyimler Google\'a yönlendirildi.',
-    pl_case_results_title: 'Sonuç: Veriye Dayalı Büyüme',
-    pl_case_results_desc: 'Pizza Locale bugün 12 şubesinde de 4.5+ puan ortalamasını koruyor. Müşteri kaybı %90 oranında azalırken, marka sadakati rekor seviyeye ulaştı.',
+    pl_case_challenge_title: 'Zorluk: Parçalanmış İtibar ve Operasyonel Kör Noktalar',
+    pl_case_challenge_desc: 'Hızlı büyüme sürecinde her şubede aynı kaliteyi korumak ve müşterilerin "sessiz kalmamasını" sağlamak Pizza Locale için en büyük zorluktu. Manuel geri bildirim toplama yöntemleri, müşteri deneyiminde operasyonel kör noktalar yaratıyordu. İşletme yönetimi, her şubedeki gerçek hissiyatı anlık olarak ölçebilecek merkezi bir sisteme ihtiyaç duyuyordu.',
+    pl_case_solution_title: 'Çözüm: Buaze Akıllı Deneyim Akışı',
+    pl_case_solution_desc: 'Tüm şubelerdeki masalara yerleştirilen akıllı QR kodlar ile geri bildirim toplama süreci tam otomatize edildi. Negatif geri bildirimlerin doğrudan bölge sorumlusuna saniyeler içinde iletildiği, pozitif deneyimlerin ise Google Haritalar\'a yönlendirildiği dinamik bir altyapı kuruldu. Bu sayede her masa, şeffaf bir veri kaynağına dönüştü.',
+    pl_case_results_title: 'Sonuç: Veriyle Gelen Zincirleme Başarı',
+    pl_case_results_desc: 'Bugün Pizza Locale, 12 şubesinde de 4.5+ puan ortalamasını başarıyla koruyor. Müşteri kaybı %90 oranında azaldı ve şube fark etmeksizin servis kalitesi standardize edildi. Yeni şubelerin açılış paketine Buaze entegrasyonu "olmazsa olmaz" bir standart olarak eklendi.',
+    
+    // SEO Comparison Strings
+    compare_verdict_title: 'Nihai Karar',
+    compare_pain_title: 'Sıkça Yaşanan Sorunlar',
+    compare_pain_spreadsheet: 'Excel ile yönetilen süreçlerde veriler güncelliğini yitirir ve reaksiyon süresi 72 saati bulur.',
+    compare_pain_static: 'Statik QR kodlar basıldıktan sonra değiştirilemez; her güncelleme yeni bir baskı maliyeti ve operasyonel karmaşa demektir.',
+    compare_verdict_desc: 'İtibarınızı pasif yöntemlerle takip etmek yerine, Buaze ile aktif bir operasyona dönüştürün. Otomasyon, hız ve veri güvenliği modern bir işletmenin vazgeçilmezidir.',
 
     // Comparison Page
     compare_title: 'Neden Buaze?',
@@ -867,12 +874,19 @@ export const translations = {
     pl_case_metric_growth_label: 'Engagement Growth',
     pl_case_metric_speed_label: 'Response Speed',
     pl_case_metric_locations_label: 'Locations',
-    pl_case_challenge_title: 'Challenge: Fragmented Reputation',
-    pl_case_challenge_desc: 'Maintaining the same quality across every branch during rapid growth and ensuring customers didn\'t stay silent were the biggest challenges. Manual methods of collecting feedback created an operational blind spot.',
-    pl_case_solution_title: 'Solution: Buaze Smart Flow',
-    pl_case_solution_desc: 'The feedback collection process was automated with smart QR codes placed on tables in all branches. Negative feedback was instantly forwarded to the regional manager, while positive experiences were directed to Google.',
-    pl_case_results_title: 'Result: Data-Driven Growth',
-    pl_case_results_desc: 'Today, Pizza Locale maintains a 4.5+ rating average across all 12 branches. Customer churn has decreased by 90%, and brand loyalty has reached record levels.',
+    pl_case_challenge_title: 'Challenge: Fragmented Reputation & Operational Blind Spots',
+    pl_case_challenge_desc: 'Maintaining the same quality across every branch during rapid growth and ensuring customers didn\'t stay silent were the biggest challenges for Pizza Locale. Manual methods of collecting feedback created an operational blind spot in the customer experience. Management needed a centralized system to measure the real sentiment at every branch in real-time.',
+    pl_case_solution_title: 'Solution: Buaze Smart Experience Flow',
+    pl_case_solution_desc: 'The feedback collection process was fully automated with smart QR codes placed on tables in all branches. A dynamic infrastructure was established where negative feedback was instantly forwarded to the regional manager within seconds, while positive experiences were directed to Google Maps. This way, every table was transformed into a transparent data source.',
+    pl_case_results_title: 'Result: Data-Driven Chain Success',
+    pl_case_results_desc: 'Today, Pizza Locale successfully maintains a 4.5+ rating average across all 12 branches. Customer churn has decreased by 90%, and service quality has been standardized regardless of the location. Buaze integration has been added as a "must-have" standard to the opening package of all new branches.',
+
+    // SEO Comparison Strings
+    compare_verdict_title: 'Final Verdict',
+    compare_pain_title: 'Common Pain Points',
+    compare_pain_spreadsheet: 'In processes managed with Excel, data becomes outdated and reaction time can take up to 72 hours.',
+    compare_pain_static: 'Static QR codes cannot be changed after printing; every update means new printing costs and operational chaos.',
+    compare_verdict_desc: 'Instead of tracking your reputation with passive methods, turn it into an active operation with Buaze. Automation, speed, and data security are indispensable for a modern business.',
 
     // Comparison Page
     compare_title: 'Why Buaze?',

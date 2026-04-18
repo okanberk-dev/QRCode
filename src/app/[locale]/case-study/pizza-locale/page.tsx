@@ -303,6 +303,101 @@ export default async function PizzaLocaleCaseStudy({
         </div>
       </section>
 
+      {/* NEW: Operational Deep Dive (Regional Manager Insight) */}
+      <section className="py-32 px-5 sm:px-8 bg-white overflow-hidden">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div className="relative">
+                <div className="absolute -top-10 -left-10 w-40 h-40 bg-[#FDBF1D]/10 rounded-full blur-3xl" />
+                <div className="relative space-y-8">
+                    <h2 className="text-[36px] sm:text-[54px] font-black tracking-tight leading-none text-[#1f1e1d]">
+                        {locale === 'tr' ? 'Bölge Sorumlusunun Gözünden Operasyon' : 'Operations Through the Regional Manager\'s Eyes'}
+                    </h2>
+                    <div className="space-y-6 text-[18px] text-[#4a4742] leading-relaxed font-medium">
+                        <p>
+                            {locale === 'tr'
+                              ? 'Pizza Locale bölge sorumlusu için her sabah Buaze paneliyle başlıyor. 12 farklı lokasyondaki operasyonel nabız, tek bir ekrandan izlenebiliyor.'
+                              : 'For the Pizza Locale regional manager, every morning starts with the Buaze dashboard. The operational pulse across 12 different locations can be monitored from a single screen.'}
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+                            <div className="p-6 bg-[#FCFBF7] rounded-2xl border-2 border-[#1f1e1d]/5">
+                                <Users size={24} className="text-[#ea580c] mb-4" />
+                                <h4 className="font-black text-[16px] mb-2">{locale === 'tr' ? 'Personel Takibi' : 'Staff Tracking'}</h4>
+                                <p className="text-[14px] text-[#6b6760]">{locale === 'tr' ? 'Hangi garsonun daha fazla pozitif geri bildirim aldığını anlık görün.' : 'See instantly which waiter receives more positive feedback.'}</p>
+                            </div>
+                            <div className="p-6 bg-[#FCFBF7] rounded-2xl border-2 border-[#1f1e1d]/5">
+                                <MapPin size={24} className="text-[#10b981] mb-4" />
+                                <h4 className="font-black text-[16px] mb-2">{locale === 'tr' ? 'Kritik Müdahale' : 'Critical Intervention'}</h4>
+                                <p className="text-[14px] text-[#6b6760]">{locale === 'tr' ? 'Olumsuz geri bildirimler doğrudan cep telefonuna saniyeler içinde düşer.' : 'Negative feedback hits the mobile phone directly within seconds.'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="relative">
+                <div className="bg-[#1f1e1d] rounded-[48px] p-10 text-white border-[4px] border-[#1f1e1d] shadow-[20px_24px_0_0_#FDBF1D]">
+                    <div className="space-y-8">
+                        <div className="flex justify-between items-center border-b border-white/10 pb-6">
+                            <span className="text-[12px] font-black uppercase tracking-widest text-[#FDBF1D]">{locale === 'tr' ? 'CANLI OPERASYON AKIŞI' : 'LIVE OPERATIONAL FLOW'}</span>
+                            <span className="flex items-center gap-2 text-[11px] font-bold text-green-400">
+                                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" /> {locale === 'tr' ? 'AKTİF' : 'ACTIVE'}
+                            </span>
+                        </div>
+                        <div className="space-y-6">
+                            {[
+                                { time: '12:42', msg: locale === 'tr' ? 'Alsancak Şubesi: Yeni 5 Yıldız' : 'Alsancak Branch: New 5 Stars', color: 'text-green-400' },
+                                { time: '12:45', msg: locale === 'tr' ? 'Bursa Şubesi: Operasyonel Geri Bildirim' : 'Bursa Branch: Operational Feedback', color: 'text-[#FDBF1D]' },
+                                { time: '12:50', msg: locale === 'tr' ? 'Çeşme Şubesi: Google Maps Yönlendirme' : 'Cesme Branch: Google Maps Routing', color: 'text-green-400' },
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-start gap-4 text-[14px]">
+                                    <span className="text-[#ada89f] font-mono">{item.time}</span>
+                                    <span className={`font-bold ${item.color}`}>{item.msg}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </section>
+
+      {/* NEW: Scaling Roadmap (1 to 12) */}
+      <section className="py-32 px-5 sm:px-8 bg-[#F7F4F0]">
+        <div className="max-w-[1000px] mx-auto space-y-20">
+            <div className="text-center space-y-4">
+                <h2 className="text-[36px] sm:text-[54px] font-black tracking-tight leading-none text-[#1f1e1d]">
+                    {locale === 'tr' ? '1\'den 12\'ye Büyüme Yol Haritası' : 'Roadmap from 1 to 12 Branches'}
+                </h2>
+                <p className="text-[18px] text-[#6b6760] font-bold">{locale === 'tr' ? 'Pizza Locale, Buaze ile her adımını ölçeklendirdi.' : 'Pizza Locale scaled every step with Buaze.'}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[
+                    { 
+                        step: '01', 
+                        title: locale === 'tr' ? 'Pilot Başlangıç' : 'Pilot Launch', 
+                        desc: locale === 'tr' ? 'İlk şubede dijital itibar test edildi, manuel süreçler terk edildi.' : 'Digital reputation tested in the first branch, manual processes abandoned.' 
+                    },
+                    { 
+                        step: '02', 
+                        title: locale === 'tr' ? 'Standardizasyon' : 'Standardization', 
+                        desc: locale === 'tr' ? 'Geri bildirim akışı "açılış paketi" standardı haline getirildi.' : 'Feedback flow became an "opening package" standard.' 
+                    },
+                    { 
+                        step: '03', 
+                        title: locale === 'tr' ? 'Zincir Yönetimi' : 'Chain Management', 
+                        desc: locale === 'tr' ? '12 lokasyondan gelen verilerle marka kalitesi zirveye taşındı.' : 'Brand quality peak with data from 12 locations.' 
+                    },
+                ].map((item, i) => (
+                    <div key={i} className="p-8 bg-white rounded-3xl border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] relative group">
+                        <div className="text-[48px] font-black text-[#FDBF1D]/20 absolute top-4 right-8 group-hover:text-[#ea580c]/20 transition-colors">{item.step}</div>
+                        <h4 className="text-[20px] font-black mb-4 relative z-10">{item.title}</h4>
+                        <p className="text-[15px] text-[#6b6760] font-medium leading-relaxed relative z-10">{item.desc}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+      </section>
+
       {/* ─── Dashboard Preview Mockup ─── */}
       <section className="py-32 px-5 sm:px-8 bg-white">
         <div className="max-w-[1100px] mx-auto space-y-16 text-center">
