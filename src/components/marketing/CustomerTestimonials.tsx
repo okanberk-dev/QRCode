@@ -55,6 +55,7 @@ export default function CustomerTestimonials({ locale }: CustomerTestimonialsPro
 
         {/* Review Card 2 */}
         <div className="w-full bg-[#fdfaf5] p-8 sm:p-10 rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] flex flex-col relative z-10 transition-transform duration-300 hover:-translate-y-2">
+          <Link href={`/${locale}/case-study/pizza-locale`} className="absolute inset-0 z-20" aria-label="Pizza Locale Case Study" />
           <div className="flex items-center justify-between mb-5">
             <div className="flex gap-1 text-[#ea580c]">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -77,10 +78,14 @@ export default function CustomerTestimonials({ locale }: CustomerTestimonialsPro
               ? 'Buaze\'deki anlık bildirim sistemi ve olumsuz yorum filtresine bayılıyorum. Ekibimizin tüm geri bildirimleri görmesini kolaylaştırıyor. Bu süreç, farklı operasyon ekiplerimizin sorunları gizli olarak tartışıp çözmesini sağlıyor. Pizza Locale için gerçek bir can kurtaran!'
               : 'I love the instant notification system and the smart negative review filter in Buaze. It makes it incredibly easy for our team to see all feedback instantly. This ensures everyone in our operations team can access and discuss issues privately. A lifesaver for Pizza Locale!'}
           </p>
-          <div className="mt-auto border-t border-[#e8e4de] pt-5">
+          <div className="mt-auto border-t border-[#e8e4de] pt-5 flex items-center justify-between">
             <p className="text-[14px] font-bold text-[#6b6760]">
               — {isTr ? 'Bölge Sorumlusu, Pizza Locale' : 'Regional Director at Pizza Locale'}
             </p>
+            <div className="text-[11px] font-black text-[#ea580c] uppercase tracking-widest flex items-center gap-1">
+              {isTr ? 'HİKAYEYİ OKU' : 'VIEW CASE'}
+              <ShieldCheck size={12} strokeWidth={3} />
+            </div>
           </div>
         </div>
       </div>

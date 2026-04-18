@@ -2,7 +2,7 @@
 
 import { 
   Menu, X, Globe, ChevronDown, Utensils, BedDouble, HeartPulse, BookOpen, 
-  Stethoscope, Sparkles, PawPrint, Home, Car, Scissors, Dumbbell, Scale, GraduationCap, Bed 
+  Stethoscope, Sparkles, PawPrint, Home, Car, Scissors, Dumbbell, Scale, GraduationCap, Bed, Layers 
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useTransition, useRef, useEffect } from 'react';
@@ -26,6 +26,7 @@ interface MarketingNavbarProps {
     nav_contact: string;
     nav_login: string;
     nav_register: string;
+    nav_compare: string;
     // New solutions labels
     sol_den_title: string;
     sol_aes_title: string;
@@ -270,15 +271,18 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
                   <div className="text-[14px] font-bold text-[#1f1e1d]">{t.nav_learn_features}</div>
                 </Link>
                 
+                  <div className="text-[14px] font-bold text-[#1f1e1d]">{t.nav_learn_blog}</div>
+                </Link>
+
                 <Link
-                  href={`${base}/blog`}
+                  href={`${base}/compare`}
                   onClick={() => setLearnOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F7F4F0] transition-colors group"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#10b981]/10 rounded-lg flex items-center justify-center text-[#10b981] group-hover:scale-110 transition-transform">
-                    <BookOpen size={15} />
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#6366f1]/10 rounded-lg flex items-center justify-center text-[#6366f1] group-hover:scale-110 transition-transform">
+                    <Layers size={15} />
                   </div>
-                  <div className="text-[14px] font-bold text-[#1f1e1d]">{t.nav_learn_blog}</div>
+                  <div className="text-[14px] font-bold text-[#1f1e1d]">{t.nav_compare}</div>
                 </Link>
               </div>
             </div>
@@ -431,15 +435,17 @@ export default function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
                   </div>
                   <div className="text-[14px] font-semibold text-[#1f1e1d]">{t.nav_learn_features}</div>
                 </Link>
+                  <div className="text-[14px] font-semibold text-[#1f1e1d]">{t.nav_learn_blog}</div>
+                </Link>
                 <Link
-                  href={`${base}/blog`}
+                  href={`${base}/compare`}
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#F7F4F0] transition-colors"
                 >
-                  <div className="w-8 h-8 bg-[#10b981]/10 rounded-lg flex items-center justify-center text-[#10b981]">
-                    <BookOpen size={15} />
+                  <div className="w-8 h-8 bg-[#6366f1]/10 rounded-lg flex items-center justify-center text-[#6366f1]">
+                    <Layers size={15} />
                   </div>
-                  <div className="text-[14px] font-semibold text-[#1f1e1d]">{t.nav_learn_blog}</div>
+                  <div className="text-[14px] font-semibold text-[#1f1e1d]">{t.nav_compare}</div>
                 </Link>
               </div>
             )}

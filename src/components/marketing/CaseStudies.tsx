@@ -89,9 +89,18 @@ export default function CaseStudies({ locale, t }: CaseStudiesProps) {
                   <h3 className="text-[16px] font-black text-[#1f1e1d] leading-tight mb-2">
                     {cs.title}
                   </h3>
-                  <p className="text-[13px] text-[#6b6760] font-medium leading-relaxed">
+                  <p className="text-[13px] text-[#6b6760] font-medium leading-relaxed mb-4">
                     {cs.desc}
                   </p>
+                  {cs.title === t.case_scale_title && (
+                    <Link 
+                      href={`/${locale}/case-study/pizza-locale`}
+                      className="inline-flex items-center gap-1.5 text-[12px] font-black text-[#ea580c] hover:gap-2 transition-all uppercase tracking-wider"
+                    >
+                      {t.case_learn_more}
+                      <ArrowRight size={14} />
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
@@ -101,17 +110,19 @@ export default function CaseStudies({ locale, t }: CaseStudiesProps) {
         {/* Mini Quote Section */}
         <div className="mt-20 pt-16 border-t border-[#e8e4de]">
           <div className="flex flex-col md:flex-row gap-12 items-center">
-            <div className="flex-shrink-0">
-              <div className="w-20 h-20 bg-[#FDBF1D] rounded-full border-2 border-[#1f1e1d] shadow-[4px_4px_0_0_#1f1e1d] flex items-center justify-center">
+            <Link href={`/${locale}/case-study/pizza-locale`} className="flex-shrink-0 group">
+              <div className="w-20 h-20 bg-[#FDBF1D] rounded-full border-2 border-[#1f1e1d] shadow-[4px_4px_0_0_#1f1e1d] flex items-center justify-center group-hover:-translate-y-1 transition-transform">
                 <Quote size={32} fill="currentColor" className="text-[#1f1e1d] translate-x-0.5" />
               </div>
-            </div>
+            </Link>
             <div className="space-y-6">
-              <p className="text-[20px] sm:text-[24px] font-bold text-[#1f1e1d] leading-snug italic italic">
-                {locale === 'tr'
-                  ? '"Buaze ile dijital itibarımızı yönetmek, artık bir iş yükü değil, büyümemizi sağlayan bir yakıt haline geldi."'
-                  : '"Managing our digital reputation with Buaze is no longer a chore; it has become the fuel that drives our growth."'}
-              </p>
+              <Link href={`/${locale}/case-study/pizza-locale`} className="block hover:opacity-80 transition-opacity">
+                <p className="text-[20px] sm:text-[24px] font-bold text-[#1f1e1d] leading-snug italic italic">
+                  {locale === 'tr'
+                    ? '"Buaze ile dijital itibarımızı yönetmek, artık bir iş yükü değil, büyümemizi sağlayan bir yakıt haline geldi."'
+                    : '"Managing our digital reputation with Buaze is no longer a chore; it has become the fuel that drives our growth."'}
+                </p>
+              </Link>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-0.5 bg-[#ea580c]" />
                 <p className="text-[14px] font-black text-[#6b6760] uppercase tracking-widest">

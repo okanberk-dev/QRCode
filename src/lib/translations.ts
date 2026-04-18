@@ -410,6 +410,44 @@ export const translations = {
     roi_result_lead_msg: 'Aylık ek {range} profil etkileşimi potansiyeli',
     roi_disclaimer: 'Bu hesaplama tahmini senaryolar sunar. Sonuçlar sektör, lokasyon, rekabet düzeyi ve müşteri deneyimine göre değişebilir.',
     roi_cta: 'Planları İncele',
+
+    // New Content Labels
+    nav_compare: 'Karşılaştır',
+    case_learn_more: 'Detayları İncele',
+
+    // Pizza Locale Case Study
+    pl_case_hero_badge: 'BAŞARI HİKAYESİ',
+    pl_case_hero_title: 'Pizza Locale: 1 Şubeden 12 Şubeye Dijital İtibar Yolculuğu',
+    pl_case_hero_desc: 'Türkiye\'nin yükselen markası Pizza Locale, operasyonel mükemmelliği ve müşteri geri bildirimlerini nasıl büyüme yakıtına dönüştürdü?',
+    pl_case_metric_growth_label: 'Etkileşim Artışı',
+    pl_case_metric_speed_label: 'Yanıt Süresi',
+    pl_case_metric_locations_label: 'Lokasyon',
+    pl_case_challenge_title: 'Zorluk: Parçalanmış İtibar',
+    pl_case_challenge_desc: 'Hızlı büyüme sürecinde her şubede aynı kaliteyi korumak ve müşterilerin sessiz kalmamasını sağlamak en büyük zorluktu. Manuel yöntemlerle geri bildirimleri toplamak operasyonel bir kör nokta yaratıyordu.',
+    pl_case_solution_title: 'Çözüm: Buaze Akıllı Akış',
+    pl_case_solution_desc: 'Tüm şubelerdeki masalara yerleştirilen akıllı QR kodlar ile geri bildirim toplama süreci otomatiğe bağlandı. Olumsuz geri bildirimler anında bölge sorumlusuna iletilirken, olumlu deneyimler Google\'a yönlendirildi.',
+    pl_case_results_title: 'Sonuç: Veriye Dayalı Büyüme',
+    pl_case_results_desc: 'Pizza Locale bugün 12 şubesinde de 4.5+ puan ortalamasını koruyor. Müşteri kaybı %90 oranında azalırken, marka sadakati rekor seviyeye ulaştı.',
+
+    // Comparison Page
+    compare_title: 'Neden Buaze?',
+    compare_subtitle: 'İtibarınızı manuel yöntemlerle veya kısıtlı araçlarla tesadüfe bırakmayın. Buaze ile profesyonel bir operasyon kurun.',
+    compare_hero_h1: 'Sadece Bir QR Kod Değil, Bir İtibar Kalkanı',
+    compare_hero_p: 'Ücretsiz statik QR kodları veya Excel tabloları işletmenizi bir noktaya kadar taşır. Profesyonel geri bildirim operasyonları ise sizi zirveye taşır.',
+    compare_feat_name: 'Özellik',
+    compare_buaze: 'Buaze',
+    compare_static: 'Bireysel QR',
+    compare_sheet: 'Excel / Kağıt',
+    compare_f1: 'Dinamik QR (Link Değiştirme)',
+    compare_f2: 'Negatif Yorum Filtreleme',
+    compare_f3: 'Anlık SMS/Email Bildirimi',
+    compare_f4: 'Müşteri Veri Tabanı (CRM)',
+    compare_f5: 'Otomatik Google Yönlendirme',
+    compare_f6: 'Çoklu Şube Yönetimi',
+    compare_f7: 'Gelişmiş Analitik Panel',
+    compare_yes: 'Evet',
+    compare_no: 'Hayır',
+    compare_limited: 'Kısıtlı',
   },
   en: {
     // Meta
@@ -817,6 +855,44 @@ export const translations = {
     roi_result_lead_msg: 'Potential for {range} additional monthly profile interactions',
     roi_disclaimer: 'This calculator provides scenario-based estimates. Results may vary depending on your industry, location, competition, and customer experience.',
     roi_cta: 'View Plans',
+
+    // New Content Labels
+    nav_compare: 'Compare',
+    case_learn_more: 'Learn More',
+
+    // Pizza Locale Case Study
+    pl_case_hero_badge: 'SUCCESS STORY',
+    pl_case_hero_title: 'Pizza Locale: A Digital Reputation Journey from 1 to 12 Branches',
+    pl_case_hero_desc: 'How Turkey\'s rising brand, Pizza Locale, turned operational excellence and customer feedback into growth fuel.',
+    pl_case_metric_growth_label: 'Engagement Growth',
+    pl_case_metric_speed_label: 'Response Speed',
+    pl_case_metric_locations_label: 'Locations',
+    pl_case_challenge_title: 'Challenge: Fragmented Reputation',
+    pl_case_challenge_desc: 'Maintaining the same quality across every branch during rapid growth and ensuring customers didn\'t stay silent were the biggest challenges. Manual methods of collecting feedback created an operational blind spot.',
+    pl_case_solution_title: 'Solution: Buaze Smart Flow',
+    pl_case_solution_desc: 'The feedback collection process was automated with smart QR codes placed on tables in all branches. Negative feedback was instantly forwarded to the regional manager, while positive experiences were directed to Google.',
+    pl_case_results_title: 'Result: Data-Driven Growth',
+    pl_case_results_desc: 'Today, Pizza Locale maintains a 4.5+ rating average across all 12 branches. Customer churn has decreased by 90%, and brand loyalty has reached record levels.',
+
+    // Comparison Page
+    compare_title: 'Why Buaze?',
+    compare_subtitle: 'Don\'t leave your reputation to chance with manual methods or limited tools. Build a professional operation with Buaze.',
+    compare_hero_h1: 'Not Just a QR Code, But a Reputation Shield',
+    compare_hero_p: 'Free static QR codes or Excel tables will only take your business so far. Professional feedback operations take you to the top.',
+    compare_feat_name: 'Feature',
+    compare_buaze: 'Buaze',
+    compare_static: 'Static QR',
+    compare_sheet: 'Excel / Paper',
+    compare_f1: 'Dynamic QR (Link Update)',
+    compare_f2: 'Negative Feedback Filtering',
+    compare_f3: 'Instant SMS/Email Alerts',
+    compare_f4: 'Customer CRM Database',
+    compare_f5: 'Automated Google Routing',
+    compare_f6: 'Multi-Branch Management',
+    compare_f7: 'Advanced Analytics Dashboard',
+    compare_yes: 'Yes',
+    compare_no: 'No',
+    compare_limited: 'Limited',
   },
 } as const;
 
