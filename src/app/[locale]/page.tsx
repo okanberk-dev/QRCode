@@ -4,6 +4,7 @@ import Image from 'next/image';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import PricingFaq from '@/components/marketing/PricingFaq';
+import Link from 'next/link';
 import FeatureTabsUI from '@/components/marketing/FeatureTabsUI';
 import CtaBanner from '@/components/marketing/CtaBanner';
 import CustomerTestimonials from '@/components/marketing/CustomerTestimonials';

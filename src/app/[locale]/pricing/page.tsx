@@ -3,6 +3,7 @@ import { CheckCircle2, Star } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import PricingFaq from '@/components/marketing/PricingFaq';
+import Link from 'next/link';
 import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
