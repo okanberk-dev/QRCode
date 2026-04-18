@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import UserDashboardShell from '@/components/dashboard/UserDashboardShell';
 import type { Locale } from '@/lib/translations';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardLayout({
   children,
   params,

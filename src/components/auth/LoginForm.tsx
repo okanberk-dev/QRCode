@@ -55,9 +55,8 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         return;
       }
 
-      const redirect = searchParams.get('redirect') || `/${locale}/dashboard`;
-      router.push(redirect);
-      router.refresh();
+      const redirectPath = searchParams.get('redirect') || `/${locale}/dashboard`;
+      window.location.href = redirectPath;
     } catch {
       setError(locale === 'tr' ? 'Bağlantı hatası.' : 'Connection error.');
       setLoading(false);
