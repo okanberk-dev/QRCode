@@ -8,7 +8,18 @@ import Link from 'next/link';
 import { ArrowLeft, Calendar, Clock, User, ArrowRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-static';
+
+export async function generateStaticParams() {
+  const posts = await prisma.blogPost.findMany({
+    select: { locale: true, slug: true },
+  });
+
+  return posts.map((post) => ({
+    locale: post.locale as Locale,
+    slug: post.slug,
+  }));
+}
 
 export async function generateMetadata({
   params,
