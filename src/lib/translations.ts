@@ -343,6 +343,22 @@ export const translations = {
     sol_bou_p: 'Misafirleriniz henüz otelden ayrılmadan deneyimlerini ölümsüzleştirin. Butik otelcilikte dijital itibarınızı zirveye taşıyın.',
     sol_bou_badge: 'BUTİK OTELLER İÇİN',
 
+    // Case Studies
+    case_study_title: 'Rakamlarla Buaze Başarısı',
+    case_study_subtitle: 'Müşterilerimizin elde ettiği somut ve ölçülebilir sonuçlar.',
+    case_growth_title: '90 Günde Rekor Büyüme',
+    case_growth_metric: '+%420',
+    case_growth_desc: 'Gourmet Kitchen, manuel yorum toplama sisteminden Buaze\'ye geçtikten sonra 3 ay içinde yorum sayısını 5 katına çıkardı.',
+    case_conv_title: 'Yüksek Dönüşüm Oranı',
+    case_conv_metric: '%68',
+    case_conv_desc: 'QR kodlarımızı tarayan her 100 müşteriden 68\'i dürüst geri bildirimde bulunarak organik etkileşimi zirveye taşıyor.',
+    case_scale_title: 'Tek Şubeden Zincire',
+    case_scale_metric: '1 → 12',
+    case_scale_desc: 'Pizza Locale, tek şubeyle başladığı Buaze yolculuğunda 12 şubeli bir zincire dönüşürken tüm lokasyonlarda 4.8+ puan ortalamasını korudu.',
+    case_speed_title: 'Işık Hızında Müdahale',
+    case_speed_metric: '4 dk',
+    case_speed_desc: 'Olumsuz deneyim bildirimlerine geri dönüş süresi ortalama 48 dakikadan 4 dakikaya düşerek müşteri kaybını %90 oranında azalttı.',
+
     // Blog
     blog_title: 'Blog',
     blog_desc: 'İtibar yönetimi, müşteri deneyimi ve dijital büyüme üzerine uzman makaleleri ve rehberler.',
@@ -703,6 +719,22 @@ export const translations = {
     sol_bou_h1: 'Boutique Service, Giant Scores',
     sol_bou_p: 'Immortalize guest experiences before they even leave. Reach the peak of your reputation in boutique hospitality.',
     sol_bou_badge: 'FOR BOUTIQUE HOTELS',
+
+    // Case Studies
+    case_study_title: 'Buaze Success by the Numbers',
+    case_study_subtitle: 'Concrete and measurable results achieved by our customers.',
+    case_growth_title: '90-Day Record Growth',
+    case_growth_metric: '+420%',
+    case_growth_desc: 'Gourmet Kitchen increased its review count fivefold within 3 months after switching to Buaze\'s automated system.',
+    case_conv_title: 'High Conversion Rate',
+    case_conv_metric: '68%',
+    case_conv_desc: '68 out of every 100 customers who scan our QR codes provide honest feedback, driving organic engagement to the peak.',
+    case_scale_title: 'From Single to Chain',
+    case_scale_metric: '1 → 12',
+    case_scale_desc: 'Pizza Locale maintained an average rating of 4.8+ across all locations while expanding from a single shop to a 12-branch chain with Buaze.',
+    case_speed_title: 'Lightning-Fast Response',
+    case_speed_metric: '4 min',
+    case_speed_desc: 'Average response time to negative feedback dropped from 48 minutes to just 4 minutes, reducing customer churn by 90%.',
 
     // Blog
     blog_title: 'Blog',

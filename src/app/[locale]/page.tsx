@@ -7,6 +7,7 @@ import PricingFaq from '@/components/marketing/PricingFaq';
 import FeatureTabsUI from '@/components/marketing/FeatureTabsUI';
 import CtaBanner from '@/components/marketing/CtaBanner';
 import CustomerTestimonials from '@/components/marketing/CustomerTestimonials';
+import CaseStudies from '@/components/marketing/CaseStudies';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
@@ -466,7 +467,8 @@ export default async function LandingPage({
         <CtaBanner locale={locale} />
       </section>
 
-      {/* ═══════ Customer Testimonials ═══════ */}
+      <CaseStudies locale={locale} t={t} />
+
       <CustomerTestimonials locale={locale} />
 
       {/* ═══════ Trust / Why Buaze Section (3D Redesign) ═══════ */}
