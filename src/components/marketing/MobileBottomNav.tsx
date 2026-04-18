@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Tag, Sparkles, LayoutDashboard, Mail, Rocket } from 'lucide-react';
+import { Home, Tag, Sparkles, LayoutDashboard, QrCode, Mail } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 
 interface MobileBottomNavProps {
@@ -54,9 +54,9 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
       Icon: isLoggedIn ? LayoutDashboard : Sparkles,
     },
     {
-      href: `${base}/#how-it-works`,
-      label: locale === 'tr' ? 'Nasıl' : 'How',
-      Icon: Rocket,
+      href: `${base}/#qr-generator`,
+      label: locale === 'tr' ? 'QR Kod' : 'QR Code',
+      Icon: QrCode,
     },
     {
       href: `${base}/contact`,

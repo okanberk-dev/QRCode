@@ -107,7 +107,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           value={form.restaurantName}
           onChange={(e) => setForm(prev => ({ ...prev, restaurantName: e.target.value }))}
           className="w-full px-5 py-4 bg-[#FCFBF7] rounded-xl border-2 border-[#1f1e1d] focus:border-[#FDBF1D] focus:shadow-[0_0_0_4px_rgba(253,191,29,0.1)] outline-none transition-all font-bold text-sm"
-          placeholder={locale === 'tr' ? "Örn: Mamma's Burger" : "e.g. Mamma's Burger"}
+          placeholder={locale === 'tr' ? 'Örn: Gourmet Eats' : 'e.g. Gourmet Eats'}
         />
       </div>
 

@@ -10,6 +10,7 @@ import CtaBanner from '@/components/marketing/CtaBanner';
 import CustomerTestimonials from '@/components/marketing/CustomerTestimonials';
 import CaseStudies from '@/components/marketing/CaseStudies';
 import ProductShowcase from '@/components/marketing/ProductShowcase';
+import InteractiveQRShowcase from '@/components/marketing/InteractiveQRShowcase';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { CtaButton } from '@/components/ui/CtaButton';
@@ -377,6 +378,9 @@ export default async function LandingPage({
 
       {/* ═══════ Desktop-only Product Showcase (hidden on mobile) ═══════ */}
       <ProductShowcase locale={locale} />
+
+      {/* ═══════ Interactive QR code generator (all viewports) ═══════ */}
+      <InteractiveQRShowcase locale={locale} />
 
       {/* ═══════ How It Works (3D Cards) ═══════ */}
       <section id="how-it-works" className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-y border-[#e8e4de]">

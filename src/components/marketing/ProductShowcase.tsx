@@ -95,7 +95,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                       <QrCode size={96} className="text-[#1f1e1d]" strokeWidth={1.5} />
                     </div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-[#FDBF1D] mt-3">
-                      Mamma&apos;s Burger
+                      Gourmet Eats
                     </p>
                     <p className="text-[9px] text-white/60 mt-0.5">
                       #QR-2847
@@ -192,7 +192,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                 <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-16 h-4 bg-[#1f1e1d] rounded-full" />
                 <div className="pt-5 space-y-3">
                   <p className="text-center text-[11px] font-black uppercase tracking-widest text-[#6b6760]">
-                    Mamma&apos;s Burger
+                    Gourmet Eats
                   </p>
                   <p className="text-center text-[13px] font-extrabold text-[#1f1e1d] leading-tight">
                     {isTr

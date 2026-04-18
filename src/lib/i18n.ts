@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 const dictionaries = {
   tr: {
-    restaurant_name: process.env.NEXT_PUBLIC_RESTAURANT_NAME || "Mamma's Burger",
+    restaurant_name: process.env.NEXT_PUBLIC_RESTAURANT_NAME || "Gourmet Eats",
     subtitle: "Bizi değerlendirin, deneyiminizi bizimle paylaşın",
     how_was_it: "Nasıl buldunuz?",
     share_experience: "Deneyiminizi paylaşın",
@@ -25,7 +25,7 @@ const dictionaries = {
     kvkk_consent_pt2: "'ni ve ",
     acik_riza_link: "Açık Rıza Metni",
     kvkk_consent_pt3: "'ni okudum, kabul ediyorum.",
-    marketing_consent_pt1: "Mamma's Burger tarafından sunulan kampanya, indirim ve fırsatlardan haberdar olmak için tarafıma ",
+    marketing_consent_pt1: "Gourmet Eats tarafından sunulan kampanya, indirim ve fırsatlardan haberdar olmak için tarafıma ",
     marketing_link: "Ticari Elektronik İleti",
     marketing_consent_pt2: " gönderilmesini (SMS/E-posta) onaylıyorum.",
     thank_you: "Teşekkür Ederiz!",
@@ -43,7 +43,7 @@ const dictionaries = {
     visit_website: "Web Sitemizi Ziyaret Et"
   },
   en: {
-    restaurant_name: process.env.NEXT_PUBLIC_RESTAURANT_NAME || "Mamma's Burger",
+    restaurant_name: process.env.NEXT_PUBLIC_RESTAURANT_NAME || "Gourmet Eats",
     subtitle: "Rate us and share your experience",
     how_was_it: "How was your experience?",
     share_experience: "Share your experience",
@@ -66,7 +66,7 @@ const dictionaries = {
     kvkk_consent_pt3: " regarding the processing of my personal data.",
     marketing_consent_pt1: "I agree to receive ",
     marketing_link: "Commercial Electronic Messages",
-    marketing_consent_pt2: " (SMS/Email) about campaigns, discounts, and offers from Mamma's Burger.",
+    marketing_consent_pt2: " (SMS/Email) about campaigns, discounts, and offers from Gourmet Eats.",
     thank_you: "Thank You!",
     thank_you_high: "Thank you so much for your great rating! You made our day.",
     thank_you_low: "Your feedback has been successfully received. We will consider your message to improve ourselves.",
@@ -82,7 +82,7 @@ const dictionaries = {
     visit_website: "Visit Our Website"
   },
   ar: {
-    restaurant_name: process.env.NEXT_PUBLIC_RESTAURANT_NAME || "Mamma's Burger",
+    restaurant_name: process.env.NEXT_PUBLIC_RESTAURANT_NAME || "Gourmet Eats",
     subtitle: "يرجى تقييمنا ومشاركة تجربتك",
     how_was_it: "كيف كانت تجربتك؟",
     share_experience: "شارك تجربتك",
@@ -105,7 +105,7 @@ const dictionaries = {
     kvkk_consent_pt3: " بخصوص معالجة بياناتي الشخصية.",
     marketing_consent_pt1: "أوافق على تلقي ",
     marketing_link: "الرسائل الإلكترونية التجارية",
-    marketing_consent_pt2: " (رسائل قصيرة/بريد إلكتروني) حول الحملات والخصومات والعروض من ماما برجر.",
+    marketing_consent_pt2: " (رسائل قصيرة/بريد إلكتروني) حول الحملات والخصومات والعروض من Gourmet Eats.",
     thank_you: "شكراً لك!",
     thank_you_high: "شكراً جزيلاً لتقييمك الرائع! لقد أسعدتنا.",
     thank_you_low: "تم استلام ملاحظاتك بنجاح. سنأخذ رسالتك بعين الاعتبار لتحسين خدماتنا.",

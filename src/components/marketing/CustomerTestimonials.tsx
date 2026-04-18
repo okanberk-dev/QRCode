@@ -80,7 +80,7 @@ export default function CustomerTestimonials({ locale }: CustomerTestimonialsPro
     {
       name: isTr ? 'Mert Altınbaş' : 'Mert Altinbas',
       role: isTr ? 'Kurucu' : 'Founder',
-      company: "Mamma's Burger",
+      company: 'Gourmet Eats',
       initials: 'MA',
       quote: isTr 
         ? "Buaze, tüm yorum platformlarımızı tek bir panelde birleştirerek ekibimize inanılmaz zaman kazandırdı. Şubelerimizdeki müşteri memnuniyetini anlık olarak izleyebiliyoruz."

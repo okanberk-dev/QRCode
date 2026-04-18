@@ -382,7 +382,7 @@ export default function UsersPage() {
                           required={isNewRestaurant}
                           value={restaurantData.name}
                           onChange={(e) => handleNameChange(e.target.value)}
-                          placeholder="Örn: Mamma's Burger Ankara"
+                          placeholder="Örn: Gourmet Eats Ankara"
                           className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FDBF1D] shadow-sm bg-white outline-none text-sm font-bold"
                         />
                       </div>
@@ -398,7 +398,7 @@ export default function UsersPage() {
                               setRestaurantData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }));
                               setIsManualSlug(true);
                             }}
-                            placeholder="mammas-burger"
+                            placeholder="gourmet-eats"
                             className="flex-1 px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FDBF1D] shadow-sm bg-white outline-none text-sm font-bold tracking-tight"
                           />
                         </div>
