@@ -112,20 +112,20 @@ export default async function PricingPage({
         <div className="max-w-[1200px] mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
 
-            {/* Monthly Plan */}
+            {/* Starter Plan */}
             <div className="bg-white p-10 sm:p-12 rounded-[40px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] flex flex-col group transition-transform hover:-translate-y-2">
               <div className="mb-8">
-                <h2 className="text-[22px] font-black text-[#111827] uppercase tracking-tighter mb-2">{t.pricing_monthly_title}</h2>
-                <p className="text-[14px] text-[#6b6760] font-bold leading-snug">{t.pricing_monthly_desc}</p>
+                <h2 className="text-[22px] font-black text-[#111827] uppercase tracking-tighter mb-2">{locale === 'tr' ? 'Başlangıç' : 'Starter'}</h2>
+                <p className="text-[14px] text-[#6b6760] font-bold leading-snug">{locale === 'tr' ? 'Küçük işletmeler için ideal başlangıç.' : 'Ideal start for small businesses.'}</p>
               </div>
               <div className="mb-10 pb-10 border-b-2 border-[#F7F4F0]">
                 <div className="flex items-end gap-1">
-                  <span className="text-[56px] sm:text-[64px] font-black tracking-tighter leading-none text-[#111827]">{t.pricing_monthly_price}</span>
+                  <span className="text-[56px] sm:text-[64px] font-black tracking-tighter leading-none text-[#111827]">₺500</span>
                   <span className="text-[#ada89f] font-black text-[16px] mb-2 uppercase tracking-widest">{t.pricing_monthly_period}</span>
                 </div>
               </div>
               <ul className="space-y-4 mb-10 flex-1">
-                {[t.pricing_feature_unlimited_qr, t.pricing_feature_feedback, t.pricing_feature_panel, t.pricing_feature_mobile].map(feat => (
+                {[t.pricing_feature_unlimited_qr, t.pricing_feature_feedback, locale === 'tr' ? 'Akıllı Filtreleme' : 'Smart Filtering', 'E-posta Desteği'].map(feat => (
                   <li key={feat} className="flex items-start gap-3 text-[14px] sm:text-[15px] text-[#1f1e1d] font-bold">
                     <CheckCircle2 size={18} className="text-[#ada89f] flex-shrink-0 mt-0.5" strokeWidth={3} /> {feat}
                   </li>
@@ -139,25 +139,25 @@ export default async function PricingPage({
               </Link>
             </div>
 
-            {/* Yearly Plan (Featured) */}
+            {/* Growth Plan (Featured) */}
             <div className="bg-[#111827] p-10 sm:p-12 rounded-[40px] border-[3.5px] border-[#1f1e1d] shadow-[12px_14px_0_0_#ea580c] relative md:scale-[1.05] flex flex-col text-white z-10">
               <div className="absolute -top-5 left-1/2 -translate-x-1/2">
                 <span className="bg-[#FDBF1D] text-[#111827] px-6 py-2 rounded-full font-black text-[11px] uppercase tracking-[0.2em] whitespace-nowrap border-2 border-[#111827] shadow-[4px_4px_0_0_#ea580c]">
-                  {t.pricing_yearly_badge}
+                  {locale === 'tr' ? 'EN POPÜLER' : 'MOST POPULAR'}
                 </span>
               </div>
               <div className="mb-8 pt-4">
-                <h2 className="text-[22px] font-black text-white uppercase tracking-tighter mb-2">{t.pricing_yearly_title}</h2>
-                <p className="text-[14px] text-[#ada89f] font-bold leading-snug">{t.pricing_yearly_desc}</p>
+                <h2 className="text-[22px] font-black text-white uppercase tracking-tighter mb-2">{locale === 'tr' ? 'Büyüme' : 'Growth'}</h2>
+                <p className="text-[14px] text-[#ada89f] font-bold leading-snug">{locale === 'tr' ? 'Hızlı büyüyen ve çok şubeli işletmeler için.' : 'For fast-growing and multi-location businesses.'}</p>
               </div>
               <div className="mb-10 pb-10 border-b-2 border-white/10">
                 <div className="flex items-end gap-1">
-                  <span className="text-[56px] sm:text-[64px] font-black tracking-tighter leading-none text-[#FDBF1D]">{t.pricing_yearly_price}</span>
-                  <span className="text-[#6b6760] font-black text-[16px] mb-2 uppercase tracking-widest">{t.pricing_yearly_period}</span>
+                  <span className="text-[56px] sm:text-[64px] font-black tracking-tighter leading-none text-[#FDBF1D]">₺1.200</span>
+                  <span className="text-[#6b6760] font-black text-[16px] mb-2 uppercase tracking-widest">{t.pricing_monthly_period}</span>
                 </div>
               </div>
               <ul className="space-y-4 mb-10 flex-1">
-                {[t.pricing_feature_all, t.pricing_feature_free_months, t.pricing_feature_priority, t.pricing_feature_google].map(feat => (
+                {[locale === 'tr' ? "Starter'daki Her Şey" : "Everything in Starter", locale === 'tr' ? "Çoklu Lokasyon (3'e kadar)" : "Multi-Location (up to 3)", locale === 'tr' ? 'Öncelikli Destek' : 'Priority Support', locale === 'tr' ? 'Gelişmiş Analitik' : 'Advanced Analytics'].map(feat => (
                   <li key={feat} className="flex items-start gap-3 text-[14px] sm:text-[15px] text-[#F7F4F0] font-bold">
                     <CheckCircle2 size={18} className="text-[#FDBF1D] flex-shrink-0 mt-0.5" strokeWidth={3} /> {feat}
                   </li>
@@ -167,33 +167,46 @@ export default async function PricingPage({
                 href={`${base}/auth/register`}
                 className="block w-full text-center py-5 bg-[#FDBF1D] border-[3px] border-[#1f1e1d] text-[#111827] font-black text-[15px] uppercase tracking-widest rounded-2xl shadow-[0_6px_0_0_#ea580c] active:translate-y-[6px] active:shadow-none transition-all"
               >
-                {t.pricing_yearly_cta}
+                {t.pricing_monthly_cta}
               </Link>
             </div>
 
-            {/* Enterprise Plan */}
+            {/* Annual Pro Plan */}
             <div className="bg-[#FCFBF7] p-10 sm:p-12 rounded-[40px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d] flex flex-col group transition-transform hover:-translate-y-2">
               <div className="mb-8">
-                <h2 className="text-[22px] font-black text-[#111827] uppercase tracking-tighter mb-2">{t.pricing_enterprise_title}</h2>
-                <p className="text-[14px] text-[#6b6760] font-bold leading-snug">{t.pricing_enterprise_desc}</p>
+                <h2 className="text-[22px] font-black text-[#111827] uppercase tracking-tighter mb-2">{locale === 'tr' ? 'Yıllık Pro' : 'Annual Pro'}</h2>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="bg-[#10b981]/10 text-[#10b981] text-[9px] font-black px-2 py-0.5 rounded-full border border-[#10b981]/20 uppercase">
+                    {locale === 'tr' ? '%17 TASARRUF' : '17% SAVINGS'}
+                  </span>
+                </div>
+                <p className="text-[14px] text-[#6b6760] font-bold leading-snug">{locale === 'tr' ? 'En iyi değer, tam kapasite yönetim.' : 'Best value, full capacity management.'}</p>
               </div>
               <div className="mb-10 pb-10 border-b-2 border-[#F7F4F0]">
-                <div className="flex items-end gap-1">
-                  <span className="text-[40px] sm:text-[48px] font-black tracking-tighter leading-none text-[#111827] uppercase">{locale === 'tr' ? 'TEKLİF' : 'CUSTOM'}</span>
+                <div className="flex flex-col">
+                   <div className="flex items-end gap-1">
+                     <span className="text-[56px] sm:text-[64px] font-black tracking-tighter leading-none text-[#111827]">₺416</span>
+                     <span className="text-[#ada89f] font-black text-[16px] mb-2 uppercase tracking-widest">{t.pricing_monthly_period}</span>
+                   </div>
+                   <div className="flex items-center gap-2 mt-1">
+                      <p className="text-[11px] text-[#ada89f] line-through font-bold">₺500/ay</p>
+                      <p className="text-[11px] text-[#FDBF1D] font-black">₺5.000 / yıl</p>
+                      <span className="text-[10px] text-[#10b981] font-bold">({locale === 'tr' ? '2 ay ücretsiz' : '2 months free'})</span>
+                   </div>
                 </div>
               </div>
               <ul className="space-y-4 mb-10 flex-1">
-                {[t.pricing_feature_unlimited_locations, t.pricing_feature_api, t.pricing_feature_account_manager, locale === 'tr' ? 'Özel SLA Sözleşmesi' : 'Custom SLA Agreements'].map(feat => (
+                {[locale === 'tr' ? 'Büyüme Planındaki Her Şey' : 'Everything in Growth', locale === 'tr' ? 'Sınırsız Şube' : 'Unlimited Locations', locale === 'tr' ? '7/24 Öncelikli Destek' : '24/7 Priority Support', 'API Erişimi'].map(feat => (
                   <li key={feat} className="flex items-start gap-3 text-[14px] sm:text-[15px] text-[#1f1e1d] font-bold">
                     <CheckCircle2 size={18} className="text-[#10b981] flex-shrink-0 mt-0.5" strokeWidth={3} /> {feat}
                   </li>
                 ))}
               </ul>
               <Link
-                href={`${base}/contact`}
-                className="block w-full text-center py-5 bg-[#111827] border-[3px] border-[#1f1e1d] text-white font-black text-[15px] uppercase tracking-widest rounded-2xl shadow-[0_6px_0_0_#000] active:translate-y-[6px] active:shadow-none transition-all"
+                href={`${base}/auth/register`}
+                className="block w-full text-center py-5 bg-[#111827] text-white border-[3px] border-[#1f1e1d] font-black text-[15px] uppercase tracking-widest rounded-2xl shadow-[0_6px_0_0_#000] active:translate-y-[6px] active:shadow-none transition-all"
               >
-                {t.pricing_enterprise_cta}
+                {t.pricing_yearly_cta}
               </Link>
             </div>
 

@@ -44,6 +44,24 @@ export default async function AboutPage({
     { icon: <Users size={22} />, title: t.about_val4_title, desc: t.about_val4_desc },
   ];
 
+  function FounderCard({
+    name, title, initials
+  }: { name: string; title: string; initials: string }) {
+    return (
+      <div className="flex items-center gap-4 rounded-xl border border-white/10
+                      bg-white/5 p-5 backdrop-blur-sm">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full
+                        bg-[#FDBF1D] text-lg font-bold text-[#1F1E1D]">
+          {initials}
+        </div>
+        <div>
+          <p className="font-semibold text-white">{name}</p>
+          <p className="text-sm text-white/50">{title}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans pt-[64px] selection:bg-[#FDBF1D]/30">
       <MarketingNavbar locale={locale} t={t} />
@@ -68,53 +86,64 @@ export default async function AboutPage({
         </div>
       </section>
 
-      {/* ─── Our Story (Expanded 3D) ─── */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-white relative">
+      {/* ─── Founder & Story ─── */}
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#1B1A19] relative text-white border-y border-white/5">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-          <div className="relative group">
-             <div className="absolute inset-0 bg-[#FDBF1D] rounded-[40px] translate-x-4 translate-y-4 group-hover:translate-x-6 group-hover:translate-y-6 transition-transform -z-10" />
-             <div className="bg-[#111827] rounded-[40px] border-[4px] border-[#1f1e1d] p-4 shadow-[12px_14px_40px_-10px_rgba(0,0,0,0.3)] transform -rotate-1 group-hover:rotate-0 transition-all duration-500 overflow-hidden aspect-[4/5] sm:aspect-square">
-                <img 
-                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1200" 
-                  alt="Buaze Team" 
-                  className="rounded-[32px] w-full h-full object-cover grayscale-[40%] group-hover:grayscale-0 transition-all duration-700"
-                />
-             </div>
-             {/* Decorative floating tag */}
-             <div className="absolute -bottom-6 -right-6 bg-white border-[3px] border-[#1f1e1d] p-6 rounded-3xl shadow-[8px_8px_0_0_#1f1e1d] hidden sm:block">
-                <p className="text-[24px] font-black text-[#111827] leading-none">2024</p>
-                <p className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest mt-1">KURULUŞ YILIMIZ</p>
-             </div>
-          </div>
-
+          
           <div className="space-y-10">
-            <h2 className="text-[34px] sm:text-[48px] font-black text-[#111827] tracking-[-0.03em] leading-tight">
+            <h2 className="text-[34px] sm:text-[48px] font-black text-white tracking-[-0.03em] leading-tight">
               {locale === 'tr' ? 'Dijital İtibarı İnsan Odaklı Yapmak' : 'Humanizing Digital Reputation'}
             </h2>
-            <div className="space-y-6 text-[16px] sm:text-[18px] text-[#4a4742] leading-relaxed font-medium">
+            <div className="space-y-6 text-[16px] sm:text-[18px] text-white/70 leading-relaxed font-medium">
               <p>
                 {locale === 'tr' 
-                  ? 'Buaze, modern işletmelerin dijital dünyadaki yankısını kontrol altına alabilmesi için doğdu. Biz sadece bir yazılım değil, işletme sahiplerinin her gün karşılaştığı "gerçek geri bildirime nasıl ulaşırım?" sorusuna verilmiş teknolojik bir cevabız.' 
-                  : 'Buaze was born so that modern businesses could take control of their digital echo. We are not just software; we are a technological answer to the daily question of "how do I reach genuine feedback?"'}
-              </p>
-              <p>
-                {locale === 'tr'
-                  ? 'Geri bildirim toplama sürecini bir QR kodu kadar basit, bir sohbet kadar samimi hale getiriyoruz. Karmaşık veri analitiğini, bir restoran sahibinin veya cafe yöneticisinin saniyeler içinde anlayabileceği, aksiyona dökebileceği bir itibar motoruna dönüştürdük.'
-                  : 'We make the feedback collection process as simple as a QR code and as sincere as a conversation. We\'ve turned complex data analytics into a reputation engine that a restaurant owner or cafe manager can understand and act upon in seconds.'}
+                   ? 'Buaze, modern işletmelerin dijital dünyadaki yankısını kontrol altına alabilmesi için doğdu. Biz sadece bir yazılım değil, işletme sahiplerinin her gün karşılaştığı "gerçek geri bildirime nasıl ulaşırım?" sorusuna verilmiş teknolojik bir cevabız.' 
+                   : 'Buaze was born so that modern businesses could take control of their digital echo. We are not just software; we are a technological answer to the daily question of "how do I reach genuine feedback?"'}
               </p>
               
-              <div className="pt-6 grid grid-cols-2 gap-10">
+              <div className="pt-8 space-y-4">
+                 <p className="text-[12px] font-black uppercase tracking-widest text-[#FDBF1D] mb-4">
+                   {locale === 'tr' ? 'KURUCU EKİBİMİZ' : 'OUR FOUNDER'}
+                 </p>
+                 <FounderCard 
+                   name="Okan Berk Manavoğlu" 
+                   title={locale === 'tr' ? 'Kurucu & CEO' : 'Founder & CEO'} 
+                   initials="OM" 
+                 />
+              </div>
+
+              <div className="pt-8 grid grid-cols-2 gap-10 border-t border-white/10">
                  <div className="space-y-1">
-                    <div className="text-[44px] font-black text-[#ea580c] leading-none tracking-tighter">500+</div>
-                    <div className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest">{locale === 'tr' ? 'MUTLU İŞLETME' : 'HAPPY BUSINESSES'}</div>
+                    <div className="text-[44px] font-black text-[#FDBF1D] leading-none tracking-tighter">500+</div>
+                    <div className="text-[11px] font-black text-white/40 uppercase tracking-widest">{locale === 'tr' ? 'MUTLU İŞLETME' : 'HAPPY BUSINESSES'}</div>
+                    <p className="text-[10px] text-white/30 italic">{locale === 'tr' ? 'Pilot müşteri verisi' : 'Pilot customer data'}</p>
                  </div>
                  <div className="space-y-1">
-                    <div className="text-[44px] font-black text-[#ea580c] leading-none tracking-tighter">1.2M</div>
-                    <div className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest">{locale === 'tr' ? 'İŞLENEN GERİ BİLDİRİM' : 'FEEDBACK PROCESSED'}</div>
+                    <div className="text-[44px] font-black text-[#FDBF1D] leading-none tracking-tighter">1.2M</div>
+                    <div className="text-[11px] font-black text-white/40 uppercase tracking-widest">{locale === 'tr' ? 'İŞLENEN GERİ BİLDİRİM' : 'FEEDBACK PROCESSED'}</div>
+                    <p className="text-[10px] text-white/30 italic">{locale === 'tr' ? 'Toplam ağ verisi' : 'Total network data'}</p>
                  </div>
               </div>
             </div>
           </div>
+
+          <div className="relative group lg:order-last order-first">
+             <div className="bg-[#111827] rounded-[40px] border-[4px] border-white/10 p-12 shadow-[12px_14px_40px_-10px_rgba(0,0,0,0.5)] transition-all duration-500 overflow-hidden text-center space-y-8 flex flex-col items-center justify-center min-h-[400px]">
+                <div className="w-32 h-32 bg-[#FDBF1D] rounded-full border-[6px] border-[#1F1E1D] flex items-center justify-center text-[48px] font-black text-[#1F1E1D] shadow-[0_0_30px_rgba(253,191,29,0.2)]">
+                  OM
+                </div>
+                <div>
+                   <h3 className="text-[28px] font-black text-white mb-2">Okan Berk Manavoğlu</h3>
+                   <p className="text-[#FDBF1D] font-black uppercase tracking-widest text-[12px]">{locale === 'tr' ? 'Kurucu & CEO' : 'Founder & CEO'}</p>
+                </div>
+                <p className="text-[14px] text-white/50 leading-relaxed max-w-[320px]">
+                   {locale === 'tr' 
+                     ? '"Amacımız, her işletmenin kendi hikayesini en şeffaf ve güçlü şekilde anlatmasını sağlamak."'
+                     : '"Our goal is to ensure every business tells its story in the most transparent and powerful way."'}
+                </p>
+             </div>
+          </div>
+
         </div>
       </section>
 

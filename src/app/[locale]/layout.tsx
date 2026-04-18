@@ -1,7 +1,5 @@
-import type { Metadata } from 'next';
-import { getTranslations } from '@/lib/translations';
-import type { Locale } from '@/lib/translations';
 import '../globals.css';
+import { ContactFloat } from '@/components/marketing/ContactFloat';
 
 export async function generateMetadata({
   params,
@@ -91,6 +89,7 @@ export default async function LocaleLayout({
   return (
     <div className="antialiased bg-white text-[#111827] min-h-screen flex flex-col">
       {children}
+      <ContactFloat locale={locale} />
     </div>
   );
 }

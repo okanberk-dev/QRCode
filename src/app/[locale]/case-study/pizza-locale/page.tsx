@@ -177,6 +177,109 @@ export default async function PizzaLocaleCaseStudy({
                 </div>
             </div>
           </div>
+
+          <div className="h-[2px] bg-[#e8e4de]/50 w-full" />
+
+          {/* Before & After Comparison */}
+          <div className="space-y-12">
+            <div className="text-center space-y-4">
+              <h2 className="text-[28px] sm:text-[36px] font-black tracking-tight uppercase">
+                {locale === 'tr' ? 'Dönüşüm Özeti' : 'Transformation Summary'}
+              </h2>
+              <p className="text-[#6b6760] font-bold">{locale === 'tr' ? 'Manuel süreçlerden profesyonel operasyona geçiş.' : 'Transition from manual processes to professional operations.'}</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Before */}
+              <div className="bg-white p-8 rounded-2xl border-[3px] border-[#e8e4de] space-y-6 opacity-60">
+                <div className="flex items-center gap-3 text-[#ada89f]">
+                   <div className="w-8 h-8 rounded-full bg-[#ada89f]/20 flex items-center justify-center font-black">1</div>
+                   <span className="text-[12px] font-black uppercase tracking-widest">{locale === 'tr' ? 'BUAZE ÖNCESİ' : 'BEFORE BUAZE'}</span>
+                </div>
+                <ul className="space-y-4">
+                  {[
+                    locale === 'tr' ? 'Masalarda işlevsiz, statik QR kodlar' : 'Static, dysfunctional QR codes on tables',
+                    locale === 'tr' ? 'Negatif yorumların Google\'a doğrudan sızması' : 'Negative reviews leaking directly to Google',
+                    locale === 'tr' ? 'Mutfak-servis performansında veri eksikliği' : 'Lack of data in kitchen-service performance',
+                    locale === 'tr' ? 'Haftalık 10-15 parça rastgele geri bildirim' : '10-15 random feedbacks per week',
+                  ].map((text, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[14px] font-medium text-[#6b6760]">
+                      <span className="text-red-500 mt-1">✕</span> {text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* After */}
+              <div className="bg-[#1f1e1d] p-8 rounded-2xl border-[3px] border-[#FDBF1D] shadow-[8px_10px_0_0_#FDBF1D] space-y-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                   <Zap size={100} className="text-[#FDBF1D]" />
+                </div>
+                <div className="flex items-center gap-3 text-[#FDBF1D] relative z-10">
+                   <div className="w-8 h-8 rounded-full bg-[#FDBF1D] text-[#1f1e1d] flex items-center justify-center font-black">2</div>
+                   <span className="text-[12px] font-black uppercase tracking-widest">{locale === 'tr' ? 'BUAZE SONRASI' : 'AFTER BUAZE'}</span>
+                </div>
+                <ul className="space-y-4 relative z-10">
+                  {[
+                    locale === 'tr' ? 'Dinamik, şube-masa takipli akıllı QR' : 'Dynamic, location-tracked smart QRs',
+                    locale === 'tr' ? 'Negatiflerin anında yönetime iletilmesi' : 'Instant routing of negative feedback',
+                    locale === 'tr' ? 'Müdür panelinde şeffaf performans verisi' : 'Transparent performance data for managers',
+                    locale === 'tr' ? 'Günlük 50+ doğrulanmış müşteri görüşü' : '50+ verified customer insights daily',
+                  ].map((text, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[14px] font-bold text-white">
+                      <BadgeCheck size={18} className="text-[#FDBF1D] flex-shrink-0" /> {text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-[2px] bg-[#e8e4de]/50 w-full" />
+
+          {/* Scaling Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-7 space-y-6">
+              <h2 className="text-[32px] sm:text-[42px] font-black tracking-tight leading-tight">
+                {locale === 'tr' ? '1\'den 12 Şubeye: Büyüme Rehberi' : '1 to 12 Branches: The Scaling Blueprint'}
+              </h2>
+              <div className="text-[17px] text-[#4a4742] leading-relaxed font-medium space-y-4">
+                <p>
+                  {locale === 'tr'
+                    ? 'Pizza Locale, Buaze\'yi sadece bir yorum toplama aracı olarak değil, bir kalite kontrol sistemi olarak kullandı. Her yeni açılan şubede Buaze entegrasyonu "açılış paketi"nin ayrılmaz bir parçası oldu.'
+                    : 'Pizza Locale used Buaze not just as a feedback tool, but as a quality control system. In every new branch opened, Buaze integration became an inseparable part of the "opening package."'}
+                </p>
+                <p>
+                  {locale === 'tr'
+                    ? 'Merkezi yönetim, tüm şubelerin haftalık memnuniyet skorlarını yan yana getirerek "Haftalık Servis Raporu" oluşturdu. Bu sayede operasyonel zayıflıklar gün yüzüne çıkarıldı ve şubeler arası tatlı bir rekabet oluştu.'
+                    : 'Central management generated a "Weekly Service Report" by comparing the satisfaction scores of all branches. This way, operational weaknesses were brought to light, creating a healthy competition between branches.'}
+                </p>
+              </div>
+            </div>
+            <div className="lg:col-span-5 relative">
+               <div className="bg-white p-6 rounded-3xl border-[2.5px] border-[#1f1e1d] shadow-[8px_10px_0_0_#1f1e1d]">
+                  <div className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest mb-4">{locale === 'tr' ? 'ZİNCİR YÖNETİMİ' : 'CHAIN MANAGEMENT'}</div>
+                  <div className="space-y-4">
+                     {[
+                       { name: 'Çeşme', score: '4.9', width: '98%' },
+                       { name: 'Alsancak', score: '4.8', width: '94%' },
+                       { name: 'Bağdat Cad.', score: '4.7', width: '88%' },
+                       { name: 'Bursa', score: '4.9', width: '96%' },
+                     ].map((item, i) => (
+                       <div key={i} className="space-y-1.5">
+                          <div className="flex justify-between text-[13px] font-black">
+                             <span>{item.name}</span>
+                             <span className="text-[#ea580c]">{item.score} ★</span>
+                          </div>
+                          <div className="h-2 bg-[#FCFBF7] rounded-full overflow-hidden border border-[#1f1e1d]/5">
+                             <div className="h-full bg-[#10b981]" style={{ width: item.width }} />
+                          </div>
+                       </div>
+                     ))}
+                  </div>
+               </div>
+            </div>
+          </div>
         </div>
       </section>
 

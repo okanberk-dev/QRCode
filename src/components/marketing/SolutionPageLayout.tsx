@@ -4,6 +4,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import type { Locale, Translations } from '@/lib/translations';
 import Link from 'next/link';
 import { ReactNode } from 'react';
+import { CtaButton } from '@/components/ui/CtaButton';
 
 interface SolutionPageLayoutProps {
   locale: Locale;
@@ -84,10 +85,10 @@ export default function SolutionPageLayout({
 
   // Default stats
   const displayStats = stats || [
-    { num: '1000+', label: locale === 'tr' ? 'AKTİF KULLANICI' : 'ACTIVE USERS' },
-    { num: '4.8', label: locale === 'tr' ? 'ORT. SKOR' : 'AVG. SCORE' },
-    { num: '%95', label: locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION' },
-    { num: '<5dk', label: locale === 'tr' ? 'KURULUM' : 'SETUP' },
+    { num: '500+', label: locale === 'tr' ? 'AKTİF İŞLETME' : 'ACTIVE BUSINESSES', context: locale === 'tr' ? 'Pilot veri' : 'Pilot data' },
+    { num: '4.8',  label: locale === 'tr' ? 'ORT. SKOR'     : 'AVG. SCORE',        context: locale === 'tr' ? 'Ağ ortalaması' : 'Network average' },
+    { num: '%92',  label: locale === 'tr' ? 'İTİBAR ARTIŞI' : 'REPUTATION GROWTH', context: locale === 'tr' ? '90 günlük trend' : '90-day trend' },
+    { num: '<5dk', label: locale === 'tr' ? 'KURULUM'      : 'SETUP',             context: locale === 'tr' ? 'Hızlı entegrasyon' : 'Fast integration' },
   ];
 
   return (
@@ -110,12 +111,12 @@ export default function SolutionPageLayout({
               {description}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link
-                href={`${base}/auth/register`}
-                className="px-8 py-4 bg-[#FDBF1D] text-[#1f1e1d] text-[15px] font-extrabold rounded-lg border-2 border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] active:translate-y-1 active:shadow-none transition-all text-center flex items-center justify-center gap-2"
-              >
-                {locale === 'tr' ? '14 Gün Ücretsiz Deneyin' : 'Start 14-Day Free Trial'} <ArrowRight size={16} />
-              </Link>
+              <CtaButton variant="primary" href={`${base}/auth/register`}>
+                {locale === 'tr' ? '14 Gün Ücretsiz Dene' : 'Start 14-Day Free Trial'}
+              </CtaButton>
+              <CtaButton variant="secondary" href={`${base}/pricing`}>
+                {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
+              </CtaButton>
             </div>
           </div>
         </div>
@@ -180,10 +181,11 @@ export default function SolutionPageLayout({
       {/* Stats Bar */}
       <section className="py-16 px-5 sm:px-8 bg-[#FDBF1D] border-y-[3px] border-[#1f1e1d]">
         <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {displayStats.map((stat, i) => (
-            <div key={i}>
+          {displayStats.map((stat: any, i) => (
+            <div key={i} className="space-y-1">
               <div className="text-[36px] sm:text-[48px] font-black text-[#1f1e1d] tracking-tighter leading-none">{stat.num}</div>
-              <div className="text-[10px] font-black text-[#1f1e1d]/60 uppercase tracking-widest mt-2">{stat.label}</div>
+              <div className="text-[10px] font-black text-[#1f1e1d] uppercase tracking-widest">{stat.label}</div>
+              <div className="text-[9px] font-bold text-[#1f1e1d]/40 uppercase tracking-widest">{stat.context}</div>
             </div>
           ))}
         </div>
@@ -195,12 +197,14 @@ export default function SolutionPageLayout({
           <h2 className="text-[32px] sm:text-[48px] font-black text-[#1f1e1d] tracking-[-0.03em] leading-tight">
              {locale === 'tr' ? 'İşletmenizi Bugün Büyütün' : 'Grow Your Business Today'}
           </h2>
-          <Link
-            href={`${base}/auth/register`}
-            className="inline-flex items-center gap-2 px-10 py-5 bg-[#1f1e1d] text-white text-[16px] font-extrabold rounded-2xl border-[3px] border-[#1f1e1d] shadow-[0_6px_0_0_#000] hover:bg-[#111] active:translate-y-[6px] active:shadow-none transition-all"
-          >
-            {locale === 'tr' ? 'Hemen Başlayın' : 'Get Started Now'} <ArrowRight size={18} />
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <CtaButton variant="dark" href={`${base}/auth/register`}>
+              {locale === 'tr' ? 'Hemen Başlayın' : 'Get Started Now'} <ArrowRight size={18} className="ml-2" />
+            </CtaButton>
+            <CtaButton variant="secondary" href={`${base}/pricing`}>
+              {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
+            </CtaButton>
+          </div>
         </div>
       </section>
 

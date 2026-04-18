@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { CtaButton } from '@/components/ui/CtaButton';
 import type { Locale } from '@/lib/translations';
 
 interface CtaBannerProps {
@@ -6,29 +6,24 @@ interface CtaBannerProps {
 }
 
 export default function CtaBanner({ locale }: CtaBannerProps) {
+  const base = `/${locale}`;
   return (
-    <div className="max-w-[1000px] w-full mx-auto my-16 p-8 sm:p-14 bg-[#F7F4F0] rounded-3xl border border-[#e8e4de] flex flex-col items-center text-center">
-      <h2 className="text-[28px] sm:text-[36px] font-extrabold text-[#1f1e1d] tracking-[-0.02em] mb-4">
+    <div className="max-w-[1000px] w-full mx-auto my-16 p-8 sm:p-20 bg-[#F7F4F0] rounded-[40px] border-[3px] border-[#1F1E1D] shadow-[10px_12px_0_0_#FDBF1D] flex flex-col items-center text-center">
+      <h2 className="text-[32px] sm:text-[44px] font-black text-[#1f1e1d] tracking-tight leading-none mb-6">
         {locale === 'tr' ? 'İtibar yönetimi konusunda ne kadar ciddisiniz?' : 'How serious are you about review management?'}
       </h2>
-      <p className="text-[16px] text-[#6b6760] mb-8 font-medium">
+      <p className="text-[17px] text-[#6b6760] mb-10 font-bold max-w-lg">
         {locale === 'tr' 
           ? '14 gün boyunca ücretsiz deneyin. Kredi kartı veya taahhüt gerekmez.' 
-          : 'Try it free on a 14 day trial or book a custom demo. No strings attached.'}
+          : 'Try it free on a 14 day trial. No credit card required, no strings attached.'}
       </p>
       <div className="flex flex-col sm:flex-row items-center gap-6">
-        <Link
-          href={`/${locale}/auth/register`}
-          className="px-8 py-3.5 bg-[#ea580c] text-white font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#c2410c] transition-all active:translate-y-[4px] active:shadow-none"
-        >
+        <CtaButton variant="primary" href={`${base}/auth/register`}>
           {locale === 'tr' ? 'Hemen başlayın!' : 'Get started now!'}
-        </Link>
-        <Link
-          href={`/${locale}/pricing`}
-          className="text-[15px] font-bold text-[#6b6760] underline underline-offset-4 decoration-[#ada89f] hover:text-[#1f1e1d] hover:decoration-[#1f1e1d] transition-all"
-        >
-          {locale === 'tr' ? 'Fiyatları incele' : 'View pricing'}
-        </Link>
+        </CtaButton>
+        <CtaButton variant="secondary" href={`${base}/pricing`}>
+          {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
+        </CtaButton>
       </div>
     </div>
   );

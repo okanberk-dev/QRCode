@@ -109,6 +109,39 @@ export default async function ComparisonPage({
                 <div className="w-3 h-3 rounded-full border-2 border-[#FDBF1D]" /> {t.compare_limited}
              </div>
           </div>
+
+          {/* New Specific VS Links */}
+          <div className="mt-24 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Link href={`${base}/vs/spreadsheet`} className="group p-8 bg-[#F7F4F0] rounded-[32px] border-[3px] border-[#1f1e1d] hover:bg-[#FDBF1D]/10 transition-all hover:-translate-y-2">
+               <div className="flex justify-between items-start mb-6">
+                  <div className="w-12 h-12 bg-white rounded-xl border-2 border-[#1f1e1d] flex items-center justify-center">
+                     <Table size={24} className="text-[#ea580c]" />
+                  </div>
+                  <ArrowRight size={24} className="text-[#ada89f] group-hover:text-[#1f1e1d] transition-colors" />
+               </div>
+               <h3 className="text-[20px] font-black mb-2">{locale === 'tr' ? 'Buaze vs Spreadsheet' : 'Buaze vs Spreadsheet'}</h3>
+               <p className="text-[14px] text-[#6b6760] font-bold leading-relaxed">
+                  {locale === 'tr'
+                    ? 'Excel tablolarının operasyonel kör noktalarından kurtulun ve otomasyonun gücünü keşfedin.'
+                    : 'Get rid of the operational blind spots of Excel spreadsheets and discover the power of automation.'}
+               </p>
+            </Link>
+
+            <Link href={`${base}/vs/individual-qr`} className="group p-8 bg-[#F7F4F0] rounded-[32px] border-[3px] border-[#1f1e1d] hover:bg-[#ea580c]/10 transition-all hover:-translate-y-2">
+               <div className="flex justify-between items-start mb-6">
+                  <div className="w-12 h-12 bg-white rounded-xl border-2 border-[#1f1e1d] flex items-center justify-center">
+                     <Smartphone size={24} className="text-[#6366f1]" />
+                  </div>
+                  <ArrowRight size={24} className="text-[#ada89f] group-hover:text-[#1f1e1d] transition-colors" />
+               </div>
+               <h3 className="text-[20px] font-black mb-2">{locale === 'tr' ? 'Buaze vs Bireysel QR' : 'Buaze vs Individual QR'}</h3>
+               <p className="text-[14px] text-[#6b6760] font-bold leading-relaxed">
+                  {locale === 'tr'
+                    ? 'Statik QR kodların link kısıtlamalarını ve itibar risklerini profesyonel dinamik altyapı ile aşın.'
+                    : 'Overcome the link limitations and reputation risks of static QR codes with a professional dynamic infrastructure.'}
+               </p>
+            </Link>
+          </div>
         </div>
       </section>
 

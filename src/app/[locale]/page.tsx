@@ -11,6 +11,7 @@ import CaseStudies from '@/components/marketing/CaseStudies';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
+import { CtaButton } from '@/components/ui/CtaButton';
 
 export async function generateMetadata({
   params,
@@ -163,24 +164,15 @@ export default async function LandingPage({
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-5 pt-4">
-                <Link
-                  href={`${base}/auth/register`}
-                  id="hero-cta-btn"
-                  className="px-8 py-3.5 bg-[#FDBF1D] text-[#1f1e1d] text-[15px] font-extrabold rounded-lg shadow-[0_4px_0_0_#1f1e1d] border-2 border-[#1f1e1d] hover:bg-[#EAB308] active:translate-y-1 active:shadow-[0_0px_0_0_#1f1e1d] transition-all text-center"
-                >
+                <CtaButton variant="primary" href={`${base}/auth/register`}>
                   {t.hero_cta}
-                </Link>
-                <Link
-                  href={`${base}/pricing`}
-                  className="group flex items-center gap-1 text-[13px] font-medium text-[#6b6760] hover:text-[#1f1e1d] transition-colors py-3.5"
-                >
-                  <span className="underline underline-offset-4 decoration-dotted decoration-[#ada89f] group-hover:decoration-[#1f1e1d]">
-                    {locale === 'tr' ? 'Fiyatları gör' : 'View pricing'}
-                  </span>
-                </Link>
+                </CtaButton>
+                <CtaButton variant="secondary" href={`${base}/pricing`}>
+                  {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
+                </CtaButton>
               </div>
 
-              <p className="text-[12px] text-[#ada89f] font-normal tracking-wide">
+              <p className="text-[12px] text-[#ada89f] font-bold tracking-wide">
                 {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
               </p>
             </div>
@@ -343,24 +335,18 @@ export default async function LandingPage({
 
           {/* Mobile hero CTA repeat */}
           <div className="lg:hidden mt-6 pt-5 border-t border-[#e8e4de]/50 text-center space-y-3">
-            <p className="text-[13px] text-[#6b6760]">
+            <p className="text-[13px] font-bold text-[#6b6760]">
               {locale === 'tr' ? 'Dakikalar içinde kurulun • Hazır olduğunuzda yükseltin' : 'Get up and running in minutes • Upgrade when you\'re ready'}
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                href={`${base}/auth/register`}
-                className="w-full sm:w-auto px-7 py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none text-center"
-              >
-                {locale === 'tr' ? 'Hemen başlayın!' : 'Get started now!'}
-              </Link>
-              <Link
-                href={`${base}/pricing`}
-                className="text-[13px] font-medium text-[#6b6760] underline underline-offset-4 decoration-dotted"
-              >
-                {locale === 'tr' ? 'Fiyatları gör' : 'View pricing'}
-              </Link>
+            <div className="flex flex-col gap-4">
+              <CtaButton variant="primary" href={`${base}/auth/register`}>
+                {locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}
+              </CtaButton>
+              <CtaButton variant="secondary" href={`${base}/pricing`}>
+                {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
+              </CtaButton>
             </div>
-            <p className="text-[11px] text-[#ada89f]">
+            <p className="text-[11px] text-[#ada89f] font-bold">
               {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
             </p>
           </div>
@@ -450,13 +436,10 @@ export default async function LandingPage({
               </p>
             </div>
             <div>
-              <Link 
-                href={`${base}/google-compliance`}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#1f1e1d] font-bold text-[14px] rounded-lg border-2 border-[#1f1e1d] shadow-[4px_4px_0_0_#1f1e1d] hover:translate-y-[-2px] hover:shadow-[6px_6px_0_0_#1f1e1d] transition-all"
-              >
+              <CtaButton variant="secondary" href={`${base}/google-compliance`}>
                 {locale === 'tr' ? 'Detayları Gör' : 'View Details'}
-                <ArrowRight size={16} />
-              </Link>
+                <ArrowRight size={16} className="ml-2" />
+              </CtaButton>
             </div>
           </div>
         </div>
@@ -664,20 +647,13 @@ export default async function LandingPage({
             {t.cta_title_1} <br />
             <span className="text-[#FDBF1D]">{t.cta_title_2}</span>
           </h2>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href={`${base}/auth/register`}
-              id="footer-cta-btn"
-              className="px-8 py-4 bg-[#FDBF1D] text-[#1f1e1d] text-base font-extrabold rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none flex items-center gap-2"
-            >
-              {t.cta_button} <ArrowRight size={18} />
-            </Link>
-            <Link
-              href={`${base}/pricing`}
-              className="text-[13px] font-medium text-[#6b6760] underline underline-offset-4 decoration-dotted hover:text-white transition-colors"
-            >
-              {locale === 'tr' ? 'Fiyatları gör' : 'View pricing'}
-            </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <CtaButton variant="primary" href={`${base}/auth/register`}>
+              {t.cta_button} <ArrowRight size={18} className="ml-2" />
+            </CtaButton>
+            <CtaButton variant="secondary" href={`${base}/pricing`}>
+              {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
+            </CtaButton>
           </div>
         </div>
       </section>
