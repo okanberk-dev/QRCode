@@ -130,6 +130,4 @@ export default async function GoogleCompliancePage({
   );
 }
 
-export function generateStaticParams() {
-  return [{ locale: 'tr' }, { locale: 'en' }];
-}
+// Dynamic page

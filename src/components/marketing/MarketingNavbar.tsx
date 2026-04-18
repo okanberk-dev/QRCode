@@ -11,18 +11,14 @@ interface MarketingNavbarProps {
 export default async function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
   let isLoggedIn = false;
   
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('user_token')?.value;
-    
-    if (token) {
-      const payload = await verifyJwt(token);
-      if (payload && typeof payload.userId === 'string') {
-        isLoggedIn = true;
-      }
+  const cookieStore = await cookies();
+  const token = cookieStore.get('user_token')?.value;
+  
+  if (token) {
+    const payload = await verifyJwt(token);
+    if (payload && typeof payload.userId === 'string') {
+      isLoggedIn = true;
     }
-  } catch (error) {
-    console.error('[MarketingNavbar] Session check failed:', error);
   }
 
   return <MarketingNavbarClient locale={locale} t={t} isLoggedIn={isLoggedIn} />;

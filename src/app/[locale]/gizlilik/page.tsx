@@ -15,8 +15,7 @@ export async function generateMetadata({
   };
 }
 
-export function generateStaticParams() {
-  return [{ locale: 'tr' }, { locale: 'en' }];
+export const dynamic = "force-dynamic";
 }
 
 export default async function PrivacyPage({
