@@ -235,7 +235,9 @@ export default function AdminBlogPage() {
       {/* Blog Posts Table */}
       {loading ? (
         <div className="flex items-center justify-center py-24">
-          <Loader2 size={32} cla      ) : filtered.length === 0 ? (
+          <Loader2 size={32} className="animate-spin text-[#FDBF1D]" />
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-16 text-center space-y-4">
           <div className="w-20 h-20 bg-gray-50 rounded-[28px] flex items-center justify-center mx-auto">
             <BookOpen size={40} className="text-gray-200" />
@@ -334,11 +336,6 @@ export default function AdminBlogPage() {
                     <Trash2 size={18} strokeWidth={2.5} />
                   </button>
                 )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (           )}
               </div>
             </div>
           ))}
