@@ -122,7 +122,9 @@ export default async function PricingPage({
               </div>
               <div className="mb-8 sm:mb-10 pb-8 sm:pb-10 border-b-2 border-[#F7F4F0]">
                 <div className="flex items-end gap-1">
-                  <span className="text-[48px] sm:text-[64px] font-black tracking-tighter leading-none text-[#111827]">₺500</span>
+                  <span className="text-[48px] sm:text-[64px] font-black tracking-tighter leading-none text-[#111827]">
+                    {locale === 'tr' ? '₺500' : '$10'}
+                  </span>
                   <span className="text-[#ada89f] font-black text-[14px] sm:text-[16px] mb-2 uppercase tracking-widest">{t.pricing_monthly_period}</span>
                 </div>
               </div>
@@ -154,7 +156,9 @@ export default async function PricingPage({
               </div>
               <div className="mb-8 sm:mb-10 pb-8 sm:pb-10 border-b-2 border-white/10">
                 <div className="flex items-end gap-1">
-                  <span className="text-[48px] sm:text-[64px] font-black tracking-tighter leading-none text-[#FDBF1D]">₺1.200</span>
+                  <span className="text-[48px] sm:text-[64px] font-black tracking-tighter leading-none text-[#FDBF1D]">
+                    {locale === 'tr' ? '₺1.200' : '$20'}
+                  </span>
                   <span className="text-[#6b6760] font-black text-[14px] sm:text-[16px] mb-2 uppercase tracking-widest">{t.pricing_monthly_period}</span>
                 </div>
               </div>
@@ -187,12 +191,18 @@ export default async function PricingPage({
               <div className="mb-8 sm:mb-10 pb-8 sm:pb-10 border-b-2 border-[#F7F4F0]">
                 <div className="flex flex-col">
                    <div className="flex items-end gap-1">
-                     <span className="text-[48px] sm:text-[64px] font-black tracking-tighter leading-none text-[#111827]">₺416</span>
+                     <span className="text-[48px] sm:text-[64px] font-black tracking-tighter leading-none text-[#111827]">
+                        {locale === 'tr' ? '₺416' : '$7.99'}
+                     </span>
                      <span className="text-[#ada89f] font-black text-[14px] sm:text-[16px] mb-2 uppercase tracking-widest">{t.pricing_monthly_period}</span>
                    </div>
                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-[10px] sm:text-[11px] text-[#ada89f] line-through font-bold">₺500/ay</p>
-                      <p className="text-[10px] sm:text-[11px] text-[#FDBF1D] font-black">₺5.000 / yıl</p>
+                      <p className="text-[10px] sm:text-[11px] text-[#ada89f] line-through font-bold">
+                        {locale === 'tr' ? '₺500/ay' : '$10/mo'}
+                      </p>
+                      <p className="text-[10px] sm:text-[11px] text-[#FDBF1D] font-black">
+                        {locale === 'tr' ? '₺5.000 / yıl' : '$96 / year'}
+                      </p>
                       <span className="text-[9px] sm:text-[10px] text-[#10b981] font-bold">({locale === 'tr' ? '2 ay ücretsiz' : '2 months free'})</span>
                    </div>
                 </div>

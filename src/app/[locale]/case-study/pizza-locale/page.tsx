@@ -89,7 +89,7 @@ export default async function PizzaLocaleCaseStudy({
             </p>
             <div className="flex items-center gap-2 text-[#FDBF1D] font-black uppercase tracking-widest text-[11px] sm:text-[13px]">
                 <MapPin size={14} className="sm:size-[16px]" />
-                İzmir • İstanbul • Ankara • Bursa
+                {locale === 'tr' ? 'İzmir • İstanbul • Ankara • Bursa' : 'London • New York • Berlin • Paris'}
             </div>
           </div>
         </div>
@@ -263,10 +263,10 @@ export default async function PizzaLocaleCaseStudy({
                   <div className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest mb-4">{locale === 'tr' ? 'ZİNCİR YÖNETİMİ' : 'CHAIN MANAGEMENT'}</div>
                   <div className="space-y-4">
                      {[
-                       { name: 'Çeşme', score: '4.9', width: '98%' },
-                       { name: 'Alsancak', score: '4.8', width: '94%' },
-                       { name: 'Bağdat Cad.', score: '4.7', width: '88%' },
-                       { name: 'Bursa', score: '4.9', width: '96%' },
+                       { name: locale === 'tr' ? 'Çeşme' : 'Downtown', score: '4.9', width: '98%' },
+                       { name: locale === 'tr' ? 'Alsancak' : 'Metropolitan', score: '4.8', width: '94%' },
+                       { name: locale === 'tr' ? 'Bağdat Cad.' : 'Waterfront', score: '4.7', width: '88%' },
+                       { name: locale === 'tr' ? 'Bursa' : 'Uptown', score: '4.9', width: '96%' },
                      ].map((item, i) => (
                        <div key={i} className="space-y-1.5">
                           <div className="flex justify-between text-[13px] font-black">
@@ -346,9 +346,9 @@ export default async function PizzaLocaleCaseStudy({
                         </div>
                         <div className="space-y-5 sm:space-y-6">
                             {[
-                                { time: '12:42', msg: locale === 'tr' ? 'Alsancak Şubesi: Yeni 5 Yıldız' : 'Alsancak Branch: New 5 Stars', color: 'text-green-400' },
-                                { time: '12:45', msg: locale === 'tr' ? 'Bursa Şubesi: Operasyonel Geri Bildirim' : 'Bursa Branch: Operational Feedback', color: 'text-[#FDBF1D]' },
-                                { time: '12:50', msg: locale === 'tr' ? 'Çeşme Şubesi: Google Maps Yönlendirme' : 'Cesme Branch: Google Maps Routing', color: 'text-green-400' },
+                                { time: '12:42', msg: locale === 'tr' ? 'Alsancak Şubesi: Yeni 5 Yıldız' : 'Metropolitan Branch: New 5 Stars', color: 'text-green-400' },
+                                { time: '12:45', msg: locale === 'tr' ? 'Bursa Şubesi: Operasyonel Geri Bildirim' : 'Uptown Branch: Operational Feedback', color: 'text-[#FDBF1D]' },
+                                { time: '12:50', msg: locale === 'tr' ? 'Çeşme Şubesi: Google Maps Yönlendirme' : 'Downtown Branch: Google Maps Routing', color: 'text-green-400' },
                             ].map((item, i) => (
                                 <div key={i} className="flex items-start gap-3 sm:gap-4 text-[13px] sm:text-[14px]">
                                     <span className="text-[#ada89f] font-mono">{item.time}</span>
@@ -412,12 +412,102 @@ export default async function PizzaLocaleCaseStudy({
                 </p>
             </div>
             
-            <div className="relative bg-[#FCFBF7] rounded-[32px] sm:rounded-[48px] border-[3px] sm:border-[4px] border-[#1f1e1d] p-3 sm:p-10 shadow-[12px_16px_0_0_#FDBF1D] sm:shadow-[20px_24px_0_0_#FDBF1D] overflow-hidden transform lg:rotate-1">
-                <div className="aspect-video bg-[#111827] rounded-[24px] sm:rounded-[32px] border-2 border-[#1f1e1d] flex items-center justify-center relative">
-                   <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
-                   <div className="z-10 text-center space-y-4 sm:space-y-6">
-                        <BarChart3 size={60} className="sm:size-80 text-[#FDBF1D] mx-auto opacity-50" />
-                        <div className="text-[18px] sm:text-[24px] font-black text-white uppercase tracking-widest">{locale === 'tr' ? 'DASHBOARD ÖNİZLEME' : 'DASHBOARD PREVIEW'}</div>
+            <div className="relative bg-white rounded-[32px] sm:rounded-[48px] border-[3px] sm:border-[4px] border-[#1f1e1d] p-3 sm:p-5 shadow-[12px_16px_0_0_#FDBF1D] sm:shadow-[20px_24px_0_0_#FDBF1D] overflow-hidden">
+                {/* Real-style Dashboard Mockup Container */}
+                <div className="aspect-[16/10] bg-[#FCFBF7] rounded-[24px] sm:rounded-[32px] border-2 border-[#1f1e1d] flex overflow-hidden shadow-inner font-sans">
+                   {/* Mini Sidebar */}
+                   <div className="hidden sm:flex w-16 lg:w-20 bg-[#111827] border-r border-[#1f1e1d]/20 flex-col items-center py-6 gap-6">
+                      <div className="w-10 h-10 rounded-xl bg-[#FDBF1D] flex items-center justify-center font-black text-[#111827]">B</div>
+                      <div className="space-y-4">
+                         {[1, 2, 3, 4].map(i => (
+                           <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center ${i === 1 ? 'bg-[#FDBF1D]/10 text-[#FDBF1D]' : 'text-gray-500'}`}>
+                             {i === 1 ? <TrendingUp size={16} /> : <div className="w-4 h-1 bg-current opacity-20 rounded-full" />}
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+
+                   {/* Main Content Area */}
+                   <div className="flex-1 flex flex-col min-w-0">
+                      {/* Top Header */}
+                      <div className="h-12 sm:h-16 border-b border-[#1f1e1d]/10 bg-white flex items-center justify-between px-6">
+                         <div className="flex items-center gap-2">
+                           <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                           <span className="text-[10px] font-black uppercase tracking-widest text-[#111827]">{locale === 'tr' ? 'CANLI PANEL' : 'LIVE DASHBOARD'}</span>
+                         </div>
+                         <div className="flex gap-1.5">
+                           {[1, 2, 3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-gray-200" />)}
+                         </div>
+                      </div>
+
+                      {/* Viewport content */}
+                      <div className="flex-1 p-4 sm:p-8 space-y-6 sm:space-y-8 overflow-hidden text-left">
+                        {/* Welcome */}
+                        <div className="space-y-1">
+                          <h4 className="text-sm sm:text-xl font-black text-[#111827]">{locale === 'tr' ? 'Hoş Geldin, Mert! 👋' : 'Welcome, James! 👋'}</h4>
+                          <div className="h-1.5 w-24 bg-[#FDBF1D] rounded-full" />
+                        </div>
+
+                        {/* Mini Stats */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                           {[
+                             { label: 'Total', val: '4.8', color: 'bg-emerald-50 text-emerald-600', icon: '★' },
+                             { label: 'New', val: '12', color: 'bg-orange-50 text-orange-600', icon: '◎' },
+                             { label: 'Views', val: '420%', color: 'bg-blue-50 text-blue-600', icon: '◈' },
+                             { label: 'Active', val: '100%', color: 'bg-purple-50 text-purple-600', icon: '✓' }
+                           ].map((s, i) => (
+                             <div key={i} className="bg-white p-3 sm:p-4 rounded-xl border border-[#1f1e1d]/10 shadow-sm flex flex-col gap-1 sm:gap-2">
+                               <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg ${s.color} flex items-center justify-center text-[10px] sm:text-xs font-black`}>{s.icon}</div>
+                               <div className="text-sm sm:text-lg font-black text-[#111827]">{s.val}</div>
+                               <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-[#ada89f]">{s.label}</div>
+                             </div>
+                           ))}
+                        </div>
+
+                        {/* Chart Area mockup */}
+                        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#1f1e1d]/10 shadow-sm space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-[#111827] opacity-40">{locale === 'tr' ? 'MEMNUNİYET TRENDİ' : 'SATISFACTION TREND'}</span>
+                            <div className="flex gap-2">
+                              <div className="w-2 h-2 rounded-full bg-[#10b981]" />
+                              <div className="w-20 h-2 bg-gray-100 rounded-full" />
+                            </div>
+                          </div>
+                          <div className="h-24 sm:h-32 flex items-end gap-1.5 sm:gap-2 pt-4">
+                             {[40, 60, 45, 90, 65, 80, 55, 100, 70, 85, 95, 60].map((h, i) => (
+                               <div key={i} className="flex-1 bg-[#111827]/5 rounded-t-md relative group">
+                                 <div 
+                                   className="absolute bottom-0 w-full bg-[#FDBF1D] rounded-t-md transition-all group-hover:bg-[#ea580c]" 
+                                   style={{ height: `${h}%` }} 
+                                 />
+                               </div>
+                             ))}
+                          </div>
+                        </div>
+
+                        {/* Recent Activity List mockup */}
+                        <div className="space-y-3">
+                           <span className="text-[9px] font-black uppercase tracking-widest text-[#ada89f]">{locale === 'tr' ? 'SON AKTİVİTELER' : 'RECENT ACTIVITIES'}</span>
+                           <div className="space-y-2">
+                             {[
+                               { name: 'John D.', star: 5, t: '2m ago' },
+                               { name: 'Sarah K.', star: 4, t: '5m ago' },
+                               { name: 'Mike R.', star: 5, t: '12m ago' }
+                             ].map((a, i) => (
+                               <div key={i} className="flex items-center justify-between p-3 bg-white/40 rounded-xl border border-dashed border-[#1f1e1d]/10 text-[10px] sm:text-xs font-bold">
+                                 <div className="flex items-center gap-3">
+                                   <div className="w-6 h-6 rounded-full bg-[#FDBF1D] flex items-center justify-center text-[9px] font-black">?</div>
+                                   <span className="text-[#111827]">{a.name}</span>
+                                 </div>
+                                 <div className="flex items-center gap-3">
+                                   <div className="flex text-[#FDBF1D]">{'★'.repeat(a.star)}</div>
+                                   <span className="text-[#ada89f] font-medium">{a.t}</span>
+                                 </div>
+                               </div>
+                             ))}
+                           </div>
+                        </div>
+                      </div>
                    </div>
                 </div>
             </div>
