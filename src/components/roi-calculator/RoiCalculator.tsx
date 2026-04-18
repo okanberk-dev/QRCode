@@ -1,259 +1,304 @@
+// src/components/roi-calculator/RoiCalculator.tsx
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Users, 
-  Star, 
-  MessageSquare, 
-  Target, 
-  Briefcase, 
-  TrendingUp, 
-  ShieldCheck, 
-  MousePointer2 
-} from 'lucide-react';
-import { Translations, Locale } from '@/lib/translations';
-import { 
-  calculateReviewsNeededRange, 
-  calculateVisibilityImpact, 
-  calculateLeadPotential, 
-  sanitizeNumericInput, 
-  formatRange 
+import { useMemo, useState } from 'react';
+import { RoiResultCard } from './RoiResultCard';
+import {
+  clampNumber,
+  computeRoiResults,
+  formatRange,
+  sanitizeNumericInput,
 } from '@/lib/roi-calculator/calculations';
-import { BusinessType } from '@/lib/roi-calculator/constants';
-import { RoiCalculatorInputs, RoiCalculatorResults } from './roi-calculator.types';
-import RoiResultCard from './RoiResultCard';
+import { RATING_MAX, RATING_MIN } from '@/lib/roi-calculator/constants';
+import type { BusinessType, RoiFormValues } from './roi-calculator.types';
 
-interface RoiCalculatorProps {
-  locale: Locale;
-  t: Translations;
+// ─── i18n: if next-intl exists, replace this with useTranslations() ───────────
+const COPY = {
+  tr: {
+    sectionTag:    'ROI Hesaplayıcı',
+    title:         'Yorum akışınız güçlendiğinde potansiyel etkiyi görün',
+    description:   'Mevcut verilerinizi girin, daha düzenli bir geri bildirim ve review request akışının işletmenize nasıl yansıyabileceğini tahmini olarak görün.',
+    disclaimer:    'Bu hesaplama tahmini senaryolar sunar. Sonuçlar sektör, lokasyon, rekabet düzeyi ve müşteri deneyimine göre değişebilir.',
+    cta:           'Planları İncele',
+    fields: {
+      monthlyCustomers: { label: 'Aylık müşteri sayısı',      placeholder: 'Örn. 300'  },
+      currentRating:    { label: 'Mevcut Google puanınız',    placeholder: 'Örn. 4.1'  },
+      currentReviews:   { label: 'Mevcut yorum sayınız',      placeholder: 'Örn. 87'   },
+      targetRating:     { label: 'Hedef puanınız',            placeholder: 'Örn. 4.5'  },
+      businessType:     { label: 'İşletme tipi' },
+    },
+    businessTypes: {
+      restaurant: 'Restoran',
+      cafe:       'Kafe',
+      hotel:      'Otel',
+      clinic:     'Klinik',
+      other:      'Diğer',
+    },
+    results: {
+      reviewsLabel:         'Tahmini Gerekli Yorum',
+      visibilityLabel:      'Görünürlük Potansiyeli',
+      leadLabel:            'Profil Etkileşim Potansiyeli',
+      targetMetMessage:     'Hedefinize ulaştınız! Mevcut puanınız hedef puanınızın üzerinde.',
+      emptyMessage:         'Sonuçları görmek için sol taraftaki alanları doldurun.',
+      reviewsBody:          (range: string) =>
+        `Hedef puana yaklaşmak için yaklaşık ${range} yeni yoruma ihtiyacınız olabilir.`,
+      leadBody:             (range: string) =>
+        `Aylık ek ${range} profil etkileşimi potansiyeli`,
+      visibilityBody:       'Daha güncel yorum akışı ve daha güçlü puan sinyalleri görünürlüğünüzü destekleyebilir.',
+      visibilityBadges:     { low: 'Düşük', medium: 'Orta', strong: 'Güçlü' },
+    },
+  },
+} as const;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const BUSINESS_TYPE_OPTIONS: BusinessType[] = ['restaurant', 'cafe', 'hotel', 'clinic', 'other'];
+
+const DEFAULT_FORM: RoiFormValues = {
+  monthlyCustomers: '',
+  currentRating:    '',
+  currentReviews:   '',
+  targetRating:     '',
+  businessType:     'restaurant',
+};
+
+function isFormFilled(f: RoiFormValues): boolean {
+  return (
+    f.monthlyCustomers.trim() !== '' &&
+    f.currentRating.trim()    !== '' &&
+    f.currentReviews.trim()   !== '' &&
+    f.targetRating.trim()     !== ''
+  );
 }
 
-const RoiCalculator: React.FC<RoiCalculatorProps> = ({ locale, t }) => {
-  const [inputs, setInputs] = useState<RoiCalculatorInputs>({
-    monthlyCustomers: 300,
-    currentRating: 4.1,
-    currentReviews: 87,
-    targetRating: 4.5,
-    businessType: 'restaurant',
-  });
+function parseInputs(f: RoiFormValues) {
+  const monthlyCustomers = Math.max(0, sanitizeNumericInput(f.monthlyCustomers));
+  const currentRating    = clampNumber(sanitizeNumericInput(f.currentRating), RATING_MIN, RATING_MAX);
+  const currentReviews   = Math.max(0, sanitizeNumericInput(f.currentReviews));
+  const targetRating     = clampNumber(sanitizeNumericInput(f.targetRating),  RATING_MIN, RATING_MAX);
+  return { monthlyCustomers, currentRating, currentReviews, targetRating, businessType: f.businessType };
+}
 
-  const [results, setResults] = useState<RoiCalculatorResults | null>(null);
+// ─── Label / Input shared styles ──────────────────────────────────────────────
+const labelCls = 'block text-sm font-medium text-white/70 mb-1.5';
+const inputCls =
+  'w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white ' +
+  'placeholder:text-white/20 focus:border-[#FDBF1D]/60 focus:outline-none focus:ring-2 ' +
+  'focus:ring-[#FDBF1D]/20 transition-colors';
 
-  useEffect(() => {
-    // Perform calculations reactively
-    const reviewsNeeded = calculateReviewsNeededRange(inputs);
-    const visibilityImpact = calculateVisibilityImpact(inputs);
-    const leadPotential = calculateLeadPotential(inputs, visibilityImpact);
+// ─── Component ────────────────────────────────────────────────────────────────
 
-    setResults({
-      reviewsNeeded,
-      visibilityImpact,
-      leadPotential,
-    });
-  }, [inputs]);
+export function RoiCalculator() {
+  const t = COPY.tr; // swap with useTranslations() if next-intl is present
+  const [form, setForm] = useState<RoiFormValues>(DEFAULT_FORM);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setInputs((prev) => ({
-      ...prev,
-      [name]: name === 'businessType' ? value : sanitizeNumericInput(value),
-    }));
-  };
+  const filled  = isFormFilled(form);
+  const inputs  = useMemo(() => parseInputs(form), [form]);
+  const results = useMemo(() => (filled ? computeRoiResults(inputs) : null), [filled, inputs]);
 
-  const getVisibilityLabel = (level: string) => {
-    switch (level) {
-      case 'strong': return t.roi_result_visibility_strong;
-      case 'medium': return t.roi_result_visibility_medium;
-      case 'low': return t.roi_result_visibility_low;
-      default: return '';
-    }
-  };
-
-  const getVisibilityMsg = (level: string) => {
-    return t.roi_result_visibility_msg;
-  };
+  function handleChange(field: keyof RoiFormValues, value: string) {
+    setForm(prev => ({ ...prev, [field]: value }));
+  }
 
   return (
-    <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F7F4F0] relative overflow-hidden" id="roi-calculator">
-      {/* Background Accent */}
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-[#EA580C]/5 rounded-full blur-[120px] translate-y-1/2 translate-x-1/2 -z-0" />
-      
-      <div className="max-w-[1200px] mx-auto relative z-10">
-        <div className="text-center mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border-2 border-[#1f1e1d] rounded-full shadow-[3px_3px_0_0_#1f1e1d] mb-4">
-            <TrendingUp size={14} className="text-[#EA580C]" strokeWidth={3} />
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#1f1e1d]">Business Impact</span>
+    <section
+      aria-labelledby="roi-calculator-title"
+      className="w-full rounded-2xl border border-white/10 bg-[#1F1E1D] p-6 md:p-10"
+    >
+      {/* Header */}
+      <div className="mb-8 max-w-2xl">
+        <span className="mb-3 inline-block rounded-full border border-[#FDBF1D]/30 bg-[#FDBF1D]/10
+                         px-3 py-1 text-xs font-semibold uppercase tracking-widest text-[#FDBF1D]">
+          {t.sectionTag}
+        </span>
+        <h2
+          id="roi-calculator-title"
+          className="mb-3 text-2xl font-bold tracking-tight text-white md:text-3xl"
+        >
+          {t.title}
+        </h2>
+        <p className="text-sm leading-relaxed text-white/50">{t.description}</p>
+      </div>
+
+      {/* Two-column grid */}
+      <div className="grid gap-8 lg:grid-cols-2">
+
+        {/* ── LEFT: Inputs ── */}
+        <div className="flex flex-col gap-5">
+
+          {/* monthlyCustomers */}
+          <div>
+            <label htmlFor="monthlyCustomers" className={labelCls}>
+              {t.fields.monthlyCustomers.label}
+            </label>
+            <input
+              id="monthlyCustomers"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              placeholder={t.fields.monthlyCustomers.placeholder}
+              value={form.monthlyCustomers}
+              onChange={e => handleChange('monthlyCustomers', e.target.value)}
+              className={inputCls}
+              aria-label={t.fields.monthlyCustomers.label}
+            />
           </div>
-          <h2 className="text-[36px] sm:text-[56px] font-black leading-[0.95] tracking-tight text-[#111827]">
-            {t.roi_title}
-          </h2>
-          <p className="text-[16px] sm:text-[18px] text-[#6b6760] font-bold max-w-[650px] mx-auto">
-            {t.roi_desc}
-          </p>
+
+          {/* currentRating */}
+          <div>
+            <label htmlFor="currentRating" className={labelCls}>
+              {t.fields.currentRating.label}
+            </label>
+            <input
+              id="currentRating"
+              type="number"
+              inputMode="decimal"
+              min={RATING_MIN}
+              max={RATING_MAX}
+              step={0.1}
+              placeholder={t.fields.currentRating.placeholder}
+              value={form.currentRating}
+              onChange={e => handleChange('currentRating', e.target.value)}
+              className={inputCls}
+              aria-label={t.fields.currentRating.label}
+            />
+          </div>
+
+          {/* currentReviews */}
+          <div>
+            <label htmlFor="currentReviews" className={labelCls}>
+              {t.fields.currentReviews.label}
+            </label>
+            <input
+              id="currentReviews"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              placeholder={t.fields.currentReviews.placeholder}
+              value={form.currentReviews}
+              onChange={e => handleChange('currentReviews', e.target.value)}
+              className={inputCls}
+              aria-label={t.fields.currentReviews.label}
+            />
+          </div>
+
+          {/* targetRating */}
+          <div>
+            <label htmlFor="targetRating" className={labelCls}>
+              {t.fields.targetRating.label}
+            </label>
+            <input
+              id="targetRating"
+              type="number"
+              inputMode="decimal"
+              min={RATING_MIN}
+              max={RATING_MAX}
+              step={0.1}
+              placeholder={t.fields.targetRating.placeholder}
+              value={form.targetRating}
+              onChange={e => handleChange('targetRating', e.target.value)}
+              className={inputCls}
+              aria-label={t.fields.targetRating.label}
+            />
+          </div>
+
+          {/* businessType */}
+          <div>
+            <label htmlFor="businessType" className={labelCls}>
+              {t.fields.businessType.label}
+            </label>
+            <select
+              id="businessType"
+              value={form.businessType}
+              onChange={e => handleChange('businessType', e.target.value as BusinessType)}
+              className={inputCls}
+              aria-label={t.fields.businessType.label}
+            >
+              {BUSINESS_TYPE_OPTIONS.map(type => (
+                <option key={type} value={type}>
+                  {t.businessTypes[type]}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
-          {/* Left Column: Inputs */}
-          <div className="lg:col-span-5 bg-white p-8 sm:p-10 rounded-[40px] border-[4px] border-[#1f1e1d] shadow-[12px_16px_0_0_#1f1e1d] space-y-8">
-            <div className="space-y-6">
-              {/* Monthly Customers */}
-              <div className="space-y-2">
-                <label className="text-[12px] font-black text-[#1f1e1d] uppercase tracking-widest flex items-center gap-2" htmlFor="monthlyCustomers">
-                  <Users size={14} /> {t.roi_label_monthly_customers}
-                </label>
-                <input
-                  type="number"
-                  id="monthlyCustomers"
-                  name="monthlyCustomers"
-                  value={inputs.monthlyCustomers || ''}
-                  onChange={handleInputChange}
-                  placeholder={t.roi_placeholder_monthly_customers}
-                  className="w-full px-5 py-4 bg-[#F7F4F0] border-[3px] border-[#1f1e1d] rounded-2xl font-black text-[16px] focus:outline-none focus:ring-4 focus:ring-[#FDBF1D]/20 transition-all"
-                />
-              </div>
+        {/* ── RIGHT: Results ── */}
+        <div className="flex flex-col gap-4">
 
-              {/* Current Rating */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[12px] font-black text-[#1f1e1d] uppercase tracking-widest flex items-center gap-2" htmlFor="currentRating">
-                    <Star size={14} /> {t.roi_label_current_rating}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="1"
-                    max="5"
-                    id="currentRating"
-                    name="currentRating"
-                    value={inputs.currentRating || ''}
-                    onChange={handleInputChange}
-                    placeholder={t.roi_placeholder_current_rating}
-                    className="w-full px-5 py-4 bg-[#F7F4F0] border-[3px] border-[#1f1e1d] rounded-2xl font-black text-[16px] focus:outline-none focus:ring-4 focus:ring-[#FDBF1D]/20 transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[12px] font-black text-[#1f1e1d] uppercase tracking-widest flex items-center gap-2" htmlFor="currentReviews">
-                    <MessageSquare size={14} /> {t.roi_label_current_reviews}
-                  </label>
-                  <input
-                    type="number"
-                    id="currentReviews"
-                    name="currentReviews"
-                    value={inputs.currentReviews || ''}
-                    onChange={handleInputChange}
-                    placeholder={t.roi_placeholder_current_reviews}
-                    className="w-full px-5 py-4 bg-[#F7F4F0] border-[3px] border-[#1f1e1d] rounded-2xl font-black text-[16px] focus:outline-none focus:ring-4 focus:ring-[#FDBF1D]/20 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Target Rating */}
-              <div className="space-y-2">
-                <label className="text-[12px] font-black text-[#1f1e1d] uppercase tracking-widest flex items-center gap-2" htmlFor="targetRating">
-                  <Target size={14} /> {t.roi_label_target_rating}
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="1"
-                  max="5"
-                  id="targetRating"
-                  name="targetRating"
-                  value={inputs.targetRating || ''}
-                  onChange={handleInputChange}
-                  placeholder={t.roi_placeholder_target_rating}
-                  className="w-full px-5 py-4 bg-[#F7F4F0] border-[3px] border-[#1f1e1d] rounded-2xl font-black text-[16px] focus:outline-none focus:ring-4 focus:ring-[#FDBF1D]/20 transition-all"
-                />
-              </div>
-
-              {/* Business Type */}
-              <div className="space-y-2">
-                <label className="text-[12px] font-black text-[#1f1e1d] uppercase tracking-widest flex items-center gap-2" htmlFor="businessType">
-                  <Briefcase size={14} /> {t.roi_label_business_type}
-                </label>
-                <select
-                  id="businessType"
-                  name="businessType"
-                  value={inputs.businessType}
-                  onChange={handleInputChange}
-                  className="w-full px-5 py-4 bg-[#FDBF1D] border-[3px] border-[#1f1e1d] rounded-2xl font-black text-[14px] uppercase tracking-widest shadow-[0_4px_0_0_#1f1e1d] focus:outline-none active:translate-y-1 active:shadow-none transition-all cursor-pointer appearance-none"
-                >
-                  <option value="restaurant">{t.roi_opt_restaurant}</option>
-                  <option value="cafe">{t.roi_opt_cafe}</option>
-                  <option value="hotel">{t.roi_opt_hotel}</option>
-                  <option value="clinic">{t.roi_opt_clinic}</option>
-                  <option value="other">{t.roi_opt_other}</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <p className="text-[11px] text-[#ada89f] font-bold leading-relaxed">
-                <ShieldCheck size={14} className="inline mr-1" />
-                {t.roi_disclaimer}
-              </p>
-            </div>
-          </div>
-
-          {/* Right Column: Result Cards */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {results && (
-                <>
-                  <RoiResultCard
-                    title={t.roi_result_reviews_title}
-                    value={results.reviewsNeeded === "TARGET_MET" ? "✓" : formatRange(results.reviewsNeeded.min, results.reviewsNeeded.max)}
-                    msg={results.reviewsNeeded === "TARGET_MET" 
-                      ? t.roi_result_reviews_met 
-                      : t.roi_result_reviews_msg.replace('{range}', formatRange(results.reviewsNeeded.min, results.reviewsNeeded.max))}
-                    icon={MessageSquare}
-                    accentColor="#FDBF1D"
-                  />
-                  
-                  <RoiResultCard
-                    title={t.roi_result_visibility_title}
-                    value={getVisibilityLabel(results.visibilityImpact)}
-                    msg={getVisibilityMsg(results.visibilityImpact)}
-                    icon={TrendingUp}
-                    accentColor="#EA580C"
-                    badge={results.visibilityImpact}
-                  />
-                </>
-              )}
-            </div>
-
+          {/* Reviews needed */}
+          <RoiResultCard
+            label={t.results.reviewsLabel}
+            isEmpty={!results}
+            emptyMessage={t.results.emptyMessage}
+          >
             {results && (
-              <div className="w-full">
-                <RoiResultCard
-                  title={t.roi_result_lead_title}
-                  value={`+${formatRange(results.leadPotential.min, results.leadPotential.max)}`}
-                  msg={t.roi_result_lead_msg.replace('{range}', formatRange(results.leadPotential.min, results.leadPotential.max))}
-                  icon={MousePointer2}
-                  accentColor="#1f1e1d"
-                />
-              </div>
+              results.reviewsNeeded === 'TARGET_MET' ? (
+                <p className="text-sm text-[#FDBF1D]">{t.results.targetMetMessage}</p>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-[#FDBF1D]">
+                    {formatRange(results.reviewsNeeded.min, results.reviewsNeeded.max)}
+                  </p>
+                  <p className="mt-1 text-sm text-white/60">
+                    {t.results.reviewsBody(
+                      formatRange(results.reviewsNeeded.min, results.reviewsNeeded.max),
+                    )}
+                  </p>
+                </>
+              )
             )}
+          </RoiResultCard>
 
-            <div className="mt-4 p-8 bg-[#111827] rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#ea580c] flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative">
-              <div className="absolute top-0 left-0 w-full h-full bg-[#FDBF1D]/5 -z-0" />
-              <div className="relative z-10 space-y-1 text-center sm:text-left">
-                <h4 className="text-white text-[10px] font-black uppercase tracking-[0.3em] opacity-50">Solution</h4>
-                <p className="text-white text-[20px] font-black tracking-tight leading-none">
-                  {locale === 'tr' ? 'Etkiyi Gerçekleştirmeye Başlayın' : 'Start Realizing Potential Impact'}
+          {/* Visibility */}
+          <RoiResultCard
+            label={t.results.visibilityLabel}
+            badge={results ? t.results.visibilityBadges[results.visibilityLevel] : undefined}
+            badgeColor={results?.visibilityLevel === 'strong' ? 'accent' : 'primary'}
+            isEmpty={!results}
+            emptyMessage={t.results.emptyMessage}
+          >
+            {results && (
+              <p className="text-sm text-white/70">{t.results.visibilityBody}</p>
+            )}
+          </RoiResultCard>
+
+          {/* Lead potential */}
+          <RoiResultCard
+            label={t.results.leadLabel}
+            isEmpty={!results}
+            emptyMessage={t.results.emptyMessage}
+          >
+            {results && (
+              <>
+                <p className="text-2xl font-bold text-[#FDBF1D]">
+                  {formatRange(results.leadPotential.min, results.leadPotential.max)}
                 </p>
-              </div>
-              <a
-                href="#pricing"
-                className="relative z-10 px-8 py-4 bg-[#FDBF1D] border-[3px] border-[#1f1e1d] text-[#111827] font-black text-[13px] uppercase tracking-widest rounded-xl shadow-[0_5px_0_0_#ea580c] active:translate-y-[5px] active:shadow-none transition-all whitespace-nowrap"
-              >
-                {t.roi_cta}
-              </a>
-            </div>
-          </div>
+                <p className="mt-1 text-sm text-white/60">
+                  {t.results.leadBody(
+                    formatRange(results.leadPotential.min, results.leadPotential.max),
+                  )}
+                </p>
+              </>
+            )}
+          </RoiResultCard>
+
+          {/* CTA */}
+          <a
+            href="/tr/pricing"
+            className="mt-2 w-full rounded-lg bg-[#FDBF1D] px-5 py-3 text-center text-sm
+                       font-bold text-[#1F1E1D] transition-opacity hover:opacity-90
+                       focus:outline-none focus:ring-2 focus:ring-[#FDBF1D]/50"
+          >
+            {t.cta}
+          </a>
+
+          {/* Disclaimer */}
+          <p className="text-center text-xs leading-relaxed text-white/30">
+            {t.disclaimer}
+          </p>
         </div>
       </div>
     </section>
   );
-};
-
-export default RoiCalculator;
+}

@@ -19,6 +19,11 @@
 
   --color-success: #1e8e3e;
   --color-error: #d93025;
+
+  /* Brand Tokens */
+  --color-brand-dark: #1F1E1D;
+  --color-brand-primary: #FDBF1D;
+  --color-brand-accent: #EA580C;
 }
 
 :root {

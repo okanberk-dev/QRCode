@@ -6,7 +6,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
 import PricingFaq from '@/components/marketing/PricingFaq';
-import RoiCalculator from '@/components/roi-calculator/RoiCalculator';
+import { RoiCalculator } from '@/components/roi-calculator/RoiCalculator';
 
 export async function generateMetadata({
   params,
@@ -101,6 +101,11 @@ export default async function PricingPage({
           </div>
         </div>
       </section>
+
+      {/* ─── ROI Calculator ─── */}
+      <div className="mx-auto mb-20 max-w-5xl px-4">
+        <RoiCalculator />
+      </div>
 
       {/* ─── Pricing Cards (Enriched 3D) ─── */}
       <section className="py-20 sm:py-32 px-5 sm:px-8 relative">
@@ -201,9 +206,6 @@ export default async function PricingPage({
           </p>
         </div>
       </section>
-
-      {/* ─── ROI Calculator ─── */}
-      <RoiCalculator locale={locale} t={t} />
 
       {/* ─── Trusted By (3D Logos) ─── */}
       <section className="py-20 sm:py-24 px-5 sm:px-8 bg-white border-y-[4px] border-[#1f1e1d]">

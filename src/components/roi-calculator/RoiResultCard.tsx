@@ -1,55 +1,54 @@
+// src/components/roi-calculator/RoiResultCard.tsx
 'use client';
 
-import React from 'react';
-import { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 
-interface RoiResultCardProps {
-  title: string;
-  value: string;
-  msg: string;
-  icon: LucideIcon;
-  accentColor?: string;
-  badge?: string;
+interface Props {
+  label:    string;
+  children: ReactNode;
+  badge?:   string;
+  badgeColor?: 'primary' | 'accent';
+  isEmpty?: boolean;
+  emptyMessage?: string;
 }
 
-const RoiResultCard: React.FC<RoiResultCardProps> = ({
-  title,
-  value,
-  msg,
-  icon: Icon,
-  accentColor = '#FDBF1D',
+export function RoiResultCard({
+  label,
+  children,
   badge,
-}) => {
+  badgeColor = 'primary',
+  isEmpty = false,
+  emptyMessage,
+}: Props) {
   return (
-    <div className="bg-white p-6 rounded-[32px] border-[3px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] flex flex-col items-start gap-4 transition-transform hover:-translate-y-1">
-      <div className="flex justify-between items-start w-full">
-        <div 
-          className="p-3 rounded-2xl border-2 border-[#1f1e1d]" 
-          style={{ backgroundColor: accentColor }}
-        >
-          <Icon size={24} className="text-[#1f1e1d]" strokeWidth={2.5} />
-        </div>
+    <div
+      className="rounded-xl border border-white/10 bg-white/5 p-5 flex flex-col gap-3
+                 backdrop-blur-sm transition-all duration-200"
+      role="region"
+      aria-label={label}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold uppercase tracking-widest text-white/40">
+          {label}
+        </span>
         {badge && (
-          <span className="bg-[#1f1e1d] text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide
+              ${badgeColor === 'accent'
+                ? 'bg-[#EA580C]/20 text-[#EA580C]'
+                : 'bg-[#FDBF1D]/20 text-[#FDBF1D]'
+              }`}
+          >
             {badge}
           </span>
         )}
       </div>
 
-      <div className="space-y-1">
-        <h3 className="text-[12px] font-black text-[#6b6760] uppercase tracking-[0.15em]">
-          {title}
-        </h3>
-        <p className="text-[28px] sm:text-[32px] font-black text-[#1f1e1d] leading-none tracking-tighter">
-          {value}
-        </p>
-      </div>
-
-      <p className="text-[14px] text-[#6b6760] font-bold leading-relaxed">
-        {msg}
-      </p>
+      {isEmpty ? (
+        <p className="text-sm text-white/30 italic">{emptyMessage}</p>
+      ) : (
+        <div className="text-white">{children}</div>
+      )}
     </div>
   );
-};
-
-export default RoiResultCard;
+}
