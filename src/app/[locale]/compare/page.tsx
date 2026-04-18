@@ -59,15 +59,15 @@ export default async function ComparisonPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero Section ─── */}
-      <section className="pt-24 pb-16 px-5 sm:px-8 overflow-hidden relative">
+      <section className="pt-20 sm:pt-32 pb-12 px-5 sm:px-8 overflow-hidden relative">
         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#FDBF1D]/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
         <div className="max-w-[1200px] mx-auto text-center relative">
-          <div className="max-w-[800px] mx-auto space-y-8">
-            <h1 className="text-[44px] sm:text-[72px] font-black leading-[0.95] tracking-tight">
-              {t.compare_hero_h1.split(' ').slice(0, -3).join(' ')} <br/>
+          <div className="max-w-[800px] mx-auto space-y-6 sm:space-y-8">
+            <h1 className="text-[34px] sm:text-[72px] font-black leading-[1] sm:leading-[0.95] tracking-tight">
+              {t.compare_hero_h1.split(' ').slice(0, -3).join(' ')} <br className="hidden sm:block"/>
               <span className="text-[#ea580c]">{t.compare_hero_h1.split(' ').slice(-3).join(' ')}</span>
             </h1>
-            <p className="text-[18px] sm:text-[22px] text-[#6b6760] font-bold leading-relaxed">
+            <p className="text-[17px] sm:text-[22px] text-[#6b6760] font-bold leading-relaxed px-2">
               {t.compare_hero_p}
             </p>
           </div>
@@ -75,69 +75,71 @@ export default async function ComparisonPage({
       </section>
 
       {/* ─── Comparison Table ─── */}
-      <section className="py-16 px-5 sm:px-8">
+      <section className="py-12 sm:py-16 px-5 sm:px-8">
         <div className="max-w-[1000px] mx-auto">
-          <div className="bg-white rounded-[40px] border-[4px] border-[#1f1e1d] shadow-[15px_20px_0_0_#1f1e1d] overflow-hidden">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-[#1f1e1d] text-white">
-                  <th className="p-8 text-left text-[14px] font-black uppercase tracking-widest border-b border-white/10">{t.compare_feat_name}</th>
-                  <th className="p-8 text-center text-[14px] font-black uppercase tracking-widest border-b border-white/10 text-[#FDBF1D]">{t.compare_buaze}</th>
-                  <th className="p-8 text-center text-[14px] font-black uppercase tracking-widest border-b border-white/10 hidden sm:table-cell">{t.compare_static}</th>
-                  <th className="p-8 text-center text-[14px] font-black uppercase tracking-widest border-b border-white/10 hidden sm:table-cell">{t.compare_sheet}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#e8e4de]">
-                {rows.map((row, i) => (
-                  <tr key={i} className="group hover:bg-[#FCFBF7] transition-colors">
-                    <td className="p-8 text-[15px] sm:text-[17px] font-black group-hover:pl-10 transition-all">{row.label}</td>
-                    <td className="p-8 text-center"><FeatureIcon status={row.buaze} /></td>
-                    <td className="p-8 text-center hidden sm:table-cell"><FeatureIcon status={row.static} /></td>
-                    <td className="p-8 text-center hidden sm:table-cell"><FeatureIcon status={row.sheet} /></td>
+          <div className="bg-white rounded-[32px] sm:rounded-[40px] border-[3px] sm:border-[4px] border-[#1f1e1d] shadow-[10px_12px_0_0_#1f1e1d] sm:shadow-[15px_20px_0_0_#1f1e1d] overflow-hidden">
+            <div className="overflow-x-auto touch-pan-x">
+              <table className="w-full border-collapse min-w-[640px] sm:min-w-0">
+                <thead>
+                  <tr className="bg-[#1f1e1d] text-white">
+                    <th className="p-5 sm:p-8 text-left text-[11px] sm:text-[14px] font-black uppercase tracking-widest border-b border-white/10">{t.compare_feat_name}</th>
+                    <th className="p-5 sm:p-8 text-center text-[11px] sm:text-[14px] font-black uppercase tracking-widest border-b border-white/10 text-[#FDBF1D]">{t.compare_buaze}</th>
+                    <th className="p-5 sm:p-8 text-center text-[11px] sm:text-[14px] font-black uppercase tracking-widest border-b border-white/10">{t.compare_static}</th>
+                    <th className="p-5 sm:p-8 text-center text-[11px] sm:text-[14px] font-black uppercase tracking-widest border-b border-white/10">{t.compare_sheet}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#e8e4de]">
+                  {rows.map((row, i) => (
+                    <tr key={i} className="group hover:bg-[#FCFBF7] transition-colors">
+                      <td className="p-5 sm:p-8 text-[14px] sm:text-[17px] font-black group-hover:pl-10 transition-all">{row.label}</td>
+                      <td className="p-5 sm:p-8 text-center"><FeatureIcon status={row.buaze} /></td>
+                      <td className="p-5 sm:p-8 text-center"><FeatureIcon status={row.static} /></td>
+                      <td className="p-5 sm:p-8 text-center"><FeatureIcon status={row.sheet} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
           
-          <div className="mt-8 flex justify-center gap-12 text-[12px] font-black text-[#8a847a]">
+          <div className="mt-8 flex flex-wrap justify-center gap-6 sm:gap-12 text-[10px] sm:text-[12px] font-black text-[#8a847a] uppercase tracking-wider">
              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full border-2 border-[#10b981]" /> {t.compare_yes}
+                <div className="w-2.5 h-2.5 rounded-full border-2 border-[#10b981]" /> {t.compare_yes}
              </div>
              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full border-2 border-red-300" /> {t.compare_no}
+                <div className="w-2.5 h-2.5 rounded-full border-2 border-red-300" /> {t.compare_no}
              </div>
              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full border-2 border-[#FDBF1D]" /> {t.compare_limited}
+                <div className="w-2.5 h-2.5 rounded-full border-2 border-[#FDBF1D]" /> {t.compare_limited}
              </div>
           </div>
 
           {/* New Specific VS Links */}
-          <div className="mt-24 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Link href={`${base}/vs/spreadsheet`} className="group p-8 bg-[#F7F4F0] rounded-[32px] border-[3px] border-[#1f1e1d] hover:bg-[#FDBF1D]/10 transition-all hover:-translate-y-2">
+          <div className="mt-20 sm:mt-24 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+            <Link href={`${base}/vs/spreadsheet`} className="group p-6 sm:p-8 bg-[#F7F4F0] rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1f1e1d] hover:bg-[#FDBF1D]/10 transition-all hover:-translate-y-2">
                <div className="flex justify-between items-start mb-6">
-                  <div className="w-12 h-12 bg-white rounded-xl border-2 border-[#1f1e1d] flex items-center justify-center">
-                     <Table size={24} className="text-[#ea580c]" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl border-2 border-[#1f1e1d] flex items-center justify-center">
+                     <Table size={20} className="sm:size-6 text-[#ea580c]" />
                   </div>
-                  <ArrowRight size={24} className="text-[#ada89f] group-hover:text-[#1f1e1d] transition-colors" />
+                  <ArrowRight size={20} className="sm:size-6 text-[#ada89f] group-hover:text-[#1f1e1d] transition-colors" />
                </div>
-               <h3 className="text-[20px] font-black mb-2">{locale === 'tr' ? 'Buaze vs Spreadsheet' : 'Buaze vs Spreadsheet'}</h3>
-               <p className="text-[14px] text-[#6b6760] font-bold leading-relaxed">
+               <h3 className="text-[18px] sm:text-[20px] font-black mb-2 leading-tight">{locale === 'tr' ? 'Buaze vs Spreadsheet' : 'Buaze vs Spreadsheet'}</h3>
+               <p className="text-[13px] sm:text-[14px] text-[#6b6760] font-bold leading-relaxed">
                   {locale === 'tr'
                     ? 'Excel tablolarının operasyonel kör noktalarından kurtulun ve otomasyonun gücünü keşfedin.'
                     : 'Get rid of the operational blind spots of Excel spreadsheets and discover the power of automation.'}
                </p>
             </Link>
 
-            <Link href={`${base}/vs/individual-qr`} className="group p-8 bg-[#F7F4F0] rounded-[32px] border-[3px] border-[#1f1e1d] hover:bg-[#ea580c]/10 transition-all hover:-translate-y-2">
+            <Link href={`${base}/vs/individual-qr`} className="group p-6 sm:p-8 bg-[#F7F4F0] rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1f1e1d] hover:bg-[#ea580c]/10 transition-all hover:-translate-y-2">
                <div className="flex justify-between items-start mb-6">
-                  <div className="w-12 h-12 bg-white rounded-xl border-2 border-[#1f1e1d] flex items-center justify-center">
-                     <Smartphone size={24} className="text-[#6366f1]" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl border-2 border-[#1f1e1d] flex items-center justify-center">
+                     <Smartphone size={20} className="sm:size-6 text-[#6366f1]" />
                   </div>
-                  <ArrowRight size={24} className="text-[#ada89f] group-hover:text-[#1f1e1d] transition-colors" />
+                  <ArrowRight size={20} className="sm:size-6 text-[#ada89f] group-hover:text-[#1f1e1d] transition-colors" />
                </div>
-               <h3 className="text-[20px] font-black mb-2">{locale === 'tr' ? 'Buaze vs Bireysel QR' : 'Buaze vs Individual QR'}</h3>
-               <p className="text-[14px] text-[#6b6760] font-bold leading-relaxed">
+               <h3 className="text-[18px] sm:text-[20px] font-black mb-2 leading-tight">{locale === 'tr' ? 'Buaze vs Bireysel QR' : 'Buaze vs Individual QR'}</h3>
+               <p className="text-[13px] sm:text-[14px] text-[#6b6760] font-bold leading-relaxed">
                   {locale === 'tr'
                     ? 'Statik QR kodların link kısıtlamalarını ve itibar risklerini profesyonel dinamik altyapı ile aşın.'
                     : 'Overcome the link limitations and reputation risks of static QR codes with a professional dynamic infrastructure.'}
@@ -148,19 +150,19 @@ export default async function ComparisonPage({
       </section>
 
       {/* ─── Deeper Dive ─── */}
-      <section className="py-32 px-5 sm:px-8 bg-white">
-        <div className="max-w-[1200px] mx-auto space-y-32">
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-white overflow-hidden">
+        <div className="max-w-[1200px] mx-auto space-y-24 sm:space-y-32">
           
           {/* Section 1 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
-               <div className="w-16 h-16 bg-[#FDBF1D]/10 rounded-2xl flex items-center justify-center border-2 border-[#1f1e1d]">
-                  <Zap size={32} className="text-[#1f1e1d]" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-16 items-center">
+            <div className="space-y-6 sm:space-y-8">
+               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#FDBF1D]/10 rounded-2xl flex items-center justify-center border-2 border-[#1f1e1d]">
+                  <Zap size={28} className="sm:size-8 text-[#1f1e1d]" />
                </div>
-               <h2 className="text-[36px] sm:text-[48px] font-black tracking-tight leading-none">
+               <h2 className="text-[30px] sm:text-[48px] font-black tracking-tight leading-[1.1] sm:leading-none">
                   {locale === 'tr' ? 'Neden Statik QR Kullanmamalısınız?' : 'Why You Shouldn\'t Use Static QR Codes?'}
                </h2>
-               <div className="space-y-4 text-[17px] sm:text-[19px] text-[#6b6760] font-medium leading-relaxed">
+               <div className="space-y-4 text-[16px] sm:text-[19px] text-[#6b6760] font-medium leading-relaxed">
                   <p>
                     {locale === 'tr' 
                       ? 'Ücretsiz oluşturulan statik QR kodların linkini bir kez bastığınızda bir daha değiştiremezsiniz. Menünüz değişirse, Google linkiniz güncellenirse tüm baskı maliyetleriniz çöpe gider.'
@@ -173,30 +175,30 @@ export default async function ComparisonPage({
                   </p>
                </div>
             </div>
-            <div className="bg-[#FCFBF7] rounded-[48px] p-12 border-[3px] border-[#1f1e1d] shadow-[12px_14px_0_0_#FDBF1D]">
+            <div className="bg-[#FCFBF7] rounded-[32px] sm:rounded-[48px] p-8 sm:p-12 border-[2.5px] sm:border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#FDBF1D] sm:shadow-[12px_14px_0_0_#FDBF1D]">
                <div className="space-y-6">
-                  <div className="bg-red-50 p-6 rounded-2xl border-2 border-red-200">
-                     <p className="text-red-600 font-black text-[14px] uppercase tracking-widest">{locale === 'tr' ? 'RİSK: STATİK QR' : 'RISK: STATIC QR'}</p>
-                     <p className="text-red-900 font-bold mt-2">{locale === 'tr' ? 'Geri dönülemez baskı hataları ve veri kaybı.' : 'Irreversible printing errors and data loss.'}</p>
+                  <div className="bg-red-50 p-5 sm:p-6 rounded-2xl border-2 border-red-200">
+                     <p className="text-red-600 font-black text-[12px] sm:text-[14px] uppercase tracking-widest">{locale === 'tr' ? 'RİSK: STATİK QR' : 'RISK: STATIC QR'}</p>
+                     <p className="text-red-900 font-bold mt-2 text-[15px] sm:text-[16px]">{locale === 'tr' ? 'Geri dönülemez baskı hataları ve veri kaybı.' : 'Irreversible printing errors and data loss.'}</p>
                   </div>
-                  <div className="bg-green-50 p-6 rounded-2xl border-2 border-green-200">
-                     <p className="text-green-600 font-black text-[14px] uppercase tracking-widest">{locale === 'tr' ? 'ÇÖZÜM: BUAZE DİNAMİK' : 'SOLUTION: BUAZE DYNAMIC'}</p>
-                     <p className="text-green-900 font-bold mt-2">{locale === 'tr' ? 'Esneklik, takip edilebilirlik ve güven.' : 'Flexibility, traceability, and trust.'}</p>
+                  <div className="bg-green-50 p-5 sm:p-6 rounded-2xl border-2 border-green-200">
+                     <p className="text-green-600 font-black text-[12px] sm:text-[14px] uppercase tracking-widest">{locale === 'tr' ? 'ÇÖZÜM: BUAZE DİNAMİK' : 'SOLUTION: BUAZE DYNAMIC'}</p>
+                     <p className="text-green-900 font-bold mt-2 text-[15px] sm:text-[16px]">{locale === 'tr' ? 'Esneklik, takip edilebilirlik ve güven.' : 'Flexibility, traceability, and trust.'}</p>
                   </div>
                </div>
             </div>
           </div>
 
           {/* Section 2 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="lg:order-2 space-y-8">
-               <div className="w-16 h-16 bg-[#ea580c]/10 rounded-2xl flex items-center justify-center border-2 border-[#1f1e1d]">
-                  <BarChart3 size={32} className="text-[#ea580c]" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-16 items-center">
+            <div className="lg:order-2 space-y-6 sm:space-y-8">
+               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#ea580c]/10 rounded-2xl flex items-center justify-center border-2 border-[#1f1e1d]">
+                  <BarChart3 size={28} className="sm:size-8 text-[#ea580c]" />
                </div>
-               <h2 className="text-[36px] sm:text-[48px] font-black tracking-tight leading-none">
+               <h2 className="text-[30px] sm:text-[48px] font-black tracking-tight leading-[1.1] sm:leading-none">
                   {locale === 'tr' ? 'Excel Tablolarının Gizli Maliyeti' : 'The Hidden Cost of Excel Tables'}
                </h2>
-               <div className="space-y-4 text-[17px] sm:text-[19px] text-[#6b6760] font-medium leading-relaxed">
+               <div className="space-y-4 text-[16px] sm:text-[19px] text-[#6b6760] font-medium leading-relaxed">
                   <p>
                     {locale === 'tr' 
                       ? 'Manuel veri girişi zamanınızı çalar. Bir müşteriniz olumsuz bir deneyim yaşadığında, bunu bir Excel tablosunda 3 gün sonra görmek o müşteriyi çoktan kaybettiğiniz anlamına gelir.'
@@ -210,17 +212,17 @@ export default async function ComparisonPage({
                </div>
             </div>
             <div className="lg:order-1 relative">
-                <div className="absolute inset-0 bg-[#ea580c]/5 rounded-[48px] translate-x-4 translate-y-4 -z-10" />
-                <div className="bg-[#1f1e1d] rounded-[48px] p-12 text-white border-[3px] border-[#1f1e1d]">
-                   <p className="text-[12px] font-black text-[#FDBF1D] uppercase tracking-[0.2em] mb-8">{locale === 'tr' ? 'OPERASYONEL FARK' : 'OPERATIONAL DIFFERENCE'}</p>
-                   <div className="space-y-8">
+                <div className="absolute inset-0 bg-[#ea580c]/5 rounded-[32px] sm:rounded-[48px] translate-x-3 translate-y-3 sm:translate-x-4 sm:translate-y-4 -z-10" />
+                <div className="bg-[#1f1e1d] rounded-[32px] sm:rounded-[48px] p-8 sm:p-12 text-white border-[3px] border-[#1f1e1d]">
+                   <p className="text-[11px] sm:text-[12px] font-black text-[#FDBF1D] uppercase tracking-[0.2em] mb-6 sm:mb-8">{locale === 'tr' ? 'OPERASYONEL FARK' : 'OPERATIONAL DIFFERENCE'}</p>
+                   <div className="space-y-6 sm:space-y-8">
                       <div className="flex items-center gap-4">
                          <div className="w-2 h-2 rounded-full bg-red-400" />
-                         <span className="text-[#ada89f] font-medium">{locale === 'tr' ? 'Excel: Ortalama Reaksiyon - 72 Saat' : 'Excel: Average Reaction - 72 Hours'}</span>
+                         <span className="text-[#ada89f] font-medium text-[14px] sm:text-[16px]">{locale === 'tr' ? 'Excel: Ortalama Reaksiyon - 72 Saat' : 'Excel: Average Reaction - 72 Hours'}</span>
                       </div>
                       <div className="flex items-center gap-4">
                          <div className="w-2 h-2 rounded-full bg-[#10b981]" />
-                         <span className="text-white font-black">{locale === 'tr' ? 'Buaze: Ortalama Reaksiyon - 4 Dakika' : 'Buaze: Average Reaction - 4 Minutes'}</span>
+                         <span className="text-white font-black text-[14px] sm:text-[16px]">{locale === 'tr' ? 'Buaze: Ortalama Reaksiyon - 4 Dakika' : 'Buaze: Average Reaction - 4 Minutes'}</span>
                       </div>
                    </div>
                 </div>
@@ -231,15 +233,15 @@ export default async function ComparisonPage({
       </section>
 
       {/* ─── Final CTA ─── */}
-      <section className="py-32 px-5 sm:px-8 bg-[#F7F4F0] border-t border-[#e8e4de]">
-        <div className="max-w-[800px] mx-auto text-center space-y-12">
-            <h2 className="text-[36px] sm:text-[56px] font-black tracking-tight leading-none">
+      <section className="py-24 sm:py-32 px-5 sm:px-8 bg-[#F7F4F0] border-t border-[#e8e4de]">
+        <div className="max-w-[800px] mx-auto text-center space-y-10 sm:space-y-12">
+            <h2 className="text-[32px] sm:text-[56px] font-black tracking-tight leading-[1.1] sm:leading-none">
               {locale === 'tr' ? 'Profesyonel İtibar Yönetimine Geçin' : 'Switch to Professional Reputation Management'}
             </h2>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-6">
               <Link
                 href={`${base}/auth/register`}
-                className="px-10 py-5 bg-[#FDBF1D] text-[#1f1e1d] text-[18px] font-black rounded-2xl border-[4px] border-[#1f1e1d] shadow-[0_8px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[8px] active:shadow-none uppercase tracking-wider"
+                className="w-full sm:w-auto px-10 py-5 bg-[#FDBF1D] text-[#1f1e1d] text-[17px] sm:text-[18px] font-black rounded-2xl border-[4.5px] border-[#1f1e1d] shadow-[0_6px_0_0_#1f1e1d] hover:bg-[#EAB308] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-wider"
               >
                 {t.hero_cta}
               </Link>
@@ -248,7 +250,7 @@ export default async function ComparisonPage({
                 className="group flex items-center gap-2 text-[15px] font-black text-[#6b6760] hover:text-[#1f1e1d] transition-colors"
               >
                 <span>{locale === 'tr' ? 'Fiyatlandırmayı İncele' : 'Explore Pricing'}</span>
-                <ArrowRight size={20} />
+                <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
         </div>

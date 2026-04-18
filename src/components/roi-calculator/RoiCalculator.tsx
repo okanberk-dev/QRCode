@@ -121,36 +121,36 @@ export function RoiCalculator() {
       className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden scroll-mt-20"
     >
       {/* Section header — full width */}
-      <div className="px-6 pt-8 pb-6 border-b border-gray-100 md:px-10">
+      <div className="px-5 sm:px-8 pt-8 pb-6 border-b border-gray-100 md:px-10">
         <div className="flex items-center gap-2 mb-3">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FDBF1D]/15
-                           border border-[#FDBF1D]/30 px-3 py-1 text-xs font-semibold
+                           border border-[#FDBF1D]/30 px-3 py-1 text-[10px] font-black
                            uppercase tracking-widest text-[#B38A00]">
-            <span aria-hidden="true">◈</span>
+            <span aria-hidden="true" className="text-[8px]">◈</span>
             {t.sectionTag}
           </span>
         </div>
         <h2
           id="roi-calc-title"
-          className="text-xl font-bold text-gray-900 md:text-2xl max-w-xl"
+          className="text-[22px] sm:text-2xl font-black text-[#1F1E1D] tracking-tight leading-tight"
         >
           {t.title}
         </h2>
-        <p className="mt-2 text-sm text-gray-500 max-w-lg leading-relaxed">
+        <p className="mt-3 text-[14px] text-[#6b6760] font-medium max-w-lg leading-relaxed">
           {t.description}
         </p>
       </div>
 
       {/* Two-column body */}
-      <div className="grid md:grid-cols-[5fr_7fr]">
+      <div className="grid grid-cols-1 lg:grid-cols-[5fr_7fr]">
 
         {/* LEFT: Inputs */}
-        <div className="px-6 py-7 border-b border-gray-100 md:border-b-0 md:border-r md:px-10">
-          <p className="mb-5 text-xs font-semibold uppercase tracking-widest text-gray-400">
+        <div className="px-5 sm:px-8 py-8 border-b border-gray-100 lg:border-b-0 lg:border-r md:px-10">
+          <p className="mb-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
             {t.inputsSectionLabel}
           </p>
 
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-6">
             {/* monthlyCustomers */}
             <InputField
               id="monthlyCustomers"
@@ -164,7 +164,7 @@ export function RoiCalculator() {
               min="0"
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* currentRating */}
               <InputField
                 id="currentRating"
@@ -210,7 +210,7 @@ export function RoiCalculator() {
             <div>
               <label
                 htmlFor="businessType"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
+                className="block text-sm font-bold text-[#1F1E1D] mb-1.5"
               >
                 {t.fields.businessType.label}
               </label>
@@ -219,9 +219,15 @@ export function RoiCalculator() {
                 value={form.businessType}
                 onChange={e => handleChange('businessType', e.target.value as BusinessType)}
                 aria-label={t.fields.businessType.label}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5
-                           text-sm text-gray-900 focus:border-[#FDBF1D] focus:outline-none
-                           focus:ring-2 focus:ring-[#FDBF1D]/30 transition-colors cursor-pointer"
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3
+                           text-sm text-[#1F1E1D] font-bold focus:border-[#FDBF1D] focus:outline-none
+                           focus:ring-4 focus:ring-[#FDBF1D]/10 transition-all cursor-pointer appearance-none"
+                style={{ 
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b6760'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 1rem center',
+                  backgroundSize: '1.25rem'
+                }}
               >
                 {BUSINESS_TYPE_OPTIONS.map(type => (
                   <option key={type} value={type}>
@@ -234,11 +240,11 @@ export function RoiCalculator() {
         </div>
 
         {/* RIGHT: Results */}
-        <div className="px-6 py-7 bg-gray-50/70 md:px-10 flex flex-col gap-4">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-400">
+        <div className="px-5 sm:px-8 py-8 bg-[#F7F4F0]/50 lg:px-10 flex flex-col gap-5">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
             {t.resultsSectionLabel}
           </p>
-
+ 
           {/* Reviews needed */}
           <ResultCard
             label={t.results.reviewsLabel}
@@ -248,28 +254,30 @@ export function RoiCalculator() {
           >
             {results && (
               results.reviewsNeeded === 'TARGET_MET' ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">✓</span>
-                  <p className="text-sm font-medium text-emerald-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center flex-shrink-0">
+                    <span className="text-emerald-600 text-[18px]">✓</span>
+                  </div>
+                  <p className="text-[14px] font-bold text-emerald-700 leading-snug">
                     {t.results.targetMetMessage}
                   </p>
                 </div>
               ) : (
-                <>
-                  <p className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+                <div className="flex flex-col gap-1">
+                  <p className="text-[28px] sm:text-[34px] font-black text-[#1F1E1D] tracking-tighter leading-none">
                     {formatRange(results.reviewsNeeded.min, results.reviewsNeeded.max)}
-                    <span className="ml-1.5 text-base font-medium text-gray-400">yorum</span>
+                    <span className="ml-2 text-base font-bold text-gray-400">{locale === 'tr' ? 'yorum' : 'reviews'}</span>
                   </p>
-                  <p className="mt-1 text-xs text-gray-500 leading-relaxed">
+                  <p className="text-[12px] text-[#6b6760] font-medium leading-relaxed">
                     {t.results.reviewsBody(
                       formatRange(results.reviewsNeeded.min, results.reviewsNeeded.max),
                     )}
                   </p>
-                </>
+                </div>
               )
             )}
           </ResultCard>
-
+ 
           {/* Visibility */}
           <ResultCard
             label={t.results.visibilityLabel}
@@ -280,12 +288,12 @@ export function RoiCalculator() {
             emptyMessage={t.results.emptyMessage}
           >
             {results && (
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-[12px] text-[#6b6760] font-medium leading-relaxed">
                 {t.results.visibilityBody}
               </p>
             )}
           </ResultCard>
-
+ 
           {/* Lead potential */}
           <ResultCard
             label={t.results.leadLabel}
@@ -294,35 +302,36 @@ export function RoiCalculator() {
             emptyMessage={t.results.emptyMessage}
           >
             {results && (
-              <>
-                <p className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+              <div className="flex flex-col gap-1">
+                <p className="text-[28px] sm:text-[34px] font-black text-[#1F1E1D] tracking-tighter leading-none">
                   {formatRange(results.leadPotential.min, results.leadPotential.max)}
-                  <span className="ml-1.5 text-base font-medium text-gray-400">
-                    etkileşim/ay
+                  <span className="ml-2 text-base font-bold text-gray-400">
+                    {locale === 'tr' ? 'etkileşim/ay' : 'leads/mo'}
                   </span>
                 </p>
-                <p className="mt-1 text-xs text-gray-500 leading-relaxed">
+                <p className="text-[12px] text-[#6b6760] font-medium leading-relaxed">
                   {t.results.leadBody(
                     formatRange(results.leadPotential.min, results.leadPotential.max),
                   )}
                 </p>
-              </>
+              </div>
             )}
           </ResultCard>
-
+ 
           {/* CTA */}
-          <a
-            href="/tr/pricing#plans"
-            className="mt-1 w-full rounded-xl bg-[#1F1E1D] px-5 py-3.5 text-center
-                       text-sm font-bold text-[#FDBF1D] transition-all hover:bg-[#2d2c2b]
-                       focus:outline-none focus:ring-2 focus:ring-[#FDBF1D]/40
-                       active:scale-[0.98]"
-          >
-            {t.cta} →
-          </a>
-
+          <div className="pt-2">
+            <a
+              href={`/${locale}/pricing#plans`}
+              className="group w-full rounded-xl bg-[#1F1E1D] px-6 py-4 text-center
+                         text-[15px] font-black text-[#FDBF1D] transition-all flex items-center justify-center gap-2
+                         hover:bg-[#2d2c2b] shadow-[0_4px_0_0_#000] active:translate-y-[2px] active:shadow-none"
+            >
+              {t.cta} <span className="transition-transform group-hover:translate-x-1">→</span>
+            </a>
+          </div>
+ 
           {/* Disclaimer */}
-          <p className="text-center text-[11px] leading-relaxed text-gray-400 px-2">
+          <p className="text-center text-[10px] font-medium leading-relaxed text-gray-400 px-4 mt-1">
             {t.disclaimer}
           </p>
         </div>
