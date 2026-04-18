@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { BadgeCheck, BarChart3, TrendingUp, Users, ArrowRight, Quote, Zap, Building2, MapPin } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
+
+export const dynamic = 'force-static';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';

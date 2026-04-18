@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Target, Eye, ShieldCheck, Heart, Users, Zap } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+
+export const dynamic = 'force-static';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';

@@ -13,6 +13,8 @@ import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
 import { CtaButton } from '@/components/ui/CtaButton';
 
+export const dynamic = 'force-static';
+
 export async function generateMetadata({
   params,
 }: {
