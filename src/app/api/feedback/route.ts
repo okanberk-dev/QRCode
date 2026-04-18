@@ -4,6 +4,8 @@ import { sendFeedbackNotification } from '@/lib/email';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/validations';
+import { cacheInvalidatePrefix } from '@/lib/cache';
+import { resolveFormConfig } from '@/lib/form-config';
 
 export async function POST(req: NextRequest) {
   try {
@@ -40,6 +42,7 @@ export async function POST(req: NextRequest) {
     let restaurantId: string | null = null;
     let notificationEmail: string | null = null;
     let restaurantName: string = 'Restoran';
+    let formConfigRaw: string | null = null;
 
     if (restaurantSlug) {
       const restaurant = await prisma.restaurant.findUnique({
@@ -49,6 +52,26 @@ export async function POST(req: NextRequest) {
         restaurantId = restaurant.id;
         notificationEmail = restaurant.notificationEmail;
         restaurantName = restaurant.name;
+        formConfigRaw = restaurant.formConfig;
+      }
+    }
+
+    // Enforce per-restaurant form config. The "High Rating Redirect" synthetic
+    // submission bypasses required-field checks since it's a system event.
+    const isHighRatingRedirect = comment === 'High Rating Redirect';
+    if (!isHighRatingRedirect) {
+      const cfg = resolveFormConfig(formConfigRaw);
+      if (cfg.comment.required && !sanitizeText(comment, 2000)) {
+        return NextResponse.json({ error: 'Yorum zorunludur' }, { status: 400 });
+      }
+      if (cfg.name.required && !sanitizeText(name, 100)) {
+        return NextResponse.json({ error: 'İsim zorunludur' }, { status: 400 });
+      }
+      if (cfg.email.required && !sanitizeText(email, 100)) {
+        return NextResponse.json({ error: 'E-posta zorunludur' }, { status: 400 });
+      }
+      if (cfg.phone.required && !sanitizeText(phone, 20)) {
+        return NextResponse.json({ error: 'Telefon zorunludur' }, { status: 400 });
       }
     }
 
@@ -75,6 +98,10 @@ export async function POST(req: NextRequest) {
         atmosphereRating: aspects?.atmosphere ? Number(aspects.atmosphere) : null,
       },
     });
+
+    // Invalidate analytics cache — scoped keys may include this restaurant,
+    // and we can't cheaply know which. Prefix-flush is fine with 5-min TTL.
+    void cacheInvalidatePrefix('stats:v1:').catch(() => {});
 
     // Send email for 1, 2, 3 stars
     if (rating <= 3) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
+import { serializeFormConfig, type FormConfig } from '@/lib/form-config';
 
 // GET /api/restaurants/[id]
 export async function GET(
@@ -59,7 +60,7 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, isActive } = body;
+    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, isActive, formConfig } = body;
 
     // Validate slug if provided
     if (slug) {
@@ -102,6 +103,9 @@ export async function PUT(
         ...(notificationEmail !== undefined && { notificationEmail: notificationEmail || null }),
         ...(primaryColor !== undefined && { primaryColor }),
         ...(isActive !== undefined && { isActive }),
+        ...(formConfig !== undefined && {
+          formConfig: serializeFormConfig(formConfig as FormConfig | null),
+        }),
       },
     });
 

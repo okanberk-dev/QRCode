@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { cacheOrFetch } from '@/lib/cache';
+
+// 5-minute TTL — dashboard analytics tolerate brief staleness and the
+// underlying aggregate queries are expensive (multiple groupBy + 7-day
+// trend loop). POST /api/feedback invalidates the scope on write.
+const STATS_TTL_SECONDS = 300;
 
 export async function GET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
@@ -49,8 +55,18 @@ export async function GET(req: NextRequest) {
     // Today filter
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-    // Basic stats
-    const totalCount = await prisma.feedback.count({ where: dateFilter });
+    // ─── Cache key ───
+    // Key includes the caller scope so data never leaks between actors.
+    // superadmin with "all" shares one key; everyone else is scoped.
+    const scopeKey = typeof dateFilter.restaurantId === 'string'
+      ? `r:${dateFilter.restaurantId}`
+      : dateFilter.restaurantId?.in
+        ? `rs:${[...dateFilter.restaurantId.in].sort().join(',')}`
+        : 'all';
+    const cacheKey = `stats:v1:${actor.role}:${scopeKey}:${daysParam || 'all'}`;
+
+    const payload = await cacheOrFetch(cacheKey, STATS_TTL_SECONDS, async () => {
+      const totalCount = await prisma.feedback.count({ where: dateFilter });
     const todayCount = await prisma.feedback.count({ where: { ...dateFilter, createdAt: { gte: startOfToday } } });
     const lowRatingCount = await prisma.feedback.count({ where: { ...dateFilter, rating: { lte: 3 } } });
     const googleRedirectsCount = await prisma.feedback.count({
@@ -276,19 +292,22 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.value - a.value)
       .slice(0, 30);
 
-    return NextResponse.json({
-      totalCount,
-      todayCount,
-      avgRating,
-      lowRatingCount,
-      googleRedirectsCount,
-      distribution,
-      trends, // Detailed trend (count + rating)
-      dayDistribution, // Distribution by day of week
-      wordCloud,
-      aspects, // Food / Service / Atmosphere breakdown
-      googleConversion, // Google review conversion funnel + per-restaurant breakdown
+      return {
+        totalCount,
+        todayCount,
+        avgRating,
+        lowRatingCount,
+        googleRedirectsCount,
+        distribution,
+        trends,
+        dayDistribution,
+        wordCloud,
+        aspects,
+        googleConversion,
+      };
     });
+
+    return NextResponse.json(payload);
   } catch (error) {
     console.error('Failed to fetch stats:', error);
     return NextResponse.json({ error: 'İstatistikler çekilemedi' }, { status: 500 });

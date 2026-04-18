@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
         phone: restaurant.phone,
         googlePlaceId: restaurant.googlePlaceId,
         primaryColor: restaurant.primaryColor,
+        formConfig: restaurant.formConfig,
         isActive: restaurant.isActive,
       });
     } catch (error) {

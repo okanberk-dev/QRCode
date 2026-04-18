@@ -3,7 +3,26 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, ExternalLink, Loader2, Mail, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Loader2, Mail, Save, Trash2, SlidersHorizontal } from 'lucide-react';
+import {
+  DEFAULT_FORM_CONFIG,
+  FORM_FIELD_KEYS,
+  resolveFormConfig,
+  type FormFieldKey,
+} from '@/lib/form-config';
+
+type FieldRow = { enabled: boolean; required: boolean };
+type FormConfigState = Record<FormFieldKey, FieldRow>;
+
+const FIELD_LABELS: Record<FormFieldKey, { tr: string; en: string; hint?: { tr: string; en: string } }> = {
+  comment:     { tr: 'Yorum', en: 'Comment', hint: { tr: 'Serbest metin alanı (her zaman görünür)', en: 'Free-text field (always shown)' } },
+  name:        { tr: 'İsim', en: 'Name' },
+  email:       { tr: 'E-posta', en: 'Email' },
+  phone:       { tr: 'Telefon', en: 'Phone' },
+  serviceType: { tr: 'Servis Tipi', en: 'Service Type', hint: { tr: 'Salon / Paket / Kurye', en: 'Dine-in / Takeaway / Delivery' } },
+  aspects:     { tr: 'Detaylı Puanlar', en: 'Aspect Ratings', hint: { tr: 'Yemek • Servis • Atmosfer', en: 'Food • Service • Atmosphere' } },
+  marketing:   { tr: 'Pazarlama Onayı', en: 'Marketing Consent', hint: { tr: 'Ticari elektronik ileti onayı', en: 'Marketing email opt-in' } },
+};
 
 export default function DashboardRestaurantDetailPage() {
   const params = useParams();
@@ -28,6 +47,8 @@ export default function DashboardRestaurantDetailPage() {
     isActive: true,
   });
 
+  const [fieldConfig, setFieldConfig] = useState<FormConfigState>(() => ({ ...DEFAULT_FORM_CONFIG }));
+
   useEffect(() => {
     const fetchRestaurant = async () => {
       try {
@@ -46,6 +67,7 @@ export default function DashboardRestaurantDetailPage() {
           primaryColor: data.primaryColor || '#1a73e8',
           isActive: data.isActive ?? true,
         });
+        setFieldConfig(resolveFormConfig(data.formConfig ?? null));
       } catch (fetchError) {
         console.error(fetchError);
       } finally {
@@ -66,7 +88,7 @@ export default function DashboardRestaurantDetailPage() {
       const response = await fetch(`/api/restaurants/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, formConfig: fieldConfig }),
       });
 
       const data = await response.json();
@@ -250,6 +272,80 @@ export default function DashboardRestaurantDetailPage() {
                 className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
               />
             </label>
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+          <div className="mb-2 flex items-center gap-3">
+            <SlidersHorizontal size={18} strokeWidth={2.75} className="text-[#111827]" />
+            <h2 className="text-lg font-black text-[#111827]">
+              {locale === 'tr' ? 'Geri Bildirim Formu Alanları' : 'Feedback Form Fields'}
+            </h2>
+          </div>
+          <p className="mb-6 text-xs font-bold text-[#6b6760]">
+            {locale === 'tr'
+              ? 'Müşteri formunuzda hangi alanların görüneceğini ve zorunlu olacağını seçin.'
+              : 'Choose which fields appear on your customer form and whether they are required.'}
+          </p>
+
+          <div className="space-y-3">
+            {FORM_FIELD_KEYS.map((key) => {
+              const row = fieldConfig[key];
+              const labels = FIELD_LABELS[key];
+              const label = locale === 'tr' ? labels.tr : labels.en;
+              const hint = labels.hint ? (locale === 'tr' ? labels.hint.tr : labels.hint.en) : null;
+              const isCommentRow = key === 'comment';
+
+              return (
+                <div
+                  key={key}
+                  className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-[#FCFBF7] p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <div className="text-sm font-black text-[#111827]">{label}</div>
+                    {hint && <div className="text-[11px] font-bold text-[#6b6760]">{hint}</div>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isCommentRow}
+                      onClick={() =>
+                        setFieldConfig((prev) => ({
+                          ...prev,
+                          [key]: { ...prev[key], enabled: !prev[key].enabled },
+                        }))
+                      }
+                      className={`rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-wider transition-all ${
+                        row.enabled
+                          ? 'bg-[#111827] text-white'
+                          : 'border border-gray-200 bg-white text-[#6b6760]'
+                      } ${isCommentRow ? 'cursor-not-allowed opacity-70' : ''}`}
+                    >
+                      {row.enabled
+                        ? locale === 'tr' ? 'Açık' : 'On'
+                        : locale === 'tr' ? 'Kapalı' : 'Off'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!row.enabled}
+                      onClick={() =>
+                        setFieldConfig((prev) => ({
+                          ...prev,
+                          [key]: { ...prev[key], required: !prev[key].required },
+                        }))
+                      }
+                      className={`rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-wider transition-all ${
+                        row.required && row.enabled
+                          ? 'bg-red-500 text-white'
+                          : 'border border-gray-200 bg-white text-[#6b6760]'
+                      } ${!row.enabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                    >
+                      {locale === 'tr' ? 'Zorunlu' : 'Required'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

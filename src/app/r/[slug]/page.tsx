@@ -18,6 +18,7 @@ interface RestaurantData {
   phone: string | null;
   googlePlaceId: string | null;
   primaryColor: string;
+  formConfig: string | null;
   isActive: boolean;
 }
 
@@ -214,12 +215,13 @@ function SlugContent() {
             <div className="mb-6 scale-90 -mt-2">
               <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
             </div>
-            <FeedbackForm 
+            <FeedbackForm
               ref={formRef}
-              rating={rating} 
+              rating={rating}
               onSuccess={() => setFormSubmitted(true)}
               restaurantSlug={slug}
               restaurantName={restaurant.name}
+              formConfig={restaurant.formConfig}
               t={t}
             />
           </div>
