@@ -104,7 +104,7 @@ export default async function ContactPage({
               
               <div className="flex items-center gap-4 mb-6 sm:mb-8 relative z-10">
                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#ea580c] border-2 border-[#1f1e1d] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-[3px_3px_0_0_#000] sm:shadow-[4px_4px_0_0_#000]">
-                    <ShieldCheck className="text-white" size={24} sm:size={32} strokeWidth={2.5} />
+                    <ShieldCheck className="text-white w-6 h-6 sm:w-8 sm:h-8" strokeWidth={2.5} />
                  </div>
                  <h4 className="text-[22px] sm:text-[32px] font-black tracking-tight">{locale === 'tr' ? 'Hızlı Destek Sözü' : 'Support Promise'}</h4>
               </div>
