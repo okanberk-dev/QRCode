@@ -11,6 +11,7 @@ interface MarketingFooterProps {
     footer_contact: string;
     footer_terms: string;
     footer_privacy: string;
+    footer_google_compliance: string;
     footer_cookie: string;
     footer_kvkk: string;
     footer_copyright: string;
@@ -62,6 +63,7 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
             <ul className="space-y-3 text-[13px] font-medium text-[#6b6760]">
               <li><Link href={`${base}/terms`} className="hover:text-white transition-colors">{t.footer_terms}</Link></li>
               <li><Link href={`${base}/privacy`} className="hover:text-white transition-colors">{t.footer_privacy}</Link></li>
+              <li><Link href={`${base}/google-compliance`} className="hover:text-white transition-colors">{t.footer_google_compliance}</Link></li>
               <li><Link href={`${base}/cookie`} className="hover:text-white transition-colors">{t.footer_cookie}</Link></li>
               {locale === 'tr' && (
                 <li><Link href={`${base}/kvkk`} className="hover:text-white transition-colors">{t.footer_kvkk}</Link></li>

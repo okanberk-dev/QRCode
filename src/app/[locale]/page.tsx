@@ -432,6 +432,35 @@ export default async function LandingPage({
         </div>
       </section>
 
+      {/* ═══════ Google Compliance Trust Section ═══════ */}
+      <section className="py-12 sm:py-16 px-5 sm:px-8">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="bg-white border-[2.5px] border-[#1f1e1d] rounded-[24px] p-6 sm:p-10 shadow-[8px_10px_0_0_#FDBF1D] flex flex-col md:flex-row items-center gap-8 justify-between">
+            <div className="space-y-4 max-w-[650px]">
+              <div className="inline-flex items-center gap-2 bg-[#FDBF1D] text-[#1f1e1d] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border-2 border-[#1f1e1d]">
+                <ShieldCheck size={14} />
+                {t.google_compliance_badge}
+              </div>
+              <h2 className="text-[24px] sm:text-[32px] font-extrabold text-[#1f1e1d] leading-tight">
+                {t.google_compliance_home_title}
+              </h2>
+              <p className="text-[14px] sm:text-[15px] text-[#6b6760] font-medium leading-relaxed">
+                {t.google_compliance_home_desc}
+              </p>
+            </div>
+            <div>
+              <Link 
+                href={`${base}/google-compliance`}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#1f1e1d] font-bold text-[14px] rounded-lg border-2 border-[#1f1e1d] shadow-[4px_4px_0_0_#1f1e1d] hover:translate-y-[-2px] hover:shadow-[6px_6px_0_0_#1f1e1d] transition-all"
+              >
+                {locale === 'tr' ? 'Detayları Gör' : 'View Details'}
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══════ CTA Banner ═══════ */}
       <section className="px-5 sm:px-8">
         <CtaBanner locale={locale} />
