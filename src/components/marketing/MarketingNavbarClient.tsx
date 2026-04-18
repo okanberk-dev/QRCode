@@ -9,6 +9,7 @@ import { useState, useTransition, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { Locale } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
+import MobileBottomNav from './MobileBottomNav';
 
 interface MarketingNavbarProps {
   locale: Locale;
@@ -222,6 +223,8 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
   };
 
   return (
+    <>
+    <MobileBottomNav locale={locale} isLoggedIn={isLoggedIn} />
     <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/90 backdrop-blur-lg border-b border-[#e8e4de]/60 h-[64px]">
       <div className="max-w-[1200px] mx-auto px-5 sm:px-8 h-full flex items-center justify-between">
         {/* Logo */}
@@ -540,5 +543,6 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
         </>
       )}
     </nav>
+    </>
   );
 }
