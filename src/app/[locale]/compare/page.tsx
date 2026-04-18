@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Check, X, Info, Zap, Shield, BarChart3, Users, Smartphone, Globe, ArrowRight } from 'lucide-react';
+import { Check, X, Info, Zap, Shield, BarChart3, Users, Smartphone, Globe, ArrowRight, Table } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 
