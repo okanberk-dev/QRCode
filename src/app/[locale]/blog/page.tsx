@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { ArrowRight, Calendar, Clock, BookOpen } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-static';
 
 export async function generateMetadata({
   params,

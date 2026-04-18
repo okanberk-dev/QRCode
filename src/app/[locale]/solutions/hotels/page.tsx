@@ -1,4 +1,10 @@
 import type { Metadata } from 'next';
+
+export const dynamic = 'force-static';
+
+export function generateStaticParams() {
+  return [{ locale: 'tr' }, { locale: 'en' }];
+}
 import { Star, QrCode, ShieldCheck, TrendingUp, Building2, ArrowRight, Zap, Users, BedDouble, Globe } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';

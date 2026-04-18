@@ -4,6 +4,12 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import type { Metadata } from 'next';
 
+export const dynamic = 'force-static';
+
+export function generateStaticParams() {
+  return [{ locale: 'tr' }, { locale: 'en' }];
+}
+
 export async function generateMetadata({
   params,
 }: {
