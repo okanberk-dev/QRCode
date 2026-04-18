@@ -30,15 +30,15 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
       icon: <Star size={32} className="text-[#FDBF1D]" />,
       title: locale === 'tr' ? '3. Geri Bildirim Toplayın' : '3. Collect Feedback',
       desc: locale === 'tr'
-        ? 'Müşterileriniz QR kodu taradığında saniyeler içinde puanlama ekranına ulaşır. 4 ve 5 yıldızlı yorumlar otomatik olarak Google\'a yönlendirilir.'
-        : 'When customers scan the QR code, they reach the rating screen in seconds. 4 and 5-star reviews are automatically redirected to Google.',
+        ? 'Müşterileriniz QR kodu taradığında saniyeler içinde geri bildirim ekranına ulaşır. Organik etkileşimle dijital itibarınızı güçlendirin.'
+        : 'When customers scan the QR code, they reach the feedback screen in seconds. Strengthen your digital reputation with organic interaction.',
     },
     {
       icon: <ShieldCheck size={32} className="text-[#10b981]" />,
-      title: locale === 'tr' ? '4. Olumsuz Yorumları Filtreleyin' : '4. Filter Negative Feedback',
+      title: locale === 'tr' ? '4. Operasyonel Takip' : '4. Operational Monitoring',
       desc: locale === 'tr'
-        ? '1-3 yıldız arası düşük puanlar Google\'da yayınlanmaz. Bunun yerine müşteriye bir şikayet formu sunulur ve bu bildirim doğrudan panelinize düşer.'
-        : 'Low ratings between 1-3 stars are not published on Google. Instead, a complaint form is presented to the customer, and this feedback goes directly to your panel.',
+        ? 'Tüm geri bildirimler yapılandırılmış bir veri akışına dönüştürülür ve doğrudan panelinize düşer. Deneyimi anlık takip ederek marka itibarınızı koruyun.'
+        : 'All feedback is converted into a structured data stream and goes directly to your panel. Protect your brand reputation by monitoring experience in real-time.',
       link: `/${locale}/dashboard/feedbacks`,
       linkText: locale === 'tr' ? 'Gelen Kutusu' : 'Inbox'
     }

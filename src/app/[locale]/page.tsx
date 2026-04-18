@@ -20,11 +20,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = getTranslations(locale);
   const title = locale === 'tr'
-    ? 'Buaze | Google Puanınızı Yükseltin, Rekabette Öne Geçin'
-    : 'Buaze | Boost Your Google Ratings & Outperform the Competition';
+    ? 'Buaze | Dijital İtibar ve Geri Bildirim Yönetimi'
+    : 'Buaze | Digital Reputation and Feedback Management';
   const description = locale === 'tr'
-    ? 'Buaze ile organik Google Haritalar yorumlarınızı artırın ve puanınızı yükseltin. İşletmenizin dijital itibarını otomatik olarak güvenle yönetin.'
-    : 'Boost your organic Google Maps reviews and ratings with Buaze. Automate your business reputation management effortlessly and securely.';
+    ? 'Buaze ile işletmenizin dijital itibarını profesyonelleştirin. Geri bildirim operasyonlarınızı tek bir merkezden yöneterek güven inşa edin.'
+    : 'Professionalize your business\'s digital reputation with Buaze. Build trust by managing your feedback operations from a single hub.';
 
   return {
     metadataBase: new URL('https://buaze.com'),
@@ -118,12 +118,12 @@ export default async function LandingPage({
       },
       {
         '@type': 'Service',
-        name: locale === 'tr' ? 'Google Puan Yükseltme Hizmeti' : 'Google Ratings Boost Service',
+        name: locale === 'tr' ? 'Dijital İtibar Yönetimi Hizmeti' : 'Digital Reputation Management Service',
         provider: {
           '@type': 'Organization',
           name: 'Buaze'
         },
-        description: locale === 'tr' ? 'Restoranlar ve işletmeler için otomatik olarak Google Haritalar 5 yıldızlı yorumlarını artırma ve itibar yönetimi hizmeti.' : 'Automatic service for restaurants and businesses to increase Google Maps 5-star reviews and manage reputation.',
+        description: locale === 'tr' ? 'İşletmeler için geri bildirim operasyonlarını profesyonelleştirme ve dijital itibar yönetimi platformu.' : 'Platform for professionalizing feedback operations and digital reputation management for businesses.',
       }
     ]
   };
@@ -411,8 +411,8 @@ export default async function LandingPage({
               },
               {
                 step: '03',
-                title: locale === 'tr' ? 'İtibarınızı Otomatiğe Alın' : 'Automate Your Reputation',
-                desc: locale === 'tr' ? 'Olumlu yorumları platformlara aktarın, olumsuzları ise sistem içindeki akıllı form ile kriz büyümeden çözün.' : 'Direct positive reviews to platforms, while resolving negative ones internally via our smart form before a crisis emerges.',
+                title: locale === 'tr' ? 'Operasyonlarınızı Yönetin' : 'Manage Your Operations',
+                desc: locale === 'tr' ? 'Geri bildirimleri anlık takip edin, operasyonel akışlarla deneyimi iyileştirin ve krizleri büyümeden profesyonelce yönetin.' : 'Monitor feedback in real-time, improve experience via operational flows, and manage crises professionally before they escalate.',
                 icon: <Trophy size={24} />
               }
             ].map((item, i) => (
@@ -500,13 +500,13 @@ export default async function LandingPage({
                 <div className="grid grid-cols-1 gap-6">
                   {[
                     { 
-                      title: locale === 'tr' ? 'Proaktif Kriz Önleme' : 'Proactive Crisis Prevention', 
-                      desc: locale === 'tr' ? 'Düşük puanlı yorumları daha internete düşmeden yakalayan akıllı kalkan.' : 'An intelligent shield that catches low-rated reviews before they hit the web.',
+                      title: locale === 'tr' ? 'Anlık Deneyim Takibi' : 'Real-Time Experience Tracking', 
+                      desc: locale === 'tr' ? 'Müşteri deneyimini anlık olarak yapılandırılmış veriye dönüştüren akıllı sistem.' : 'An intelligent system that converts customer experience into structured data in real-time.',
                       icon: <Zap size={20} className="text-[#FDBF1D]" />
                     },
                     { 
-                      title: locale === 'tr' ? 'Puanınızı Domine Edin' : 'Dominate Your Score', 
-                      desc: locale === 'tr' ? 'Google, TripAdvisor ve Yelp üzerinde organik ve hızlı puan artışı sağlayın.' : 'Achieve organic and rapid score increases on Google, TripAdvisor, and Yelp.',
+                      title: locale === 'tr' ? 'İtibarınızı Zirveye Taşıyın' : 'Elevate Your Reputation', 
+                      desc: locale === 'tr' ? 'Google, TripAdvisor ve Yelp üzerinde organik ve güvenli bir itibar artışı sağlayın.' : 'Achieve organic and secure reputation growth on Google, TripAdvisor, and Yelp.',
                       icon: <Trophy size={20} className="text-[#ea580c]" />
                     }
                   ].map((item, i) => (

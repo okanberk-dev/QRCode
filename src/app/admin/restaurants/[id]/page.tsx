@@ -255,7 +255,7 @@ export default function RestaurantDetailPage() {
                 placeholder="ChIJ... veya https://maps.app.goo.gl/..."
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm font-mono shadow-sm transition-all"
               />
-              <p className="text-xs text-gray-400 mt-1">Mekan kimliğini ya da Google Haritalar Yorum linkini direkt ekleyebilirsiniz. 4-5 yıldıza basanlar buraya yönlendirilecek.</p>
+              <p className="text-xs text-gray-400 mt-1">Mekan kimliğini ya da Google Haritalar Yorum linkini direkt ekleyebilirsiniz. Olumlu geri bildirimler buraya yönlendirilecek.</p>
             </div>
           </div>
         </div>

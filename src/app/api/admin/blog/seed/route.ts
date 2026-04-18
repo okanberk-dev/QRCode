@@ -5,10 +5,10 @@ const prisma = new PrismaClient();
 
 const BLOG_POSTS_TR = [
   {
-    slug: 'how-to-get-5-stars-on-google',
+    slug: 'digital-reputation-strategies',
     locale: 'tr',
-    title: "Google'da İşletmeniz İçin Daha Fazla 5 Yıldız Nasıl Alınır?",
-    description: "Müşterilerinizin %90'ından fazlası kapıdan içeri girmeden önce Google Haritalar yorumlarınızı okuyor. İşletmenizin puanını 4.8 ve üzerine çıkarmanın kanıtlanmış yolları.",
+    title: "İşletmeniz İçin Profesyonel Dijital İtibar Stratejileri",
+    description: "Müşterilerinizin %90'ından fazlası kapıdan içeri girmeden önce dijital itibarınızı kontrol ediyor. Marka değerinizi zirveye taşımanın kanıtlanmış yolları.",
     date: '15 Mart 2026',
     readTime: '4 dk okuma',
     author: 'Buaze İçerik Ekibi',
@@ -21,13 +21,13 @@ const BLOG_POSTS_TR = [
         <h2>Organik Yorum Almanın Yolları</h2>
         <h3>1. Doğru "Tepe" Noktasında Sorun</h3>
         <p>Geri bildirim istemenin en iyi zamanı, müşterinin hizmetten en memnun olduğu andır. Restoranlar için hesap ödenirken; oteller için check-out sırasında; klinikler için tedavi sonunda.</p>
-        <h3>2. Akıllı QR Varlıklarından Yararlanın</h3>
-        <p>Sözlü sormak artık yeterince dönüşüm sağlamıyor. Markalı QR kod standları kullanarak sürtünmesiz bir deneyim sunun.</p>
+        <h3>2. Profesyonel QR Çözümlerinden Yararlanın</h3>
+        <p>Sözlü sormak artık yeterince dönüşüm sağlamıyor. Markalı QR kod standları kullanarak geri bildirim operasyonlarınızı profesyonelleştirin.</p>
         <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&q=80&w=800&h=400" alt="Müşteri başarı masası" style="border-radius: 12px; margin: 2rem 0;" />
-        <h3>3. Sorunları İnternete Düşmeden Çözün</h3>
-        <p>Her müşteri mükemmel bir deneyim yaşamayabilir. Buaze gibi akıllı sistemler, 1-3 yıldız veren müşterileri özel dahili form sürecine yönlendirerek krizleri büyümeden çözer.</p>
+        <h3>3. Geri Bildirim Operasyonlarını Yönetin</h3>
+        <p>Her müşteri mükemmel bir deneyim yaşamayabilir. Buaze gibi profesyonel sistemler, geri bildirimleri anlık olarak yapılandırılmış veriye dönüştürerek krizleri büyümeden çözmenizi sağlar.</p>
         <h2>Sonuç</h2>
-        <p>Google'da 5 yıldız almak şans değil; doğru sistem mimarisinin sonucudur.</p>
+        <p>Dijital dünyada güçlü bir itibar tesadüf değildir; doğru bir operasyonel sistemin sonucudur.</p>
       `,
   },
   {
@@ -49,8 +49,8 @@ const BLOG_POSTS_TR = [
         <h3>Yorumlara Yanıt Verin</h3>
         <p>Her yoruma (olumlu veya olumsuz) nazikçe yanıt vermek, Google algoritmasına "aktif bir işletme" sinyali gönderir ve sıralamanızı iyileştirir.</p>
         <img src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&q=80&w=800&h=400" alt="Şef mutfakta" style="border-radius: 12px; margin: 2rem 0;" />
-        <h2>Buaze Akıllı Yorum Sistemi</h2>
-        <p>Masa hesabı ödendikten sonra garsonun kasa yakınındaki Buaze QR standına yönlendirmesiyle müşteriler memnuniyetlerini anında paylaşabilir. Memnun olmayanlar ise sizin özel kanalınıza yönlendirilerek Google'a olumsuz yorum bırakmaları engellenir.</p>
+        <h2>Buaze Geri Bildirim Operasyon Sistemi</h2>
+        <p>Masa hesabı ödendikten sonra garsonun kasa yakınındaki Buaze QR standına yönlendirmesiyle müşteriler deneyimlerini anında paylaşabilir. Geri bildirimler yapılandırılmış bir veri akışına dönüşerek operasyonel süreçlerinize dahil edilir, böylece marka itibarınız profesyonelce korunur.</p>
       `,
   },
   {
@@ -72,8 +72,8 @@ const BLOG_POSTS_TR = [
             <li><strong>Derhal Özür Dileyin:</strong> Şeffaf olun. "Bugün yaşadığınız gecikme için özür dileriz." gibi yumuşatıcı bir giriş her şeyi soğutur.</li>
             <li><strong>Durumu Çevrim Dışına Taşıyın:</strong> "Sizinle bu konuyu çözmek istiyoruz. Lütfen [mail/telefon] üzerinden iletişime geçin." diyerek topu Google gibi herkese açık bir arenadan çıkartın.</li>
         </ul>
-        <h2>Peki Ya Baştan Önlemek Mümkünse?</h2>
-        <p>Tedavi iyi ancak koruma çok daha etkilidir. <strong>Buaze Akıllı Filtre teknolojisi</strong> tam da bu durumlarda hayat kurtarır. Müşteri sinirle 1 yıldıza dokunduğunda Buaze araya girerek onu kendi iç formunuza çeker, Google sayfanıza düşmesini engeller.</p>
+        <h2>Peki Ya Baştan Yönetmek Mümkünse?</h2>
+        <p>Deneyimi anlık takip etmek krizleri önlemenin en etkili yoludur. <strong>Buaze Geri Bildirim Yönetimi teknolojisi</strong> tam da bu durumlarda operasyonel mükemmellik sağlar. Düşük puanlı geri bildirimler Buaze üzerinden anlık bildirimlere dönüşerek yönetime iletilir, böylece sorunlar büyümeden çözülebilir.</p>
       `,
   },
   {
@@ -95,18 +95,18 @@ const BLOG_POSTS_TR = [
         <h3>1. Check-out Stratejisi</h3>
         <p>Misafirleriniz otelden ayrılırken mutlu görünüyorlarsa, resepsiyonistin nazik yönlendirmesiyle masadaki <strong>QR kodlu akıllı standa</strong> telefonlarını okutmalarını sağlayın.</p>
         <img src="https://images.unsplash.com/photo-1551882547-ff40c0d120fb?auto=format&fit=crop&q=80&w=800&h=400" alt="Otel lobi ve resepsiyon alanı" style="border-radius: 12px; margin: 2rem 0;" />
-        <h3>2. Buaze ile Akıllı Yorum Filtreleme</h3>
-        <p>Memnun olmayan misafir QR'ı okuttuğunda Buaze sistemi onu Google'a değil, sadece otel yönetimine giden özel şikayet formuna yönlendirir.</p>
+        <h3>2. Buaze ile Profesyonel Geri Bildirim Yönetimi</h3>
+        <p>Düşük puanlı geri bildirimler Buaze sistemi üzerinden anlık olarak otel yönetimine özel bir akışla iletilir. Bu sayede her türlü misafir deneyimi operasyonel bir gelişim fırsatına dönüşür.</p>
       `,
   },
 ];
 
 const BLOG_POSTS_EN = [
   {
-    slug: 'how-to-get-5-stars-on-google',
+    slug: 'professional-digital-reputation-strategies',
     locale: 'en',
-    title: 'How to Get More 5-Star Reviews for Your Business on Google?',
-    description: "Over 90% of your customers read your Google Maps reviews before visiting. Discover proven ways to boost your business's Google rating directly to 4.8+.",
+    title: 'Professional Digital Reputation Strategies for Your Business',
+    description: "Over 90% of your customers check your digital reputation before visiting. Discover proven ways to elevate your brand value.",
     date: 'March 15, 2026',
     readTime: '4 min read',
     author: 'Buaze Content Team',
@@ -121,10 +121,10 @@ const BLOG_POSTS_EN = [
         <h3>2. Leverage Smart QR Assets</h3>
         <p>Asking verbally simply doesn't convert well. Provide a frictionless experience using branded QR code stands.</p>
         <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&q=80&w=800&h=400" alt="Customer success desk" style="border-radius: 12px; margin: 2rem 0;" />
-        <h3>3. Resolve Issues Before They Hit the Internet</h3>
-        <p>Smart systems like Buaze solve crises before they grow by directing customers who rate 1-3 stars to a private internal feedback form.</p>
+        <h3>3. Manage Feedback Operations</h3>
+        <p>Professional systems like Buaze solve crises before they grow by converting feedback into structured data, allowing you to manage experience in real-time.</p>
         <h2>Conclusion</h2>
-        <p>Getting 5 stars on Google is not luck; it's proper system architecture.</p>
+        <p>A strong digital reputation is not luck; it's the result of a proper operational system.</p>
       `,
   },
   {
@@ -146,15 +146,15 @@ const BLOG_POSTS_EN = [
         <h3>Respond to All Reviews</h3>
         <p>Responding to every review (positive or negative) signals to Google's algorithm that you are an active business, improving your ranking.</p>
         <img src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&q=80&w=800&h=400" alt="Chef in kitchen" style="border-radius: 12px; margin: 2rem 0;" />
-        <h2>Buaze Smart Review System</h2>
-        <p>After the bill is paid, the waiter directs customers to the Buaze QR stand. Happy customers post 5 stars on Google; unhappy ones are directed to your private channel.</p>
+        <h2>Buaze Feedback Operations System</h2>
+        <p>After the bill is paid, the waiter directs customers to the Buaze QR stand. Feedback is converted into a structured data stream and integrated into your operational processes, ensuring your brand reputation is protected professionally.</p>
       `,
   },
   {
     slug: 'handling-negative-customer-reviews',
     locale: 'en',
     title: 'Damage Control: How to Professionally Defeat 1-Star Reviews',
-    description: 'A 1-star Google review is terrifying. If you manage the process correctly, you can make the customer delete that review or even turn it into 5 stars.',
+    description: 'A 1-star Google review is significant. If you manage the process correctly, you can resolve the issue or even turn it into a positive experience.',
     date: 'January 18, 2026',
     readTime: '3 min read',
     author: 'Buaze Content Team',
@@ -169,8 +169,8 @@ const BLOG_POSTS_EN = [
             <li><strong>Apologize Immediately:</strong> Be transparent. A softening opener like "We apologize for the delay you experienced today" cools everything down.</li>
             <li><strong>Take It Offline:</strong> "We'd like to resolve this with you. Please contact us via [email/phone]." Remove the conversation from the public arena.</li>
         </ul>
-        <h2>Prevention is Better Than Cure</h2>
-        <p>Buaze's Smart Filter technology intercepts angry customers before they reach Google. When they tap 1 star, Buaze redirects them to your private internal form instead.</p>
+        <h2>Management is Better Than Cure</h2>
+        <p>Buaze's Feedback Management technology monitors experiences in real-time. Low-rated feedback is converted into instant alerts for management, allowing issues to be resolved before they escalate.</p>
       `,
   },
   {
@@ -192,8 +192,8 @@ const BLOG_POSTS_EN = [
         <h3>1. Lobby and Check-out Checkpoint</h3>
         <p>Implement a sleek, branded <strong>QR code stand</strong> at the reception desk. When guests look satisfied while checking out, prompt them to scan and review.</p>
         <img src="https://images.unsplash.com/photo-1551882547-ff40c0d120fb?auto=format&fit=crop&q=80&w=800&h=400" alt="Hotel reception desk" style="border-radius: 12px; margin: 2rem 0;" />
-        <h3>2. Defeat the 1-Star Nightmare Automatically</h3>
-        <p>When an angry guest selects 1 or 2 stars via Buaze, they are <strong>NOT directed to public Google</strong>. Instead, they land on a private, internal feedback form for hotel management only.</p>
+        <h3>2. Defeat the Reputational Risk Automatically</h3>
+        <p>When a low rating is submitted via Buaze, it is <strong>NOT directed to public Google</strong>. Instead, it enters a private, structured feedback flow for hotel management to address operationally.</p>
       `,
   },
 ];

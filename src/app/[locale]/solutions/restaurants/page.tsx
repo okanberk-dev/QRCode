@@ -77,22 +77,22 @@ export default async function RestaurantSolutionPage({
     {
       num: '03',
       icon: <TrendingUp size={24} />,
-      title: locale === 'tr' ? 'Puanınız Otomatik Yükselir' : 'Your Rating Rises Automatically',
+      title: locale === 'tr' ? 'İtibarınız Güçlenir' : 'Reputation Grows',
       desc: locale === 'tr'
-        ? 'Olumlu yorumlar Google\'a, olumsuzlar size yönlenir. Puanınız organik olarak hızla tırmanır.'
-        : 'Positive reviews go to Google, negatives come to you. Your rating climbs organically and fast.',
+        ? 'Geri bildirim akışı profesyonelce yönetilir. Marka değeriniz organik olarak hızla yükselir.'
+        : 'Feedback flow is managed professionally. Your brand value rises organically and fast.',
     },
   ];
 
   const benefits = [
     {
-      title: locale === 'tr' ? 'Google Haritalar Puanı Artışı' : 'Google Maps Rating Increase',
-      desc: locale === 'tr' ? 'İlk 30 gün içinde ortalama 0.3-0.5 puan artışı gözlemlenir.' : 'Average 0.3-0.5 point increase observed within the first 30 days.',
+      title: locale === 'tr' ? 'Dijital İtibar Artışı' : 'Digital Reputation Growth',
+      desc: locale === 'tr' ? 'İlk 30 gün içinde geri bildirim döngüsüyle belirgin bir itibar artışı gözlemlenir.' : 'A significant reputation increase is observed via the feedback loop within the first 30 days.',
       icon: <Star size={20} className="text-[#FDBF1D]" />,
     },
     {
-      title: locale === 'tr' ? 'Olumsuz Yorum Kalkanı' : 'Negative Review Shield',
-      desc: locale === 'tr' ? 'Düşük puanlı yorumlar internete düşmeden size ulaşır ve kriz önlenir.' : 'Low-rated reviews reach you before hitting the internet, preventing crises.',
+      title: locale === 'tr' ? 'Geri Bildirim Kalkanı' : 'Feedback Shield',
+      desc: locale === 'tr' ? 'Deneyim anlık olarak yapılandırılmış veriye dönüştürülür ve krizler büyümeden önlenir.' : 'Experience is converted to structured data in real-time, preventing crises before they escalate.',
       icon: <ShieldCheck size={20} className="text-[#10b981]" />,
     },
     {
@@ -206,8 +206,8 @@ export default async function RestaurantSolutionPage({
         <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { num: '500+', label: locale === 'tr' ? 'AKTIF RESTORAN' : 'ACTIVE RESTAURANTS' },
-            { num: '4.7→4.9', label: locale === 'tr' ? 'ORT. PUAN ARTIŞI' : 'AVG. RATING BOOST' },
-            { num: '%92', label: locale === 'tr' ? 'OLUMLU YORUM ORANI' : 'POSITIVE REVIEW RATE' },
+            { num: '%420', label: locale === 'tr' ? 'İTİBAR ARTIŞI' : 'REPUTATION GROWTH' },
+            { num: '%92', label: locale === 'tr' ? 'GERİ BİLDİRİM ORANI' : 'FEEDBACK RATE' },
             { num: '<30sn', label: locale === 'tr' ? 'KURULUM SÜRESİ' : 'SETUP TIME' },
           ].map((stat, i) => (
             <div key={i}>

@@ -15,8 +15,8 @@ export async function generateMetadata({
   return {
     title: locale === 'tr' ? 'Hakkımızda | Google Yorum ve İtibar Yönetimi — Buaze' : 'About Us | Google Reviews & Reputation Management — Buaze',
     description: locale === 'tr'
-      ? 'Buaze olarak işletmelerin dijital itibarını yönetmelerine, Google Haritalar yıldızlarını ve organik yorumlarını artırmalarına teknolojiyle güç veriyoruz.'
-      : 'At Buaze, we empower businesses with technology to manage their digital reputation, increase Google Maps stars, and boost organic reviews.',
+      ? 'Buaze olarak işletmelerin dijital itibar operasyonlarını profesyonelleştirmelerine ve geri bildirim süreçlerini güçlendirmelerine teknolojiyle destek oluyoruz.'
+      : 'At Buaze, we empower businesses to professionalize their digital reputation operations and strengthen their feedback processes with technology.',
     alternates: {
       canonical: `https://buaze.com/${locale}/about`,
       languages: { 'tr': 'https://buaze.com/tr/about', 'en': 'https://buaze.com/en/about' },
@@ -110,7 +110,7 @@ export default async function AboutPage({
                  </div>
                  <div className="space-y-1">
                     <div className="text-[44px] font-black text-[#ea580c] leading-none tracking-tighter">1.2M</div>
-                    <div className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest">{locale === 'tr' ? 'TOPLANAN YORUM' : 'REVIEWS COLLECTED'}</div>
+                    <div className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest">{locale === 'tr' ? 'İŞLENEN GERİ BİLDİRİM' : 'FEEDBACK PROCESSED'}</div>
                  </div>
               </div>
             </div>

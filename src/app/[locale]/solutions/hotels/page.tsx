@@ -91,7 +91,7 @@ export default async function HotelSolutionPage({
       icon: <Globe size={20} className="text-[#FDBF1D]" />,
     },
     {
-      title: locale === 'tr' ? 'Kriz Yönetimi Kalkanı' : 'Crisis Management Shield',
+      title: locale === 'tr' ? 'Geri Bildirim Yönetimi' : 'Feedback Management',
       desc: locale === 'tr' ? 'Olumsuz yorumlar halka açık platformlara ulaşmadan size iletilir.' : 'Negative reviews are sent to you before reaching public platforms.',
       icon: <ShieldCheck size={20} className="text-[#10b981]" />,
     },
@@ -206,7 +206,7 @@ export default async function HotelSolutionPage({
         <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { num: '200+', label: locale === 'tr' ? 'AKTIF OTEL' : 'ACTIVE HOTELS' },
-            { num: '4.5→4.8', label: locale === 'tr' ? 'ORT. PUAN ARTIŞI' : 'AVG. RATING BOOST' },
+            { num: '4.5→4.8', label: locale === 'tr' ? 'İTİBAR ARTIŞI' : 'REPUTATION GROWTH' },
             { num: '%88', label: locale === 'tr' ? 'ŞİKAYET ÇÖZÜM ORANI' : 'COMPLAINT RESOLUTION' },
             { num: '24/7', label: locale === 'tr' ? 'DESTEK' : 'SUPPORT' },
           ].map((stat, i) => (

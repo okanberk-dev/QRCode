@@ -18,11 +18,11 @@ export default async function Image({
   const { locale } = await params;
   const isTr = locale === 'tr';
 
-  const headline = isTr ? 'Google Puanınızı' : 'Boost Your';
-  const headline2 = isTr ? 'Otomatik Yükseltin' : 'Google Rating';
+  const headline = isTr ? 'Dijital İtibar' : 'Digital';
+  const headline2 = isTr ? 'Operasyon Merkezi' : 'Reputation Hub';
   const sub = isTr
-    ? 'QR Kod ile saniyeler içinde 5 yıldız toplayın'
-    : 'Collect 5-star reviews in seconds with QR';
+    ? 'Geri bildirim operasyonları ile güven inşa edin'
+    : 'Manage feedback operations and build trust';
 
   return new ImageResponse(
     (

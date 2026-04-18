@@ -35,10 +35,10 @@ export default async function LoginPage({
   const t = getTranslations(locale);
 
   const stats = [
-    { val: '1,284', label: locale === 'tr' ? 'Toplam Yorum' : 'Total Reviews' },
-    { val: '4.8', label: locale === 'tr' ? 'Ort. Puan' : 'Avg. Rating' },
-    { val: '847', label: locale === 'tr' ? 'Google Yönlendirme' : 'Google Redirects' },
-    { val: '14', label: locale === 'tr' ? 'Aktif Restoran' : 'Active Restaurants' },
+    { val: '1,284', label: locale === 'tr' ? 'İşlenen Geri Bildirim' : 'Processed Feedback' },
+    { val: '4.8', label: locale === 'tr' ? 'İtibar Gücü' : 'Reputation Score' },
+    { val: '847', label: locale === 'tr' ? 'Digital Yayılım' : 'Digital Reach' },
+    { val: '14', label: locale === 'tr' ? 'Aktif Portföy' : 'Active Portfolio' },
   ];
 
   return (
@@ -54,8 +54,8 @@ export default async function LoginPage({
             </h2>
             <p className="text-[14px] text-[#6b6760] leading-relaxed mb-10">
               {locale === 'tr'
-                ? 'Geri bildirimlerinizi izleyin, Google puanınızı takip edin ve işletmenizi güvenle büyütün.'
-                : 'Monitor your feedback, track your Google rating, and grow your business with confidence.'}
+                ? 'Geri bildirim operasyonlarınızı anlık takip edin, marka itibarınızı profesyonelce yönetin ve güvenle büyüyün.'
+                : 'Monitor your feedback operations in real-time, manage your brand reputation professionally, and grow with confidence.'}
             </p>
 
             {/* Stats grid */}

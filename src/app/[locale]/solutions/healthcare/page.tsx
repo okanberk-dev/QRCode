@@ -77,10 +77,10 @@ export default async function HealthcareSolutionPage({
     {
       num: '03',
       icon: <ShieldCheck size={24} />,
-      title: locale === 'tr' ? 'Gizlilik Korunarak Puan Artar' : 'Ratings Increase with Privacy',
+      title: locale === 'tr' ? 'Gizlilik Korunarak İtibar Yönetilir' : 'Reputation Managed with Privacy',
       desc: locale === 'tr'
-        ? 'KVKK uyumlu yapımız sayesinde hasta gizliliği korunur, olumlu yorumlar Google\'a yönlendirilir.'
-        : 'Patient privacy is protected with our GDPR-compliant structure, while positive reviews are directed to Google.',
+        ? 'KVKK uyumlu yapımız sayesinde hasta gizliliği korunur, tüm geri bildirimler profesyonelce yönetilir.'
+        : 'Patient privacy is protected with our GDPR-compliant structure, and all feedback is managed professionally.',
     },
   ];
 
@@ -97,7 +97,7 @@ export default async function HealthcareSolutionPage({
     },
     {
       title: locale === 'tr' ? 'Rakiplerin Üzerine Çıkın' : 'Outperform Competitors',
-      desc: locale === 'tr' ? 'Bölgenizdeki kliniğe aramalarda 5 yıldızlı profilinizle öne çıkın.' : 'Stand out in local clinic searches with your 5-star profile.',
+      desc: locale === 'tr' ? 'Bölgenizdeki aramarda güçlü dijital itibarınızla öne çıkın.' : 'Stand out in local clinic searches with your strong digital reputation.',
       icon: <TrendingUp size={20} className="text-[#ea580c]" />,
     },
     {
@@ -206,7 +206,7 @@ export default async function HealthcareSolutionPage({
         <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { num: '150+', label: locale === 'tr' ? 'AKTIF KLİNİK' : 'ACTIVE CLINICS' },
-            { num: '4.6→4.9', label: locale === 'tr' ? 'ORT. PUAN ARTIŞI' : 'AVG. RATING BOOST' },
+            { num: '%420', label: locale === 'tr' ? 'İTİBAR ARTIŞI' : 'REPUTATION GROWTH' },
             { num: '%100', label: locale === 'tr' ? 'KVKK UYUMLU' : 'GDPR COMPLIANT' },
             { num: '%95', label: locale === 'tr' ? 'HASTA MEMNUNİYETİ' : 'PATIENT SATISFACTION' },
           ].map((stat, i) => (

@@ -49,25 +49,25 @@ export default function SolutionPageLayout({
         ? 'Müşteriniz saniyeler içinde tarar, uygulama indirmesine gerek kalmaz.'
         : 'Customers scan in seconds — no app download needed.',
     },
-    {
-      icon: <TrendingUp size={24} />,
-      title: locale === 'tr' ? 'Puanınız Yükselir' : 'Your Rating Rises',
-      desc: locale === 'tr'
-        ? 'Olumlu yorumlar Google\'a, olumsuzlar size yönlenir.'
-        : 'Positive reviews go to Google, negatives come to you.',
-    },
+      {
+        icon: <TrendingUp size={24} />,
+        title: locale === 'tr' ? 'Görünürlüğünüz Artar' : 'Your Visibility Increases',
+        desc: locale === 'tr'
+          ? 'Geri bildirim akışını profesyonelce yönetin.'
+          : 'Manage your feedback flow professionally.',
+      },
   ];
 
   // Default benefits
   const displayBenefits = benefits || [
     {
-      title: locale === 'tr' ? 'Google Puan Artışı' : 'Google Rating Boost',
-      desc: locale === 'tr' ? 'Organik ve hızlı puan artışı sağlayın.' : 'Achieve organic and rapid score increases.',
+      title: locale === 'tr' ? 'Dijital İtibar Artışı' : 'Digital Reputation Growth',
+      desc: locale === 'tr' ? 'Organik ve güvenli itibar artışı sağlayın.' : 'Achieve organic and secure reputation growth.',
       icon: <Star size={20} className="text-[#FDBF1D]" />,
     },
     {
-      title: locale === 'tr' ? 'Olumsuz Yorum Filtresi' : 'Negative Review Filter',
-      desc: locale === 'tr' ? 'Krizleri büyümeden içeride çözün.' : 'Resolve crises internally before they grow.',
+      title: locale === 'tr' ? 'Profesyonel Geri Bildirim Ops.' : 'Professional Feedback Ops.',
+      desc: locale === 'tr' ? 'Krizleri büyümeden operasyonel olarak çözün.' : 'Resolve crises operationally before they grow.',
       icon: <ShieldCheck size={20} className="text-[#10b981]" />,
     },
     {
@@ -85,7 +85,7 @@ export default function SolutionPageLayout({
   // Default stats
   const displayStats = stats || [
     { num: '1000+', label: locale === 'tr' ? 'AKTİF KULLANICI' : 'ACTIVE USERS' },
-    { num: '4.8', label: locale === 'tr' ? 'ORT. PUAN' : 'AVG. RATING' },
+    { num: '4.8', label: locale === 'tr' ? 'ORT. SKOR' : 'AVG. SCORE' },
     { num: '%95', label: locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION' },
     { num: '<5dk', label: locale === 'tr' ? 'KURULUM' : 'SETUP' },
   ];

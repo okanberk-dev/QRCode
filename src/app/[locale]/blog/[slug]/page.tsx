@@ -119,7 +119,7 @@ export default async function BlogPostPage({
           <div className="mt-16 pt-10 border-t-2 border-[#e8e4de] flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#FCFBF7] p-8 rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[4px_4px_0_0_#FDBF1D]">
             <div className="space-y-2 text-center sm:text-left">
               <h4 className="text-[22px] font-black">{locale === 'tr' ? 'Dijitalde Rekabeti Geride Bırakın' : 'Leave the Competition Behind'}</h4>
-              <p className="text-[15px] text-[#6b6760] font-medium">{locale === 'tr' ? '14 günlük ücretsiz deneme ile yıldızlarınızı hemen artırmaya başlayın.' : 'Start boosting your stars instantly with a 14-day free trial.'}</p>
+              <p className="text-[15px] text-[#6b6760] font-medium">{locale === 'tr' ? '14 günlük ücretsiz deneme ile dijital itibarınızı hemen güçlendirmeye başlayın.' : 'Start strengthening your digital reputation instantly with a 14-day free trial.'}</p>
             </div>
             <Link
               href={`${base}/auth/register`}

@@ -36,7 +36,7 @@ export default async function HowItWorksPage({
   const steps = [
     {
       id: '01',
-      title: locale === 'tr' ? 'Akıllı QR Kodunuzu Oluşturun' : 'Create Your Smart QR Code',
+      title: locale === 'tr' ? 'Profesyonel QR Kodunuzu Oluşturun' : 'Create Your Professional QR Code',
       desc: locale === 'tr' 
         ? 'İşletmenize özel, estetik ve dikkat çekici QR kodları saniyeler içinde panelimizden tasarlayın.' 
         : 'Design aesthetic and remarkable QR codes specific to your business from our panel in seconds.',
@@ -54,10 +54,10 @@ export default async function HowItWorksPage({
     },
     {
       id: '03',
-      title: locale === 'tr' ? 'Sonuçları Otomatiğe Bağlayın' : 'Automate Your Results',
+      title: locale === 'tr' ? 'Operasyonları Yönetin' : 'Manage Operations',
       desc: locale === 'tr' 
-        ? 'Olumlu yorumları platformlara aktarın, olumsuzları ise kriz oluşmadan kendiniz çözün.' 
-        : 'Direct positive reviews to platforms, resolve negative ones yourself before a crisis occurs.',
+        ? 'Geri bildirim akışını anlık takip edin ve krizleri operasyonel olarak profesyonelce yönetin.' 
+        : 'Monitor feedback flow in real-time and manage crises operationally and professionally.',
       icon: <Trophy size={32} />,
       color: '#FDBF1D'
     }
@@ -148,7 +148,7 @@ export default async function HowItWorksPage({
         <div className="max-w-[1200px] mx-auto relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
             {[
-              { icon: <MessageSquare className="text-[#FDBF1D]" size={36} strokeWidth={2.5} />, t: locale === 'tr' ? 'Akıllı Filtreleme' : 'Smart Filtering', d: locale === 'tr' ? 'Düşük puanlı geri bildirimleri doğrudan size iletir, kamuoyuna yansımasını engeller.' : 'Redirects low-rated feedback directly to you, preventing public exposure.' },
+              { icon: <MessageSquare className="text-[#FDBF1D]" size={36} strokeWidth={2.5} />, t: locale === 'tr' ? 'Geri Bildirim Yönetimi' : 'Feedback Management', d: locale === 'tr' ? 'Müşteri deneyimini anlık olarak yapılandırılmış veriye dönüştürerek marka itibarınızı profesyonelce korur.' : 'Protects your brand reputation by converting customer experience into real-time structured data.' },
               { icon: <BarChart3 className="text-[#ea580c]" size={36} strokeWidth={2.5} />, t: locale === 'tr' ? 'Gerçek Zamanlı Analiz' : 'Real-time Analytics', d: locale === 'tr' ? 'Müşteri memnuniyet eğilimlerini anlık grafiklerle izleyin ve aksiyon alın.' : 'Monitor satisfaction trends with live charts and take immediate action.' },
               { icon: <Zap className="text-[#FDBF1D]" size={36} strokeWidth={2.5} />, t: locale === 'tr' ? 'Işık Hızında Kurulum' : 'Lightning Setup', d: locale === 'tr' ? 'Karmaşık entegrasyonlar yok. Sisteminiz 5 dakikada geri bildirim toplamaya hazır.' : 'No complex integrations. Your system is ready to collect feedback in 5 minutes.' }
             ].map((f, i) => (

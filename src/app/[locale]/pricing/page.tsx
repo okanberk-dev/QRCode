@@ -14,10 +14,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Fiyatlandırma | Google Puanı Yükseltme Hizmeti — Buaze' : 'Pricing | Google Ratings Boost Service — Buaze',
+    title: locale === 'tr' ? 'Fiyatlandırma | Kurumsal İtibar Yönetimi Platformu — Buaze' : 'Pricing | Enterprise Reputation Management Platform — Buaze',
     description: locale === 'tr'
-      ? 'Buaze itibar yönetim platformu ile Google Haritalar puanınızı en uygun maliyetle artırın. 14 gün ücretsiz deneyin, kredi kartı gerekmez.'
-      : 'Boost your Google Maps rating affordably with the Buaze reputation management platform. Try free for 14 days, no credit card required.',
+      ? 'Buaze itibar yönetim platformu ile dijital varlığınızı ve müşteri geri bildirimlerinizi en uygun maliyetle yönetin. 14 gün ücretsiz deneyin.'
+      : 'Manage your digital presence and customer feedback affordably with the Buaze reputation management platform. Try free for 14 days.',
     alternates: {
       canonical: `https://buaze.com/${locale}/pricing`,
       languages: { 'tr': 'https://buaze.com/tr/pricing', 'en': 'https://buaze.com/en/pricing' },
@@ -242,9 +242,9 @@ export default async function PricingPage({
                 <tbody className="divide-y-2 divide-[#F7F4F0]">
                   {[
                     { name: locale === 'tr' ? 'Dinamik QR Kod Teknolojisi' : 'Dynamic QR Technology', m: true, y: true },
-                    { name: locale === 'tr' ? 'Akıllı Yorum Filtreleme' : 'Smart Review Filtering', m: true, y: true },
+                    { name: locale === 'tr' ? 'Geri Bildirim Yönetimi' : 'Feedback Management', m: true, y: true },
                     { name: locale === 'tr' ? 'Panel Üzerinden Yanıtlama' : 'Dashboard Responses', m: true, y: true },
-                    { name: locale === 'tr' ? 'Google Haritalar Push' : 'Google Maps Push', m: true, y: true },
+                    { name: locale === 'tr' ? 'İtibar Yayınlama' : 'Reputation Distribution', m: true, y: true },
                     { name: locale === 'tr' ? '7/24 Öncelikli Destek' : '24/7 Priority Support', m: false, y: true },
                     { name: locale === 'tr' ? 'Kişiselleştirilmiş Tasarımlar' : 'White-label Designs', m: false, y: true },
                     { name: locale === 'tr' ? 'Çoklu Şube Yönetimi' : 'Multi-Location Mgmt', m: false, y: true },

@@ -37,9 +37,9 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
     },
     {
       id: 'smart-filters',
-      label: locale === 'tr' ? 'Akıllı Filtreleme' : 'Smart Filtering',
+      label: locale === 'tr' ? 'Geri Bildirim Yönetimi' : 'Feedback Management',
       icon: <Trophy size={18} />,
-      subtitle: locale === 'tr' ? 'OLUMSUZ YORUMLARI YAYINLANMADAN YAKALAYIN' : 'CATCH NEGATIVE REVIEWS BEFORE THEY GO PUBLIC',
+      subtitle: locale === 'tr' ? 'MÜŞTERİ DENEYİMİNİ ANLIK OLARAK TAKİP EDİN' : 'TRACK CUSTOMER EXPERIENCE IN REAL-TIME',
       content: (
         <div className="mx-auto w-full max-w-[650px] bg-[#FCFBF7] rounded-2xl md:rounded-[32px] border-[2.5px] border-[#1f1e1d] p-6 md:p-10 shadow-[6px_8px_0_0_#1f1e1d] space-y-6 md:space-y-8">
           {/* Positive Review Route */}
@@ -77,11 +77,11 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
         </div>
       ),
       p1: locale === 'tr'
-        ? 'Düşük puan veren müşterilerinizi otomatik olarak şikayet formuna yönlendirin ve sorunları özel olarak çözün.'
-        : 'Automatically route customers who give low ratings to a private feedback form and resolve issues privately.',
+        ? 'Müşteri geri bildirimlerini yapılandırılmış bir veri akışına dönüştürerek operasyonel mükemmellik sağlayın.'
+        : 'Ensure operational excellence by converting customer feedback into a structured data stream.',
       p2: locale === 'tr'
-        ? 'Gerçek şikayetleri dinleyin, dijital itibarınızı ve Google Haritalar puanınızı güvene alın.'
-        : 'Listen to genuine complaints, protect your digital reputation and secure your Google Maps score.',
+        ? 'Geri bildirim operasyonlarınızı tek bir merkezden yöneterek marka itibarınızı profesyonelce koruyun.'
+        : 'Protect your brand reputation professionally by managing your feedback operations from a single center.',
     },
     {
       id: 'widgets',
