@@ -95,9 +95,6 @@ export default function ComparisonLayout({
         </div>
       </section>
 
-          </div>
-        </div>
-      </section>
 
       {/* Deep Argument Section */}
       <section className="py-32 px-5 sm:px-8 bg-[#FCFBF7]">
