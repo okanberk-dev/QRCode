@@ -3,9 +3,42 @@ import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import UserDashboardShell from '@/components/dashboard/UserDashboardShell';
+import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { Locale } from '@/lib/translations';
 
 export const dynamic = 'force-dynamic';
+
+async function fetchActiveAnnouncements(locale: Locale): Promise<DashboardAnnouncement[]> {
+  try {
+    const now = new Date();
+    const rows = await prisma.announcement.findMany({
+      where: {
+        status: 'published',
+        AND: [
+          { OR: [{ startDate: null }, { startDate: { lte: now } }] },
+          { OR: [{ endDate: null }, { endDate: { gte: now } }] },
+          { OR: [{ locale: 'all' }, { locale }] },
+        ],
+      },
+      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+      take: 5,
+    });
+    return rows.map((a) => ({
+      id: a.id,
+      title: a.title,
+      message: a.message,
+      severity: a.severity as DashboardAnnouncement['severity'],
+      priority: a.priority,
+      ctaText: a.ctaText,
+      ctaLink: a.ctaLink,
+      isDismissible: a.isDismissible,
+      updatedAt: a.updatedAt.toISOString(),
+    }));
+  } catch (error) {
+    console.error('[DashboardLayout announcements]', error);
+    return [];
+  }
+}
 
 export default async function DashboardLayout({
   children,
@@ -48,9 +81,12 @@ export default async function DashboardLayout({
     redirect(`/${locale}/pricing?trial=expired`);
   }
 
+  const announcements = await fetchActiveAnnouncements(locale);
+
   return (
     <UserDashboardShell
       locale={locale}
+      announcements={announcements}
       user={{
         name: user.name,
         email: user.email,

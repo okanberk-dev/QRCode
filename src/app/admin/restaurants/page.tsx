@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Store, Loader2, MoreVertical, Mail, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin } from 'lucide-react';
+import { Plus, Store, Loader2, MoreVertical, Mail, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import Link from 'next/link';
 
@@ -13,8 +13,16 @@ interface Restaurant {
   notificationEmail: string | null;
   primaryColor: string;
   isActive: boolean;
+  menuEnabled: boolean;
+  menuPublished: boolean;
   createdAt: string;
-  _count: { feedbacks: number };
+  _count: { feedbacks: number; menuItems: number };
+}
+
+function menuStatus(r: Pick<Restaurant, 'menuEnabled' | 'menuPublished'>) {
+  if (!r.menuEnabled) return { label: 'KAPALI', cls: 'bg-gray-100 text-gray-500 border-gray-200' };
+  if (!r.menuPublished) return { label: 'TASLAK', cls: 'bg-amber-50 text-amber-700 border-amber-200' };
+  return { label: 'YAYINDA', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
 }
 
 export default function RestaurantsPage() {
@@ -213,7 +221,7 @@ export default function RestaurantsPage() {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-6 py-4 border-y-2 border-[#F7F4F0]">
+                <div className="flex items-center gap-4 sm:gap-6 py-4 border-y-2 border-[#F7F4F0]">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest leading-none">KATEGORİ</p>
                     <p className="text-[13px] font-black text-[#111827]">{r.category.toUpperCase()}</p>
@@ -221,7 +229,17 @@ export default function RestaurantsPage() {
                   <div className="w-px h-8 bg-[#e8e4de]" />
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest leading-none">YORUM</p>
-                    <p className="text-[13px] font-black text-[#ea580c]">{r._count.feedbacks} ADET</p>
+                    <p className="text-[13px] font-black text-[#ea580c]">{r._count.feedbacks}</p>
+                  </div>
+                  <div className="w-px h-8 bg-[#e8e4de]" />
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest leading-none">MENÜ</p>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${menuStatus(r).cls}`}>
+                        {menuStatus(r).label}
+                      </span>
+                      <span className="text-[13px] font-black text-[#111827]">{r._count.menuItems}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -233,15 +251,16 @@ export default function RestaurantsPage() {
                     YÖNET
                   </Link>
                   <Link
-                    href={`/admin/qr?restaurant=${r.id}`}
-                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-gray-700 border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all uppercase tracking-widest active:scale-95"
+                    href={`/admin/restaurants/${r.id}/menu`}
+                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-gray-700 border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all uppercase tracking-widest active:scale-95 flex items-center justify-center gap-2"
                   >
-                    QR KOD
+                    <UtensilsCrossed size={14} strokeWidth={2.75} />
+                    MENÜ
                   </Link>
                   <Link
-                    href={`/r/${r.slug}`}
-                    target="_blank"
+                    href={`/admin/qr?restaurant=${r.id}`}
                     className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-500 bg-white hover:text-gray-900 border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95 shrink-0"
+                    title="QR KOD"
                   >
                     <ExternalLink size={18} strokeWidth={2.5} />
                   </Link>

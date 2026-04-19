@@ -60,9 +60,12 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
-          select: { feedbacks: true }
-        }
-      }
+          select: {
+            feedbacks: true,
+            menuItems: { where: { deletedAt: null } },
+          },
+        },
+      },
     });
 
     return NextResponse.json(restaurants);

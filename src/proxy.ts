@@ -102,7 +102,11 @@ export default async function proxy(req: NextRequest) {
 
   // ─── i18n locale routing (marketing + auth + dashboard pages) ────────────
   // Skip API, admin, _next, static files
-  const isApiOrAdmin = pathname.startsWith('/api/') || pathname.startsWith('/admin') || pathname.startsWith('/r/');
+  const isApiOrAdmin =
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/r/') ||
+    pathname.startsWith('/menu/');
   const isStaticFile = /\.(ico|png|jpg|jpeg|svg|webp|css|js|woff|woff2|ttf|map|txt|xml)$/.test(pathname);
   const isNextInternal = pathname.startsWith('/_next/');
 

@@ -39,6 +39,9 @@ model Restaurant {
   notificationEmail String?    @map("notification_email")
   primaryColor      String     @default("#1a73e8")
   isActive          Boolean    @default(true) @map("is_active")
+  menuEnabled       Boolean    @default(true) @map("menu_enabled")
+  menuPublished     Boolean    @default(false) @map("menu_published")
+  menuUpdatedAt     DateTime?  @map("menu_updated_at")
   createdAt         DateTime   @default(now()) @map("created_at")
   updatedAt         DateTime   @updatedAt @map("updated_at")
 
@@ -48,6 +51,8 @@ model Restaurant {
   feedbacks         Feedback[]
   qrGenerations     QrGeneration[]
   adminUsers        AdminUser[]
+  menuCategories    MenuCategory[]
+  menuItems         MenuItem[]
 
   @@map("restaurants")
 }
@@ -112,6 +117,69 @@ model Settings {
   value String
 
   @@map("settings")
+}
+
+model Announcement {
+  id            String    @id @default(cuid())
+  title         String
+  message       String    @db.Text
+  status        String    @default("draft")
+  severity      String    @default("info")
+  locale        String    @default("all")
+  priority      Int       @default(0)
+  startDate     DateTime? @map("start_date")
+  endDate       DateTime? @map("end_date")
+  ctaText       String?   @map("cta_text")
+  ctaLink       String?   @map("cta_link")
+  isDismissible Boolean   @default(true) @map("is_dismissible")
+  createdBy     String?   @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, startDate, endDate])
+  @@map("announcements")
+}
+
+model MenuCategory {
+  id           String     @id @default(cuid())
+  restaurantId String     @map("restaurant_id")
+  name         String
+  description  String?
+  sortOrder    Int        @default(0) @map("sort_order")
+  isVisible    Boolean    @default(true) @map("is_visible")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items        MenuItem[]
+
+  @@index([restaurantId, sortOrder])
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id           String       @id @default(cuid())
+  restaurantId String       @map("restaurant_id")
+  categoryId   String       @map("category_id")
+  name         String
+  description  String?
+  priceCents   Int          @default(0) @map("price_cents")
+  currency     String       @default("TRY")
+  imageUrl     String?      @map("image_url")
+  badges       String[]     @default([])
+  isAvailable  Boolean      @default(true) @map("is_available")
+  isOutOfStock Boolean      @default(false) @map("is_out_of_stock")
+  sortOrder    Int          @default(0) @map("sort_order")
+  deletedAt    DateTime?    @map("deleted_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category     MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([restaurantId])
+  @@index([categoryId, sortOrder])
+  @@map("menu_items")
 }
 
 model BlogPost {

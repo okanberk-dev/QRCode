@@ -3,8 +3,9 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Crown, LayoutDashboard, LogOut, MessageSquareText, QrCode, Store, User, X } from 'lucide-react';
+import { BookOpen, Crown, LayoutDashboard, LogOut, MessageSquareText, QrCode, Store, User, UtensilsCrossed, X } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
+import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 
 interface DashboardUser {
   name: string | null;
@@ -16,6 +17,7 @@ interface DashboardUser {
 interface UserDashboardShellProps {
   locale: Locale;
   user: DashboardUser;
+  announcements?: DashboardAnnouncement[];
   children: React.ReactNode;
 }
 
@@ -26,7 +28,7 @@ function getDaysLeft(trialEndsAt: string | null) {
   return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-export default function UserDashboardShell({ locale, user, children }: UserDashboardShellProps) {
+export default function UserDashboardShell({ locale, user, announcements = [], children }: UserDashboardShellProps) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const trialDaysLeft = getDaysLeft(user.trialEndsAt);
@@ -38,6 +40,7 @@ export default function UserDashboardShell({ locale, user, children }: UserDashb
       feedbacks: isTr ? 'Yorumlar' : 'Feedbacks',
       restaurants: isTr ? 'İşletmeler' : 'Locations',
       qr: 'QR',
+      menu: isTr ? 'Menü' : 'Menu',
       guide: isTr ? 'Kılavuz' : 'Guide',
       profile: isTr ? 'Profil' : 'Profile',
       logout: isTr ? 'Çıkış' : 'Logout',
@@ -50,6 +53,7 @@ export default function UserDashboardShell({ locale, user, children }: UserDashb
     { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
     { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
+    { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
     { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
     { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
     { href: `/${locale}/dashboard/profile`, icon: User, label: copy.profile },
@@ -165,6 +169,9 @@ export default function UserDashboardShell({ locale, user, children }: UserDashb
         </div>
 
         <main className="min-w-0 flex-1 overflow-x-hidden pb-24 lg:pb-0">
+          {announcements.length > 0 && (
+            <AnnouncementBanner announcements={announcements} locale={locale} />
+          )}
           {children}
         </main>
       </div>

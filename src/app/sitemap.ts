@@ -76,6 +76,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Sitemap blog fetch error:', error);
   }
 
+  // Published menu pages
+  try {
+    const restaurants = await prisma.restaurant.findMany({
+      where: { isActive: true, menuEnabled: true, menuPublished: true },
+      select: { slug: true, menuUpdatedAt: true, updatedAt: true },
+    });
+    restaurants.forEach((r) => {
+      sitemapEntries.push({
+        url: `${baseUrl}/menu/${r.slug}`,
+        lastModified: r.menuUpdatedAt ?? r.updatedAt,
+        changeFrequency: 'weekly',
+        priority: 0.7,
+      });
+    });
+  } catch (error) {
+    console.error('Sitemap menu fetch error:', error);
+  }
+
   // TR-only legal pages
   const trOnlyPages = ['/kvkk', '/gizlilik', '/acik-riza', '/ticari-ileti'];
   for (const page of trOnlyPages) {
