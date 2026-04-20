@@ -23,6 +23,9 @@ export default function DashboardRestaurantDetailPage() {
     address: '',
     phone: '',
     googlePlaceId: '',
+    getirYemekUrl: '',
+    yemekSepetiUrl: '',
+    trendyolYemekUrl: '',
     notificationEmail: '',
     primaryColor: '#1a73e8',
     isActive: true,
@@ -42,6 +45,9 @@ export default function DashboardRestaurantDetailPage() {
           address: data.address || '',
           phone: data.phone || '',
           googlePlaceId: data.googlePlaceId || '',
+          getirYemekUrl: data.getirYemekUrl || '',
+          yemekSepetiUrl: data.yemekSepetiUrl || '',
+          trendyolYemekUrl: data.trendyolYemekUrl || '',
           notificationEmail: data.notificationEmail || '',
           primaryColor: data.primaryColor || '#1a73e8',
           isActive: data.isActive ?? true,
@@ -226,8 +232,8 @@ export default function DashboardRestaurantDetailPage() {
 
         <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-6 flex items-center gap-3">
-            <Mail size={18} strokeWidth={2.75} className="text-[#111827]" />
-            <h2 className="text-lg font-black text-[#111827]">{locale === 'tr' ? 'Bildirim ve Google Ayarları' : 'Notifications & Google'}</h2>
+            <ExternalLink size={18} strokeWidth={2.75} className="text-[#111827]" />
+            <h2 className="text-lg font-black text-[#111827]">{locale === 'tr' ? 'Harici Bağlantılar ve Bildirimler' : 'External Links & Notifications'}</h2>
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -248,6 +254,39 @@ export default function DashboardRestaurantDetailPage() {
                 value={formData.googlePlaceId}
                 onChange={(event) => setFormData((prev) => ({ ...prev, googlePlaceId: event.target.value }))}
                 className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+              />
+            </label>
+
+            <label className="space-y-2 sm:col-span-2">
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Getir Yemek URL</span>
+              <input
+                type="url"
+                value={formData.getirYemekUrl}
+                onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
+                placeholder="https://getir.com/yemek/..."
+                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-purple-600"
+              />
+            </label>
+
+            <label className="space-y-2">
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Yemek Sepeti URL</span>
+              <input
+                type="url"
+                value={formData.yemekSepetiUrl}
+                onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
+                placeholder="https://www.yemeksepeti.com/..."
+                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-pink-600"
+              />
+            </label>
+
+            <label className="space-y-2">
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Trendyol Yemek URL</span>
+              <input
+                type="url"
+                value={formData.trendyolYemekUrl}
+                onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
+                placeholder="https://www.trendyol.com/..."
+                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-orange-500"
               />
             </label>
           </div>

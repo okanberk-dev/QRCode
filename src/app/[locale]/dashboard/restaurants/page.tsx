@@ -35,6 +35,9 @@ export default function DashboardRestaurantsPage() {
     category: 'Restoran',
     notificationEmail: '',
     googlePlaceId: '',
+    getirYemekUrl: '',
+    yemekSepetiUrl: '',
+    trendyolYemekUrl: '',
     address: '',
     phone: '',
     primaryColor: '#1a73e8',
@@ -138,6 +141,9 @@ export default function DashboardRestaurantsPage() {
         category: 'Restoran',
         notificationEmail: '',
         googlePlaceId: '',
+        getirYemekUrl: '',
+        yemekSepetiUrl: '',
+        trendyolYemekUrl: '',
         address: '',
         phone: '',
         primaryColor: '#1a73e8',
@@ -411,6 +417,39 @@ export default function DashboardRestaurantsPage() {
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm font-bold text-[#111827] outline-none transition-all placeholder:text-[#ada89f] focus:ring-2 focus:ring-[#FDBF1D]"
                   />
                 </div>
+
+                <label className="space-y-2 sm:col-span-2">
+                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Getir Yemek URL</span>
+                  <input
+                    type="url"
+                    value={formData.getirYemekUrl}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
+                    placeholder="https://getir.com/yemek/..."
+                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-purple-600"
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Yemek Sepeti URL</span>
+                  <input
+                    type="url"
+                    value={formData.yemekSepetiUrl}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
+                    placeholder="https://www.yemeksepeti.com/..."
+                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-pink-600"
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Trendyol Yemek URL</span>
+                  <input
+                    type="url"
+                    value={formData.trendyolYemekUrl}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
+                    placeholder="https://www.trendyol.com/..."
+                    className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-orange-500"
+                  />
+                </label>
 
                 <label className="space-y-2">
                   <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Kategori</span>

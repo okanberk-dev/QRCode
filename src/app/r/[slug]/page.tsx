@@ -17,8 +17,18 @@ interface RestaurantData {
   address: string | null;
   phone: string | null;
   googlePlaceId: string | null;
+  getirYemekUrl: string | null;
+  yemekSepetiUrl: string | null;
+  trendyolYemekUrl: string | null;
   primaryColor: string;
   isActive: boolean;
+}
+
+interface ReviewPlatform {
+  name: string;
+  url: string;
+  color: string;
+  icon: string;
 }
 
 function SlugContent() {
@@ -78,13 +88,21 @@ function SlugContent() {
       : `https://search.google.com/local/writereview?placeid=${restaurant.googlePlaceId}`
     : null;
 
+  // Build available review platforms
+  const platforms: ReviewPlatform[] = [];
+  if (googleUrl) platforms.push({ name: 'Google', url: googleUrl, color: '#4285F4', icon: 'G' });
+  if (restaurant?.getirYemekUrl) platforms.push({ name: 'Getir Yemek', url: restaurant.getirYemekUrl, color: '#5D3EBC', icon: '🛵' });
+  if (restaurant?.yemekSepetiUrl) platforms.push({ name: 'Yemek Sepeti', url: restaurant.yemekSepetiUrl, color: '#FA0050', icon: '🍽️' });
+  if (restaurant?.trendyolYemekUrl) platforms.push({ name: 'Trendyol Yemek', url: restaurant.trendyolYemekUrl, color: '#F27A1A', icon: '🧡' });
+
+  const [showPlatformPicker, setShowPlatformPicker] = useState(false);
+
   const handleRatingChange = async (newRating: number) => {
     if (!restaurant) return;
     setRating(newRating);
 
     if (newRating >= 4) {
-      setIsRedirecting(true);
-
+      // Log the high rating
       try {
         fetch('/api/feedback', {
           method: 'POST',
@@ -102,11 +120,16 @@ function SlugContent() {
         console.error('Failed to log high rating', e);
       }
 
-      if (googleUrl) {
+      // If multiple platforms → show picker, if single → auto redirect, if none → thank you
+      if (platforms.length > 1) {
+        setShowPlatformPicker(true);
+      } else if (platforms.length === 1) {
+        setIsRedirecting(true);
         setTimeout(() => {
-          window.location.href = googleUrl;
+          window.location.href = platforms[0].url;
         }, 2200);
       } else {
+        setIsRedirecting(true);
         setTimeout(() => {
           setIsRedirecting(false);
           setFormSubmitted(true);
@@ -115,8 +138,8 @@ function SlugContent() {
     }
   };
 
-  const showForm = rating > 0 && rating <= 3 && !formSubmitted;
-  const showThankYou = formSubmitted;
+  const showForm = rating > 0 && rating <= 3 && !formSubmitted && !showPlatformPicker;
+  const showThankYou = formSubmitted && !showPlatformPicker;
 
   // --- Loading State ---
   if (loading) {
@@ -227,6 +250,67 @@ function SlugContent() {
 
         {showThankYou && (
             <ThankYou rating={rating} googleReviewUrl={googleUrl} t={t} />
+        )}
+
+        {/* ═══════ Platform Picker (High Rating + Multiple Platforms) ═══════ */}
+        {showPlatformPicker && !isRedirecting && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
+                <Star className="w-8 h-8 text-green-500 fill-green-500" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">
+                {locale === 'tr' ? 'Harika! Teşekkürler 🎉' : 'Awesome! Thank you 🎉'}
+              </h2>
+              <p className="text-sm text-gray-500 font-medium mt-2 px-4">
+                {locale === 'tr'
+                  ? 'Deneyiminizi bir platformda da paylaşmak ister misiniz?'
+                  : 'Would you like to share your experience on a platform?'}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {platforms.map((platform) => (
+                <a
+                  key={platform.name}
+                  href={platform.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 w-full p-4 rounded-2xl border-2 border-gray-100 bg-white hover:border-gray-300 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm group"
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold shrink-0 shadow-sm"
+                    style={{ backgroundColor: platform.color }}
+                  >
+                    {platform.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-900 text-[15px]">{platform.name}</p>
+                    <p className="text-xs text-gray-400 font-medium truncate">
+                      {locale === 'tr' ? 'Değerlendirmenizi paylaşın' : 'Share your review'}
+                    </p>
+                  </div>
+                  <ChevronRight size={20} className="text-gray-300 group-hover:text-gray-500 transition-colors shrink-0" />
+                </a>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                setShowPlatformPicker(false);
+                setFormSubmitted(true);
+              }}
+              className="w-full mt-6 py-3 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              {locale === 'tr' ? 'Şimdi değil, teşekkürler' : 'Not now, thanks'}
+            </button>
+          </div>
+        )}
+
+        {!showThankYou && !showForm && !showPlatformPicker && rating === 0 && (
+            <div className="mt-4">
+               <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
+            </div>
         )}
 
 
