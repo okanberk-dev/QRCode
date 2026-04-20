@@ -25,7 +25,8 @@ export default function DashboardRestaurantsPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState('');
+  const [fetchError, setFetchError] = useState('');
+  const [createError, setCreateError] = useState('');
   const [isManualSlug, setIsManualSlug] = useState(false);
   const [showGoogleInfo, setShowGoogleInfo] = useState(false);
   const [formData, setFormData] = useState({
@@ -67,14 +68,20 @@ export default function DashboardRestaurantsPage() {
 
   const fetchRestaurants = async () => {
     setLoading(true);
+    setFetchError('');
     try {
       const response = await fetch('/api/restaurants');
-      if (!response.ok) return;
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        setFetchError(errData.error || `Sunucu hatası (${response.status})`);
+        return;
+      }
 
       const data = await response.json();
       setRestaurants(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
+      setFetchError('Bağlantı hatası. Lütfen sayfayı yenileyin.');
     } finally {
       setLoading(false);
     }
@@ -109,7 +116,7 @@ export default function DashboardRestaurantsPage() {
   const handleCreate = async (event: React.FormEvent) => {
     event.preventDefault();
     setCreating(true);
-    setError('');
+    setCreateError('');
 
     try {
       const response = await fetch('/api/restaurants', {
@@ -120,7 +127,7 @@ export default function DashboardRestaurantsPage() {
 
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || 'İşletme oluşturulamadı.');
+        setCreateError(data.error || 'İşletme oluşturulamadı.');
         return;
       }
 
@@ -137,9 +144,9 @@ export default function DashboardRestaurantsPage() {
       });
       setIsManualSlug(false);
       fetchRestaurants();
-    } catch (error) {
-      console.error(error);
-      setError(locale === 'tr' ? 'Bağlantı hatası oluştu.' : 'Connection error.');
+    } catch (err) {
+      console.error(err);
+      setCreateError(locale === 'tr' ? 'Bağlantı hatası oluştu.' : 'Connection error.');
     } finally {
       setCreating(false);
     }
@@ -162,6 +169,23 @@ export default function DashboardRestaurantsPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-[#111827]" />
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-10">
+        <div className="rounded-[28px] border border-red-200 bg-red-50 px-6 py-12 text-center">
+          <p className="text-sm font-black uppercase tracking-widest text-red-500">Hata</p>
+          <p className="mt-2 text-lg font-black text-red-700">{fetchError}</p>
+          <button
+            onClick={fetchRestaurants}
+            className="mt-6 rounded-2xl bg-[#111827] px-6 py-3 text-sm font-black text-white"
+          >
+            Tekrar Dene
+          </button>
+        </div>
       </div>
     );
   }
@@ -286,7 +310,7 @@ export default function DashboardRestaurantsPage() {
                 type="button"
                 onClick={() => {
                   setShowCreateModal(false);
-                  setError('');
+                  setCreateError('');
                 }}
                 className="absolute right-5 top-5 rounded-2xl p-2 text-[#6b6760] transition-all hover:bg-white"
               >
@@ -295,9 +319,9 @@ export default function DashboardRestaurantsPage() {
             </div>
 
             <form onSubmit={handleCreate} className="space-y-4 sm:space-y-5 overflow-y-auto p-5 sm:p-6 md:p-8">
-              {error && (
+              {createError && (
                 <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm font-bold text-red-600">
-                  {error}
+                  {createError}
                 </div>
               )}
 
