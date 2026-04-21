@@ -40,10 +40,15 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy standalone build
-COPY --from=builder /app/public ./public
+# Copy standalone build. `public/` is copied with nextjs ownership so the
+# runtime user can write to `public/uploads/` for user-uploaded images.
+# On Coolify, mount a persistent volume at `/app/public/uploads` to keep
+# uploaded files across redeploys (see CLAUDE.md → Storage).
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+RUN mkdir -p /app/public/uploads/menu && chown -R nextjs:nodejs /app/public/uploads
 
 USER nextjs
 

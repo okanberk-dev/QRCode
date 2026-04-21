@@ -47,12 +47,23 @@ export async function POST(req: NextRequest) {
     // 4. Save to disk
     const fileName = `${crypto.randomUUID()}.webp`;
     const uploadDir = path.join(process.cwd(), 'public/uploads/menu');
-    
-    // Ensure directory exists
-    await mkdir(uploadDir, { recursive: true });
-    
-    const filePath = path.join(uploadDir, fileName);
-    await writeFile(filePath, processedImage);
+
+    try {
+      await mkdir(uploadDir, { recursive: true });
+      const filePath = path.join(uploadDir, fileName);
+      await writeFile(filePath, processedImage);
+    } catch (fsErr: any) {
+      // EACCES / EROFS typically mean the runtime user can't write to
+      // `public/uploads/menu`. On Coolify this usually means the Dockerfile
+      // permissions fix is missing or the persistent volume isn't mounted.
+      console.error('[API_MENU_UPLOAD] filesystem error', {
+        code: fsErr?.code, errno: fsErr?.errno, path: fsErr?.path, message: fsErr?.message,
+      });
+      const hint = fsErr?.code === 'EACCES'
+        ? 'Sunucuda yazma izni yok (public/uploads/menu). Lütfen sistem yöneticinize bildirin.'
+        : 'Dosya sunucuya yazılamadı.';
+      return NextResponse.json({ error: hint }, { status: 500 });
+    }
 
     // 5. Return URL
     const url = `/uploads/menu/${fileName}`;
