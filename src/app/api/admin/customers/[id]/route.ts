@@ -14,7 +14,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const body = await req.json();
     const { name, email, plan, isActive, password, trialEndsAt, restaurantIds } = body;
-    
+
     // Check if updating email conflicts with another user
     if (email) {
       const existing = await prisma.user.findFirst({
@@ -35,7 +35,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     } else if (plan && plan !== 'trial') {
       data.trialEndsAt = null;
     }
-    
+
     if (password) {
       data.passwordHash = await bcrypt.hash(password, 12);
     }
