@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     await mkdir(uploadDir, { recursive: true });
     
     const filePath = path.join(uploadDir, fileName);
+    console.log('[API_MENU_UPLOAD] Saving to:', filePath);
     await writeFile(filePath, processedImage);
 
     // 5. Return URL

@@ -31,22 +31,21 @@ RUN npm run build
 # 3. Production runner stage
 FROM node:22-slim AS runner
 RUN apt-get update && apt-get install -y openssl libssl-dev ca-certificates && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
-
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-
 # User setup for security
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Create uploads directory first and set permissions
-RUN mkdir -p public/uploads/menu && chown -R nextjs:nodejs public
+# Set up workdir
+WORKDIR /app
 
 # Copy standalone build
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+# Next.js standalone requires public and static folders to be inside the standalone directory
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Create uploads directory and set permissions
+RUN mkdir -p public/uploads/menu && chown -R nextjs:nodejs public/uploads
 
 USER nextjs
 
