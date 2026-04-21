@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { validateAnnouncement } from '@/lib/validations';
+import { revalidatePath } from 'next/cache';
 
 async function requireSuperadmin(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
@@ -32,6 +33,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where: { id },
       data: result.data,
     });
+    revalidatePath('/[locale]/dashboard', 'layout');
     return NextResponse.json({ announcement });
   } catch (error) {
     if ((error as { code?: string })?.code === 'P2025') {
@@ -49,6 +51,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
   try {
     await prisma.announcement.delete({ where: { id } });
+    revalidatePath('/[locale]/dashboard', 'layout');
     return NextResponse.json({ success: true });
   } catch (error) {
     if ((error as { code?: string })?.code === 'P2025') {
