@@ -5,7 +5,12 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
-RUN npm ci
+
+# Add network resilience for Contabo/Coolify Docker builds
+RUN npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 20000 \
+    && npm config set fetch-retry-maxtimeout 120000 \
+    && npm ci
 
 # 2. Builder stage
 FROM node:22-slim AS builder
