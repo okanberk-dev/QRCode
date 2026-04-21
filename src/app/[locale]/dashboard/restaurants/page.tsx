@@ -29,6 +29,7 @@ export default function DashboardRestaurantsPage() {
   const [createError, setCreateError] = useState('');
   const [isManualSlug, setIsManualSlug] = useState(false);
   const [showGoogleInfo, setShowGoogleInfo] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -92,6 +93,17 @@ export default function DashboardRestaurantsPage() {
 
   useEffect(() => {
     fetchRestaurants();
+    
+    // Fetch user profile to default the notification email
+    fetch('/api/user/profile')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.email) {
+          setUserEmail(data.email);
+          setFormData((prev) => ({ ...prev, notificationEmail: data.email }));
+        }
+      })
+      .catch(console.error);
   }, []);
 
   const handleNameChange = (name: string) => {
@@ -139,7 +151,7 @@ export default function DashboardRestaurantsPage() {
         name: '',
         slug: '',
         category: 'Restoran',
-        notificationEmail: '',
+        notificationEmail: userEmail,
         googlePlaceId: '',
         getirYemekUrl: '',
         yemekSepetiUrl: '',
