@@ -65,6 +65,7 @@ model QrGeneration {
   id            String      @id @default(cuid())
   qrUrl         String      @map("qr_url")
   tableNumber   String?     @map("table_number")
+  platform      String?     @map("platform")    // google | yemeksepeti | getir | trendyol_go
   createdAt     DateTime    @default(now()) @map("created_at")
 
   restaurantId  String      @map("restaurant_id")
@@ -88,6 +89,7 @@ model Feedback {
   userAgent           String?     @map("user_agent")
   hasKvkkConsent      Boolean     @default(true) @map("has_kvkk_consent")
   hasMarketingConsent Boolean     @default(false) @map("has_marketing_consent")
+  platform            String?     @map("platform")   // google | yemeksepeti | getir | trendyol_go
   
   // Rich Feedback Additions
   serviceType         String?     @map("service_type")

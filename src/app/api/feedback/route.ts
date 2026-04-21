@@ -23,7 +23,11 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { rating, name, email, phone, comment, source, branch, tableNumber, restaurantSlug, serviceType, aspects } = body;
+    const { rating, name, email, phone, comment, source, branch, tableNumber, restaurantSlug, serviceType, aspects, platform } = body;
+
+    // Validate platform value if provided
+    const validPlatforms = ['google', 'yemeksepeti', 'getir', 'trendyol_go'];
+    const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : null;
 
     // Validation
     if (!isValidRating(rating)) {
@@ -68,6 +72,7 @@ export async function POST(req: NextRequest) {
         hasKvkkConsent: body.hasKvkkConsent ?? true,
         hasMarketingConsent: body.hasMarketingConsent ?? false,
         restaurantId,
+        platform: sanitizedPlatform,
         // Rich Feedback Additions
         serviceType: sanitizeText(serviceType, 50),
         foodRating: aspects?.food ? Number(aspects.food) : null,
@@ -122,6 +127,7 @@ export async function GET(req: NextRequest) {
   const ratingFilter = searchParams.get('rating'); // e.g. "low" or "1"
   const daysParam = searchParams.get('days');
   const restaurantId = searchParams.get('restaurantId');
+  const platformFilter = searchParams.get('platform');
   
   const skip = (page - 1) * limit;
 
@@ -177,6 +183,11 @@ export async function GET(req: NextRequest) {
       ...where.createdAt,
       gte: pastDate
     };
+  }
+
+  // Platform filter
+  if (platformFilter && platformFilter !== 'all') {
+    where.platform = platformFilter;
   }
 
   try {

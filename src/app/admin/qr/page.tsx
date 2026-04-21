@@ -49,6 +49,9 @@ function QRPageContent() {
   const [batchError, setBatchError] = useState('');
   const [batchItems, setBatchItems] = useState<{ table: string; qrUrl: string; svg: string }[]>([]);
 
+  // Platform selection
+  const [selectedPlatform, setSelectedPlatform] = useState('');
+
   useEffect(() => {
     Promise.all([
       fetch('/api/restaurants').then(res => res.ok ? res.json() : []),
@@ -81,7 +84,7 @@ function QRPageContent() {
     ? window.location.origin.replace(/\/+$/, '')
     : 'https://buaze.com');
   const qrTargetUrl = selectedRestaurant
-    ? `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}`
+    ? `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}${selectedPlatform ? `&platform=${selectedPlatform}` : ''}`
     : '';
 
   const LS_KEY = (id: string) => `qr_history_${id}`;
@@ -133,6 +136,7 @@ function QRPageContent() {
   const buildQuery = (format: 'svg' | 'png') => {
     const query = new URLSearchParams({ format, width: String(size), dark: activeDark });
     if (tableNumber) query.append('table', tableNumber);
+    if (selectedPlatform) query.append('platform', selectedPlatform);
     return query;
   };
 
@@ -172,7 +176,7 @@ function QRPageContent() {
     if (selectedId) {
       generateQR();
     }
-  }, [selectedId, tableNumber, activeDark, size]);
+  }, [selectedId, tableNumber, activeDark, size, selectedPlatform]);
 
   useEffect(() => {
     if (selectedId) {
@@ -371,6 +375,25 @@ function QRPageContent() {
                     <Plus size={20} strokeWidth={2.5} />
                   </button>
                 </div>
+              </div>
+
+              {/* Platform Selector */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Platform</label>
+                <select
+                  value={selectedPlatform}
+                  onChange={(e) => setSelectedPlatform(e.target.value)}
+                  className="w-full px-5 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold uppercase tracking-widest transition-all appearance-none cursor-pointer shadow-sm"
+                >
+                  <option value="">GENEL (PLATFORM YOK)</option>
+                  <option value="google">GOOGLE</option>
+                  <option value="yemeksepeti">YEMEKSEPETİ</option>
+                  <option value="getir">GETİR</option>
+                  <option value="trendyol_go">TRENDYOL GO</option>
+                </select>
+                <p className="text-[10px] text-[#ada89f] font-bold pl-1">
+                  Seçilen platforma özel QR oluşturulur. Gelen yorumlar bu platform altında listelenir.
+                </p>
               </div>
 
               {/* QR Size Selector */}
@@ -605,7 +628,22 @@ function QRPageContent() {
         <div className="lg:col-span-3 order-1 lg:order-2">
           <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm p-5 sm:p-8 flex flex-col items-center h-full">
             <div className="flex items-center justify-between w-full mb-6 sm:mb-10">
-              <h3 className="text-lg sm:text-2xl font-black text-[#111827] uppercase tracking-tighter">Önizleme</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg sm:text-2xl font-black text-[#111827] uppercase tracking-tighter">Önizleme</h3>
+                {selectedPlatform && (
+                  <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-white shadow-sm ${
+                    selectedPlatform === 'google' ? 'bg-[#4285F4]' :
+                    selectedPlatform === 'yemeksepeti' ? 'bg-[#FA0050]' :
+                    selectedPlatform === 'getir' ? 'bg-[#5D3EBC]' :
+                    selectedPlatform === 'trendyol_go' ? 'bg-[#F27A1A]' : 'bg-gray-500'
+                  }`}>
+                    {selectedPlatform === 'google' ? 'Google' :
+                     selectedPlatform === 'yemeksepeti' ? 'Yemeksepeti' :
+                     selectedPlatform === 'getir' ? 'Getir' :
+                     selectedPlatform === 'trendyol_go' ? 'Trendyol GO' : selectedPlatform}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={generateQR}
                 disabled={generating || !selectedId}

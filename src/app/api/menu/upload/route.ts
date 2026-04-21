@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url });
   } catch (error) {
     console.error('[API_MENU_UPLOAD]', error);
-    return NextResponse.json({ error: 'Dosya yüklenirken bir hata oluştu.' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
+    return NextResponse.json({ error: `Dosya yüklenirken bir hata oluştu: ${errorMessage}` }, { status: 500 });
   }
 }

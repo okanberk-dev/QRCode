@@ -9,6 +9,7 @@ interface FeedbackFormProps {
   onSuccess: () => void;
   restaurantSlug?: string;
   restaurantName?: string;
+  platform?: string;
   t: (key: any) => string;
 }
 
@@ -19,7 +20,7 @@ export interface FeedbackFormHandle {
 }
 
 const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
-  ({ rating, onSuccess, restaurantSlug, restaurantName, t }, ref) => {
+  ({ rating, onSuccess, restaurantSlug, restaurantName, platform, t }, ref) => {
     const searchParams = useSearchParams();
     const source = searchParams.get('source') || 'qr';
     const branch = restaurantName || searchParams.get('branch') || '';
@@ -54,6 +55,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
             branch,
             tableNumber,
             restaurantSlug,
+            platform: platform || null,
             serviceType: null,
             aspects: null,
           })

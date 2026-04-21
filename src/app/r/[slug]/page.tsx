@@ -38,6 +38,9 @@ function SlugContent() {
   const slug = params.slug as string;
   const formRef = useRef<FeedbackFormHandle>(null);
 
+  // --- Platform from QR ---
+  const platformParam = searchParams.get('platform') || '';
+
   // --- Locale Handling ---
   const [locale, setLocale] = useState<Locale>('tr');
   useEffect(() => {
@@ -115,10 +118,29 @@ function SlugContent() {
             tableNumber: searchParams.get('table') || '',
             comment: 'High Rating Redirect',
             restaurantSlug: slug,
+            platform: platformParam || null,
           })
         });
       } catch (e) {
         console.error('Failed to log high rating', e);
+      }
+
+      // If platform is specified from QR, redirect directly to that platform
+      if (platformParam) {
+        const platformUrls: Record<string, string | null> = {
+          google: googleUrl,
+          yemeksepeti: restaurant.yemekSepetiUrl,
+          getir: restaurant.getirYemekUrl,
+          trendyol_go: restaurant.trendyolYemekUrl,
+        };
+        const targetUrl = platformUrls[platformParam];
+        if (targetUrl) {
+          setIsRedirecting(true);
+          setTimeout(() => {
+            window.location.href = targetUrl;
+          }, 2200);
+          return;
+        }
       }
 
       // If multiple platforms → show picker, if single → auto redirect, if none → thank you
@@ -270,6 +292,7 @@ function SlugContent() {
               onSuccess={() => setFormSubmitted(true)}
               restaurantSlug={slug}
               restaurantName={restaurant.name}
+              platform={platformParam || undefined}
               t={t}
             />
           </div>

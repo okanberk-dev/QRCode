@@ -276,6 +276,26 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.value - a.value)
       .slice(0, 30);
 
+    // Platform distribution
+    const platformGroupRaw = await prisma.feedback.groupBy({
+      by: ['platform'],
+      where: dateFilter,
+      _count: true,
+    });
+
+    const platformLabels: Record<string, string> = {
+      google: 'Google',
+      yemeksepeti: 'Yemeksepeti',
+      getir: 'Getir',
+      trendyol_go: 'Trendyol GO',
+    };
+
+    const platformDistribution = platformGroupRaw.map((row: any) => ({
+      platform: row.platform || 'unspecified',
+      label: row.platform ? (platformLabels[row.platform] || row.platform) : 'Belirtilmemiş',
+      count: row._count,
+    }));
+
     return NextResponse.json({
       totalCount,
       todayCount,
@@ -288,6 +308,7 @@ export async function GET(req: NextRequest) {
       wordCloud,
       aspects, // Food / Service / Atmosphere breakdown
       googleConversion, // Google review conversion funnel + per-restaurant breakdown
+      platformDistribution, // Platform-based review counts
     });
   } catch (error) {
     console.error('Failed to fetch stats:', error);

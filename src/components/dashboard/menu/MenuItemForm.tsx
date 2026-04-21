@@ -313,7 +313,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             <button
               type="button"
-              onClick={() => setForm({ ...form, isAvailable: !form.isVisible })}
+              onClick={() => setForm({ ...form, isAvailable: !form.isAvailable })}
               className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
                 form.isAvailable ? 'bg-emerald-50/50 border-emerald-100' : 'bg-gray-50 border-gray-100'
               }`}

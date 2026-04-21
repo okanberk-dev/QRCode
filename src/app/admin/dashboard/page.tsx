@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Download, Loader2, TrendingUp, Calendar, BarChart3, ArrowRight, SlidersHorizontal } from 'lucide-react';
+import { Download, Loader2, TrendingUp, Calendar, BarChart3, ArrowRight, SlidersHorizontal, Layers } from 'lucide-react';
 import StatsCards from '@/components/admin/StatsCards';
 import FeedbackTable from '@/components/admin/FeedbackTable';
 import RatingChart from '@/components/admin/RatingChart';
 import WordCloud from '@/components/admin/WordCloud';
 import AspectBreakdown from '@/components/admin/AspectBreakdown';
 import GoogleConversionPanel from '@/components/admin/GoogleConversionPanel';
+import PlatformDistribution from '@/components/admin/PlatformDistribution';
 
 // Recharts components must be dynamic for SSR compatibility
 const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), { ssr: false, loading: () => <div className="h-[300px] w-full bg-gray-50 animate-pulse rounded-2xl" /> });
@@ -32,6 +33,7 @@ export default function AdminDashboard() {
   const [daysFilter, setDaysFilter] = useState('7');
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState('all');
+  const [filterPlatform, setFilterPlatform] = useState('all');
   const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
@@ -70,6 +72,7 @@ export default function AdminDashboard() {
       });
       if (filterRating !== 'all') query.append('rating', filterRating);
       if (selectedRestaurant !== 'all') query.append('restaurantId', selectedRestaurant);
+      if (filterPlatform !== 'all') query.append('platform', filterPlatform);
 
       const feedRes = await fetch(`/api/feedback?${query.toString()}`);
       if (feedRes.ok) {
@@ -85,7 +88,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
-  }, [page, filterRating, daysFilter, selectedRestaurant]);
+  }, [page, filterRating, daysFilter, selectedRestaurant, filterPlatform]);
 
   const handleExport = () => {
     const params = new URLSearchParams();
@@ -254,6 +257,28 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* ─── Platform Distribution ─── */}
+      {stats?.platformDistribution && stats.platformDistribution.length > 0 && (
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
+          <div className="mb-4 sm:mb-6 flex items-center gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
+              <Layers size={20} strokeWidth={3} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">
+                {locale === 'en' ? 'Platform Distribution' : 'Platform Dağılımı'}
+              </h3>
+              <p className="text-[11px] sm:text-xs font-bold text-[#6b6760] mt-0.5">
+                {locale === 'en'
+                  ? 'See which platforms your reviews come from.'
+                  : 'Yorumlarınızın hangi platformlardan geldiğini görün.'}
+              </p>
+            </div>
+          </div>
+          <PlatformDistribution data={stats.platformDistribution} locale={locale as 'tr' | 'en'} />
+        </div>
+      )}
+
       {/* ─── Advanced Charts ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
         <div className="lg:col-span-2 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden min-h-[260px] sm:min-h-[350px] md:min-h-[400px]">
@@ -305,19 +330,32 @@ export default function AdminDashboard() {
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
             <h3 className="text-lg sm:text-xl font-bold text-gray-800 tracking-tight">İşletme Günlüğü</h3>
-            <select
-              value={filterRating}
-              onChange={(e) => { setFilterRating(e.target.value); setPage(1); }}
-              className="w-full sm:w-auto px-4 py-2 text-xs rounded-xl border border-gray-200 bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
-            >
-              <option value="all">TÜM KAYITLAR</option>
-              <option value="low">SADECE DÜŞÜK (1-3)</option>
-              <option value="5">5 YILDIZ</option>
-              <option value="4">4 YILDIZ</option>
-              <option value="3">3 YILDIZ</option>
-              <option value="2">2 YILDIZ</option>
-              <option value="1">1 YILDIZ</option>
-            </select>
+            <div className="flex items-center gap-2 flex-wrap">
+              <select
+                value={filterPlatform}
+                onChange={(e) => { setFilterPlatform(e.target.value); setPage(1); }}
+                className="w-full sm:w-auto px-4 py-2 text-xs rounded-xl border border-gray-200 bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
+              >
+                <option value="all">TÜM PLATFORMLAR</option>
+                <option value="google">GOOGLE</option>
+                <option value="yemeksepeti">YEMEKSEPETİ</option>
+                <option value="getir">GETİR</option>
+                <option value="trendyol_go">TRENDYOL GO</option>
+              </select>
+              <select
+                value={filterRating}
+                onChange={(e) => { setFilterRating(e.target.value); setPage(1); }}
+                className="w-full sm:w-auto px-4 py-2 text-xs rounded-xl border border-gray-200 bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
+              >
+                <option value="all">TÜM KAYITLAR</option>
+                <option value="low">SADECE DÜŞÜK (1-3)</option>
+                <option value="5">5 YILDIZ</option>
+                <option value="4">4 YILDIZ</option>
+                <option value="3">3 YILDIZ</option>
+                <option value="2">2 YILDIZ</option>
+                <option value="1">1 YILDIZ</option>
+              </select>
+            </div>
           </div>
 
           <div className={`transition-all duration-300 ${loading ? 'opacity-30 pointer-events-none scale-[0.98]' : ''}`}>

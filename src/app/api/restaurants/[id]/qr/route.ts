@@ -27,6 +27,10 @@ export async function GET(
   const { searchParams } = new URL(req.url);
   const table = searchParams.get('table') || '';
   const format = (searchParams.get('format') || 'svg').toLowerCase();
+  const platform = searchParams.get('platform') || '';
+
+  const validPlatforms = ['google', 'yemeksepeti', 'getir', 'trendyol_go'];
+  const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : '';
 
   if (format !== 'svg' && format !== 'png') {
     return NextResponse.json({ error: 'Geçersiz format' }, { status: 400 });
@@ -100,6 +104,9 @@ export async function GET(
     if (table) {
       qrUrl += `&table=${encodeURIComponent(table)}`;
     }
+    if (sanitizedPlatform) {
+      qrUrl += `&platform=${sanitizedPlatform}`;
+    }
 
     // Track generation — non-fatal if the qr_generations table hasn't been
     // provisioned yet (e.g. first deploy before `prisma db push`).
@@ -110,6 +117,7 @@ export async function GET(
             restaurantId: restaurant.id,
             qrUrl,
             tableNumber: table || null,
+            platform: sanitizedPlatform || null,
           },
         });
 

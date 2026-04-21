@@ -15,12 +15,20 @@ interface FeedbackItem {
   foodRating: number | null;
   serviceRating: number | null;
   atmosphereRating: number | null;
+  platform: string | null;
 }
 
 interface FeedbackTableProps {
   feedbacks: FeedbackItem[];
   locale?: string;
 }
+
+const PLATFORM_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  google: { label: 'Google', color: 'text-white', bg: 'bg-[#4285F4]', border: 'border-[#3367D6]' },
+  yemeksepeti: { label: 'Yemeksepeti', color: 'text-white', bg: 'bg-[#FA0050]', border: 'border-[#D10044]' },
+  getir: { label: 'Getir', color: 'text-white', bg: 'bg-[#5D3EBC]', border: 'border-[#4A2FA0]' },
+  trendyol_go: { label: 'Trendyol GO', color: 'text-white', bg: 'bg-[#F27A1A]', border: 'border-[#D66A15]' },
+};
 
 export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTableProps) {
   if (feedbacks.length === 0) {
@@ -41,6 +49,13 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
     return labels[type] || { tr: type, en: type, color: 'bg-gray-50 text-gray-600 border-gray-100' };
   };
 
+  const getPlatformBadge = (platform: string | null) => {
+    if (!platform) return null;
+    const config = PLATFORM_CONFIG[platform];
+    if (!config) return null;
+    return config;
+  };
+
   return (
     <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
@@ -49,6 +64,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
             <tr>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'TARİH' : 'DATE'}</th>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'PUAN' : 'RATING'}</th>
+              <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'PLATFORM' : 'PLATFORM'}</th>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold w-1/2">{locale === 'tr' ? 'YORUM' : 'COMMENT'}</th>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'KONUM' : 'LOCATION'}</th>
             </tr>
@@ -56,6 +72,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
           <tbody className="divide-y divide-gray-100">
             {feedbacks.map((f) => {
               const service = getServiceLabel(f.serviceType);
+              const platformBadge = getPlatformBadge(f.platform);
               return (
                 <tr key={f.id} className="hover:bg-gray-50 transition-colors group">
                   <td className="px-4 py-4 sm:px-8 sm:py-6 whitespace-nowrap font-medium text-gray-900 text-[13px]">
@@ -67,6 +84,17 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                     >
                       {f.rating} {locale === 'tr' ? 'Yıldız' : 'Stars'}
                     </span>
+                  </td>
+                  <td className="px-4 py-4 sm:px-8 sm:py-6 whitespace-nowrap">
+                    {platformBadge ? (
+                      <span className={`inline-flex items-center gap-1.5 font-bold px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider shadow-sm ${platformBadge.bg} ${platformBadge.color}`}>
+                        {platformBadge.label}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 font-bold px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider bg-gray-100 text-gray-400 border border-gray-200">
+                        —
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-4 sm:px-8 sm:py-6 max-w-[200px] sm:max-w-sm">
                     <div className="flex flex-col gap-2">
