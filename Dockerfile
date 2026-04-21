@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y openssl libssl-dev ca-certificates && r
 WORKDIR /app
 
 COPY package.json package-lock.json ./
+COPY prisma ./prisma
 RUN npm ci
 
 # 2. Builder stage
