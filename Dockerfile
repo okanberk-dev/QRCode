@@ -50,6 +50,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 RUN mkdir -p /app/public/uploads/menu && chown -R nextjs:nodejs /app/public/uploads
 
+# Declare the uploads directory as a volume so uploaded images survive
+# redeploys. In Coolify, still configure a NAMED persistent volume on this
+# path (Persistent Storage → Mount Path: /app/public/uploads); without an
+# explicit mount the orchestrator will create an anonymous volume which
+# can be garbage collected.
+VOLUME ["/app/public/uploads"]
+
 USER nextjs
 
 EXPOSE 3000
