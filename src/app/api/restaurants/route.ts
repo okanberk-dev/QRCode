@@ -52,7 +52,10 @@ export async function GET(req: NextRequest) {
     } else if (actor.role === 'manager' && actor.restaurantId) {
       where.id = actor.restaurantId;
     } else if (actor.role === 'restaurant_owner') {
-      where.userId = actor.id;
+      where.OR = [
+        { userId: actor.id },
+        ...(actor.restaurantId ? [{ id: actor.restaurantId }] : [])
+      ];
     } else {
       // Unknown role — deny access
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });

@@ -31,10 +31,17 @@ export async function GET(
     if (actor.role === 'superadmin') {
       // full access
     } else if (actor.role === 'manager' && actor.restaurantId !== restaurant.id) {
+      console.warn(`[API_REST_GET] 403: Manager ID mismatch. Actor.restId: ${actor.restaurantId}, Rest.id: ${restaurant.id}`);
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-    } else if (actor.role === 'restaurant_owner' && restaurant.userId !== actor.id) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-    } else if (actor.role !== 'manager' && actor.role !== 'restaurant_owner') {
+    } else if (actor.role === 'restaurant_owner') {
+      // Allow if either the specific userId matches OR the token is explicitly linked to this restaurantId
+      const isOwner = restaurant.userId === actor.id;
+      const isLinked = actor.restaurantId === restaurant.id;
+      if (!isOwner && !isLinked) {
+        console.warn(`[API_REST_GET] 403: Owner mismatch. Actor.id: ${actor.id}, Rest.userId: ${restaurant.userId}, Actor.restId: ${actor.restaurantId}`);
+        return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+      }
+    } else {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
@@ -84,8 +91,12 @@ export async function PUT(
       // full access
     } else if (actor.role === 'manager' && actor.restaurantId !== currentRest.id) {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-    } else if (actor.role === 'restaurant_owner' && currentRest.userId !== actor.id) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    } else if (actor.role === 'restaurant_owner') {
+      const isOwner = currentRest.userId === actor.id;
+      const isLinked = actor.restaurantId === currentRest.id;
+      if (!isOwner && !isLinked) {
+        return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+      }
     } else {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
@@ -136,8 +147,12 @@ export async function DELETE(
       // full access
     } else if (actor.role === 'manager' && actor.restaurantId !== currentRest.id) {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-    } else if (actor.role === 'restaurant_owner' && currentRest.userId !== actor.id) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    } else if (actor.role === 'restaurant_owner') {
+      const isOwner = currentRest.userId === actor.id;
+      const isLinked = actor.restaurantId === currentRest.id;
+      if (!isOwner && !isLinked) {
+        return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+      }
     } else {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
