@@ -45,7 +45,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Create uploads directory and set permissions
-RUN mkdir -p public/uploads/menu && chown -R nextjs:nodejs public/uploads
+# We use /app/storage/uploads/menu as the persistent path
+RUN mkdir -p storage/uploads/menu && chown -R nextjs:nodejs storage && chmod -R 755 storage
 
 USER nextjs
 
