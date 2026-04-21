@@ -47,17 +47,21 @@ export async function POST(req: NextRequest) {
     // 4. Save to disk
     const fileName = `${crypto.randomUUID()}.webp`;
     
-    // Use absolute path for storage in Docker /app/storage
-    // In local development, it will fall back to local folder
-    const storageRoot = process.env.NODE_ENV === 'production' ? '/app/storage' : path.join(process.cwd(), 'storage');
+    // Hardcode absolute path for production to avoid environment issues
+    const storageRoot = process.env.NODE_ENV === 'production' 
+      ? '/app/storage' 
+      : path.join(process.cwd(), 'storage');
+      
     const uploadDir = path.join(storageRoot, 'uploads/menu');
     
     // Ensure directory exists
     await mkdir(uploadDir, { recursive: true });
     
     const filePath = path.join(uploadDir, fileName);
-    console.log('[API_MENU_UPLOAD] Saving to:', filePath);
+    console.log('[API_MENU_UPLOAD] Saving file to:', filePath);
+    
     await writeFile(filePath, processedImage);
+    console.log('[API_MENU_UPLOAD] Successfully saved. Size:', processedImage.length);
 
     // 5. Return URL
     const url = `/uploads/menu/${fileName}`;
