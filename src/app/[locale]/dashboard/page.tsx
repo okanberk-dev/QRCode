@@ -188,7 +188,7 @@ export default async function DashboardPage({
                           <Star key={i} size={12} fill={i < fb.rating ? "currentColor" : "none"} strokeWidth={3} />
                         ))}
                       </div>
-                      <span className="text-[9px] font-black text-[#ada89f] uppercase tracking-widest">{fb.restaurant.name}</span>
+                      <span className="text-[9px] font-black text-[#ada89f] uppercase tracking-widest">{fb.restaurant?.name}</span>
                     </div>
                     <p className="text-[13px] font-bold text-[#111827] line-clamp-1 italic">{fb.comment || (locale === 'tr' ? 'Yorum bırakılmadı.' : 'No comment provided.')}</p>
                   </div>

@@ -34,7 +34,10 @@ export default async function ComparisonPage({
   const t = getTranslations(locale);
   const base = `/${locale}`;
 
-  const rows = [
+  type FeatureStatus = boolean | 'limited';
+  type Row = { label: string; buaze: FeatureStatus; static: FeatureStatus; sheet: FeatureStatus };
+
+  const rows: Row[] = [
     { label: t.compare_f1, buaze: true, static: false, sheet: false },
     { label: t.compare_f2, buaze: true, static: false, sheet: false },
     { label: t.compare_f3, buaze: true, static: false, sheet: false },
