@@ -39,6 +39,7 @@ export async function GET(
     // Return menu data
     return NextResponse.json({
       name: restaurant.name,
+      menuLogoUrl: restaurant.menuLogoUrl,
       primaryColor: restaurant.primaryColor,
       categories: restaurant.menuCategories
     });

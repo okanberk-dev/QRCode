@@ -59,7 +59,7 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, isActive, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl } = body;
+    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, isActive, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, menuLogoUrl } = body;
 
     // Validate slug if provided
     if (slug) {
@@ -105,6 +105,7 @@ export async function PUT(
         ...(getirYemekUrl !== undefined && { getirYemekUrl: getirYemekUrl || null }),
         ...(yemekSepetiUrl !== undefined && { yemekSepetiUrl: yemekSepetiUrl || null }),
         ...(trendyolYemekUrl !== undefined && { trendyolYemekUrl: trendyolYemekUrl || null }),
+        ...(menuLogoUrl !== undefined && { menuLogoUrl: menuLogoUrl || null }),
       },
     });
 

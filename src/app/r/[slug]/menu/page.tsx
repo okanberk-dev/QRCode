@@ -29,6 +29,7 @@ interface MenuItem {
 
 interface RestaurantData {
   name: string;
+  menuLogoUrl: string | null;
   primaryColor: string;
   categories: Category[];
 }
@@ -138,10 +139,14 @@ export default function PublicMenuPage() {
              <h1 className="font-black text-lg tracking-tight text-[#111827] truncate max-w-[180px]">{data.name}</h1>
           </div>
           <div 
-            className="w-10 h-10 rounded-2xl flex items-center justify-center text-white text-base font-black shadow-lg"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center text-white text-base font-black shadow-lg overflow-hidden shrink-0"
             style={{ backgroundColor: themeColor }}
           >
-            {data.name.charAt(0).toUpperCase()}
+            {data.menuLogoUrl ? (
+              <img src={data.menuLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              data.name.charAt(0).toUpperCase()
+            )}
           </div>
         </div>
 

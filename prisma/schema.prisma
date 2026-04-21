@@ -44,6 +44,7 @@ model Restaurant {
   isActive          Boolean    @default(true) @map("is_active")
   menuEnabled       Boolean    @default(true) @map("menu_enabled")
   menuPublished     Boolean    @default(false) @map("menu_published")
+  menuLogoUrl       String?    @map("menu_logo_url")
   menuUpdatedAt     DateTime?  @map("menu_updated_at")
   createdAt         DateTime   @default(now()) @map("created_at")
   updatedAt         DateTime   @updatedAt @map("updated_at")

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       .toBuffer();
 
     // 4. Save to disk
-    const fileName = `${uuidv4()}.webp`;
+    const fileName = `${crypto.randomUUID()}.webp`;
     const uploadDir = path.join(process.cwd(), 'public/uploads/menu');
     
     // Ensure directory exists

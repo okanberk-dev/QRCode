@@ -5,7 +5,8 @@ import {
   Plus, Pencil, Trash2, GripVertical, 
   ChevronDown, ChevronUp, Eye, EyeOff, 
   Loader2, UtensilsCrossed, AlertCircle,
-  Image as ImageIcon
+  Image as ImageIcon, ExternalLink, Upload,
+  X as CloseIcon
 } from 'lucide-react';
 import MenuCategoryForm from './MenuCategoryForm';
 import MenuItemForm from './MenuItemForm';
@@ -41,6 +42,8 @@ interface Props {
 export default function MenuEditor({ restaurantId, restaurantName, primaryColor }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [restaurantData, setRestaurantData] = useState<{ slug: string; menuLogoUrl: string | null } | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
@@ -53,17 +56,24 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch categories
+      // 1. Fetch restaurant details (slug, logo)
+      const restRes = await fetch(`/api/restaurants/${restaurantId}`);
+      if (restRes.ok) {
+        const restData = await restRes.json();
+        setRestaurantData({ slug: restData.slug, menuLogoUrl: restData.menuLogoUrl });
+      }
+
+      // 2. Fetch categories
       const catRes = await fetch(`/api/menu/categories?restaurantId=${restaurantId}`);
       if (!catRes.ok) throw new Error('Kategoriler yüklenemedi');
       const catData = await catRes.json();
 
-      // 2. Fetch items
+      // 3. Fetch items
       const itemRes = await fetch(`/api/menu/items?restaurantId=${restaurantId}`);
       if (!itemRes.ok) throw new Error('Ürünler yüklenemedi');
       const itemData = await itemRes.json();
 
-      // 3. Combine
+      // 4. Combine
       const combined = catData.map((cat: any) => ({
         ...cat,
         items: itemData.filter((item: any) => item.categoryId === cat.id)
@@ -151,6 +161,59 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/menu/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Logo yüklenemedi');
+
+      // Update restaurant with new logo URL
+      const updateRes = await fetch(`/api/restaurants/${restaurantId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ menuLogoUrl: data.url }),
+      });
+
+      if (!updateRes.ok) throw new Error('Logo kaydedilemedi');
+
+      setRestaurantData(prev => prev ? { ...prev, menuLogoUrl: data.url } : null);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!confirm('Logoyu kaldırmak istediğinize emin misiniz?')) return;
+    try {
+      const updateRes = await fetch(`/api/restaurants/${restaurantId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ menuLogoUrl: null }),
+      });
+
+      if (!updateRes.ok) throw new Error('Logo kaldırılamadı');
+
+      setRestaurantData(prev => prev ? { ...prev, menuLogoUrl: null } : null);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -162,30 +225,87 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header Info */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-5">
-           <div 
-             className="w-16 h-16 rounded-[22px] flex items-center justify-center text-white text-2xl font-black shadow-lg"
-             style={{ backgroundColor: primaryColor }}
-           >
-             {restaurantName.charAt(0).toUpperCase()}
+      <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-gray-50">
+          <div className="flex items-center gap-5">
+             <div 
+               className="w-16 h-16 rounded-[22px] flex items-center justify-center text-white text-2xl font-black shadow-lg overflow-hidden shrink-0"
+               style={{ backgroundColor: primaryColor }}
+             >
+               {restaurantData?.menuLogoUrl ? (
+                 <img src={restaurantData.menuLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+               ) : (
+                 restaurantName.charAt(0).toUpperCase()
+               )}
+             </div>
+             <div>
+               <h2 className="text-2xl font-black text-[#111827]">{restaurantName}</h2>
+               <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest leading-none">MENÜ EDİTÖRÜ</p>
+             </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            {restaurantData?.slug && (
+              <a
+                href={`/r/${restaurantData.slug}/menu`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-6 py-4 bg-white text-[#111827] border border-gray-200 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:bg-gray-50 active:scale-95 shadow-sm"
+              >
+                <ExternalLink size={18} strokeWidth={3} />
+                ÖNİZLEME
+              </a>
+            )}
+            <button
+              onClick={() => {
+                setEditingCategory(null);
+                setShowCategoryForm(true);
+              }}
+              className="flex items-center justify-center gap-2 px-6 py-4 bg-[#FDBF1D] text-[#111827] rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-[#FDBF1D]/10"
+            >
+              <Plus size={18} strokeWidth={3} />
+              YENİ KATEGORİ
+            </button>
+          </div>
+        </div>
+
+        {/* Logo Aspect */}
+        <div className="flex items-center gap-6">
+           <div className="space-y-1 flex-1">
+              <h4 className="text-xs font-black text-[#111827] uppercase tracking-widest">MENÜ LOGOSU</h4>
+              <p className="text-[11px] font-bold text-gray-400">Menü sayfasının başında görüntülenecek işletme logosu.</p>
            </div>
-           <div>
-             <h2 className="text-2xl font-black text-[#111827]">{restaurantName}</h2>
-             <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest">MENÜ EDİTÖRÜ</p>
+           <div className="flex items-center gap-4">
+              {restaurantData?.menuLogoUrl && (
+                <button 
+                  onClick={handleRemoveLogo}
+                  className="p-2 text-red-400 hover:text-red-500 transition-colors"
+                >
+                  <CloseIcon size={20} strokeWidth={3} />
+                </button>
+              )}
+              <label className="cursor-pointer group">
+                  <div className={`flex items-center gap-2 px-5 py-3 rounded-xl border-2 border-dashed transition-all ${
+                    uploadingLogo ? 'bg-gray-50 border-gray-200 pointer-events-none' : 'border-gray-200 group-hover:border-[#FDBF1D] group-hover:bg-[#FDBF1D]/5'
+                  }`}>
+                    {uploadingLogo ? (
+                      <Loader2 size={16} className="animate-spin text-gray-400" />
+                    ) : (
+                      <Upload size={16} className="text-gray-400 group-hover:text-[#FDBF1D]" />
+                    )}
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest group-hover:text-[#111827]">
+                      {uploadingLogo ? 'YÜKLENİYOR...' : (restaurantData?.menuLogoUrl ? 'LOGOYU DEĞİŞTİR' : 'LOGO YÜKLE')}
+                    </span>
+                  </div>
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    onChange={handleLogoUpload} 
+                    accept="image/*"
+                  />
+              </label>
            </div>
         </div>
-        
-        <button
-          onClick={() => {
-            setEditingCategory(null);
-            setShowCategoryForm(true);
-          }}
-          className="flex items-center justify-center gap-2 px-6 py-4 bg-[#FDBF1D] text-[#111827] rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-[#FDBF1D]/10"
-        >
-          <Plus size={18} strokeWidth={3} />
-          YENİ KATEGORİ
-        </button>
       </div>
 
       {error && (
