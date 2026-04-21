@@ -16,9 +16,9 @@ interface MenuItem {
   priceCents: number;
   currency: string;
   imageUrl: string | null;
-  isAvailable: boolean;
   isOutOfStock: boolean;
   sortOrder: number;
+  badges: string[];
 }
 
 interface Props {
@@ -45,7 +45,21 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
     isAvailable: item?.isAvailable ?? true,
     isOutOfStock: item?.isOutOfStock ?? false,
     sortOrder: item?.sortOrder ?? 0,
+    badges: item?.badges || [] as string[],
   });
+
+  const [badgeInput, setBadgeInput] = useState('');
+
+  const addBadge = () => {
+    if (badgeInput.trim() && !form.badges.includes(badgeInput.trim())) {
+      setForm({ ...form, badges: [...form.badges, badgeInput.trim()] });
+      setBadgeInput('');
+    }
+  };
+
+  const removeBadge = (badge: string) => {
+    setForm({ ...form, badges: form.badges.filter(b => b !== badge) });
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -250,6 +264,37 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                   />
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">ÜRÜN ETİKETLERİ (ÖRN: YENİ, POPÜLER)</label>
+            <div className="flex flex-wrap gap-2 mb-3">
+               {form.badges.map(badge => (
+                 <span key={badge} className="bg-[#FDBF1D] text-[#111827] text-[10px] font-black px-2.5 py-1.5 rounded-lg flex items-center gap-2 uppercase tracking-wider shadow-sm">
+                   {badge}
+                   <button type="button" onClick={() => removeBadge(badge)} className="hover:text-red-600 transition-colors">
+                     <X size={12} strokeWidth={3} />
+                   </button>
+                 </span>
+               ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={badgeInput}
+                onChange={(e) => setBadgeInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addBadge(); } }}
+                placeholder="Örn: Yeni"
+                className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm"
+              />
+              <button
+                type="button"
+                onClick={addBadge}
+                className="px-6 bg-[#111827] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-md active:scale-95"
+              >
+                EKLE
+              </button>
             </div>
           </div>
 

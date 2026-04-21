@@ -48,6 +48,29 @@ export default function PublicMenuPage() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+
+  useEffect(() => {
+    if (loading || filteredCategories.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveCategory(entry.target.id.replace('cat-', ''));
+          }
+        });
+      },
+      { threshold: 0.2, rootMargin: '-10% 0px -80% 0px' }
+    );
+
+    filteredCategories.forEach((cat) => {
+      const el = document.getElementById(`cat-${cat.id}`);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [loading, filteredCategories]);
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -144,7 +167,19 @@ export default function PublicMenuPage() {
                 key={cat.id}
                 onClick={() => {
                   setActiveCategory(cat.id);
-                  document.getElementById(`cat-${cat.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  const el = document.getElementById(`cat-${cat.id}`);
+                  if (el) {
+                    const offset = 160; // adjust based on header height
+                    const bodyRect = document.body.getBoundingClientRect().top;
+                    const elementRect = el.getBoundingClientRect().top;
+                    const elementPosition = elementRect - bodyRect;
+                    const offsetPosition = elementPosition - offset;
+
+                    window.scrollTo({
+                      top: offsetPosition,
+                      behavior: 'smooth'
+                    });
+                  }
                 }}
                 className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
                   activeCategory === cat.id 
@@ -183,11 +218,23 @@ export default function PublicMenuPage() {
                    {cat.items.map(item => (
                      <div 
                        key={item.id}
-                       className="relative bg-white rounded-[28px] p-4 flex gap-4 border border-gray-50 shadow-sm active:scale-[0.98] transition-all group"
+                       onClick={() => setSelectedItem(item)}
+                       className="relative bg-white rounded-[28px] p-4 flex gap-4 border border-gray-50 shadow-sm active:scale-[0.98] transition-all group cursor-pointer"
                      >
                         <div className="flex-1 space-y-1.5">
                            <div className="flex items-start justify-between gap-2">
-                             <h3 className="font-black text-[#111827] leading-tight group-hover:text-gray-700 transition-colors">{item.name}</h3>
+                             <div className="flex flex-col gap-1">
+                               <h3 className="font-black text-[#111827] leading-tight group-hover:text-gray-700 transition-colors uppercase tracking-tight">{item.name}</h3>
+                               {item.badges && item.badges.length > 0 && (
+                                 <div className="flex flex-wrap gap-1">
+                                    {item.badges.map((badge, idx) => (
+                                      <span key={idx} className="bg-[#FDBF1D] text-[#111827] text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
+                                         {badge}
+                                      </span>
+                                    ))}
+                                 </div>
+                               )}
+                             </div>
                            </div>
                            {item.description && (
                              <p className="text-[12px] font-medium text-gray-500 line-clamp-2 leading-relaxed">{item.description}</p>
@@ -236,6 +283,78 @@ export default function PublicMenuPage() {
           </div>
         </div>
       </footer>
+
+      {/* ── Item Detail Modal ── */}
+      {selectedItem && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-300">
+           <div 
+             className="w-full max-w-xl bg-white rounded-t-[32px] sm:rounded-[40px] overflow-hidden animate-in slide-in-from-bottom-20 duration-500 shadow-2xl"
+             onClick={(e) => e.stopPropagation()}
+           >
+              <div className="relative h-[60dvh] sm:h-[400px]">
+                 {selectedItem.imageUrl ? (
+                   <img src={selectedItem.imageUrl} alt={selectedItem.name} className="w-full h-full object-cover" />
+                 ) : (
+                   <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-200">
+                      <Utensils size={64} />
+                   </div>
+                 )}
+                 <button 
+                   onClick={() => setSelectedItem(null)}
+                   className="absolute top-5 right-5 w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/40 transition-all active:scale-90"
+                 >
+                   <X size={20} strokeWidth={3} />
+                 </button>
+              </div>
+
+              <div className="p-8 space-y-6">
+                 <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-3xl font-black text-[#111827] leading-tight uppercase tracking-tight">{selectedItem.name}</h2>
+                      {selectedItem.isOutOfStock && (
+                        <span className="px-2 py-1 rounded-lg bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-tighter border border-red-100">
+                          {locale === 'tr' ? 'STOKTA YOK' : 'OUT OF STOCK'}
+                        </span>
+                      )}
+                    </div>
+                    {selectedItem.badges && selectedItem.badges.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                         {selectedItem.badges.map((badge, idx) => (
+                           <span key={idx} className="bg-[#FDBF1D] text-[#111827] text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider shadow-sm">
+                             {badge}
+                           </span>
+                         ))}
+                      </div>
+                    )}
+                 </div>
+
+                 {selectedItem.description && (
+                   <div className="space-y-2 pt-2 border-t border-gray-50">
+                      <p className="text-[11px] font-black uppercase text-gray-400 tracking-[0.2em]">{locale === 'tr' ? 'AÇIKLAMA' : 'DESCRIPTION'}</p>
+                      <p className="text-gray-500 text-sm font-bold leading-relaxed">{selectedItem.description}</p>
+                   </div>
+                 )}
+
+                 <div className="flex items-center justify-between pt-6 border-t border-gray-50">
+                    <div className="space-y-1">
+                       <p className="text-[11px] font-black uppercase text-gray-400 tracking-[0.2em]">{locale === 'tr' ? 'FİYAT' : 'PRICE'}</p>
+                       <p className="text-2xl font-black text-[#111827]">
+                         {(selectedItem.priceCents / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {selectedItem.currency === 'TRY' ? '₺' : selectedItem.currency}
+                       </p>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedItem(null)}
+                      className="px-10 py-4 bg-[#111827] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-800 transition-all active:scale-95 shadow-xl"
+                    >
+                      {locale === 'tr' ? 'GERİ DÖN' : 'GO BACK'}
+                    </button>
+                 </div>
+              </div>
+           </div>
+           {/* Click backdrop to close */}
+           <div className="absolute inset-0 -z-10" onClick={() => setSelectedItem(null)} />
+        </div>
+      )}
     </div>
   );
 }

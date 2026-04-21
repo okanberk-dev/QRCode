@@ -107,6 +107,50 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
     }
   };
 
+  const handleReorder = async (type: 'category' | 'item', id: string, direction: 'up' | 'down') => {
+    // 1. Find the current category or item
+    let list: any[] = [];
+    if (type === 'category') {
+      list = [...categories];
+    } else {
+      const allItems = categories.flatMap(c => c.items);
+      const current = allItems.find(i => i.id === id);
+      if (!current) return;
+      list = categories.find(c => c.id === current.categoryId)?.items || [];
+    }
+
+    const index = list.findIndex(x => x.id === id);
+    if (index === -1) return;
+
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= list.length) return;
+
+    // 2. Perform the swap
+    const target = list[newIndex];
+    const current = list[index];
+
+    try {
+      const endpoint = type === 'category' ? `/api/menu/categories` : `/api/menu/items`;
+      
+      // Update both's sortOrder
+      await Promise.all([
+        fetch(`${endpoint}/${current.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sortOrder: target.sortOrder }),
+        }),
+        fetch(`${endpoint}/${target.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sortOrder: current.sortOrder }),
+        })
+      ]);
+      fetchData();
+    } catch (err) {
+      console.error('Reorder error', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -170,10 +214,24 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
             >
               {/* Category Header */}
               <div className="p-6 sm:p-8 flex items-center justify-between gap-4 bg-gray-50/50 border-b border-gray-50">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="p-2 cursor-grab text-gray-300 hover:text-gray-500 transition-colors">
-                    <GripVertical size={20} />
-                  </div>
+                <div className="flex items-center gap-2 mr-2">
+                   <button
+                     onClick={() => handleReorder('category', category.id, 'up')}
+                     className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#111827] flex items-center justify-center transition-all disabled:opacity-30"
+                     title="Yukarı Taşı"
+                   >
+                     <ChevronUp size={16} strokeWidth={3} />
+                   </button>
+                   <button
+                     onClick={() => handleReorder('category', category.id, 'down')}
+                     className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#111827] flex items-center justify-center transition-all disabled:opacity-30"
+                     title="Aşağı Taşı"
+                   >
+                     <ChevronDown size={16} strokeWidth={3} />
+                   </button>
+                </div>
+
+                <div className="flex items-center gap-4 min-w-0 flex-1">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                        <h3 className="text-lg font-black text-[#111827] truncate">{category.name}</h3>
@@ -254,6 +312,19 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                         </div>
 
                         <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                          <button
+                             onClick={() => handleReorder('item', item.id, 'up')}
+                             className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#111827] flex items-center justify-center transition-all"
+                           >
+                             <ChevronUp size={14} strokeWidth={3} />
+                          </button>
+                          <button
+                             onClick={() => handleReorder('item', item.id, 'down')}
+                             className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#111827] flex items-center justify-center transition-all"
+                           >
+                             <ChevronDown size={14} strokeWidth={3} />
+                          </button>
+                          <div className="w-[1px] h-4 bg-gray-100 mx-1" />
                           <button
                             onClick={() => {
                               setEditingItem(item);

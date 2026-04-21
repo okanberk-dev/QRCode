@@ -11,7 +11,7 @@ export async function PATCH(
     const body = await req.json();
     const { 
       categoryId, name, description, priceCents, 
-      currency, imageUrl, isAvailable, isOutOfStock, sortOrder 
+      currency, imageUrl, isAvailable, isOutOfStock, sortOrder, badges 
     } = body;
 
     const existing = await prisma.menuItem.findUnique({
@@ -37,6 +37,7 @@ export async function PATCH(
         isAvailable,
         isOutOfStock,
         sortOrder,
+        badges,
       },
     });
 

@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { 
       restaurantId, categoryId, name, description, 
-      priceCents, currency, imageUrl, isAvailable, sortOrder 
+      priceCents, currency, imageUrl, isAvailable, sortOrder, badges 
     } = body;
 
     if (!restaurantId || !categoryId || !name) {
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
         imageUrl,
         isAvailable: isAvailable ?? true,
         sortOrder: sortOrder ?? 0,
+        badges: badges ?? [],
       },
     });
 
