@@ -2,11 +2,12 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
-import { Star, Loader2, MapPin, ChevronRight, X } from 'lucide-react';
+import { Star, Loader2, MapPin, ChevronRight, X, UtensilsCrossed } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import FeedbackForm, { FeedbackFormHandle } from '@/components/FeedbackForm';
 import ThankYou from '@/components/ThankYou';
 import BusinessSummary from '@/components/BusinessSummary';
+import Link from 'next/link';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 
 interface RestaurantData {
@@ -226,8 +227,34 @@ function SlugContent() {
       {/* ═══════ Main Content Area ═══════ */}
       <div className="max-w-xl mx-auto w-full px-6 py-6 flex-1">
         
-        {!showThankYou && !showForm && (
-            <div className="mt-4">
+        {!showThankYou && !showForm && !showPlatformPicker && (
+            <div className="space-y-10 mt-4">
+               {/* ── Menu CTA ── */}
+               <Link 
+                 href={`/r/${slug}/menu${searchParams.toString() ? '?' + searchParams.toString() : ''}`}
+                 className="flex items-center justify-between p-5 rounded-[28px] border-2 border-[#111827] bg-[#111827] text-white shadow-xl shadow-gray-200 active:scale-95 transition-all group"
+               >
+                 <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-[#FDBF1D]">
+                      <UtensilsCrossed size={24} strokeWidth={2.75} />
+                   </div>
+                   <div>
+                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#FDBF1D] opacity-80">DİJİTAL MENÜ</p>
+                     <p className="text-lg font-black tracking-tight">{locale === 'tr' ? 'Menüyü İncele' : 'View Menu'}</p>
+                   </div>
+                 </div>
+                 <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <ChevronRight size={20} strokeWidth={3} />
+                 </div>
+               </Link>
+
+               <div className="relative py-2 text-center">
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <div className="w-full border-t border-gray-100"></div>
+                  </div>
+                  <span className="relative z-10 px-4 bg-white text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">{locale === 'tr' ? 'VEYA' : 'OR'}</span>
+               </div>
+
                <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
             </div>
         )}

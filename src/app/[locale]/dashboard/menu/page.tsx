@@ -1,125 +1,150 @@
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { UtensilsCrossed, ChevronRight, Store } from 'lucide-react';
-import { verifyJwt } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import type { Locale } from '@/lib/translations';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { Loader2, Store, ChevronRight, UtensilsCrossed } from 'lucide-react';
+import MenuEditor from '@/components/dashboard/menu/MenuEditor';
 
-export default async function DashboardMenuPickerPage({ params }: { params: Promise<{ locale: Locale }> }) {
-  const { locale } = await params;
-  const cookieStore = await cookies();
-  const token = cookieStore.get('user_token')?.value;
-  if (!token) redirect(`/${locale}/auth/login`);
+interface Restaurant {
+  id: string;
+  name: string;
+  category: string;
+  primaryColor: string;
+  slug: string;
+}
 
-  const payload = await verifyJwt(token);
-  if (!payload || typeof payload.userId !== 'string') redirect(`/${locale}/auth/login`);
+export default function DashboardMenuPage() {
+  const params = useParams();
+  const locale = params.locale === 'en' ? 'en' : 'tr';
+  
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const restaurants = await prisma.restaurant.findMany({
-    where: { userId: payload.userId as string },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      category: true,
-      primaryColor: true,
-      menuEnabled: true,
-      menuPublished: true,
-      _count: { select: { menuItems: { where: { deletedAt: null } } } },
-    },
-  });
-
-  if (restaurants.length === 1) {
-    redirect(`/${locale}/dashboard/restaurants/${restaurants[0].id}/menu`);
-  }
-
-  const isTr = locale === 'tr';
   const copy = {
-    title: isTr ? 'Menü Yönetimi' : 'Menu Management',
-    subtitle: isTr ? 'Düzenlemek istediğiniz işletmeyi seçin.' : 'Pick a location to edit its menu.',
-    empty: isTr ? 'Henüz bir restoran eklemediniz.' : "You haven't added a restaurant yet.",
-    addRestaurant: isTr ? 'Restoran Ekle' : 'Add Restaurant',
-    statusDisabled: isTr ? 'Kapalı' : 'Disabled',
-    statusDraft: isTr ? 'Taslak' : 'Draft',
-    statusPublished: isTr ? 'Yayında' : 'Published',
-    items: isTr ? 'ürün' : 'items',
-    manage: isTr ? 'Yönet' : 'Manage',
-  };
+    tr: {
+      title: 'Menü Yönetimi',
+      subtitle: 'Restoranlarınızın menülerini, kategorilerini ve ürünlerini buradan yönetin.',
+      select: 'Düzenlenecek İşletme Seçin',
+      noRest: 'Henüz bir işletmeniz bulunmuyor.',
+      addRest: 'İşletme Ekle',
+      manage: 'Menüyü Düzenle'
+    },
+    en: {
+      title: 'Menu Management',
+      subtitle: 'Manage your restaurant menus, categories, and items here.',
+      select: 'Select a Restaurant to Edit',
+      noRest: 'You don\u2019t have any restaurants yet.',
+      addRest: 'Add Restaurant',
+      manage: 'Edit Menu'
+    }
+  }[locale];
 
-  if (restaurants.length === 0) {
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        const res = await fetch('/api/restaurants');
+        if (res.ok) {
+          const data = await res.json();
+          setRestaurants(data);
+          // If only one restaurant, auto-select it
+          if (data.length === 1) {
+            setSelectedId(data[0].id);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRestaurants();
+  }, []);
+
+  if (loading) {
     return (
-      <div className="mx-auto max-w-xl p-6 sm:p-10">
-        <div className="rounded-[24px] border border-gray-100 bg-white p-10 text-center shadow-sm">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50">
-            <Store size={28} className="text-gray-400" strokeWidth={2.5} />
-          </div>
-          <h1 className="text-xl font-black tracking-tight text-[#111827]">{copy.title}</h1>
-          <p className="mt-2 text-sm font-bold text-[#6b6760]">{copy.empty}</p>
-          <Link
-            href={`/${locale}/dashboard/restaurants`}
-            className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#FDBF1D] px-6 py-3 text-xs font-black uppercase tracking-widest text-[#111827] shadow-sm hover:bg-[#EAB308] active:scale-95"
-          >
-            {copy.addRestaurant}
-          </Link>
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-[#111827]" />
       </div>
     );
   }
 
+  const selectedRest = restaurants.find(r => r.id === selectedId);
+
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 md:p-10">
-      <div className="rounded-[24px] border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FDBF1D] text-[#111827]">
-            <UtensilsCrossed size={20} strokeWidth={2.75} />
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10 lg:py-12 space-y-10 animate-in fade-in duration-700">
+      
+      {/* Header Section */}
+      <div className="bg-[#111827] rounded-[40px] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl">
+        <div className="relative z-10 space-y-4">
+          <div className="inline-flex items-center gap-2 bg-[#FDBF1D]/10 text-[#FDBF1D] px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.25em]">
+            <UtensilsCrossed size={16} /> ✦ DİJİTAL MENÜ
           </div>
-          <div>
-            <h1 className="text-2xl font-black tracking-tight text-[#111827] sm:text-3xl">{copy.title}</h1>
-            <p className="text-[13px] font-bold text-[#6b6760]">{copy.subtitle}</p>
-          </div>
+          <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">{copy.title}</h1>
+          <p className="text-[#ada89f] text-sm md:text-lg font-bold max-w-2xl">{copy.subtitle}</p>
         </div>
+        {/* Background Accent */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FDBF1D]/5 rounded-full blur-3xl -mr-20 -mt-20" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {restaurants.map((r) => {
-          const status = !r.menuEnabled
-            ? { label: copy.statusDisabled, cls: 'bg-gray-100 text-gray-500 border-gray-200' }
-            : r.menuPublished
-            ? { label: copy.statusPublished, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
-            : { label: copy.statusDraft, cls: 'bg-amber-50 text-amber-700 border-amber-200' };
-          return (
-            <Link
-              key={r.id}
-              href={`/${locale}/dashboard/restaurants/${r.id}/menu`}
-              className="group rounded-[24px] border border-gray-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div className="flex items-center gap-4">
-                <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-white shadow-sm"
-                  style={{ backgroundColor: r.primaryColor }}
+      {restaurants.length === 0 ? (
+        <div className="bg-white rounded-[40px] border border-gray-100 p-20 text-center shadow-sm">
+           <div className="w-20 h-20 bg-gray-50 rounded-[30px] flex items-center justify-center mx-auto mb-6">
+             <Store size={36} className="text-gray-200" />
+           </div>
+           <p className="text-xl font-black text-[#111827]">{copy.noRest}</p>
+           <a 
+             href={`/${locale}/dashboard/restaurants`}
+             className="mt-6 inline-flex items-center justify-center px-8 py-4 bg-[#FDBF1D] text-[#111827] rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95"
+           >
+             {copy.addRest}
+           </a>
+        </div>
+      ) : (
+        <>
+          {/* Restaurant Selector (Only if > 1) */}
+          {restaurants.length > 1 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {restaurants.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => setSelectedId(r.id)}
+                  className={`flex items-center justify-between p-6 rounded-3xl border-2 transition-all text-left ${
+                    selectedId === r.id 
+                      ? 'bg-white border-[#FDBF1D] shadow-xl shadow-[#FDBF1D]/5' 
+                      : 'bg-white border-gray-50 hover:border-gray-200'
+                  }`}
                 >
-                  {r.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="truncate text-base font-black text-[#111827]">{r.name}</h3>
-                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${status.cls}`}>
-                      {status.label}
-                    </span>
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black shrink-0 shadow-sm"
+                      style={{ backgroundColor: r.primaryColor }}
+                    >
+                      {r.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-black text-[#111827] text-sm truncate max-w-[120px]">{r.name}</p>
+                      <p className="text-[10px] font-bold text-gray-400 mt-0.5">{r.category}</p>
+                    </div>
                   </div>
-                  <p className="mt-0.5 truncate text-[11px] font-bold uppercase tracking-widest text-[#ada89f]">
-                    {r.category} · {r._count.menuItems} {copy.items}
-                  </p>
-                </div>
-                <ChevronRight size={18} className="shrink-0 text-[#ada89f] transition-transform group-hover:translate-x-0.5" strokeWidth={2.75} />
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+                  <ChevronRight size={20} className={selectedId === r.id ? 'text-[#FDBF1D]' : 'text-gray-200'} />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Menu Editor */}
+          {selectedId && selectedRest && (
+            <div className="animate-in slide-in-from-bottom-10 duration-700">
+              <MenuEditor 
+                restaurantId={selectedRest.id} 
+                restaurantName={selectedRest.name} 
+                primaryColor={selectedRest.primaryColor}
+              />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
