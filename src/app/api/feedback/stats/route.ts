@@ -12,15 +12,29 @@ export async function GET(req: NextRequest) {
   try {
     const daysParam = req.nextUrl.searchParams.get('days');
     const restaurantIdParam = req.nextUrl.searchParams.get('restaurantId');
+    const branchParam = req.nextUrl.searchParams.get('branch');
     const today = new Date();
 
-    // Build base date filter
+    // Build base date filter (supports: today/1, month, numeric days, all)
     const dateFilter: any = {};
-    if (daysParam && daysParam !== 'all') {
+    if (daysParam === '1' || daysParam === 'today') {
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+      dateFilter.createdAt = { gte: startOfToday };
+    } else if (daysParam === 'month') {
+      const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+      dateFilter.createdAt = { gte: firstOfMonth };
+    } else if (daysParam && daysParam !== 'all') {
       const days = parseInt(daysParam);
-      const pastDate = new Date();
-      pastDate.setDate(today.getDate() - days);
-      dateFilter.createdAt = { gte: pastDate };
+      if (Number.isFinite(days) && days > 0) {
+        const pastDate = new Date();
+        pastDate.setDate(today.getDate() - days);
+        dateFilter.createdAt = { gte: pastDate };
+      }
+    }
+
+    // Branch filter
+    if (branchParam && branchParam !== 'all') {
+      dateFilter.branch = branchParam;
     }
 
     // ─── IDOR Security Override ───
@@ -276,11 +290,12 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.value - a.value)
       .slice(0, 30);
 
-    // Platform distribution
+    // Platform distribution (with avg rating per platform)
     const platformGroupRaw = await prisma.feedback.groupBy({
       by: ['platform'],
       where: dateFilter,
       _count: true,
+      _avg: { rating: true },
     });
 
     const platformLabels: Record<string, string> = {
@@ -294,6 +309,7 @@ export async function GET(req: NextRequest) {
       platform: row.platform || 'unspecified',
       label: row.platform ? (platformLabels[row.platform] || row.platform) : 'Belirtilmemiş',
       count: row._count,
+      avgRating: round1(row._avg?.rating),
     }));
 
     return NextResponse.json({

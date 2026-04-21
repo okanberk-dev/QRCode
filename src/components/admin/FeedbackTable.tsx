@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
+import { Inbox } from 'lucide-react';
 
 interface FeedbackItem {
   id: string;
@@ -33,8 +34,16 @@ const PLATFORM_CONFIG: Record<string, { label: string; color: string; bg: string
 export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTableProps) {
   if (feedbacks.length === 0) {
     return (
-      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 text-center text-gray-500">
-        {locale === 'tr' ? 'Henüz değerlendirme bulunmuyor.' : 'No evaluations yet.'}
+      <div className="bg-white p-8 sm:p-12 rounded-2xl shadow-sm border border-gray-100 text-center flex flex-col items-center gap-3">
+        <div className="w-14 h-14 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center">
+          <Inbox size={26} strokeWidth={2} />
+        </div>
+        <p className="text-sm font-bold text-gray-700">
+          {locale === 'tr' ? 'Bu filtrelerle eşleşen değerlendirme bulunamadı.' : 'No feedback matches these filters.'}
+        </p>
+        <p className="text-xs text-gray-400 font-medium max-w-xs">
+          {locale === 'tr' ? 'Filtreleri sıfırlayıp tekrar deneyebilirsiniz.' : 'Try clearing the filters and retry.'}
+        </p>
       </div>
     );
   }
@@ -74,7 +83,10 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
               const service = getServiceLabel(f.serviceType);
               const platformBadge = getPlatformBadge(f.platform);
               return (
-                <tr key={f.id} className="hover:bg-gray-50 transition-colors group">
+                <tr
+                  key={f.id}
+                  className={`transition-colors group ${f.rating <= 3 ? 'bg-red-50/60 hover:bg-red-100/60' : 'hover:bg-gray-50'}`}
+                >
                   <td className="px-4 py-4 sm:px-8 sm:py-6 whitespace-nowrap font-medium text-gray-900 text-[13px]">
                     {format(new Date(f.createdAt), 'dd MMM yyyy, HH:mm', { locale: locale === 'tr' ? tr : undefined })}
                   </td>

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { Download, Loader2, TrendingUp, Calendar, BarChart3, ArrowRight, SlidersHorizontal, Layers } from 'lucide-react';
+import { Download, Loader2, TrendingUp, Calendar, BarChart3, ArrowRight, SlidersHorizontal, Layers, QrCode, ListChecks, AlertTriangle, Search, ArrowUpDown, Star } from 'lucide-react';
 import StatsCards from '@/components/admin/StatsCards';
 import FeedbackTable from '@/components/admin/FeedbackTable';
 import RatingChart from '@/components/admin/RatingChart';
@@ -22,6 +23,15 @@ interface Restaurant {
   slug: string;
 }
 
+type DaysFilter = '1' | '7' | '30' | 'month' | 'all';
+
+const PLATFORM_MINI: Array<{ key: string; label: string; barClass: string; textClass: string; bgClass: string }> = [
+  { key: 'google', label: 'Google', barClass: 'bg-[#4285F4]', textClass: 'text-[#4285F4]', bgClass: 'bg-blue-50' },
+  { key: 'yemeksepeti', label: 'Yemeksepeti', barClass: 'bg-[#FA0050]', textClass: 'text-[#FA0050]', bgClass: 'bg-red-50' },
+  { key: 'getir', label: 'Getir', barClass: 'bg-[#5D3EBC]', textClass: 'text-[#5D3EBC]', bgClass: 'bg-purple-50' },
+  { key: 'trendyol_go', label: 'Trendyol GO', barClass: 'bg-[#F27A1A]', textClass: 'text-[#F27A1A]', bgClass: 'bg-orange-50' },
+];
+
 export default function AdminDashboard() {
   const { t, locale } = useAdminTranslation();
   const [stats, setStats] = useState<any>(null);
@@ -30,11 +40,17 @@ export default function AdminDashboard() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filterRating, setFilterRating] = useState('all');
-  const [daysFilter, setDaysFilter] = useState('7');
+  const [daysFilter, setDaysFilter] = useState<DaysFilter>('7');
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState('all');
   const [filterPlatform, setFilterPlatform] = useState('all');
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [branches, setBranches] = useState<string[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const feedbackTableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     Promise.all([
@@ -52,11 +68,41 @@ export default function AdminDashboard() {
     .catch(() => setRestaurants([]));
   }, []);
 
+  // Fetch branches when restaurant scope changes
+  useEffect(() => {
+    const q = new URLSearchParams();
+    if (selectedRestaurant !== 'all') q.append('restaurantId', selectedRestaurant);
+    fetch(`/api/feedback/branches?${q.toString()}`)
+      .then(res => res.ok ? res.json() : { branches: [] })
+      .then(data => setBranches(Array.isArray(data.branches) ? data.branches : []))
+      .catch(() => setBranches([]));
+    setSelectedBranch('all');
+  }, [selectedRestaurant]);
+
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const buildFilterParams = (includeSort = true) => {
+    const params = new URLSearchParams();
+    params.append('days', daysFilter);
+    if (selectedRestaurant !== 'all') params.append('restaurantId', selectedRestaurant);
+    if (filterRating !== 'all') params.append('rating', filterRating);
+    if (filterPlatform !== 'all') params.append('platform', filterPlatform);
+    if (selectedBranch !== 'all') params.append('branch', selectedBranch);
+    if (debouncedSearch) params.append('search', debouncedSearch);
+    if (includeSort) params.append('sortOrder', sortOrder);
+    return params;
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
       const statsQuery = new URLSearchParams({ days: daysFilter });
       if (selectedRestaurant !== 'all') statsQuery.append('restaurantId', selectedRestaurant);
+      if (selectedBranch !== 'all') statsQuery.append('branch', selectedBranch);
 
       const statsRes = await fetch(`/api/feedback/stats?${statsQuery.toString()}`);
       if (statsRes.ok) {
@@ -65,14 +111,9 @@ export default function AdminDashboard() {
         window.location.href = '/admin';
       }
 
-      const query = new URLSearchParams({
-        page: page.toString(),
-        limit: '10',
-        days: daysFilter
-      });
-      if (filterRating !== 'all') query.append('rating', filterRating);
-      if (selectedRestaurant !== 'all') query.append('restaurantId', selectedRestaurant);
-      if (filterPlatform !== 'all') query.append('platform', filterPlatform);
+      const query = buildFilterParams();
+      query.set('page', page.toString());
+      query.set('limit', '10');
 
       const feedRes = await fetch(`/api/feedback?${query.toString()}`);
       if (feedRes.ok) {
@@ -88,12 +129,27 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
-  }, [page, filterRating, daysFilter, selectedRestaurant, filterPlatform]);
+  }, [page, filterRating, daysFilter, selectedRestaurant, filterPlatform, selectedBranch, debouncedSearch, sortOrder]);
 
   const handleExport = () => {
-    const params = new URLSearchParams();
-    if (selectedRestaurant !== 'all') params.append('restaurantId', selectedRestaurant);
+    const params = buildFilterParams();
     window.open(`/api/feedback/export?${params.toString()}`, '_blank');
+  };
+
+  const scrollToFeedback = () => {
+    feedbackTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleShowAll = () => {
+    setFilterRating('all');
+    setPage(1);
+    scrollToFeedback();
+  };
+
+  const handleShowLow = () => {
+    setFilterRating('low');
+    setPage(1);
+    scrollToFeedback();
   };
 
   const isSuperAdmin = !userProfile || userProfile.role === 'superadmin';
@@ -101,29 +157,6 @@ export default function AdminDashboard() {
   const satisfactionRate = stats && stats.totalCount > 0
     ? Math.round(((stats.googleRedirectsCount || 0) / stats.totalCount) * 100)
     : null;
-
-  const DateTabs = () => (
-    <div className="flex bg-gray-100 p-1 rounded-xl self-start">
-      {[
-        { label: 'Bugün', val: '1' },
-        { label: '7 Gün', val: '7' },
-        { label: '30 Gün', val: '30' },
-        { label: 'Tümü', val: 'all' }
-      ].map((tab) => (
-        <button
-          key={tab.val}
-          onClick={() => { setDaysFilter(tab.val); setPage(1); }}
-          className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-            daysFilter === tab.val
-            ? 'bg-white text-gray-900 shadow-sm'
-            : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  );
 
   if (loading && !stats) {
     return (
@@ -162,55 +195,124 @@ export default function AdminDashboard() {
       </div>
 
       {/* ─── Toolbar ─── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 lg:pb-0 no-scrollbar">
-          {[
-            { label: 'BUGÜN', val: '1' },
-            { label: '7 GÜN', val: '7' },
-            { label: '30 GÜN', val: '30' },
-            { label: 'TÜMÜ', val: 'all' }
-          ].map((tab) => (
-            <button
-              key={tab.val}
-              onClick={() => { setDaysFilter(tab.val); setPage(1); }}
-              className={`px-4 sm:px-6 py-2.5 sm:py-3 text-[10px] sm:text-xs font-bold rounded-xl transition-all uppercase tracking-widest whitespace-nowrap ${
-                daysFilter === tab.val
-                ? 'bg-[#111827] text-white shadow-md'
-                : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-          {isSuperAdmin && (
-            <select
-              value={selectedRestaurant}
-              onChange={(e) => { setSelectedRestaurant(e.target.value); setPage(1); }}
-              className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-3.5 text-[10px] sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
-            >
-              <option value="all">TÜM RESTORANLAR</option>
-              {restaurants.map((r) => (
-                <option key={r.id} value={r.id}>{r.name.toUpperCase()}</option>
-              ))}
-            </select>
-          )}
-
-          <button
-            onClick={handleExport}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 px-4 sm:px-6 py-3 sm:py-3.5 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95"
+      <div className="flex flex-col md:flex-row md:items-center md:flex-wrap gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
+        <label className="flex items-center gap-2 w-full md:w-auto md:flex-1 md:max-w-[220px]">
+          <Calendar size={16} strokeWidth={2.5} className="text-gray-400 shrink-0" />
+          <select
+            value={daysFilter}
+            onChange={(e) => { setDaysFilter(e.target.value as DaysFilter); setPage(1); }}
+            className="w-full px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
           >
-            <Download size={18} strokeWidth={3} />
-            DIŞA AKTAR
-          </button>
-        </div>
+            <option value="1">BUGÜN</option>
+            <option value="7">SON 7 GÜN</option>
+            <option value="30">SON 30 GÜN</option>
+            <option value="month">BU AY</option>
+            <option value="all">TÜM ZAMANLAR</option>
+          </select>
+        </label>
+
+        {isSuperAdmin && (
+          <select
+            value={selectedRestaurant}
+            onChange={(e) => { setSelectedRestaurant(e.target.value); setPage(1); }}
+            className="w-full md:w-auto md:flex-1 md:max-w-[240px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
+          >
+            <option value="all">TÜM RESTORANLAR</option>
+            {restaurants.map((r) => (
+              <option key={r.id} value={r.id}>{r.name.toUpperCase()}</option>
+            ))}
+          </select>
+        )}
+
+        <select
+          value={selectedBranch}
+          onChange={(e) => { setSelectedBranch(e.target.value); setPage(1); }}
+          className="w-full md:w-auto md:flex-1 md:max-w-[220px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
+        >
+          <option value="all">TÜM ŞUBELER</option>
+          {branches.map((b) => (
+            <option key={b} value={b}>{b.toUpperCase()}</option>
+          ))}
+        </select>
+
+        <button
+          onClick={handleExport}
+          className="w-full md:w-auto md:ml-auto flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 px-5 py-3 rounded-xl text-[11px] sm:text-xs font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95"
+        >
+          <Download size={16} strokeWidth={3} />
+          DIŞA AKTAR
+        </button>
       </div>
 
       {/* ─── Main Stats ─── */}
       <div className="w-full">
         {stats && <StatsCards stats={stats} />}
+      </div>
+
+      {/* ─── Platform Mini Cards ─── */}
+      {stats?.platformDistribution && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          {PLATFORM_MINI.map((p) => {
+            const found = stats.platformDistribution.find((x: any) => x.platform === p.key);
+            const count = found?.count ?? 0;
+            const avg = found?.avgRating;
+            return (
+              <div key={p.key} className="bg-white p-4 sm:p-5 rounded-[20px] border border-gray-100 shadow-sm flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className={`w-8 h-8 rounded-lg ${p.bgClass} ${p.textClass} flex items-center justify-center text-[11px] font-black`}>
+                    {p.label.charAt(0)}
+                  </span>
+                  <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wider ${p.textClass} truncate`}>{p.label}</span>
+                </div>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Yorum</p>
+                    <p className="text-xl sm:text-2xl font-black text-[#1f1e1d] tabular-nums tracking-tighter">{count}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ort.</p>
+                    <p className="text-sm sm:text-base font-black text-[#1f1e1d] tabular-nums flex items-center gap-1">
+                      {avg != null ? avg.toFixed(1) : '—'}
+                      {avg != null && <Star size={12} fill="#FDBF1D" className="text-[#FDBF1D]" strokeWidth={0} />}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ─── Quick Actions ─── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <Link
+          href="/admin/qr"
+          className="flex items-center justify-center gap-2 bg-[#111827] text-white px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-800 active:scale-95 transition-all"
+        >
+          <QrCode size={16} strokeWidth={2.5} />
+          <span>QR Oluştur</span>
+        </Link>
+        <button
+          onClick={handleShowAll}
+          className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+        >
+          <ListChecks size={16} strokeWidth={2.5} />
+          <span>Tüm Yorumlar</span>
+        </button>
+        <button
+          onClick={handleShowLow}
+          className="flex items-center justify-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-red-50 active:scale-95 transition-all"
+        >
+          <AlertTriangle size={16} strokeWidth={2.5} />
+          <span>Düşük Puanlılar</span>
+        </button>
+        <button
+          onClick={handleExport}
+          className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+        >
+          <Download size={16} strokeWidth={2.5} />
+          <span>CSV İndir</span>
+        </button>
       </div>
 
       {/* ─── Aspect Breakdown: Food / Service / Atmosphere ─── */}
@@ -327,14 +429,26 @@ export default function AdminDashboard() {
         </div>
 
         {/* Right column: Feedback Table */}
-        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-800 tracking-tight">İşletme Günlüğü</h3>
-            <div className="flex items-center gap-2 flex-wrap">
+        <div ref={feedbackTableRef} className="lg:col-span-2 space-y-4 sm:space-y-6 scroll-mt-6">
+          <div className="bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-800 tracking-tight">İşletme Günlüğü</h3>
+              <div className="relative w-full sm:max-w-xs">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" strokeWidth={2.5} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+                  placeholder={locale === 'en' ? 'Search comment or name...' : 'Yorum veya isim ara...'}
+                  className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl border border-gray-200 bg-white font-medium text-gray-700 outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:border-transparent transition-all"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
               <select
                 value={filterPlatform}
                 onChange={(e) => { setFilterPlatform(e.target.value); setPage(1); }}
-                className="w-full sm:w-auto px-4 py-2 text-xs rounded-xl border border-gray-200 bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
+                className="flex-1 sm:flex-none min-w-[140px] px-3 py-2 text-[11px] rounded-xl border border-gray-200 bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
               >
                 <option value="all">TÜM PLATFORMLAR</option>
                 <option value="google">GOOGLE</option>
@@ -345,7 +459,7 @@ export default function AdminDashboard() {
               <select
                 value={filterRating}
                 onChange={(e) => { setFilterRating(e.target.value); setPage(1); }}
-                className="w-full sm:w-auto px-4 py-2 text-xs rounded-xl border border-gray-200 bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
+                className="flex-1 sm:flex-none min-w-[140px] px-3 py-2 text-[11px] rounded-xl border border-gray-200 bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
               >
                 <option value="all">TÜM KAYITLAR</option>
                 <option value="low">SADECE DÜŞÜK (1-3)</option>
@@ -355,6 +469,17 @@ export default function AdminDashboard() {
                 <option value="2">2 YILDIZ</option>
                 <option value="1">1 YILDIZ</option>
               </select>
+              <label className="flex items-center gap-1.5 flex-1 sm:flex-none min-w-[140px]">
+                <ArrowUpDown size={12} className="text-gray-400 shrink-0" strokeWidth={2.5} />
+                <select
+                  value={sortOrder}
+                  onChange={(e) => { setSortOrder(e.target.value as 'asc' | 'desc'); setPage(1); }}
+                  className="w-full px-3 py-2 text-[11px] rounded-xl border border-gray-200 bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
+                >
+                  <option value="desc">EN YENİ</option>
+                  <option value="asc">EN ESKİ</option>
+                </select>
+              </label>
             </div>
           </div>
 

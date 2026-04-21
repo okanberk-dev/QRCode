@@ -128,7 +128,11 @@ export async function GET(req: NextRequest) {
   const daysParam = searchParams.get('days');
   const restaurantId = searchParams.get('restaurantId');
   const platformFilter = searchParams.get('platform');
-  
+  const branchFilter = searchParams.get('branch');
+  const searchParam = (searchParams.get('search') || '').trim();
+  const sortOrderParam = searchParams.get('sortOrder');
+  const sortOrder: 'asc' | 'desc' = sortOrderParam === 'asc' ? 'asc' : 'desc';
+
   const skip = (page - 1) * limit;
 
   // Build filter query
@@ -167,22 +171,22 @@ export async function GET(req: NextRequest) {
     where.rating = parseInt(ratingFilter, 10);
   }
 
-  // Date filter
+  // Date filter (supports today/1, month, numeric days, all)
   if (daysParam === 'today' || daysParam === '1') {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    where.createdAt = {
-      ...where.createdAt,
-      gte: today
-    };
+    where.createdAt = { ...where.createdAt, gte: today };
+  } else if (daysParam === 'month') {
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    where.createdAt = { ...where.createdAt, gte: firstOfMonth };
   } else if (daysParam && daysParam !== 'all') {
     const days = parseInt(daysParam);
-    const pastDate = new Date();
-    pastDate.setDate(pastDate.getDate() - days);
-    where.createdAt = {
-      ...where.createdAt,
-      gte: pastDate
-    };
+    if (Number.isFinite(days) && days > 0) {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - days);
+      where.createdAt = { ...where.createdAt, gte: pastDate };
+    }
   }
 
   // Platform filter
@@ -190,10 +194,23 @@ export async function GET(req: NextRequest) {
     where.platform = platformFilter;
   }
 
+  // Branch filter
+  if (branchFilter && branchFilter !== 'all') {
+    where.branch = branchFilter;
+  }
+
+  // Search filter (comment or name, case-insensitive)
+  if (searchParam) {
+    where.OR = [
+      { comment: { contains: searchParam, mode: 'insensitive' } },
+      { name: { contains: searchParam, mode: 'insensitive' } },
+    ];
+  }
+
   try {
     const feedbacks = await prisma.feedback.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: sortOrder },
       skip,
       take: limit,
       include: {

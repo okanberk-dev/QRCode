@@ -4,6 +4,7 @@ interface PlatformItem {
   platform: string;
   label: string;
   count: number;
+  avgRating?: number | null;
 }
 
 interface PlatformDistributionProps {

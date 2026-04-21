@@ -29,6 +29,7 @@ export async function GET(
           id: true,
           qrUrl: true,
           tableNumber: true,
+          platform: true,
           createdAt: true,
         },
       });

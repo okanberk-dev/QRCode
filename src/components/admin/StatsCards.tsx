@@ -1,18 +1,17 @@
-import { Star, AlertTriangle, Hash, Zap, Heart } from 'lucide-react';
+import { Star, AlertTriangle, Hash, Heart } from 'lucide-react';
 
 interface StatsProps {
   stats: {
     totalCount: number;
     avgRating: string;
     lowRatingCount: number;
-    todayCount: number;
     googleRedirectsCount?: number;
   };
 }
 
 export default function StatsCards({ stats }: StatsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5 mb-10">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
       {/* Toplam Yorum */}
       <div className="bg-white p-4 sm:p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:translate-y-[-2px] hover:shadow-md group">
         <div className="flex items-center justify-between mb-4 sm:mb-5">
@@ -54,20 +53,6 @@ export default function StatsCards({ stats }: StatsProps) {
         <div>
           <p className="text-[11px] sm:text-[13px] font-bold text-[#6b6760] mb-1">Düşük Puanlı</p>
           <h3 className="text-2xl sm:text-3xl font-black text-[#1f1e1d] tabular-nums tracking-tighter">{stats.lowRatingCount}</h3>
-        </div>
-      </div>
-
-      {/* Bugün */}
-      <div className="bg-white p-4 sm:p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:translate-y-[-2px] hover:shadow-md group">
-        <div className="flex items-center justify-between mb-4 sm:mb-5">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors">
-            <Zap size={20} strokeWidth={2.5} />
-          </div>
-          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-blue-400">CANLI</span>
-        </div>
-        <div>
-          <p className="text-[11px] sm:text-[13px] font-bold text-[#6b6760] mb-1">Bugün Gelen</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-[#1f1e1d] tabular-nums tracking-tighter">{stats.todayCount}</h3>
         </div>
       </div>
 

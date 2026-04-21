@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Download, Loader2, QrCode, Mail, RefreshCw, Copy, Check, Printer, Plus, Minus, Palette, Layers } from 'lucide-react';
+import { Download, Loader2, QrCode, Mail, RefreshCw, Copy, Check, Printer, Plus, Minus, Palette, Layers, AlertCircle } from 'lucide-react';
 import { Suspense } from 'react';
 
 interface Restaurant {
@@ -17,8 +17,16 @@ interface QrHistoryItem {
   id: string;
   qrUrl: string;
   tableNumber: string | null;
+  platform: string | null;
   createdAt: string;
 }
+
+const PLATFORM_BADGE: Record<string, { label: string; bg: string }> = {
+  google: { label: 'Google', bg: 'bg-[#4285F4]' },
+  yemeksepeti: { label: 'Yemeksepeti', bg: 'bg-[#FA0050]' },
+  getir: { label: 'Getir', bg: 'bg-[#5D3EBC]' },
+  trendyol_go: { label: 'Trendyol GO', bg: 'bg-[#F27A1A]' },
+};
 
 function QRPageContent() {
   const searchParams = useSearchParams();
@@ -32,9 +40,11 @@ function QRPageContent() {
   const [generating, setGenerating] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [qrError, setQrError] = useState('');
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
 
   // Customisation
   const [useBrandColor, setUseBrandColor] = useState(false);
@@ -142,6 +152,19 @@ function QRPageContent() {
 
   const generateQR = async () => {
     if (!selectedId) return;
+
+    // Check for duplicate (same table + platform) before generating
+    const dup = history.find(h =>
+      (h.tableNumber || '') === (tableNumber || '') &&
+      (h.platform || '') === (selectedPlatform || '')
+    );
+    if (dup) {
+      setDuplicateWarning(true);
+      setTimeout(() => setDuplicateWarning(false), 4000);
+    } else {
+      setDuplicateWarning(false);
+    }
+
     setGenerating(true);
     setQrError('');
     try {
@@ -153,6 +176,7 @@ function QRPageContent() {
           id: `local_${Date.now()}`,
           qrUrl: qrTargetUrl,
           tableNumber: tableNumber || null,
+          platform: selectedPlatform || null,
           createdAt: new Date().toISOString(),
         });
         fetchHistory(selectedId);
@@ -295,6 +319,37 @@ function QRPageContent() {
     navigator.clipboard.writeText(qrTargetUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyHistoryItem = (item: QrHistoryItem) => {
+    if (!item.qrUrl) return;
+    navigator.clipboard.writeText(item.qrUrl);
+    setCopiedId(item.id);
+    setTimeout(() => setCopiedId((current) => (current === item.id ? null : current)), 2000);
+  };
+
+  const downloadHistoryItem = async (item: QrHistoryItem) => {
+    if (!selectedId) return;
+    const q = new URLSearchParams({ format: 'png', width: String(size), dark: activeDark });
+    if (item.tableNumber) q.append('table', item.tableNumber);
+    if (item.platform) q.append('platform', item.platform);
+    try {
+      const res = await fetch(`/api/restaurants/${selectedId}/qr?${q.toString()}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        alert(err?.error || 'QR indirilemedi.');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `qr-${selectedRestaurant?.slug || 'code'}${item.tableNumber ? `-masa-${item.tableNumber}` : ''}${item.platform ? `-${item.platform}` : ''}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('QR indirilemedi.');
+    }
   };
 
   if (loading) {
@@ -595,29 +650,69 @@ function QRPageContent() {
                 ) : history.length === 0 ? (
                   <div className="p-4 text-[12px] font-bold text-[#6b6760]">Henüz kayıtlı QR yok.</div>
                 ) : (
-                  history.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setTableNumber(item.tableNumber || '')}
-                      className="w-full text-left p-3 hover:bg-[#FCFBF7] transition-colors flex items-start gap-3"
-                    >
-                      <div className="shrink-0 rounded-lg bg-[#FCFBF7] border border-gray-200 px-2 py-1.5 text-center min-w-[60px]">
-                        <p className="text-[9px] font-black uppercase tracking-wider text-[#ada89f] leading-tight">
-                          {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}
-                        </p>
-                        <p className="text-[11px] font-black text-[#111827] leading-tight">
-                          {new Date(item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
+                  history.map((item) => {
+                    const badge = item.platform ? PLATFORM_BADGE[item.platform] : null;
+                    return (
+                      <div key={item.id} className="p-3 hover:bg-[#FCFBF7] transition-colors flex flex-col gap-2">
+                        <div className="flex items-start gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTableNumber(item.tableNumber || '');
+                              setSelectedPlatform(item.platform || '');
+                            }}
+                            className="shrink-0 rounded-lg bg-[#FCFBF7] border border-gray-200 px-2 py-1.5 text-center min-w-[60px] hover:border-gray-300 active:scale-95 transition-all"
+                          >
+                            <p className="text-[9px] font-black uppercase tracking-wider text-[#ada89f] leading-tight">
+                              {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}
+                            </p>
+                            <p className="text-[11px] font-black text-[#111827] leading-tight">
+                              {new Date(item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </button>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                              <span className="text-[12px] font-black text-[#111827]">
+                                {item.tableNumber ? `Masa ${item.tableNumber}` : 'Genel'}
+                              </span>
+                              {badge ? (
+                                <span className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider text-white ${badge.bg}`}>
+                                  {badge.label}
+                                </span>
+                              ) : (
+                                <span className="inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-500 border border-gray-200">
+                                  Genel
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-[#6b6760] font-mono truncate" title={item.qrUrl}>{item.qrUrl}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap pl-[72px]">
+                          <button
+                            type="button"
+                            onClick={() => copyHistoryItem(item)}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border transition-all active:scale-95 ${
+                              copiedId === item.id
+                                ? 'bg-green-500 border-green-500 text-white'
+                                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            {copiedId === item.id ? <Check size={11} strokeWidth={3} /> : <Copy size={11} strokeWidth={3} />}
+                            {copiedId === item.id ? 'Kopyalandı' : 'Linki Kopyala'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => downloadHistoryItem(item)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
+                          >
+                            <Download size={11} strokeWidth={3} />
+                            PNG İndir
+                          </button>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[12px] font-black text-[#111827] truncate">
-                          {item.tableNumber ? `Masa ${item.tableNumber}` : 'Genel QR'}
-                        </p>
-                        <p className="text-[11px] text-[#6b6760] font-mono truncate">{item.qrUrl}</p>
-                      </div>
-                    </button>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -644,15 +739,29 @@ function QRPageContent() {
                   </span>
                 )}
               </div>
-              <button
-                onClick={generateQR}
-                disabled={generating || !selectedId}
-                className="flex items-center gap-2 text-[11px] sm:text-xs font-bold text-gray-600 hover:text-gray-900 transition-all disabled:opacity-30 border border-gray-200 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white shadow-sm hover:bg-gray-50 active:scale-95 uppercase tracking-widest"
-              >
-                <RefreshCw size={14} strokeWidth={2.5} className={generating ? 'animate-spin' : ''} />
-                YENİLE
-              </button>
+              <div className="flex items-center gap-2">
+                {duplicateWarning && (
+                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
+                    <AlertCircle size={12} strokeWidth={2.5} />
+                    Daha önce oluşturuldu
+                  </div>
+                )}
+                <button
+                  onClick={generateQR}
+                  disabled={generating || !selectedId}
+                  className="flex items-center gap-2 text-[11px] sm:text-xs font-bold text-gray-600 hover:text-gray-900 transition-all disabled:opacity-30 border border-gray-200 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white shadow-sm hover:bg-gray-50 active:scale-95 uppercase tracking-widest"
+                >
+                  <RefreshCw size={14} strokeWidth={2.5} className={generating ? 'animate-spin' : ''} />
+                  YENİLE
+                </button>
+              </div>
             </div>
+            {duplicateWarning && (
+              <div className="sm:hidden w-full mb-4 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-bold">
+                <AlertCircle size={14} strokeWidth={2.5} />
+                Bu kombinasyonla daha önce QR oluşturuldu.
+              </div>
+            )}
 
             {/* QR Box */}
             <div className="flex-1 flex items-center justify-center w-full min-h-[260px] sm:min-h-[300px]">
