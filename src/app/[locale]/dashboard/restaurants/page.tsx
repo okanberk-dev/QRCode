@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store, ToggleLeft, ToggleRight, X } from 'lucide-react';
+import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 
 interface Restaurant {
   id: string;
@@ -269,7 +270,13 @@ export default function DashboardRestaurantsPage() {
                       </div>
                       <div className="min-w-0">
                         <h3 className="truncate text-lg font-black text-[#111827]">{restaurant.name}</h3>
-                        <p className="truncate text-xs font-bold text-[#ada89f]">/{restaurant.slug}</p>
+                        <div className="flex items-center gap-2">
+                           <p className="truncate text-xs font-bold text-[#ada89f]">/{restaurant.slug}</p>
+                           <CopyUrlButton 
+                             url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurant.slug}`} 
+                             className="h-6 w-6" 
+                           />
+                        </div>
                       </div>
                     </div>
 

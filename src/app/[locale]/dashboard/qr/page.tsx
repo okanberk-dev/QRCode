@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw } from 'lucide-react';
+import { copyToClipboard } from '@/lib/clipboard';
+import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 
 interface Restaurant {
   id: string;
@@ -264,9 +266,11 @@ export default function DashboardQrPage() {
   const copyUrl = async () => {
     if (!qrTargetUrl) return;
 
-    await navigator.clipboard.writeText(qrTargetUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+    const success = await copyToClipboard(qrTargetUrl);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }
   };
 
   if (loading) {
@@ -451,7 +455,10 @@ export default function DashboardQrPage() {
                       </p>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-black text-[#111827]">{item.qrUrl}</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-xs font-black text-[#111827]">{item.qrUrl}</p>
+                        <CopyUrlButton url={item.qrUrl} className="h-6 w-6 shrink-0" />
+                      </div>
                       <p className="mt-0.5 text-[10px] font-bold text-[#6b6760]">
                         {item.tableNumber ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}` : (locale === 'tr' ? 'Genel QR' : 'General QR')}
                       </p>

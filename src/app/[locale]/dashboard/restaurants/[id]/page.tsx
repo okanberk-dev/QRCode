@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Loader2, Mail, Save, Trash2 } from 'lucide-react';
+import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 
 export default function DashboardRestaurantDetailPage() {
   const params = useParams();
@@ -129,7 +130,12 @@ export default function DashboardRestaurantDetailPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-black text-[#111827]">{formData.name || (locale === 'tr' ? 'İşletme' : 'Location')}</h1>
-          <p className="text-sm font-bold text-[#6b6760]">/{formData.slug}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-bold text-[#6b6760]">/{formData.slug}</p>
+            <CopyUrlButton 
+              url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${formData.slug}`} 
+            />
+          </div>
         </div>
       </div>
 

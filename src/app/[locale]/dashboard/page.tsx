@@ -8,6 +8,7 @@ import { getTranslations } from '@/lib/translations';
 import Link from 'next/link';
 import { Building2, QrCode, Star, AlertTriangle, ArrowRight, ShieldCheck, Calendar } from 'lucide-react';
 import RestaurantAnalyticsPanel from '@/components/dashboard/RestaurantAnalyticsPanel';
+import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 
 export async function generateMetadata({
   params,
@@ -236,7 +237,13 @@ export default async function DashboardPage({
                   <div className="flex items-start justify-between gap-3 mb-4 sm:mb-6">
                     <div className="min-w-0 flex-1">
                       <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d] group-hover:text-[#ea580c] transition-colors truncate">{restaurant.name}</h3>
-                      <p className="text-[11px] sm:text-[13px] font-bold text-[#ada89f] mt-1 truncate">/{restaurant.slug}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-[11px] sm:text-[13px] font-bold text-[#ada89f] truncate">/{restaurant.slug}</p>
+                        <CopyUrlButton 
+                          url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/r/${restaurant.slug}`} 
+                          className="h-7 w-7"
+                        />
+                      </div>
                     </div>
                     <span className={`shrink-0 whitespace-nowrap text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border-2 ${restaurant.isActive ? 'bg-green-50 text-green-600 border-green-200' : 'bg-gray-50 text-[#ada89f] border-gray-200'}`}>
                       {restaurant.isActive ? (locale === 'tr' ? 'AKTİF' : 'ACTIVE') : (locale === 'tr' ? 'PASİF' : 'INACTIVE')}

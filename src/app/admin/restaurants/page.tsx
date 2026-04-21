@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Store, Loader2, MoreVertical, Mail, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import Link from 'next/link';
+import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 
 interface Restaurant {
   id: string;
@@ -205,7 +206,13 @@ export default function RestaurantsPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-black text-[#111827] text-xl tracking-tight leading-none mb-2 truncate" title={r.name}>{r.name}</h3>
-                      <p className="text-[13px] font-bold text-[#ada89f] truncate">/{r.slug}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[13px] font-bold text-[#ada89f] truncate">/{r.slug}</p>
+                        <CopyUrlButton 
+                          url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${r.slug}`}
+                          className="h-6 w-6"
+                        />
+                      </div>
                     </div>
                   </div>
                   <button
