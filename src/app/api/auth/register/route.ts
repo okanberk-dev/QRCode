@@ -133,6 +133,9 @@ export async function POST(req: NextRequest) {
       restaurantId: createdRestaurantId,
     });
 
+    const isSecure = process.env.NODE_ENV === 'production' && 
+                     (req.headers.get('x-forwarded-proto') === 'https' || req.nextUrl.protocol === 'https:');
+
     const response = NextResponse.json(
       {
         success: true,
@@ -149,7 +152,7 @@ export async function POST(req: NextRequest) {
 
     response.cookies.set('user_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
@@ -157,7 +160,7 @@ export async function POST(req: NextRequest) {
 
     response.cookies.set('admin_token', '', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 0,
       path: '/',

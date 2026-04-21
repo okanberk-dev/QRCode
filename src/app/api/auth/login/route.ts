@@ -113,10 +113,12 @@ export async function POST(req: NextRequest) {
     });
 
     const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 1; // 30 days or 1 day
+    const isSecure = process.env.NODE_ENV === 'production' && 
+                     (req.headers.get('x-forwarded-proto') === 'https' || req.nextUrl.protocol === 'https:');
 
     response.cookies.set('user_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: cookieMaxAge,
       path: '/',
@@ -124,7 +126,7 @@ export async function POST(req: NextRequest) {
 
     response.cookies.set('admin_token', '', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 0,
       path: '/',
