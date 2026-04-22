@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
         phone: phone || null,
         googlePlaceId: googlePlaceId || null,
         notificationEmail: notificationEmail || null,
-        primaryColor: primaryColor || '#1a73e8',
+        primaryColor: primaryColor || '#FF9A14',
         getirYemekUrl: getirYemekUrl || null,
         yemekSepetiUrl: yemekSepetiUrl || null,
         trendyolYemekUrl: trendyolYemekUrl || null,

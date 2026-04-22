@@ -29,7 +29,7 @@ export default function DashboardRestaurantDetailPage() {
     yemekSepetiUrl: '',
     trendyolYemekUrl: '',
     notificationEmail: '',
-    primaryColor: '#1a73e8',
+    primaryColor: '#FF9A14',
     isActive: true,
   });
 
@@ -51,7 +51,7 @@ export default function DashboardRestaurantDetailPage() {
           yemekSepetiUrl: data.yemekSepetiUrl || '',
           trendyolYemekUrl: data.trendyolYemekUrl || '',
           notificationEmail: data.notificationEmail || '',
-          primaryColor: data.primaryColor || '#1a73e8',
+          primaryColor: data.primaryColor || '#FF9A14',
           isActive: data.isActive ?? true,
         });
       } catch (fetchError) {
@@ -118,7 +118,7 @@ export default function DashboardRestaurantDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-[#111827]" />
+        <Loader2 className="h-10 w-10 animate-spin text-[#0F2348]" />
       </div>
     );
   }
@@ -130,9 +130,9 @@ export default function DashboardRestaurantDetailPage() {
           <ArrowLeft size={18} strokeWidth={2.75} />
         </Link>
         <div>
-          <h1 className="text-2xl font-black text-[#111827]">{formData.name || (locale === 'tr' ? 'İşletme' : 'Location')}</h1>
+          <h1 className="text-2xl font-black text-[#0F2348]">{formData.name || (locale === 'tr' ? 'İşletme' : 'Location')}</h1>
           <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-[#6b6760]">/{formData.slug}</p>
+            <p className="text-sm font-bold text-[#243554]">/{formData.slug}</p>
             <CopyUrlButton 
               url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${formData.slug}`} 
             />
@@ -151,84 +151,84 @@ export default function DashboardRestaurantDetailPage() {
         <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-6 flex items-center gap-3">
             <div className="h-6 w-2 rounded-full" style={{ backgroundColor: formData.primaryColor }} />
-            <h2 className="text-lg font-black text-[#111827]">{locale === 'tr' ? 'Temel Bilgiler' : 'Basics'}</h2>
+            <h2 className="text-lg font-black text-[#0F2348]">{locale === 'tr' ? 'Temel Bilgiler' : 'Basics'}</h2>
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{locale === 'tr' ? 'İşletme Adı' : 'Location Name'}</span>
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93]">{locale === 'tr' ? 'İşletme Adı' : 'Location Name'}</span>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
-                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                className="w-full rounded-2xl border border-gray-200 bg-[#F5F4F1] px-5 py-4 text-sm font-bold text-[#0F2348] outline-none transition-all focus:ring-2 focus:ring-[#FF9A14]"
               />
             </label>
 
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">URL Slug</span>
-              <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4">
-                <span className="shrink-0 text-xs font-black text-[#6b6760]">buaze.com/r/</span>
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93]">URL Slug</span>
+              <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-[#F5F4F1] px-4">
+                <span className="shrink-0 text-xs font-black text-[#243554]">buaze.com/r/</span>
                 <input
                   type="text"
                   required
                   value={formData.slug}
                   onChange={(event) => setFormData((prev) => ({ ...prev, slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
-                  className="w-full bg-transparent py-4 text-sm font-bold text-[#111827] outline-none"
+                  className="w-full bg-transparent py-4 text-sm font-bold text-[#0F2348] outline-none"
                 />
               </div>
             </label>
 
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{locale === 'tr' ? 'Kategori' : 'Category'}</span>
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93]">{locale === 'tr' ? 'Kategori' : 'Category'}</span>
               <input
                 type="text"
                 value={formData.category}
                 onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
-                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                className="w-full rounded-2xl border border-gray-200 bg-[#F5F4F1] px-5 py-4 text-sm font-bold text-[#0F2348] outline-none transition-all focus:ring-2 focus:ring-[#FF9A14]"
               />
             </label>
 
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{locale === 'tr' ? 'Tema Rengi' : 'Theme Color'}</span>
-              <div className="flex h-[56px] items-center gap-3 rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4">
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93]">{locale === 'tr' ? 'Tema Rengi' : 'Theme Color'}</span>
+              <div className="flex h-[56px] items-center gap-3 rounded-2xl border border-gray-200 bg-[#F5F4F1] px-4">
                 <input
                   type="color"
                   value={formData.primaryColor}
                   onChange={(event) => setFormData((prev) => ({ ...prev, primaryColor: event.target.value }))}
                   className="h-10 w-12 cursor-pointer rounded-xl border-0 bg-transparent"
                 />
-                <span className="text-sm font-black text-[#111827]">{formData.primaryColor}</span>
+                <span className="text-sm font-black text-[#0F2348]">{formData.primaryColor}</span>
               </div>
             </label>
 
             <label className="space-y-2 sm:col-span-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{locale === 'tr' ? 'Adres' : 'Address'}</span>
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93]">{locale === 'tr' ? 'Adres' : 'Address'}</span>
               <input
                 type="text"
                 value={formData.address}
                 onChange={(event) => setFormData((prev) => ({ ...prev, address: event.target.value }))}
-                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                className="w-full rounded-2xl border border-gray-200 bg-[#F5F4F1] px-5 py-4 text-sm font-bold text-[#0F2348] outline-none transition-all focus:ring-2 focus:ring-[#FF9A14]"
               />
             </label>
 
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{locale === 'tr' ? 'Telefon' : 'Phone'}</span>
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93]">{locale === 'tr' ? 'Telefon' : 'Phone'}</span>
               <input
                 type="text"
                 value={formData.phone}
                 onChange={(event) => setFormData((prev) => ({ ...prev, phone: event.target.value }))}
-                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                className="w-full rounded-2xl border border-gray-200 bg-[#F5F4F1] px-5 py-4 text-sm font-bold text-[#0F2348] outline-none transition-all focus:ring-2 focus:ring-[#FF9A14]"
               />
             </label>
 
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{locale === 'tr' ? 'Durum' : 'Status'}</span>
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93]">{locale === 'tr' ? 'Durum' : 'Status'}</span>
               <select
                 value={formData.isActive ? '1' : '0'}
                 onChange={(event) => setFormData((prev) => ({ ...prev, isActive: event.target.value === '1' }))}
-                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                className="w-full rounded-2xl border border-gray-200 bg-[#F5F4F1] px-5 py-4 text-sm font-bold text-[#0F2348] outline-none transition-all focus:ring-2 focus:ring-[#FF9A14]"
               >
                 <option value="1">{locale === 'tr' ? 'Aktif' : 'Active'}</option>
                 <option value="0">{locale === 'tr' ? 'Pasif' : 'Inactive'}</option>
@@ -239,23 +239,23 @@ export default function DashboardRestaurantDetailPage() {
 
         <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-6 flex items-center gap-3">
-            <ExternalLink size={18} strokeWidth={2.75} className="text-[#111827]" />
-            <h2 className="text-lg font-black text-[#111827]">{locale === 'tr' ? 'Harici Bağlantılar ve Bildirimler' : 'External Links & Notifications'}</h2>
+            <ExternalLink size={18} strokeWidth={2.75} className="text-[#0F2348]" />
+            <h2 className="text-lg font-black text-[#0F2348]">{locale === 'tr' ? 'Harici Bağlantılar ve Bildirimler' : 'External Links & Notifications'}</h2>
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{locale === 'tr' ? 'Bildirim E-postası' : 'Notification Email'}</span>
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93]">{locale === 'tr' ? 'Bildirim E-postası' : 'Notification Email'}</span>
               <input
                 type="email"
                 value={formData.notificationEmail}
                 onChange={(event) => setFormData((prev) => ({ ...prev, notificationEmail: event.target.value }))}
-                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                className="w-full rounded-2xl border border-gray-200 bg-[#F5F4F1] px-5 py-4 text-sm font-bold text-[#0F2348] outline-none transition-all focus:ring-2 focus:ring-[#FF9A14]"
               />
             </label>
 
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f] inline-flex items-center gap-2">
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93] inline-flex items-center gap-2">
                 Google Place ID / Link
                 <PlatformUrlHelp platform="google" />
               </span>
@@ -263,12 +263,12 @@ export default function DashboardRestaurantDetailPage() {
                 type="text"
                 value={formData.googlePlaceId}
                 onChange={(event) => setFormData((prev) => ({ ...prev, googlePlaceId: event.target.value }))}
-                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+                className="w-full rounded-2xl border border-gray-200 bg-[#F5F4F1] px-5 py-4 text-sm font-bold text-[#0F2348] outline-none transition-all focus:ring-2 focus:ring-[#FF9A14]"
               />
             </label>
 
             <label className="space-y-2 sm:col-span-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f] inline-flex items-center gap-2">
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93] inline-flex items-center gap-2">
                 Getir Yemek URL
                 <PlatformUrlHelp platform="getir" />
               </span>
@@ -277,12 +277,12 @@ export default function DashboardRestaurantDetailPage() {
                 value={formData.getirYemekUrl}
                 onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
                 placeholder="https://getir.com/yemek/..."
-                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-purple-600"
+                className="w-full rounded-2xl border border-gray-200 bg-[#F5F4F1] px-5 py-4 text-sm font-bold text-[#0F2348] outline-none transition-all focus:ring-2 focus:ring-purple-600"
               />
             </label>
 
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f] inline-flex items-center gap-2">
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93] inline-flex items-center gap-2">
                 Yemek Sepeti URL
                 <PlatformUrlHelp platform="yemeksepeti" />
               </span>
@@ -291,12 +291,12 @@ export default function DashboardRestaurantDetailPage() {
                 value={formData.yemekSepetiUrl}
                 onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
                 placeholder="https://www.yemeksepeti.com/..."
-                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-pink-600"
+                className="w-full rounded-2xl border border-gray-200 bg-[#F5F4F1] px-5 py-4 text-sm font-bold text-[#0F2348] outline-none transition-all focus:ring-2 focus:ring-pink-600"
               />
             </label>
 
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f] inline-flex items-center gap-2">
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93] inline-flex items-center gap-2">
                 Trendyol Yemek URL
                 <PlatformUrlHelp platform="trendyol" />
               </span>
@@ -305,7 +305,7 @@ export default function DashboardRestaurantDetailPage() {
                 value={formData.trendyolYemekUrl}
                 onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
                 placeholder="https://www.trendyol.com/..."
-                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-5 py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-orange-500"
+                className="w-full rounded-2xl border border-gray-200 bg-[#F5F4F1] px-5 py-4 text-sm font-bold text-[#0F2348] outline-none transition-all focus:ring-2 focus:ring-orange-500"
               />
             </label>
           </div>
@@ -326,7 +326,7 @@ export default function DashboardRestaurantDetailPage() {
             <Link
               href={`/r/${formData.slug}`}
               target="_blank"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#111827]"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#0F2348]"
             >
               <ExternalLink size={18} strokeWidth={2.75} />
               {locale === 'tr' ? 'Önizle' : 'Preview'}
@@ -334,7 +334,7 @@ export default function DashboardRestaurantDetailPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#111827] px-5 py-3 text-sm font-black text-white disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0F2348] px-5 py-3 text-sm font-black text-white disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save size={18} strokeWidth={2.75} />}
               {locale === 'tr' ? 'Kaydet' : 'Save'}

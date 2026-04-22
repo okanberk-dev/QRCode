@@ -165,7 +165,7 @@ export default function AdminDashboard() {
   if (loading && !stats) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#111827] w-8 h-8" />
+        <Loader2 className="animate-spin text-[#0F2348] w-8 h-8" />
       </div>
     );
   }
@@ -174,7 +174,7 @@ export default function AdminDashboard() {
     <div className="p-3 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-8 sm:space-y-10 pb-32">
 
       {/* ─── Welcome Banner ─── */}
-      <div className="bg-[#111827] rounded-[24px] sm:rounded-[32px] border border-gray-800 p-4 sm:p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden shadow-2xl">
+      <div className="bg-[#0F2348] rounded-[24px] sm:rounded-[32px] border border-gray-800 p-4 sm:p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-3 sm:space-y-4 min-w-0">
           <div className="inline-flex items-center gap-2 bg-yellow-500/10 text-yellow-500 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em]">
             ✦ CANLI PANEL
@@ -182,18 +182,18 @@ export default function AdminDashboard() {
           <h1 className="text-xl sm:text-4xl font-black text-white tracking-tight leading-tight break-words">
             {t('welcome')}, {displayName} 👋
           </h1>
-          <p className="text-[#ada89f] text-sm sm:text-[17px] font-bold max-w-md">Gerçek zamanlı verilerle işletmenizin nabzını tutun.</p>
+          <p className="text-[#6B7B93] text-sm sm:text-[17px] font-bold max-w-md">Gerçek zamanlı verilerle işletmenizin nabzını tutun.</p>
         </div>
 
         {/* Satisfaction Rate Badge */}
         {satisfactionRate !== null && (
           <div className="bg-white rounded-[20px] sm:rounded-[24px] px-4 sm:px-6 md:px-10 py-4 sm:py-6 md:py-8 text-center flex-shrink-0 relative z-10 shadow-lg border border-gray-100 self-stretch md:self-auto">
             <div className="flex items-center gap-2 justify-center mb-1.5 sm:mb-2">
-              <TrendingUp size={20} className="text-[#ea580c]" strokeWidth={3} />
-              <span className="text-[10px] sm:text-[11px] text-[#ada89f] font-black uppercase tracking-widest">{t('satisfaction')}</span>
+              <TrendingUp size={20} className="text-[#FF9A14]" strokeWidth={3} />
+              <span className="text-[10px] sm:text-[11px] text-[#6B7B93] font-black uppercase tracking-widest">{t('satisfaction')}</span>
             </div>
-            <p className="text-3xl sm:text-4xl md:text-5xl font-black text-[#111827] tracking-tighter">{satisfactionRate}%</p>
-            <p className="text-[9px] sm:text-[10px] text-[#6b6760] mt-1.5 sm:mt-2 font-black uppercase tracking-wider">POZİTİF / TOPLAM</p>
+            <p className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F2348] tracking-tighter">{satisfactionRate}%</p>
+            <p className="text-[9px] sm:text-[10px] text-[#243554] mt-1.5 sm:mt-2 font-black uppercase tracking-wider">POZİTİF / TOPLAM</p>
           </div>
         )}
       </div>
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
           <select
             value={daysFilter}
             onChange={(e) => { setDaysFilter(e.target.value as DaysFilter); setPage(1); }}
-            className="w-full px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
+            className="w-full px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
           >
             <option value="1">BUGÜN</option>
             <option value="7">SON 7 GÜN</option>
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
           <select
             value={selectedRestaurant}
             onChange={(e) => { setSelectedRestaurant(e.target.value); setPage(1); }}
-            className="w-full md:w-auto md:flex-1 md:max-w-[240px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
+            className="w-full md:w-auto md:flex-1 md:max-w-[240px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
           >
             <option value="all">TÜM RESTORANLAR</option>
             {restaurants.map((r) => (
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
         <select
           value={selectedBranch}
           onChange={(e) => { setSelectedBranch(e.target.value); setPage(1); }}
-          className="w-full md:w-auto md:flex-1 md:max-w-[220px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
+          className="w-full md:w-auto md:flex-1 md:max-w-[220px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
         >
           <option value="all">TÜM ŞUBELER</option>
           {branches.map((b) => (
@@ -271,13 +271,13 @@ export default function AdminDashboard() {
                 <div className="flex items-end justify-between">
                   <div>
                     <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Yorum</p>
-                    <p className="text-xl sm:text-2xl font-black text-[#1f1e1d] tabular-nums tracking-tighter">{count}</p>
+                    <p className="text-xl sm:text-2xl font-black text-[#0F2348] tabular-nums tracking-tighter">{count}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ort.</p>
-                    <p className="text-sm sm:text-base font-black text-[#1f1e1d] tabular-nums flex items-center gap-1">
+                    <p className="text-sm sm:text-base font-black text-[#0F2348] tabular-nums flex items-center gap-1">
                       {avg != null ? avg.toFixed(1) : '—'}
-                      {avg != null && <Star size={12} fill="#FDBF1D" className="text-[#FDBF1D]" strokeWidth={0} />}
+                      {avg != null && <Star size={12} fill="#FF9A14" className="text-[#FF9A14]" strokeWidth={0} />}
                     </p>
                   </div>
                 </div>
@@ -293,7 +293,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Link
           href="/admin/qr"
-          className="flex items-center justify-center gap-2 bg-[#111827] text-white px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-800 active:scale-95 transition-all"
+          className="flex items-center justify-center gap-2 bg-[#0F2348] text-white px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-800 active:scale-95 transition-all"
         >
           <QrCode size={16} strokeWidth={2.5} />
           <span>QR Oluştur</span>
@@ -329,8 +329,8 @@ export default function AdminDashboard() {
               <SlidersHorizontal size={20} strokeWidth={3} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">Kategori Analizi</h3>
-              <p className="text-[11px] sm:text-xs font-bold text-[#6b6760] mt-0.5">
+              <h3 className="text-lg sm:text-xl font-black text-[#0F2348]">Kategori Analizi</h3>
+              <p className="text-[11px] sm:text-xs font-bold text-[#243554] mt-0.5">
                 Yemek, servis ve atmosfer puanlarınızı karşılaştırın.
               </p>
             </div>
@@ -347,10 +347,10 @@ export default function AdminDashboard() {
               <TrendingUp size={20} strokeWidth={3} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">
+              <h3 className="text-lg sm:text-xl font-black text-[#0F2348]">
                 {locale === 'en' ? 'Google Review Conversion' : 'Google Yorum Dönüşümü'}
               </h3>
-              <p className="text-[11px] sm:text-xs font-bold text-[#6b6760] mt-0.5">
+              <p className="text-[11px] sm:text-xs font-bold text-[#243554] mt-0.5">
                 {locale === 'en'
                   ? 'How many happy customers actually reach Google to leave a review.'
                   : 'Memnun müşterilerin kaçı Google\'a yorum bırakmaya yönlendiriliyor.'}
@@ -373,10 +373,10 @@ export default function AdminDashboard() {
               <Layers size={20} strokeWidth={3} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">
+              <h3 className="text-lg sm:text-xl font-black text-[#0F2348]">
                 {locale === 'en' ? 'Platform Distribution' : 'Platform Dağılımı'}
               </h3>
-              <p className="text-[11px] sm:text-xs font-bold text-[#6b6760] mt-0.5">
+              <p className="text-[11px] sm:text-xs font-bold text-[#243554] mt-0.5">
                 {locale === 'en'
                   ? 'See which platforms your reviews come from.'
                   : 'Yorumlarınızın hangi platformlardan geldiğini görün.'}
@@ -394,7 +394,7 @@ export default function AdminDashboard() {
             <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <TrendingUp size={20} strokeWidth={3} />
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">Trend Analizi</h3>
+            <h3 className="text-lg sm:text-xl font-black text-[#0F2348]">Trend Analizi</h3>
           </div>
           {stats && <TrendsChart data={stats.trends} />}
         </div>
@@ -403,7 +403,7 @@ export default function AdminDashboard() {
             <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
               <BarChart3 size={20} strokeWidth={3} />
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">Günlük Dağılım</h3>
+            <h3 className="text-lg sm:text-xl font-black text-[#0F2348]">Günlük Dağılım</h3>
           </div>
           {stats && <DayDistributionChart data={stats.dayDistribution} />}
         </div>
@@ -418,7 +418,7 @@ export default function AdminDashboard() {
                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
                  <Calendar size={20} strokeWidth={3} />
                </div>
-               <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">Puan Dağılımı</h3>
+               <h3 className="text-lg sm:text-xl font-black text-[#0F2348]">Puan Dağılımı</h3>
              </div>
              {stats && <RatingChart distribution={stats.distribution} totalCount={stats.totalCount} />}
            </div>
@@ -428,7 +428,7 @@ export default function AdminDashboard() {
                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center">
                  <TrendingUp size={20} strokeWidth={3} />
                </div>
-               <h3 className="text-lg sm:text-xl font-black text-[#1f1e1d]">Anahtar Kelimeler</h3>
+               <h3 className="text-lg sm:text-xl font-black text-[#0F2348]">Anahtar Kelimeler</h3>
              </div>
              {stats && <WordCloud words={stats.wordCloud} />}
            </div>
@@ -446,7 +446,7 @@ export default function AdminDashboard() {
                   value={searchQuery}
                   onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                   placeholder={locale === 'en' ? 'Search comment or name...' : 'Yorum veya isim ara...'}
-                  className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl border border-gray-200 bg-white font-medium text-gray-700 outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:border-transparent transition-all"
+                  className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl border border-gray-200 bg-white font-medium text-gray-700 outline-none focus:ring-2 focus:ring-[#FF9A14] focus:border-transparent transition-all"
                 />
               </div>
             </div>
@@ -511,7 +511,7 @@ export default function AdminDashboard() {
               >
                 <ArrowRight size={20} className="rotate-180" strokeWidth={2.5} />
               </button>
-              <span className="px-6 py-3 bg-[#111827] text-white rounded-2xl font-bold text-sm shadow-md tracking-widest">
+              <span className="px-6 py-3 bg-[#0F2348] text-white rounded-2xl font-bold text-sm shadow-md tracking-widest">
                 {page} / {totalPages}
               </span>
               <button

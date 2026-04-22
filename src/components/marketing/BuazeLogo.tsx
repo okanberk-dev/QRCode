@@ -10,25 +10,36 @@ export default function BuazeLogo({ size = 40, className = '' }: { size?: number
       aria-label="Buaze Logo"
     >
       <defs>
-        <linearGradient id="buazeGold" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FDBF1D" />
-          <stop offset="100%" stopColor="#F59E0B" />
+        <linearGradient id="buazeOrange" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFB347" />
+          <stop offset="100%" stopColor="#FF9A14" />
         </linearGradient>
       </defs>
 
-      {/* Rounded square base */}
-      <rect x="8" y="8" width="104" height="104" rx="26" fill="#1f1e1d" />
-
-      {/* Bold 'B' letterform — clean geometric */}
+      {/* Speech bubble "b" shape */}
+      {/* Main b body — tall ascender + bowl */}
       <path
-        d="M42 34H60C65.5 34 70 36 73 39C75.5 41.5 77 45 77 49C77 53.5 75 57 72 59.5C76 62 78.5 66.5 78.5 72C78.5 76 77 79.5 74.5 82C71.5 85 67.5 86.5 63 86.5H42V34Z
-        M53 55H60C62.5 55 64.5 54 66 52.5C67.2 51 68 49 68 47C68 45 67.2 43.5 66 42.2C64.5 41 62.5 40 60 40H53V55Z
-        M53 81H62C64.5 81 66.5 80 68 78.5C69.5 77 70 75 70 72.5C70 70 69.2 68 67.8 66.8C66.2 65.5 64 65 62 65H53V81Z"
-        fill="url(#buazeGold)"
+        d="M38 18C38 18 38 85 38 85C38 85 42 92 50 95C50 95 42 100 35 98C28 96 26 90 26 85V18C26 14 30 12 34 14L38 18Z"
+        fill="url(#buazeOrange)"
       />
-
-      {/* Accent dot */}
-      <circle cx="90" cy="30" r="5.5" fill="#FDBF1D" />
+      {/* Bowl of b — speech bubble circle */}
+      <circle cx="54" cy="65" r="26" fill="url(#buazeOrange)" />
+      {/* Inner white of bowl */}
+      <circle cx="54" cy="65" r="16" fill="white" />
+      {/* Checkmark inside */}
+      <path
+        d="M46 65L52 71L64 59"
+        stroke="#FF9A14"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      {/* Speech bubble tail */}
+      <path
+        d="M38 82L32 96L48 84"
+        fill="url(#buazeOrange)"
+      />
     </svg>
   );
 }

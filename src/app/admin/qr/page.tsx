@@ -281,7 +281,7 @@ function QRPageContent() {
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
         .card { border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px; text-align: center; page-break-inside: avoid; }
         .qr svg { width: 180px; height: 180px; }
-        h3 { margin: 8px 0 2px; font-size: 14px; color: #111827; }
+        h3 { margin: 8px 0 2px; font-size: 14px; color: #0F2348; }
         p { margin: 0; font-size: 12px; color: #6b7280; }
         @media print { body { padding: 0; } .grid { gap: 8px; } }
       </style>
@@ -302,7 +302,7 @@ function QRPageContent() {
         body { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:sans-serif; }
         .qr-wrap { text-align:center; }
         .qr-wrap svg { width:280px; height:280px; }
-        h2 { font-size:18px; margin-bottom:4px; color:#111827; }
+        h2 { font-size:18px; margin-bottom:4px; color:#0F2348; }
         p { font-size:13px; color:#6b7280; margin:0; }
         @media print { body { margin: 0; } }
       </style>
@@ -398,7 +398,7 @@ function QRPageContent() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#111827] w-8 h-8" />
+        <Loader2 className="animate-spin text-[#0F2348] w-8 h-8" />
       </div>
     );
   }
@@ -409,8 +409,8 @@ function QRPageContent() {
     <div className="p-3 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-6 sm:space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-5 sm:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">QR Kod Oluşturucu</h1>
-          <p className="text-[#6b6760] text-[12px] sm:text-[15px] font-bold">İşletmenize özel, yüksek çözünürlüklü QR kodlar hazırlayın.</p>
+          <h1 className="text-xl sm:text-3xl font-black text-[#0F2348] tracking-tight uppercase">QR Kod Oluşturucu</h1>
+          <p className="text-[#243554] text-[12px] sm:text-[15px] font-bold">İşletmenize özel, yüksek çözünürlüklü QR kodlar hazırlayın.</p>
         </div>
       </div>
 
@@ -425,17 +425,17 @@ function QRPageContent() {
               <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
                 <QrCode size={20} strokeWidth={3} />
               </div>
-              <h3 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Ayarlar</h3>
+              <h3 className="text-xl font-black text-[#0F2348] uppercase tracking-tighter">Ayarlar</h3>
             </div>
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">İşletme Seçimi</label>
+                <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">İşletme Seçimi</label>
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
                   disabled={isSingleRestaurant}
-                  className={`w-full px-5 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold uppercase tracking-widest transition-all appearance-none cursor-pointer shadow-sm ${
+                  className={`w-full px-5 py-4 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-sm font-bold uppercase tracking-widest transition-all appearance-none cursor-pointer shadow-sm ${
                     isSingleRestaurant
                     ? 'opacity-50 cursor-not-allowed'
                     : ''
@@ -449,7 +449,7 @@ function QRPageContent() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Masa / Konum Numarası</label>
+                <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Masa / Konum Numarası</label>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -463,7 +463,7 @@ function QRPageContent() {
                     value={tableNumber}
                     onChange={(e) => setTableNumber(e.target.value.replace(/\D/g, ''))}
                     placeholder="GENEL"
-                    className="flex-1 px-5 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold text-center shadow-sm transition-all"
+                    className="flex-1 px-5 py-4 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-[15px] font-bold text-center shadow-sm transition-all"
                   />
                   <button
                     type="button"
@@ -477,11 +477,11 @@ function QRPageContent() {
 
               {/* Platform Selector */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Platform</label>
+                <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Platform</label>
                 <select
                   value={selectedPlatform}
                   onChange={(e) => setSelectedPlatform(e.target.value)}
-                  className="w-full px-5 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold uppercase tracking-widest transition-all appearance-none cursor-pointer shadow-sm"
+                  className="w-full px-5 py-4 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-sm font-bold uppercase tracking-widest transition-all appearance-none cursor-pointer shadow-sm"
                 >
                   <option value="">GENEL (PLATFORM YOK)</option>
                   <option value="google">GOOGLE</option>
@@ -489,7 +489,7 @@ function QRPageContent() {
                   <option value="getir">GETİR</option>
                   <option value="trendyol_go">TRENDYOL GO</option>
                 </select>
-                <p className="text-[10px] text-[#ada89f] font-bold pl-1">
+                <p className="text-[10px] text-[#6B7B93] font-bold pl-1">
                   Seçilen platforma özel QR oluşturulur. Gelen yorumlar bu platform altında listelenir.
                 </p>
               </div>
@@ -498,7 +498,7 @@ function QRPageContent() {
 
               {/* QR Size Selector */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Çözünürlük (PNG)</label>
+                <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Çözünürlük (PNG)</label>
                 <div className="flex gap-2">
                   {[
                     { label: 'Küçük', value: 512 },
@@ -511,7 +511,7 @@ function QRPageContent() {
                       onClick={() => setSize(opt.value as 512 | 800 | 1200)}
                       className={`flex-1 py-3 rounded-xl border text-[11px] font-black uppercase tracking-widest transition-all ${
                         size === opt.value
-                          ? 'bg-[#111827] text-white border-[#111827] shadow-sm'
+                          ? 'bg-[#0F2348] text-white border-[#0F2348] shadow-sm'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                       }`}
                     >
@@ -523,7 +523,7 @@ function QRPageContent() {
 
               {/* Colour customisation */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1 flex items-center gap-2">
+                <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1 flex items-center gap-2">
                   <Palette size={14} strokeWidth={3} /> Renk
                 </label>
                 <div className="flex items-center gap-3">
@@ -533,7 +533,7 @@ function QRPageContent() {
                     disabled={!selectedRestaurant?.primaryColor}
                     className={`flex-1 px-4 py-3 rounded-xl border-2 text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
                       useBrandColor
-                        ? 'bg-[#FDBF1D]/10 border-[#FDBF1D] text-[#111827]'
+                        ? 'bg-[#FF9A14]/10 border-[#FF9A14] text-[#0F2348]'
                         : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
                     } disabled:opacity-40 disabled:cursor-not-allowed`}
                     title={selectedRestaurant?.primaryColor ? `Marka rengi: ${selectedRestaurant.primaryColor}` : 'Restoranda marka rengi tanımlı değil'}
@@ -557,7 +557,7 @@ function QRPageContent() {
                     />
                   </label>
                 </div>
-                <p className="text-[10px] text-[#ada89f] font-bold pl-1">
+                <p className="text-[10px] text-[#6B7B93] font-bold pl-1">
                   Koyu renkleri tercih edin. Tarama güvenilirliği için siyah önerilir.
                 </p>
               </div>
@@ -577,32 +577,32 @@ function QRPageContent() {
                     <Layers size={20} strokeWidth={3} />
                   </div>
                   <div className="text-left">
-                    <h3 className="text-sm font-black text-[#111827] uppercase tracking-widest">Toplu QR</h3>
-                    <p className="text-[11px] text-[#6b6760] font-bold">Masa aralığı için tek tıkla oluşturun.</p>
+                    <h3 className="text-sm font-black text-[#0F2348] uppercase tracking-widest">Toplu QR</h3>
+                    <p className="text-[11px] text-[#243554] font-bold">Masa aralığı için tek tıkla oluşturun.</p>
                   </div>
                 </div>
-                <span className="text-[18px] font-black text-[#ada89f]">{batchOpen ? '−' : '+'}</span>
+                <span className="text-[18px] font-black text-[#6B7B93]">{batchOpen ? '−' : '+'}</span>
               </button>
 
               {batchOpen && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Başlangıç</label>
+                      <label className="text-[10px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Başlangıç</label>
                       <input
                         type="text"
                         value={batchFrom}
                         onChange={(e) => setBatchFrom(e.target.value.replace(/\D/g, ''))}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#FCFBF7] outline-none text-sm font-bold text-center"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#F5F4F1] outline-none text-sm font-bold text-center"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Bitiş</label>
+                      <label className="text-[10px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Bitiş</label>
                       <input
                         type="text"
                         value={batchTo}
                         onChange={(e) => setBatchTo(e.target.value.replace(/\D/g, ''))}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#FCFBF7] outline-none text-sm font-bold text-center"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#F5F4F1] outline-none text-sm font-bold text-center"
                       />
                     </div>
                   </div>
@@ -617,7 +617,7 @@ function QRPageContent() {
                     type="button"
                     onClick={runBatch}
                     disabled={batchLoading}
-                    className="w-full flex items-center justify-center gap-2 bg-[#111827] text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm hover:bg-gray-800 disabled:opacity-60 transition-all"
+                    className="w-full flex items-center justify-center gap-2 bg-[#0F2348] text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm hover:bg-gray-800 disabled:opacity-60 transition-all"
                   >
                     {batchLoading ? <Loader2 size={16} className="animate-spin" /> : <Layers size={16} strokeWidth={3} />}
                     OLUŞTUR (Maks. 50)
@@ -629,7 +629,7 @@ function QRPageContent() {
                         {batchItems.map((it) => (
                           <div key={it.table} className="border border-gray-100 rounded-lg p-2 text-center bg-white">
                             <div className="w-full aspect-square [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: it.svg }} />
-                            <p className="text-[10px] font-black text-[#111827] mt-1">Masa {it.table}</p>
+                            <p className="text-[10px] font-black text-[#0F2348] mt-1">Masa {it.table}</p>
                           </div>
                         ))}
                       </div>
@@ -649,9 +649,9 @@ function QRPageContent() {
 
           {/* Restaurant info */}
           {selectedRestaurant && (
-            <div className="bg-[#111827] rounded-[24px] border border-gray-800 shadow-xl p-6 sm:p-8 space-y-6">
+            <div className="bg-[#0F2348] rounded-[24px] border border-gray-800 shadow-xl p-6 sm:p-8 space-y-6">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black text-[#FDBF1D] uppercase tracking-widest leading-none">Hedef Link</p>
+                <p className="text-[10px] font-black text-[#FF9A14] uppercase tracking-widest leading-none">Hedef Link</p>
                 <div className="h-2 w-2 rounded-full bg-[#10b981] animate-pulse" />
               </div>
               
@@ -667,11 +667,11 @@ function QRPageContent() {
 
               <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
                 <div className="space-y-1 min-w-0">
-                  <p className="text-[9px] font-black text-[#ada89f] uppercase tracking-widest">İşletme</p>
+                  <p className="text-[9px] font-black text-[#6B7B93] uppercase tracking-widest">İşletme</p>
                   <p className="text-xs font-black text-white truncate" title={selectedRestaurant.name}>{selectedRestaurant.name.toUpperCase()}</p>
                 </div>
                 <div className="space-y-1 text-right">
-                  <p className="text-[9px] font-black text-[#ada89f] uppercase tracking-widest">Durum</p>
+                  <p className="text-[9px] font-black text-[#6B7B93] uppercase tracking-widest">Durum</p>
                   <p className="text-xs font-black text-[#10b981] whitespace-nowrap">AKTİF ✓</p>
                 </div>
               </div>
@@ -683,8 +683,8 @@ function QRPageContent() {
             <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 sm:p-8 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <h4 className="text-sm font-black text-[#111827] uppercase tracking-widest">Son 50 QR</h4>
-                  <span className="text-[10px] font-black text-[#ada89f] px-2 py-0.5 bg-gray-100 rounded-md">{history.length}/50</span>
+                  <h4 className="text-sm font-black text-[#0F2348] uppercase tracking-widest">Son 50 QR</h4>
+                  <span className="text-[10px] font-black text-[#6B7B93] px-2 py-0.5 bg-gray-100 rounded-md">{history.length}/50</span>
                 </div>
                 <button
                   onClick={handleExportHistory}
@@ -695,20 +695,20 @@ function QRPageContent() {
                   DIŞA AKTAR
                 </button>
               </div>
-              <p className="text-[12px] text-[#6b6760] font-semibold">
+              <p className="text-[12px] text-[#243554] font-semibold">
                 50 kayıt aşıldığında en eski QR otomatik silinir, en yeniler tutulur.
               </p>
 
               <div className="max-h-[280px] overflow-auto divide-y divide-gray-100 border border-gray-100 rounded-xl">
                 {historyLoading ? (
-                  <div className="p-4 text-[12px] font-bold text-[#6b6760]">Yükleniyor...</div>
+                  <div className="p-4 text-[12px] font-bold text-[#243554]">Yükleniyor...</div>
                 ) : history.length === 0 ? (
-                  <div className="p-4 text-[12px] font-bold text-[#6b6760]">Henüz kayıtlı QR yok.</div>
+                  <div className="p-4 text-[12px] font-bold text-[#243554]">Henüz kayıtlı QR yok.</div>
                 ) : (
                   history.map((item) => {
                     const badge = item.platform ? PLATFORM_BADGE[item.platform] : null;
                     return (
-                      <div key={item.id} className="p-3 hover:bg-[#FCFBF7] transition-colors flex flex-col gap-2">
+                      <div key={item.id} className="p-3 hover:bg-[#F5F4F1] transition-colors flex flex-col gap-2">
                         <div className="flex items-start gap-3">
                           <button
                             type="button"
@@ -716,18 +716,18 @@ function QRPageContent() {
                               setTableNumber(item.tableNumber || '');
                               setSelectedPlatform(item.platform || '');
                             }}
-                            className="shrink-0 rounded-lg bg-[#FCFBF7] border border-gray-200 px-2 py-1.5 text-center min-w-[60px] hover:border-gray-300 active:scale-95 transition-all"
+                            className="shrink-0 rounded-lg bg-[#F5F4F1] border border-gray-200 px-2 py-1.5 text-center min-w-[60px] hover:border-gray-300 active:scale-95 transition-all"
                           >
-                            <p className="text-[9px] font-black uppercase tracking-wider text-[#ada89f] leading-tight">
+                            <p className="text-[9px] font-black uppercase tracking-wider text-[#6B7B93] leading-tight">
                               {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}
                             </p>
-                            <p className="text-[11px] font-black text-[#111827] leading-tight">
+                            <p className="text-[11px] font-black text-[#0F2348] leading-tight">
                               {new Date(item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </button>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                              <span className="text-[12px] font-black text-[#111827]">
+                              <span className="text-[12px] font-black text-[#0F2348]">
                                 {item.tableNumber ? `Masa ${item.tableNumber}` : 'Genel'}
                               </span>
                               {badge ? (
@@ -741,7 +741,7 @@ function QRPageContent() {
                               )}
 
                             </div>
-                            <p className="text-[11px] text-[#6b6760] font-mono truncate" title={item.qrUrl}>{item.qrUrl}</p>
+                            <p className="text-[11px] text-[#243554] font-mono truncate" title={item.qrUrl}>{item.qrUrl}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap pl-[72px]">
@@ -780,7 +780,7 @@ function QRPageContent() {
           <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm p-5 sm:p-8 flex flex-col items-center h-full">
             <div className="flex items-center justify-between w-full mb-6 sm:mb-10">
               <div className="flex items-center gap-3">
-                <h3 className="text-lg sm:text-2xl font-black text-[#111827] uppercase tracking-tighter">Önizleme</h3>
+                <h3 className="text-lg sm:text-2xl font-black text-[#0F2348] uppercase tracking-tighter">Önizleme</h3>
                 {selectedPlatform && (
                   <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-white shadow-sm ${
                     selectedPlatform === 'google' ? 'bg-[#4285F4]' :
@@ -823,7 +823,7 @@ function QRPageContent() {
             <div className="flex-1 flex items-center justify-center w-full min-h-[260px] sm:min-h-[300px]">
               {generating ? (
                 <div className="flex items-center justify-center w-56 h-56 sm:w-72 sm:h-72">
-                  <Loader2 className="animate-spin text-[#111827] w-12 h-12" strokeWidth={3} />
+                  <Loader2 className="animate-spin text-[#0F2348] w-12 h-12" strokeWidth={3} />
                 </div>
               ) : qrSvg ? (
                 <div
@@ -833,7 +833,7 @@ function QRPageContent() {
               ) : (
                 <div className="w-56 h-56 sm:w-72 sm:h-72 bg-gray-50 rounded-[20px] sm:rounded-[24px] flex flex-col items-center justify-center border-2 border-dashed border-gray-200 text-center p-5 sm:p-8">
                   <QrCode size={48} strokeWidth={2.5} className={`${qrError ? 'text-red-300' : 'text-gray-300'} mb-4`} />
-                  <p className={`text-[11px] sm:text-[13px] font-black uppercase tracking-widest ${qrError ? 'text-red-500' : 'text-[#ada89f]'}`}>
+                  <p className={`text-[11px] sm:text-[13px] font-black uppercase tracking-widest ${qrError ? 'text-red-500' : 'text-[#6B7B93]'}`}>
                     {qrError
                       ? qrError
                       : selectedId
@@ -843,7 +843,7 @@ function QRPageContent() {
                   {qrError && (
                     <button
                       onClick={generateQR}
-                      className="mt-4 text-[11px] font-black text-[#111827] underline underline-offset-2 uppercase tracking-widest"
+                      className="mt-4 text-[11px] font-black text-[#0F2348] underline underline-offset-2 uppercase tracking-widest"
                     >
                       Tekrar Dene
                     </button>
@@ -858,7 +858,7 @@ function QRPageContent() {
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-green-100 text-green-500 flex items-center justify-center flex-shrink-0">
                   <Check size={18} strokeWidth={3} />
                 </div>
-                <p className="text-[11px] sm:text-[12px] font-bold text-[#6b6760] leading-tight">
+                <p className="text-[11px] sm:text-[12px] font-bold text-[#243554] leading-tight">
                   Bu QR kodu masalara, menülere veya girişe yerleştirerek müşteri geri bildirimi toplamaya başlayın.
                 </p>
               </div>
@@ -869,7 +869,7 @@ function QRPageContent() {
               <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full mt-6 sm:mt-auto">
                 <button
                   onClick={() => downloadQR('png')}
-                  className="col-span-2 flex items-center justify-center gap-3 bg-[#111827] text-white px-6 sm:px-8 py-4 sm:py-5 rounded-2xl text-[12px] sm:text-[13px] font-bold uppercase tracking-widest border border-gray-800 shadow-md hover:bg-gray-800 active:scale-95 transition-all group"
+                  className="col-span-2 flex items-center justify-center gap-3 bg-[#0F2348] text-white px-6 sm:px-8 py-4 sm:py-5 rounded-2xl text-[12px] sm:text-[13px] font-bold uppercase tracking-widest border border-gray-800 shadow-md hover:bg-gray-800 active:scale-95 transition-all group"
                 >
                   <Download size={20} strokeWidth={2.5} className="group-hover:translate-y-0.5 transition-transform" />
                   PNG OLARAK İNDİR (HD)
@@ -901,7 +901,7 @@ export default function QRPage() {
   return (
     <Suspense fallback={
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#111827] w-8 h-8" />
+        <Loader2 className="animate-spin text-[#0F2348] w-8 h-8" />
       </div>
     }>
       <QRPageContent />

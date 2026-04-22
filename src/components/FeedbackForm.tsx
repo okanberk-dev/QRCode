@@ -244,7 +244,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
               className={`w-full py-5 rounded-2xl text-[15px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-3 ${
                 isSubmitting || !comment.trim()
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-[#111827] text-white shadow-xl hover:bg-gray-800 hover:-translate-y-1 active:scale-95'
+                  : 'bg-[#0F2348] text-white shadow-xl hover:bg-gray-800 hover:-translate-y-1 active:scale-95'
               }`}
             >
               {isSubmitting ? (
@@ -298,7 +298,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
               <div className="p-6 bg-gray-50/80 border-t border-gray-100 flex justify-end gap-3">
                 <button 
                   onClick={() => setShowLegalModal(null)}
-                  className="w-full py-4 bg-[#111827] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 active:scale-95"
+                  className="w-full py-4 bg-[#0F2348] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 active:scale-95"
                 >
                   KAPAT
                 </button>

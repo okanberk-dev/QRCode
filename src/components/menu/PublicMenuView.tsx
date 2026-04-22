@@ -118,7 +118,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
   const priceLocale = locale === 'tr' ? 'tr-TR' : 'en-US';
 
   return (
-    <div className="min-h-full bg-[#FCFBF7]">
+    <div className="min-h-full bg-[#F5F4F1]">
       <header className="relative overflow-hidden">
         <div
           className="absolute inset-0"
@@ -167,12 +167,12 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
             <Sparkles size={28} className="text-gray-400" strokeWidth={2} />
           </div>
-          <h2 className="text-lg font-black text-[#111827]">{copy.emptyTitle}</h2>
-          <p className="mt-1 text-sm font-bold text-[#6b6760]">{copy.emptyBody}</p>
+          <h2 className="text-lg font-black text-[#0F2348]">{copy.emptyTitle}</h2>
+          <p className="mt-1 text-sm font-bold text-[#243554]">{copy.emptyBody}</p>
         </div>
       ) : (
         <>
-          <nav className="sticky top-0 z-30 border-b border-gray-200/80 bg-[#FCFBF7]/95 backdrop-blur">
+          <nav className="sticky top-0 z-30 border-b border-gray-200/80 bg-[#F5F4F1]/95 backdrop-blur">
             <div className="mx-auto max-w-2xl overflow-x-auto px-3 py-3 no-scrollbar">
               <div className="flex gap-2">
                 {visibleCategories.map((c) => {
@@ -182,7 +182,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                       key={c.id}
                       href={`#cat-${c.id}`}
                       className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all ${
-                        isActive ? 'text-white shadow-sm' : 'bg-white text-[#111827] hover:bg-gray-50'
+                        isActive ? 'text-white shadow-sm' : 'bg-white text-[#0F2348] hover:bg-gray-50'
                       }`}
                       style={isActive ? { backgroundColor: restaurant.primaryColor } : undefined}
                     >
@@ -201,9 +201,9 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-5">
-                    <h2 className="text-xl font-black tracking-tight text-[#111827] sm:text-2xl">{category.name}</h2>
+                    <h2 className="text-xl font-black tracking-tight text-[#0F2348] sm:text-2xl">{category.name}</h2>
                     {category.description && (
-                      <p className="mt-1 text-sm font-bold text-[#6b6760]">{category.description}</p>
+                      <p className="mt-1 text-sm font-bold text-[#243554]">{category.description}</p>
                     )}
                     <div className="mt-2 h-1 w-12 rounded-full" style={{ backgroundColor: restaurant.primaryColor }} />
                   </div>
@@ -236,7 +236,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-[15px] font-black leading-tight text-[#111827]">{item.name}</h3>
+                            <h3 className="text-[15px] font-black leading-tight text-[#0F2348]">{item.name}</h3>
                             <span
                               className="shrink-0 text-sm font-black sm:text-base"
                               style={{ color: restaurant.primaryColor }}
@@ -245,7 +245,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                             </span>
                           </div>
                           {item.description && (
-                            <p className="mt-1 line-clamp-3 text-xs font-bold text-[#6b6760] sm:text-[13px]">{item.description}</p>
+                            <p className="mt-1 line-clamp-3 text-xs font-bold text-[#243554] sm:text-[13px]">{item.description}</p>
                           )}
                           {item.badges.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1">
@@ -261,7 +261,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                 </section>
               );
             })}
-            <footer className="pt-4 pb-6 text-center text-[10px] font-bold uppercase tracking-widest text-[#ada89f]">
+            <footer className="pt-4 pb-6 text-center text-[10px] font-bold uppercase tracking-widest text-[#6B7B93]">
               Powered by Buaze
             </footer>
           </main>

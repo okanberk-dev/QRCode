@@ -1,5 +1,13 @@
 import type { Metadata, Viewport } from 'next';
+import { DM_Sans } from 'next/font/google';
 import './globals.css';
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+  display: 'swap',
+  variable: '--font-dm-sans',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://buaze.com'),
@@ -30,8 +38,8 @@ export const viewport: Viewport = {
   // `maximumScale: 1` lock, which blocks users with low vision from zooming.
   maximumScale: 5,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#FCFBF7' },
-    { media: '(prefers-color-scheme: dark)', color: '#1f1e1d' },
+    { media: '(prefers-color-scheme: light)', color: '#F5F4F1' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F2348' },
   ],
 };
 
@@ -41,8 +49,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="tr">
-      <body className="antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-screen">
+    <html lang="tr" className={dmSans.variable}>
+      <body className={`${dmSans.className} antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-screen`}>
         {children}
       </body>
     </html>

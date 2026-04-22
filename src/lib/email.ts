@@ -93,7 +93,7 @@ const EMAIL_STYLES = `
     box-shadow: 6px 6px 0px #1e293b; 
   }
   .btn { 
-    background-color: #FDBF1D; 
+    background-color: #FF9A14; 
     border: 3px solid #1e293b; 
     box-shadow: 4px 4px 0px #1e293b; 
     color: #1e293b !important;
@@ -101,7 +101,7 @@ const EMAIL_STYLES = `
   @media (prefers-color-scheme: dark) {
     body { background-color: #0f172a !important; color: #f1f5f9 !important; }
     .card { background-color: #1e293b !important; border-color: #334155 !important; box-shadow: 6px 6px 0px #000000 !important; color: #f1f5f9 !important; }
-    .btn { background-color: #FDBF1D !important; border-color: #000000 !important; box-shadow: 4px 4px 0px #000000 !important; color: #000000 !important; }
+    .btn { background-color: #FF9A14 !important; border-color: #000000 !important; box-shadow: 4px 4px 0px #000000 !important; color: #000000 !important; }
     .text-muted { color: #94a3b8 !important; }
     .bg-accent { background-color: #334155 !important; }
     .border-accent { border-color: #475569 !important; }
@@ -116,7 +116,7 @@ const SHARED_LAYOUT = (content: string, title: string) => `
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>${EMAIL_STYLES}</style>
 </head>
-<body style="margin:0;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<body style="margin:0;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'DM Sans',Roboto,Helvetica,Arial,sans-serif;">
   <div align="center">
     <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;">
       <tr>
@@ -125,7 +125,7 @@ const SHARED_LAYOUT = (content: string, title: string) => `
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:32px;">
             <tr>
               <td>
-                <div style="background:#FDBF1D;border:2px solid #1e293b;border-radius:10px;width:40px;height:40px;text-align:center;display:inline-block;vertical-align:middle;">
+                <div style="background:#FF9A14;border:2px solid #1e293b;border-radius:10px;width:40px;height:40px;text-align:center;display:inline-block;vertical-align:middle;">
                   <span style="font-size:20px;font-weight:900;color:#1e293b;line-height:40px;">B</span>
                 </div>
                 <span style="font-size:24px;font-weight:900;margin-left:12px;vertical-align:middle;">Buaze</span>
@@ -174,12 +174,12 @@ export interface NotificationParams {
 function renderStars(rating: number): string {
   const filled = '★'.repeat(rating);
   const empty = '☆'.repeat(5 - rating);
-  return `<span style="color:#FDBF1D;font-size:28px;letter-spacing:2px;">${filled}</span><span style="color:#d1d5db;font-size:28px;letter-spacing:2px;">${empty}</span>`;
+  return `<span style="color:#FF9A14;font-size:28px;letter-spacing:2px;">${filled}</span><span style="color:#d1d5db;font-size:28px;letter-spacing:2px;">${empty}</span>`;
 }
 
 function getRatingColor(rating: number): string {
   if (rating <= 2) return '#ef4444';
-  if (rating === 3) return '#f59e0b';
+  if (rating === 3) return '#FF9A14';
   return '#22c55e';
 }
 
@@ -303,7 +303,7 @@ export async function sendWeeklyDigest(params: WeeklyDigestParams) {
   const distRows = [5, 4, 3, 2, 1].map(star => {
     const count = stats.distribution[star] || 0;
     const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
-    const barColor = star >= 4 ? '#22c55e' : star === 3 ? '#f59e0b' : '#ef4444';
+    const barColor = star >= 4 ? '#22c55e' : star === 3 ? '#FF9A14' : '#ef4444';
     return `
       <tr>
         <td style="padding:4px 0;width:30px;font-size:12px;font-weight:800;">${star}★</td>
@@ -325,7 +325,7 @@ export async function sendWeeklyDigest(params: WeeklyDigestParams) {
       <tr>
         <td style="width:50%;padding-right:10px;">
           <div class="card" style="padding:20px;text-align:center;border-radius:12px;box-shadow:4px 4px 0px #1e293b;">
-            <div style="font-size:32px;font-weight:900;color:#FDBF1D;">${stats.avgRating}</div>
+            <div style="font-size:32px;font-weight:900;color:#FF9A14;">${stats.avgRating}</div>
             <div style="font-size:11px;font-weight:800;text-transform:uppercase;opacity:0.6;">${copy.avg}</div>
           </div>
         </td>

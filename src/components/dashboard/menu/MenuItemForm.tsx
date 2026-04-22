@@ -129,15 +129,15 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#111827]/40 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0F2348]/40 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="w-full max-w-2xl bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="flex items-center justify-between p-7 border-b border-gray-50">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#FDBF1D]/10 rounded-2xl flex items-center justify-center">
-              <Utensils size={24} className="text-[#FDBF1D]" />
+            <div className="w-12 h-12 bg-[#FF9A14]/10 rounded-2xl flex items-center justify-center">
+              <Utensils size={24} className="text-[#FF9A14]" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-[#111827]">
+              <h2 className="text-2xl font-black text-[#0F2348]">
                 {item ? 'Ürünü Düzenle' : 'Yeni Ürün Ekle'}
               </h2>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-0.5">
@@ -168,7 +168,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                <div
                  onClick={() => fileInputRef.current?.click()}
                  className={`relative h-56 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
-                   form.imageUrl ? 'border-gray-100' : 'border-gray-200 hover:border-[#FDBF1D] hover:bg-[#FDBF1D]/5'
+                   form.imageUrl ? 'border-gray-100' : 'border-gray-200 hover:border-[#FF9A14] hover:bg-[#FF9A14]/5'
                  }`}
                >
                  {form.imageUrl ? (
@@ -208,7 +208,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                    value={form.imageUrl || ''}
                    onChange={(e) => setForm({ ...form, imageUrl: e.target.value || null })}
                    placeholder="https://..."
-                   className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm"
+                   className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
                  />
                </div>
 
@@ -231,7 +231,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                   required
                   value={form.categoryId}
                   onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm appearance-none"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm appearance-none"
                 >
                   <option value="">Seçiniz...</option>
                   {categories.map(c => (
@@ -248,7 +248,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Örn: Izgara Köfte"
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
                 />
               </div>
 
@@ -263,7 +263,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                       value={form.price}
                       onChange={(e) => setForm({ ...form, price: e.target.value })}
                       placeholder="0.00"
-                      className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-black focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm pr-12"
+                      className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-black focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm pr-12"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">₺</span>
                   </div>
@@ -274,7 +274,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                     type="number"
                     value={form.sortOrder}
                     onChange={(e) => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -285,7 +285,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">ÜRÜN ETİKETLERİ (ÖRN: YENİ, POPÜLER)</label>
             <div className="flex flex-wrap gap-2 mb-3">
                {form.badges.map(badge => (
-                 <span key={badge} className="bg-[#FDBF1D] text-[#111827] text-[10px] font-black px-2.5 py-1.5 rounded-lg flex items-center gap-2 uppercase tracking-wider shadow-sm">
+                 <span key={badge} className="bg-[#FF9A14] text-[#0F2348] text-[10px] font-black px-2.5 py-1.5 rounded-lg flex items-center gap-2 uppercase tracking-wider shadow-sm">
                    {badge}
                    <button type="button" onClick={() => removeBadge(badge)} className="hover:text-red-600 transition-colors">
                      <X size={12} strokeWidth={3} />
@@ -300,12 +300,12 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                 onChange={(e) => setBadgeInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addBadge(); } }}
                 placeholder="Örn: Yeni"
-                className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm"
+                className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
               />
               <button
                 type="button"
                 onClick={addBadge}
-                className="px-6 bg-[#111827] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-md active:scale-95"
+                className="px-6 bg-[#0F2348] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-md active:scale-95"
               >
                 EKLE
               </button>
@@ -319,7 +319,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Ürünün içeriğini veya detaylarını yazın..."
               rows={3}
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm resize-none"
+              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm resize-none"
             />
           </div>
 
@@ -333,7 +333,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
               }`}
             >
               <div className="text-left">
-                <p className="text-[11px] font-black uppercase text-[#111827]">MENÜDE GÖSTER</p>
+                <p className="text-[11px] font-black uppercase text-[#0F2348]">MENÜDE GÖSTER</p>
                 <p className="text-[9px] font-bold text-gray-400 tracking-tight">Kapatılırsa ürünü kimse göremez</p>
               </div>
               <div className={`w-9 h-5 rounded-full relative transition-all ${form.isAvailable ? 'bg-emerald-500' : 'bg-gray-300'}`}>
@@ -349,7 +349,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
               }`}
             >
               <div className="text-left">
-                <p className="text-[11px] font-black uppercase text-[#111827]">STOKTA YOK</p>
+                <p className="text-[11px] font-black uppercase text-[#0F2348]">STOKTA YOK</p>
                 <p className="text-[9px] font-bold text-gray-400 tracking-tight">Üzerine "Tükendi" etiketi gelir</p>
               </div>
               <div className={`w-9 h-5 rounded-full relative transition-all ${form.isOutOfStock ? 'bg-red-500' : 'bg-gray-300'}`}>
@@ -363,14 +363,14 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
             <button
               type="button"
               onClick={onClose}
-              className="px-8 py-4 text-gray-400 hover:text-[#111827] font-black text-xs uppercase tracking-widest transition-all"
+              className="px-8 py-4 text-gray-400 hover:text-[#0F2348] font-black text-xs uppercase tracking-widest transition-all"
             >
               İPTAL
             </button>
             <button
               type="submit"
               disabled={loading || uploading}
-              className="flex-1 flex items-center justify-center gap-3 py-4 bg-[#111827] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl active:scale-95 disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-3 py-4 bg-[#0F2348] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl active:scale-95 disabled:opacity-50"
             >
               {loading ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
               {item ? 'GÜNCELLEMEYİ KAYDET' : 'ÜRÜNÜ OLUŞTUR'}

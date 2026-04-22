@@ -139,7 +139,7 @@ export default async function LandingPage({
   };
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#FCFBF7] text-[#1f1e1d] font-sans selection:bg-[#FDBF1D]/30 selection:text-[#1f1e1d] pt-[64px]">
+    <div className="min-h-screen overflow-x-clip bg-[#F5F4F1] text-[#0F2348] font-sans selection:bg-[#FF9A14]/30 selection:text-[#0F2348] pt-[64px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -155,20 +155,20 @@ export default async function LandingPage({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mt-4 sm:mt-8">
             {/* Left: Content */}
             <div className="text-left space-y-5 sm:space-y-6">
-              <h1 className="text-[30px] sm:text-[42px] lg:text-[56px] font-extrabold leading-[1.1] tracking-[-0.04em] text-[#1f1e1d] text-balance">
+              <h1 className="text-[30px] sm:text-[42px] lg:text-[56px] font-extrabold leading-[1.1] tracking-[-0.04em] text-[#0F2348] text-balance">
                 {t.hero_title_1} <br />
-                <span className="text-[#FDBF1D]">{t.hero_title_2}</span>
+                <span className="text-[#FF9A14]">{t.hero_title_2}</span>
               </h1>
-              <p className="text-[16px] sm:text-[17px] text-[#6b6760] font-medium leading-relaxed max-w-[500px] text-pretty">
+              <p className="text-[16px] sm:text-[17px] text-[#243554] font-medium leading-relaxed max-w-[500px] text-pretty">
                 {t.hero_subtitle}
               </p>
 
               <div className="space-y-1.5 pt-1">
-                <p className="text-[14px] sm:text-[15px] text-[#6b6760] font-normal flex items-center gap-2">
+                <p className="text-[14px] sm:text-[15px] text-[#243554] font-normal flex items-center gap-2">
                   <CheckCircle2 size={16} className="text-[#16A34A] flex-shrink-0" />
                   {locale === 'tr' ? 'Dakikalar içinde kurulun ve başlayın' : 'Get up and running in minutes'}
                 </p>
-                <p className="text-[14px] sm:text-[15px] text-[#6b6760] font-normal flex items-center gap-2">
+                <p className="text-[14px] sm:text-[15px] text-[#243554] font-normal flex items-center gap-2">
                   <CheckCircle2 size={16} className="text-[#16A34A] flex-shrink-0" />
                   {locale === 'tr' ? 'Hazır olduğunuzda yükseltin' : 'Upgrade when you\'re ready'}
                 </p>
@@ -183,7 +183,7 @@ export default async function LandingPage({
                 </CtaButton>
               </div>
 
-              <p className="text-[11px] sm:text-[12px] text-[#ada89f] font-bold tracking-wide">
+              <p className="text-[11px] sm:text-[12px] text-[#6B7B93] font-bold tracking-wide">
                 {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
               </p>
             </div>
@@ -197,21 +197,21 @@ export default async function LandingPage({
                 <div
                   className="absolute inset-0 opacity-[0.1] pointer-events-none"
                   style={{
-                    backgroundImage: 'radial-gradient(circle, #ada89f 1px, transparent 1px)',
+                    backgroundImage: 'radial-gradient(circle, #6B7B93 1px, transparent 1px)',
                     backgroundSize: '16px 16px',
                   }}
                 />
 
                 {/* Neobrutalist "review card" mockup — styled visual */}
-                <div className="relative bg-white rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] p-5 space-y-4">
+                <div className="relative bg-white rounded-2xl border-[2.5px] border-[#0F2348] shadow-[6px_8px_0_0_#0F2348] p-5 space-y-4">
                   {/* Browser dots */}
-                  <div className="flex items-center justify-between pb-3 border-b border-[#e8e4de]">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#C9D0DB]">
                     <div className="flex gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#ea580c]" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#FDBF1D]" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#FF9A14]" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#FF9A14]" />
                       <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]" />
                     </div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-[#ada89f]">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-[#6B7B93]">
                       buaze.com
                     </div>
                   </div>
@@ -220,35 +220,35 @@ export default async function LandingPage({
                   <div className="flex items-center justify-between">
                     <div className="flex gap-0.5">
                       {[1,2,3,4,5].map(i => (
-                        <Star key={i} size={20} fill="#FDBF1D" strokeWidth={0} />
+                        <Star key={i} size={20} fill="#FF9A14" strokeWidth={0} />
                       ))}
                     </div>
-                    <div className="text-[13px] font-black text-[#1f1e1d]">4.9 / 5.0</div>
+                    <div className="text-[13px] font-black text-[#0F2348]">4.9 / 5.0</div>
                   </div>
 
                   {/* Metric chips */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#FCFBF7] border-[2px] border-[#1f1e1d] rounded-lg p-3 shadow-[3px_3px_0_0_#1f1e1d]">
-                      <div className="text-[9px] font-black uppercase tracking-wider text-[#6b6760] mb-1">
+                    <div className="bg-[#F5F4F1] border-[2px] border-[#0F2348] rounded-lg p-3 shadow-[3px_3px_0_0_#0F2348]">
+                      <div className="text-[9px] font-black uppercase tracking-wider text-[#243554] mb-1">
                         {locale === 'tr' ? 'YORUMLAR' : 'REVIEWS'}
                       </div>
-                      <div className="text-[20px] font-black text-[#1f1e1d] flex items-center gap-1">
+                      <div className="text-[20px] font-black text-[#0F2348] flex items-center gap-1">
                         +142
                         <span className="text-[11px] text-[#16A34A]">↑</span>
                       </div>
                     </div>
-                    <div className="bg-[#FDBF1D] border-[2px] border-[#1f1e1d] rounded-lg p-3 shadow-[3px_3px_0_0_#1f1e1d]">
-                      <div className="text-[9px] font-black uppercase tracking-wider text-[#1f1e1d] mb-1">
+                    <div className="bg-[#FF9A14] border-[2px] border-[#0F2348] rounded-lg p-3 shadow-[3px_3px_0_0_#0F2348]">
+                      <div className="text-[9px] font-black uppercase tracking-wider text-[#0F2348] mb-1">
                         {locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION'}
                       </div>
-                      <div className="text-[20px] font-black text-[#1f1e1d]">99%</div>
+                      <div className="text-[20px] font-black text-[#0F2348]">99%</div>
                     </div>
                   </div>
 
                   {/* Progress bar block */}
-                  <div className="bg-[#FCFBF7] border-[2px] border-[#1f1e1d] rounded-lg p-3 shadow-[3px_3px_0_0_#1f1e1d]">
+                  <div className="bg-[#F5F4F1] border-[2px] border-[#0F2348] rounded-lg p-3 shadow-[3px_3px_0_0_#0F2348]">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="text-[10px] font-black uppercase tracking-wider text-[#6b6760]">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-[#243554]">
                         {locale === 'tr' ? 'BU HAFTA' : 'THIS WEEK'}
                       </div>
                       <div className="flex items-center gap-1 text-[10px] font-black text-[#16A34A]">
@@ -257,34 +257,34 @@ export default async function LandingPage({
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <div className="h-1.5 bg-[#e8e4de] rounded-full overflow-hidden">
-                        <div className="h-full w-[88%] bg-[#FDBF1D] rounded-full" />
+                      <div className="h-1.5 bg-[#C9D0DB] rounded-full overflow-hidden">
+                        <div className="h-full w-[88%] bg-[#FF9A14] rounded-full" />
                       </div>
-                      <div className="h-1.5 bg-[#e8e4de] rounded-full overflow-hidden">
-                        <div className="h-full w-[64%] bg-[#ea580c] rounded-full" />
+                      <div className="h-1.5 bg-[#C9D0DB] rounded-full overflow-hidden">
+                        <div className="h-full w-[64%] bg-[#FF9A14] rounded-full" />
                       </div>
-                      <div className="h-1.5 bg-[#e8e4de] rounded-full overflow-hidden">
-                        <div className="h-full w-[42%] bg-[#1f1e1d] rounded-full" />
+                      <div className="h-1.5 bg-[#C9D0DB] rounded-full overflow-hidden">
+                        <div className="h-full w-[42%] bg-[#0F2348] rounded-full" />
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Floating QR chip */}
-                <div className="absolute -top-4 -right-1 bg-[#1f1e1d] text-white p-3 rounded-xl border-[2.5px] border-[#1f1e1d] shadow-[4px_4px_0_0_#FDBF1D] rotate-[6deg] z-10">
-                  <QrCode size={28} className="text-[#FDBF1D]" />
+                <div className="absolute -top-4 -right-1 bg-[#0F2348] text-white p-3 rounded-xl border-[2.5px] border-[#0F2348] shadow-[4px_4px_0_0_#FF9A14] rotate-[6deg] z-10">
+                  <QrCode size={28} className="text-[#FF9A14]" />
                 </div>
 
                 {/* Floating testimonial bubble (single) */}
-                <div className="relative bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-4 shadow-[4px_6px_0_0_#FDBF1D] mt-5 mx-auto max-w-[320px]">
+                <div className="relative bg-white rounded-xl border-[2.5px] border-[#0F2348] p-4 shadow-[4px_6px_0_0_#FF9A14] mt-5 mx-auto max-w-[320px]">
                   <div className="flex gap-[2px] mb-2">
                     {[1,2,3,4,5].map(i => (
                       <svg key={i} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FF9A14"></path>
                       </svg>
                     ))}
                   </div>
-                  <div className="text-[13px] text-[#1f1e1d] font-semibold leading-[1.5]">
+                  <div className="text-[13px] text-[#0F2348] font-semibold leading-[1.5]">
                     {locale === 'tr'
                       ? '"Buaze\'yi kullanmak gerçekten çok kolay. Müthiş zaman kazandırıyor."'
                       : '"Really love how easy Buaze is to use. It saves so much time."'}
@@ -298,21 +298,21 @@ export default async function LandingPage({
                 <div
                   className="absolute inset-0 w-full h-full opacity-[0.08]"
                   style={{
-                    backgroundImage: 'radial-gradient(circle, #ada89f 1px, transparent 1px)',
+                    backgroundImage: 'radial-gradient(circle, #6B7B93 1px, transparent 1px)',
                     backgroundSize: '18px 18px',
                   }}
                 />
 
                 {/* Box 1: Super easy (Top) */}
-                <div className="absolute top-2 left-0 w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-10 transform hover:-translate-y-2 transition-transform">
+                <div className="absolute top-2 left-0 w-[260px] bg-white rounded-xl border-[2.5px] border-[#0F2348] p-5 shadow-[8px_10px_0_0_#0F2348] z-10 transform hover:-translate-y-2 transition-transform">
                   <div className="flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
                       <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FF9A14"></path>
                       </svg>
                     ))}
                   </div>
-                  <div className="text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
+                  <div className="text-[14px] text-[#0F2348] font-semibold leading-[1.6]">
                     {locale === 'tr'
                       ? '"Kullanımı süper kolay ve kusursuz çalışıyor"'
                       : '"Super easy to use and worked perfectly"'}
@@ -320,15 +320,15 @@ export default async function LandingPage({
                 </div>
 
                 {/* Box 2: Really love (Middle) */}
-                <div className="absolute top-[120px] right-2 w-[290px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-30 transform hover:-translate-y-2 transition-transform">
+                <div className="absolute top-[120px] right-2 w-[290px] bg-white rounded-xl border-[2.5px] border-[#0F2348] p-5 shadow-[8px_10px_0_0_#0F2348] z-30 transform hover:-translate-y-2 transition-transform">
                   <div className="flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
                       <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FF9A14"></path>
                       </svg>
                     ))}
                   </div>
-                  <div className="text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
+                  <div className="text-[14px] text-[#0F2348] font-semibold leading-[1.6]">
                     {locale === 'tr'
                       ? '"Buaze\'yi kullanmak gerçekten çok kolay. Yorum toplamak konusunda müthiş zaman kazandırıyor"'
                       : '"Really love how easy Buaze is to use. It saves so much time collecting reviews"'}
@@ -336,15 +336,15 @@ export default async function LandingPage({
                 </div>
 
                 {/* Box 3: Buaze makes (Bottom) */}
-                <div className="absolute top-[250px] left-6 w-[260px] bg-white rounded-xl border-[2.5px] border-[#1f1e1d] p-5 shadow-[8px_10px_0_0_#1f1e1d] z-20 transform hover:-translate-y-2 transition-transform">
+                <div className="absolute top-[250px] left-6 w-[260px] bg-white rounded-xl border-[2.5px] border-[#0F2348] p-5 shadow-[8px_10px_0_0_#0F2348] z-20 transform hover:-translate-y-2 transition-transform">
                   <div className="flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
                       <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FDBF1D"></path>
+                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#FF9A14"></path>
                       </svg>
                     ))}
                   </div>
-                  <div className="text-[14px] text-[#1f1e1d] font-semibold leading-[1.6]">
+                  <div className="text-[14px] text-[#0F2348] font-semibold leading-[1.6]">
                     {locale === 'tr'
                       ? '"Buaze ile yorumları takip etmek ve yanıtlamak artık çok zahmetsiz"'
                       : '"Buaze makes tracking and replying to reviews effortless."'}
@@ -362,7 +362,7 @@ export default async function LandingPage({
         <div className="max-w-[1000px] mx-auto">
           <div className="flex flex-wrap justify-center gap-x-10 sm:gap-x-14 gap-y-5 items-center opacity-30 hover:opacity-50 transition-opacity duration-500">
             {['Google', 'TripAdvisor', 'Yelp', 'Foursquare', 'Zomato'].map(site => (
-              <span key={site} className="text-lg sm:text-xl font-bold text-[#1f1e1d] tracking-tight cursor-default select-none">
+              <span key={site} className="text-lg sm:text-xl font-bold text-[#0F2348] tracking-tight cursor-default select-none">
                 {site}
               </span>
             ))}
@@ -385,22 +385,22 @@ export default async function LandingPage({
         className="py-16 sm:py-24 px-5 sm:px-8"
       >
         <div className="max-w-[1040px] mx-auto">
-          <div className="relative bg-white border-[2.5px] border-[#1f1e1d] rounded-[24px] sm:rounded-[32px] shadow-[10px_12px_0_0_#FDBF1D] p-6 sm:p-10 lg:p-14 overflow-hidden">
+          <div className="relative bg-white border-[2.5px] border-[#0F2348] rounded-[24px] sm:rounded-[32px] shadow-[10px_12px_0_0_#FF9A14] p-6 sm:p-10 lg:p-14 overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 items-center">
               <div className="md:col-span-2 space-y-4 text-left">
-                <div className="inline-flex items-center gap-2 bg-[#FDBF1D] text-[#1f1e1d] px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em] border-[2px] border-[#1f1e1d] shadow-[3px_4px_0_0_#1f1e1d]">
+                <div className="inline-flex items-center gap-2 bg-[#FF9A14] text-[#0F2348] px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em] border-[2px] border-[#0F2348] shadow-[3px_4px_0_0_#0F2348]">
                   <QrCode size={14} />
                   {locale === 'tr' ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
                 </div>
                 <h2
                   id="qr-generator-cta-title"
-                  className="text-[26px] sm:text-[36px] lg:text-[42px] font-extrabold text-[#1f1e1d] leading-[1.1] tracking-[-0.02em] text-balance"
+                  className="text-[26px] sm:text-[36px] lg:text-[42px] font-extrabold text-[#0F2348] leading-[1.1] tracking-[-0.02em] text-balance"
                 >
                   {locale === 'tr'
                     ? 'Kendi QR Kodunuzu Saniyeler İçinde Oluşturun'
                     : 'Build Your Own QR Code in Seconds'}
                 </h2>
-                <p className="text-[15px] sm:text-[16px] text-[#6b6760] font-medium leading-relaxed max-w-[560px]">
+                <p className="text-[15px] sm:text-[16px] text-[#243554] font-medium leading-relaxed max-w-[560px]">
                   {locale === 'tr'
                     ? 'Menü, rezervasyon veya web sitenizin bağlantısını girin — biz de size özel, yüksek çözünürlüklü bir QR kodu üretelim.'
                     : 'Paste your menu, reservation page, or website URL — and we\'ll generate a high-resolution QR code tailored to it.'}
@@ -408,7 +408,7 @@ export default async function LandingPage({
                 <div className="pt-2">
                   <Link
                     href={`${base}/solutions/qr-generator`}
-                    className="inline-flex items-center gap-2 bg-[#1f1e1d] text-white font-extrabold text-[14px] sm:text-[15px] px-6 sm:px-7 py-3.5 sm:py-4 rounded-xl border-[2.5px] border-[#1f1e1d] shadow-[5px_6px_0_0_#FDBF1D] hover:-translate-y-0.5 hover:shadow-[6px_7px_0_0_#FDBF1D] active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
+                    className="inline-flex items-center gap-2 bg-[#0F2348] text-white font-extrabold text-[14px] sm:text-[15px] px-6 sm:px-7 py-3.5 sm:py-4 rounded-xl border-[2.5px] border-[#0F2348] shadow-[5px_6px_0_0_#FF9A14] hover:-translate-y-0.5 hover:shadow-[6px_7px_0_0_#FF9A14] active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
                   >
                     {locale === 'tr' ? 'QR Kod Oluştur' : 'Generate a QR Code'}
                     <ArrowRight size={16} />
@@ -420,10 +420,10 @@ export default async function LandingPage({
               <div className="hidden md:flex justify-center">
                 <div
                   aria-hidden
-                  className="relative w-[180px] h-[180px] bg-[#FCFBF7] border-[2.5px] border-[#1f1e1d] rounded-2xl shadow-[6px_8px_0_0_#1f1e1d] rotate-[4deg] flex items-center justify-center"
+                  className="relative w-[180px] h-[180px] bg-[#F5F4F1] border-[2.5px] border-[#0F2348] rounded-2xl shadow-[6px_8px_0_0_#0F2348] rotate-[4deg] flex items-center justify-center"
                 >
-                  <QrCode size={112} className="text-[#1f1e1d]" strokeWidth={1.5} />
-                  <span className="absolute -top-2 -right-2 bg-[#FDBF1D] text-[#1f1e1d] text-[10px] font-black uppercase tracking-widest border-[2px] border-[#1f1e1d] rounded-full px-2.5 py-1 shadow-[2px_3px_0_0_#1f1e1d]">
+                  <QrCode size={112} className="text-[#0F2348]" strokeWidth={1.5} />
+                  <span className="absolute -top-2 -right-2 bg-[#FF9A14] text-[#0F2348] text-[10px] font-black uppercase tracking-widest border-[2px] border-[#0F2348] rounded-full px-2.5 py-1 shadow-[2px_3px_0_0_#0F2348]">
                     {locale === 'tr' ? 'YENİ' : 'NEW'}
                   </span>
                 </div>
@@ -434,11 +434,11 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════ How It Works (3D Cards) ═══════ */}
-      <section id="how-it-works" className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-y border-[#e8e4de]">
+      <section id="how-it-works" className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-y border-[#C9D0DB]">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-16">
-            <p className="text-[12px] font-black uppercase tracking-widest text-[#FDBF1D] mb-4">{locale === 'tr' ? 'BASİT VE ETKİLİ' : 'SIMPLE & EFFECTIVE'}</p>
-            <h2 className="text-[32px] sm:text-[42px] font-extrabold text-[#1f1e1d] tracking-[-0.03em] leading-tight">
+            <p className="text-[12px] font-black uppercase tracking-widest text-[#FF9A14] mb-4">{locale === 'tr' ? 'BASİT VE ETKİLİ' : 'SIMPLE & EFFECTIVE'}</p>
+            <h2 className="text-[32px] sm:text-[42px] font-extrabold text-[#0F2348] tracking-[-0.03em] leading-tight">
               {locale === 'tr' ? 'Süreç Nasıl İlerler?' : 'How It Works'}
             </h2>
           </div>
@@ -464,15 +464,15 @@ export default async function LandingPage({
                 icon: <Trophy size={24} />
               }
             ].map((item, i) => (
-              <div key={i} className="group relative bg-[#FCFBF7] p-8 rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[4px_6px_0_0_#1f1e1d] hover:-translate-y-2 transition-transform duration-300">
-                <div className="absolute -top-5 -right-5 w-14 h-14 bg-[#FDBF1D] rounded-full border-[2px] border-[#1f1e1d] shadow-[2px_3px_0_0_#1f1e1d] flex items-center justify-center text-[18px] font-black text-[#1f1e1d] z-10">
+              <div key={i} className="group relative bg-[#F5F4F1] p-8 rounded-2xl border-[2.5px] border-[#0F2348] shadow-[4px_6px_0_0_#0F2348] hover:-translate-y-2 transition-transform duration-300">
+                <div className="absolute -top-5 -right-5 w-14 h-14 bg-[#FF9A14] rounded-full border-[2px] border-[#0F2348] shadow-[2px_3px_0_0_#0F2348] flex items-center justify-center text-[18px] font-black text-[#0F2348] z-10">
                   {item.step}
                 </div>
-                <div className="w-12 h-12 bg-white rounded-xl border-[2px] border-[#1f1e1d] flex items-center justify-center mb-6 text-[#1f1e1d]">
+                <div className="w-12 h-12 bg-white rounded-xl border-[2px] border-[#0F2348] flex items-center justify-center mb-6 text-[#0F2348]">
                   {item.icon}
                 </div>
-                <h3 className="text-[20px] font-extrabold text-[#1f1e1d] mb-4">{item.title}</h3>
-                <p className="text-[14px] text-[#6b6760] leading-relaxed font-medium">
+                <h3 className="text-[20px] font-extrabold text-[#0F2348] mb-4">{item.title}</h3>
+                <p className="text-[14px] text-[#243554] leading-relaxed font-medium">
                   {item.desc}
                 </p>
               </div>
@@ -484,16 +484,16 @@ export default async function LandingPage({
       {/* ═══════ Google Compliance Trust Section ═══════ */}
       <section className="py-12 sm:py-16 px-5 sm:px-8">
         <div className="max-w-[1200px] mx-auto">
-          <div className="bg-white border-[2.5px] border-[#1f1e1d] rounded-[24px] p-6 sm:p-10 shadow-[8px_10px_0_0_#FDBF1D] flex flex-col md:flex-row items-center gap-8 justify-between">
+          <div className="bg-white border-[2.5px] border-[#0F2348] rounded-[24px] p-6 sm:p-10 shadow-[8px_10px_0_0_#FF9A14] flex flex-col md:flex-row items-center gap-8 justify-between">
             <div className="space-y-4 max-w-[650px]">
-              <div className="inline-flex items-center gap-2 bg-[#FDBF1D] text-[#1f1e1d] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border-2 border-[#1f1e1d]">
+              <div className="inline-flex items-center gap-2 bg-[#FF9A14] text-[#0F2348] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border-2 border-[#0F2348]">
                 <ShieldCheck size={14} />
                 {t.google_compliance_badge}
               </div>
-              <h2 className="text-[24px] sm:text-[32px] font-extrabold text-[#1f1e1d] leading-tight">
+              <h2 className="text-[24px] sm:text-[32px] font-extrabold text-[#0F2348] leading-tight">
                 {t.google_compliance_home_title}
               </h2>
-              <p className="text-[14px] sm:text-[15px] text-[#6b6760] font-medium leading-relaxed">
+              <p className="text-[14px] sm:text-[15px] text-[#243554] font-medium leading-relaxed">
                 {t.google_compliance_home_desc}
               </p>
             </div>
@@ -519,18 +519,18 @@ export default async function LandingPage({
       {/* ═══════ Trust / Why Buaze Section (3D Redesign) ═══════ */}
       <section
         aria-labelledby="command-center-title"
-        className="py-16 sm:py-24 lg:py-32 px-4 sm:px-8 bg-[#FCFBF7]"
+        className="py-16 sm:py-24 lg:py-32 px-4 sm:px-8 bg-[#F5F4F1]"
       >
         <div className="max-w-[1240px] mx-auto">
-          <div className="relative bg-[#1f1e1d] rounded-[24px] sm:rounded-[32px] lg:rounded-[48px] p-6 sm:p-10 lg:p-20 border-[2.5px] sm:border-[3px] border-[#1f1e1d] shadow-[8px_10px_0_0_#FDBF1D] sm:shadow-[12px_14px_0_0_#FDBF1D] lg:shadow-[16px_20px_0_0_#FDBF1D] overflow-hidden">
+          <div className="relative bg-[#0F2348] rounded-[24px] sm:rounded-[32px] lg:rounded-[48px] p-6 sm:p-10 lg:p-20 border-[2.5px] sm:border-[3px] border-[#0F2348] shadow-[8px_10px_0_0_#FF9A14] sm:shadow-[12px_14px_0_0_#FF9A14] lg:shadow-[16px_20px_0_0_#FF9A14] overflow-hidden">
             {/* Background Accent */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ea580c]/10 blur-[120px] rounded-full -mr-32 -mt-32 pointer-events-none" />
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FF9A14]/10 blur-[120px] rounded-full -mr-32 -mt-32 pointer-events-none" />
 
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20 items-center">
               {/* Left Content Column */}
               <div className="lg:col-span-6 space-y-8 sm:space-y-10">
                 <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 bg-[#FDBF1D] text-[#1f1e1d] px-3.5 py-1.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-[0.1em] border-2 border-[#1f1e1d] shadow-[3px_4px_0_0_#1f1e1d]">
+                  <div className="inline-flex items-center gap-2 bg-[#FF9A14] text-[#0F2348] px-3.5 py-1.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-[0.1em] border-2 border-[#0F2348] shadow-[3px_4px_0_0_#0F2348]">
                     <ShieldCheck size={14} />
                     {locale === 'tr' ? 'RAKİPSİZ KORUMA' : 'UNRIVALED PROTECTION'}
                   </div>
@@ -540,11 +540,11 @@ export default async function LandingPage({
                   >
                     {locale === 'tr' ? 'Dijital İtibarınızın' : 'Your Digital Reputation\'s'}
                     <br />
-                    <span className="text-[#FDBF1D]">
+                    <span className="text-[#FF9A14]">
                       {locale === 'tr' ? 'Komuta Merkezi' : 'Command Center'}
                     </span>
                   </h2>
-                  <p className="text-[15px] sm:text-[17px] lg:text-[18px] text-[#ada89f] font-medium leading-relaxed max-w-[520px] text-pretty">
+                  <p className="text-[15px] sm:text-[17px] lg:text-[18px] text-[#6B7B93] font-medium leading-relaxed max-w-[520px] text-pretty">
                     {locale === 'tr'
                       ? 'Buaze sadece veri toplamaz; itibarınızı proaktif bir zırh gibi korur ve her etkileşimi kalıcı bir güvene dönüştürür.'
                       : 'Buaze doesn\'t just collect data; it protects your reputation like a proactive shield and turns every interaction into lasting trust.'}
@@ -556,12 +556,12 @@ export default async function LandingPage({
                     {
                       title: locale === 'tr' ? 'Anlık Deneyim Takibi' : 'Real-Time Experience Tracking',
                       desc: locale === 'tr' ? 'Müşteri deneyimini anlık olarak yapılandırılmış veriye dönüştüren akıllı sistem.' : 'An intelligent system that converts customer experience into structured data in real-time.',
-                      icon: <Zap size={20} className="text-[#FDBF1D]" />,
+                      icon: <Zap size={20} className="text-[#FF9A14]" />,
                     },
                     {
                       title: locale === 'tr' ? 'İtibarınızı Zirveye Taşıyın' : 'Elevate Your Reputation',
                       desc: locale === 'tr' ? 'Google, TripAdvisor ve Yelp üzerinde organik ve güvenli bir itibar artışı sağlayın.' : 'Achieve organic and secure reputation growth on Google, TripAdvisor, and Yelp.',
-                      icon: <Trophy size={20} className="text-[#ea580c]" />,
+                      icon: <Trophy size={20} className="text-[#FF9A14]" />,
                     },
                   ].map((item, i) => (
                     <div
@@ -575,7 +575,7 @@ export default async function LandingPage({
                         <h3 className="text-[16px] sm:text-[17px] font-extrabold text-white">
                           {item.title}
                         </h3>
-                        <p className="text-[13px] text-[#ada89f] leading-relaxed">
+                        <p className="text-[13px] text-[#6B7B93] leading-relaxed">
                           {item.desc}
                         </p>
                       </div>
@@ -588,11 +588,11 @@ export default async function LandingPage({
               <div className="lg:col-span-6 relative flex justify-center lg:justify-end mt-4 lg:mt-0">
                 {/* Floating Metric Chips — constrained to parent on mobile via left-0 instead of -left-X */}
                 <div className="absolute -top-6 sm:-top-8 lg:-top-16 left-0 sm:left-2 lg:-left-6 z-[40] transform hover:-translate-y-1 transition-transform cursor-default">
-                  <div className="bg-white px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[5px_6px_0_0_#ea580c] sm:shadow-[8px_10px_0_0_#ea580c]">
-                    <div className="text-[9px] sm:text-[10px] font-black text-[#6b6760] uppercase mb-0.5 sm:mb-1 tracking-wider">
+                  <div className="bg-white px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl border-[2.5px] border-[#0F2348] shadow-[5px_6px_0_0_#FF9A14] sm:shadow-[8px_10px_0_0_#FF9A14]">
+                    <div className="text-[9px] sm:text-[10px] font-black text-[#243554] uppercase mb-0.5 sm:mb-1 tracking-wider">
                       {locale === 'tr' ? 'CANLI ANALİZ' : 'LIVE ANALYTICS'}
                     </div>
-                    <div className="text-[18px] sm:text-[22px] lg:text-[24px] font-black text-[#1f1e1d] flex items-center gap-1.5 sm:gap-2">
+                    <div className="text-[18px] sm:text-[22px] lg:text-[24px] font-black text-[#0F2348] flex items-center gap-1.5 sm:gap-2">
                       <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-[#16A34A] rounded-full animate-pulse" />
                       98.5%
                     </div>
@@ -602,7 +602,7 @@ export default async function LandingPage({
                 {/* Main 3D Browser Mockup — full width on mobile, capped on desktop */}
                 <div className="relative w-full max-w-[500px] h-[340px] sm:h-[420px] lg:h-[440px] bg-[#1a1a1a] rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#3d3a36] shadow-[10px_14px_0_0_rgba(0,0,0,0.4)] sm:shadow-[16px_22px_0_0_rgba(0,0,0,0.45)] lg:shadow-[24px_32px_0_0_rgba(0,0,0,0.5)] transform lg:rotate-[-2deg] flex flex-col overflow-hidden">
                    {/* Browser Bar */}
-                   <div className="bg-[#1f1e1d] border-b border-[#3d3a36] p-4 flex gap-2">
+                   <div className="bg-[#0F2348] border-b border-[#3d3a36] p-4 flex gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
                       <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
                       <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
@@ -613,32 +613,32 @@ export default async function LandingPage({
                       <div className="space-y-3">
                          <div className="h-4 bg-white/10 w-1/3 rounded-full" />
                          <div className="flex gap-2">
-                            {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#FDBF1D" strokeWidth={0} />)}
+                            {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#FF9A14" strokeWidth={0} />)}
                          </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-4">
                          <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
-                            <div className="text-[10px] text-[#6b6760] font-bold uppercase">{locale === 'tr' ? 'YORUMLAR' : 'REVIEWS'}</div>
+                            <div className="text-[10px] text-[#243554] font-bold uppercase">{locale === 'tr' ? 'YORUMLAR' : 'REVIEWS'}</div>
                             <div className="text-[20px] font-black text-white">+142</div>
                          </div>
                          <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
-                            <div className="text-[10px] text-[#6b6760] font-bold uppercase">{locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION'}</div>
-                            <div className="text-[20px] font-black text-[#FDBF1D]">99%</div>
+                            <div className="text-[10px] text-[#243554] font-bold uppercase">{locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION'}</div>
+                            <div className="text-[20px] font-black text-[#FF9A14]">99%</div>
                          </div>
                       </div>
 
                       <div className="bg-white/5 p-5 rounded-xl border border-white/10">
                          <div className="flex justify-between items-center mb-4">
                             <div className="h-3 bg-white/10 w-1/4 rounded-full" />
-                            <div className="h-3 bg-[#FDBF1D]/20 w-10 rounded-full" />
+                            <div className="h-3 bg-[#FF9A14]/20 w-10 rounded-full" />
                          </div>
                          <div className="space-y-2">
                             <div className="h-2 bg-white/5 w-full rounded-full overflow-hidden">
-                               <div className="h-full w-[85%] bg-[#FDBF1D] shadow-[0_0_15px_rgba(253,191,29,0.3)]" />
+                               <div className="h-full w-[85%] bg-[#FF9A14] shadow-[0_0_15px_rgba(253,191,29,0.3)]" />
                             </div>
                             <div className="h-2 bg-white/5 w-full rounded-full overflow-hidden">
-                               <div className="h-full w-[65%] bg-[#ea580c] opacity-60" />
+                               <div className="h-full w-[65%] bg-[#FF9A14] opacity-60" />
                             </div>
                          </div>
                       </div>
@@ -646,8 +646,8 @@ export default async function LandingPage({
 
                    {/* Floating Bottom Badge — inside-bounds on mobile, overflowing on desktop */}
                    <div className="absolute bottom-3 sm:bottom-5 right-3 sm:right-5 lg:-right-8 z-[40]">
-                      <div className="bg-[#FDBF1D] text-[#1f1e1d] p-3 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl border-[2.5px] sm:border-[3px] border-[#1f1e1d] shadow-[4px_5px_0_0_#1f1e1d] sm:shadow-[6px_8px_0_0_#1f1e1d] flex flex-col items-center gap-1 group cursor-default">
-                         <Zap size={20} fill="#1f1e1d" className="group-hover:scale-110 transition-transform sm:w-6 sm:h-6" />
+                      <div className="bg-[#FF9A14] text-[#0F2348] p-3 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl border-[2.5px] sm:border-[3px] border-[#0F2348] shadow-[4px_5px_0_0_#0F2348] sm:shadow-[6px_8px_0_0_#0F2348] flex flex-col items-center gap-1 group cursor-default">
+                         <Zap size={20} fill="#0F2348" className="group-hover:scale-110 transition-transform sm:w-6 sm:h-6" />
                          <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.1em] sm:tracking-widest whitespace-nowrap">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
                       </div>
                    </div>
@@ -659,61 +659,61 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════ Pricing Section ═══════ */}
-      <section id="pricing" className="py-16 sm:py-24 px-5 sm:px-8 bg-[#F7F4F0]">
+      <section id="pricing" className="py-16 sm:py-24 px-5 sm:px-8 bg-[#F5F4F1]">
         <div className="max-w-[900px] mx-auto">
           <div className="text-center mb-12 sm:mb-16 space-y-3">
-            <h2 className="text-[28px] sm:text-[42px] font-extrabold text-[#1f1e1d] tracking-[-0.02em] text-balance">{t.pricing_title}</h2>
-            <p className="text-[14px] sm:text-[15px] text-[#FDBF1D] font-semibold">{t.pricing_subtitle}</p>
+            <h2 className="text-[28px] sm:text-[42px] font-extrabold text-[#0F2348] tracking-[-0.02em] text-balance">{t.pricing_title}</h2>
+            <p className="text-[14px] sm:text-[15px] text-[#FF9A14] font-semibold">{t.pricing_subtitle}</p>
           </div>
 
           {/* Single, responsive grid — renders plans exactly once on all sizes */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 md:pt-4">
             {/* Monthly Plan */}
-            <div className="bg-white p-6 sm:p-8 md:p-10 rounded-2xl border-[2px] border-[#1f1e1d] shadow-[4px_6px_0_0_#1f1e1d] hover:-translate-y-1 transition-transform flex flex-col">
-              <h3 className="text-[20px] font-extrabold mb-1.5 text-[#1f1e1d]">{t.pricing_monthly_title}</h3>
-              <p className="text-[#6b6760] text-[13px] mb-6">{t.pricing_monthly_desc}</p>
+            <div className="bg-white p-6 sm:p-8 md:p-10 rounded-2xl border-[2px] border-[#0F2348] shadow-[4px_6px_0_0_#0F2348] hover:-translate-y-1 transition-transform flex flex-col">
+              <h3 className="text-[20px] font-extrabold mb-1.5 text-[#0F2348]">{t.pricing_monthly_title}</h3>
+              <p className="text-[#243554] text-[13px] mb-6">{t.pricing_monthly_desc}</p>
               <div className="mb-6 sm:mb-8">
-                <span className="text-[40px] sm:text-[48px] font-extrabold tracking-tighter text-[#1f1e1d]">{t.pricing_monthly_price}</span>
-                <span className="text-[#ada89f] font-medium ml-1 text-[14px]">{t.pricing_monthly_period}</span>
+                <span className="text-[40px] sm:text-[48px] font-extrabold tracking-tighter text-[#0F2348]">{t.pricing_monthly_price}</span>
+                <span className="text-[#6B7B93] font-medium ml-1 text-[14px]">{t.pricing_monthly_period}</span>
               </div>
               <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-1">
                 {[t.pricing_feature_unlimited_qr, t.pricing_feature_feedback, t.pricing_feature_panel, t.pricing_feature_mobile].map(feat => (
-                  <li key={feat} className="flex items-start gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#1f1e1d]">
-                    <CheckCircle2 size={16} className="text-[#ada89f] flex-shrink-0 mt-0.5" />
+                  <li key={feat} className="flex items-start gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#0F2348]">
+                    <CheckCircle2 size={16} className="text-[#6B7B93] flex-shrink-0 mt-0.5" />
                     <span>{feat}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-white text-[#1f1e1d] font-extrabold text-[14px] sm:text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#1f1e1d] hover:bg-[#FCFBF7] transition-all active:translate-y-[4px] active:shadow-none"
+                className="block w-full text-center py-3.5 bg-white text-[#0F2348] font-extrabold text-[14px] sm:text-[15px] rounded-lg border-[2px] border-[#0F2348] shadow-[0_4px_0_0_#0F2348] hover:bg-[#F5F4F1] transition-all active:translate-y-[4px] active:shadow-none"
               >
                 {t.pricing_monthly_cta}
               </Link>
             </div>
 
             {/* Yearly Plan */}
-            <div className="bg-[#1f1e1d] p-6 sm:p-8 md:p-10 pt-10 sm:pt-10 md:pt-10 rounded-2xl border-[2px] border-[#1f1e1d] relative flex flex-col text-white shadow-[4px_6px_0_0_#FDBF1D] hover:-translate-y-1 transition-transform">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#FDBF1D] text-[#1f1e1d] px-4 py-1.5 rounded-full font-black text-[10px] sm:text-[11px] uppercase tracking-widest border-[2px] border-[#1f1e1d] whitespace-nowrap">
+            <div className="bg-[#0F2348] p-6 sm:p-8 md:p-10 pt-10 sm:pt-10 md:pt-10 rounded-2xl border-[2px] border-[#0F2348] relative flex flex-col text-white shadow-[4px_6px_0_0_#FF9A14] hover:-translate-y-1 transition-transform">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#FF9A14] text-[#0F2348] px-4 py-1.5 rounded-full font-black text-[10px] sm:text-[11px] uppercase tracking-widest border-[2px] border-[#0F2348] whitespace-nowrap">
                 {t.pricing_yearly_badge}
               </div>
               <h3 className="text-[20px] font-extrabold mb-1.5">{t.pricing_yearly_title}</h3>
-              <p className="text-[#ada89f] text-[13px] mb-6">{t.pricing_yearly_desc}</p>
+              <p className="text-[#6B7B93] text-[13px] mb-6">{t.pricing_yearly_desc}</p>
               <div className="mb-6 sm:mb-8">
                 <span className="text-[40px] sm:text-[48px] font-extrabold tracking-tighter">{t.pricing_yearly_price}</span>
-                <span className="text-[#ada89f] font-medium ml-1 text-[14px]">{t.pricing_yearly_period}</span>
+                <span className="text-[#6B7B93] font-medium ml-1 text-[14px]">{t.pricing_yearly_period}</span>
               </div>
               <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-1">
                 {[t.pricing_feature_all, t.pricing_feature_free_months, t.pricing_feature_priority, t.pricing_feature_google].map(feat => (
-                  <li key={feat} className="flex items-start gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#ada89f]">
-                    <CheckCircle2 size={16} className="text-[#FDBF1D] flex-shrink-0 mt-0.5" />
+                  <li key={feat} className="flex items-start gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#6B7B93]">
+                    <CheckCircle2 size={16} className="text-[#FF9A14] flex-shrink-0 mt-0.5" />
                     <span>{feat}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-[#FDBF1D] text-[#1f1e1d] font-extrabold text-[14px] sm:text-[15px] rounded-lg border-[2px] border-[#1f1e1d] shadow-[0_4px_0_0_#000000] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none"
+                className="block w-full text-center py-3.5 bg-[#FF9A14] text-[#0F2348] font-extrabold text-[14px] sm:text-[15px] rounded-lg border-[2px] border-[#0F2348] shadow-[0_4px_0_0_#000000] hover:bg-[#EAB308] transition-all active:translate-y-[4px] active:shadow-none"
               >
                 {t.pricing_yearly_cta}
               </Link>
@@ -723,12 +723,12 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════ Final CTA ═══════ */}
-      <section className="py-16 sm:py-24 px-5 sm:px-8 text-center bg-[#1f1e1d] relative overflow-hidden">
+      <section className="py-16 sm:py-24 px-5 sm:px-8 text-center bg-[#0F2348] relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
         <div className="relative z-10 max-w-[600px] mx-auto space-y-7">
           <h2 className="text-[32px] sm:text-[42px] font-extrabold text-white leading-[1.15] tracking-[-0.02em]">
             {t.cta_title_1} <br />
-            <span className="text-[#FDBF1D]">{t.cta_title_2}</span>
+            <span className="text-[#FF9A14]">{t.cta_title_2}</span>
           </h2>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <CtaButton variant="primary" href={`${base}/auth/register`}>

@@ -61,15 +61,15 @@ export default function MenuCategoryForm({ restaurantId, category, onClose, onSu
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#111827]/40 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0F2348]/40 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="w-full max-w-lg bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="flex items-center justify-between p-6 border-b border-gray-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#FDBF1D]/10 rounded-xl flex items-center justify-center">
-              <ListTree size={20} className="text-[#FDBF1D]" />
+            <div className="w-10 h-10 bg-[#FF9A14]/10 rounded-xl flex items-center justify-center">
+              <ListTree size={20} className="text-[#FF9A14]" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-[#111827]">
+              <h2 className="text-xl font-black text-[#0F2348]">
                 {category ? 'Kategoriyi Düzenle' : 'Yeni Kategori'}
               </h2>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
@@ -102,7 +102,7 @@ export default function MenuCategoryForm({ restaurantId, category, onClose, onSu
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Örn: Başlangıçlar"
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm"
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
               />
             </div>
 
@@ -113,7 +113,7 @@ export default function MenuCategoryForm({ restaurantId, category, onClose, onSu
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Örn: En lezzetli başlangıç seçeneklerimiz"
                 rows={3}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm resize-none"
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm resize-none"
               />
             </div>
 
@@ -124,7 +124,7 @@ export default function MenuCategoryForm({ restaurantId, category, onClose, onSu
                   type="number"
                   value={form.sortOrder}
                   onChange={(e) => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
                 />
               </div>
               <div className="flex flex-col justify-end pb-1.5">
@@ -133,7 +133,7 @@ export default function MenuCategoryForm({ restaurantId, category, onClose, onSu
                   onClick={() => setForm({ ...form, isVisible: !form.isVisible })}
                   className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50 hover:bg-gray-100 transition-all group"
                 >
-                  <span className="text-[11px] font-black uppercase text-gray-500 group-hover:text-[#111827]">GÖRÜNÜR</span>
+                  <span className="text-[11px] font-black uppercase text-gray-500 group-hover:text-[#0F2348]">GÖRÜNÜR</span>
                   <div className={`w-8 h-4.5 rounded-full relative transition-all ${form.isVisible ? 'bg-emerald-500' : 'bg-gray-300'}`}>
                     <div className={`absolute top-1 w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-all ${form.isVisible ? 'left-4.5' : 'left-1'}`} />
                   </div>
@@ -146,14 +146,14 @@ export default function MenuCategoryForm({ restaurantId, category, onClose, onSu
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3.5 text-gray-400 hover:text-[#111827] font-black text-xs uppercase tracking-widest transition-all"
+              className="flex-1 py-3.5 text-gray-400 hover:text-[#0F2348] font-black text-xs uppercase tracking-widest transition-all"
             >
               İPTAL
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#111827] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg active:scale-95 disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#0F2348] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg active:scale-95 disabled:opacity-50"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               KAYDET

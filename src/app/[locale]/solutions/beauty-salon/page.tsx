@@ -69,7 +69,7 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
     {
       title: isTr ? 'Stilist Bazlı Performans' : 'Stylist-Based Performance',
       desc: isTr ? 'Her stilist için ayrı metrikler. Hangi çalışanın en iyi değerlendirme aldığını görün, ödüllendirin.' : 'Separate metrics for each stylist. See which employee gets the best reviews and reward them.',
-      icon: <Star size={20} className="text-[#FDBF1D]" />,
+      icon: <Star size={20} className="text-[#FF9A14]" />,
     },
     {
       title: isTr ? 'Müşteri Sadakati' : 'Customer Loyalty',

@@ -198,6 +198,45 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 - Destructive action (force push, reset --hard, dependency kaldırma) → **önce sor**.
 - Kullanıcı "iyileştir" dediğinde UI/UX açısından **sadeleştirme** bekler, özellik eklemeyi değil.
 
+
 ---
 
-_Son güncelleme: 2026-04 — admin dashboard sadeleştirme + upload permission fix_
+## 11. Marka Kimliği & Tasarım Sistemi (2026-04 güncellendi)
+
+### Renk Paleti
+
+| Token | Hex | Kullanım |
+|---|---|---|
+| Trust Orange | `#FF9A14` | Primary accent, buttons, aktif nav, logo |
+| Deep Navy | `#0F2348` | Sidebar, wordmark, text-main |
+| Slate Navy | `#243554` | Secondary UI, muted text |
+| Soft Mist | `#F5F4F1` | Sayfa arka planı |
+| Cool Gray | `#C9D0DB` | Border, neutral support |
+
+**CSS token'ları:** `globals.css` → `@theme {}` bloğunda tanımlı.
+**Tailwind:** Inline `bg-[#FF9A14]`, `text-[#0F2348]` gibi arbitrary value'lar kullanılıyor.
+
+### Logo
+- `src/components/marketing/BuazeLogo.tsx` — SVG bileşeni
+- Şekil: Küçük harfli `b` → speech bubble formunda, içinde onay işareti
+- Gradient: `#FFB347 → #FF9A14` (sarımsı-turuncu → canlı turuncu)
+- **Admin sidebar, user dashboard ve marketing navbar** içinde kullanılıyor
+
+### Font
+- **DM Sans** — `next/font/google` ile yüklü (`src/app/layout.tsx`)
+- Yuvarlatılmış geometrik sans-serif → logo ile uyumlu
+- Weights: 400, 500, 600, 700, 800, 900
+
+### Eski renkler → Yeni karşılıklar
+| Eski | Yeni |
+|---|---|
+| `#FDBF1D` (altın sarı) | `#FF9A14` Trust Orange |
+| `#1F1E1D` (koyu) | `#0F2348` Deep Navy |
+| `#111827` (Tailwind gray-900) | `#0F2348` Deep Navy |
+| `#F7F4F0` / `#FCFBF7` (krem) | `#F5F4F1` Soft Mist |
+| `#EA580C` (turuncu accent) | `#FF9A14` Trust Orange |
+
+---
+
+_Son güncelleme: 2026-04 — Buaze marka kimliği entegrasyonu (Trust Orange + Deep Navy + DM Sans)_
+

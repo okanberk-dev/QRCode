@@ -1,35 +1,43 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #e8f0fe;
-  --color-primary-100: #d2e3fc;
-  --color-primary-500: #1a73e8;
-  --color-primary-600: #1967d2;
-  --color-primary-700: #185abc;
+  /* ── Buaze Brand Palette (2026-04) ── */
+  --color-brand-orange: #FF9A14;       /* Trust Orange — Primary Accent */
+  --color-brand-navy: #0F2348;         /* Deep Navy — Primary Wordmark */
+  --color-brand-slate: #243554;        /* Slate Navy — Secondary UI */
+  --color-brand-mist: #F5F4F1;         /* Soft Mist — Background */
+  --color-brand-gray: #C9D0DB;         /* Cool Gray — Neutral Support */
 
-  --color-accent-400: #fde293;
-  --color-accent-500: #fbbc04;
+  /* Semantic aliases */
+  --color-primary-50: #FFF5E6;
+  --color-primary-100: #FFE8C2;
+  --color-primary-500: #FF9A14;
+  --color-primary-600: #E8870A;
+  --color-primary-700: #D07A08;
+
+  --color-accent-400: #FFB74D;
+  --color-accent-500: #FF9A14;
   
-  --color-background: #f8f9fa;
+  --color-background: #F5F4F1;
   --color-surface: #ffffff;
   
-  --color-text-main: #202124;
-  --color-text-muted: #5f6368;
-  --color-text-light: #70757a;
+  --color-text-main: #0F2348;
+  --color-text-muted: #243554;
+  --color-text-light: #6B7B93;
 
   --color-success: #1e8e3e;
   --color-error: #d93025;
 
-  /* Brand Tokens */
-  --color-brand-dark: #1F1E1D;
-  --color-brand-primary: #FDBF1D;
-  --color-brand-accent: #EA580C;
+  /* Legacy aliases (backward compat) */
+  --color-brand-dark: #0F2348;
+  --color-brand-primary: #FF9A14;
+  --color-brand-accent: #FF9A14;
 }
 
 :root {
   background-color: var(--color-background);
   color: var(--color-text-main);
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'DM Sans', 'DM Sans', Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 

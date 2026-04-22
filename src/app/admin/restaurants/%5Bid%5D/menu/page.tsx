@@ -32,8 +32,8 @@ export default function AdminRestaurantMenuPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#FCFBF7]">
-        <Loader2 className="animate-spin text-[#111827] w-10 h-10" />
+      <div className="flex h-screen items-center justify-center bg-[#F5F4F1]">
+        <Loader2 className="animate-spin text-[#0F2348] w-10 h-10" />
       </div>
     );
   }
@@ -41,10 +41,10 @@ export default function AdminRestaurantMenuPage() {
   if (!restaurant) return null;
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] p-4 sm:p-6 md:p-10">
+    <div className="min-h-screen bg-[#F5F4F1] p-4 sm:p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Admin Header */}
-        <div className="flex items-center justify-between bg-[#111827] text-white p-6 rounded-[28px] border border-gray-800 shadow-2xl relative overflow-hidden">
+        <div className="flex items-center justify-between bg-[#0F2348] text-white p-6 rounded-[28px] border border-gray-800 shadow-2xl relative overflow-hidden">
           <div className="relative z-10 flex items-center gap-4">
              <button 
                onClick={() => router.back()}

@@ -18,39 +18,40 @@ export default function PricingFaq({ faqs, title, subtitle }: PricingFaqProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   return (
-    <section className="py-16 sm:py-20 px-5 sm:px-8">
-      <div className="max-w-[720px] mx-auto">
-        <div className="mb-10">
-          <h2 className="text-[28px] sm:text-[34px] font-extrabold tracking-[-0.02em] text-[#1f1e1d] mb-2">{title}</h2>
-          <p className="text-[14px] text-[#6b6760]">{subtitle}</p>
+    <section className="py-20 sm:py-32 px-5 sm:px-8 bg-white border-t-[3px] border-[#0F2348]">
+      <div className="max-w-[800px] mx-auto">
+        <div className="mb-12 sm:mb-16 text-center">
+          <h2 className="text-[32px] sm:text-[52px] font-black tracking-tight text-[#0F2348] leading-tight mb-4 uppercase">{title}</h2>
+          <p className="text-[16px] sm:text-[18px] text-[#243554] font-bold">{subtitle}</p>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-4">
           {faqs.map((faq, index) => (
             <div
               key={index}
-              className={`rounded-xl border transition-all overflow-hidden ${
+              className={`rounded-[24px] sm:rounded-[32px] border-[3px] transition-all overflow-hidden ${
                 openFaq === index
-                  ? 'bg-white border-[#FDBF1D]/30 shadow-sm'
-                  : 'bg-white border-[#e8e4de] hover:border-[#d4cfc8]'
+                  ? 'bg-white border-[#0F2348] shadow-[8px_10px_0_0_#0F2348]'
+                  : 'bg-[#F5F4F1] border-[#0F2348] shadow-[4px_4px_0_0_#0F2348] hover:shadow-[6px_6px_0_0_#0F2348] hover:-translate-y-0.5'
               }`}
             >
               <button
                 id={`faq-btn-${index}`}
                 onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                className="w-full px-6 py-5 flex items-center justify-between text-left gap-4"
+                className="w-full px-8 py-6 sm:py-8 flex items-center justify-between text-left gap-6"
                 aria-expanded={openFaq === index}
               >
-                <span className="text-[14px] sm:text-[15px] font-semibold text-[#1f1e1d] leading-snug">{faq.q}</span>
-                <ChevronDown
-                  size={18}
-                  className={`flex-shrink-0 transition-transform duration-200 ${
-                    openFaq === index ? 'rotate-180 text-[#FDBF1D]' : 'text-[#ada89f]'
-                  }`}
-                />
+                <span className="text-[16px] sm:text-[18px] font-black text-[#0F2348] tracking-tight leading-snug">{faq.q}</span>
+                <div className={`w-10 h-10 rounded-xl border-2 border-[#0F2348] flex items-center justify-center transition-all ${openFaq === index ? 'bg-[#FF9A14] rotate-180' : 'bg-white'}`}>
+                  <ChevronDown
+                    size={20}
+                    strokeWidth={3}
+                    className={`${openFaq === index ? 'text-[#0F2348]' : 'text-[#0F2348]'}`}
+                  />
+                </div>
               </button>
               {openFaq === index && (
-                <div className="px-6 pb-5 text-[14px] text-[#6b6760] leading-relaxed border-t border-[#e8e4de]/60 pt-4">
+                <div className="px-8 pb-8 text-[15px] sm:text-[16px] text-[#243554] leading-relaxed font-bold border-t-[3px] border-[#0F2348] pt-6 bg-white">
                   {faq.a}
                 </div>
               )}

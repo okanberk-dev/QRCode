@@ -1,8 +1,11 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="64" height="64" rx="14" fill="#1F1E1D"/>
-  <rect x="8" y="8" width="48" height="48" rx="10" fill="#FDBF1D"/>
-  <path d="M23 17H37C42.5228 17 47 21.4772 47 27C47 30.2198 45.4776 33.084 43.1159 34.9149C45.4691 36.7442 47 39.6273 47 43C47 48.5228 42.5228 53 37 53H23V17Z" fill="#1F1E1D"/>
-  <path d="M30 24V31H36.2C38.1892 31 39.8 29.3892 39.8 27.4C39.8 25.6108 38.1892 24 36.2 24H30Z" fill="#FDBF1D"/>
-  <path d="M30 38V46H36.6C38.8091 46 40.6 44.2091 40.6 42C40.6 39.7909 38.8091 38 36.6 38H30Z" fill="#FDBF1D"/>
-  <circle cx="42.5" cy="43.5" r="4.5" fill="#EA580C"/>
+  <rect width="64" height="64" rx="14" fill="#0F2348"/>
+  <!-- Speech bubble b shape -->
+  <path d="M20 12C20 12 20 44 20 44C20 44 22 48 26 49C26 49 22 52 18 51C14 50 13 47 13 44V12C13 10 15 9 17 10L20 12Z" fill="#FF9A14"/>
+  <circle cx="28" cy="34" r="14" fill="#FF9A14"/>
+  <circle cx="28" cy="34" r="8.5" fill="#0F2348"/>
+  <!-- Checkmark -->
+  <path d="M24 34L27 37L33 31" stroke="#FF9A14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Tail -->
+  <path d="M20 43L16 51L25 44" fill="#FF9A14"/>
 </svg>

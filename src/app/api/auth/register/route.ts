@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
             slug: finalSlug,
             userId: user.id,
             category: 'Restoran',
-            primaryColor: '#ea580c', // Updated to premium orange default
+            primaryColor: '#FF9A14', // Updated to premium orange default
           }
         });
         restaurantId = restaurant.id;

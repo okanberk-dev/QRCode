@@ -69,7 +69,7 @@ export default async function DentistSolutionPage({ params }: { params: Promise<
     {
       title: isTr ? 'Güven Oluşturur' : 'Builds Trust',
       desc: isTr ? 'Diş hekimi seçimi hassas bir karardır. Bol olumlu yorum potansiyel hastanın kararını 4x hızlandırır.' : 'Choosing a dentist is a sensitive decision. Many positive reviews speed up potential patients\' decision 4x.',
-      icon: <Star size={20} className="text-[#FDBF1D]" />,
+      icon: <Star size={20} className="text-[#FF9A14]" />,
     },
     {
       title: isTr ? 'Hasta Gizliliği' : 'Patient Privacy',

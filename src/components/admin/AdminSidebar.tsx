@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, LogOut, Store, QrCode, Users, Clock, Crown, UsersRound, Globe, User, BookOpen, Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
+import BuazeLogo from '@/components/marketing/BuazeLogo';
 
 interface AdminProfile {
   id: string;
@@ -75,7 +76,7 @@ export default function AdminSidebar() {
   const trialInfo = profile?.plan === 'trial' ? getTrialInfo(profile?.trialEndsAt) : null;
 
   const planBadge = () => {
-    if (role === 'superadmin') return <span className="bg-[#FDBF1D] text-[#111827] text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1"><Crown size={9} />ADMIN</span>;
+    if (role === 'superadmin') return <span className="bg-[#FF9A14] text-[#0F2348] text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1"><Crown size={9} />ADMIN</span>;
     if (!profile?.plan || profile.plan === 'trial') return <span className="bg-orange-500/20 text-orange-400 text-[10px] font-bold px-2 py-0.5 rounded-full">DENEME</span>;
     if (profile.plan === 'monthly') return <span className="bg-blue-500/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full">AYLIK</span>;
     if (profile.plan === 'yearly') return <span className="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">YILLIK</span>;
@@ -83,12 +84,12 @@ export default function AdminSidebar() {
   };
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-[#111827]">
+    <div className="flex flex-col h-full bg-[#0F2348]">
       {/* ─── Logo ─── */}
       <div className="p-6 border-b border-white/10 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#FDBF1D] flex items-center justify-center text-[#111827] font-black text-2xl leading-none flex-shrink-0 shadow-sm">
-            B
+          <div className="w-10 h-10 flex-shrink-0">
+            <BuazeLogo size={40} />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-black text-white tracking-tight leading-none">Buaze</h1>
@@ -109,11 +110,11 @@ export default function AdminSidebar() {
               onClick={() => setMobileOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-black text-sm border border-transparent ${
                 isActive
-                  ? 'bg-[#FDBF1D] text-[#111827] shadow-sm'
+                  ? 'bg-[#FF9A14] text-[#0F2348] shadow-sm'
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <item.icon size={20} className={isActive ? 'text-[#111827]' : 'text-gray-500 group-hover:text-white'} strokeWidth={2.5} />
+              <item.icon size={20} className={isActive ? 'text-[#0F2348]' : 'text-gray-500 group-hover:text-white'} strokeWidth={2.5} />
               {item.label}
             </Link>
           );
@@ -137,7 +138,7 @@ export default function AdminSidebar() {
       {/* ─── User Info ─── */}
       <div className="p-4 border-t border-white/10 bg-black/20">
         <div className="flex items-center gap-3 px-3 py-3 mb-2 rounded-2xl bg-white/5 border border-white/5">
-          <div className="w-9 h-9 rounded-xl bg-[#FDBF1D] border border-[#1f1e1d] flex items-center justify-center text-sm font-black text-[#111827] flex-shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-[#FF9A14] border border-[#0F2348] flex items-center justify-center text-sm font-black text-[#0F2348] flex-shrink-0">
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
@@ -175,14 +176,14 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-64 bg-[#111827] border-r border-white/5 flex-col h-full z-30">
+      <aside className="hidden lg:flex w-64 bg-[#0F2348] border-r border-white/5 flex-col h-full z-30">
         <SidebarContent />
       </aside>
 
       {/* Mobile Top Bar */}
-      <div className="lg:hidden bg-[#111827] border-b border-white/10 px-5 py-4 flex items-center justify-between sticky top-0 z-40">
+      <div className="lg:hidden bg-[#0F2348] border-b border-white/10 px-5 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#FDBF1D] flex items-center justify-center text-[#111827] font-black text-lg shadow-sm">B</div>
+          <div className="w-8 h-8"><BuazeLogo size={32} /></div>
           <span className="text-white font-black text-lg tracking-tight">Buaze</span>
         </div>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white p-2 hover:bg-white/5 transition-colors rounded-xl">
@@ -197,7 +198,7 @@ export default function AdminSidebar() {
       {/* Mobile Drawer */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="w-72 bg-[#111827] h-full flex flex-col border-r border-white/10 shadow-2xl">
+          <div className="w-72 bg-[#0F2348] h-full flex flex-col border-r border-white/10 shadow-2xl">
             <SidebarContent />
           </div>
           <div className="flex-1 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />

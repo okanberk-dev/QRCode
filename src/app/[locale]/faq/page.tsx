@@ -72,7 +72,7 @@ export default async function FaqPage({
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-[#FCFBF7] selection:bg-[#FDBF1D]/30">
+    <div className="min-h-screen flex flex-col font-sans bg-[#F5F4F1] selection:bg-[#FF9A14]/30">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}

@@ -17,7 +17,7 @@ export default async function Image() {
     (
       <div
         style={{
-          background: 'linear-gradient(135deg, #1f1e1d 0%, #111111 100%)',
+          background: 'linear-gradient(135deg, #0F2348 0%, #111111 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -74,7 +74,7 @@ export default async function Image() {
               lineHeight: 1,
             }}
           >
-            buaze<span style={{ color: '#ea580c' }}>.</span>
+            buaze<span style={{ color: '#FF9A14' }}>.</span>
           </div>
 
           {/* Subtitle */}
@@ -82,7 +82,7 @@ export default async function Image() {
             style={{
               fontSize: '42px',
               fontWeight: 700,
-              color: '#ada89f',
+              color: '#6B7B93',
               marginTop: '40px',
               textAlign: 'center',
               lineHeight: 1.2,
@@ -93,7 +93,7 @@ export default async function Image() {
               gap: '12px'
             }}
           >
-            <span style={{ color: '#ea580c' }}>Google Puanınızı</span>
+            <span style={{ color: '#FF9A14' }}>Google Puanınızı</span>
             <span>Otomatik Olarak Yükseltin</span>
           </div>
 
@@ -113,8 +113,8 @@ export default async function Image() {
                 width="48"
                 height="48"
                 viewBox="0 0 24 24"
-                fill="#FDBF1D"
-                stroke="#FDBF1D"
+                fill="#FF9A14"
+                stroke="#FF9A14"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -136,7 +136,7 @@ export default async function Image() {
               alignItems: 'center',
               fontSize: '24px',
               fontWeight: 600,
-              color: '#6b6760',
+              color: '#243554',
               letterSpacing: '0.05em',
             }}
           >

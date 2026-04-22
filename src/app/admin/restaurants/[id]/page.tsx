@@ -27,7 +27,7 @@ export default function RestaurantDetailPage() {
     yemekSepetiUrl: '',
     trendyolYemekUrl: '',
     notificationEmail: '',
-    primaryColor: '#1a73e8',
+    primaryColor: '#FF9A14',
     isActive: true,
   });
 
@@ -57,7 +57,7 @@ export default function RestaurantDetailPage() {
             yemekSepetiUrl: data.yemekSepetiUrl || '',
             trendyolYemekUrl: data.trendyolYemekUrl || '',
             notificationEmail: data.notificationEmail || '',
-            primaryColor: data.primaryColor || '#1a73e8',
+            primaryColor: data.primaryColor || '#FF9A14',
             isActive: data.isActive ?? true,
           });
         } else {
@@ -116,7 +116,7 @@ export default function RestaurantDetailPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#111827] w-8 h-8" />
+        <Loader2 className="animate-spin text-[#0F2348] w-8 h-8" />
       </div>
     );
   }
@@ -125,10 +125,10 @@ export default function RestaurantDetailPage() {
     <div className="p-4 sm:p-6 md:p-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
         <Link href="/admin/restaurants" className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white shrink-0">
-          <ArrowLeft size={20} className="text-[#111827]" />
+          <ArrowLeft size={20} className="text-[#0F2348]" />
         </Link>
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-black text-[#111827] tracking-tight">Restoran Düzenle</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-[#0F2348] tracking-tight">Restoran Düzenle</h1>
           <p className="text-gray-500 text-sm font-medium truncate">{formData.name}</p>
         </div>
       </div>
@@ -156,7 +156,7 @@ export default function RestaurantDetailPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#0F2348] focus:ring-2 focus:ring-[#0F2348] outline-none text-sm shadow-sm transition-all"
                 />
               </div>
               <div>
@@ -168,7 +168,7 @@ export default function RestaurantDetailPage() {
                     required
                     value={formData.slug}
                     onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm font-mono shadow-sm transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#0F2348] focus:ring-2 focus:ring-[#0F2348] outline-none text-sm font-mono shadow-sm transition-all"
                   />
                 </div>
               </div>
@@ -180,7 +180,7 @@ export default function RestaurantDetailPage() {
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#0F2348] focus:ring-2 focus:ring-[#0F2348] outline-none text-sm shadow-sm transition-all"
                 >
                   <option>Restoran</option>
                   <option>Hamburger Restoranı</option>
@@ -214,7 +214,7 @@ export default function RestaurantDetailPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#111827] rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#111827]"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#0F2348] rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0F2348]"></div>
               </label>
               <span className="text-sm font-medium text-gray-700">Aktif</span>
             </div>
@@ -232,7 +232,7 @@ export default function RestaurantDetailPage() {
                 value={formData.address}
                 onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                 placeholder="Mahall Ankara, Çankaya/Ankara"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#0F2348] focus:ring-2 focus:ring-[#0F2348] outline-none text-sm shadow-sm transition-all"
               />
             </div>
             <div>
@@ -241,7 +241,7 @@ export default function RestaurantDetailPage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#0F2348] focus:ring-2 focus:ring-[#0F2348] outline-none text-sm shadow-sm transition-all"
               />
             </div>
           </div>
@@ -250,7 +250,7 @@ export default function RestaurantDetailPage() {
         {/* Notification & Google */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
           <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <Mail size={16} className="text-[#111827]" />
+            <Mail size={16} className="text-[#0F2348]" />
             Bildirim & Google Ayarları
           </h3>
           <div className="space-y-4">
@@ -261,7 +261,7 @@ export default function RestaurantDetailPage() {
                 value={formData.notificationEmail}
                 onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
                 placeholder="restoran@email.com"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#0F2348] focus:ring-2 focus:ring-[#0F2348] outline-none text-sm shadow-sm transition-all"
               />
               <p className="text-xs text-gray-400 mt-1">1-2-3 yıldız puanlarında bu e-posta adresine bildirim gönderilir.</p>
             </div>
@@ -275,7 +275,7 @@ export default function RestaurantDetailPage() {
                 value={formData.googlePlaceId}
                 onChange={(e) => setFormData(prev => ({ ...prev, googlePlaceId: e.target.value }))}
                 placeholder="ChIJ... veya https://maps.app.goo.gl/..."
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm font-mono shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#0F2348] focus:ring-2 focus:ring-[#0F2348] outline-none text-sm font-mono shadow-sm transition-all"
               />
               <p className="text-xs text-gray-400 mt-1">Mekan kimliğini ya da Google Haritalar Yorum linkini direkt ekleyebilirsiniz. Olumlu geri bildirimler buraya yönlendirilecek.</p>
             </div>
@@ -340,7 +340,7 @@ export default function RestaurantDetailPage() {
             <Link
               href={`/r/${formData.slug}`}
               target="_blank"
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-[#111827] bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition-colors shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-[#0F2348] bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition-colors shadow-sm"
             >
               <ExternalLink size={16} />
               Önizle
@@ -348,7 +348,7 @@ export default function RestaurantDetailPage() {
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-2 bg-[#111827] hover:bg-[#1f2937] text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50 shadow-md hover:shadow-lg"
+              className="flex items-center gap-2 bg-[#0F2348] hover:bg-[#1f2937] text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50 shadow-md hover:shadow-lg"
             >
               {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
               Kaydet

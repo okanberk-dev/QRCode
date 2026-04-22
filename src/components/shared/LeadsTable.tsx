@@ -82,12 +82,12 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-8 rounded-[32px] border-2 border-gray-100 shadow-sm">
         <div className="space-y-2">
-          <h1 className="text-3xl font-black text-[#111827] tracking-tight uppercase">{title}</h1>
-          <p className="text-[#6b6760] text-[15px] font-bold">{subtitle}</p>
+          <h1 className="text-3xl font-black text-[#0F2348] tracking-tight uppercase">{title}</h1>
+          <p className="text-[#243554] text-[15px] font-bold">{subtitle}</p>
         </div>
         <button 
           onClick={exportToCSV}
-          className="flex items-center gap-2 px-6 py-3 bg-[#111827] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg active:scale-95"
+          className="flex items-center gap-2 px-6 py-3 bg-[#0F2348] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg active:scale-95"
         >
           <Download size={16} strokeWidth={3} />
           CSV İNDİR
@@ -96,13 +96,13 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
 
       {/* Search Bar */}
       <div className="relative group">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#ada89f] group-focus-within:text-[#111827] transition-colors" size={20} strokeWidth={3} />
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#6B7B93] group-focus-within:text-[#0F2348] transition-colors" size={20} strokeWidth={3} />
         <input
           type="text"
           placeholder="İsim, e-posta, telefon veya işletme ara..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border-2 border-gray-100 rounded-[24px] pl-16 pr-8 py-5 text-sm font-bold shadow-sm outline-none focus:border-[#FDBF1D] transition-all"
+          className="w-full bg-white border-2 border-gray-100 rounded-[24px] pl-16 pr-8 py-5 text-sm font-bold shadow-sm outline-none focus:border-[#FF9A14] transition-all"
         />
       </div>
 
@@ -110,7 +110,7 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
-              <tr className="bg-[#111827] text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">
+              <tr className="bg-[#0F2348] text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7B93]">
                 <th className="px-10 py-5">MÜŞTERİ BİLGİLERİ</th>
                 {isSuperAdmin && <th className="px-10 py-5">İŞLETME</th>}
                 <th className="px-10 py-5">İLETİŞİM</th>
@@ -121,12 +121,12 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
               {loading ? (
                 <tr>
                   <td colSpan={isSuperAdmin ? 4 : 3} className="py-20 text-center">
-                    <Loader2 className="animate-spin text-[#111827] w-10 h-10 mx-auto" />
+                    <Loader2 className="animate-spin text-[#0F2348] w-10 h-10 mx-auto" />
                   </td>
                 </tr>
               ) : filteredLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={isSuperAdmin ? 4 : 3} className="py-20 text-center text-[#6b6760] font-bold italic">
+                  <td colSpan={isSuperAdmin ? 4 : 3} className="py-20 text-center text-[#243554] font-bold italic">
                     Henüz iletişim bilgisi bırakan müşteri bulunamadı.
                   </td>
                 </tr>
@@ -135,19 +135,19 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
                   <tr key={lead.id} className="hover:bg-gray-50/50 transition-all group">
                     <td className="px-10 py-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-[#FDBF1D] flex items-center justify-center text-[#111827] shadow-sm group-hover:scale-105 transition-transform">
+                        <div className="w-12 h-12 rounded-2xl bg-[#FF9A14] flex items-center justify-center text-[#0F2348] shadow-sm group-hover:scale-105 transition-transform">
                           <User size={20} strokeWidth={3} />
                         </div>
                         <div>
-                          <p className="font-black text-[#111827] text-base tracking-tight">{lead.name || 'İsimsiz'}</p>
-                          <p className="text-[11px] font-bold text-[#ada89f] uppercase tracking-wider">MÜŞTERİ</p>
+                          <p className="font-black text-[#0F2348] text-base tracking-tight">{lead.name || 'İsimsiz'}</p>
+                          <p className="text-[11px] font-bold text-[#6B7B93] uppercase tracking-wider">MÜŞTERİ</p>
                         </div>
                       </div>
                     </td>
                     {isSuperAdmin && (
                       <td className="px-10 py-6">
-                        <div className="flex items-center gap-2 text-[#111827] font-black">
-                          <Store size={16} className="text-[#ada89f]" />
+                        <div className="flex items-center gap-2 text-[#0F2348] font-black">
+                          <Store size={16} className="text-[#6B7B93]" />
                           <span>{lead.restaurant?.name || '-'}</span>
                         </div>
                       </td>
@@ -155,13 +155,13 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
                     <td className="px-10 py-6">
                       <div className="space-y-1.5">
                         {lead.phone && (
-                          <div className="flex items-center gap-2 text-[13px] font-bold text-[#111827]">
+                          <div className="flex items-center gap-2 text-[13px] font-bold text-[#0F2348]">
                             <Phone size={14} className="text-blue-500" />
                             {lead.phone}
                           </div>
                         )}
                         {lead.email && (
-                          <div className="flex items-center gap-2 text-[13px] font-bold text-[#111827]">
+                          <div className="flex items-center gap-2 text-[13px] font-bold text-[#0F2348]">
                             <Mail size={14} className="text-emerald-500" />
                             {lead.email}
                           </div>
@@ -170,12 +170,12 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
                     </td>
                     <td className="px-10 py-6">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-[13px] font-bold text-[#111827]">
-                          <Calendar size={14} className="text-[#ada89f]" />
+                        <div className="flex items-center gap-2 text-[13px] font-bold text-[#0F2348]">
+                          <Calendar size={14} className="text-[#6B7B93]" />
                           {new Date(lead.createdAt).toLocaleDateString('tr-TR')}
                         </div>
                         {lead.branch && (
-                          <div className="flex items-center gap-2 text-[11px] font-black text-[#ada89f] uppercase tracking-widest">
+                          <div className="flex items-center gap-2 text-[11px] font-black text-[#6B7B93] uppercase tracking-widest">
                             <MapPin size={12} />
                             {lead.branch}
                           </div>

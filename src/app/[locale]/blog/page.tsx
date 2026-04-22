@@ -53,22 +53,22 @@ export default async function BlogIndexPage({
   });
 
   return (
-    <div className="min-h-screen bg-[#FCFBF7] text-[#1f1e1d] font-sans pt-[64px] selection:bg-[#FDBF1D]/30">
+    <div className="min-h-screen bg-[#F5F4F1] text-[#0F2348] font-sans pt-[64px] selection:bg-[#FF9A14]/30">
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero Header */}
-      <section className="pt-24 pb-16 px-5 sm:px-8 bg-[#F7F4F0] relative overflow-hidden border-b border-[#e8e4de]">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ea580c]/5 rounded-full blur-[120px] translate-x-1/3 -translate-y-1/3" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#FDBF1D]/5 rounded-full blur-[100px] -translate-x-1/3 translate-y-1/3" />
+      <section className="pt-24 pb-16 px-5 sm:px-8 bg-[#F5F4F1] relative overflow-hidden border-b border-[#C9D0DB]">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FF9A14]/5 rounded-full blur-[120px] translate-x-1/3 -translate-y-1/3" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#FF9A14]/5 rounded-full blur-[100px] -translate-x-1/3 translate-y-1/3" />
         
         <div className="max-w-[1000px] mx-auto text-center space-y-6 relative z-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl border-[2.5px] border-[#1f1e1d] shadow-[4px_4px_0_0_#1f1e1d] mb-4">
-            <BookOpen size={28} className="text-[#ea580c]" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl border-[2.5px] border-[#0F2348] shadow-[4px_4px_0_0_#0F2348] mb-4">
+            <BookOpen size={28} className="text-[#FF9A14]" />
           </div>
-          <h1 className="text-[48px] sm:text-[72px] font-black tracking-[-0.04em] text-[#1f1e1d] leading-[0.95]">
-            {t.blog_title}<span className="text-[#ea580c]">.</span>
+          <h1 className="text-[48px] sm:text-[72px] font-black tracking-[-0.04em] text-[#0F2348] leading-[0.95]">
+            {t.blog_title}<span className="text-[#FF9A14]">.</span>
           </h1>
-          <p className="text-[18px] sm:text-[22px] text-[#6b6760] font-medium max-w-[650px] mx-auto leading-relaxed">
+          <p className="text-[18px] sm:text-[22px] text-[#243554] font-medium max-w-[650px] mx-auto leading-relaxed">
             {t.blog_desc}
           </p>
         </div>
@@ -77,7 +77,7 @@ export default async function BlogIndexPage({
       {/* Blog Grid */}
       <section className="py-20 px-5 sm:px-8">
         {posts.length === 0 ? (
-          <div className="text-center py-20 text-[#ada89f] text-lg font-medium">
+          <div className="text-center py-20 text-[#6B7B93] text-lg font-medium">
             {locale === 'tr' ? 'Henüz blog yazısı yok.' : 'No blog posts yet.'}
           </div>
         ) : (
@@ -86,9 +86,9 @@ export default async function BlogIndexPage({
               <Link
                 key={post.id}
                 href={`${base}/blog/${post.slug}`}
-                className="group bg-white rounded-3xl border-[2.5px] border-[#1f1e1d] shadow-[6px_8px_0_0_#1f1e1d] hover:-translate-y-2 transition-transform duration-300 flex flex-col overflow-hidden"
+                className="group bg-white rounded-3xl border-[2.5px] border-[#0F2348] shadow-[6px_8px_0_0_#0F2348] hover:-translate-y-2 transition-transform duration-300 flex flex-col overflow-hidden"
               >
-                <div className="relative w-full h-[220px] border-b-[2.5px] border-[#1f1e1d] overflow-hidden">
+                <div className="relative w-full h-[220px] border-b-[2.5px] border-[#0F2348] overflow-hidden">
                   <img
                     src={post.coverImage}
                     alt={post.title}
@@ -97,22 +97,22 @@ export default async function BlogIndexPage({
                 </div>
 
                 <div className="p-8 space-y-5 flex-grow flex flex-col">
-                  <div className="flex items-center gap-4 text-[12px] font-bold text-[#ea580c] uppercase tracking-widest">
+                  <div className="flex items-center gap-4 text-[12px] font-bold text-[#FF9A14] uppercase tracking-widest">
                     <span className="flex items-center gap-1.5"><Calendar size={14} /> {post.date}</span>
-                    <span className="flex items-center gap-1.5 text-[#ada89f]"><Clock size={14} /> {post.readTime}</span>
+                    <span className="flex items-center gap-1.5 text-[#6B7B93]"><Clock size={14} /> {post.readTime}</span>
                   </div>
                   
-                  <h2 className="text-[24px] font-extrabold leading-[1.2] text-[#1f1e1d] group-hover:text-[#ea580c] transition-colors">
+                  <h2 className="text-[24px] font-extrabold leading-[1.2] text-[#0F2348] group-hover:text-[#FF9A14] transition-colors">
                     {post.title}
                   </h2>
                   
-                  <p className="text-[15px] text-[#6b6760] font-medium line-clamp-3 leading-relaxed flex-grow">
+                  <p className="text-[15px] text-[#243554] font-medium line-clamp-3 leading-relaxed flex-grow">
                     {post.description}
                   </p>
                   
-                  <div className="mt-4 pt-5 border-t border-[#e8e4de] flex flex-row items-center justify-between text-[14px] font-bold text-[#1f1e1d]">
+                  <div className="mt-4 pt-5 border-t border-[#C9D0DB] flex flex-row items-center justify-between text-[14px] font-bold text-[#0F2348]">
                     <span className="uppercase tracking-wider">{t.blog_readMore}</span>
-                    <div className="w-10 h-10 rounded-full bg-[#FCFBF7] border-2 border-[#1f1e1d] flex items-center justify-center group-hover:bg-[#FDBF1D] group-hover:-rotate-45 transition-all">
+                    <div className="w-10 h-10 rounded-full bg-[#F5F4F1] border-2 border-[#0F2348] flex items-center justify-center group-hover:bg-[#FF9A14] group-hover:-rotate-45 transition-all">
                       <ArrowRight size={18} />
                     </div>
                   </div>

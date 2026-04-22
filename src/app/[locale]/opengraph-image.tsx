@@ -28,7 +28,7 @@ export default async function Image({
     (
       <div
         style={{
-          background: 'linear-gradient(135deg, #1f1e1d 0%, #0d0c0b 100%)',
+          background: 'linear-gradient(135deg, #0F2348 0%, #0d0c0b 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -81,7 +81,7 @@ export default async function Image({
             }}
           >
             buaze
-            <span style={{ color: '#ea580c', marginLeft: '2px' }}>.</span>
+            <span style={{ color: '#FF9A14', marginLeft: '2px' }}>.</span>
           </div>
 
           {/* Headline */}
@@ -96,7 +96,7 @@ export default async function Image({
               style={{
                 fontSize: '72px',
                 fontWeight: 900,
-                color: '#ea580c',
+                color: '#FF9A14',
                 letterSpacing: '-0.04em',
                 lineHeight: '1',
               }}
@@ -120,7 +120,7 @@ export default async function Image({
           <div
             style={{
               fontSize: '28px',
-              color: '#ada89f',
+              color: '#6B7B93',
               fontWeight: 500,
               marginTop: '8px',
             }}
@@ -136,7 +136,7 @@ export default async function Image({
                 width="40"
                 height="40"
                 viewBox="0 0 24 24"
-                fill="#FDBF1D"
+                fill="#FF9A14"
                 style={{ filter: 'drop-shadow(0 0 8px rgba(253,191,29,0.5))' }}
               >
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -164,14 +164,14 @@ export default async function Image({
             style={{
               fontSize: '88px',
               fontWeight: 900,
-              color: '#FDBF1D',
+              color: '#FF9A14',
               lineHeight: '1',
               letterSpacing: '-0.05em',
             }}
           >
             4.9
           </span>
-          <span style={{ fontSize: '20px', color: '#ada89f', marginTop: '8px', fontWeight: 600 }}>
+          <span style={{ fontSize: '20px', color: '#6B7B93', marginTop: '8px', fontWeight: 600 }}>
             Google Stars
           </span>
         </div>
@@ -183,7 +183,7 @@ export default async function Image({
             bottom: '40px',
             left: '100px',
             fontSize: '22px',
-            color: '#6b6760',
+            color: '#243554',
             fontWeight: 600,
             letterSpacing: '0.05em',
             zIndex: 10,

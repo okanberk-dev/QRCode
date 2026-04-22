@@ -74,7 +74,7 @@ export default async function RealEstateSolutionPage({ params }: { params: Promi
     {
       title: isTr ? 'Danışman Rekabeti' : 'Agent Competition',
       desc: isTr ? 'Her danışman kendi itibarını geliştirmek için motive olur. Ofis genelinde kalite artar.' : 'Each agent is motivated to improve their own reputation. Overall office quality increases.',
-      icon: <Star size={20} className="text-[#FDBF1D]" />,
+      icon: <Star size={20} className="text-[#FF9A14]" />,
     },
     {
       title: isTr ? 'Mülk Bazlı İtibar' : 'Property-Based Reputation',

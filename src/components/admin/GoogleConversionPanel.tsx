@@ -84,7 +84,7 @@ export default function GoogleConversionPanel({
 
   if (totalResponses === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-gray-200 bg-white/60 p-6 text-center text-sm font-bold text-[#6b6760]">
+      <div className="rounded-2xl border border-dashed border-gray-200 bg-white/60 p-6 text-center text-sm font-bold text-[#243554]">
         {copy.noData}
       </div>
     );
@@ -115,7 +115,7 @@ export default function GoogleConversionPanel({
             label={copy.highRating}
             value={highRatings}
             pct={highPct}
-            color="#FDBF1D"
+            color="#FF9A14"
             bg="bg-amber-50"
             text="text-amber-600"
             icon={<Star size={16} strokeWidth={2.5} fill="currentColor" />}
@@ -138,14 +138,14 @@ export default function GoogleConversionPanel({
               {copy.rate}
             </p>
             <div className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-4xl font-black tabular-nums tracking-tight text-[#111827] sm:text-5xl">
+              <span className="text-4xl font-black tabular-nums tracking-tight text-[#0F2348] sm:text-5xl">
                 {conversionRate === null ? '—' : conversionRate.toFixed(1)}
               </span>
               {conversionRate !== null && (
-                <span className="text-xl font-black text-[#6b6760] sm:text-2xl">%</span>
+                <span className="text-xl font-black text-[#243554] sm:text-2xl">%</span>
               )}
             </div>
-            <p className="mt-2 text-[11px] font-bold text-[#6b6760]">
+            <p className="mt-2 text-[11px] font-bold text-[#243554]">
               {sentToGoogle} / {highRatings} {copy.highRatingsLabel} → {copy.sentLabel}
             </p>
           </div>
@@ -179,8 +179,8 @@ export default function GoogleConversionPanel({
               <Trophy size={18} strokeWidth={2.75} />
             </div>
             <div className="min-w-0">
-              <h4 className="text-[13px] font-black text-[#111827]">{copy.leaderboardTitle}</h4>
-              <p className="mt-0.5 text-[11px] font-bold text-[#6b6760]">{copy.leaderboardSub}</p>
+              <h4 className="text-[13px] font-black text-[#0F2348]">{copy.leaderboardTitle}</h4>
+              <p className="mt-0.5 text-[11px] font-bold text-[#243554]">{copy.leaderboardSub}</p>
             </div>
           </div>
 
@@ -225,11 +225,11 @@ function FunnelRow({
           <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${bg} ${text}`}>
             {icon ?? <ArrowDownRight size={14} strokeWidth={3} />}
           </div>
-          <span className="truncate text-[11px] font-black uppercase tracking-widest text-[#6b6760]">
+          <span className="truncate text-[11px] font-black uppercase tracking-widest text-[#243554]">
             {label}
           </span>
         </div>
-        <span className="shrink-0 text-lg font-black tabular-nums text-[#111827] sm:text-xl">
+        <span className="shrink-0 text-lg font-black tabular-nums text-[#0F2348] sm:text-xl">
           {value}
         </span>
       </div>
@@ -281,14 +281,14 @@ function RestaurantRow({
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-black text-[#111827]">{rest.name}</p>
+          <p className="truncate text-[13px] font-black text-[#0F2348]">{rest.name}</p>
           {!rest.hasGoogleLink ? (
             <p className="mt-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-600">
               <Link2Off size={11} strokeWidth={3} />
               {copy.noGoogleLink} · {copy.setLink} →
             </p>
           ) : (
-            <p className="mt-1 text-[10px] font-bold text-[#6b6760]">
+            <p className="mt-1 text-[10px] font-bold text-[#243554]">
               {rest.sentToGoogle} / {rest.highRatings} {copy.highRatingsLabel} → {copy.sentLabel}
             </p>
           )}

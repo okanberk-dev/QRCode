@@ -41,11 +41,11 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
       icon: <Trophy size={18} />,
       subtitle: locale === 'tr' ? 'MÜŞTERİ DENEYİMİNİ ANLIK OLARAK TAKİP EDİN' : 'TRACK CUSTOMER EXPERIENCE IN REAL-TIME',
       content: (
-        <div className="mx-auto w-full max-w-[650px] bg-[#FCFBF7] rounded-2xl md:rounded-[32px] border-[2.5px] border-[#1f1e1d] p-6 md:p-10 shadow-[6px_8px_0_0_#1f1e1d] space-y-6 md:space-y-8">
+        <div className="mx-auto w-full max-w-[650px] bg-[#F5F4F1] rounded-2xl md:rounded-[32px] border-[2.5px] border-[#0F2348] p-6 md:p-10 shadow-[6px_8px_0_0_#0F2348] space-y-6 md:space-y-8">
           {/* Positive Review Route */}
-          <div className="bg-white rounded-xl border-[2px] border-[#1f1e1d] p-5 shadow-[4px_6px_0_0_#1f1e1d] relative hover:-translate-y-1 transition-transform">
+          <div className="bg-white rounded-xl border-[2px] border-[#0F2348] p-5 shadow-[4px_6px_0_0_#0F2348] relative hover:-translate-y-1 transition-transform">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
-              <div className="flex gap-1 text-[#FDBF1D]">
+              <div className="flex gap-1 text-[#FF9A14]">
                 {[1,2,3,4,5].map(i => <Star key={i} size={22} fill="currentColor" strokeWidth={0} />)}
               </div>
               <div className="bg-[#EFFFF3] text-[#16A34A] px-3.5 py-1.5 text-[11px] font-extrabold rounded-full border border-[#16A34A] uppercase tracking-wider inline-flex items-center w-fit shadow-sm">
@@ -53,25 +53,25 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
               </div>
             </div>
             <div className="space-y-2 opacity-50 pl-1">
-              <div className="h-2.5 bg-[#e8e4de] w-3/4 rounded-full" />
-              <div className="h-2.5 bg-[#e8e4de] w-1/2 rounded-full" />
+              <div className="h-2.5 bg-[#C9D0DB] w-3/4 rounded-full" />
+              <div className="h-2.5 bg-[#C9D0DB] w-1/2 rounded-full" />
             </div>
           </div>
 
           {/* Negative Review Route */}
-          <div className="bg-[#FFF9F5] rounded-xl border-[2px] border-[#ea580c] p-5 shadow-[4px_6px_0_0_rgba(234,88,12,0.1)] relative hover:-translate-y-1 transition-transform">
+          <div className="bg-[#FFF9F5] rounded-xl border-[2px] border-[#FF9A14] p-5 shadow-[4px_6px_0_0_rgba(234,88,12,0.1)] relative hover:-translate-y-1 transition-transform">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
               <div className="flex gap-1">
-                {[1,2].map(i => <Star key={i} size={22} fill="#ea580c" strokeWidth={0} />)}
+                {[1,2].map(i => <Star key={i} size={22} fill="#FF9A14" strokeWidth={0} />)}
                 {[3,4,5].map(i => <Star key={i} size={22} fill="#FDEBD0" strokeWidth={0} />)}
               </div>
-              <div className="bg-[#ea580c] text-white px-3.5 py-1.5 text-[11px] font-extrabold rounded-full shadow-sm uppercase tracking-wider inline-flex items-center w-fit">
+              <div className="bg-[#FF9A14] text-white px-3.5 py-1.5 text-[11px] font-extrabold rounded-full shadow-sm uppercase tracking-wider inline-flex items-center w-fit">
                 {locale === 'tr' ? '🔒 Özel Panele Al' : '🔒 Internal Dashboard'}
               </div>
             </div>
             <div className="space-y-2 opacity-40 pl-1">
-              <div className="h-2.5 bg-[#ea580c] w-2/3 rounded-full opacity-30" />
-              <div className="h-2.5 bg-[#ea580c] w-1/3 rounded-full opacity-30" />
+              <div className="h-2.5 bg-[#FF9A14] w-2/3 rounded-full opacity-30" />
+              <div className="h-2.5 bg-[#FF9A14] w-1/3 rounded-full opacity-30" />
             </div>
           </div>
         </div>
@@ -110,15 +110,15 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
   const currentData = tabs[activeTab];
 
   return (
-    <div className="max-w-[1000px] mx-auto bg-white rounded-3xl border-[2px] border-[#1f1e1d] shadow-[4px_6px_0_0_#1f1e1d] p-8 sm:p-12 transition-all flex flex-col items-center text-center">
+    <div className="max-w-[1000px] mx-auto bg-white rounded-3xl border-[2px] border-[#0F2348] shadow-[4px_6px_0_0_#0F2348] p-8 sm:p-12 transition-all flex flex-col items-center text-center">
       
       {/* Title */}
-      <h2 className="text-[28px] sm:text-[36px] font-extrabold text-[#1f1e1d] tracking-[-0.02em] mb-3">
+      <h2 className="text-[28px] sm:text-[36px] font-extrabold text-[#0F2348] tracking-[-0.02em] mb-3">
         {locale === 'tr' ? 'Mutlu müşterilerinizi daha fazla müşteriye dönüştürün' : 'Turn happy customers into more customers'}
       </h2>
       
       {/* Dynamic Subtitle */}
-      <div className="text-[12px] font-bold text-[#ada89f] tracking-widest uppercase mb-10 transition-opacity duration-300">
+      <div className="text-[12px] font-bold text-[#6B7B93] tracking-widest uppercase mb-10 transition-opacity duration-300">
         {currentData.subtitle}
       </div>
 
@@ -129,27 +129,27 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
 
       {/* Dynamic Texts */}
       <div className="max-w-[640px] mx-auto space-y-4 mb-14 min-h-[80px]">
-        <p className="text-[15px] font-medium text-[#6b6760] leading-relaxed">
+        <p className="text-[15px] font-medium text-[#243554] leading-relaxed">
           {currentData.p1}
         </p>
-        <p className="text-[15px] font-medium text-[#6b6760] leading-relaxed">
+        <p className="text-[15px] font-medium text-[#243554] leading-relaxed">
           {currentData.p2}
         </p>
       </div>
 
       {/* Tab Navigation Menu */}
-      <div className="w-full border-t border-[#e8e4de] pt-6 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+      <div className="w-full border-t border-[#C9D0DB] pt-6 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
         {tabs.map((tab, idx) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(idx)}
             className={`flex items-center gap-2.5 px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all duration-300 ${
               activeTab === idx
-                ? 'bg-white border-2 border-[#ff5c25]/30 text-[#1f1e1d] shadow-[0_2px_12px_rgba(255,92,37,0.12)]' 
-                : 'text-[#ada89f] hover:text-[#1f1e1d]'
+                ? 'bg-white border-2 border-[#FF9A14]/30 text-[#0F2348] shadow-[0_2px_12px_rgba(255,92,37,0.12)]' 
+                : 'text-[#6B7B93] hover:text-[#0F2348]'
                }`}
           >
-            <div className={`${activeTab === idx ? 'text-[#ff5c25]' : ''}`}>
+            <div className={`${activeTab === idx ? 'text-[#FF9A14]' : ''}`}>
               {tab.icon}
             </div>
             {tab.label}

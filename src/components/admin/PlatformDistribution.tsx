@@ -89,7 +89,7 @@ export default function PlatformDistribution({ data, locale = 'tr' }: PlatformDi
         <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
           {locale === 'tr' ? 'TOPLAM' : 'TOTAL'}
         </span>
-        <span className="text-lg font-black text-[#111827]">{total}</span>
+        <span className="text-lg font-black text-[#0F2348]">{total}</span>
       </div>
     </div>
   );

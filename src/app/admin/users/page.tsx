@@ -171,7 +171,7 @@ export default function UsersPage() {
   if (loading && users.length === 0) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#111827] w-10 h-10" />
+        <Loader2 className="animate-spin text-[#0F2348] w-10 h-10" />
       </div>
     );
   }
@@ -180,12 +180,12 @@ export default function UsersPage() {
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">Hesap Yönetimi</h1>
-          <p className="text-[#6b6760] text-[13px] sm:text-[15px] font-bold">Sistem yöneticilerini ve işletme yetkililerini tanımlayın.</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#0F2348] tracking-tight uppercase">Hesap Yönetimi</h1>
+          <p className="text-[#243554] text-[13px] sm:text-[15px] font-bold">Sistem yöneticilerini ve işletme yetkililerini tanımlayın.</p>
         </div>
         <button
           onClick={() => { setEditingId(null); setFormData({ username: '', password: '', role: 'manager', restaurantId: '' }); setShowModal(true); }}
-          className="flex items-center justify-center gap-2 sm:gap-3 bg-[#FDBF1D] text-[#111827] px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#EAB308] active:scale-95 transition-all group"
+          className="flex items-center justify-center gap-2 sm:gap-3 bg-[#FF9A14] text-[#0F2348] px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#EAB308] active:scale-95 transition-all group"
         >
           <Plus size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
           YENİ HESAP AÇ
@@ -194,13 +194,13 @@ export default function UsersPage() {
 
       {/* Search Bar */}
       <div className="relative group">
-        <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#ada89f] group-focus-within:text-[#111827] transition-colors" size={20} strokeWidth={3} />
+        <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7B93] group-focus-within:text-[#0F2348] transition-colors" size={20} strokeWidth={3} />
         <input
           type="text"
           placeholder={t('search_placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border border-gray-100 rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-4 sm:py-5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#FDBF1D] transition-all"
+          className="w-full bg-white border border-gray-100 rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-4 sm:py-5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#FF9A14] transition-all"
         />
       </div>
 
@@ -215,7 +215,7 @@ export default function UsersPage() {
                 <th className="px-3 py-4 sm:px-6 text-right">EYLEMLER</th>
               </tr>
             </thead>
-            <tbody className="divide-y-2 divide-[#F7F4F0] text-sm">
+            <tbody className="divide-y-2 divide-[#F5F4F1] text-sm">
               {users.filter(u =>
                 u.username.toLowerCase().includes(searchTerm.toLowerCase())
               ).map(user => (
@@ -226,7 +226,7 @@ export default function UsersPage() {
                         <User size={18} strokeWidth={2.5} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="font-bold text-[#111827] text-[14px] truncate block">{user.username}</span>
+                        <span className="font-bold text-[#0F2348] text-[14px] truncate block">{user.username}</span>
                         {/* Mobile-only badges */}
                         <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1">
                           <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
@@ -254,11 +254,11 @@ export default function UsersPage() {
                     </span>
                   </td>
                   <td className="hidden md:table-cell px-4 py-4 sm:px-8 sm:py-6">
-                    <div className="flex items-center gap-2 font-bold text-[#6b6760] text-[13px] sm:text-sm">
+                    <div className="flex items-center gap-2 font-bold text-[#243554] text-[13px] sm:text-sm">
                       {user.restaurant ? (
-                        <span className="text-[#111827] font-black line-clamp-1">{user.restaurant.name.toUpperCase()}</span>
+                        <span className="text-[#0F2348] font-black line-clamp-1">{user.restaurant.name.toUpperCase()}</span>
                       ) : (
-                        <span className="text-[#ada89f] italic">SİSTEM GENELİ</span>
+                        <span className="text-[#6B7B93] italic">SİSTEM GENELİ</span>
                       )}
                     </div>
                   </td>
@@ -266,14 +266,14 @@ export default function UsersPage() {
                     <div className="flex items-center justify-end gap-2 sm:gap-3">
                       <button
                         onClick={() => handleEdit(user)}
-                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[#1f1e1d] bg-white border-2 border-[#1f1e1d] shadow-[3px_3px_0_0_#1f1e1d] rounded-xl hover:bg-[#FDBF1D] active:translate-y-1 active:shadow-none transition-all"
+                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[#0F2348] bg-white border-2 border-[#0F2348] shadow-[3px_3px_0_0_#0F2348] rounded-xl hover:bg-[#FF9A14] active:translate-y-1 active:shadow-none transition-all"
                         title="Düzenle"
                       >
                         <Plus className="rotate-45" size={18} strokeWidth={3} />
                       </button>
                       <button
                         onClick={() => handleDelete(user.id)}
-                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#ef4444] border-2 border-[#1f1e1d] shadow-[3px_3px_0_0_#1f1e1d] rounded-xl hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
+                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#ef4444] border-2 border-[#0F2348] shadow-[3px_3px_0_0_#0F2348] rounded-xl hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
                         title="Sil"
                       >
                         <Trash2 size={18} strokeWidth={3} />
@@ -290,17 +290,17 @@ export default function UsersPage() {
       {showModal && (
         <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6">
           <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
-            <div className="p-5 sm:p-8 md:p-10 border-b border-gray-100 bg-[#FCFBF7] relative">
-              <h2 className="text-xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase pr-10">
+            <div className="p-5 sm:p-8 md:p-10 border-b border-gray-100 bg-[#F5F4F1] relative">
+              <h2 className="text-xl sm:text-3xl font-black text-[#0F2348] tracking-tight uppercase pr-10">
                 {editingId ? 'Hesabı Düzenle' : 'Yeni Yetkili Ekle'}
               </h2>
-              <p className="text-[#6b6760] text-[13px] sm:text-sm font-bold mt-2">
+              <p className="text-[#243554] text-[13px] sm:text-sm font-bold mt-2">
                 {editingId ? 'Kullanıcı yetkilerini ve bilgilerini güncelleyin.' : 'Sisteme yeni bir yönetici veya işletme sahibi tanımlayın.'}
               </p>
 
               <button
                 onClick={() => { setShowModal(false); setEditingId(null); setError(''); }}
-                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-gray-400 hover:text-[#111827] hover:bg-gray-100 rounded-xl transition-all"
+                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-gray-400 hover:text-[#0F2348] hover:bg-gray-100 rounded-xl transition-all"
               >
                 <X size={24} strokeWidth={3} />
               </button>
@@ -315,18 +315,18 @@ export default function UsersPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Kullanıcı Adı / Email</label>
+                  <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Kullanıcı Adı / Email</label>
                   <input
                     type="text"
                     required
                     disabled={!!editingId} // Kullanıcı adı değiştirilemez (Prisma unique constrain)
                     value={formData.username}
                     onChange={(e) => setFormData({...formData, username: e.target.value.toLowerCase()})}
-                    className={`w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold transition-all shadow-sm ${editingId ? 'opacity-50 cursor-not-allowed shadow-none' : ''}`}
+                    className={`w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-[15px] font-bold transition-all shadow-sm ${editingId ? 'opacity-50 cursor-not-allowed shadow-none' : ''}`}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">
+                  <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">
                     {editingId ? 'Şifre (Değiştirmek için)' : 'Yeni Şifre'}
                   </label>
                   <input
@@ -335,17 +335,17 @@ export default function UsersPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     placeholder={editingId ? 'Değişmeyecekse boş bırakın' : '••••••••'}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-[15px] font-bold shadow-sm transition-all placeholder:text-[13px] placeholder:font-medium"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-[15px] font-bold shadow-sm transition-all placeholder:text-[13px] placeholder:font-medium"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Sistem Yetki Seviyesi</label>
+                <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Sistem Yetki Seviyesi</label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value, restaurantId: ''})}
-                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
                 >
                   <option value="manager">İŞLETME YÖNETİCİSİ / SAHİBİ</option>
                   <option value="superadmin">SUPER ADMIN (SİSTEM GENELİ)</option>
@@ -359,7 +359,7 @@ export default function UsersPage() {
                       type="button"
                       disabled={!!editingId}
                       onClick={() => setIsNewRestaurant(false)}
-                      className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${!isNewRestaurant ? 'bg-[#111827] text-white' : 'text-[#ada89f] hover:text-[#111827] disabled:opacity-50'}`}
+                      className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${!isNewRestaurant ? 'bg-[#0F2348] text-white' : 'text-[#6B7B93] hover:text-[#0F2348] disabled:opacity-50'}`}
                     >
                       MEVCUT İŞLETME
                     </button>
@@ -367,7 +367,7 @@ export default function UsersPage() {
                       <button
                         type="button"
                         onClick={() => setIsNewRestaurant(true)}
-                        className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${isNewRestaurant ? 'bg-[#111827] text-white' : 'text-[#ada89f] hover:text-[#111827]'}`}
+                        className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${isNewRestaurant ? 'bg-[#0F2348] text-white' : 'text-[#6B7B93] hover:text-[#0F2348]'}`}
                       >
                         YENİ OLUŞTUR
                       </button>
@@ -376,12 +376,12 @@ export default function UsersPage() {
 
                   {!isNewRestaurant ? (
                     <div className="space-y-2">
-                      <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Bağlı Olduğu İşletme</label>
+                      <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Bağlı Olduğu İşletme</label>
                       <select
                         required={!isNewRestaurant}
                         value={formData.restaurantId}
                         onChange={(e) => setFormData({...formData, restaurantId: e.target.value})}
-                        className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FDBF1D] bg-white text-sm font-bold shadow-sm uppercase tracking-widest appearance-none cursor-pointer outline-none"
+                        className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FF9A14] bg-white text-sm font-bold shadow-sm uppercase tracking-widest appearance-none cursor-pointer outline-none"
                       >
                         <option value="">İŞLETME SEÇİN...</option>
                         {restaurants.map(r => (
@@ -392,20 +392,20 @@ export default function UsersPage() {
                   ) : (
                     <div className="space-y-6">
                       <div className="space-y-2">
-                        <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Yeni İşletme Adı *</label>
+                        <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Yeni İşletme Adı *</label>
                         <input
                           type="text"
                           required={isNewRestaurant}
                           value={restaurantData.name}
                           onChange={(e) => handleNameChange(e.target.value)}
                           placeholder="Örn: Gourmet Eats Ankara"
-                          className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FDBF1D] shadow-sm bg-white outline-none text-sm font-bold"
+                          className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FF9A14] shadow-sm bg-white outline-none text-sm font-bold"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Sistem URL'i (Otomatik) *</label>
+                        <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Sistem URL'i (Otomatik) *</label>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-black text-[#ada89f]">buaze.com/r/</span>
+                          <span className="text-xs font-black text-[#6B7B93]">buaze.com/r/</span>
                           <input
                             type="text"
                             required={isNewRestaurant}
@@ -415,7 +415,7 @@ export default function UsersPage() {
                               setIsManualSlug(true);
                             }}
                             placeholder="gourmet-eats"
-                            className="flex-1 px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FDBF1D] shadow-sm bg-white outline-none text-sm font-bold tracking-tight"
+                            className="flex-1 px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FF9A14] shadow-sm bg-white outline-none text-sm font-bold tracking-tight"
                           />
                         </div>
                       </div>
@@ -424,18 +424,18 @@ export default function UsersPage() {
                 </div>
               )}
 
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-5 pt-6 sm:pt-10 border-t-2 border-[#F7F4F0]">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-5 pt-6 sm:pt-10 border-t-2 border-[#F5F4F1]">
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setEditingId(null); }}
-                  className="px-6 sm:px-8 py-3 sm:py-4 text-xs font-black text-[#6b6760] hover:text-[#111827] uppercase tracking-widest transition-colors"
+                  className="px-6 sm:px-8 py-3 sm:py-4 text-xs font-black text-[#243554] hover:text-[#0F2348] uppercase tracking-widest transition-colors"
                 >
                   İPTAL
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-[#111827] text-white px-6 sm:px-10 py-3 sm:py-4 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-sm hover:scale-95 transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 sm:gap-3 bg-[#0F2348] text-white px-6 sm:px-10 py-3 sm:py-4 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-sm hover:scale-95 transition-all disabled:opacity-50"
                 >
                   {isSubmitting ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <Plus size={20} className={editingId ? 'rotate-45' : ''} strokeWidth={3} />}
                   {editingId ? 'GÜNCELLEMEYİ KAYDET' : 'HESABI OLUŞTUR'}

@@ -26,7 +26,7 @@ export default function CopyUrlButton({ url, className = "" }: CopyUrlButtonProp
   return (
     <button
       onClick={handleCopy}
-      className={`inline-flex items-center justify-center p-1.5 rounded-lg border border-[#F7F4F0] bg-white text-[#ada89f] hover:text-[#FDBF1D] hover:border-[#FDBF1D] hover:bg-[#FDBF1D]/5 transition-all active:scale-95 ${className}`}
+      className={`inline-flex items-center justify-center p-1.5 rounded-lg border border-[#F5F4F1] bg-white text-[#6B7B93] hover:text-[#FF9A14] hover:border-[#FF9A14] hover:bg-[#FF9A14]/5 transition-all active:scale-95 ${className}`}
       title="Bağlantıyı Kopyala"
     >
       {copied ? <Check size={14} strokeWidth={3} className="text-emerald-500" /> : <Copy size={14} strokeWidth={2.5} />}

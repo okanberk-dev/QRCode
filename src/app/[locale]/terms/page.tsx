@@ -33,29 +33,29 @@ export default async function TermsPage({
   const t = getTranslations(locale);
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-[#FCFBF7] selection:bg-[#FDBF1D]/30">
+    <div className="min-h-screen flex flex-col font-sans bg-[#F5F4F1] selection:bg-[#FF9A14]/30">
       <MarketingNavbar locale={locale} t={t} />
 
       <main className="flex-1 max-w-[1000px] mx-auto w-full px-5 py-20 sm:py-32">
-        <div className="bg-white p-10 sm:p-20 rounded-[48px] border-[4px] border-[#1f1e1d] shadow-[15px_20px_0_0_#ea580c] relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-[#ea580c]/5 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
+        <div className="bg-white p-10 sm:p-20 rounded-[48px] border-[4px] border-[#0F2348] shadow-[15px_20px_0_0_#FF9A14] relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-[#FF9A14]/5 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
           
           <div className="mb-16 relative">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#111827] text-white rounded-xl mb-6 shadow-[4px_4px_0_0_#FDBF1D]">
-               <ShieldCheck size={14} className="text-[#FDBF1D]" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#0F2348] text-white rounded-xl mb-6 shadow-[4px_4px_0_0_#FF9A14]">
+               <ShieldCheck size={14} className="text-[#FF9A14]" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'YASAL SÖZLEŞME' : 'LEGAL AGREEMENT'}</span>
             </div>
-            <h1 className="text-[36px] sm:text-[56px] font-black text-[#111827] tracking-tight leading-none mb-4 whitespace-pre-line">
+            <h1 className="text-[36px] sm:text-[56px] font-black text-[#0F2348] tracking-tight leading-none mb-4 whitespace-pre-line">
               {isTr ? 'Kullanım\nKoşulları' : 'Terms of\nService'}
             </h1>
-            <p className="text-[13px] text-[#ada89f] font-black uppercase tracking-widest">
+            <p className="text-[13px] text-[#6B7B93] font-black uppercase tracking-widest">
               {isTr ? 'Son güncelleme: 13 Nisan 2026' : 'Last updated: April 13, 2026'}
             </p>
           </div>
           
           <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-12 text-[16px] sm:text-[18px] leading-relaxed font-medium">
-             <div className="p-8 bg-[#F7F4F0] rounded-3xl border-2 border-[#1f1e1d] border-dashed">
-               <p className="font-black text-[#111827] m-0">
+             <div className="p-8 bg-[#F5F4F1] rounded-3xl border-2 border-[#0F2348] border-dashed">
+               <p className="font-black text-[#0F2348] m-0">
                  {isTr 
                    ? 'Buaze platformunu kullanarak aşağıdaki kullanım koşullarını tamamen anladığınızı ve kabul ettiğinizi beyan edersiniz. Bu koşullar işletmemiz ile sizin aranızdaki yasal hakları belirler.' 
                    : 'By using the Buaze platform, you declare that you fully understand and accept the following terms of use. These terms define the legal rights between our business and you.'}
@@ -63,7 +63,7 @@ export default async function TermsPage({
              </div>
 
               <section className="space-y-6">
-                <h2 className="text-[#111827] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '1. Hizmet Tanımı' : '1. Service Description'}</h2>
+                <h2 className="text-[#0F2348] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '1. Hizmet Tanımı' : '1. Service Description'}</h2>
                 <p>
                   {isTr 
                     ? 'Buaze, işletmelerin dijital itibarını yönetmesine, müşteri geri bildirimlerini toplamasına ve analiz etmesine olanak tanıyan bir SaaS (Yazılım Hizmeti) platformudur. Sunulan hizmetlerin kapsamı seçilen abonelik planına göre değişiklik gösterebilir.'
@@ -72,7 +72,7 @@ export default async function TermsPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#111827] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '2. Fikri Mülkiyet Hakları' : '2. Intellectual Property Rights'}</h2>
+                <h2 className="text-[#0F2348] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '2. Fikri Mülkiyet Hakları' : '2. Intellectual Property Rights'}</h2>
                 <p>
                   {isTr
                     ? 'Platform üzerinde yer alan tüm yazılımlar, tasarımlar, logolar ve metin içerikleri Buaze mülkiyetindedir. Yazılı izin olmaksızın kopyalanması, çoğaltılması veya ticari amaçla kullanılması kesinlikle yasaktır.'
@@ -81,7 +81,7 @@ export default async function TermsPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#111827] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '3. Kullanıcı Sorumlulukları' : '3. User Responsibilities'}</h2>
+                <h2 className="text-[#0F2348] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '3. Kullanıcı Sorumlulukları' : '3. User Responsibilities'}</h2>
                 <p>
                   {isTr
                     ? 'Kullanıcılar, platformu yasalara ve dürüstlük kuralına uygun şekilde kullanmayı kabul eder. Sistemin manipüle edilmesi, sahte veriler girilmesi veya üçüncü şahısların haklarının ihlal edilmesi durumunda hesap derhal sonlandırılabilir.'
@@ -90,7 +90,7 @@ export default async function TermsPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#111827] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '4. Sorumluluk Sınırlandırması' : '4. Limitation of Liability'}</h2>
+                <h2 className="text-[#0F2348] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '4. Sorumluluk Sınırlandırması' : '4. Limitation of Liability'}</h2>
                 <p>
                   {isTr
                     ? 'Buaze, teknik aksaklıklardan doğabilecek geçici hizmet kesintilerinden sorumlu tutulamaz. Yazılımımız "olduğu gibi" sunulur ve ticari başarı garantisi verilmez.'
@@ -98,16 +98,16 @@ export default async function TermsPage({
                 </p>
               </section>
 
-               <div className="pt-16 border-t-2 border-[#F7F4F0] flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
+               <div className="pt-16 border-t-2 border-[#F5F4F1] flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
                  <div className="space-y-1">
-                   <p className="text-[14px] font-black text-[#111827] uppercase tracking-widest leading-none">
+                   <p className="text-[14px] font-black text-[#0F2348] uppercase tracking-widest leading-none">
                      {isTr ? 'SORULARINIZ İÇİN' : 'FOR QUESTIONS'}
                    </p>
-                   <p className="text-[14px] text-[#ada89f] font-bold">
+                   <p className="text-[14px] text-[#6B7B93] font-bold">
                      {isTr ? 'hello@buaze.com adresine yazın.' : 'Write to hello@buaze.com'}
                    </p>
                  </div>
-                 <a href="mailto:hello@buaze.com" className="px-10 py-5 bg-[#111827] text-white rounded-2xl text-[15px] font-black shadow-[6px_8px_0_0_#ea580c] hover:bg-[#1f1e1d] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-widest">
+                 <a href="mailto:hello@buaze.com" className="px-10 py-5 bg-[#0F2348] text-white rounded-2xl text-[15px] font-black shadow-[6px_8px_0_0_#FF9A14] hover:bg-[#0F2348] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-widest">
                    hello@buaze.com
                  </a>
                </div>

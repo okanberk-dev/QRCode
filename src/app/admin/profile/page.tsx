@@ -85,7 +85,7 @@ export default function AdminProfilePage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#111827] w-10 h-10" />
+        <Loader2 className="animate-spin text-[#0F2348] w-10 h-10" />
       </div>
     );
   }
@@ -93,10 +93,10 @@ export default function AdminProfilePage() {
   return (
     <div className="p-4 sm:p-6 md:p-10 max-w-4xl mx-auto space-y-6 sm:space-y-10">
       <div className="space-y-4">
-        <h1 className="text-2xl sm:text-3xl md:text-[40px] font-black text-[#111827] leading-[1.1] sm:leading-[0.9] tracking-tighter uppercase italic break-words">
+        <h1 className="text-2xl sm:text-3xl md:text-[40px] font-black text-[#0F2348] leading-[1.1] sm:leading-[0.9] tracking-tighter uppercase italic break-words">
           Profilim
         </h1>
-        <p className="text-[15px] sm:text-[17px] text-[#6b6760] font-bold italic">
+        <p className="text-[15px] sm:text-[17px] text-[#243554] font-bold italic">
           Hesap bilgilerinizi ve parolanızı güncelleyin
         </p>
       </div>
@@ -104,13 +104,13 @@ export default function AdminProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
         {/* Sidebar Info */}
         <div className="space-y-8">
-          <div className="p-6 sm:p-8 bg-[#111827] rounded-[32px] sm:rounded-[40px] border-2 border-[#1f1e1d] shadow-[6px_8px_0_0_#FDBF1D] sm:shadow-[8px_10px_0_0_#FDBF1D] space-y-6">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[20px] bg-[#FDBF1D] border-2 border-[#1f1e1d] flex items-center justify-center shadow-[4px_4px_0_0_#1f1e1d]">
-              <ShieldCheck size={28} className="text-[#111827]" strokeWidth={2.5} />
+          <div className="p-6 sm:p-8 bg-[#0F2348] rounded-[32px] sm:rounded-[40px] border-2 border-[#0F2348] shadow-[6px_8px_0_0_#FF9A14] sm:shadow-[8px_10px_0_0_#FF9A14] space-y-6">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[20px] bg-[#FF9A14] border-2 border-[#0F2348] flex items-center justify-center shadow-[4px_4px_0_0_#0F2348]">
+              <ShieldCheck size={28} className="text-[#0F2348]" strokeWidth={2.5} />
             </div>
             <div className="space-y-2">
               <h4 className="text-white font-black uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
-              <p className="text-[#ada89f] text-xs font-bold leading-relaxed">
+              <p className="text-[#6B7B93] text-xs font-bold leading-relaxed">
                 Şifrenizi düzenli aralıklarla değiştirmek hesabınızın güvenliğini artırır. Güçlü bir şifre en az 8 karakter, rakam ve sembol içermelidir.
               </p>
             </div>
@@ -119,7 +119,7 @@ export default function AdminProfilePage() {
 
         {/* Form Area */}
         <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit} className="bg-white rounded-[24px] sm:rounded-[40px] border-2 border-[#1f1e1d] shadow-[4px_6px_0_0_#1f1e1d] sm:shadow-[8px_10px_0_0_#1f1e1d] p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-10">
+          <form onSubmit={handleSubmit} className="bg-white rounded-[24px] sm:rounded-[40px] border-2 border-[#0F2348] shadow-[4px_6px_0_0_#0F2348] sm:shadow-[8px_10px_0_0_#0F2348] p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-10">
             {error && (
               <div className="flex items-center gap-4 p-5 bg-red-50 border-2 border-red-500/20 rounded-2xl text-red-600 text-[13px] font-black uppercase tracking-widest shadow-[0_4px_0_0_#ef4444]">
                 <AlertCircle size={20} strokeWidth={3} className="flex-shrink-0" />
@@ -136,15 +136,15 @@ export default function AdminProfilePage() {
             {/* Account Info */}
             <div className="space-y-6 sm:space-y-8">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#FCFBF7] border-2 border-[#1f1e1d] flex items-center justify-center shadow-[2px_2px_0_0_#1f1e1d]">
+                <div className="w-8 h-8 rounded-lg bg-[#F5F4F1] border-2 border-[#0F2348] flex items-center justify-center shadow-[2px_2px_0_0_#0F2348]">
                   <User size={16} strokeWidth={3} />
                 </div>
-                <h3 className="text-lg font-black text-[#111827] uppercase tracking-tighter italic">Hesap Bilgileri</h3>
+                <h3 className="text-lg font-black text-[#0F2348] uppercase tracking-tighter italic">Hesap Bilgileri</h3>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Kullanıcı Adı</label>
-                <div className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1f1e1d] bg-[#f3f4f6] text-[#6b6760] font-bold">
+                <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Kullanıcı Adı</label>
+                <div className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0F2348] bg-[#f3f4f6] text-[#243554] font-bold">
                   {profile?.username}
                   {profile?.id === 'env-admin' && " (Varsayılan Admin - Değiştirilemez)"}
                 </div>
@@ -152,17 +152,17 @@ export default function AdminProfilePage() {
             </div>
 
             {/* Password Change */}
-            <div className="pt-6 sm:pt-10 border-t-4 border-[#F7F4F0] space-y-6 sm:space-y-8">
+            <div className="pt-6 sm:pt-10 border-t-4 border-[#F5F4F1] space-y-6 sm:space-y-8">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#FCFBF7] border-2 border-[#1f1e1d] flex items-center justify-center shadow-[2px_2px_0_0_#1f1e1d]">
+                <div className="w-8 h-8 rounded-lg bg-[#F5F4F1] border-2 border-[#0F2348] flex items-center justify-center shadow-[2px_2px_0_0_#0F2348]">
                   <Key size={16} strokeWidth={3} />
                 </div>
-                <h3 className="text-lg font-black text-[#111827] uppercase tracking-tighter italic">Şifre Değiştir</h3>
+                <h3 className="text-lg font-black text-[#0F2348] uppercase tracking-tighter italic">Şifre Değiştir</h3>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Mevcut Şifre</label>
+                  <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Mevcut Şifre</label>
                   <input
                     type="password"
                     required
@@ -170,12 +170,12 @@ export default function AdminProfilePage() {
                     value={formData.currentPassword}
                     onChange={(e) => setFormData(p => ({ ...p, currentPassword: e.target.value }))}
                     placeholder="••••••••"
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1f1e1d] bg-[#FCFBF7] focus:border-[#ea580c] focus:shadow-[2px_2px_0_0_#ea580c] outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-gray-100"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0F2348] bg-[#F5F4F1] focus:border-[#FF9A14] focus:shadow-[2px_2px_0_0_#FF9A14] outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-gray-100"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Yeni Şifre</label>
+                    <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Yeni Şifre</label>
                     <input
                       type="password"
                       required
@@ -183,11 +183,11 @@ export default function AdminProfilePage() {
                       value={formData.newPassword}
                       onChange={(e) => setFormData(p => ({ ...p, newPassword: e.target.value }))}
                       placeholder="Min 8 karakter"
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1f1e1d] bg-[#FCFBF7] focus:border-[#ea580c] focus:shadow-[2px_2px_0_0_#ea580c] outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-gray-100"
+                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0F2348] bg-[#F5F4F1] focus:border-[#FF9A14] focus:shadow-[2px_2px_0_0_#FF9A14] outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-gray-100"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Şifre Tekrar</label>
+                    <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Şifre Tekrar</label>
                     <input
                       type="password"
                       required
@@ -195,7 +195,7 @@ export default function AdminProfilePage() {
                       value={formData.confirmPassword}
                       onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
                       placeholder="Şifreyi doğrula"
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1f1e1d] bg-[#FCFBF7] focus:border-[#ea580c] focus:shadow-[2px_2px_0_0_#ea580c] outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-gray-100"
+                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0F2348] bg-[#F5F4F1] focus:border-[#FF9A14] focus:shadow-[2px_2px_0_0_#FF9A14] outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-gray-100"
                     />
                   </div>
                 </div>
@@ -205,7 +205,7 @@ export default function AdminProfilePage() {
             <button
               type="submit"
               disabled={saving || profile?.id === 'env-admin'}
-              className="w-full py-5 bg-[#111827] text-white font-black rounded-2xl border-2 border-[#1f1e1d] shadow-[0_4px_0_0_#000] hover:bg-[#111827]/90 active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 text-[15px] tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-5 bg-[#0F2348] text-white font-black rounded-2xl border-2 border-[#0F2348] shadow-[0_4px_0_0_#000] hover:bg-[#0F2348]/90 active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 text-[15px] tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? (
                 <>

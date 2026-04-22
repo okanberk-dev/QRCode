@@ -97,7 +97,7 @@ export default function MembersPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#111827] w-10 h-10" />
+        <Loader2 className="animate-spin text-[#0F2348] w-10 h-10" />
       </div>
     );
   }
@@ -107,12 +107,12 @@ export default function MembersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight uppercase">Üye Yönetimi</h1>
-          <p className="text-[#6b6760] text-[13px] sm:text-[15px] font-bold">Kayıtlı işletme sahiplerinin planlarını ve erişimlerini yönetin.</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#0F2348] tracking-tight uppercase">Üye Yönetimi</h1>
+          <p className="text-[#243554] text-[13px] sm:text-[15px] font-bold">Kayıtlı işletme sahiplerinin planlarını ve erişimlerini yönetin.</p>
         </div>
         <button
           onClick={fetchMembers}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#FCFBF7] border border-gray-200 text-sm font-black text-[#111827] hover:bg-gray-100 transition-all active:scale-95"
+          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#F5F4F1] border border-gray-200 text-sm font-black text-[#0F2348] hover:bg-gray-100 transition-all active:scale-95"
         >
           <RefreshCw size={16} strokeWidth={2.5} />
           YENİLE
@@ -142,7 +142,7 @@ export default function MembersPage() {
             <tbody className="divide-y divide-gray-50">
               {members.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-sm font-bold text-[#ada89f]">
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm font-bold text-[#6B7B93]">
                     Henüz kayıtlı üye yok.
                   </td>
                 </tr>
@@ -156,12 +156,12 @@ export default function MembersPage() {
                   <tr key={m.id} className="hover:bg-gray-50/50 transition-all">
                     <td className="px-3 py-4 sm:px-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#FCFBF7] border border-gray-200 flex items-center justify-center text-sm font-black text-[#111827] flex-shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-[#F5F4F1] border border-gray-200 flex items-center justify-center text-sm font-black text-[#0F2348] flex-shrink-0">
                           {(m.name || m.email).charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-black text-[#111827] text-sm truncate">{m.name || '—'}</p>
-                          <p className="text-xs text-[#6b6760] font-bold truncate">{m.email}</p>
+                          <p className="font-black text-[#0F2348] text-sm truncate">{m.name || '—'}</p>
+                          <p className="text-xs text-[#243554] font-bold truncate">{m.email}</p>
                           {/* Mobile-only badges: plan + status + trial countdown */}
                           <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
                             <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${planMeta.color}`}>
@@ -189,18 +189,18 @@ export default function MembersPage() {
                     </td>
                     <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
                       {m.plan === 'trial' && m.trialEndsAt ? (
-                        <span className={`text-xs font-black flex items-center gap-1.5 ${trialExpired ? 'text-red-500' : trialSoon ? 'text-orange-500' : 'text-[#6b6760]'}`}>
+                        <span className={`text-xs font-black flex items-center gap-1.5 ${trialExpired ? 'text-red-500' : trialSoon ? 'text-orange-500' : 'text-[#243554]'}`}>
                           {trialExpired ? <AlertTriangle size={14} strokeWidth={3} /> : null}
                           {trialExpired
                             ? `Süresi doldu (${Math.abs(dl!)} gün önce)`
                             : `${dl} gün kaldı`}
                         </span>
                       ) : (
-                        <span className="text-xs text-[#ada89f] font-bold">—</span>
+                        <span className="text-xs text-[#6B7B93] font-bold">—</span>
                       )}
                     </td>
                     <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#6b6760]">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#243554]">
                         <Store size={14} strokeWidth={2.5} />
                         {m._count.restaurants}
                       </div>
@@ -219,7 +219,7 @@ export default function MembersPage() {
                     <td className="px-2 py-4 sm:px-5 text-right">
                       <button
                         onClick={() => openEdit(m)}
-                        className="px-3 sm:px-4 py-2 rounded-xl bg-[#111827] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-gray-800 active:scale-95 transition-all"
+                        className="px-3 sm:px-4 py-2 rounded-xl bg-[#0F2348] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-gray-800 active:scale-95 transition-all"
                       >
                         DÜZENLE
                       </button>
@@ -238,12 +238,12 @@ export default function MembersPage() {
           <div className="bg-white rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-md max-h-[92dvh] overflow-y-auto">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-black text-[#111827] uppercase tracking-tight">Üye Düzenle</h2>
-                <p className="text-xs text-[#6b6760] font-bold mt-1">{editingMember.email}</p>
+                <h2 className="text-xl font-black text-[#0F2348] uppercase tracking-tight">Üye Düzenle</h2>
+                <p className="text-xs text-[#243554] font-bold mt-1">{editingMember.email}</p>
               </div>
               <button
                 onClick={() => setEditingMember(null)}
-                className="p-2 text-gray-400 hover:text-[#111827] hover:bg-gray-100 rounded-xl transition-all"
+                className="p-2 text-gray-400 hover:text-[#0F2348] hover:bg-gray-100 rounded-xl transition-all"
               >
                 <X size={20} strokeWidth={3} />
               </button>
@@ -258,7 +258,7 @@ export default function MembersPage() {
 
               {/* Plan */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Plan</label>
+                <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Plan</label>
                 <div className="grid grid-cols-2 gap-2">
                   {(['trial', 'monthly', 'yearly', 'free'] as const).map((p) => (
                     <button
@@ -267,8 +267,8 @@ export default function MembersPage() {
                       onClick={() => setEditPlan(p)}
                       className={`py-3 rounded-xl border-2 text-[11px] font-black uppercase tracking-widest transition-all ${
                         editPlan === p
-                          ? 'bg-[#111827] text-white border-[#111827]'
-                          : 'bg-white text-[#6b6760] border-gray-200 hover:border-gray-400'
+                          ? 'bg-[#0F2348] text-white border-[#0F2348]'
+                          : 'bg-white text-[#243554] border-gray-200 hover:border-gray-400'
                       }`}
                     >
                       {PLAN_LABELS[p]?.label || p.toUpperCase()}
@@ -280,21 +280,21 @@ export default function MembersPage() {
               {/* Trial End Date */}
               {editPlan === 'trial' && (
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Deneme Bitiş Tarihi</label>
+                  <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Deneme Bitiş Tarihi</label>
                   <input
                     type="date"
                     value={editTrialEndsAt}
                     onChange={(e) => setEditTrialEndsAt(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-sm font-bold"
                   />
                 </div>
               )}
 
               {/* Active toggle */}
-              <div className="flex items-center justify-between p-4 bg-[#FCFBF7] rounded-2xl border border-gray-200">
+              <div className="flex items-center justify-between p-4 bg-[#F5F4F1] rounded-2xl border border-gray-200">
                 <div>
-                  <p className="text-sm font-black text-[#111827]">Hesap Durumu</p>
-                  <p className="text-xs font-bold text-[#6b6760] mt-0.5">{editIsActive ? 'Kullanıcı sisteme girebilir.' : 'Kullanıcı erişimi engellendi.'}</p>
+                  <p className="text-sm font-black text-[#0F2348]">Hesap Durumu</p>
+                  <p className="text-xs font-bold text-[#243554] mt-0.5">{editIsActive ? 'Kullanıcı sisteme girebilir.' : 'Kullanıcı erişimi engellendi.'}</p>
                 </div>
                 <button
                   type="button"
@@ -312,7 +312,7 @@ export default function MembersPage() {
                 <button
                   type="button"
                   onClick={() => setEditingMember(null)}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-black text-[#6b6760] hover:text-[#111827] transition-colors"
+                  className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-black text-[#243554] hover:text-[#0F2348] transition-colors"
                 >
                   İPTAL
                 </button>
@@ -320,7 +320,7 @@ export default function MembersPage() {
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 py-3 rounded-xl bg-[#111827] text-white text-sm font-black uppercase tracking-widest hover:bg-gray-800 disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-[#0F2348] text-white text-sm font-black uppercase tracking-widest hover:bg-gray-800 disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={3} />}
                   KAYDET
