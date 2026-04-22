@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft, Ghost } from 'lucide-react';
+import BuazeLogo from '@/components/marketing/BuazeLogo';
 
 export default function NotFound() {
   return (
@@ -45,12 +46,10 @@ export default function NotFound() {
           </Link>
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#1A2332]">
-            <span className="text-[#F4B400] font-black text-sm">B</span>
-          </div>
-          <span className="text-[#6B7280] font-bold text-xs uppercase tracking-[0.2em]">Buaze • Dijital İtibar</span>
-        </div>
+        <Link href="/" className="mt-8 flex items-center justify-center gap-2.5 group">
+          <BuazeLogo size={28} />
+          <span className="text-[#6B7280] font-semibold text-xs uppercase tracking-[0.2em] group-hover:text-[#1A2332] transition-colors">Buaze • Dijital İtibar</span>
+        </Link>
       </div>
     </div>
   );

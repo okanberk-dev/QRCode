@@ -61,6 +61,12 @@ export default async function RegisterPage({
         {/* Left Panel - Hidden on mobile */}
         <div className="hidden lg:flex w-[44%] bg-[#1A2332] text-white flex-col justify-center px-12 xl:px-16 py-16 relative overflow-hidden">
           <div className="relative z-10 max-w-lg">
+            <Link href={`/${locale}`} className="inline-flex items-center gap-3 mb-10 group">
+              <BuazeLogo size={48} variant="on-dark" />
+              <span className="text-[24px] font-extrabold tracking-[-0.02em] text-white">
+                buaze<span className="text-[#F4B400]">.</span>
+              </span>
+            </Link>
             <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 border border-[#F4B400]/30 text-[#F4B400] px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest mb-6">
               ✦ {t.auth_trial_badge}
             </div>

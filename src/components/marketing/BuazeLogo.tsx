@@ -21,15 +21,21 @@ export default function BuazeLogo({ size = 40, className = '', variant = 'defaul
       aria-label="Buaze Logo"
       role="img"
     >
-      {/* Ascender — vertical stroke of the "b" */}
-      <rect x="24" y="12" width="14" height="74" rx="7" fill={body} />
+      {/* Ascender — capsule-shaped vertical stroke of the "b" */}
+      <rect x="22" y="10" width="14" height="76" rx="7" fill={body} />
 
-      {/* Bowl ring — outer circle of the "b" */}
-      <circle cx="60" cy="76" r="22" stroke={body} strokeWidth="12" fill="none" />
-
-      {/* Gold curl — signature accent on the bowl's bottom-right arc */}
+      {/* Bowl — open ring (top + left + bottom via left side); gap sits at top-right */}
       <path
-        d="M 82 76 A 22 22 0 0 1 60 98"
+        d="M 62 52 A 22 22 0 0 0 62 96"
+        stroke={body}
+        strokeWidth="12"
+        strokeLinecap="round"
+        fill="none"
+      />
+
+      {/* Signature gold curl — closes the bowl at bottom-right (3→6 o'clock) */}
+      <path
+        d="M 84 74 A 22 22 0 0 1 62 96"
         stroke={curl}
         strokeWidth="12"
         strokeLinecap="round"

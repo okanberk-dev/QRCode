@@ -64,6 +64,12 @@ export default async function LoginPage({
         {/* Left Panel */}
         <div className="hidden lg:flex w-[44%] bg-[#1A2332] text-white flex-col justify-center px-12 xl:px-16 py-16 relative overflow-hidden">
           <div className="relative z-10 max-w-[400px]">
+            <Link href={`/${locale}`} className="inline-flex items-center gap-3 mb-10 group">
+              <BuazeLogo size={48} variant="on-dark" />
+              <span className="text-[24px] font-extrabold tracking-[-0.02em] text-white">
+                buaze<span className="text-[#F4B400]">.</span>
+              </span>
+            </Link>
             <h2 className="text-[32px] font-extrabold leading-[1.15] tracking-[-0.03em] mb-4">
               {locale === 'tr' ? 'İtibarınız sizi bekliyor' : 'Your reputation is waiting'}
             </h2>
