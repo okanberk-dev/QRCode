@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Crown, LayoutDashboard, LogOut, MessageSquareText, QrCode, Store, User, UtensilsCrossed, X } from 'lucide-react';
+import { BookOpen, Crown, LayoutDashboard, LogOut, MessageSquareText, QrCode, Store, User, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 
@@ -55,6 +55,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
     { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
+    { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: locale === 'tr' ? 'Müşteri Listesi' : 'Customer List' },
     { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
     { href: `/${locale}/dashboard/profile`, icon: User, label: copy.profile },
   ];
