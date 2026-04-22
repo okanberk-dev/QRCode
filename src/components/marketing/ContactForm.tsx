@@ -280,5 +280,6 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
           </div>
         </div>
       )}
+    </div>
   );
 }
