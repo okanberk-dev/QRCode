@@ -21,7 +21,7 @@ interface Restaurant {
 }
 
 function menuStatus(r: Pick<Restaurant, 'menuEnabled' | 'menuPublished'>) {
-  if (!r.menuEnabled) return { label: 'KAPALI', cls: 'bg-gray-100 text-gray-500 border-gray-200' };
+  if (!r.menuEnabled) return { label: 'KAPALI', cls: 'bg-gray-100 text-gray-500 border-[#E8ECF2]' };
   if (!r.menuPublished) return { label: 'TASLAK', cls: 'bg-amber-50 text-amber-700 border-amber-200' };
   return { label: 'YAYINDA', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
 }
@@ -145,9 +145,9 @@ export default function RestaurantsPage() {
 
   return (
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#1A2332] tracking-tight uppercase">İşletmeler</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase">İşletmeler</h1>
           <p className="text-[#2A3444] text-[13px] sm:text-[15px] font-bold">Platformdaki tüm restoranları ve şubeleri yönetin.</p>
         </div>
         <button
@@ -162,7 +162,7 @@ export default function RestaurantsPage() {
       {/* Filters and Search */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         {/* Status Filter */}
-        <div className="flex bg-gray-100/50 p-1 rounded-xl shrink-0 border border-gray-100">
+        <div className="flex bg-gray-100/50 p-1 rounded-xl shrink-0 border border-[#E8ECF2]">
           <button
             onClick={() => setStatusFilter('active')}
             className={`px-4 sm:px-6 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
@@ -203,19 +203,19 @@ export default function RestaurantsPage() {
             placeholder={t('search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white border border-gray-100 rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-3 sm:py-4 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#F4B400] transition-all"
+            className="w-full bg-white border border-[#E8ECF2] rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-3 sm:py-4 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#F4B400] transition-all"
           />
         </div>
       </div>
 
       {/* Restaurant Cards Grid */}
       {restaurants.length === 0 ? (
-        <div className="bg-white rounded-[24px] border border-gray-100 p-8 sm:p-16 md:p-24 text-center space-y-6 shadow-sm">
-          <div className="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto border border-gray-100">
+        <div className="bg-white rounded-[24px] border border-[#E8ECF2] p-8 sm:p-16 md:p-24 text-center space-y-6 shadow-sm">
+          <div className="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto border border-[#E8ECF2]">
             <Store size={48} className="text-gray-400" strokeWidth={2} />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-black text-[#1A2332]">Henüz işletme kaydı yok</h3>
+            <h3 className="text-xl font-extrabold text-[#1A2332]">Henüz işletme kaydı yok</h3>
             <p className="text-[#2A3444] font-bold">İlk restoranınızı ekleyerek dijital itibarınızı yönetmeye başlayın.</p>
           </div>
           <button
@@ -232,7 +232,7 @@ export default function RestaurantsPage() {
             r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             r.category.toLowerCase().includes(searchTerm.toLowerCase())
           ).map((r) => (
-            <div key={r.id} className={`bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden transition-all hover:translate-y-[-2px] hover:shadow-md ${!r.isActive && 'opacity-70 grayscale-[0.5]'}`}>
+            <div key={r.id} className={`bg-white rounded-[24px] border border-[#E8ECF2] shadow-sm overflow-hidden transition-all hover:translate-y-[-2px] hover:shadow-md ${!r.isActive && 'opacity-70 grayscale-[0.5]'}`}>
               {/* Color strip */}
               <div className="h-2 w-full" style={{ backgroundColor: r.primaryColor }} />
               
@@ -246,7 +246,7 @@ export default function RestaurantsPage() {
                       {r.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-black text-[#1A2332] text-xl tracking-tight leading-none mb-2 truncate" title={r.name}>{r.name}</h3>
+                      <h3 className="font-extrabold text-[#1A2332] text-xl tracking-tight leading-none mb-2 truncate" title={r.name}>{r.name}</h3>
                       <div className="flex items-center gap-2">
                         <p className="text-[13px] font-bold text-[#6B7280] truncate">/{r.slug}</p>
                         <CopyUrlButton 
@@ -300,14 +300,14 @@ export default function RestaurantsPage() {
                   </Link>
                   <Link
                     href={`/admin/restaurants/${r.id}/menu`}
-                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-gray-700 border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all uppercase tracking-widest active:scale-95 flex items-center justify-center gap-2"
+                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-gray-700 border border-[#E8ECF2] rounded-xl shadow-sm hover:bg-gray-50 transition-all uppercase tracking-widest active:scale-95 flex items-center justify-center gap-2"
                   >
                     <UtensilsCrossed size={14} strokeWidth={2} />
                     MENÜ
                   </Link>
                   <Link
                     href={`/admin/qr?restaurant=${r.id}`}
-                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-500 bg-white hover:text-gray-900 border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95 shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-500 bg-white hover:text-gray-900 border border-[#E8ECF2] rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95 shrink-0"
                     title="QR KOD"
                   >
                     <ExternalLink size={18} strokeWidth={2} />
@@ -322,9 +322,9 @@ export default function RestaurantsPage() {
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6">
-          <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
-            <div className="p-5 sm:p-8 md:p-10 border-b border-gray-100 bg-[#F8F6F1] relative">
-              <h2 className="text-2xl sm:text-3xl font-black text-[#1A2332] tracking-tight uppercase pr-10">Yeni İşletme</h2>
+          <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl border border-[#E8ECF2] w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
+            <div className="p-5 sm:p-8 md:p-10 border-b border-[#E8ECF2] bg-[#F8F6F1] relative">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase pr-10">Yeni İşletme</h2>
               <p className="text-[#2A3444] text-xs sm:text-sm font-bold mt-2">Sisteme yeni bir restoran veya şube tanımlayın.</p>
 
               <button
@@ -350,7 +350,7 @@ export default function RestaurantsPage() {
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Örn: Gourmet Eats Ankara"
-                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all"
+                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all"
                 />
               </div>
 
@@ -367,7 +367,7 @@ export default function RestaurantsPage() {
                       setIsManualSlug(true);
                     }}
                     placeholder="gourmet-eats"
-                    className="flex-1 min-w-0 px-3 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[13px] sm:text-[15px] font-bold tracking-tight shadow-sm transition-all"
+                    className="flex-1 min-w-0 px-3 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[13px] sm:text-[15px] font-bold tracking-tight shadow-sm transition-all"
                   />
                 </div>
               </div>
@@ -392,7 +392,7 @@ export default function RestaurantsPage() {
                   <button
                     type="button"
                     onClick={() => setShowGoogleInfo((v) => !v)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-[#1A2332] transition-all hover:bg-[#F4B400]/20 active:scale-95"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#E8ECF2] bg-white text-[#1A2332] transition-all hover:bg-[#F4B400]/20 active:scale-95"
                     aria-label="Info"
                   >
                     <Info size={15} strokeWidth={2} />
@@ -400,7 +400,7 @@ export default function RestaurantsPage() {
                 </div>
 
                 {showGoogleInfo && (
-                  <div className="mb-3 rounded-xl border border-gray-200 bg-white p-3.5 text-xs font-bold text-[#2A3444] leading-relaxed">
+                  <div className="mb-3 rounded-xl border border-[#E8ECF2] bg-white p-3.5 text-xs font-bold text-[#2A3444] leading-relaxed">
                     <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#1A2332]">Nasıl alınır?</p>
                     <ol className="ml-4 list-decimal space-y-1">
                       <li>Google Haritalar&apos;ı açın ve işletmenizi aratın.</li>
@@ -424,7 +424,7 @@ export default function RestaurantsPage() {
                   value={formData.googlePlaceId}
                   onChange={(e) => setFormData((prev) => ({ ...prev, googlePlaceId: e.target.value }))}
                   placeholder="https://maps.google.com/... veya Place ID"
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm font-bold text-[#1A2332] outline-none transition-all placeholder:text-[#6B7280] focus:ring-2 focus:ring-[#F4B400]"
+                  className="w-full rounded-xl border border-[#E8ECF2] bg-white px-4 py-3.5 text-sm font-bold text-[#1A2332] outline-none transition-all placeholder:text-[#6B7280] focus:ring-2 focus:ring-[#F4B400]"
                 />
               </div>
 
@@ -434,7 +434,7 @@ export default function RestaurantsPage() {
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
                   >
                     <option>Restoran</option>
                     <option>Kafe</option>
@@ -453,7 +453,7 @@ export default function RestaurantsPage() {
                       type="color"
                       value={formData.primaryColor}
                       onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
-                      className="w-14 h-12 sm:w-16 rounded-xl border border-gray-200 cursor-pointer p-1 bg-white shadow-sm shrink-0"
+                      className="w-14 h-12 sm:w-16 rounded-xl border border-[#E8ECF2] cursor-pointer p-1 bg-white shadow-sm shrink-0"
                     />
                     <span className="text-xs sm:text-sm font-black text-[#1A2332] font-mono">{formData.primaryColor.toUpperCase()}</span>
                   </div>
@@ -468,7 +468,7 @@ export default function RestaurantsPage() {
                     value={formData.notificationEmail}
                     onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
                     placeholder="yonetim@email.com"
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold shadow-sm transition-all"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold shadow-sm transition-all"
                   />
                 </div>
                 <div className="space-y-2">
@@ -478,7 +478,7 @@ export default function RestaurantsPage() {
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="05..."
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold shadow-sm transition-all"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold shadow-sm transition-all"
                   />
                 </div>
               </div>

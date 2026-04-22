@@ -45,7 +45,7 @@ export default async function PrivacyPage({
                <ShieldCheck size={14} className="text-[#F4B400]" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'GİZLİLİK POLİTİKASI' : 'PRIVACY POLICY'}</span>
             </div>
-            <h1 className="text-[36px] sm:text-[56px] font-black text-[#1A2332] tracking-tight leading-none mb-4 whitespace-pre-line">
+            <h1 className="text-[36px] sm:text-[56px] font-extrabold text-[#1A2332] tracking-tight leading-none mb-4 whitespace-pre-line">
               {isTr ? 'Veri ve Gizlilik\nPolitikamız' : 'Data and Privacy\nPolicy'}
             </h1>
             <p className="text-[13px] text-[#6B7280] font-black uppercase tracking-widest">
@@ -63,7 +63,7 @@ export default async function PrivacyPage({
              </div>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '1. Bilgi Toplama' : '1. Collection of Information'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '1. Bilgi Toplama' : '1. Collection of Information'}</h2>
                 <p>
                   {isTr 
                     ? 'Hesap açılışı, hizmet kullanımı veya bizimle iletişime geçtiğinizde; kimlik bilgileri, iletişim detayları, ödeme geçmişi ve kullanım verileri gibi bilgileri toplarız.'
@@ -77,7 +77,7 @@ export default async function PrivacyPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '2. Veri Kullanımı ve Paylaşımı' : '2. Data Usage and Sharing'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '2. Veri Kullanımı ve Paylaşımı' : '2. Data Usage and Sharing'}</h2>
                 <p>
                   {isTr
                     ? 'Verileriniz yalnızca hizmet kalitemizi artırmak, yasal yükümlülüklerimizi yerine getirmek ve size özel bir kullanıcı deneyimi sunmak amacıyla kullanılır. Üçüncü şahıslara satış yapılmaz.'
@@ -86,7 +86,7 @@ export default async function PrivacyPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '3. Güvenlik Önlemleri' : '3. Security Measures'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '3. Güvenlik Önlemleri' : '3. Security Measures'}</h2>
                 <p>
                   {isTr
                     ? 'Tüm verileriniz endüstri standardı SSL/TLS şifreleme ile korunur. Sunucularımızda güvenlik duvarları, yetkisiz erişim tespit sistemleri ve periyodik sızma testleri uygulanmaktadır.'
@@ -95,7 +95,7 @@ export default async function PrivacyPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '4. Uluslararası Veri Aktarımı' : '4. International Data Transfer'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '4. Uluslararası Veri Aktarımı' : '4. International Data Transfer'}</h2>
                 <p>
                   {isTr
                     ? 'Veri barındırma hizmetlerimiz global altyapılar (Vercel, Supabase vb.) üzerinde tutulabilir. Bu durumlarda da en yüksek koruma standartlarını garanti ediyoruz.'

@@ -93,7 +93,7 @@ export default function AdminProfilePage() {
   return (
     <div className="p-4 sm:p-6 md:p-10 max-w-4xl mx-auto space-y-6 sm:space-y-10">
       <div className="space-y-4">
-        <h1 className="text-2xl sm:text-3xl md:text-[40px] font-black text-[#1A2332] leading-[1.1] sm:leading-[0.9] tracking-tighter uppercase italic break-words">
+        <h1 className="text-2xl sm:text-3xl md:text-[40px] font-extrabold text-[#1A2332] leading-[1.1] sm:leading-[0.9] tracking-tighter uppercase italic break-words">
           Profilim
         </h1>
         <p className="text-[15px] sm:text-[17px] text-[#2A3444] font-bold italic">
@@ -109,7 +109,7 @@ export default function AdminProfilePage() {
               <ShieldCheck size={28} className="text-[#1A2332]" strokeWidth={2} />
             </div>
             <div className="space-y-2">
-              <h4 className="text-white font-black uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
+              <h4 className="text-white font-extrabold uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
               <p className="text-[#6B7280] text-xs font-bold leading-relaxed">
                 Şifrenizi düzenli aralıklarla değiştirmek hesabınızın güvenliğini artırır. Güçlü bir şifre en az 8 karakter, rakam ve sembol içermelidir.
               </p>
@@ -139,7 +139,7 @@ export default function AdminProfilePage() {
                 <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
                   <User size={16} strokeWidth={2} />
                 </div>
-                <h3 className="text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">Hesap Bilgileri</h3>
+                <h3 className="text-lg font-extrabold text-[#1A2332] uppercase tracking-tighter italic">Hesap Bilgileri</h3>
               </div>
 
               <div className="space-y-2">
@@ -157,7 +157,7 @@ export default function AdminProfilePage() {
                 <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
                   <Key size={16} strokeWidth={2} />
                 </div>
-                <h3 className="text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">Şifre Değiştir</h3>
+                <h3 className="text-lg font-extrabold text-[#1A2332] uppercase tracking-tighter italic">Şifre Değiştir</h3>
               </div>
 
               <div className="space-y-6">

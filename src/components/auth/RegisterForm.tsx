@@ -227,7 +227,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
                  <div className="p-2 bg-[#F4B400]/10 rounded-xl text-[#1A2332]">
                     <ShieldCheck size={20} />
                  </div>
-                 <h3 className="font-black text-[#1A2332] uppercase tracking-tighter">
+                 <h3 className="font-extrabold text-[#1A2332] uppercase tracking-tighter">
                    KVKK Aydınlatma Metni
                  </h3>
               </div>

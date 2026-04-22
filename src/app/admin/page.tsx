@@ -67,7 +67,7 @@ export default function AdminLogin() {
             </div>
           </div>
           
-          <h2 className="text-[28px] font-black text-center text-[#1A2332] tracking-tight leading-tight mb-2">Yönetici Girişi</h2>
+          <h2 className="text-[28px] font-extrabold text-center text-[#1A2332] tracking-tight leading-tight mb-2">Yönetici Girişi</h2>
           <p className="text-sm font-bold text-[#2A3444] text-center mb-10 tracking-tight">Sistem paneline hoş geldiniz</p>
           
           {error && (

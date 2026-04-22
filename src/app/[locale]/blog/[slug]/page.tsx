@@ -84,7 +84,7 @@ export default async function BlogPostPage({
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> {t.blog_backToBlog}
           </Link>
           
-          <h1 className="text-[36px] sm:text-[56px] font-black leading-[1.05] tracking-[-0.03em] text-white mb-8">
+          <h1 className="text-[36px] sm:text-[56px] font-extrabold leading-[1.05] tracking-[-0.03em] text-white mb-8">
             {post.title}
           </h1>
           
@@ -118,7 +118,7 @@ export default async function BlogPostPage({
 
           <div className="mt-16 pt-10 border-t-2 border-[#E8ECF2] flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#F8F6F1] p-8 rounded-2xl border border-[#1A2332] shadow-md">
             <div className="space-y-2 text-center sm:text-left">
-              <h4 className="text-[22px] font-black">{locale === 'tr' ? 'Dijitalde Rekabeti Geride Bırakın' : 'Leave the Competition Behind'}</h4>
+              <h4 className="text-[22px] font-extrabold">{locale === 'tr' ? 'Dijitalde Rekabeti Geride Bırakın' : 'Leave the Competition Behind'}</h4>
               <p className="text-[15px] text-[#2A3444] font-medium">{locale === 'tr' ? '14 günlük ücretsiz deneme ile dijital itibarınızı hemen güçlendirmeye başlayın.' : 'Start strengthening your digital reputation instantly with a 14-day free trial.'}</p>
             </div>
             <Link

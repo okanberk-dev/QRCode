@@ -31,7 +31,7 @@ export default async function PrivacyPage({
 
       <main className="flex-1 max-w-[900px] mx-auto w-full px-5 py-20 sm:py-32">
         <div className="bg-white p-8 sm:p-16 rounded-[32px] border border-[#1A2332] shadow-md">
-          <h1 className="text-[28px] sm:text-[42px] font-black text-[#1A2332] leading-tight mb-10 tracking-[-0.03em]">
+          <h1 className="text-[28px] sm:text-[42px] font-extrabold text-[#1A2332] leading-tight mb-10 tracking-[-0.03em]">
              {locale === 'tr' ? 'Gizlilik' : 'Privacy'} <span className="text-[#F4B400]">{locale === 'tr' ? 'Politikası' : 'Policy'}</span>
           </h1>
           
@@ -70,7 +70,7 @@ export default async function PrivacyPage({
                  }
                ].map((item, i) => (
                  <div key={i} className="p-6 bg-[#F8F6F1] rounded-2xl border-2 border-[#1A2332] hover:bg-white transition-colors">
-                    <h3 className="text-[17px] font-black text-[#1A2332] mb-3">{item.t}</h3>
+                    <h3 className="text-[17px] font-extrabold text-[#1A2332] mb-3">{item.t}</h3>
                     <p className="text-[14px] text-[#2A3444]">{item.d}</p>
                  </div>
                ))}

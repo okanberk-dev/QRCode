@@ -124,11 +124,11 @@ export default function RestaurantDetailPage() {
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
-        <Link href="/admin/restaurants" className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white shrink-0">
+        <Link href="/admin/restaurants" className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-[#E8ECF2] bg-white shrink-0">
           <ArrowLeft size={20} className="text-[#1A2332]" />
         </Link>
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-black text-[#1A2332] tracking-tight">Restoran Düzenle</h1>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[#1A2332] tracking-tight">Restoran Düzenle</h1>
           <p className="text-gray-500 text-sm font-medium truncate">{formData.name}</p>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function RestaurantDetailPage() {
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-2xl border border-[#E8ECF2] shadow-sm p-4 sm:p-6">
           <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <div className="w-1.5 h-5 rounded-full" style={{ backgroundColor: formData.primaryColor }} />
             Temel Bilgiler
@@ -156,7 +156,7 @@ export default function RestaurantDetailPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm shadow-sm transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#E8ECF2] focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm shadow-sm transition-all"
                 />
               </div>
               <div>
@@ -168,7 +168,7 @@ export default function RestaurantDetailPage() {
                     required
                     value={formData.slug}
                     onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm font-mono shadow-sm transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#E8ECF2] focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm font-mono shadow-sm transition-all"
                   />
                 </div>
               </div>
@@ -180,7 +180,7 @@ export default function RestaurantDetailPage() {
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm shadow-sm transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#E8ECF2] focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm shadow-sm transition-all"
                 >
                   <option>Restoran</option>
                   <option>Hamburger Restoranı</option>
@@ -199,7 +199,7 @@ export default function RestaurantDetailPage() {
                     type="color"
                     value={formData.primaryColor}
                     onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
-                    className="w-16 h-12 rounded-lg border border-gray-200 cursor-pointer p-1"
+                    className="w-16 h-12 rounded-lg border border-[#E8ECF2] cursor-pointer p-1"
                   />
                   <span className="text-sm text-gray-500 font-mono">{formData.primaryColor}</span>
                 </div>
@@ -222,7 +222,7 @@ export default function RestaurantDetailPage() {
         </div>
 
         {/* Contact Info */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-2xl border border-[#E8ECF2] shadow-sm p-4 sm:p-6">
           <h3 className="font-semibold text-gray-800 mb-4">İletişim Bilgileri</h3>
           <div className="space-y-4">
             <div>
@@ -232,7 +232,7 @@ export default function RestaurantDetailPage() {
                 value={formData.address}
                 onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                 placeholder="Mahall Ankara, Çankaya/Ankara"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#E8ECF2] focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm shadow-sm transition-all"
               />
             </div>
             <div>
@@ -241,14 +241,14 @@ export default function RestaurantDetailPage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#E8ECF2] focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm shadow-sm transition-all"
               />
             </div>
           </div>
         </div>
 
         {/* Notification & Google */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-2xl border border-[#E8ECF2] shadow-sm p-4 sm:p-6">
           <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <Mail size={16} className="text-[#1A2332]" />
             Bildirim & Google Ayarları
@@ -261,7 +261,7 @@ export default function RestaurantDetailPage() {
                 value={formData.notificationEmail}
                 onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
                 placeholder="restoran@email.com"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#E8ECF2] focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm shadow-sm transition-all"
               />
               <p className="text-xs text-gray-400 mt-1">1-2-3 yıldız puanlarında bu e-posta adresine bildirim gönderilir.</p>
             </div>
@@ -275,7 +275,7 @@ export default function RestaurantDetailPage() {
                 value={formData.googlePlaceId}
                 onChange={(e) => setFormData(prev => ({ ...prev, googlePlaceId: e.target.value }))}
                 placeholder="ChIJ... veya https://maps.app.goo.gl/..."
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm font-mono shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#E8ECF2] focus:border-[#1A2332] focus:ring-2 focus:ring-[#1A2332] outline-none text-sm font-mono shadow-sm transition-all"
               />
               <p className="text-xs text-gray-400 mt-1">Mekan kimliğini ya da Google Haritalar Yorum linkini direkt ekleyebilirsiniz. Olumlu geri bildirimler buraya yönlendirilecek.</p>
             </div>
@@ -290,7 +290,7 @@ export default function RestaurantDetailPage() {
                 value={formData.getirYemekUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, getirYemekUrl: e.target.value }))}
                 placeholder="https://getir.com/yemek/..."
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#5D3EBC] focus:ring-2 focus:ring-[#5D3EBC] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#E8ECF2] focus:border-[#5D3EBC] focus:ring-2 focus:ring-[#5D3EBC] outline-none text-sm shadow-sm transition-all"
               />
             </div>
 
@@ -304,7 +304,7 @@ export default function RestaurantDetailPage() {
                 value={formData.yemekSepetiUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, yemekSepetiUrl: e.target.value }))}
                 placeholder="https://www.yemeksepeti.com/..."
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#FA0050] focus:ring-2 focus:ring-[#FA0050] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#E8ECF2] focus:border-[#FA0050] focus:ring-2 focus:ring-[#FA0050] outline-none text-sm shadow-sm transition-all"
               />
             </div>
 
@@ -318,7 +318,7 @@ export default function RestaurantDetailPage() {
                 value={formData.trendyolYemekUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, trendyolYemekUrl: e.target.value }))}
                 placeholder="https://www.trendyol.com/..."
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#F27A1A] focus:ring-2 focus:ring-[#F27A1A] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#E8ECF2] focus:border-[#F27A1A] focus:ring-2 focus:ring-[#F27A1A] outline-none text-sm shadow-sm transition-all"
               />
             </div>
           </div>
@@ -340,7 +340,7 @@ export default function RestaurantDetailPage() {
             <Link
               href={`/r/${formData.slug}`}
               target="_blank"
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-[#1A2332] bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition-colors shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-[#1A2332] bg-white hover:bg-gray-50 border border-[#E8ECF2] rounded-xl transition-colors shadow-sm"
             >
               <ExternalLink size={16} />
               Önizle

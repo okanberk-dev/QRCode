@@ -64,7 +64,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F4B400] text-[#1A2332] border-2 border-[#1A2332] rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
                 <BookOpen size={14} /> {locale === 'tr' ? 'REHBER' : 'GUIDE'}
               </div>
-              <h1 className="text-[36px] sm:text-[48px] font-black text-[#1A2332] leading-[1] tracking-tighter uppercase italic">
+              <h1 className="text-[36px] sm:text-[48px] font-extrabold text-[#1A2332] leading-[1] tracking-tighter uppercase italic">
                 {locale === 'tr' ? 'Kullanım Kılavuzu' : 'User Guide'}
               </h1>
               <p className="text-[15px] sm:text-[17px] text-[#2A3444] font-bold max-w-xl italic">
@@ -87,7 +87,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
                 {step.icon}
               </div>
               <div className="space-y-3">
-                <h3 className="text-xl font-black text-[#1A2332] uppercase tracking-tight italic">{step.title}</h3>
+                <h3 className="text-xl font-extrabold text-[#1A2332] uppercase tracking-tight italic">{step.title}</h3>
                 <p className="text-sm font-bold text-[#2A3444] leading-relaxed">
                   {step.desc}
                 </p>
@@ -107,7 +107,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
         {/* FAQ - Quick Tips */}
         <div className="bg-[#1A2332] rounded-[40px] border-2 border-[#1A2332] p-8 sm:p-12 shadow-md space-y-10">
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-white uppercase italic">{locale === 'tr' ? 'Önemli İpuçları' : 'Pro Tips'}</h2>
+            <h2 className="text-2xl font-extrabold text-white uppercase italic">{locale === 'tr' ? 'Önemli İpuçları' : 'Pro Tips'}</h2>
             <div className="h-1.5 w-20 bg-[#F4B400] rounded-full" />
           </div>
 
@@ -115,7 +115,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-[#F4B400]">
                 <Settings size={20} strokeWidth={2} />
-                <h4 className="font-black uppercase text-sm tracking-wide">{locale === 'tr' ? 'Düzenli Takip' : 'Regular Monitoring'}</h4>
+                <h4 className="font-extrabold uppercase text-sm tracking-wide">{locale === 'tr' ? 'Düzenli Takip' : 'Regular Monitoring'}</h4>
               </div>
               <p className="text-[#6B7280] text-sm font-bold leading-relaxed">
                 {locale === 'tr'
@@ -126,7 +126,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-[#F4B400]">
                 <MessageSquare size={20} strokeWidth={2} />
-                <h4 className="font-black uppercase text-sm tracking-wide">{locale === 'tr' ? 'Kişiselleştirme' : 'Personalization'}</h4>
+                <h4 className="font-extrabold uppercase text-sm tracking-wide">{locale === 'tr' ? 'Kişiselleştirme' : 'Personalization'}</h4>
               </div>
               <p className="text-[#6B7280] text-sm font-bold leading-relaxed">
                 {locale === 'tr'

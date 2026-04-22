@@ -49,7 +49,7 @@ export default function ComparisonLayout({
               {locale === 'tr' ? `BUAZE VS ${vsName.toUpperCase()}` : `BUAZE VS ${vsName.toUpperCase()}`}
             </span>
           </div>
-          <h1 className="text-[34px] sm:text-[72px] font-black leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332] max-w-[900px] mx-auto">
+          <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332] max-w-[900px] mx-auto">
             {heroTitle}
           </h1>
           <p className="text-[17px] sm:text-[22px] text-[#2A3444] font-bold leading-relaxed max-w-[700px] mx-auto">
@@ -62,7 +62,7 @@ export default function ComparisonLayout({
       <section className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-y border-[#E8ECF2]">
         <div className="max-w-[1100px] mx-auto">
           <div className="mb-12 sm:mb-16 text-center space-y-4">
-               <h2 className="text-[28px] sm:text-[48px] font-black tracking-tight">{t.compare_title}</h2>
+               <h2 className="text-[28px] sm:text-[48px] font-extrabold tracking-tight">{t.compare_title}</h2>
                <p className="text-[15px] sm:text-[16px] text-[#2A3444] font-bold max-w-2xl mx-auto">{t.compare_subtitle}</p>
           </div>
 
@@ -102,7 +102,7 @@ export default function ComparisonLayout({
                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400]/10 rounded-2xl border-2 border-[#F4B400]/20 flex items-center justify-center">
                   <AlertCircle size={28} className="sm:size-8 text-[#F4B400]" />
                </div>
-               <h2 className="text-[30px] sm:text-[54px] font-black leading-[1.1] tracking-tight text-[#1A2332]">
+               <h2 className="text-[30px] sm:text-[54px] font-extrabold leading-[1.1] tracking-tight text-[#1A2332]">
                   {argumentTitle}
                </h2>
                <div className="text-[16px] sm:text-[18px] text-[#4a4742] leading-relaxed font-medium space-y-4 sm:space-y-6">
@@ -147,7 +147,7 @@ export default function ComparisonLayout({
       <section className="py-20 sm:py-24 px-5 sm:px-8 bg-white border-t border-[#E8ECF2]">
          <div className="max-w-[1000px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16">
             <div className="space-y-4 sm:space-y-6">
-               <h3 className="text-[22px] sm:text-[24px] font-black flex items-center gap-2">
+               <h3 className="text-[22px] sm:text-[24px] font-extrabold flex items-center gap-2">
                   <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-[14px] sm:text-[16px]">!</span>
                   {t.compare_pain_title}
                </h3>
@@ -156,7 +156,7 @@ export default function ComparisonLayout({
                </p>
             </div>
             <div className="space-y-4 sm:space-y-6 p-6 sm:p-8 bg-[#F8F6F1] rounded-[24px] sm:rounded-[32px] border-2 border-[#1A2332] shadow-md sm:shadow-md">
-               <h3 className="text-[22px] sm:text-[24px] font-black flex items-center gap-2">
+               <h3 className="text-[22px] sm:text-[24px] font-extrabold flex items-center gap-2">
                   <Zap size={22} className="sm:size-6 text-[#F4B400]" />
                   {t.compare_verdict_title}
                </h3>
@@ -171,7 +171,7 @@ export default function ComparisonLayout({
       <section className="py-24 sm:py-32 px-5 sm:px-8 bg-[#1A2332] text-white relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#F4B400]/5 rounded-full blur-[150px]" />
         <div className="max-w-[800px] mx-auto text-center space-y-8 sm:space-y-10 relative z-10">
-          <h2 className="text-[32px] sm:text-[64px] font-black leading-[1.1] sm:leading-[1] tracking-tight">
+          <h2 className="text-[32px] sm:text-[64px] font-extrabold leading-[1.1] sm:leading-[1] tracking-tight">
             {locale === 'tr' ? 'Daha Fazla Beklemeyin' : 'Don\'t Wait Any Longer'}
           </h2>
           <p className="text-[17px] sm:text-[20px] text-[#6B7280] font-medium max-w-[600px] mx-auto">

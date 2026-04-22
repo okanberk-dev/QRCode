@@ -57,7 +57,7 @@ export default function CaseStudies({ locale, t }: CaseStudiesProps) {
                 {locale === 'tr' ? 'BAŞARI HİKAYELERİ' : 'SUCCESS STORIES'}
               </span>
             </div>
-            <h2 className="text-[36px] sm:text-[54px] font-black text-[#1A2332] leading-[0.95] tracking-[-0.04em]">
+            <h2 className="text-[36px] sm:text-[54px] font-extrabold text-[#1A2332] leading-[0.95] tracking-[-0.04em]">
               {t.case_study_title.split(' ').slice(0, -1).join(' ')}{' '}
               <span className="text-[#F4B400]">{t.case_study_title.split(' ').slice(-1)}</span>
             </h2>
@@ -87,7 +87,7 @@ export default function CaseStudies({ locale, t }: CaseStudiesProps) {
                   {cs.metric}
                 </div>
                 <div>
-                  <h3 className="text-[16px] font-black text-[#1A2332] leading-tight mb-2">
+                  <h3 className="text-[16px] font-extrabold text-[#1A2332] leading-tight mb-2">
                     {cs.title}
                   </h3>
                   <p className="text-[13px] text-[#2A3444] font-medium leading-relaxed mb-4">

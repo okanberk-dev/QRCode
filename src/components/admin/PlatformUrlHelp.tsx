@@ -65,13 +65,13 @@ export default function PlatformUrlHelp({ platform }: Props) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={`${guide.title} nasıl kopyalanır?`}
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 hover:text-[#1A2332] hover:border-gray-300 transition-colors"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#E8ECF2] bg-white text-gray-400 hover:text-[#1A2332] hover:border-gray-300 transition-colors"
       >
         <Info size={12} strokeWidth={2} />
       </button>
       {open && (
-        <div className="absolute left-0 top-7 z-50 w-72 rounded-2xl border border-gray-100 bg-white p-4 text-[12px] font-medium text-[#1A2332] shadow-xl">
-          <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b border-gray-100">
+        <div className="absolute left-0 top-7 z-50 w-72 rounded-2xl border border-[#E8ECF2] bg-white p-4 text-[12px] font-medium text-[#1A2332] shadow-xl">
+          <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b border-[#E8ECF2]">
             <p className="text-[12px] font-black uppercase tracking-wider text-[#1A2332]">{guide.title}</p>
             <button
               type="button"

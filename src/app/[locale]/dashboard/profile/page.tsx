@@ -129,7 +129,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
           {/* Sidebar Info */}
           <div className="space-y-8">
             <div className="space-y-4">
-              <h1 className="text-2xl sm:text-3xl md:text-[40px] font-black text-[#1A2332] leading-[1.1] sm:leading-[0.9] tracking-tighter uppercase italic break-words">
+              <h1 className="text-2xl sm:text-3xl md:text-[40px] font-extrabold text-[#1A2332] leading-[1.1] sm:leading-[0.9] tracking-tighter uppercase italic break-words">
                 {t.profile_title}
               </h1>
               <p className="text-[15px] sm:text-[17px] text-[#2A3444] font-bold italic">
@@ -142,7 +142,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
                 <ShieldCheck size={28} className="text-[#1A2332]" strokeWidth={2} />
               </div>
               <div className="space-y-2">
-                <h4 className="text-white font-black uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
+                <h4 className="text-white font-extrabold uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
                 <p className="text-[#6B7280] text-xs font-bold leading-relaxed">
                   Şifrenizi düzenli aralıklarla değiştirmek hesabınızın güvenliğini artırır. Güçlü bir şifre en az 8 karakter, rakam ve sembol içermelidir.
                 </p>
@@ -172,7 +172,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
                   <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
                     <User size={16} strokeWidth={2} />
                   </div>
-                  <h3 className="text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">Kişisel Bilgiler</h3>
+                  <h3 className="text-lg font-extrabold text-[#1A2332] uppercase tracking-tighter italic">Kişisel Bilgiler</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
@@ -205,7 +205,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
                   <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
                     <Globe size={16} strokeWidth={2} />
                   </div>
-                  <h3 className="text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">Sistem Dili</h3>
+                  <h3 className="text-lg font-extrabold text-[#1A2332] uppercase tracking-tighter italic">Sistem Dili</h3>
                 </div>
 
                 <div className="space-y-2">
@@ -227,7 +227,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
                   <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
                     <Key size={16} strokeWidth={2} />
                   </div>
-                  <h3 className="text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">Şifre Değiştir</h3>
+                  <h3 className="text-lg font-extrabold text-[#1A2332] uppercase tracking-tighter italic">Şifre Değiştir</h3>
                 </div>
 
                 <div className="space-y-6">

@@ -31,13 +31,13 @@ const PLATFORM_CONFIG: Record<string, { label: string; color: string; bg: string
   yemeksepeti: { label: 'Yemeksepeti', color: 'text-white', bg: 'bg-[#FA0050]', border: 'border-[#D10044]' },
   getir: { label: 'Getir', color: 'text-white', bg: 'bg-[#5D3EBC]', border: 'border-[#4A2FA0]' },
   trendyol_go: { label: 'Trendyol GO', color: 'text-white', bg: 'bg-[#F27A1A]', border: 'border-[#D66A15]' },
-  unspecified: { label: 'Genel', color: 'text-gray-600', bg: 'bg-gray-100', border: 'border-gray-200' },
+  unspecified: { label: 'Genel', color: 'text-gray-600', bg: 'bg-gray-100', border: 'border-[#E8ECF2]' },
 };
 
 export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTableProps) {
   if (feedbacks.length === 0) {
     return (
-      <div className="bg-white p-8 sm:p-12 rounded-2xl shadow-sm border border-gray-100 text-center flex flex-col items-center gap-3">
+      <div className="bg-white p-8 sm:p-12 rounded-2xl shadow-sm border border-[#E8ECF2] text-center flex flex-col items-center gap-3">
         <div className="w-14 h-14 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center">
           <Inbox size={26} strokeWidth={2} />
         </div>
@@ -58,10 +58,10 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
   };
 
   return (
-    <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-[24px] border border-[#E8ECF2] shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm text-gray-600">
-          <thead className="bg-gray-50 text-gray-500 text-[11px] uppercase tracking-[0.1em] border-b border-gray-100">
+          <thead className="bg-gray-50 text-gray-500 text-[11px] uppercase tracking-[0.1em] border-b border-[#E8ECF2]">
             <tr>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'TARİH' : 'DATE'}</th>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'PUAN' : 'RATING'}</th>
@@ -107,7 +107,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                           KVKK
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] bg-gray-50 text-gray-400 border border-gray-100 font-black uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] bg-gray-50 text-gray-400 border border-[#E8ECF2] font-black uppercase tracking-wider">
                           KVKK YOK
                         </span>
                       )}

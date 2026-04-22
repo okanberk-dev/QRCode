@@ -45,7 +45,7 @@ export default async function CookiePage({
                <ShieldCheck size={14} className="text-[#F4B400]" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'ÇEREZ BİLGİSİ' : 'COOKIE INFORMATION'}</span>
             </div>
-            <h1 className="text-[36px] sm:text-[56px] font-black text-[#1A2332] tracking-tight leading-none mb-4 whitespace-pre-line">
+            <h1 className="text-[36px] sm:text-[56px] font-extrabold text-[#1A2332] tracking-tight leading-none mb-4 whitespace-pre-line">
               {isTr ? 'Çerez Kullanım\nPolitikamız' : 'Cookie Usage\nPolicy'}
             </h1>
             <p className="text-[13px] text-[#6B7280] font-black uppercase tracking-widest">
@@ -63,21 +63,21 @@ export default async function CookiePage({
              </div>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '1. Çerez Türleri ve Kullanım Amaçları' : '1. Cookie Types and Usage Purposes'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '1. Çerez Türleri ve Kullanım Amaçları' : '1. Cookie Types and Usage Purposes'}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    <div className="p-6 bg-white border-2 border-[#1A2332] rounded-2xl shadow-md">
-                      <h4 className="text-[16px] font-black text-[#1A2332] mb-2">{isTr ? 'Zorunlu Çerezler' : 'Strictly Necessary'}</h4>
+                      <h4 className="text-[16px] font-extrabold text-[#1A2332] mb-2">{isTr ? 'Zorunlu Çerezler' : 'Strictly Necessary'}</h4>
                       <p className="text-[14px] leading-relaxed">{isTr ? 'Sitenin çalışması ve güvenliği için gereken temel teknik çerezlerdir.' : 'Basic technical cookies required for the site\'s operation and security.'}</p>
                    </div>
                    <div className="p-6 bg-white border-2 border-[#1A2332] rounded-2xl shadow-md">
-                      <h4 className="text-[16px] font-black text-[#1A2332] mb-2">{isTr ? 'Analitik Çerezler' : 'Analytical Cookies'}</h4>
+                      <h4 className="text-[16px] font-extrabold text-[#1A2332] mb-2">{isTr ? 'Analitik Çerezler' : 'Analytical Cookies'}</h4>
                       <p className="text-[14px] leading-relaxed">{isTr ? 'Ziyaretçi trafiğini ölçmek ve platform deneyimini iyileştirmek için kullanılır.' : 'Used to measure visitor traffic and improve the platform experience.'}</p>
                    </div>
                 </div>
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '2. Çerezleri Nasıl Kontrol Edebilirsiniz?' : '2. How Can You Control Cookies?'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '2. Çerezleri Nasıl Kontrol Edebilirsiniz?' : '2. How Can You Control Cookies?'}</h2>
                 <p>
                   {isTr
                     ? 'Çoğu tarayıcı çerezleri otomatik olarak kabul eder ancak dilediğiniz zaman tarayıcı ayarlarınızdan çerezleri reddedebilir veya silebilirsiniz.'

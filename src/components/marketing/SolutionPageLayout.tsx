@@ -110,7 +110,7 @@ export default function SolutionPageLayout({
               {icon}
               <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">{industryBadge}</span>
             </div>
-            <h1 className="text-[34px] sm:text-[72px] font-black leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332]">
+            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332]">
               {h1Prefix} <span style={{ color: accentColor }}>{h1Suffix}</span>
             </h1>
             <p className="text-[16px] sm:text-[20px] text-[#2A3444] font-bold leading-relaxed max-w-[600px]">
@@ -135,7 +135,7 @@ export default function SolutionPageLayout({
             <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#F4B400] mb-4">
               {locale === 'tr' ? 'SÜREÇ' : 'PROCESS'}
             </p>
-            <h2 className="text-[32px] sm:text-[52px] font-black text-[#1A2332] tracking-tight leading-tight">
+            <h2 className="text-[32px] sm:text-[52px] font-extrabold text-[#1A2332] tracking-tight leading-tight">
               {locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}
             </h2>
           </div>
@@ -148,7 +148,7 @@ export default function SolutionPageLayout({
                 <div className="w-14 h-14 bg-white rounded-2xl border border-[#1A2332] flex items-center justify-center mb-8 text-[#1A2332] shadow-md">
                   {step.icon}
                 </div>
-                <h3 className="text-[20px] sm:text-[22px] font-black text-[#1A2332] mb-4 tracking-tight">{step.title}</h3>
+                <h3 className="text-[20px] sm:text-[22px] font-extrabold text-[#1A2332] mb-4 tracking-tight">{step.title}</h3>
                 <p className="text-[14px] sm:text-[15px] text-[#2A3444] leading-relaxed font-bold">{step.desc}</p>
               </div>
             ))}
@@ -164,7 +164,7 @@ export default function SolutionPageLayout({
             <p className="text-[11px] sm:text-[12px] font-black text-[#F4B400] uppercase tracking-widest">
               {locale === 'tr' ? 'AVANTAJLAR' : 'BENEFITS'}
             </p>
-            <h2 className="text-[32px] sm:text-[52px] font-black text-white tracking-tight leading-tight">
+            <h2 className="text-[32px] sm:text-[52px] font-extrabold text-white tracking-tight leading-tight">
               {locale === 'tr' ? 'Neden Buaze?' : 'Why Buaze?'}
             </h2>
           </div>
@@ -175,7 +175,7 @@ export default function SolutionPageLayout({
                   {b.icon}
                 </div>
                 <div className="space-y-2">
-                  <h4 className="text-[18px] sm:text-[20px] font-black text-white tracking-tight">{b.title}</h4>
+                  <h4 className="text-[18px] sm:text-[20px] font-extrabold text-white tracking-tight">{b.title}</h4>
                   <p className="text-[13px] sm:text-[14px] text-[#6B7280] font-bold leading-relaxed">{b.desc}</p>
                 </div>
               </div>
@@ -205,14 +205,14 @@ export default function SolutionPageLayout({
               <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: accentColor }}>
                 {locale === 'tr' ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
               </p>
-              <h2 className="text-[32px] sm:text-[52px] font-black text-[#1A2332] tracking-tight leading-tight">
+              <h2 className="text-[32px] sm:text-[52px] font-extrabold text-[#1A2332] tracking-tight leading-tight">
                 {locale === 'tr' ? 'Merak Ettikleriniz' : 'Common Questions'}
               </h2>
             </div>
             <div className="space-y-6">
               {faqs.map((faq, i) => (
                 <div key={i} className="bg-white border border-[#1A2332] rounded-[24px] sm:rounded-[32px] p-7 sm:p-10 shadow-md transition-all hover:shadow-md hover:-translate-y-1">
-                  <h3 className="text-[16px] sm:text-[18px] font-black text-[#1A2332] mb-4 tracking-tight leading-snug">{faq.q}</h3>
+                  <h3 className="text-[16px] sm:text-[18px] font-extrabold text-[#1A2332] mb-4 tracking-tight leading-snug">{faq.q}</h3>
                   <p className="text-[14px] sm:text-[15px] text-[#2A3444] leading-relaxed font-bold">{faq.a}</p>
                 </div>
               ))}
@@ -225,7 +225,7 @@ export default function SolutionPageLayout({
       <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#1A2332] relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
         <div className="relative z-10 max-w-[800px] mx-auto text-center space-y-8">
-          <h2 className="text-[28px] sm:text-[48px] font-black text-white tracking-tight leading-tight">
+          <h2 className="text-[28px] sm:text-[48px] font-extrabold text-white tracking-tight leading-tight">
             {locale === 'tr' ? 'İşletmenizi Bugün Büyütün' : 'Grow Your Business Today'}
           </h2>
           <p className="text-[15px] sm:text-[18px] text-[#6B7280] font-bold">

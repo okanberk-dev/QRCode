@@ -44,7 +44,7 @@ export default async function KvkkPage({
                <ShieldCheck size={14} className="text-[#F4B400]" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'YASAL UYARI' : 'LEGAL NOTICE'}</span>
             </div>
-            <h1 className="text-[36px] sm:text-[56px] font-black text-[#1A2332] tracking-tight leading-none mb-4 whitespace-pre-line">
+            <h1 className="text-[36px] sm:text-[56px] font-extrabold text-[#1A2332] tracking-tight leading-none mb-4 whitespace-pre-line">
               {isTr ? 'KVKK\nAydınlatma Metni' : 'Personal Data\nProtection Policy (KVKK)'}
             </h1>
             <p className="text-[13px] text-[#6B7280] font-black uppercase tracking-widest">
@@ -62,7 +62,7 @@ export default async function KvkkPage({
              </div>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '1. Veri Sorumlusu' : '1. Data Controller'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '1. Veri Sorumlusu' : '1. Data Controller'}</h2>
                 <p>
                   {isTr 
                     ? 'Buaze platformu, kullanıcılarının gizliliğine ve kişisel verilerinin korunmasına en üst düzeyde önem vermektedir. Veri sorumlusu olarak tüm süreçlerimizi KVKK standartlarına uygun şekilde yürütmekteyiz.'
@@ -71,7 +71,7 @@ export default async function KvkkPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '2. Kişisel Verilerin İşlenme Amaçları' : '2. Purposes of Processing Personal Data'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '2. Kişisel Verilerin İşlenme Amaçları' : '2. Purposes of Processing Personal Data'}</h2>
                 <p>
                   {isTr
                     ? 'Kişisel verileriniz aşağıdaki amaçlarla işlenmektedir:'
@@ -86,7 +86,7 @@ export default async function KvkkPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '3. İşlenen Veri Kategorileri' : '3. Categories of Processed Data'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '3. İşlenen Veri Kategorileri' : '3. Categories of Processed Data'}</h2>
                 <p>
                   {isTr
                    ? 'Platform kullanımı sırasında işlenen veriler; kimlik bilgileri (isim-soyisim), iletişim bilgileri (e-posta, telefon), işlem güvenliği bilgileri ve müşteri işlem verilerini kapsamaktadır.'
@@ -95,7 +95,7 @@ export default async function KvkkPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '4. İlgili Kişi Hakları' : '4. Rights of the Data Subject'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '4. İlgili Kişi Hakları' : '4. Rights of the Data Subject'}</h2>
                 <p>
                   {isTr
                     ? 'KVKK’nın 11. maddesi uyarınca herkes veri sorumlusuna başvurarak kendisiyle ilgili;'

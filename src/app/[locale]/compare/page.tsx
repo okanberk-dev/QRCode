@@ -62,7 +62,7 @@ export default async function ComparisonPage({
         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#F4B400]/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
         <div className="max-w-[1200px] mx-auto text-center relative">
           <div className="max-w-[800px] mx-auto space-y-6 sm:space-y-8">
-            <h1 className="text-[34px] sm:text-[72px] font-black leading-[1] sm:leading-[0.95] tracking-tight">
+            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight">
               {t.compare_hero_h1.split(' ').slice(0, -3).join(' ')} <br className="hidden sm:block"/>
               <span className="text-[#F4B400]">{t.compare_hero_h1.split(' ').slice(-3).join(' ')}</span>
             </h1>
@@ -122,7 +122,7 @@ export default async function ComparisonPage({
                   </div>
                   <ArrowRight size={20} className="sm:size-6 text-[#6B7280] group-hover:text-[#1A2332] transition-colors" />
                </div>
-               <h3 className="text-[18px] sm:text-[20px] font-black mb-2 leading-tight">{locale === 'tr' ? 'Buaze vs Spreadsheet' : 'Buaze vs Spreadsheet'}</h3>
+               <h3 className="text-[18px] sm:text-[20px] font-extrabold mb-2 leading-tight">{locale === 'tr' ? 'Buaze vs Spreadsheet' : 'Buaze vs Spreadsheet'}</h3>
                <p className="text-[13px] sm:text-[14px] text-[#2A3444] font-bold leading-relaxed">
                   {locale === 'tr'
                     ? 'Excel tablolarının operasyonel kör noktalarından kurtulun ve otomasyonun gücünü keşfedin.'
@@ -137,7 +137,7 @@ export default async function ComparisonPage({
                   </div>
                   <ArrowRight size={20} className="sm:size-6 text-[#6B7280] group-hover:text-[#1A2332] transition-colors" />
                </div>
-               <h3 className="text-[18px] sm:text-[20px] font-black mb-2 leading-tight">{locale === 'tr' ? 'Buaze vs Bireysel QR' : 'Buaze vs Individual QR'}</h3>
+               <h3 className="text-[18px] sm:text-[20px] font-extrabold mb-2 leading-tight">{locale === 'tr' ? 'Buaze vs Bireysel QR' : 'Buaze vs Individual QR'}</h3>
                <p className="text-[13px] sm:text-[14px] text-[#2A3444] font-bold leading-relaxed">
                   {locale === 'tr'
                     ? 'Statik QR kodların link kısıtlamalarını ve itibar risklerini profesyonel dinamik altyapı ile aşın.'
@@ -158,7 +158,7 @@ export default async function ComparisonPage({
                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400]/10 rounded-2xl flex items-center justify-center border-2 border-[#1A2332]">
                   <Zap size={28} className="sm:size-8 text-[#1A2332]" />
                </div>
-               <h2 className="text-[30px] sm:text-[48px] font-black tracking-tight leading-[1.1] sm:leading-none">
+               <h2 className="text-[30px] sm:text-[48px] font-extrabold tracking-tight leading-[1.1] sm:leading-none">
                   {locale === 'tr' ? 'Neden Statik QR Kullanmamalısınız?' : 'Why You Shouldn\'t Use Static QR Codes?'}
                </h2>
                <div className="space-y-4 text-[16px] sm:text-[19px] text-[#2A3444] font-medium leading-relaxed">
@@ -194,7 +194,7 @@ export default async function ComparisonPage({
                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400]/10 rounded-2xl flex items-center justify-center border-2 border-[#1A2332]">
                   <BarChart3 size={28} className="sm:size-8 text-[#F4B400]" />
                </div>
-               <h2 className="text-[30px] sm:text-[48px] font-black tracking-tight leading-[1.1] sm:leading-none">
+               <h2 className="text-[30px] sm:text-[48px] font-extrabold tracking-tight leading-[1.1] sm:leading-none">
                   {locale === 'tr' ? 'Excel Tablolarının Gizli Maliyeti' : 'The Hidden Cost of Excel Tables'}
                </h2>
                <div className="space-y-4 text-[16px] sm:text-[19px] text-[#2A3444] font-medium leading-relaxed">
@@ -234,7 +234,7 @@ export default async function ComparisonPage({
       {/* ─── Final CTA ─── */}
       <section className="py-24 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1] border-t border-[#E8ECF2]">
         <div className="max-w-[800px] mx-auto text-center space-y-10 sm:space-y-12">
-            <h2 className="text-[32px] sm:text-[56px] font-black tracking-tight leading-[1.1] sm:leading-none">
+            <h2 className="text-[32px] sm:text-[56px] font-extrabold tracking-tight leading-[1.1] sm:leading-none">
               {locale === 'tr' ? 'Profesyonel İtibar Yönetimine Geçin' : 'Switch to Professional Reputation Management'}
             </h2>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-6">

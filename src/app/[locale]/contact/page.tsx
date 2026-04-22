@@ -66,7 +66,7 @@ export default async function ContactPage({
             <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md sm:shadow-md">
                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em]">{locale === 'tr' ? 'BİZE ULAŞIN' : 'GET IN TOUCH'}</span>
             </div>
-            <h1 className="text-[34px] sm:text-[72px] font-black leading-[1.1] sm:leading-[0.95] tracking-tight sm:tracking-[-0.04em] text-[#1A2332]">
+            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1.1] sm:leading-[0.95] tracking-tight sm:tracking-[-0.04em] text-[#1A2332]">
               {t.contact_title}
             </h1>
             <p className="text-[17px] sm:text-[22px] text-[#2A3444] font-bold leading-relaxed max-w-[600px]">
@@ -104,7 +104,7 @@ export default async function ContactPage({
                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#F4B400] border-2 border-[#1A2332] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-md sm:shadow-md">
                     <ShieldCheck className="text-white w-6 h-6 sm:w-8 sm:h-8" strokeWidth={2} />
                  </div>
-                 <h4 className="text-[22px] sm:text-[32px] font-black tracking-tight">{locale === 'tr' ? 'Hızlı Destek Sözü' : 'Support Promise'}</h4>
+                 <h4 className="text-[22px] sm:text-[32px] font-extrabold tracking-tight">{locale === 'tr' ? 'Hızlı Destek Sözü' : 'Support Promise'}</h4>
               </div>
               
               <p className="text-[15px] sm:text-[18px] text-[#6B7280] leading-relaxed font-bold mb-8 sm:mb-10 relative z-10">

@@ -72,7 +72,7 @@ export default async function HowItWorksPage({
           <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md sm:shadow-md">
              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em]">{locale === 'tr' ? 'SİSTEM NASIL ÇALIŞIR?' : 'HOW THE SYSTEM WORKS'}</span>
           </div>
-          <h1 className="text-[34px] sm:text-[84px] font-black leading-[1.1] sm:leading-[0.9] tracking-tight sm:tracking-[-0.05em] text-[#1A2332]">
+          <h1 className="text-[34px] sm:text-[84px] font-extrabold leading-[1.1] sm:leading-[0.9] tracking-tight sm:tracking-[-0.05em] text-[#1A2332]">
              {locale === 'tr' ? 'İtibar Yönetiminin' : 'The Future of'}<br/>
              <span className="text-[#F4B400]">{locale === 'tr' ? 'Dijital Geleceği' : 'Digital Reputation'}</span>
           </h1>
@@ -99,7 +99,7 @@ export default async function HowItWorksPage({
                    {step.id}
                 </div>
                 <div className="relative z-10 space-y-4 sm:space-y-6">
-                  <h2 className="text-[28px] sm:text-[52px] font-black leading-[1.1] tracking-tight sm:tracking-[-0.03em] text-[#1A2332]">
+                  <h2 className="text-[28px] sm:text-[52px] font-extrabold leading-[1.1] tracking-tight sm:tracking-[-0.03em] text-[#1A2332]">
                      {step.title}
                   </h2>
                   <p className="text-[15px] sm:text-[19px] text-[#2A3444] leading-relaxed font-bold">
@@ -151,7 +151,7 @@ export default async function HowItWorksPage({
             ].map((f, i) => (
               <div key={i} className="p-8 sm:p-10 bg-white/5 rounded-[32px] sm:rounded-[40px] border sm:border border-white/10 hover:border-[#F4B400]/50 hover:bg-white/10 transition-all group">
                  <div className="mb-6 w-14 h-14 sm:w-16 sm:h-16 bg-white/5 rounded-2xl flex items-center justify-center border-2 border-white/10 group-hover:scale-110 transition-transform">{f.icon}</div>
-                 <h4 className="text-[20px] sm:text-[22px] font-black mb-4 uppercase tracking-tighter">{f.t}</h4>
+                 <h4 className="text-[20px] sm:text-[22px] font-extrabold mb-4 uppercase tracking-tighter">{f.t}</h4>
                  <p className="text-[14px] sm:text-[15px] text-[#6B7280] font-bold leading-relaxed">{f.d}</p>
               </div>
             ))}
@@ -162,7 +162,7 @@ export default async function HowItWorksPage({
       {/* ─── Final CTA Section ─── */}
       <section className="py-20 sm:py-40 px-5 sm:px-8 bg-[#F8F6F1]">
         <div className="max-w-[1000px] mx-auto text-center space-y-10 sm:space-y-12">
-          <h2 className="text-[32px] sm:text-[72px] font-black mb-4 sm:mb-8 leading-[1.1] sm:leading-[0.9] tracking-tight sm:tracking-[-0.05em] text-[#1A2332]">
+          <h2 className="text-[32px] sm:text-[72px] font-extrabold mb-4 sm:mb-8 leading-[1.1] sm:leading-[0.9] tracking-tight sm:tracking-[-0.05em] text-[#1A2332]">
              {locale === 'tr' ? 'Başarı Hikayenizi Yazmaya' : 'Ready to Start Writing'}<br/>
              <span className="text-[#F4B400]">{locale === 'tr' ? 'Şimdi Başlayın' : 'Your Success Story?'}</span>
           </h2>

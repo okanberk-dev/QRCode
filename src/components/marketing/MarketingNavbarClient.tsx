@@ -330,7 +330,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
               <div className="p-6 grid grid-cols-3 gap-8">
                 {solutionCategories.map((category, idx) => (
                   <div key={idx} className="space-y-4">
-                    <h5 className="text-[10px] font-black uppercase tracking-widest text-[#6B7280] px-2">
+                    <h5 className="text-[10px] font-extrabold uppercase tracking-widest text-[#6B7280] px-2">
                       {category.title}
                     </h5>
                     <div className="space-y-1">
@@ -497,7 +497,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
               <div className="pl-3 space-y-4 pb-4">
                 {solutionCategories.map((category, idx) => (
                   <div key={idx} className="space-y-2">
-                    <h5 className="text-[9px] font-black uppercase tracking-widest text-[#6B7280] px-3 mt-2">
+                    <h5 className="text-[9px] font-extrabold uppercase tracking-widest text-[#6B7280] px-3 mt-2">
                       {category.title}
                     </h5>
                     <div className="space-y-0.5">

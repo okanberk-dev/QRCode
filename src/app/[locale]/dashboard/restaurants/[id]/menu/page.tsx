@@ -317,7 +317,7 @@ export default function RestaurantMenuBuilderPage() {
   }
 
   const status = !restaurant.menuEnabled
-    ? { label: copy.disabled, cls: 'bg-gray-100 text-gray-500 border-gray-200' }
+    ? { label: copy.disabled, cls: 'bg-gray-100 text-gray-500 border-[#E8ECF2]' }
     : restaurant.menuPublished
     ? { label: copy.published, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
     : { label: copy.draft, cls: 'bg-amber-50 text-amber-700 border-amber-200' };
@@ -325,7 +325,7 @@ export default function RestaurantMenuBuilderPage() {
   if (previewMode) {
     return (
       <div className="min-h-full">
-        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-gray-200 bg-[#1A2332] px-4 py-3 text-white">
+        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#E8ECF2] bg-[#1A2332] px-4 py-3 text-white">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-widest text-[#F4B400]">{copy.preview}</p>
             <p className="truncate text-sm font-black">{restaurant.name}</p>
@@ -346,7 +346,7 @@ export default function RestaurantMenuBuilderPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-[24px] border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
+      <div className="flex flex-col gap-4 rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-1">
             <Link
@@ -356,7 +356,7 @@ export default function RestaurantMenuBuilderPage() {
               <ArrowLeft size={14} strokeWidth={2} />
               {copy.backToMenus}
             </Link>
-            <h1 className="flex items-center gap-3 text-2xl font-black tracking-tight text-[#1A2332] sm:text-3xl">
+            <h1 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight text-[#1A2332] sm:text-3xl">
               <UtensilsCrossed size={22} strokeWidth={2} />
               {restaurant.name}
             </h1>
@@ -370,7 +370,7 @@ export default function RestaurantMenuBuilderPage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/${locale}/dashboard/restaurants/${id}/menu?preview=1`}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-gray-50 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-gray-50 active:scale-95"
             >
               <Eye size={14} strokeWidth={2} />
               {copy.preview}
@@ -379,7 +379,7 @@ export default function RestaurantMenuBuilderPage() {
               <Link
                 href={`/menu/${restaurant.slug}`}
                 target="_blank"
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-gray-50 active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-gray-50 active:scale-95"
               >
                 <ChevronRight size={14} strokeWidth={2} />
                 {copy.viewPublic}
@@ -415,9 +415,9 @@ export default function RestaurantMenuBuilderPage() {
       {/* Two-pane builder */}
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         {/* Categories */}
-        <section className="rounded-[24px] border border-gray-100 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 p-4">
-            <h2 className="text-sm font-black uppercase tracking-widest text-[#1A2332]">{copy.categories}</h2>
+        <section className="rounded-[24px] border border-[#E8ECF2] bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-[#E8ECF2] p-4">
+            <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">{copy.categories}</h2>
             <button
               onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#F4B400] px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F4B400] active:scale-95"
@@ -489,10 +489,10 @@ export default function RestaurantMenuBuilderPage() {
         </section>
 
         {/* Items */}
-        <section className="rounded-[24px] border border-gray-100 bg-white shadow-sm">
-          <div className="flex items-center justify-between gap-2 border-b border-gray-100 p-4">
+        <section className="rounded-[24px] border border-[#E8ECF2] bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-2 border-b border-[#E8ECF2] p-4">
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-black uppercase tracking-widest text-[#1A2332]">
+              <h2 className="truncate text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">
                 {activeCategory ? activeCategory.name : copy.items}
               </h2>
               {activeCategory?.description && (
@@ -631,7 +631,7 @@ function CategoryModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
           />
         </Field>
         <Field label={copy.description}>
@@ -639,10 +639,10 @@ function CategoryModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none rounded-xl border border-gray-200 bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="w-full resize-none rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
           />
         </Field>
-        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-[#F8F6F1] px-4 py-3">
+        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3">
           <input type="checkbox" checked={isVisible} onChange={(e) => setIsVisible(e.target.checked)} className="h-4 w-4 accent-[#F4B400]" />
           <span className="text-sm font-bold text-[#1A2332]">{copy.visible}</span>
         </label>
@@ -708,7 +708,7 @@ function ItemModal({
             required
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
           >
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -720,7 +720,7 @@ function ItemModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
           />
         </Field>
         <Field label={copy.description}>
@@ -728,7 +728,7 @@ function ItemModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none rounded-xl border border-gray-200 bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="w-full resize-none rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
           />
         </Field>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -739,7 +739,7 @@ function ItemModal({
               value={priceInput}
               onChange={(e) => setPriceInput(e.target.value)}
               placeholder="0,00"
-              className="w-full rounded-xl border border-gray-200 bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+              className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
             />
           </Field>
           <Field label={copy.imageUrl}>
@@ -748,7 +748,7 @@ function ItemModal({
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
               placeholder="https://..."
-              className="w-full rounded-xl border border-gray-200 bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+              className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
             />
           </Field>
         </div>
@@ -762,7 +762,7 @@ function ItemModal({
                   type="button"
                   onClick={() => toggleBadge(b)}
                   className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-all ${
-                    active ? 'border-[#F4B400] bg-[#F4B400] text-[#1A2332]' : 'border-gray-200 bg-white text-[#2A3444] hover:bg-gray-50'
+                    active ? 'border-[#F4B400] bg-[#F4B400] text-[#1A2332]' : 'border-[#E8ECF2] bg-white text-[#2A3444] hover:bg-gray-50'
                   }`}
                 >
                   {active && <Check size={10} strokeWidth={2} />}
@@ -773,11 +773,11 @@ function ItemModal({
           </div>
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-[#F8F6F1] px-4 py-3">
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3">
             <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="h-4 w-4 accent-[#F4B400]" />
             <span className="text-sm font-bold text-[#1A2332]">{copy.available}</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-[#F8F6F1] px-4 py-3">
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3">
             <input type="checkbox" checked={isOutOfStock} onChange={(e) => setIsOutOfStock(e.target.checked)} className="h-4 w-4 accent-red-500" />
             <span className="text-sm font-bold text-[#1A2332]">{copy.outOfStock}</span>
           </label>
@@ -794,9 +794,9 @@ function ItemModal({
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-md sm:p-6">
-      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-2xl">
-        <div className="relative border-b border-gray-100 bg-[#F8F6F1] p-5 sm:p-7">
-          <h2 className="pr-10 text-xl font-black uppercase tracking-tight text-[#1A2332] sm:text-2xl">{title}</h2>
+      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-[#E8ECF2] bg-white shadow-2xl">
+        <div className="relative border-b border-[#E8ECF2] bg-[#F8F6F1] p-5 sm:p-7">
+          <h2 className="pr-10 text-xl font-extrabold uppercase tracking-tight text-[#1A2332] sm:text-2xl">{title}</h2>
           <button
             onClick={onClose}
             className="absolute right-4 top-4 rounded-xl p-2 text-gray-400 transition-all hover:bg-gray-100 hover:text-[#1A2332]"

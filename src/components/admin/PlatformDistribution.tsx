@@ -43,7 +43,7 @@ export default function PlatformDistribution({ data, locale = 'tr' }: PlatformDi
           return (
             <div
               key={item.platform}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl ${config.bg} border border-gray-100`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl ${config.bg} border border-[#E8ECF2]`}
             >
               <span className="text-sm">{config.icon}</span>
               <span className={`text-[11px] font-black ${config.text}`}>{item.label}</span>
@@ -68,7 +68,7 @@ export default function PlatformDistribution({ data, locale = 'tr' }: PlatformDi
                   {item.label}
                 </span>
               </div>
-              <div className="flex-1 h-8 bg-gray-50 rounded-xl overflow-hidden border border-gray-100 relative">
+              <div className="flex-1 h-8 bg-gray-50 rounded-xl overflow-hidden border border-[#E8ECF2] relative">
                 <div
                   className={`h-full rounded-xl ${config.bar} transition-all duration-700 ease-out`}
                   style={{ width: `${Math.max(widthPercent, 2)}%` }}
@@ -85,7 +85,7 @@ export default function PlatformDistribution({ data, locale = 'tr' }: PlatformDi
       </div>
 
       {/* Total */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-4">
+      <div className="flex items-center justify-between pt-4 border-t border-[#E8ECF2] mt-4">
         <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
           {locale === 'tr' ? 'TOPLAM' : 'TOTAL'}
         </span>

@@ -74,7 +74,7 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
             </Link>
             
             <div className="space-y-2">
-              <h1 className="text-2xl sm:text-[40px] md:text-[56px] font-black text-[#1A2332] leading-[1.1] tracking-tighter uppercase italic break-words">
+              <h1 className="text-2xl sm:text-[40px] md:text-[56px] font-extrabold text-[#1A2332] leading-[1.1] tracking-tighter uppercase italic break-words">
                 {t.feedbacks_title}
               </h1>
               <p className="text-[15px] sm:text-[17px] text-[#2A3444] font-bold max-w-md italic">
@@ -128,7 +128,7 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
           ) : feedbacks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 sm:py-40 bg-white rounded-[24px] sm:rounded-[40px] border-2 border-dashed border-[#E8ECF2] text-center italic p-4">
               <Calendar size={64} className="text-[#E8ECF2] mb-6 scale-75 sm:scale-100" />
-              <h3 className="text-xl sm:text-2xl font-black text-[#1A2332] mb-2 uppercase">{t.feedbacks_empty}</h3>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-[#1A2332] mb-2 uppercase">{t.feedbacks_empty}</h3>
               <p className="text-sm sm:text-base text-[#2A3444] font-bold">Seçili kriterlere uygun değerlendirme bulunamadı.</p>
             </div>
           ) : (

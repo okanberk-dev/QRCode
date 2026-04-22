@@ -127,7 +127,7 @@ export default function PublicMenuPage() {
     <div className="flex flex-col min-h-screen bg-[#F8F6F1] selection:bg-gray-100">
       
       {/* ── Fixed Header ── */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#E8ECF2]">
         <div className="max-w-xl mx-auto px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
              <button 
@@ -136,7 +136,7 @@ export default function PublicMenuPage() {
              >
                <ArrowLeft size={22} strokeWidth={2} />
              </button>
-             <h1 className="font-black text-lg tracking-tight text-[#1A2332] truncate max-w-[180px]">{data.name}</h1>
+             <h1 className="font-extrabold text-lg tracking-tight text-[#1A2332] truncate max-w-[180px]">{data.name}</h1>
           </div>
           <div 
             className="w-10 h-10 rounded-2xl flex items-center justify-center text-white text-base font-black shadow-lg overflow-hidden shrink-0"
@@ -159,7 +159,7 @@ export default function PublicMenuPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={locale === 'tr' ? 'Ürün veya kategori ara...' : 'Search for dishes...'}
-                className="w-full h-12 bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all shadow-sm"
+                className="w-full h-12 bg-gray-50 border border-[#E8ECF2] rounded-2xl pl-12 pr-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all shadow-sm"
               />
            </div>
         </div>
@@ -189,7 +189,7 @@ export default function PublicMenuPage() {
                 className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
                   activeCategory === cat.id 
                     ? 'bg-[#1A2332] text-white border-[#1A2332] shadow-xl shadow-gray-200' 
-                    : 'bg-white text-gray-500 border-gray-100 hover:border-gray-200'
+                    : 'bg-white text-gray-500 border-[#E8ECF2] hover:border-[#E8ECF2]'
                 }`}
               >
                 {cat.name}
@@ -214,7 +214,7 @@ export default function PublicMenuPage() {
                 <div className="flex items-center gap-4">
                    <div className="h-8 w-1.5 rounded-full" style={{ backgroundColor: themeColor }} />
                    <div>
-                     <h2 className="text-2xl font-black text-[#1A2332] tracking-tight">{cat.name}</h2>
+                     <h2 className="text-2xl font-extrabold text-[#1A2332] tracking-tight">{cat.name}</h2>
                      {cat.description && <p className="text-xs font-bold text-gray-400 mt-0.5">{cat.description}</p>}
                    </div>
                 </div>
@@ -229,7 +229,7 @@ export default function PublicMenuPage() {
                         <div className="flex-1 space-y-1.5">
                            <div className="flex items-start justify-between gap-2">
                              <div className="flex flex-col gap-1">
-                               <h3 className="font-black text-[#1A2332] leading-tight group-hover:text-gray-700 transition-colors uppercase tracking-tight">{item.name}</h3>
+                               <h3 className="font-extrabold text-[#1A2332] leading-tight group-hover:text-gray-700 transition-colors uppercase tracking-tight">{item.name}</h3>
                                {item.badges && item.badges.length > 0 && (
                                  <div className="flex flex-wrap gap-1">
                                     {item.badges.map((badge, idx) => (
@@ -280,7 +280,7 @@ export default function PublicMenuPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="mt-auto py-10 px-6 bg-gray-50/50 border-t border-gray-100">
+      <footer className="mt-auto py-10 px-6 bg-gray-50/50 border-t border-[#E8ECF2]">
         <div className="max-w-xl mx-auto flex flex-col items-center gap-6">
           <div className="flex items-center gap-2">
             <span className="text-[9px] font-bold text-gray-300 tracking-[0.2em] uppercase">POWERED BY</span>
@@ -315,7 +315,7 @@ export default function PublicMenuPage() {
               <div className="p-8 space-y-6">
                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-3xl font-black text-[#1A2332] leading-tight uppercase tracking-tight">{selectedItem.name}</h2>
+                      <h2 className="text-3xl font-extrabold text-[#1A2332] leading-tight uppercase tracking-tight">{selectedItem.name}</h2>
                       {selectedItem.isOutOfStock && (
                         <span className="px-2 py-1 rounded-lg bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-tighter border border-red-100">
                           {locale === 'tr' ? 'STOKTA YOK' : 'OUT OF STOCK'}

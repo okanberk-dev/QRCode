@@ -118,7 +118,7 @@ export default async function LoginPage({
           <div className="w-full max-w-sm mx-auto">
             <div className="bg-white rounded-[28px] border border-[#E8ECF2] p-8 sm:p-10 mb-5 shadow-md">
               <div className="mb-8 text-center lg:text-left">
-                <h1 className="text-[28px] font-black text-[#1A2332] tracking-tight leading-tight">{t.auth_login_title}</h1>
+                <h1 className="text-[28px] font-extrabold text-[#1A2332] tracking-tight leading-tight">{t.auth_login_title}</h1>
                 <p className="text-[13px] font-bold text-[#2A3444] mt-2">{t.auth_login_subtitle}</p>
               </div>
 

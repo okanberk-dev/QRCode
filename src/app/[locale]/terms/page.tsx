@@ -45,7 +45,7 @@ export default async function TermsPage({
                <ShieldCheck size={14} className="text-[#F4B400]" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'YASAL SÖZLEŞME' : 'LEGAL AGREEMENT'}</span>
             </div>
-            <h1 className="text-[36px] sm:text-[56px] font-black text-[#1A2332] tracking-tight leading-none mb-4 whitespace-pre-line">
+            <h1 className="text-[36px] sm:text-[56px] font-extrabold text-[#1A2332] tracking-tight leading-none mb-4 whitespace-pre-line">
               {isTr ? 'Kullanım\nKoşulları' : 'Terms of\nService'}
             </h1>
             <p className="text-[13px] text-[#6B7280] font-black uppercase tracking-widest">
@@ -63,7 +63,7 @@ export default async function TermsPage({
              </div>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '1. Hizmet Tanımı' : '1. Service Description'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '1. Hizmet Tanımı' : '1. Service Description'}</h2>
                 <p>
                   {isTr 
                     ? 'Buaze, işletmelerin dijital itibarını yönetmesine, müşteri geri bildirimlerini toplamasına ve analiz etmesine olanak tanıyan bir SaaS (Yazılım Hizmeti) platformudur. Sunulan hizmetlerin kapsamı seçilen abonelik planına göre değişiklik gösterebilir.'
@@ -72,7 +72,7 @@ export default async function TermsPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '2. Fikri Mülkiyet Hakları' : '2. Intellectual Property Rights'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '2. Fikri Mülkiyet Hakları' : '2. Intellectual Property Rights'}</h2>
                 <p>
                   {isTr
                     ? 'Platform üzerinde yer alan tüm yazılımlar, tasarımlar, logolar ve metin içerikleri Buaze mülkiyetindedir. Yazılı izin olmaksızın kopyalanması, çoğaltılması veya ticari amaçla kullanılması kesinlikle yasaktır.'
@@ -81,7 +81,7 @@ export default async function TermsPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '3. Kullanıcı Sorumlulukları' : '3. User Responsibilities'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '3. Kullanıcı Sorumlulukları' : '3. User Responsibilities'}</h2>
                 <p>
                   {isTr
                     ? 'Kullanıcılar, platformu yasalara ve dürüstlük kuralına uygun şekilde kullanmayı kabul eder. Sistemin manipüle edilmesi, sahte veriler girilmesi veya üçüncü şahısların haklarının ihlal edilmesi durumunda hesap derhal sonlandırılabilir.'
@@ -90,7 +90,7 @@ export default async function TermsPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '4. Sorumluluk Sınırlandırması' : '4. Limitation of Liability'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '4. Sorumluluk Sınırlandırması' : '4. Limitation of Liability'}</h2>
                 <p>
                   {isTr
                     ? 'Buaze, teknik aksaklıklardan doğabilecek geçici hizmet kesintilerinden sorumlu tutulamaz. Yazılımımız "olduğu gibi" sunulur ve ticari başarı garantisi verilmez.'

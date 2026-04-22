@@ -21,7 +21,7 @@ export default function PricingFaq({ faqs, title, subtitle }: PricingFaqProps) {
     <section className="py-20 sm:py-32 px-5 sm:px-8 bg-white border-t-[3px] border-[#1A2332]">
       <div className="max-w-[800px] mx-auto">
         <div className="mb-12 sm:mb-16 text-center">
-          <h2 className="text-[32px] sm:text-[52px] font-black tracking-tight text-[#1A2332] leading-tight mb-4 uppercase">{title}</h2>
+          <h2 className="text-[32px] sm:text-[52px] font-extrabold tracking-tight text-[#1A2332] leading-tight mb-4 uppercase">{title}</h2>
           <p className="text-[16px] sm:text-[18px] text-[#2A3444] font-bold">{subtitle}</p>
         </div>
 

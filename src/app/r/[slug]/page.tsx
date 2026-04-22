@@ -217,7 +217,7 @@ function SlugContent() {
       )}
 
       {/* ═══════ Google-Style Sticky Header ═══════ */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 z-50">
+      <div className="sticky top-0 bg-white border-b border-[#E8ECF2] z-50">
         <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button 

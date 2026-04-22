@@ -58,7 +58,7 @@ export default function AdminRestaurantMenuPage() {
                       <ShieldCheck size={10} /> SUPERADMIN YETKİSİ
                    </div>
                 </div>
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight">{restaurant.name} - Menü Yönetimi</h1>
+                <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">{restaurant.name} - Menü Yönetimi</h1>
              </div>
           </div>
           {/* Background pattern */}

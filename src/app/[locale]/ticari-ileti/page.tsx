@@ -44,7 +44,7 @@ export default async function ConsentMarketingPage({
                <ShieldCheck size={14} className="text-[#F4B400]" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'İLETİŞİM ONAYI' : 'COMMUNICATION CONSENT'}</span>
             </div>
-            <h1 className="text-[32px] sm:text-[52px] font-black text-[#1A2332] tracking-tight leading-[1.1] mb-4 whitespace-pre-line">
+            <h1 className="text-[32px] sm:text-[52px] font-extrabold text-[#1A2332] tracking-tight leading-[1.1] mb-4 whitespace-pre-line">
               {isTr ? 'Ticari İleti ve Elektronik\nİletişim Beyanı' : 'Commercial Message and\nElectronic Communication'}
             </h1>
             <p className="text-[13px] text-[#6B7280] font-black uppercase tracking-widest">
@@ -85,7 +85,7 @@ export default async function ConsentMarketingPage({
               </section>
 
               <section className="space-y-6">
-                 <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? 'Cayma Hakkı (Opt-out)' : 'Right of Withdrawal (Opt-out)'}</h2>
+                 <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? 'Cayma Hakkı (Opt-out)' : 'Right of Withdrawal (Opt-out)'}</h2>
                  <p>
                    {isTr
                      ? 'Dilediğiniz zaman, hiçbir gerekçe göstermeksizin bu onayı geri çekebilirsiniz. Her iletimizde size abonelikten çıkma seçeneği sunulmaktadır.'

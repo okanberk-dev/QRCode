@@ -119,7 +119,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
       <div className="w-full mt-4">
         <div className="space-y-6">
           {/* Experience Input Section */}
-          <div className="bg-white rounded-[24px] border-2 border-gray-100 p-6 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 transition-all duration-300 shadow-sm">
+          <div className="bg-white rounded-[24px] border-2 border-[#E8ECF2] p-6 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 transition-all duration-300 shadow-sm">
             <textarea
               id="comment"
               rows={5}
@@ -134,7 +134,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
           {(rating > 0 && rating <= 3) && (
             <div className="space-y-5 animate-in fade-in slide-in-from-top-4 duration-500">
               <div className="px-1">
-                <h3 className="text-[14px] font-black text-gray-900 uppercase tracking-tight mb-1 flex items-center gap-2">
+                <h3 className="text-[14px] font-extrabold text-gray-900 uppercase tracking-tight mb-1 flex items-center gap-2">
                   <span className="w-1.5 h-4 bg-blue-600 rounded-full" />
                   {t('feedback_contact_title') || 'Size ulaşmamızı ister misiniz?'}
                 </h3>
@@ -150,7 +150,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder={t('feedback_name_placeholder') || 'Adınız Soyadınız'}
-                    className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm group-hover:border-gray-200"
+                    className="w-full bg-gray-50/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm group-hover:border-[#E8ECF2]"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -159,14 +159,14 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder={t('feedback_phone_placeholder') || 'Telefon Numaranız'}
-                    className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
                   />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t('feedback_email_placeholder') || 'E-posta Adresiniz'}
-                    className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -178,11 +178,11 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                   className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                     hasKvkkConsent 
                       ? 'bg-blue-50/30 border-blue-100 shadow-sm' 
-                      : 'bg-white border-gray-50 hover:border-gray-100'
+                      : 'bg-white border-gray-50 hover:border-[#E8ECF2]'
                   }`}
                 >
                   <div className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all border-2 ${
-                    hasKvkkConsent ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200'
+                    hasKvkkConsent ? 'bg-blue-600 border-blue-600' : 'bg-white border-[#E8ECF2]'
                   }`}>
                     {hasKvkkConsent && <Check size={14} className="text-white" strokeWidth={4} />}
                   </div>
@@ -198,11 +198,11 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                   className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                     hasMarketingConsent 
                       ? 'bg-emerald-50/30 border-emerald-100 shadow-sm' 
-                      : 'bg-white border-gray-50 hover:border-gray-100'
+                      : 'bg-white border-gray-50 hover:border-[#E8ECF2]'
                   }`}
                 >
                   <div className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all border-2 ${
-                    hasMarketingConsent ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-gray-200'
+                    hasMarketingConsent ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-[#E8ECF2]'
                   }`}>
                     {hasMarketingConsent && <Check size={14} className="text-white" strokeWidth={4} />}
                   </div>
@@ -269,13 +269,13 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
         {showLegalModal && (
           <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-md animate-in fade-in duration-300">
             <div className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300">
-              <div className="p-7 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div className="p-7 border-b border-[#E8ECF2] flex items-center justify-between bg-gray-50/50">
                 <div className="flex items-center gap-3">
                    <div className={`p-2 rounded-xl ${showLegalModal === 'kvkk' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
                       {showLegalModal === 'kvkk' ? <ShieldCheck size={20} /> : <Mail size={20} />}
                    </div>
                    <div>
-                      <h3 className="font-black text-gray-900 uppercase tracking-tighter text-sm">
+                      <h3 className="font-extrabold text-gray-900 uppercase tracking-tighter text-sm">
                         {showLegalModal === 'kvkk' ? 'KVKK Aydınlatma Metni' : 'İletişim İzni'}
                       </h3>
                       <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Legal & Privacy</p>
@@ -283,7 +283,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                 </div>
                 <button 
                   onClick={() => setShowLegalModal(null)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white hover:shadow-sm text-gray-400 transition-all border border-transparent hover:border-gray-100"
+                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white hover:shadow-sm text-gray-400 transition-all border border-transparent hover:border-[#E8ECF2]"
                 >
                   <X size={20} strokeWidth={2} />
                 </button>
@@ -295,7 +295,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                     : (t('feedback_marketing_text') || 'Paylaştığım iletişim bilgilerine kampanya, indirim, promosyon ve yeni ürünler hakkında bilgilendirme amaçlı ticari elektronik ileti gönderilmesini kabul ediyorum.')}
                 </p>
               </div>
-              <div className="p-6 bg-gray-50/80 border-t border-gray-100 flex justify-end gap-3">
+              <div className="p-6 bg-gray-50/80 border-t border-[#E8ECF2] flex justify-end gap-3">
                 <button 
                   onClick={() => setShowLegalModal(null)}
                   className="w-full py-4 bg-[#1A2332] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 active:scale-95"

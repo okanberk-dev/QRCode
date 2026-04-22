@@ -104,7 +104,7 @@ export default function CustomerTestimonials({ locale }: CustomerTestimonialsPro
         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border-2 border-[#1A2332] rounded-full shadow-md mb-6">
            <span className="text-[10px] font-black uppercase tracking-widest text-[#1A2332]">{isTr ? 'REFERANSLARIMIZ' : 'OUR TESTIMONIALS'}</span>
         </div>
-        <h2 className="text-[36px] sm:text-[60px] font-black text-[#1A2332] tracking-tight leading-none">
+        <h2 className="text-[36px] sm:text-[60px] font-extrabold text-[#1A2332] tracking-tight leading-none">
           {isTr ? 'Yüzlerce işletme ' : 'Hundreds of businesses '}
           <span className="text-[#F4B400]">{isTr ? 'Buaze' : 'trust Buaze'}</span>
           {isTr ? 'ye güveniyor' : ''}

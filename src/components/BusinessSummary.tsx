@@ -15,7 +15,7 @@ export default function BusinessSummary({ name, address, category }: BusinessSum
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2">
            <div className="w-1 h-8 bg-blue-500 rounded-full" />
-           <h2 className="text-2xl font-black text-gray-900 tracking-tighter uppercase">{name}</h2>
+           <h2 className="text-2xl font-extrabold text-gray-900 tracking-tighter uppercase">{name}</h2>
         </div>
         
         <div className="flex flex-wrap gap-4 text-xs sm:text-sm text-gray-500 px-1 items-center">

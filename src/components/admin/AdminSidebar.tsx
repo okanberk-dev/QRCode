@@ -92,7 +92,7 @@ export default function AdminSidebar() {
             <BuazeLogo size={40} variant="on-dark" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-black text-white tracking-tight leading-none">Buaze</h1>
+            <h1 className="text-lg font-extrabold text-white tracking-tight leading-none">Buaze</h1>
             <p className="text-[10px] text-white/45 font-bold tracking-widest uppercase mt-1">{roleLabel}</p>
           </div>
           {planBadge()}

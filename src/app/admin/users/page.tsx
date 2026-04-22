@@ -178,9 +178,9 @@ export default function UsersPage() {
 
   return (
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#1A2332] tracking-tight uppercase">Hesap Yönetimi</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase">Hesap Yönetimi</h1>
           <p className="text-[#2A3444] text-[13px] sm:text-[15px] font-bold">Sistem yöneticilerini ve işletme yetkililerini tanımlayın.</p>
         </div>
         <button
@@ -200,11 +200,11 @@ export default function UsersPage() {
           placeholder={t('search_placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border border-gray-100 rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-4 sm:py-5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#F4B400] transition-all"
+          className="w-full bg-white border border-[#E8ECF2] rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-4 sm:py-5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#F4B400] transition-all"
         />
       </div>
 
-      <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm overflow-hidden">
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left border-collapse sm:min-w-[600px]">
             <thead>
@@ -219,10 +219,10 @@ export default function UsersPage() {
               {users.filter(u =>
                 u.username.toLowerCase().includes(searchTerm.toLowerCase())
               ).map(user => (
-                <tr key={user.id} className="hover:bg-blue-50/50 transition-all border-b border-gray-100 group">
+                <tr key={user.id} className="hover:bg-blue-50/50 transition-all border-b border-[#E8ECF2] group">
                   <td className="px-3 py-4 sm:px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 shrink-0 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-500 group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors">
+                      <div className="w-10 h-10 shrink-0 rounded-xl bg-gray-50 border border-[#E8ECF2] flex items-center justify-center text-gray-500 group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors">
                         <User size={18} strokeWidth={2} />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -289,9 +289,9 @@ export default function UsersPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6">
-          <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
-            <div className="p-5 sm:p-8 md:p-10 border-b border-gray-100 bg-[#F8F6F1] relative">
-              <h2 className="text-xl sm:text-3xl font-black text-[#1A2332] tracking-tight uppercase pr-10">
+          <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl border border-[#E8ECF2] w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
+            <div className="p-5 sm:p-8 md:p-10 border-b border-[#E8ECF2] bg-[#F8F6F1] relative">
+              <h2 className="text-xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase pr-10">
                 {editingId ? 'Hesabı Düzenle' : 'Yeni Yetkili Ekle'}
               </h2>
               <p className="text-[#2A3444] text-[13px] sm:text-sm font-bold mt-2">
@@ -322,7 +322,7 @@ export default function UsersPage() {
                     disabled={!!editingId} // Kullanıcı adı değiştirilemez (Prisma unique constrain)
                     value={formData.username}
                     onChange={(e) => setFormData({...formData, username: e.target.value.toLowerCase()})}
-                    className={`w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold transition-all shadow-sm ${editingId ? 'opacity-50 cursor-not-allowed shadow-none' : ''}`}
+                    className={`w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold transition-all shadow-sm ${editingId ? 'opacity-50 cursor-not-allowed shadow-none' : ''}`}
                   />
                 </div>
                 <div className="space-y-2">
@@ -335,7 +335,7 @@ export default function UsersPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     placeholder={editingId ? 'Değişmeyecekse boş bırakın' : '••••••••'}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all placeholder:text-[13px] placeholder:font-medium"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all placeholder:text-[13px] placeholder:font-medium"
                   />
                 </div>
               </div>
@@ -345,7 +345,7 @@ export default function UsersPage() {
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value, restaurantId: ''})}
-                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
                 >
                   <option value="manager">İŞLETME YÖNETİCİSİ / SAHİBİ</option>
                   <option value="superadmin">SUPER ADMIN (SİSTEM GENELİ)</option>
@@ -353,8 +353,8 @@ export default function UsersPage() {
               </div>
 
               {formData.role === 'manager' && (
-                <div className="bg-gray-50 rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 md:p-8 border border-gray-100 shadow-sm space-y-4 sm:space-y-6 md:space-y-8">
-                  <div className="flex gap-4 p-2 bg-white border border-gray-200 shadow-sm rounded-xl">
+                <div className="bg-gray-50 rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 md:p-8 border border-[#E8ECF2] shadow-sm space-y-4 sm:space-y-6 md:space-y-8">
+                  <div className="flex gap-4 p-2 bg-white border border-[#E8ECF2] shadow-sm rounded-xl">
                     <button
                       type="button"
                       disabled={!!editingId}
@@ -381,7 +381,7 @@ export default function UsersPage() {
                         required={!isNewRestaurant}
                         value={formData.restaurantId}
                         onChange={(e) => setFormData({...formData, restaurantId: e.target.value})}
-                        className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#F4B400] bg-white text-sm font-bold shadow-sm uppercase tracking-widest appearance-none cursor-pointer outline-none"
+                        className="w-full px-5 py-4 rounded-xl border border-[#E8ECF2] focus:ring-2 focus:ring-[#F4B400] bg-white text-sm font-bold shadow-sm uppercase tracking-widest appearance-none cursor-pointer outline-none"
                       >
                         <option value="">İŞLETME SEÇİN...</option>
                         {restaurants.map(r => (
@@ -399,7 +399,7 @@ export default function UsersPage() {
                           value={restaurantData.name}
                           onChange={(e) => handleNameChange(e.target.value)}
                           placeholder="Örn: Gourmet Eats Ankara"
-                          className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#F4B400] shadow-sm bg-white outline-none text-sm font-bold"
+                          className="w-full px-5 py-4 rounded-xl border border-[#E8ECF2] focus:ring-2 focus:ring-[#F4B400] shadow-sm bg-white outline-none text-sm font-bold"
                         />
                       </div>
                       <div className="space-y-2">
@@ -415,7 +415,7 @@ export default function UsersPage() {
                               setIsManualSlug(true);
                             }}
                             placeholder="gourmet-eats"
-                            className="flex-1 px-5 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#F4B400] shadow-sm bg-white outline-none text-sm font-bold tracking-tight"
+                            className="flex-1 px-5 py-4 rounded-xl border border-[#E8ECF2] focus:ring-2 focus:ring-[#F4B400] shadow-sm bg-white outline-none text-sm font-bold tracking-tight"
                           />
                         </div>
                       </div>

@@ -76,7 +76,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
             <CheckCircle2 size={40} className="text-[#F4B400]" />
           </div>
           <div className="space-y-3">
-            <h3 className="text-[24px] font-black text-[#1A2332] tracking-tighter">{t.contact_success_title}</h3>
+            <h3 className="text-[24px] font-extrabold text-[#1A2332] tracking-tighter">{t.contact_success_title}</h3>
             <p className="text-[15px] font-bold text-[#2A3444] max-w-sm mx-auto">{t.contact_success_desc}</p>
           </div>
           <button
@@ -218,7 +218,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
                  <div className="p-3 bg-[#F4B400]/10 rounded-2xl text-[#1A2332]">
                     <CheckCircle2 size={24} />
                  </div>
-                 <h3 className="text-xl font-black text-[#1A2332] tracking-tighter uppercase">
+                 <h3 className="text-xl font-extrabold text-[#1A2332] tracking-tighter uppercase">
                    {modal === 'kvkk' 
                      ? (locale === 'en' ? 'Privacy Policy & Terms' : 'KVKK Aydınlatma Metni') 
                      : (locale === 'en' ? 'Commercial Electronic Message Consent' : 'Ticari Elektronik İleti Onayı')}

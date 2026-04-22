@@ -149,7 +149,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
 
       <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto">
         {/* Mobile top bar */}
-        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-200/60 bg-white/95 px-4 py-3 backdrop-blur lg:hidden shadow-sm">
+        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#E8ECF2]/60 bg-white/95 px-4 py-3 backdrop-blur lg:hidden shadow-sm">
           <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center"><BuazeLogo size={36} variant="default" /></div>
             <span className="text-base font-black tracking-tight text-[#1A2332]">Buaze</span>

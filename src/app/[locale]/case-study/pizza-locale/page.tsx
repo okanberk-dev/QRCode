@@ -77,7 +77,7 @@ export default async function PizzaLocaleCaseStudy({
                 <BadgeCheck size={16} className="sm:size-[18px]" />
                 <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em]">{t.pl_case_hero_badge}</span>
             </div>
-            <h1 className="text-[32px] sm:text-[64px] font-black leading-[1.1] sm:leading-[1.05] tracking-tight">
+            <h1 className="text-[32px] sm:text-[64px] font-extrabold leading-[1.1] sm:leading-[1.05] tracking-tight">
                 {t.pl_case_hero_title}
             </h1>
             <p className="text-[17px] sm:text-[22px] text-[#6B7280] font-medium leading-relaxed max-w-[700px]">
@@ -120,7 +120,7 @@ export default async function PizzaLocaleCaseStudy({
                 </div>
             </div>
             <div className="md:col-span-8 space-y-4 sm:space-y-6">
-                <h2 className="text-[28px] sm:text-[42px] font-black tracking-tight leading-tight">{t.pl_case_challenge_title}</h2>
+                <h2 className="text-[28px] sm:text-[42px] font-extrabold tracking-tight leading-tight">{t.pl_case_challenge_title}</h2>
                 <div className="text-[16px] sm:text-[19px] text-[#4a4742] leading-relaxed font-medium space-y-4">
                     <p>{t.pl_case_challenge_desc}</p>
                     <p>
@@ -137,7 +137,7 @@ export default async function PizzaLocaleCaseStudy({
           {/* Solution */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 sm:gap-12 items-start text-center md:text-left">
             <div className="md:col-span-8 order-2 md:order-1 space-y-4 sm:space-y-6">
-                <h2 className="text-[28px] sm:text-[42px] font-black tracking-tight leading-tight">{t.pl_case_solution_title}</h2>
+                <h2 className="text-[28px] sm:text-[42px] font-extrabold tracking-tight leading-tight">{t.pl_case_solution_title}</h2>
                 <div className="text-[16px] sm:text-[19px] text-[#4a4742] leading-relaxed font-medium space-y-4">
                     <p>{t.pl_case_solution_desc}</p>
                     <p>
@@ -164,7 +164,7 @@ export default async function PizzaLocaleCaseStudy({
                 </div>
             </div>
             <div className="md:col-span-8 space-y-4 sm:space-y-6">
-                <h2 className="text-[28px] sm:text-[42px] font-black tracking-tight leading-tight">{t.pl_case_results_title}</h2>
+                <h2 className="text-[28px] sm:text-[42px] font-extrabold tracking-tight leading-tight">{t.pl_case_results_title}</h2>
                 <div className="text-[16px] sm:text-[19px] text-[#4a4742] leading-relaxed font-medium space-y-4">
                     <p>{t.pl_case_results_desc}</p>
                     <p>
@@ -181,7 +181,7 @@ export default async function PizzaLocaleCaseStudy({
           {/* Before & After Comparison */}
           <div className="space-y-12">
             <div className="text-center space-y-4">
-              <h2 className="text-[24px] sm:text-[36px] font-black tracking-tight uppercase">
+              <h2 className="text-[24px] sm:text-[36px] font-extrabold tracking-tight uppercase">
                 {locale === 'tr' ? 'Dönüşüm Özeti' : 'Transformation Summary'}
               </h2>
               <p className="text-[15px] sm:text-[16px] text-[#2A3444] font-bold">{locale === 'tr' ? 'Manuel süreçlerden profesyonel operasyona geçiş.' : 'Transition from manual processes to professional operations.'}</p>
@@ -238,7 +238,7 @@ export default async function PizzaLocaleCaseStudy({
           {/* Scaling Section */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-7 space-y-6">
-              <h2 className="text-[28px] sm:text-[42px] font-black tracking-tight leading-tight">
+              <h2 className="text-[28px] sm:text-[42px] font-extrabold tracking-tight leading-tight">
                 {locale === 'tr' ? '1\'den 12 Şubeye: Büyüme Rehberi' : '1 to 12 Branches: The Scaling Blueprint'}
               </h2>
               <div className="text-[16px] sm:text-[17px] text-[#4a4742] leading-relaxed font-medium space-y-4">
@@ -307,7 +307,7 @@ export default async function PizzaLocaleCaseStudy({
             <div className="relative">
                 <div className="absolute -top-10 -left-10 w-40 h-40 bg-[#F4B400]/10 rounded-full blur-3xl" />
                 <div className="relative space-y-6 sm:space-y-8">
-                    <h2 className="text-[30px] sm:text-[54px] font-black tracking-tight leading-[1.1] text-[#1A2332]">
+                    <h2 className="text-[30px] sm:text-[54px] font-extrabold tracking-tight leading-[1.1] text-[#1A2332]">
                         {locale === 'tr' ? 'Bölge Sorumlusunun Gözünden Operasyon' : 'Operations Through the Regional Manager\'s Eyes'}
                     </h2>
                     <div className="space-y-6 text-[16px] sm:text-[18px] text-[#4a4742] leading-relaxed font-medium">
@@ -319,12 +319,12 @@ export default async function PizzaLocaleCaseStudy({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2 sm:pt-4">
                             <div className="p-6 bg-[#F8F6F1] rounded-xl sm:rounded-2xl border-2 border-[#1A2332]/5">
                                 <Users size={22} className="sm:size-24 text-[#F4B400] mb-3 sm:mb-4" />
-                                <h4 className="font-black text-[15px] sm:text-[16px] mb-2">{locale === 'tr' ? 'Personel Takibi' : 'Staff Tracking'}</h4>
+                                <h4 className="font-extrabold text-[15px] sm:text-[16px] mb-2">{locale === 'tr' ? 'Personel Takibi' : 'Staff Tracking'}</h4>
                                 <p className="text-[13px] sm:text-[14px] text-[#2A3444]">{locale === 'tr' ? 'Hangi garsonun daha fazla pozitif geri bildirim aldığını anlık görün.' : 'See instantly which waiter receives more positive feedback.'}</p>
                             </div>
                             <div className="p-6 bg-[#F8F6F1] rounded-xl sm:rounded-2xl border-2 border-[#1A2332]/5">
                                 <MapPin size={22} className="sm:size-24 text-[#10b981] mb-3 sm:mb-4" />
-                                <h4 className="font-black text-[15px] sm:text-[16px] mb-2">{locale === 'tr' ? 'Kritik Müdahale' : 'Critical Intervention'}</h4>
+                                <h4 className="font-extrabold text-[15px] sm:text-[16px] mb-2">{locale === 'tr' ? 'Kritik Müdahale' : 'Critical Intervention'}</h4>
                                 <p className="text-[13px] sm:text-[14px] text-[#2A3444]">{locale === 'tr' ? 'Olumsuz geri bildirimler doğrudan cep telefonuna saniyeler içinde düşer.' : 'Negative feedback hits the mobile phone directly within seconds.'}</p>
                             </div>
                         </div>
@@ -362,7 +362,7 @@ export default async function PizzaLocaleCaseStudy({
       <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1]">
         <div className="max-w-[1000px] mx-auto space-y-16 sm:space-y-20">
             <div className="text-center space-y-4">
-                <h2 className="text-[30px] sm:text-[54px] font-black tracking-tight leading-none text-[#1A2332]">
+                <h2 className="text-[30px] sm:text-[54px] font-extrabold tracking-tight leading-none text-[#1A2332]">
                     {locale === 'tr' ? '1\'den 12\'ye Büyüme Yol Haritası' : 'Roadmap from 1 to 12 Branches'}
                 </h2>
                 <p className="text-[16px] sm:text-[18px] text-[#2A3444] font-bold">{locale === 'tr' ? 'Pizza Locale, Buaze ile her adımını ölçeklendirdi.' : 'Pizza Locale scaled every step with Buaze.'}</p>
@@ -388,7 +388,7 @@ export default async function PizzaLocaleCaseStudy({
                 ].map((item, i) => (
                     <div key={i} className="p-8 bg-white rounded-[32px] border sm:border border-[#1A2332] shadow-md sm:shadow-md relative group">
                         <div className="text-[40px] sm:text-[48px] font-black text-[#F4B400]/20 absolute top-4 right-8 group-hover:text-[#F4B400]/20 transition-colors">{item.step}</div>
-                        <h4 className="text-[18px] sm:text-[20px] font-black mb-3 relative z-10">{item.title}</h4>
+                        <h4 className="text-[18px] sm:text-[20px] font-extrabold mb-3 relative z-10">{item.title}</h4>
                         <p className="text-[14px] sm:text-[15px] text-[#2A3444] font-medium leading-relaxed relative z-10">{item.desc}</p>
                     </div>
                 ))}
@@ -400,7 +400,7 @@ export default async function PizzaLocaleCaseStudy({
       <section className="py-20 sm:py-32 px-5 sm:px-8 bg-white">
         <div className="max-w-[1100px] mx-auto space-y-12 sm:space-y-16 text-center">
             <div className="space-y-4">
-                <h2 className="text-[28px] sm:text-[54px] font-black tracking-tight leading-tight">
+                <h2 className="text-[28px] sm:text-[54px] font-extrabold tracking-tight leading-tight">
                     {locale === 'tr' ? 'Veriyle Yönetin, Güvenle Büyüyün' : 'Manage with Data, Grow with Confidence'}
                 </h2>
                 <p className="text-[15px] sm:text-[18px] text-[#2A3444] font-bold max-w-[600px] mx-auto">
@@ -440,7 +440,7 @@ export default async function PizzaLocaleCaseStudy({
                       <div className="flex-1 p-4 sm:p-8 space-y-6 sm:space-y-8 overflow-hidden text-left">
                         {/* Welcome */}
                         <div className="space-y-1">
-                          <h4 className="text-sm sm:text-xl font-black text-[#1A2332]">{locale === 'tr' ? 'Hoş Geldin, Mert! 👋' : 'Welcome, James! 👋'}</h4>
+                          <h4 className="text-sm sm:text-xl font-extrabold text-[#1A2332]">{locale === 'tr' ? 'Hoş Geldin, Mert! 👋' : 'Welcome, James! 👋'}</h4>
                           <div className="h-1.5 w-24 bg-[#F4B400] rounded-full" />
                         </div>
 
@@ -513,7 +513,7 @@ export default async function PizzaLocaleCaseStudy({
       {/* ─── Final CTA ─── */}
       <section className="py-20 sm:py-32 px-5 sm:px-8 border-t border-[#E8ECF2]">
         <div className="max-w-[1200px] mx-auto text-center space-y-10 sm:space-y-12">
-           <h2 className="text-[32px] sm:text-[56px] font-black tracking-tight leading-[1.1]">
+           <h2 className="text-[32px] sm:text-[56px] font-extrabold tracking-tight leading-[1.1]">
               {locale === 'tr' ? 'Kendi Başarı Hikayenizi Yazmaya Başlayın' : 'Start Writing Your Own Success Story'}
            </h2>
            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">

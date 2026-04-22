@@ -105,14 +105,14 @@ export default function MembersPage() {
   return (
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#1A2332] tracking-tight uppercase">Üye Yönetimi</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase">Üye Yönetimi</h1>
           <p className="text-[#2A3444] text-[13px] sm:text-[15px] font-bold">Kayıtlı işletme sahiplerinin planlarını ve erişimlerini yönetin.</p>
         </div>
         <button
           onClick={fetchMembers}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#F8F6F1] border border-gray-200 text-sm font-black text-[#1A2332] hover:bg-gray-100 transition-all active:scale-95"
+          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#F8F6F1] border border-[#E8ECF2] text-sm font-black text-[#1A2332] hover:bg-gray-100 transition-all active:scale-95"
         >
           <RefreshCw size={16} strokeWidth={2} />
           YENİLE
@@ -126,7 +126,7 @@ export default function MembersPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse sm:min-w-[600px]">
             <thead>
@@ -150,13 +150,13 @@ export default function MembersPage() {
                 const dl = daysLeft(m.trialEndsAt);
                 const trialExpired = m.plan === 'trial' && dl !== null && dl <= 0;
                 const trialSoon = m.plan === 'trial' && dl !== null && dl > 0 && dl <= 3;
-                const planMeta = PLAN_LABELS[m.plan] || { label: m.plan.toUpperCase(), color: 'bg-gray-100 text-gray-600 border-gray-200' };
+                const planMeta = PLAN_LABELS[m.plan] || { label: m.plan.toUpperCase(), color: 'bg-gray-100 text-gray-600 border-[#E8ECF2]' };
 
                 return (
                   <tr key={m.id} className="hover:bg-gray-50/50 transition-all">
                     <td className="px-3 py-4 sm:px-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#F8F6F1] border border-gray-200 flex items-center justify-center text-sm font-black text-[#1A2332] flex-shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-[#F8F6F1] border border-[#E8ECF2] flex items-center justify-center text-sm font-black text-[#1A2332] flex-shrink-0">
                           {(m.name || m.email).charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -235,10 +235,10 @@ export default function MembersPage() {
       {/* Edit Modal */}
       {editingMember && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-md max-h-[92dvh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="bg-white rounded-[24px] shadow-2xl border border-[#E8ECF2] w-full max-w-md max-h-[92dvh] overflow-y-auto">
+            <div className="p-6 border-b border-[#E8ECF2] flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-black text-[#1A2332] uppercase tracking-tight">Üye Düzenle</h2>
+                <h2 className="text-xl font-extrabold text-[#1A2332] uppercase tracking-tight">Üye Düzenle</h2>
                 <p className="text-xs text-[#2A3444] font-bold mt-1">{editingMember.email}</p>
               </div>
               <button
@@ -268,7 +268,7 @@ export default function MembersPage() {
                       className={`py-3 rounded-xl border-2 text-[11px] font-black uppercase tracking-widest transition-all ${
                         editPlan === p
                           ? 'bg-[#1A2332] text-white border-[#1A2332]'
-                          : 'bg-white text-[#2A3444] border-gray-200 hover:border-gray-400'
+                          : 'bg-white text-[#2A3444] border-[#E8ECF2] hover:border-gray-400'
                       }`}
                     >
                       {PLAN_LABELS[p]?.label || p.toUpperCase()}
@@ -285,13 +285,13 @@ export default function MembersPage() {
                     type="date"
                     value={editTrialEndsAt}
                     onChange={(e) => setEditTrialEndsAt(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold"
+                    className="w-full px-4 py-3 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold"
                   />
                 </div>
               )}
 
               {/* Active toggle */}
-              <div className="flex items-center justify-between p-4 bg-[#F8F6F1] rounded-2xl border border-gray-200">
+              <div className="flex items-center justify-between p-4 bg-[#F8F6F1] rounded-2xl border border-[#E8ECF2]">
                 <div>
                   <p className="text-sm font-black text-[#1A2332]">Hesap Durumu</p>
                   <p className="text-xs font-bold text-[#2A3444] mt-0.5">{editIsActive ? 'Kullanıcı sisteme girebilir.' : 'Kullanıcı erişimi engellendi.'}</p>
@@ -312,7 +312,7 @@ export default function MembersPage() {
                 <button
                   type="button"
                   onClick={() => setEditingMember(null)}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-black text-[#2A3444] hover:text-[#1A2332] transition-colors"
+                  className="flex-1 py-3 rounded-xl border border-[#E8ECF2] text-sm font-black text-[#2A3444] hover:text-[#1A2332] transition-colors"
                 >
                   İPTAL
                 </button>

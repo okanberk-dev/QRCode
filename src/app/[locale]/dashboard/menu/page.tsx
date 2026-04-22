@@ -81,7 +81,7 @@ export default function DashboardMenuPage() {
           <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 text-[#F4B400] px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.25em]">
             <UtensilsCrossed size={16} /> ✦ DİJİTAL MENÜ
           </div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">{copy.title}</h1>
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">{copy.title}</h1>
           <p className="text-[#6B7280] text-sm md:text-lg font-bold max-w-2xl">{copy.subtitle}</p>
         </div>
         {/* Background Accent */}
@@ -89,7 +89,7 @@ export default function DashboardMenuPage() {
       </div>
 
       {restaurants.length === 0 ? (
-        <div className="bg-white rounded-[40px] border border-gray-100 p-20 text-center shadow-sm">
+        <div className="bg-white rounded-[40px] border border-[#E8ECF2] p-20 text-center shadow-sm">
            <div className="w-20 h-20 bg-gray-50 rounded-[30px] flex items-center justify-center mx-auto mb-6">
              <Store size={36} className="text-gray-200" />
            </div>
@@ -113,7 +113,7 @@ export default function DashboardMenuPage() {
                   className={`flex items-center justify-between p-6 rounded-3xl border-2 transition-all text-left ${
                     selectedId === r.id 
                       ? 'bg-white border-[#F4B400] shadow-xl shadow-[#F4B400]/5' 
-                      : 'bg-white border-gray-50 hover:border-gray-200'
+                      : 'bg-white border-gray-50 hover:border-[#E8ECF2]'
                   }`}
                 >
                   <div className="flex items-center gap-4">

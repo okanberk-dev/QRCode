@@ -63,7 +63,7 @@ export default async function AboutPage({
                <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">{locale === 'tr' ? 'BİZ KİMİZ?' : 'WHO ARE WE?'}</span>
             </div>
-            <h1 className="text-[34px] sm:text-[72px] font-black leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332]">
+            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332]">
               {t.about_hero_title_1}{' '}
               <span className="text-[#F4B400] block sm:inline">{t.about_hero_title_2}</span>
             </h1>
@@ -78,7 +78,7 @@ export default async function AboutPage({
       <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1] border-t border-[#E8ECF2]">
         <div className="max-w-[1200px] mx-auto text-center mb-16 sm:mb-20">
            <p className="text-[12px] font-black uppercase tracking-widest text-[#F4B400] mb-4">{locale === 'tr' ? 'GELECEĞİ ŞEKİLLENDİRİYORUZ' : 'SHAPING THE FUTURE'}</p>
-           <h2 className="text-[34px] sm:text-[56px] font-black text-[#1A2332] tracking-tight leading-[1.1] sm:leading-none">
+           <h2 className="text-[34px] sm:text-[56px] font-extrabold text-[#1A2332] tracking-tight leading-[1.1] sm:leading-none">
               {locale === 'tr' ? 'Amacımız ve Vizyonumuz' : 'Our Purpose & Vision'}
            </h2>
         </div>
@@ -88,7 +88,7 @@ export default async function AboutPage({
             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400] border sm:border border-[#1A2332] text-[#1A2332] rounded-2xl flex items-center justify-center shadow-md">
               <Target size={28} className="sm:size-8" strokeWidth={2} />
             </div>
-            <h2 className="text-[26px] sm:text-[34px] font-black text-[#1A2332] tracking-tight leading-tight">{t.about_mission_title}</h2>
+            <h2 className="text-[26px] sm:text-[34px] font-extrabold text-[#1A2332] tracking-tight leading-tight">{t.about_mission_title}</h2>
             <p className="text-[15px] sm:text-[17px] text-[#2A3444] leading-relaxed font-bold">{t.about_mission_desc}</p>
           </div>
 
@@ -97,7 +97,7 @@ export default async function AboutPage({
             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400] border sm:border border-[#1A2332] text-white rounded-2xl flex items-center justify-center shadow-md">
                <Eye size={28} className="sm:size-8" strokeWidth={2} />
             </div>
-            <h2 className="text-[26px] sm:text-[34px] font-black text-white tracking-tight leading-tight">{t.about_vision_title}</h2>
+            <h2 className="text-[26px] sm:text-[34px] font-extrabold text-white tracking-tight leading-tight">{t.about_vision_title}</h2>
             <p className="text-[15px] sm:text-[17px] text-[#6B7280] leading-relaxed font-bold">{t.about_vision_desc}</p>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default async function AboutPage({
         <div className="max-w-[1200px] mx-auto relative z-10">
           <div className="mb-12 sm:mb-24 space-y-4 text-center sm:text-left">
             <p className="text-[11px] sm:text-[13px] font-black text-[#F4B400] uppercase tracking-widest">{locale === 'tr' ? 'TEMEL DEĞERLERİMİZ' : 'OUR CORE VALUES'}</p>
-            <h2 className="text-[34px] sm:text-[56px] font-black text-white tracking-tight leading-[1.1] sm:leading-none">{t.about_values_title}</h2>
+            <h2 className="text-[34px] sm:text-[56px] font-extrabold text-white tracking-tight leading-[1.1] sm:leading-none">{t.about_values_title}</h2>
             <p className="text-[15px] sm:text-[16px] font-bold text-[#6B7280] max-w-[500px] mx-auto sm:mx-0">{t.about_values_subtitle}</p>
           </div>
 
@@ -122,7 +122,7 @@ export default async function AboutPage({
                   {value.icon}
                 </div>
                 <div className="space-y-2 sm:space-y-3">
-                  <h4 className="text-[18px] sm:text-[20px] font-black text-white uppercase tracking-tighter leading-tight">{value.title}</h4>
+                  <h4 className="text-[18px] sm:text-[20px] font-extrabold text-white uppercase tracking-tighter leading-tight">{value.title}</h4>
                   <p className="text-[13px] sm:text-[14px] text-[#6B7280] leading-relaxed font-bold">{value.desc}</p>
                 </div>
               </div>
@@ -137,7 +137,7 @@ export default async function AboutPage({
           <div className="bg-white border sm:border border-[#1A2332] rounded-[32px] sm:rounded-[50px] p-8 sm:p-20 shadow-md sm:shadow-md flex flex-col md:flex-row items-center justify-between gap-8 sm:gap-12 text-center md:text-left relative overflow-hidden">
             <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#F4B400]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
             <div className="space-y-4 sm:space-y-6 relative">
-              <h3 className="text-[28px] sm:text-[48px] font-black text-[#1A2332] tracking-tight leading-[1.1]">
+              <h3 className="text-[28px] sm:text-[48px] font-extrabold text-[#1A2332] tracking-tight leading-[1.1]">
                 {locale === 'tr' ? 'Hemen başlayın, ilk 14 gün bizden.' : 'Start today, first 14 days on us.'}
               </h3>
               <p className="text-[16px] sm:text-[19px] text-[#2A3444] font-bold">

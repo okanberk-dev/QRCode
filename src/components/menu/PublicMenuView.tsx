@@ -132,7 +132,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
             </div>
             <div className="min-w-0 flex-1 text-white">
               <p className="text-[11px] font-black uppercase tracking-[0.25em] opacity-80">{restaurant.category}</p>
-              <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{restaurant.name}</h1>
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">{restaurant.name}</h1>
               <p className="mt-1 text-[11px] font-bold uppercase tracking-widest opacity-75">{copy.menuOf}</p>
             </div>
           </div>
@@ -167,12 +167,12 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
             <Sparkles size={28} className="text-gray-400" strokeWidth={2} />
           </div>
-          <h2 className="text-lg font-black text-[#1A2332]">{copy.emptyTitle}</h2>
+          <h2 className="text-lg font-extrabold text-[#1A2332]">{copy.emptyTitle}</h2>
           <p className="mt-1 text-sm font-bold text-[#2A3444]">{copy.emptyBody}</p>
         </div>
       ) : (
         <>
-          <nav className="sticky top-0 z-30 border-b border-gray-200/80 bg-[#F8F6F1]/95 backdrop-blur">
+          <nav className="sticky top-0 z-30 border-b border-[#E8ECF2]/80 bg-[#F8F6F1]/95 backdrop-blur">
             <div className="mx-auto max-w-2xl overflow-x-auto px-3 py-3 no-scrollbar">
               <div className="flex gap-2">
                 {visibleCategories.map((c) => {
@@ -201,7 +201,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-5">
-                    <h2 className="text-xl font-black tracking-tight text-[#1A2332] sm:text-2xl">{category.name}</h2>
+                    <h2 className="text-xl font-extrabold tracking-tight text-[#1A2332] sm:text-2xl">{category.name}</h2>
                     {category.description && (
                       <p className="mt-1 text-sm font-bold text-[#2A3444]">{category.description}</p>
                     )}
@@ -211,7 +211,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                     {items.map((item) => (
                       <article
                         key={item.id}
-                        className={`flex gap-4 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm transition-all sm:p-4 ${
+                        className={`flex gap-4 rounded-2xl border border-[#E8ECF2] bg-white p-3 shadow-sm transition-all sm:p-4 ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
@@ -236,7 +236,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-[15px] font-black leading-tight text-[#1A2332]">{item.name}</h3>
+                            <h3 className="text-[15px] font-extrabold leading-tight text-[#1A2332]">{item.name}</h3>
                             <span
                               className="shrink-0 text-sm font-black sm:text-base"
                               style={{ color: restaurant.primaryColor }}

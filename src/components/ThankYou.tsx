@@ -39,7 +39,7 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
         <div className="mt-8 space-y-4">
           <div className="relative py-4">
              <div className="absolute inset-0 flex items-center" aria-hidden="true">
-               <div className="w-full border-t border-gray-100"></div>
+               <div className="w-full border-t border-[#E8ECF2]"></div>
              </div>
              <div className="relative flex justify-center text-xs uppercase">
                <span className="bg-white px-3 text-gray-400 font-bold tracking-widest">{t('feedback_share_google')}</span>
@@ -50,7 +50,7 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
             href={googleReviewUrl!}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-center gap-3 bg-white border border-gray-200 text-gray-800 font-bold px-8 py-4 rounded-2xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all active:scale-[0.98] w-full"
+            className="group flex items-center justify-center gap-3 bg-white border border-[#E8ECF2] text-gray-800 font-bold px-8 py-4 rounded-2xl shadow-sm hover:shadow-md hover:border-gray-300 transition-all active:scale-[0.98] w-full"
           >
             {/* Google G Logo */}
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

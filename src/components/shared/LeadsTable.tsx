@@ -80,9 +80,9 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
 
   return (
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-8 rounded-[32px] border-2 border-gray-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-8 rounded-[32px] border-2 border-[#E8ECF2] shadow-sm">
         <div className="space-y-2">
-          <h1 className="text-3xl font-black text-[#1A2332] tracking-tight uppercase">{title}</h1>
+          <h1 className="text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase">{title}</h1>
           <p className="text-[#2A3444] text-[15px] font-bold">{subtitle}</p>
         </div>
         <button 
@@ -102,11 +102,11 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
           placeholder="İsim, e-posta, telefon veya işletme ara..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border-2 border-gray-100 rounded-[24px] pl-16 pr-8 py-5 text-sm font-bold shadow-sm outline-none focus:border-[#F4B400] transition-all"
+          className="w-full bg-white border-2 border-[#E8ECF2] rounded-[24px] pl-16 pr-8 py-5 text-sm font-bold shadow-sm outline-none focus:border-[#F4B400] transition-all"
         />
       </div>
 
-      <div className="bg-white rounded-[32px] border-2 border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[32px] border-2 border-[#E8ECF2] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>

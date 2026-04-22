@@ -137,10 +137,10 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+      <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h2 className="text-xl font-black text-[#1A2332] sm:text-2xl">{copy.title}</h2>
+            <h2 className="text-xl font-extrabold text-[#1A2332] sm:text-2xl">{copy.title}</h2>
             <p className="mt-2 text-sm font-bold text-[#2A3444]">{copy.subtitle}</p>
           </div>
 
@@ -168,7 +168,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
               <select
                 value={selectedRestaurant}
                 onChange={(event) => setSelectedRestaurant(event.target.value)}
-                className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                className="rounded-2xl border border-[#E8ECF2] bg-white px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
               >
                 <option value="all">{copy.all}</option>
                 {restaurants.map((restaurant) => (
@@ -183,7 +183,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
       </div>
 
       {loading && !stats ? (
-        <div className="flex min-h-[280px] items-center justify-center rounded-[28px] border border-gray-100 bg-white shadow-sm">
+        <div className="flex min-h-[280px] items-center justify-center rounded-[28px] border border-[#E8ECF2] bg-white shadow-sm">
           <Loader2 className="h-10 w-10 animate-spin text-[#1A2332]" />
         </div>
       ) : stats ? (
@@ -191,13 +191,13 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
           <StatsCards stats={stats} />
 
           {stats.aspects && (
-            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-4 flex items-center gap-3 sm:mb-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
                   <SlidersHorizontal size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-black text-[#1A2332]">{copy.aspects}</h3>
+                  <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.aspects}</h3>
                   <p className="mt-0.5 text-xs font-bold text-[#2A3444]">{copy.aspectsSub}</p>
                 </div>
               </div>
@@ -206,13 +206,13 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
           )}
 
           {stats.googleConversion && (
-            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-4 flex items-center gap-3 sm:mb-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                   <TrendingUp size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-black text-[#1A2332]">{copy.google}</h3>
+                  <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.google}</h3>
                   <p className="mt-0.5 text-xs font-bold text-[#2A3444]">{copy.googleSub}</p>
                 </div>
               </div>
@@ -225,13 +225,13 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
           )}
 
           {stats.platformDistribution && stats.platformDistribution.length > 0 && (
-            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-4 flex items-center gap-3 sm:mb-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
                   <Layers size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-black text-[#1A2332]">{copy.platforms}</h3>
+                  <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.platforms}</h3>
                   <p className="mt-0.5 text-xs font-bold text-[#2A3444]">{copy.platformsSub}</p>
                 </div>
               </div>
@@ -240,39 +240,39 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
           )}
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                   <TrendingUp size={20} strokeWidth={2} />
                 </div>
-                <h3 className="text-lg font-black text-[#1A2332]">{copy.trends}</h3>
+                <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.trends}</h3>
               </div>
               <TrendsChart data={stats.trends} />
             </div>
 
-            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF8D6] text-[#F4B400]">
                   <Calendar size={20} strokeWidth={2} />
                 </div>
-                <h3 className="text-lg font-black text-[#1A2332]">{copy.rating}</h3>
+                <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.rating}</h3>
               </div>
               <RatingChart distribution={stats.distribution} totalCount={stats.totalCount} />
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+          <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                 <BarChart3 size={20} strokeWidth={2} />
               </div>
-              <h3 className="text-lg font-black text-[#1A2332]">{copy.days}</h3>
+              <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.days}</h3>
             </div>
             <DayDistributionChart data={stats.dayDistribution} />
           </div>
         </>
       ) : (
-        <div className="rounded-[28px] border border-dashed border-gray-200 bg-white px-5 py-16 text-center text-sm font-bold text-[#2A3444] shadow-sm">
+        <div className="rounded-[28px] border border-dashed border-[#E8ECF2] bg-white px-5 py-16 text-center text-sm font-bold text-[#2A3444] shadow-sm">
           {locale === 'tr' ? 'Henüz analiz üretilecek veri bulunamadı.' : 'No analytics data yet.'}
         </div>
       )}

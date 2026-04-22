@@ -211,9 +211,9 @@ export default function DashboardRestaurantsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
-      <div className="flex flex-col gap-4 rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-8">
+      <div className="flex flex-col gap-4 rounded-[28px] border border-[#E8ECF2] bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-8">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#1A2332] sm:text-3xl">{copy.title}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-[#1A2332] sm:text-3xl">{copy.title}</h1>
           <p className="mt-2 max-w-2xl text-sm font-bold text-[#2A3444] sm:text-base">{copy.subtitle}</p>
         </div>
 
@@ -233,16 +233,16 @@ export default function DashboardRestaurantsPage() {
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder={copy.search}
-          className="w-full rounded-[24px] border border-gray-100 bg-white py-4 pl-14 pr-5 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+          className="w-full rounded-[24px] border border-[#E8ECF2] bg-white py-4 pl-14 pr-5 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
         />
       </div>
 
       {restaurants.length === 0 ? (
-        <div className="rounded-[28px] border border-gray-100 bg-white px-6 py-16 text-center shadow-sm sm:px-10">
+        <div className="rounded-[28px] border border-[#E8ECF2] bg-white px-6 py-16 text-center shadow-sm sm:px-10">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-[#F8F6F1] text-[#1A2332]">
             <Store size={36} strokeWidth={2} />
           </div>
-          <h2 className="text-xl font-black text-[#1A2332]">{copy.emptyTitle}</h2>
+          <h2 className="text-xl font-extrabold text-[#1A2332]">{copy.emptyTitle}</h2>
           <p className="mx-auto mt-2 max-w-lg text-sm font-bold text-[#2A3444]">{copy.emptyText}</p>
         </div>
       ) : (
@@ -255,7 +255,7 @@ export default function DashboardRestaurantsPage() {
             .map((restaurant) => (
               <div
                 key={restaurant.id}
-                className={`overflow-hidden rounded-[28px] border border-gray-100 bg-white shadow-sm transition-all ${!restaurant.isActive ? 'opacity-70 grayscale-[0.4]' : 'hover:-translate-y-1 hover:shadow-md'}`}
+                className={`overflow-hidden rounded-[28px] border border-[#E8ECF2] bg-white shadow-sm transition-all ${!restaurant.isActive ? 'opacity-70 grayscale-[0.4]' : 'hover:-translate-y-1 hover:shadow-md'}`}
               >
                 <div className="h-2 w-full" style={{ backgroundColor: restaurant.primaryColor }} />
 
@@ -269,7 +269,7 @@ export default function DashboardRestaurantsPage() {
                         {restaurant.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="truncate text-lg font-black text-[#1A2332]">{restaurant.name}</h3>
+                        <h3 className="truncate text-lg font-extrabold text-[#1A2332]">{restaurant.name}</h3>
                         <div className="flex items-center gap-2">
                            <p className="truncate text-xs font-bold text-[#6B7280]">/{restaurant.slug}</p>
                            <CopyUrlButton 
@@ -308,14 +308,14 @@ export default function DashboardRestaurantsPage() {
                     </Link>
                     <Link
                       href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
-                      className="flex-1 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-center text-sm font-black text-[#1A2332]"
+                      className="flex-1 rounded-2xl border border-[#E8ECF2] bg-white px-4 py-3 text-center text-sm font-black text-[#1A2332]"
                     >
                       {copy.qr}
                     </Link>
                     <Link
                       href={`/r/${restaurant.slug}`}
                       target="_blank"
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#1A2332]"
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#E8ECF2] bg-white text-[#1A2332]"
                     >
                       <ExternalLink size={18} strokeWidth={2} />
                     </Link>
@@ -329,8 +329,8 @@ export default function DashboardRestaurantsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-sm">
           <div className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[20px] sm:rounded-[28px] bg-white shadow-2xl">
-            <div className="relative border-b border-gray-100 bg-[#F8F6F1] p-5 sm:p-6 md:p-8">
-              <h2 className="text-xl sm:text-2xl font-black text-[#1A2332] pr-10">{copy.add}</h2>
+            <div className="relative border-b border-[#E8ECF2] bg-[#F8F6F1] p-5 sm:p-6 md:p-8">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[#1A2332] pr-10">{copy.add}</h2>
               <button
                 type="button"
                 onClick={() => {
@@ -358,13 +358,13 @@ export default function DashboardRestaurantsPage() {
                     required
                     value={formData.name}
                     onChange={(event) => handleNameChange(event.target.value)}
-                    className="w-full rounded-2xl border border-gray-200 bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                    className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
                   />
                 </label>
 
                 <label className="space-y-2 sm:col-span-2">
                   <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">URL Slug</span>
-                  <div className="flex items-center gap-2 sm:gap-3 rounded-2xl border border-gray-200 bg-[#F8F6F1] px-3 sm:px-4">
+                  <div className="flex items-center gap-2 sm:gap-3 rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-3 sm:px-4">
                     <span className="shrink-0 text-[11px] sm:text-xs font-black text-[#2A3444]">buaze.com/r/</span>
                     <input
                       type="text"
@@ -399,7 +399,7 @@ export default function DashboardRestaurantsPage() {
                     <button
                       type="button"
                       onClick={() => setShowGoogleInfo((v) => !v)}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-[#1A2332] transition-all hover:bg-[#F4B400]/20 active:scale-95"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#E8ECF2] bg-white text-[#1A2332] transition-all hover:bg-[#F4B400]/20 active:scale-95"
                       aria-label="Info"
                     >
                       <Info size={15} strokeWidth={2} />
@@ -407,7 +407,7 @@ export default function DashboardRestaurantsPage() {
                   </div>
 
                   {showGoogleInfo && (
-                    <div className="mb-3 rounded-xl border border-gray-200 bg-white p-3.5 text-xs font-bold text-[#2A3444] leading-relaxed">
+                    <div className="mb-3 rounded-xl border border-[#E8ECF2] bg-white p-3.5 text-xs font-bold text-[#2A3444] leading-relaxed">
                       <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#1A2332]">
                         {locale === 'tr' ? 'Nasıl alınır?' : 'How to get it?'}
                       </p>
@@ -433,7 +433,7 @@ export default function DashboardRestaurantsPage() {
                     value={formData.googlePlaceId}
                     onChange={(event) => setFormData((prev) => ({ ...prev, googlePlaceId: event.target.value }))}
                     placeholder={locale === 'tr' ? 'https://maps.google.com/... veya Place ID' : 'https://maps.google.com/... or Place ID'}
-                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm font-bold text-[#1A2332] outline-none transition-all placeholder:text-[#6B7280] focus:ring-2 focus:ring-[#F4B400]"
+                    className="w-full rounded-xl border border-[#E8ECF2] bg-white px-4 py-3.5 text-sm font-bold text-[#1A2332] outline-none transition-all placeholder:text-[#6B7280] focus:ring-2 focus:ring-[#F4B400]"
                   />
                 </div>
 
@@ -444,7 +444,7 @@ export default function DashboardRestaurantsPage() {
                     value={formData.getirYemekUrl}
                     onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
                     placeholder="https://getir.com/yemek/..."
-                    className="w-full rounded-2xl border border-gray-200 bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-purple-600"
+                    className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-purple-600"
                   />
                 </label>
 
@@ -455,7 +455,7 @@ export default function DashboardRestaurantsPage() {
                     value={formData.yemekSepetiUrl}
                     onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
                     placeholder="https://www.yemeksepeti.com/..."
-                    className="w-full rounded-2xl border border-gray-200 bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-pink-600"
+                    className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-pink-600"
                   />
                 </label>
 
@@ -466,7 +466,7 @@ export default function DashboardRestaurantsPage() {
                     value={formData.trendyolYemekUrl}
                     onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
                     placeholder="https://www.trendyol.com/..."
-                    className="w-full rounded-2xl border border-gray-200 bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-orange-500"
+                    className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-orange-500"
                   />
                 </label>
 
@@ -476,7 +476,7 @@ export default function DashboardRestaurantsPage() {
                     type="text"
                     value={formData.category}
                     onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
-                    className="w-full rounded-2xl border border-gray-200 bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                    className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
                   />
                 </label>
 
@@ -486,7 +486,7 @@ export default function DashboardRestaurantsPage() {
                     type="email"
                     value={formData.notificationEmail}
                     onChange={(event) => setFormData((prev) => ({ ...prev, notificationEmail: event.target.value }))}
-                    className="w-full rounded-2xl border border-gray-200 bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                    className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
                   />
                 </label>
 
@@ -496,7 +496,7 @@ export default function DashboardRestaurantsPage() {
                     type="text"
                     value={formData.address}
                     onChange={(event) => setFormData((prev) => ({ ...prev, address: event.target.value }))}
-                    className="w-full rounded-2xl border border-gray-200 bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                    className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
                   />
                 </label>
 
@@ -506,13 +506,13 @@ export default function DashboardRestaurantsPage() {
                     type="text"
                     value={formData.phone}
                     onChange={(event) => setFormData((prev) => ({ ...prev, phone: event.target.value }))}
-                    className="w-full rounded-2xl border border-gray-200 bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                    className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
                   />
                 </label>
 
                 <label className="space-y-2">
                   <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">Tema Rengi</span>
-                  <div className="flex h-[54px] items-center gap-3 rounded-2xl border border-gray-200 bg-[#F8F6F1] px-4">
+                  <div className="flex h-[54px] items-center gap-3 rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-4">
                     <input
                       type="color"
                       value={formData.primaryColor}
@@ -524,11 +524,11 @@ export default function DashboardRestaurantsPage() {
                 </label>
               </div>
 
-              <div className="flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">
+              <div className="flex flex-col gap-3 border-t border-[#E8ECF2] pt-5 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#1A2332]"
+                  className="rounded-2xl border border-[#E8ECF2] bg-white px-5 py-3 text-sm font-black text-[#1A2332]"
                 >
                   {locale === 'tr' ? 'İptal' : 'Cancel'}
                 </button>

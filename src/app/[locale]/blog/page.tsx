@@ -65,7 +65,7 @@ export default async function BlogIndexPage({
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl border border-[#1A2332] shadow-md mb-4">
             <BookOpen size={28} className="text-[#F4B400]" />
           </div>
-          <h1 className="text-[48px] sm:text-[72px] font-black tracking-[-0.04em] text-[#1A2332] leading-[0.95]">
+          <h1 className="text-[48px] sm:text-[72px] font-extrabold tracking-[-0.04em] text-[#1A2332] leading-[0.95]">
             {t.blog_title}<span className="text-[#F4B400]">.</span>
           </h1>
           <p className="text-[18px] sm:text-[22px] text-[#2A3444] font-medium max-w-[650px] mx-auto leading-relaxed">

@@ -62,14 +62,14 @@ export default function MenuCategoryForm({ restaurantId, category, onClose, onSu
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-[#1A2332]/40 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="w-full max-w-lg bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="w-full max-w-lg bg-white rounded-[32px] shadow-2xl border border-[#E8ECF2] overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="flex items-center justify-between p-6 border-b border-gray-50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#F4B400]/10 rounded-xl flex items-center justify-center">
               <ListTree size={20} className="text-[#F4B400]" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-[#1A2332]">
+              <h2 className="text-xl font-extrabold text-[#1A2332]">
                 {category ? 'Kategoriyi Düzenle' : 'Yeni Kategori'}
               </h2>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
@@ -102,7 +102,7 @@ export default function MenuCategoryForm({ restaurantId, category, onClose, onSu
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Örn: Başlangıçlar"
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
+                className="w-full bg-gray-50 border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
               />
             </div>
 
@@ -113,7 +113,7 @@ export default function MenuCategoryForm({ restaurantId, category, onClose, onSu
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Örn: En lezzetli başlangıç seçeneklerimiz"
                 rows={3}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm resize-none"
+                className="w-full bg-gray-50 border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm resize-none"
               />
             </div>
 
@@ -124,14 +124,14 @@ export default function MenuCategoryForm({ restaurantId, category, onClose, onSu
                   type="number"
                   value={form.sortOrder}
                   onChange={(e) => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
+                  className="w-full bg-gray-50 border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                 />
               </div>
               <div className="flex flex-col justify-end pb-1.5">
                 <button
                   type="button"
                   onClick={() => setForm({ ...form, isVisible: !form.isVisible })}
-                  className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50 hover:bg-gray-100 transition-all group"
+                  className="flex items-center justify-between p-3 rounded-xl border border-[#E8ECF2] bg-gray-50 hover:bg-gray-100 transition-all group"
                 >
                   <span className="text-[11px] font-black uppercase text-gray-500 group-hover:text-[#1A2332]">GÖRÜNÜR</span>
                   <div className={`w-8 h-4.5 rounded-full relative transition-all ${form.isVisible ? 'bg-emerald-500' : 'bg-gray-300'}`}>

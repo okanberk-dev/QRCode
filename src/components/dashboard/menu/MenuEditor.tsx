@@ -225,7 +225,7 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header Info */}
-      <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-8">
+      <div className="bg-white p-8 rounded-[32px] border border-[#E8ECF2] shadow-sm space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-gray-50">
           <div className="flex items-center gap-5">
              <div 
@@ -239,7 +239,7 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                )}
              </div>
              <div>
-               <h2 className="text-2xl font-black text-[#1A2332]">{restaurantName}</h2>
+               <h2 className="text-2xl font-extrabold text-[#1A2332]">{restaurantName}</h2>
                <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest leading-none">MENÜ EDİTÖRÜ</p>
              </div>
           </div>
@@ -250,7 +250,7 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                 href={`/r/${restaurantData.slug}/menu`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 px-6 py-4 bg-white text-[#1A2332] border border-gray-200 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:bg-gray-50 active:scale-95 shadow-sm"
+                className="flex items-center justify-center gap-2 px-6 py-4 bg-white text-[#1A2332] border border-[#E8ECF2] rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:bg-gray-50 active:scale-95 shadow-sm"
               >
                 <ExternalLink size={18} strokeWidth={2} />
                 ÖNİZLEME
@@ -272,7 +272,7 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
         {/* Logo Aspect */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
            <div className="space-y-1 flex-1">
-              <h4 className="text-xs font-black text-[#1A2332] uppercase tracking-widest">MENÜ LOGOSU</h4>
+              <h4 className="text-xs font-extrabold text-[#1A2332] uppercase tracking-widest">MENÜ LOGOSU</h4>
               <p className="text-[11px] font-bold text-gray-400">Menü sayfasının başında görüntülenecek işletme logosu.</p>
            </div>
            <div className="flex items-center gap-4">
@@ -286,7 +286,7 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
               )}
               <label className="cursor-pointer group">
                   <div className={`flex items-center gap-2 px-5 py-3 rounded-xl border-2 border-dashed transition-all ${
-                    uploadingLogo ? 'bg-gray-50 border-gray-200 pointer-events-none' : 'border-gray-200 group-hover:border-[#F4B400] group-hover:bg-[#F4B400]/5'
+                    uploadingLogo ? 'bg-gray-50 border-[#E8ECF2] pointer-events-none' : 'border-[#E8ECF2] group-hover:border-[#F4B400] group-hover:bg-[#F4B400]/5'
                   }`}>
                     {uploadingLogo ? (
                       <Loader2 size={16} className="animate-spin text-gray-400" />
@@ -335,7 +335,7 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
               }
             }}
             placeholder="https://... (dosya yükleyemiyorsan dışarıdaki bir URL yapıştırabilirsin)"
-            className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
+            className="flex-1 bg-gray-50 border border-[#E8ECF2] rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
           />
         </div>
       </div>
@@ -348,11 +348,11 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
       )}
 
       {categories.length === 0 ? (
-        <div className="bg-white rounded-[40px] border border-dashed border-gray-200 py-24 text-center">
+        <div className="bg-white rounded-[40px] border border-dashed border-[#E8ECF2] py-24 text-center">
           <div className="w-20 h-20 bg-gray-50 rounded-[30px] flex items-center justify-center mx-auto mb-6">
             <UtensilsCrossed size={36} className="text-gray-200" />
           </div>
-          <h3 className="text-xl font-black text-[#1A2332]">Menü Henüz Boş</h3>
+          <h3 className="text-xl font-extrabold text-[#1A2332]">Menü Henüz Boş</h3>
           <p className="text-gray-400 font-bold text-sm mt-2 max-w-sm mx-auto">
             Hemen bir kategori oluşturarak restoran menünüzü yapılandırmaya başlayın.
           </p>
@@ -362,21 +362,21 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
           {categories.map((category) => (
             <div 
               key={category.id}
-              className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden group transition-all hover:border-[#F4B400]/30"
+              className="bg-white rounded-[32px] border border-[#E8ECF2] shadow-sm overflow-hidden group transition-all hover:border-[#F4B400]/30"
             >
               {/* Category Header */}
               <div className="p-6 sm:p-8 flex items-center justify-between gap-4 bg-gray-50/50 border-b border-gray-50">
                 <div className="flex items-center gap-2 mr-2">
                    <button
                      onClick={() => handleReorder('category', category.id, 'up')}
-                     className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all disabled:opacity-30"
+                     className="w-8 h-8 rounded-lg bg-white border border-[#E8ECF2] text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all disabled:opacity-30"
                      title="Yukarı Taşı"
                    >
                      <ChevronUp size={16} strokeWidth={2} />
                    </button>
                    <button
                      onClick={() => handleReorder('category', category.id, 'down')}
-                     className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all disabled:opacity-30"
+                     className="w-8 h-8 rounded-lg bg-white border border-[#E8ECF2] text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all disabled:opacity-30"
                      title="Aşağı Taşı"
                    >
                      <ChevronDown size={16} strokeWidth={2} />
@@ -386,7 +386,7 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                 <div className="flex items-center gap-4 min-w-0 flex-1">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                       <h3 className="text-lg font-black text-[#1A2332] truncate">{category.name}</h3>
+                       <h3 className="text-lg font-extrabold text-[#1A2332] truncate">{category.name}</h3>
                        {!category.isVisible && <EyeOff size={14} className="text-gray-400" />}
                     </div>
                     {category.description && (
@@ -401,13 +401,13 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                       setEditingCategory(category);
                       setShowCategoryForm(true);
                     }}
-                    className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] hover:border-[#F4B400] flex items-center justify-center transition-all shadow-sm"
+                    className="w-10 h-10 rounded-xl bg-white border border-[#E8ECF2] text-gray-400 hover:text-[#1A2332] hover:border-[#F4B400] flex items-center justify-center transition-all shadow-sm"
                   >
                     <Pencil size={18} strokeWidth={2} />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category.id)}
-                    className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-red-500 hover:border-red-100 flex items-center justify-center transition-all shadow-sm"
+                    className="w-10 h-10 rounded-xl bg-white border border-[#E8ECF2] text-gray-400 hover:text-red-500 hover:border-red-100 flex items-center justify-center transition-all shadow-sm"
                   >
                     <Trash2 size={18} strokeWidth={2} />
                   </button>
@@ -466,13 +466,13 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                         <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
                           <button
                              onClick={() => handleReorder('item', item.id, 'up')}
-                             className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all"
+                             className="w-8 h-8 rounded-lg bg-white border border-[#E8ECF2] text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all"
                            >
                              <ChevronUp size={14} strokeWidth={2} />
                           </button>
                           <button
                              onClick={() => handleReorder('item', item.id, 'down')}
-                             className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all"
+                             className="w-8 h-8 rounded-lg bg-white border border-[#E8ECF2] text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all"
                            >
                              <ChevronDown size={14} strokeWidth={2} />
                           </button>
@@ -483,13 +483,13 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                               setActiveCategoryId(category.id);
                               setShowItemForm(true);
                             }}
-                            className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all shadow-sm"
+                            className="w-8 h-8 rounded-lg bg-white border border-[#E8ECF2] text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all shadow-sm"
                           >
                             <Pencil size={14} strokeWidth={2} />
                           </button>
                           <button
                             onClick={() => handleDeleteItem(item.id)}
-                            className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-red-500 flex items-center justify-center transition-all shadow-sm"
+                            className="w-8 h-8 rounded-lg bg-white border border-[#E8ECF2] text-gray-400 hover:text-red-500 flex items-center justify-center transition-all shadow-sm"
                           >
                             <Trash2 size={14} strokeWidth={2} />
                           </button>

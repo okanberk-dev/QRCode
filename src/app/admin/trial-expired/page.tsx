@@ -6,13 +6,13 @@ export default function TrialExpiredPage() {
     <div className="flex-1 flex items-center justify-center min-h-screen bg-gray-50 p-6">
       <div className="w-full max-w-md">
         {/* Card */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-sm border border-[#E8ECF2] overflow-hidden">
           {/* Top banner */}
           <div className="bg-[#1A2332] px-8 py-8 text-center">
             <div className="w-16 h-16 bg-[#F4B400]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Clock size={32} className="text-[#F4B400]" />
             </div>
-            <h1 className="text-xl font-black text-white mb-1">Deneme Süreniz Doldu</h1>
+            <h1 className="text-xl font-extrabold text-white mb-1">Deneme Süreniz Doldu</h1>
             <p className="text-gray-400 text-sm">14 günlük ücretsiz deneme süreniz sona ermiştir</p>
           </div>
 
@@ -40,7 +40,7 @@ export default function TrialExpiredPage() {
                 </div>
               </div>
 
-              <div className="border border-gray-200 rounded-2xl p-4">
+              <div className="border border-[#E8ECF2] rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-[#1A2332]">Yıllık Plan</span>
                   <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">%30 İndirim</span>

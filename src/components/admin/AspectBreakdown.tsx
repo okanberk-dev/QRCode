@@ -89,7 +89,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
 
   if (!anyData) {
     return (
-      <div className="rounded-2xl border border-dashed border-gray-200 bg-white/60 p-6 text-center text-sm font-bold text-[#2A3444]">
+      <div className="rounded-2xl border border-dashed border-[#E8ECF2] bg-white/60 p-6 text-center text-sm font-bold text-[#2A3444]">
         {copy.noData}
       </div>
     );
@@ -108,7 +108,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
           <div
             key={item.key}
             className={`relative overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition-all sm:p-5 ${
-              isWorst ? 'border-red-300 ring-2 ring-red-100' : 'border-gray-100'
+              isWorst ? 'border-red-300 ring-2 ring-red-100' : 'border-[#E8ECF2]'
             }`}
           >
             {isWorst && (

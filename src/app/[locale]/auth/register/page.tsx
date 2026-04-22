@@ -71,7 +71,7 @@ export default async function RegisterPage({
               ✦ {t.auth_trial_badge}
             </div>
             
-            <h2 className="text-[36px] font-black leading-[1.1] mb-6 tracking-tighter">
+            <h2 className="text-[36px] font-extrabold leading-[1.1] mb-6 tracking-tighter">
               {locale === 'tr'
                 ? 'İtibarınızı büyütmeye bugün başlayın'
                 : 'Start growing your reputation today'}
@@ -111,7 +111,7 @@ export default async function RegisterPage({
                 <div className="inline-flex lg:hidden items-center gap-2 bg-[#F4B400]/10 text-[#F4B400] px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border border-[#F4B400]/20">
                   ✦ {t.auth_trial_badge} - {t.auth_no_cc}
                 </div>
-                <h1 className="text-3xl font-black text-[#1A2332] tracking-tighter">{t.auth_register_title}</h1>
+                <h1 className="text-3xl font-extrabold text-[#1A2332] tracking-tighter">{t.auth_register_title}</h1>
                 <p className="text-[#2A3444] font-bold text-sm">{t.auth_register_subtitle}</p>
               </div>
 

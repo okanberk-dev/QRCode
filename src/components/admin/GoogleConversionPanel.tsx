@@ -84,7 +84,7 @@ export default function GoogleConversionPanel({
 
   if (totalResponses === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-gray-200 bg-white/60 p-6 text-center text-sm font-bold text-[#2A3444]">
+      <div className="rounded-2xl border border-dashed border-[#E8ECF2] bg-white/60 p-6 text-center text-sm font-bold text-[#2A3444]">
         {copy.noData}
       </div>
     );
@@ -173,13 +173,13 @@ export default function GoogleConversionPanel({
 
       {/* ─── Leaderboard ─── */}
       {showLeaderboard && (
-        <div className="rounded-2xl border border-gray-100 bg-white">
-          <div className="flex items-start gap-3 border-b border-gray-100 px-4 py-4 sm:px-5">
+        <div className="rounded-2xl border border-[#E8ECF2] bg-white">
+          <div className="flex items-start gap-3 border-b border-[#E8ECF2] px-4 py-4 sm:px-5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFF8D6] text-[#D69E00]">
               <Trophy size={18} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <h4 className="text-[13px] font-black text-[#1A2332]">{copy.leaderboardTitle}</h4>
+              <h4 className="text-[13px] font-extrabold text-[#1A2332]">{copy.leaderboardTitle}</h4>
               <p className="mt-0.5 text-[11px] font-bold text-[#2A3444]">{copy.leaderboardSub}</p>
             </div>
           </div>
@@ -219,7 +219,7 @@ function FunnelRow({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-3 sm:p-4">
+    <div className="rounded-2xl border border-[#E8ECF2] bg-white p-3 sm:p-4">
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${bg} ${text}`}>

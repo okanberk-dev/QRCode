@@ -107,7 +107,7 @@ export default async function PricingPage({
           <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md sm:shadow-md">
              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">{locale === 'tr' ? 'ŞEFFAF FİYATLANDIRMA' : 'TRANSPARENT PRICING'}</span>
           </div>
-          <h1 className="text-[34px] sm:text-[72px] font-black leading-[1.1] sm:leading-[0.95] tracking-tight sm:tracking-[-0.04em] text-[#1A2332] max-w-[800px] mx-auto">
+          <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1.1] sm:leading-[0.95] tracking-tight sm:tracking-[-0.04em] text-[#1A2332] max-w-[800px] mx-auto">
             {t.pricing_title}
           </h1>
           <p className="text-[16px] sm:text-[20px] text-[#2A3444] font-bold leading-relaxed max-w-[560px] mx-auto">
@@ -131,7 +131,7 @@ export default async function PricingPage({
             {/* Starter Plan */}
             <div className="bg-white p-8 sm:p-12 rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md flex flex-col group transition-transform hover:-translate-y-2">
               <div className="mb-6 sm:mb-8">
-                <h2 className="text-[20px] sm:text-[22px] font-black text-[#1A2332] uppercase tracking-tighter mb-2">{locale === 'tr' ? 'Başlangıç' : 'Starter'}</h2>
+                <h2 className="text-[20px] sm:text-[22px] font-extrabold text-[#1A2332] uppercase tracking-tighter mb-2">{locale === 'tr' ? 'Başlangıç' : 'Starter'}</h2>
                 <p className="text-[13px] sm:text-[14px] text-[#2A3444] font-bold leading-snug">{locale === 'tr' ? 'Küçük işletmeler için ideal başlangıç.' : 'Ideal start for small businesses.'}</p>
               </div>
               <div className="mb-8 sm:mb-10 pb-8 sm:pb-10 border-b-2 border-[#F8F6F1]">
@@ -165,7 +165,7 @@ export default async function PricingPage({
                 </span>
               </div>
               <div className="mb-6 sm:mb-8 pt-4">
-                <h2 className="text-[20px] sm:text-[22px] font-black text-white uppercase tracking-tighter mb-2">{locale === 'tr' ? 'Büyüme' : 'Growth'}</h2>
+                <h2 className="text-[20px] sm:text-[22px] font-extrabold text-white uppercase tracking-tighter mb-2">{locale === 'tr' ? 'Büyüme' : 'Growth'}</h2>
                 <p className="text-[13px] sm:text-[14px] text-[#6B7280] font-bold leading-snug">{locale === 'tr' ? 'Hızlı büyüyen ve çok şubeli işletmeler için.' : 'For fast-growing and multi-location businesses.'}</p>
               </div>
               <div className="mb-8 sm:mb-10 pb-8 sm:pb-10 border-b-2 border-white/10">
@@ -194,7 +194,7 @@ export default async function PricingPage({
             {/* Annual Pro Plan */}
             <div className="bg-[#F8F6F1] p-8 sm:p-12 rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md flex flex-col group transition-transform hover:-translate-y-2 mt-4 md:mt-0">
               <div className="mb-6 sm:mb-8">
-                <h2 className="text-[20px] sm:text-[22px] font-black text-[#1A2332] uppercase tracking-tighter mb-2">{locale === 'tr' ? 'Yıllık Pro' : 'Annual Pro'}</h2>
+                <h2 className="text-[20px] sm:text-[22px] font-extrabold text-[#1A2332] uppercase tracking-tighter mb-2">{locale === 'tr' ? 'Yıllık Pro' : 'Annual Pro'}</h2>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="bg-[#10b981]/10 text-[#10b981] text-[9px] font-black px-2 py-0.5 rounded-full border border-[#10b981]/20 uppercase">
                     {locale === 'tr' ? '%17 TASARRUF' : '17% SAVINGS'}
@@ -255,7 +255,7 @@ export default async function PricingPage({
                 {locale === 'tr' ? 'YATIRIM GETİRİSİ' : 'RETURN ON INVESTMENT'}
               </span>
             </div>
-            <h2 className="text-[30px] sm:text-[52px] font-black text-[#1A2332] tracking-tight leading-[1.1]">
+            <h2 className="text-[30px] sm:text-[52px] font-extrabold text-[#1A2332] tracking-tight leading-[1.1]">
               {locale === 'tr' ? 'Rakamlarla Görün: Buaze Size Ne Kazandırır?' : 'See It in Numbers: What Buaze Delivers'}
             </h2>
             <p className="text-[15px] sm:text-[18px] text-[#2A3444] font-bold max-w-[640px] mx-auto leading-relaxed">
@@ -288,7 +288,7 @@ export default async function PricingPage({
       <section className="py-20 sm:py-40 px-5 sm:px-8 bg-[#F8F6F1]">
         <div className="max-w-[1000px] mx-auto">
           <div className="text-center mb-12 sm:mb-24 space-y-4">
-            <h2 className="text-[30px] sm:text-[60px] font-black text-[#1A2332] tracking-tight leading-none">
+            <h2 className="text-[30px] sm:text-[60px] font-extrabold text-[#1A2332] tracking-tight leading-none">
               {locale === 'tr' ? 'Detaylı Karşılaştırma' : 'Deep Comparison'}
             </h2>
             <p className="text-[16px] sm:text-[20px] text-[#2A3444] font-bold">

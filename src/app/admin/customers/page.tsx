@@ -147,9 +147,9 @@ export default function CustomersPage() {
 
   return (
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#1A2332] tracking-tight uppercase">{t('customers')}</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase">{t('customers')}</h1>
           <p className="text-[#2A3444] text-[13px] sm:text-[15px] font-bold">Tüm kayıtlı restoran sahiplerini, aboneliklerini ve ayarlarını yönetin.</p>
         </div>
       </div>
@@ -162,11 +162,11 @@ export default function CustomersPage() {
           placeholder={t('search_placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border border-gray-100 rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-4 sm:py-5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#F4B400] transition-all"
+          className="w-full bg-white border border-[#E8ECF2] rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-4 sm:py-5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#F4B400] transition-all"
         />
       </div>
 
-      <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse sm:min-w-[720px]">
             <thead>
@@ -252,7 +252,7 @@ export default function CustomersPage() {
                     <div className="flex items-center justify-end gap-2 sm:gap-3 hover:opacity-100">
                       <button
                         onClick={() => handleEdit(customer)}
-                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[#1A2332] bg-white border border-gray-200 shadow-sm rounded-xl hover:bg-[#F4B400] active:translate-y-1 transition-all"
+                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[#1A2332] bg-white border border-[#E8ECF2] shadow-sm rounded-xl hover:bg-[#F4B400] active:translate-y-1 transition-all"
                         title={t('edit')}
                       >
                         <Plus className="rotate-45" size={18} strokeWidth={2} />
@@ -280,9 +280,9 @@ export default function CustomersPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6">
-          <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
-            <div className="p-5 sm:p-8 md:p-10 border-b border-gray-100 bg-[#F8F6F1]">
-              <h2 className="text-xl sm:text-3xl font-black text-[#1A2332] tracking-tight uppercase">
+          <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl border border-[#E8ECF2] w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
+            <div className="p-5 sm:p-8 md:p-10 border-b border-[#E8ECF2] bg-[#F8F6F1]">
+              <h2 className="text-xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase">
                 Müşteriyi Düzenle
               </h2>
               <p className="text-[#2A3444] text-[13px] sm:text-sm font-bold mt-2">
@@ -305,7 +305,7 @@ export default function CustomersPage() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold transition-all shadow-sm"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold transition-all shadow-sm"
                   />
                 </div>
                 <div className="space-y-2">
@@ -315,7 +315,7 @@ export default function CustomersPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all"
                   />
                 </div>
                 <div className="space-y-2">
@@ -325,7 +325,7 @@ export default function CustomersPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     placeholder="Değişmeyecekse boş bırakın"
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all placeholder:text-[13px] placeholder:font-medium"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all placeholder:text-[13px] placeholder:font-medium"
                   />
                 </div>
                 
@@ -334,7 +334,7 @@ export default function CustomersPage() {
                   <select
                     value={formData.plan}
                     onChange={(e) => setFormData({...formData, plan: e.target.value})}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
                   >
                     <option value="trial">Trial (Deneme)</option>
                     <option value="monthly">Monthly (Aylık)</option>
@@ -348,7 +348,7 @@ export default function CustomersPage() {
                   <select
                     value={formData.isActive ? '1' : '0'}
                     onChange={(e) => setFormData({...formData, isActive: e.target.value === '1'})}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
                   >
                     <option value="1">Aktif</option>
                     <option value="0">Askıya Alındı</option>
@@ -361,18 +361,18 @@ export default function CustomersPage() {
                     type="date"
                     value={formData.trialEndsAt}
                     onChange={(e) => setFormData({...formData, trialEndsAt: e.target.value})}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all text-[#2A3444]"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all text-[#2A3444]"
                   />
                 </div>
               </div>
 
-              <div className="space-y-4 pt-2 border-t border-gray-100">
+              <div className="space-y-4 pt-2 border-t border-[#E8ECF2]">
                 <div className="space-y-1">
                   <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Bağlı İşletmeler / Mağazalar</label>
                   <p className="text-xs text-[#2A3444] font-bold">Bu kullanıcıya ait işletmeleri seçin. Seçilmemiş mevcut bağlantılar kaldırılır.</p>
                 </div>
 
-                <div className="max-h-64 sm:max-h-80 overflow-y-auto rounded-2xl border border-gray-200 bg-[#F8F6F1] p-2 sm:p-3 space-y-2 sm:space-y-3">
+                <div className="max-h-64 sm:max-h-80 overflow-y-auto rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] p-2 sm:p-3 space-y-2 sm:space-y-3">
                   {restaurants.length === 0 ? (
                     <div className="px-3 py-4 text-sm text-[#2A3444] font-bold">Bağlanabilir işletme bulunamadı.</div>
                   ) : (
@@ -384,7 +384,7 @@ export default function CustomersPage() {
                           className={`flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-all ${
                             checked
                               ? 'border-[#1A2332] bg-white shadow-sm'
-                              : 'border-transparent bg-white/70 hover:border-gray-200'
+                              : 'border-transparent bg-white/70 hover:border-[#E8ECF2]'
                           }`}
                         >
                           <input
@@ -408,11 +408,11 @@ export default function CustomersPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-100">
+              <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-[#E8ECF2]">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="w-full py-4 bg-[#F8F6F1] text-[#1A2332] font-black rounded-xl text-xs uppercase tracking-widest hover:bg-gray-100 transition-colors border border-gray-200"
+                  className="w-full py-4 bg-[#F8F6F1] text-[#1A2332] font-black rounded-xl text-xs uppercase tracking-widest hover:bg-gray-100 transition-colors border border-[#E8ECF2]"
                 >
                   {t('cancel')}
                 </button>

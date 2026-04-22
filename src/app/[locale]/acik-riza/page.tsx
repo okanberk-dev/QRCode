@@ -44,7 +44,7 @@ export default async function ConsentPage({
                <ShieldCheck size={14} className="text-[#F4B400]" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'ONAY METNİ' : 'CONSENT FORM'}</span>
             </div>
-            <h1 className="text-[32px] sm:text-[52px] font-black text-[#1A2332] tracking-tight leading-[1.1] mb-4 whitespace-pre-line">
+            <h1 className="text-[32px] sm:text-[52px] font-extrabold text-[#1A2332] tracking-tight leading-[1.1] mb-4 whitespace-pre-line">
               {isTr ? 'Kişisel Verilerin İşlenmesi\nAçık Rıza Beyanı' : 'Explicit Consent for\nPersonal Data Processing'}
             </h1>
             <p className="text-[13px] text-[#6B7280] font-black uppercase tracking-widest">

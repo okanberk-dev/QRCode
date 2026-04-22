@@ -108,7 +108,7 @@ export default async function DashboardPage({
           <div className="inline-block px-3 py-1 bg-[#F4B400] text-[#1A2332] border-2 border-[#1A2332] rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-widest mb-1 shadow-md">
             {t.dash_welcome}
           </div>
-          <h1 className="text-2xl sm:text-[42px] font-black text-[#1A2332] tracking-[-0.03em] leading-tight">
+          <h1 className="text-2xl sm:text-[42px] font-extrabold text-[#1A2332] tracking-[-0.03em] leading-tight">
              {user.name ? `${user.name}` : 'İşletmeci'}! 👋
           </h1>
           <p className="text-sm sm:text-[17px] text-[#2A3444] font-bold max-w-[500px]">
@@ -173,7 +173,7 @@ export default async function DashboardPage({
             <div className="bg-[#F8F6F1] border-b-2 border-[#1A2332] px-5 sm:px-8 py-4 sm:py-5 flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
                 <Star className="text-[#F4B400]" size={18} strokeWidth={2} fill="currentColor" />
-                <h3 className="text-base sm:text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">{t.dash_latest_feedbacks}</h3>
+                <h3 className="text-base sm:text-lg font-extrabold text-[#1A2332] uppercase tracking-tighter italic">{t.dash_latest_feedbacks}</h3>
               </div>
               <Link href={`/${locale}/dashboard/feedbacks`} className="text-[10px] font-black text-[#2A3444] hover:text-[#1A2332] uppercase tracking-widest flex items-center gap-1.5">
                 {t.dash_see_all} <ArrowRight size={14} strokeWidth={2} />
@@ -205,7 +205,7 @@ export default async function DashboardPage({
         {/* Restaurants */}
         <div className="space-y-6 sm:space-y-8">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-black text-[#1A2332] tracking-tight">{t.dash_restaurants}</h2>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#1A2332] tracking-tight">{t.dash_restaurants}</h2>
             <Link
               href={`/${locale}/dashboard/restaurants`}
               className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#1A2332] text-white font-black rounded-xl border-2 border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:text-[#1A2332] active:translate-y-[2px] active:shadow-sm transition-all text-xs sm:text-sm uppercase tracking-wider"
@@ -236,7 +236,7 @@ export default async function DashboardPage({
                 <div key={restaurant.id} className="bg-white rounded-[20px] border-2 border-[#1A2332] shadow-md p-6 sm:p-8 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all group">
                   <div className="flex items-start justify-between gap-3 mb-4 sm:mb-6">
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-lg sm:text-xl font-black text-[#1A2332] group-hover:text-[#F4B400] transition-colors truncate">{restaurant.name}</h3>
+                      <h3 className="text-lg sm:text-xl font-extrabold text-[#1A2332] group-hover:text-[#F4B400] transition-colors truncate">{restaurant.name}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-[11px] sm:text-[13px] font-bold text-[#6B7280] truncate">/{restaurant.slug}</p>
                         <CopyUrlButton 
@@ -245,7 +245,7 @@ export default async function DashboardPage({
                         />
                       </div>
                     </div>
-                    <span className={`shrink-0 whitespace-nowrap text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border-2 ${restaurant.isActive ? 'bg-green-50 text-green-600 border-green-200' : 'bg-gray-50 text-[#6B7280] border-gray-200'}`}>
+                    <span className={`shrink-0 whitespace-nowrap text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border-2 ${restaurant.isActive ? 'bg-green-50 text-green-600 border-green-200' : 'bg-gray-50 text-[#6B7280] border-[#E8ECF2]'}`}>
                       {restaurant.isActive ? (locale === 'tr' ? 'AKTİF' : 'ACTIVE') : (locale === 'tr' ? 'PASİF' : 'INACTIVE')}
                     </span>
                   </div>
@@ -277,7 +277,7 @@ export default async function DashboardPage({
         {user.plan === 'trial' && (
           <div className="bg-[#1A2332] text-white rounded-[24px] border-2 border-[#1A2332] p-6 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-10 shadow-md">
             <div className="space-y-3 sm:space-y-4 text-center sm:text-left">
-              <h3 className="text-xl sm:text-[32px] font-black leading-tight tracking-[-0.03em]">
+              <h3 className="text-xl sm:text-[32px] font-extrabold leading-tight tracking-[-0.03em]">
                 {locale === 'tr' ? 'Kesintisiz İtibar Yönetimi' : 'Uninterrupted Reputation Mgmt'}
               </h3>
               <p className="text-sm sm:text-[17px] text-[#6B7280] font-bold max-w-[550px]">
