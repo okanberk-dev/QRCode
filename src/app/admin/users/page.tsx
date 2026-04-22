@@ -205,39 +205,54 @@ export default function UsersPage() {
 
       <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto scrollbar-hide">
-          <table className="w-full text-left border-collapse min-w-[600px]">
+          <table className="w-full text-left border-collapse sm:min-w-[600px]">
             <thead>
               <tr className="bg-[#1f2937] text-[11px] font-bold uppercase tracking-[0.2em] text-[#9ca3af]">
-                <th className="px-6 py-4">{t('users').toUpperCase()}</th>
-                <th className="px-6 py-4">ROL / YETKİ</th>
-                <th className="px-6 py-4">RESTORAN / ŞUBE</th>
-                <th className="px-6 py-4 text-right">EYLEMLER</th>
+                <th className="px-3 py-4 sm:px-6">{t('users').toUpperCase()}</th>
+                <th className="hidden md:table-cell px-3 py-4 sm:px-6">ROL / YETKİ</th>
+                <th className="hidden md:table-cell px-3 py-4 sm:px-6">RESTORAN / ŞUBE</th>
+                <th className="px-3 py-4 sm:px-6 text-right">EYLEMLER</th>
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-[#F7F4F0] text-sm">
-              {users.filter(u => 
+              {users.filter(u =>
                 u.username.toLowerCase().includes(searchTerm.toLowerCase())
               ).map(user => (
                 <tr key={user.id} className="hover:bg-blue-50/50 transition-all border-b border-gray-100 group">
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-4 sm:px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-500 group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors">
+                      <div className="w-10 h-10 shrink-0 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-500 group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors">
                         <User size={18} strokeWidth={2.5} />
                       </div>
-                      <span className="font-bold text-[#111827] text-[14px]">{user.username}</span>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-bold text-[#111827] text-[14px] truncate block">{user.username}</span>
+                        {/* Mobile-only badges */}
+                        <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1">
+                          <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                            user.role === 'superadmin' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+                          }`}>
+                            {user.role === 'superadmin' ? 'SUPER' : 'YÖNETİCİ'}
+                          </span>
+                          {user.restaurant && (
+                            <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-700 truncate max-w-[140px]">
+                              {user.restaurant.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="hidden md:table-cell px-3 py-4 sm:px-6">
                     <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border flex items-center gap-2 w-max ${
-                      user.role === 'superadmin' 
-                        ? 'bg-indigo-50 text-indigo-600 border-indigo-100' 
+                      user.role === 'superadmin'
+                        ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
                         : 'bg-emerald-50 text-emerald-600 border-emerald-100'
                     }`}>
                       {user.role === 'superadmin' ? <ShieldCheck size={14} strokeWidth={3} /> : <Store size={14} strokeWidth={3} />}
                       {user.role === 'superadmin' ? 'SUPER ADMIN' : 'YÖNETİCİ'}
                     </span>
                   </td>
-                  <td className="px-4 py-4 sm:px-8 sm:py-6">
+                  <td className="hidden md:table-cell px-4 py-4 sm:px-8 sm:py-6">
                     <div className="flex items-center gap-2 font-bold text-[#6b6760] text-[13px] sm:text-sm">
                       {user.restaurant ? (
                         <span className="text-[#111827] font-black line-clamp-1">{user.restaurant.name.toUpperCase()}</span>
@@ -246,18 +261,18 @@ export default function UsersPage() {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-4 sm:px-8 sm:py-6 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                      <button 
+                  <td className="px-2 py-4 sm:px-8 sm:py-6 text-right">
+                    <div className="flex items-center justify-end gap-2 sm:gap-3">
+                      <button
                         onClick={() => handleEdit(user)}
-                        className="w-10 h-10 flex items-center justify-center text-[#1f1e1d] bg-white border-2 border-[#1f1e1d] shadow-[3px_3px_0_0_#1f1e1d] rounded-xl hover:bg-[#FDBF1D] active:translate-y-1 active:shadow-none transition-all"
+                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[#1f1e1d] bg-white border-2 border-[#1f1e1d] shadow-[3px_3px_0_0_#1f1e1d] rounded-xl hover:bg-[#FDBF1D] active:translate-y-1 active:shadow-none transition-all"
                         title="Düzenle"
                       >
                         <Plus className="rotate-45" size={18} strokeWidth={3} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDelete(user.id)}
-                        className="w-10 h-10 flex items-center justify-center text-white bg-[#ef4444] border-2 border-[#1f1e1d] shadow-[3px_3px_0_0_#1f1e1d] rounded-xl hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
+                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#ef4444] border-2 border-[#1f1e1d] shadow-[3px_3px_0_0_#1f1e1d] rounded-xl hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
                         title="Sil"
                       >
                         <Trash2 size={18} strokeWidth={3} />

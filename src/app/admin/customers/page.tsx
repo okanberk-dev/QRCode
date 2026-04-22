@@ -168,37 +168,58 @@ export default function CustomersPage() {
 
       <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[720px]">
+          <table className="w-full text-left border-collapse sm:min-w-[720px]">
             <thead>
               <tr className="bg-[#111827] text-[11px] font-bold uppercase tracking-[0.2em] text-[#ada89f]">
                 <th className="px-3 py-4 sm:px-6 md:px-10">{t('customers')}</th>
-                <th className="px-3 py-4 sm:px-6 md:px-10">ÜYELİK DURUMU</th>
-                <th className="px-3 py-4 sm:px-6 md:px-10">{t('restaurants')}</th>
-                <th className="px-3 py-4 sm:px-6 md:px-10">{t('status')}</th>
+                <th className="hidden md:table-cell px-3 py-4 sm:px-6 md:px-10">ÜYELİK DURUMU</th>
+                <th className="hidden lg:table-cell px-3 py-4 sm:px-6 md:px-10">{t('restaurants')}</th>
+                <th className="hidden md:table-cell px-3 py-4 sm:px-6 md:px-10">{t('status')}</th>
                 <th className="px-3 py-4 sm:px-6 md:px-10 text-right">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-[#F7F4F0] text-sm">
-              {customers.filter(c => 
+              {customers.filter(c =>
                 (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                 c.email.toLowerCase().includes(searchTerm.toLowerCase())
               ).map(customer => (
                 <tr key={customer.id} className="hover:bg-[#FDBF1D]/5 transition-all group border-b border-[#F7F4F0]">
                   <td className="px-3 py-4 sm:px-6 md:px-10">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <div className="hidden sm:flex w-14 h-14 rounded-2xl bg-[#111827] text-[#FDBF1D] items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
                         <User size={24} strokeWidth={2.5} />
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-black text-[#111827] text-[16px] tracking-tight">{customer.name || 'İsimsiz Müşteri'}</span>
-                        <span className="text-xs font-bold text-[#ada89f] tracking-wide uppercase">{customer.email}</span>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="font-black text-[#111827] text-[15px] sm:text-[16px] tracking-tight truncate">{customer.name || 'İsimsiz Müşteri'}</span>
+                        <span className="text-[11px] sm:text-xs font-bold text-[#ada89f] tracking-wide uppercase truncate">{customer.email}</span>
+                        {/* Mobile-only inline badges for plan + status */}
+                        <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
+                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                            customer.plan === 'yearly' ? 'bg-[#111827] text-[#FDBF1D]'
+                            : customer.plan === 'monthly' ? 'bg-[#FDBF1D] text-[#111827]'
+                            : customer.plan === 'external' ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-gray-100 text-gray-500'
+                          }`}>
+                            {customer.plan === 'yearly' ? 'PLATINUM' : customer.plan === 'monthly' ? 'PRO' : customer.plan === 'external' ? 'MANUEL' : 'DENEME'}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                            customer.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {customer.isActive ? t('active') : t('passive')}
+                          </span>
+                          {customer.restaurants && customer.restaurants.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 lg:hidden">
+                              {customer.restaurants.length} İşletme
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-4 sm:px-6 md:px-10">
+                  <td className="hidden md:table-cell px-3 py-4 sm:px-6 md:px-10">
                     <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border flex items-center gap-2 w-max shadow-sm transition-all group-hover:translate-x-1 ${
-                      customer.plan === 'yearly' 
-                        ? 'bg-[#111827] text-[#FDBF1D] border-[#FDBF1D]/30 shadow-[0_4px_12px_rgba(253,191,29,0.2)]' 
+                      customer.plan === 'yearly'
+                        ? 'bg-[#111827] text-[#FDBF1D] border-[#FDBF1D]/30 shadow-[0_4px_12px_rgba(253,191,29,0.2)]'
                         : customer.plan === 'monthly'
                         ? 'bg-[#FDBF1D] text-[#111827] border-transparent'
                         : customer.plan === 'external'
@@ -209,7 +230,7 @@ export default function CustomersPage() {
                       {customer.plan === 'yearly' ? 'PLATINUM' : customer.plan === 'monthly' ? 'PRO PLAN' : customer.plan === 'external' ? 'MANUEL' : 'DENEME'}
                     </div>
                   </td>
-                  <td className="px-4 py-4 sm:px-8 sm:py-6">
+                  <td className="hidden lg:table-cell px-4 py-4 sm:px-8 sm:py-6">
                     <div className="flex flex-col gap-1 font-bold text-[#6b6760] text-[12px]">
                       {customer.restaurants && customer.restaurants.length > 0 ? (
                         customer.restaurants.map(r => (
@@ -220,25 +241,25 @@ export default function CustomersPage() {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-4 sm:px-8 sm:py-6">
+                  <td className="hidden md:table-cell px-4 py-4 sm:px-8 sm:py-6">
                     {customer.isActive ? (
                       <span className="text-green-600 bg-green-50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-200">{t('active')}</span>
                     ) : (
                       <span className="text-red-600 bg-red-50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200">{t('passive')}</span>
                     )}
                   </td>
-                  <td className="px-4 py-4 sm:px-8 sm:py-6 text-right">
-                    <div className="flex items-center justify-end gap-3 hover:opacity-100">
-                      <button 
+                  <td className="px-2 py-4 sm:px-8 sm:py-6 text-right">
+                    <div className="flex items-center justify-end gap-2 sm:gap-3 hover:opacity-100">
+                      <button
                         onClick={() => handleEdit(customer)}
-                        className="w-10 h-10 flex items-center justify-center text-[#1f1e1d] bg-white border border-gray-200 shadow-sm rounded-xl hover:bg-[#FDBF1D] active:translate-y-1 transition-all"
+                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[#1f1e1d] bg-white border border-gray-200 shadow-sm rounded-xl hover:bg-[#FDBF1D] active:translate-y-1 transition-all"
                         title={t('edit')}
                       >
                         <Plus className="rotate-45" size={18} strokeWidth={3} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDelete(customer.id)}
-                        className="w-10 h-10 flex items-center justify-center text-white bg-[#ef4444] border hover:border-[#1f1e1d] shadow-sm rounded-xl hover:bg-red-600 active:translate-y-1 transition-all"
+                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#ef4444] border hover:border-[#1f1e1d] shadow-sm rounded-xl hover:bg-red-600 active:translate-y-1 transition-all"
                         title={t('delete')}
                       >
                         <Trash2 size={18} strokeWidth={3} />

@@ -169,7 +169,7 @@ export default function RestaurantsPage() {
 
       {/* Restaurant Cards Grid */}
       {restaurants.length === 0 ? (
-        <div className="bg-white rounded-[24px] border border-gray-100 p-16 sm:p-24 text-center space-y-6 shadow-sm">
+        <div className="bg-white rounded-[24px] border border-gray-100 p-8 sm:p-16 md:p-24 text-center space-y-6 shadow-sm">
           <div className="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto border border-gray-100">
             <Store size={48} className="text-gray-400" strokeWidth={2.5} />
           </div>
@@ -228,24 +228,24 @@ export default function RestaurantsPage() {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-4 sm:gap-6 py-4 border-y-2 border-[#F7F4F0]">
-                  <div className="space-y-1">
+                <div className="flex items-center gap-3 sm:gap-6 py-4 border-y-2 border-[#F7F4F0] flex-wrap">
+                  <div className="space-y-1 min-w-0">
                     <p className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest leading-none">KATEGORİ</p>
-                    <p className="text-[13px] font-black text-[#111827]">{r.category.toUpperCase()}</p>
+                    <p className="text-[12px] sm:text-[13px] font-black text-[#111827] truncate">{r.category.toUpperCase()}</p>
                   </div>
                   <div className="w-px h-8 bg-[#e8e4de]" />
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest leading-none">YORUM</p>
-                    <p className="text-[13px] font-black text-[#ea580c]">{r._count.feedbacks}</p>
+                    <p className="text-[12px] sm:text-[13px] font-black text-[#ea580c]">{r._count.feedbacks}</p>
                   </div>
                   <div className="w-px h-8 bg-[#e8e4de]" />
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-[#ada89f] uppercase tracking-widest leading-none">MENÜ</p>
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${menuStatus(r).cls}`}>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest border ${menuStatus(r).cls}`}>
                         {menuStatus(r).label}
                       </span>
-                      <span className="text-[13px] font-black text-[#111827]">{r._count.menuItems}</span>
+                      <span className="text-[12px] sm:text-[13px] font-black text-[#111827]">{r._count.menuItems}</span>
                     </div>
                   </div>
                 </div>

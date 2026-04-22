@@ -347,27 +347,27 @@ export default function AdminAnnouncementsPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-[#111827]/60 backdrop-blur-md z-[100] flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-[32px] w-full max-w-3xl my-8 shadow-2xl border border-gray-100 overflow-hidden">
-            <div className="flex items-center justify-between p-8 border-b border-gray-50">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[#FDBF1D]/10 rounded-2xl flex items-center justify-center">
+        <div className="fixed inset-0 bg-[#111827]/60 backdrop-blur-md z-[100] flex items-start justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-[24px] sm:rounded-[32px] w-full max-w-3xl my-4 sm:my-8 shadow-2xl border border-gray-100 overflow-hidden">
+            <div className="flex items-center justify-between p-4 sm:p-6 md:p-8 border-b border-gray-50 gap-3">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 bg-[#FDBF1D]/10 rounded-2xl flex items-center justify-center">
                   {editing ? <Pencil size={20} className="text-[#FDBF1D]" strokeWidth={3} /> : <Plus size={20} className="text-[#FDBF1D]" strokeWidth={3} />}
                 </div>
-                <div>
-                  <h2 className="text-xl font-black text-[#111827]">{editing ? 'Duyuruyu Düzenle' : 'Yeni Duyuru'}</h2>
-                  <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-0.5">Restoran panellerinde gösterilecek</p>
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-xl font-black text-[#111827] truncate">{editing ? 'Duyuruyu Düzenle' : 'Yeni Duyuru'}</h2>
+                  <p className="text-gray-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest mt-0.5">Restoran panellerinde gösterilecek</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowForm(false)}
-                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#111827] hover:bg-gray-50 rounded-xl transition-all"
+                className="w-10 h-10 shrink-0 flex items-center justify-center text-gray-400 hover:text-[#111827] hover:bg-gray-50 rounded-xl transition-all"
               >
                 <X size={20} strokeWidth={3} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6">
               {/* Title */}
               <div>
                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">BAŞLIK</label>

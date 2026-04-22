@@ -128,15 +128,15 @@ export default function MembersPage() {
       {/* Table */}
       <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[600px]">
+          <table className="w-full text-left border-collapse sm:min-w-[600px]">
             <thead>
               <tr className="bg-[#1f2937] text-[11px] font-bold uppercase tracking-[0.2em] text-[#9ca3af]">
-                <th className="px-5 py-4">KULLANICI</th>
-                <th className="px-5 py-4">PLAN</th>
-                <th className="px-5 py-4">DENEME / BİTİŞ</th>
-                <th className="px-5 py-4">İŞLETME</th>
-                <th className="px-5 py-4">DURUM</th>
-                <th className="px-5 py-4 text-right">EYLEM</th>
+                <th className="px-3 py-4 sm:px-5">KULLANICI</th>
+                <th className="hidden md:table-cell px-3 py-4 sm:px-5">PLAN</th>
+                <th className="hidden lg:table-cell px-3 py-4 sm:px-5">DENEME / BİTİŞ</th>
+                <th className="hidden lg:table-cell px-3 py-4 sm:px-5">İŞLETME</th>
+                <th className="hidden md:table-cell px-3 py-4 sm:px-5">DURUM</th>
+                <th className="px-3 py-4 sm:px-5 text-right">EYLEM</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -154,24 +154,40 @@ export default function MembersPage() {
 
                 return (
                   <tr key={m.id} className="hover:bg-gray-50/50 transition-all">
-                    <td className="px-5 py-4">
+                    <td className="px-3 py-4 sm:px-5">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-[#FCFBF7] border border-gray-200 flex items-center justify-center text-sm font-black text-[#111827] flex-shrink-0">
                           {(m.name || m.email).charAt(0).toUpperCase()}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="font-black text-[#111827] text-sm truncate">{m.name || '—'}</p>
                           <p className="text-xs text-[#6b6760] font-bold truncate">{m.email}</p>
+                          {/* Mobile-only badges: plan + status + trial countdown */}
+                          <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
+                            <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${planMeta.color}`}>
+                              {planMeta.label}
+                            </span>
+                            {m.isActive ? (
+                              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-green-100 text-green-700">AKTİF</span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-red-100 text-red-700">PASİF</span>
+                            )}
+                            {m.plan === 'trial' && m.trialEndsAt && (
+                              <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${trialExpired ? 'bg-red-100 text-red-700' : trialSoon ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}`}>
+                                {trialExpired ? 'SÜRESİ DOLDU' : `${dl}G KALDI`}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="hidden md:table-cell px-3 py-4 sm:px-5">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${planMeta.color}`}>
                         <Crown size={10} />
                         {planMeta.label}
                       </span>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
                       {m.plan === 'trial' && m.trialEndsAt ? (
                         <span className={`text-xs font-black flex items-center gap-1.5 ${trialExpired ? 'text-red-500' : trialSoon ? 'text-orange-500' : 'text-[#6b6760]'}`}>
                           {trialExpired ? <AlertTriangle size={14} strokeWidth={3} /> : null}
@@ -183,13 +199,13 @@ export default function MembersPage() {
                         <span className="text-xs text-[#ada89f] font-bold">—</span>
                       )}
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-[#6b6760]">
                         <Store size={14} strokeWidth={2.5} />
                         {m._count.restaurants}
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="hidden md:table-cell px-3 py-4 sm:px-5">
                       {m.isActive ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-50 text-green-600 border border-green-200 text-[10px] font-black uppercase tracking-widest">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />AKTİF
@@ -200,10 +216,10 @@ export default function MembersPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-2 py-4 sm:px-5 text-right">
                       <button
                         onClick={() => openEdit(m)}
-                        className="px-4 py-2 rounded-xl bg-[#111827] text-white text-[11px] font-black uppercase tracking-widest hover:bg-gray-800 active:scale-95 transition-all"
+                        className="px-3 sm:px-4 py-2 rounded-xl bg-[#111827] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-gray-800 active:scale-95 transition-all"
                       >
                         DÜZENLE
                       </button>

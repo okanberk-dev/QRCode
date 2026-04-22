@@ -177,13 +177,13 @@ export default function AdminBlogPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-[20px] border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-[20px] border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
           {(['all', 'tr', 'en'] as const).map(l => (
             <button
               key={l}
               onClick={() => setFilterLocale(l)}
-              className={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
+              className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
                 filterLocale === l
                   ? 'bg-[#111827] text-white shadow-md'
                   : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
@@ -198,14 +198,15 @@ export default function AdminBlogPage() {
           <button
             onClick={handleSeed}
             disabled={seeding}
-            className="flex items-center gap-2 px-5 py-3 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm disabled:opacity-50"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2.5 sm:py-3 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm disabled:opacity-50 whitespace-nowrap"
           >
             {seeding ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-            Örnekleri Aktar
+            <span className="hidden sm:inline">Örnekleri Aktar</span>
+            <span className="sm:hidden">Örnek</span>
           </button>
           <button
             onClick={openNew}
-            className="flex items-center gap-2 px-6 py-3 bg-[#FDBF1D] text-[#111827] rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#f5b914] transition-all shadow-lg shadow-[#FDBF1D]/10 active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#FDBF1D] text-[#111827] rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#f5b914] transition-all shadow-lg shadow-[#FDBF1D]/10 active:scale-95 whitespace-nowrap"
           >
             <Plus size={18} strokeWidth={3} />
             Yeni Yazı
