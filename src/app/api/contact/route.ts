@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMail } from '@/lib/email';
 
+// Must stay in sync with ContactForm.tsx — form under this dwell time is bot-like.
+const MIN_FILL_MS = 2500;
+
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, phone, business, message, kvkk, marketing } = await req.json();
+    const body = await req.json();
+    const { name, email, phone, business, message, kvkk, marketing, website, renderedAt } = body;
+
+    // Bot guard — honeypot field filled, or form submitted implausibly fast.
+    // Respond 200 so scrapers don't learn the trap, but skip the mail send.
+    const dwell = typeof renderedAt === 'number' ? Date.now() - renderedAt : Infinity;
+    if ((typeof website === 'string' && website.trim() !== '') || dwell < MIN_FILL_MS) {
+      return NextResponse.json({ success: true });
+    }
 
     if (!name || !email || !message || !kvkk) {
       return NextResponse.json({ error: 'Gerekli alanlar eksik veya KVKK onayı verilmemiş.' }, { status: 400 });

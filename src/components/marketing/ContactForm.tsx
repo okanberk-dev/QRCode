@@ -21,6 +21,9 @@ interface ContactFormProps {
   locale: string;
 }
 
+// Minimum human fill time — bots typically submit in milliseconds.
+const MIN_FILL_MS = 2500;
+
 export default function ContactForm({ t, locale }: ContactFormProps) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -28,6 +31,8 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
   const [kvkkChecked, setKvkkChecked] = useState(false);
   const [modal, setModal] = useState<'kvkk' | 'marketing' | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  // Captures form mount time so we can detect robotic instant-submits on submit.
+  const renderedAtRef = useRef<number>(Date.now());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +40,18 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
     setError('');
 
     const formData = new FormData(e.target as HTMLFormElement);
+    // Honeypot — real users can't reach this field; bots typically fill it.
+    const honeypot = (formData.get('website') as string) || '';
+    const elapsed = Date.now() - renderedAtRef.current;
+
+    if (honeypot.trim() !== '' || elapsed < MIN_FILL_MS) {
+      // Pretend success to avoid giving bots signal that their fill failed.
+      setSent(true);
+      setLoading(false);
+      if (formRef.current) formRef.current.reset();
+      return;
+    }
+
     const data = {
       name: formData.get('name'),
       email: formData.get('email'),
@@ -43,6 +60,8 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
       message: formData.get('message'),
       kvkk: formData.get('kvkk') === 'on',
       marketing: formData.get('marketing') === 'on',
+      website: honeypot,
+      renderedAt: renderedAtRef.current,
     };
 
     try {
@@ -88,6 +107,31 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
         </div>
       ) : (
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-7">
+          {/* Honeypot — hidden from humans (keyboard, screen readers, visual). Bots parsing
+              the DOM may fill this and will be silently rejected. */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: '-9999px',
+              width: '1px',
+              height: '1px',
+              overflow: 'hidden',
+              opacity: 0,
+              pointerEvents: 'none',
+            }}
+          >
+            <label htmlFor="contact-website">Website</label>
+            <input
+              id="contact-website"
+              name="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              defaultValue=""
+            />
+          </div>
+
           {error && (
             <div className="bg-red-50 text-red-600 border-2 border-red-500/20 px-5 py-4 rounded-xl text-[14px] font-bold shadow-md">
               {error}
