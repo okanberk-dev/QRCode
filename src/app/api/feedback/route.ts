@@ -4,6 +4,7 @@ import { sendFeedbackNotification } from '@/lib/email';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/validations';
+import { ApiErrors } from '@/lib/api-errors';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (recentSubmissions >= 3) {
-      return NextResponse.json({ error: 'Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.' }, { status: 429 });
+      return ApiErrors.tooManyRequests('Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.', 'RATE_LIMIT_EXCEEDED', 600);
     }
 
     const body = await req.json();
@@ -31,13 +32,13 @@ export async function POST(req: NextRequest) {
 
     // Validation
     if (!isValidRating(rating)) {
-      return NextResponse.json({ error: 'Geçersiz puan' }, { status: 400 });
+      return ApiErrors.badRequest('Geçersiz puan', 'INVALID_RATING');
     }
     if (!isValidEmail(email)) {
-      return NextResponse.json({ error: 'Geçersiz e-posta' }, { status: 400 });
+      return ApiErrors.badRequest('Geçersiz e-posta', 'INVALID_EMAIL');
     }
     if (!isValidPhone(phone)) {
-      return NextResponse.json({ error: 'Geçersiz telefon' }, { status: 400 });
+      return ApiErrors.badRequest('Geçersiz telefon', 'INVALID_PHONE');
     }
 
     // Find restaurant by slug
@@ -105,18 +106,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, id: feedback.id }, { status: 201 });
   } catch (error) {
     console.error('Feedback submission error (Detailed):', error);
-    if (error instanceof Error) {
-      console.error('ERROR MESSAGE:', error.message);
-      console.error('ERROR STACK:', error.stack);
-    }
-    return NextResponse.json({ error: 'Sunucu hatası veya veritabanı bağlantı sorunu. Lütfen tekrar deneyiniz.' }, { status: 500 });
+    return ApiErrors.internalError('Sunucu hatası veya veritabanı bağlantı sorunu. Lütfen tekrar deneyiniz.');
   }
 }
 
 export async function GET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
+    return ApiErrors.unauthorized();
   }
 
   const { searchParams } = new URL(req.url);
@@ -127,6 +124,7 @@ export async function GET(req: NextRequest) {
   const restaurantId = searchParams.get('restaurantId');
   const platformFilter = searchParams.get('platform');
   const branchFilter = searchParams.get('branch');
+  const kvkkFilter = searchParams.get('kvkk'); // 'true' or 'false'
   const searchParam = (searchParams.get('search') || '').trim();
   const sortOrderParam = searchParams.get('sortOrder');
   const sortOrder: 'asc' | 'desc' = sortOrderParam === 'asc' ? 'asc' : 'desc';
@@ -135,6 +133,13 @@ export async function GET(req: NextRequest) {
 
   // Build filter query
   const where: any = {};
+
+  // KVKK filter
+  if (kvkkFilter === 'true') {
+    where.hasKvkkConsent = true;
+  } else if (kvkkFilter === 'false') {
+    where.hasKvkkConsent = false;
+  }
 
   // Restaurant filter
   if (restaurantId && restaurantId !== 'all') {
@@ -151,13 +156,13 @@ export async function GET(req: NextRequest) {
 
     if (where.restaurantId) {
       if (!userRestIds.includes(where.restaurantId as string)) {
-        return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+        return ApiErrors.forbidden();
       }
     } else {
       where.restaurantId = { in: userRestIds };
     }
   } else {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    return ApiErrors.forbidden();
   }
 
   // Rating filter
@@ -226,6 +231,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error('Failed to fetch feedback:', error);
-    return NextResponse.json({ error: 'Veriler çekilemedi' }, { status: 500 });
+    return ApiErrors.internalError('Veriler çekilemedi');
   }
 }

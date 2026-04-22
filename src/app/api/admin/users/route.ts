@@ -11,20 +11,33 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const users = await prisma.adminUser.findMany({
-      select: {
-        id: true,
-        username: true,
-        role: true,
-        restaurantId: true,
-        restaurant: {
-          select: { name: true }
-        }
-      },
-      orderBy: { username: 'asc' }
-    });
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')));
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json(users);
+    const [users, total] = await Promise.all([
+      prisma.adminUser.findMany({
+        select: {
+          id: true,
+          username: true,
+          role: true,
+          restaurantId: true,
+          restaurant: {
+            select: { name: true }
+          }
+        },
+        orderBy: { username: 'asc' },
+        skip,
+        take: limit,
+      }),
+      prisma.adminUser.count(),
+    ]);
+
+    return NextResponse.json({
+      data: users,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
+    });
   } catch (error) {
     return NextResponse.json({ error: 'Kullanıcılar getirilemedi' }, { status: 500 });
   }

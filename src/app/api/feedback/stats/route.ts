@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { SYSTEM_FEEDBACK } from '@/lib/constants';
 
 export async function GET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
@@ -68,7 +69,7 @@ export async function GET(req: NextRequest) {
     const todayCount = await prisma.feedback.count({ where: { ...dateFilter, createdAt: { gte: startOfToday } } });
     const lowRatingCount = await prisma.feedback.count({ where: { ...dateFilter, rating: { lte: 3 } } });
     const googleRedirectsCount = await prisma.feedback.count({
-      where: { ...dateFilter, rating: { gte: 4 }, comment: 'High Rating Redirect' }
+      where: { ...dateFilter, rating: { gte: 4 }, comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT }
     });
 
     // ─── Google Review Conversion ───
@@ -118,9 +119,10 @@ export async function GET(req: NextRequest) {
       });
 
       if (highByRest.length > 0) {
-        const restaurantIds = highByRest
+        const rawIds = highByRest
           .map((r: any) => r.restaurantId as string | null)
           .filter((id): id is string => !!id);
+        const restaurantIds = Array.from(new Set(rawIds));
 
         const restaurants = await prisma.restaurant.findMany({
           where: { id: { in: restaurantIds } },
@@ -241,10 +243,12 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Day of week distribution (Pzt, Sal, ...)
+    // Day of week distribution (Pzt, Sal, ...) - Limit to last 2000 for performance
     const dayDistributionRaw = await prisma.feedback.findMany({
       where: dateFilter,
-      select: { createdAt: true }
+      select: { createdAt: true },
+      take: 2000,
+      orderBy: { createdAt: 'desc' }
     });
 
     const daysMap: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 0: 0 };
@@ -259,10 +263,12 @@ export async function GET(req: NextRequest) {
       count: daysMap[d]
     }));
 
-    // Word Cloud
+    // Word Cloud - Sample last 1000 comments for performance
     const allComments = await prisma.feedback.findMany({
       where: { ...dateFilter, comment: { not: '' } },
-      select: { comment: true }
+      select: { comment: true },
+      take: 1000,
+      orderBy: { createdAt: 'desc' }
     });
 
     const stopWords = new Set([
@@ -270,7 +276,7 @@ export async function GET(req: NextRequest) {
       'daha', 'güzel', 'teşekkürler', 'teşekkür', 'harika', 'gerçekten', 'kadar',
       'gibi', 'en', 'ise', 'olarak', 'var', 'yok', 'mı', 'mi', 'mu', 'mü',
       'ben', 'sen', 'o', 'biz', 'siz', 'onlar', 'bana', 'bizi', 'her', 'hiç',
-      'high', 'rating', 'redirect'
+      ...SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT.toLowerCase().split(' ')
     ]);
 
     const wordCounts: Record<string, number> = {};

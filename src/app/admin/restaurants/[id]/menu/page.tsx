@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, ExternalLink, Eye, EyeOff, Loader2, Power, PowerOff, ShieldAlert, UtensilsCrossed } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import PublicMenuView, { type MenuCategoryView, type RestaurantView } from '@/components/menu/PublicMenuView';
 import MenuEditor from '@/components/dashboard/menu/MenuEditor';
 
@@ -14,6 +15,7 @@ interface MenuState {
 
 export default function AdminRestaurantMenuPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params?.id as string;
   const [state, setState] = useState<MenuState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,12 @@ export default function AdminRestaurantMenuPage() {
         fetch(`/api/restaurants/${id}`),
         fetch(`/api/restaurants/${id}/menu/categories`),
       ]);
+      
+      if (rRes.status === 403 || rRes.status === 401) {
+        router.push('/admin/restaurants');
+        return;
+      }
+
       if (!rRes.ok) throw new Error('Restoran yüklenemedi');
       if (!cRes.ok) throw new Error('Menü yüklenemedi');
       const r = await rRes.json();
@@ -52,7 +60,7 @@ export default function AdminRestaurantMenuPage() {
       setError((e as Error).message);
     }
     setLoading(false);
-  }, [id]);
+  }, [id, router]);
 
   useEffect(() => {
     if (id) fetchAll();

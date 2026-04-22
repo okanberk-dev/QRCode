@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
+import { canAccessRestaurant } from '@/lib/panel-access';
+import { ApiErrors } from '@/lib/api-errors';
 
 // GET /api/restaurants/[id]
 export async function GET(
@@ -9,10 +11,14 @@ export async function GET(
 ) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
+    return ApiErrors.unauthorized();
   }
 
   const { id } = await params;
+
+  if (!(await canAccessRestaurant(actor, id))) {
+    return ApiErrors.forbidden();
+  }
 
   try {
     const restaurant = await prisma.restaurant.findUnique({
@@ -25,23 +31,13 @@ export async function GET(
     });
 
     if (!restaurant) {
-      return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
-    }
-
-    if (actor.role === 'superadmin') {
-      // full access
-    } else if (actor.role === 'manager' && actor.restaurantId !== restaurant.id) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-    } else if (actor.role === 'restaurant_owner' && restaurant.userId !== actor.id) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-    } else if (actor.role !== 'manager' && actor.role !== 'restaurant_owner') {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+      return ApiErrors.notFound('Restoran bulunamadı');
     }
 
     return NextResponse.json(restaurant);
   } catch (error) {
     console.error('Failed to fetch restaurant:', error);
-    return NextResponse.json({ error: 'Restoran çekilemedi' }, { status: 500 });
+    return ApiErrors.internalError('Restoran çekilemedi');
   }
 }
 
@@ -52,10 +48,14 @@ export async function PUT(
 ) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
+    return ApiErrors.unauthorized();
   }
 
   const { id } = await params;
+
+  if (!(await canAccessRestaurant(actor, id))) {
+    return ApiErrors.forbidden();
+  }
 
   try {
     const body = await req.json();
@@ -65,7 +65,7 @@ export async function PUT(
     if (slug) {
       const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
       if (!slugRegex.test(slug)) {
-        return NextResponse.json({ error: 'Slug sadece küçük harf, rakam ve tire içerebilir' }, { status: 400 });
+        return ApiErrors.badRequest('Slug sadece küçük harf, rakam ve tire içerebilir', 'INVALID_SLUG');
       }
 
       // Check duplicate slug (excluding current restaurant)
@@ -73,21 +73,13 @@ export async function PUT(
         where: { slug, id: { not: id } }
       });
       if (existing) {
-        return NextResponse.json({ error: 'Bu slug zaten kullanılıyor' }, { status: 409 });
+        return ApiErrors.conflict('Bu slug zaten kullanılıyor');
       }
     }
 
     const currentRest = await prisma.restaurant.findUnique({ where: { id } });
-    if (!currentRest) return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
-
-    if (actor.role === 'superadmin') {
-      // full access
-    } else if (actor.role === 'manager' && actor.restaurantId !== currentRest.id) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-    } else if (actor.role === 'restaurant_owner' && currentRest.userId !== actor.id) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-    } else {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    if (!currentRest) {
+      return ApiErrors.notFound('Restoran bulunamadı');
     }
 
     const restaurant = await prisma.restaurant.update({
@@ -112,7 +104,7 @@ export async function PUT(
     return NextResponse.json(restaurant);
   } catch (error) {
     console.error('Failed to update restaurant:', error);
-    return NextResponse.json({ error: 'Restoran güncellenemedi' }, { status: 500 });
+    return ApiErrors.internalError('Restoran güncellenemedi');
   }
 }
 
@@ -123,23 +115,19 @@ export async function DELETE(
 ) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
+    return ApiErrors.unauthorized();
   }
 
   const { id } = await params;
 
+  if (!(await canAccessRestaurant(actor, id))) {
+    return ApiErrors.forbidden();
+  }
+
   try {
     const currentRest = await prisma.restaurant.findUnique({ where: { id } });
-    if (!currentRest) return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
-
-    if (actor.role === 'superadmin') {
-      // full access
-    } else if (actor.role === 'manager' && actor.restaurantId !== currentRest.id) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-    } else if (actor.role === 'restaurant_owner' && currentRest.userId !== actor.id) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-    } else {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    if (!currentRest) {
+      return ApiErrors.notFound('Restoran bulunamadı');
     }
 
     // Hard delete: delete related records first to avoid foreign key constraints
@@ -153,6 +141,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to delete restaurant:', error);
-    return NextResponse.json({ error: 'Restoran silinemedi' }, { status: 500 });
+    return ApiErrors.internalError('Restoran silinemedi');
   }
 }

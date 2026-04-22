@@ -1,3 +1,4 @@
+import { SYSTEM_FEEDBACK } from './constants';
 /**
  * Sends an email via Resend HTTP API.
  * This is the ONLY email sending method — no SMTP fallback.
@@ -216,7 +217,7 @@ export async function sendFeedbackNotification(data: NotificationParams) {
       <div style="margin-top:12px;">${renderStars(data.rating)}</div>
     </div>
 
-    ${data.comment && data.comment !== 'High Rating Redirect' ? `
+    ${data.comment && data.comment !== SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT ? `
     <div style="margin-bottom:24px;">
       <p style="margin:0 0 8px;font-size:12px;font-weight:800;text-transform:uppercase;opacity:0.6;">Müşteri Yorumu</p>
       <div style="background:#f1f5f9;border-radius:12px;padding:20px;font-style:italic;line-height:1.6;" class="bg-accent font-dark">

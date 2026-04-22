@@ -7,6 +7,7 @@ import StarRating from '@/components/StarRating';
 import FeedbackForm, { FeedbackFormHandle } from '@/components/FeedbackForm';
 import ThankYou from '@/components/ThankYou';
 import { getTranslations, Locale, locales } from '@/lib/translations';
+import { SYSTEM_FEEDBACK } from '@/lib/constants';
 
 interface RestaurantData {
   id: string;
@@ -112,7 +113,7 @@ function SlugContent() {
             source: searchParams.get('source') || 'qr',
             branch: restaurant.name,
             tableNumber: searchParams.get('table') || '',
-            comment: 'High Rating Redirect',
+            comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT,
             restaurantSlug: slug,
             platform: platformParam || null,
           })

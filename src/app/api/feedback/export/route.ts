@@ -23,11 +23,19 @@ export async function GET(req: NextRequest) {
     const platformFilter = searchParams.get('platform');
     const ratingFilter = searchParams.get('rating');
     const branchFilter = searchParams.get('branch');
+    const kvkkFilter = searchParams.get('kvkk');
     const searchParam = (searchParams.get('search') || '').trim();
     const sortOrderParam = searchParams.get('sortOrder');
     const sortOrder: 'asc' | 'desc' = sortOrderParam === 'asc' ? 'asc' : 'desc';
 
     const where: any = {};
+
+    // KVKK filter
+    if (kvkkFilter === 'true') {
+      where.hasKvkkConsent = true;
+    } else if (kvkkFilter === 'false') {
+      where.hasKvkkConsent = false;
+    }
 
     // ─── IDOR Security Override ───
     if (actor.role === 'superadmin') {
@@ -100,6 +108,7 @@ export async function GET(req: NextRequest) {
     const feedbacks = await prisma.feedback.findMany({
       where,
       orderBy: { createdAt: sortOrder },
+      take: 10000,
       include: {
         restaurant: {
           select: { name: true, slug: true }
@@ -107,16 +116,17 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // Generate CSV with Platform and Kaynak columns
-    const header = ['ID', 'Tarih', 'Puan', 'Platform', 'Kaynak', 'Yorum', 'Restoran', 'Şube', 'Masa No'];
+    // Generate CSV with Platform, Kaynak and KVKK columns
+    const header = ['ID', 'Tarih', 'Puan', 'KVKK Onayı', 'Platform', 'Kaynak', 'Yorum', 'Restoran', 'Şube', 'Masa No'];
     const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const rows = feedbacks.map((f: any) => [
       f.id,
       f.createdAt.toISOString(),
       f.rating.toString(),
+      f.hasKvkkConsent ? 'Onaylı' : 'Onaylanmamış',
       esc(f.platform ? (PLATFORM_LABELS[f.platform] || f.platform) : ''),
       esc(f.source || ''),
-      esc(f.comment && f.comment !== 'High Rating Redirect' ? f.comment : ''),
+      esc(f.comment && f.comment !== SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT ? f.comment : ''),
       esc(f.restaurant?.name || ''),
       esc(f.branch || ''),
       esc(f.tableNumber || ''),

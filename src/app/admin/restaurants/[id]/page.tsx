@@ -35,6 +35,15 @@ export default function RestaurantDetailPage() {
     const fetchRestaurant = async () => {
       try {
         const res = await fetch(`/api/restaurants/${id}`);
+        if (res.status === 403 || res.status === 401) {
+          router.push('/admin/restaurants');
+          return;
+        }
+        if (res.status === 404) {
+          setError('Restoran bulunamadı');
+          setLoading(false);
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           setFormData({
@@ -51,14 +60,17 @@ export default function RestaurantDetailPage() {
             primaryColor: data.primaryColor || '#1a73e8',
             isActive: data.isActive ?? true,
           });
+        } else {
+          setError('Bir hata oluştu');
         }
       } catch (e) {
         console.error(e);
+        setError('Bağlantı hatası');
       }
       setLoading(false);
     };
     fetchRestaurant();
-  }, [id]);
+  }, [id, router]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

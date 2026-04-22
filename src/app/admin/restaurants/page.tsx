@@ -52,8 +52,10 @@ export default function RestaurantsPage() {
     try {
       const res = await fetch('/api/restaurants');
       if (res.ok) {
-        const data = await res.json();
-        setRestaurants(Array.isArray(data) ? data : []);
+        const result = await res.json();
+        // Handle both older array response and newer { data, meta } shape
+        const list = Array.isArray(result) ? result : (result.data || []);
+        setRestaurants(list);
       }
     } catch (e) {
       console.error(e);

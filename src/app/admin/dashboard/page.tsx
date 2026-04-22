@@ -46,6 +46,7 @@ export default function AdminDashboard() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState('all');
   const [filterPlatform, setFilterPlatform] = useState('all');
+  const [filterKvkk, setFilterKvkk] = useState('all');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [branches, setBranches] = useState<string[]>([]);
   const [selectedBranch, setSelectedBranch] = useState('all');
@@ -60,7 +61,7 @@ export default function AdminDashboard() {
       fetch('/api/admin/me').then(res => res.ok ? res.json() : null)
     ])
     .then(([restData, profileData]) => {
-      setRestaurants(Array.isArray(restData) ? restData : []);
+      setRestaurants(Array.isArray(restData.data) ? restData.data : (Array.isArray(restData) ? restData : []));
       setUserProfile(profileData);
 
       if (profileData && (profileData.role === 'manager' || profileData.role === 'restaurant_owner') && profileData.restaurantId) {
@@ -93,6 +94,7 @@ export default function AdminDashboard() {
     if (selectedRestaurant !== 'all') params.append('restaurantId', selectedRestaurant);
     if (filterRating !== 'all') params.append('rating', filterRating);
     if (filterPlatform !== 'all') params.append('platform', filterPlatform);
+    if (filterKvkk !== 'all') params.append('kvkk', filterKvkk);
     if (selectedBranch !== 'all') params.append('branch', selectedBranch);
     if (debouncedSearch) params.append('search', debouncedSearch);
     if (includeSort) params.append('sortOrder', sortOrder);
@@ -131,7 +133,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
-  }, [page, filterRating, daysFilter, selectedRestaurant, filterPlatform, selectedBranch, debouncedSearch, sortOrder]);
+  }, [page, filterRating, daysFilter, selectedRestaurant, filterPlatform, filterKvkk, selectedBranch, debouncedSearch, sortOrder]);
 
   const handleExport = () => {
     const params = buildFilterParams();
@@ -461,17 +463,26 @@ export default function AdminDashboard() {
                 <option value="trendyol_go">TRENDYOL GO</option>
               </select>
               <select
+                value={filterKvkk}
+                onChange={(e) => { setFilterKvkk(e.target.value); setPage(1); }}
+                className="flex-1 sm:flex-none min-w-[140px] px-3 py-2 text-[11px] rounded-xl border border-gray-200 bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
+              >
+                <option value="all">KVKK: TÜMÜ</option>
+                <option value="true">SADECE ONAYLI</option>
+                <option value="false">ONAYLANMAMIŞ</option>
+              </select>
+              <select
                 value={filterRating}
                 onChange={(e) => { setFilterRating(e.target.value); setPage(1); }}
                 className="flex-1 sm:flex-none min-w-[140px] px-3 py-2 text-[11px] rounded-xl border border-gray-200 bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
               >
-                <option value="all">TÜM KAYITLAR</option>
-                <option value="low">SADECE DÜŞÜK (1-3)</option>
-                <option value="5">5 YILDIZ</option>
-                <option value="4">4 YILDIZ</option>
-                <option value="3">3 YILDIZ</option>
-                <option value="2">2 YILDIZ</option>
-                <option value="1">1 YILDIZ</option>
+                <option value="all">{locale === 'tr' ? 'TÜM PUANLAR' : 'ALL RATINGS'}</option>
+                <option value="low">{locale === 'tr' ? 'SADECE DÜŞÜK (1-3)' : 'LOW (1-3)'}</option>
+                <option value="5">5 {locale === 'tr' ? 'YILDIZ' : 'STARS'}</option>
+                <option value="4">4 {locale === 'tr' ? 'YILDIZ' : 'STARS'}</option>
+                <option value="3">3 {locale === 'tr' ? 'YILDIZ' : 'STARS'}</option>
+                <option value="2">2 {locale === 'tr' ? 'YILDIZ' : 'STARS'}</option>
+                <option value="1">1 {locale === 'tr' ? 'YILDIZ' : 'STARS'}</option>
               </select>
               <label className="flex items-center gap-1.5 flex-1 sm:flex-none min-w-[140px]">
                 <ArrowUpDown size={12} className="text-gray-400 shrink-0" strokeWidth={2.5} />

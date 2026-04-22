@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { Inbox } from 'lucide-react';
+import { SYSTEM_FEEDBACK } from '@/lib/constants';
 
 interface FeedbackItem {
   id: string;
@@ -16,6 +17,7 @@ interface FeedbackItem {
   serviceRating: number | null;
   atmosphereRating: number | null;
   platform: string | null;
+  hasKvkkConsent?: boolean | null;
 }
 
 interface FeedbackTableProps {
@@ -47,8 +49,6 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
     );
   }
 
-
-
   const getPlatformBadge = (platform: string | null) => {
     if (!platform) return null;
     const config = PLATFORM_CONFIG[platform];
@@ -64,6 +64,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
             <tr>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'TARİH' : 'DATE'}</th>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'PUAN' : 'RATING'}</th>
+              <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'KVKK' : 'KVKK'}</th>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'PLATFORM' : 'PLATFORM'}</th>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold w-1/2">{locale === 'tr' ? 'YORUM' : 'COMMENT'}</th>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'KONUM' : 'LOCATION'}</th>
@@ -88,6 +89,20 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                     </span>
                   </td>
                   <td className="px-4 py-4 sm:px-8 sm:py-6 whitespace-nowrap">
+                    {f.hasKvkkConsent ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] bg-green-50 text-green-600 border border-green-100 font-bold uppercase tracking-wider shadow-sm">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {locale === 'tr' ? 'ONAYLI' : 'OK'}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] bg-gray-50 text-gray-400 border border-gray-100 font-bold uppercase tracking-wider">
+                        {locale === 'tr' ? 'YOK' : 'NONE'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 sm:px-8 sm:py-6 whitespace-nowrap">
                     {platformBadge ? (
                       <span className={`inline-flex items-center gap-1.5 font-bold px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider shadow-sm ${platformBadge.bg} ${platformBadge.color}`}>
                         {platformBadge.label}
@@ -103,7 +118,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                       <div className="flex items-center gap-2 flex-wrap">
 
                         <div className="text-gray-900 font-medium line-clamp-2 leading-relaxed italic">
-                          {f.comment ? `"${f.comment}"` : '-'}
+                          {f.comment && f.comment !== SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT ? `"${f.comment}"` : '-'}
                         </div>
                       </div>
                       

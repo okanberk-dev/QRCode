@@ -3,11 +3,15 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { validateAnnouncement } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
+import { ApiErrors } from '@/lib/api-errors';
 
 async function requireSuperadmin(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
-    return { ok: false as const, res: NextResponse.json({ error: 'Yetkisiz erişim' }, { status: admin ? 403 : 401 }) };
+  if (!admin) {
+    return { ok: false as const, res: ApiErrors.unauthorized() };
+  }
+  if (admin.role !== 'superadmin') {
+    return { ok: false as const, res: ApiErrors.forbidden() };
   }
   return { ok: true as const, admin };
 }
@@ -16,10 +20,34 @@ export async function GET(req: NextRequest) {
   const gate = await requireSuperadmin(req);
   if (!gate.ok) return gate.res;
 
-  const announcements = await prisma.announcement.findMany({
-    orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
-  });
-  return NextResponse.json({ announcements });
+  const { searchParams } = new URL(req.url);
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')));
+  const skip = (page - 1) * limit;
+
+  try {
+    const [announcements, total] = await Promise.all([
+      prisma.announcement.findMany({
+        orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+        skip,
+        take: limit,
+      }),
+      prisma.announcement.count(),
+    ]);
+
+    return NextResponse.json({
+      announcements,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      }
+    });
+  } catch (error) {
+    console.error('[API announcements GET]', error);
+    return ApiErrors.internalError('Duyurular çekilemedi');
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -30,11 +58,11 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Geçersiz JSON' }, { status: 400 });
+    return ApiErrors.badRequest('Geçersiz JSON', 'INVALID_JSON');
   }
 
   const result = validateAnnouncement(body);
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+  if (!result.ok) return ApiErrors.badRequest(result.error, 'VALIDATION_ERROR');
 
   try {
     const createdBy = typeof gate.admin.id === 'string' ? gate.admin.id : null;
@@ -45,6 +73,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ announcement }, { status: 201 });
   } catch (error) {
     console.error('[API announcements POST]', error);
-    return NextResponse.json({ error: 'Duyuru oluşturulamadı' }, { status: 500 });
+    return ApiErrors.internalError('Duyuru oluşturulamadı');
   }
 }
