@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Eye, EyeOff, CheckCircle2, ArrowRight, X } from 'lucide-react';
+import { Loader2, Eye, EyeOff, CheckCircle2, ArrowRight, X, ShieldCheck, Check } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 
 interface RegisterFormProps {
@@ -26,6 +26,7 @@ interface RegisterFormProps {
     auth_register_loading: string;
     auth_has_account: string;
     auth_login_link: string;
+    feedback_kvkk_text?: string;
   };
 }
 
@@ -150,16 +151,6 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             {showPassword ? <EyeOff size={20} strokeWidth={2.5} /> : <Eye size={20} strokeWidth={2.5} />}
           </button>
         </div>
-        {form.password.length > 0 && (
-          <div className="flex items-center gap-2 px-1">
-            <div className={`h-1.5 flex-1 rounded-full transition-colors border border-[#1f1e1d]/10 ${form.password.length >= 8 ? 'bg-[#10b981]' : 'bg-[#ef4444]'}`} />
-            <span className={`text-[10px] font-black uppercase tracking-widest ${form.password.length >= 8 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-              {form.password.length >= 8
-                ? (locale === 'tr' ? 'GÜÇLÜ' : 'STRONG')
-                : (locale === 'tr' ? 'ZAYIF' : 'WEAK')}
-            </span>
-          </div>
-        )}
       </div>
 
       <div className="space-y-2">
@@ -194,56 +185,25 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
       </div>
 
       <div className="space-y-4 pt-2">
-        <label className="flex items-start gap-4 cursor-pointer group">
-          <div className="relative mt-0.5">
-            <input
-              id="kvkk-consent"
-              type="checkbox"
-              checked={kvkkConsent}
-              onChange={(e) => setKvkkConsent(e.target.checked)}
-              className="peer sr-only"
-            />
-            <div className="w-5 h-5 bg-white border-2 border-[#1f1e1d] rounded shadow-[2px_2px_0_0_#1f1e1d] peer-checked:bg-[#FDBF1D] peer-checked:shadow-none peer-checked:translate-x-[1px] peer-checked:translate-y-[1px] transition-all"></div>
-            <CheckCircle2 className="absolute inset-0 m-auto text-[#111827] opacity-0 peer-checked:opacity-100 transition-opacity" size={14} strokeWidth={3} />
+        <div 
+          onClick={() => setKvkkConsent(!kvkkConsent)}
+          className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+            kvkkConsent 
+              ? 'bg-[#FDBF1D]/10 border-[#FDBF1D]/20 shadow-sm' 
+              : 'bg-white border-[#1f1e1d]/5 hover:border-[#1f1e1d]/10'
+          }`}
+        >
+          <div className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all border-2 ${
+            kvkkConsent ? 'bg-[#111827] border-[#111827]' : 'bg-white border-[#1f1e1d]'
+          }`}>
+            {kvkkConsent && <Check size={14} className="text-white" strokeWidth={4} />}
           </div>
-          <span className="text-[12px] font-bold text-[#6b6760] leading-relaxed select-none">
-            {locale === 'tr' ? 'Üye olarak' : 'By signing up,'} <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowKvkk(true); }} className="text-[#111827] underline decoration-[#FDBF1D] decoration-2 underline-offset-2 hover:bg-[#FDBF1D]/10 transition-colors">KVKK metnini</button> {locale === 'tr' ? 'okudum ve kabul ediyorum.' : 'I have read and accept the data processing policy.'}
-          </span>
-        </label>
-
-      {/* KVKK Modal */}
-      {showKvkk && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#111827]/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#FCFBF7] rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl border-2 border-[#1f1e1d] animate-in zoom-in-95 duration-300">
-            <div className="p-7 border-b-2 border-[#1f1e1d] flex items-center justify-between bg-white">
-              <h3 className="font-black text-[#111827] uppercase tracking-tighter">
-                KVKK Aydınlatma Metni
-              </h3>
-              <button 
-                onClick={() => setShowKvkk(false)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 text-gray-400 transition-colors"
-              >
-                <X size={22} strokeWidth={3} />
-              </button>
-            </div>
-            <div className="p-8 max-h-[50vh] overflow-y-auto no-scrollbar">
-              <p className="text-sm text-[#6b6760] leading-relaxed font-bold whitespace-pre-wrap">
-                {locale === 'tr' 
-                  ? '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kayıt sırasında paylaştığınız kişisel verileriniz, hizmetlerimizin sunulması, kullanıcı hesabınızın yönetilmesi ve yasal yükümlülüklerin yerine getirilmesi amacıyla işlenmektedir. Verileriniz, yasal zorunluluklar dışında üçüncü taraflarla paylaşılmayacaktır.'
-                  : 'In accordance with the Personal Data Protection laws, your personal data shared during registration is processed for the purposes of providing our services, managing your user account, and fulfilling legal obligations. Your data will not be shared with third parties except for legal obligations.'}
-              </p>
-            </div>
-            <div className="p-7 bg-white border-t-2 border-[#1f1e1d] flex justify-end">
-              <button 
-                onClick={() => setShowKvkk(false)}
-                className="px-10 py-4 bg-[#111827] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-[4px_4px_0_0_#FDBF1D] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-              >
-                KAPAT
-              </button>
-            </div>
+          <div className="flex-1">
+            <p className="text-[12px] font-bold text-[#6b6760] leading-relaxed select-none">
+              {locale === 'tr' ? 'Üye olarak' : 'By signing up,'} <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowKvkk(true); }} className="text-[#111827] underline decoration-[#FDBF1D] decoration-2 underline-offset-4 hover:bg-[#FDBF1D]/10 transition-colors">KVKK metnini</button> {locale === 'tr' ? 'okudum ve kabul ediyorum.' : 'I have read and accept the data processing policy.'}
+            </p>
           </div>
         </div>
-      )}
 
         <p className="text-[11px] text-[#ada89f] font-bold leading-relaxed px-1">
           {t.auth_terms_consent_1}{' '}
@@ -257,6 +217,45 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           {t.auth_terms_consent_5}
         </p>
       </div>
+
+      {/* KVKK Modal */}
+      {showKvkk && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#111827]/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-[#FCFBF7] rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl border-2 border-[#1f1e1d] animate-in zoom-in-95 duration-300">
+            <div className="p-7 border-b-2 border-[#1f1e1d] flex items-center justify-between bg-white">
+              <div className="flex items-center gap-3">
+                 <div className="p-2 bg-[#FDBF1D]/10 rounded-xl text-[#111827]">
+                    <ShieldCheck size={20} />
+                 </div>
+                 <h3 className="font-black text-[#111827] uppercase tracking-tighter">
+                   KVKK Aydınlatma Metni
+                 </h3>
+              </div>
+              <button 
+                onClick={() => setShowKvkk(false)}
+                className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 text-gray-400 transition-colors"
+              >
+                <X size={22} strokeWidth={3} />
+              </button>
+            </div>
+            <div className="p-8 max-h-[50vh] overflow-y-auto no-scrollbar">
+              <p className="text-sm text-[#6b6760] leading-relaxed font-bold whitespace-pre-wrap">
+                {locale === 'tr' 
+                  ? '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kayıt sırasında paylaştığınız kişisel verileriniz, hizmetlerimizin sunulması, kullanici hesabınızın yönetilmesi ve yasal yükümlülüklerin yerine getirilmesi amacıyla işlenmektedir. Verileriniz, yasal zorunluluklar dışında üçüncü taraflarla paylaşılmayacaktır.'
+                  : 'In accordance with the Personal Data Protection laws, your personal data shared during registration is processed for the purposes of providing our services, managing your user account, and fulfilling legal obligations. Your data will not be shared with third parties except for legal obligations.'}
+              </p>
+            </div>
+            <div className="p-7 bg-white border-t-2 border-[#1f1e1d] flex justify-end">
+              <button 
+                onClick={() => setShowKvkk(false)}
+                className="w-full py-4 bg-[#111827] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-[4px_4px_0_0_#FDBF1D] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+              >
+                KAPAT
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <button
         type="submit"

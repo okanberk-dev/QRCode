@@ -32,14 +32,7 @@ export default function StarRating({ rating, onRatingChange, t, platform }: Star
   };
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full py-2">
-      {/* Platform Badge */}
-      {currentPlatform && (
-        <div className={`px-4 py-1.5 rounded-full ${currentPlatform.bg} text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-sm animate-in fade-in slide-in-from-top-2 duration-700`}>
-          {currentPlatform.label} {t('rating_title_suffix') || 'DEĞERLENDİRMESİ'}
-        </div>
-      )}
-      
+    <div className="flex flex-col items-center gap-8 w-full py-4">
       {/* Stars Row */}
       <div className="flex flex-row gap-3 justify-center items-center w-full">
         {[1, 2, 3, 4, 5].map((star) => {
