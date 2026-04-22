@@ -31,10 +31,34 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
     const [comment, setComment] = useState('');
     const [website, setWebsite] = useState('');
 
+    // Lead generation fields
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [hasKvkkConsent, setHasKvkkConsent] = useState(false);
+    const [hasMarketingConsent, setHasMarketingConsent] = useState(false);
+
+    const isLowRating = rating > 0 && rating <= 3;
+
     const handleSubmit = async () => {
       if (!comment.trim()) {
-        setError('Lütfen deneyiminizi paylaşın.');
+        setError(t('feedback_error_comment') || 'Lütfen deneyiminizi paylaşın.');
         return;
+      }
+
+      if (isLowRating) {
+        if (!name.trim()) {
+          setError(t('feedback_error_name') || 'Lütfen isminizi belirtin.');
+          return;
+        }
+        if (!phone.trim() && !email.trim()) {
+          setError(t('feedback_error_contact') || 'Lütfen size ulaşabilmemiz için telefon veya e-posta belirtin.');
+          return;
+        }
+        if (!hasKvkkConsent) {
+          setError(t('feedback_error_kvkk') || 'Devam etmek için KVKK metnini onaylamanız gerekmektedir.');
+          return;
+        }
       }
       
       setError('');
@@ -45,12 +69,12 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: null,
-            email: null,
-            phone: null,
+            name: name.trim() || null,
+            email: email.trim() || null,
+            phone: phone.trim() || null,
             comment: comment.trim(),
-            hasKvkkConsent: true,
-            hasMarketingConsent: false,
+            hasKvkkConsent: isLowRating ? hasKvkkConsent : true,
+            hasMarketingConsent,
             rating,
             source,
             branch,
@@ -80,7 +104,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
     useImperativeHandle(ref, () => ({
       submit: handleSubmit,
       isSubmitting,
-      canSubmit: comment.trim().length > 0,
+      canSubmit: comment.trim().length > 0 && (!isLowRating || (name.trim().length > 0 && (phone.trim().length > 0 || email.trim().length > 0) && hasKvkkConsent)),
     }));
 
     return (
@@ -97,6 +121,83 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
               className="w-full px-0 py-0 bg-transparent border-none focus:ring-0 text-[16px] text-gray-800 placeholder-gray-400 resize-none min-h-[140px] leading-relaxed"
             />
           </div>
+
+          {/* Lead Generation Section (Conditional) */}
+          {isLowRating && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
+              <div className="p-1">
+                <p className="text-[13px] font-black text-gray-900 uppercase tracking-tighter mb-1">
+                  {t('feedback_contact_title') || 'Size ulaşmamızı ister misiniz?'}
+                </p>
+                <p className="text-[11px] text-gray-500 font-medium">
+                  {t('feedback_contact_sub') || 'Deneyiminizi telafi edebilmemiz için lütfen bilgilerinizi bırakın.'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('feedback_name_placeholder') || 'Adınız Soyadınız'}
+                  className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-all"
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={t('feedback_phone_placeholder') || 'Telefon Numaranız'}
+                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-all"
+                  />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t('feedback_email_placeholder') || 'E-posta Adresiniz'}
+                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Consents */}
+              <div className="space-y-3 pt-2">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative flex items-center justify-center mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={hasKvkkConsent}
+                      onChange={(e) => setHasKvkkConsent(e.target.checked)}
+                      className="peer appearance-none w-5 h-5 border-2 border-gray-200 rounded-md checked:bg-blue-600 checked:border-blue-600 transition-all"
+                    />
+                    <svg className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-[11px] text-gray-500 font-bold leading-tight group-hover:text-gray-700 transition-colors">
+                    {t('feedback_kvkk_label') || 'Kişisel verilerimin işlenmesine ilişkin KVKK metnini okudum ve onaylıyorum.'}
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative flex items-center justify-center mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={hasMarketingConsent}
+                      onChange={(e) => setHasMarketingConsent(e.target.checked)}
+                      className="peer appearance-none w-5 h-5 border-2 border-gray-200 rounded-md checked:bg-blue-600 checked:border-blue-600 transition-all"
+                    />
+                    <svg className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-[11px] text-gray-500 font-bold leading-tight group-hover:text-gray-700 transition-colors">
+                    {t('feedback_marketing_label') || 'Kampanya ve duyurulardan haberdar olmak için iletişim izni veriyorum.'}
+                  </span>
+                </label>
+              </div>
+            </div>
+          )}
 
           {/* Honeypot field - Invisible to humans */}
           <div className="opacity-0 absolute -z-10 pointer-events-none" aria-hidden="true">
@@ -123,7 +224,8 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
             <p className="text-[11px] text-gray-400 leading-tight font-medium">
-              {t('feedback_disclaimer')} {t('feedback_private_note')}
+              {!isLowRating && (t('feedback_disclaimer') + ' ' + t('feedback_private_note'))}
+              {isLowRating && (t('feedback_low_disclaimer') || 'Bilgileriniz sadece restoran yetkilisi ile paylaşılacaktır.')}
             </p>
           </div>
 
@@ -141,6 +243,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
           </button>
         </div>
       </div>
+
     );
   }
 );

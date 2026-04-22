@@ -18,6 +18,7 @@ interface FeedbackItem {
   atmosphereRating: number | null;
   platform: string | null;
   hasKvkkConsent?: boolean | null;
+  hasMarketingConsent?: boolean | null;
 }
 
 interface FeedbackTableProps {
@@ -64,9 +65,9 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
             <tr>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'TARİH' : 'DATE'}</th>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'PUAN' : 'RATING'}</th>
-              <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'KVKK' : 'KVKK'}</th>
-              <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'PLATFORM' : 'PLATFORM'}</th>
-              <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold w-1/2">{locale === 'tr' ? 'YORUM' : 'COMMENT'}</th>
+              <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'MÜŞTERİ' : 'CUSTOMER'}</th>
+              <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'İZİNLER' : 'CONSENTS'}</th>
+              <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold w-1/3">{locale === 'tr' ? 'YORUM' : 'COMMENT'}</th>
               <th className="px-4 py-4 sm:px-8 sm:py-5 font-bold">{locale === 'tr' ? 'KONUM' : 'LOCATION'}</th>
             </tr>
           </thead>
@@ -88,43 +89,52 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                       {f.rating} {locale === 'tr' ? 'Yıldız' : 'Stars'}
                     </span>
                   </td>
-                  <td className="px-4 py-4 sm:px-8 sm:py-6 whitespace-nowrap">
-                    {f.hasKvkkConsent ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] bg-green-50 text-green-600 border border-green-100 font-bold uppercase tracking-wider shadow-sm">
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        {locale === 'tr' ? 'ONAYLI' : 'OK'}
-                      </span>
+                  <td className="px-4 py-4 sm:px-8 sm:py-6">
+                    {f.name ? (
+                      <div className="flex flex-col gap-1">
+                        <div className="text-gray-900 font-black uppercase text-[12px]">{f.name}</div>
+                        {f.phone && <div className="text-[11px] font-bold text-gray-500">{f.phone}</div>}
+                        {f.email && <div className="text-[11px] font-bold text-gray-400">{f.email}</div>}
+                      </div>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] bg-gray-50 text-gray-400 border border-gray-100 font-bold uppercase tracking-wider">
-                        {locale === 'tr' ? 'YOK' : 'NONE'}
-                      </span>
+                      <span className="text-gray-400 italic text-xs">-</span>
                     )}
                   </td>
                   <td className="px-4 py-4 sm:px-8 sm:py-6 whitespace-nowrap">
-                    {platformBadge ? (
-                      <span className={`inline-flex items-center gap-1.5 font-bold px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider shadow-sm ${platformBadge.bg} ${platformBadge.color}`}>
-                        {platformBadge.label}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 font-bold px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider bg-gray-100 text-gray-400 border border-gray-200">
-                        —
-                      </span>
-                    )}
+                    <div className="flex flex-col gap-1.5">
+                      {f.hasKvkkConsent ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] bg-green-50 text-green-600 border border-green-100 font-black uppercase tracking-wider">
+                          KVKK
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] bg-gray-50 text-gray-400 border border-gray-100 font-black uppercase tracking-wider">
+                          KVKK YOK
+                        </span>
+                      )}
+                      {f.hasMarketingConsent && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] bg-blue-50 text-blue-600 border border-blue-100 font-black uppercase tracking-wider">
+                          İLETİŞİM İZNİ
+                        </span>
+                      )}
+                    </div>
                   </td>
-                  <td className="px-4 py-4 sm:px-8 sm:py-6 max-w-[200px] sm:max-w-sm">
+                  <td className="px-4 py-4 sm:px-8 sm:py-6">
                     <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-
-                        <div className="text-gray-900 font-medium line-clamp-2 leading-relaxed italic">
-                          {f.comment && f.comment !== SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT ? `"${f.comment}"` : '-'}
-                        </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        {platformBadge && (
+                          <span className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md text-[9px] uppercase tracking-wider shadow-sm ${platformBadge.bg} ${platformBadge.color}`}>
+                            {platformBadge.label}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="text-gray-900 font-medium line-clamp-3 leading-relaxed italic text-[13px]">
+                        {f.comment && f.comment !== SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT ? `"${f.comment}"` : '-'}
                       </div>
                       
                       {/* Aspect Ratings Row */}
                       {(f.foodRating || f.serviceRating || f.atmosphereRating) && (
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
                           {f.foodRating && (
                             <div className="flex items-center gap-1">
                               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{locale === 'tr' ? 'Yemek' : 'Food'}:</span>
@@ -161,5 +171,6 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
         </table>
       </div>
     </div>
+
   );
 }
