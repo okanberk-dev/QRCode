@@ -317,7 +317,7 @@ export default function RestaurantMenuBuilderPage() {
   }
 
   const status = !restaurant.menuEnabled
-    ? { label: copy.disabled, cls: 'bg-gray-100 text-gray-500 border-[#E8ECF2]' }
+    ? { label: copy.disabled, cls: 'bg-[#E8ECF2] text-[#6B7280] border-[#E8ECF2]' }
     : restaurant.menuPublished
     ? { label: copy.published, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
     : { label: copy.draft, cls: 'bg-amber-50 text-amber-700 border-amber-200' };
@@ -370,7 +370,7 @@ export default function RestaurantMenuBuilderPage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/${locale}/dashboard/restaurants/${id}/menu?preview=1`}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-gray-50 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F8F6F1] active:scale-95"
             >
               <Eye size={14} strokeWidth={2} />
               {copy.preview}
@@ -379,7 +379,7 @@ export default function RestaurantMenuBuilderPage() {
               <Link
                 href={`/menu/${restaurant.slug}`}
                 target="_blank"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-gray-50 active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F8F6F1] active:scale-95"
               >
                 <ChevronRight size={14} strokeWidth={2} />
                 {copy.viewPublic}
@@ -391,7 +391,7 @@ export default function RestaurantMenuBuilderPage() {
               className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 disabled:opacity-50 ${
                 restaurant.menuPublished
                   ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                  : 'bg-[#1A2332] text-white hover:bg-gray-800'
+                  : 'bg-[#1A2332] text-white hover:bg-[#2A3444]'
               }`}
             >
               {publishBusy ? <Loader2 size={14} className="animate-spin" /> : restaurant.menuPublished ? <EyeOff size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
@@ -429,13 +429,13 @@ export default function RestaurantMenuBuilderPage() {
           {categories.length === 0 ? (
             <div className="p-5 text-center text-xs font-bold text-[#2A3444]">{copy.noCategories}</div>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-[#E8ECF2]">
               {categories.map((c, idx) => {
                 const isActive = c.id === activeCategoryId;
                 return (
                   <li
                     key={c.id}
-                    className={`flex items-center gap-2 p-3 text-sm transition-all ${isActive ? 'bg-[#F4B400]/15' : 'hover:bg-gray-50'}`}
+                    className={`flex items-center gap-2 p-3 text-sm transition-all ${isActive ? 'bg-[#F4B400]/15' : 'hover:bg-[#F8F6F1]'}`}
                   >
                     <button
                       onClick={() => setActiveCategoryId(c.id)}
@@ -453,7 +453,7 @@ export default function RestaurantMenuBuilderPage() {
                       <button
                         onClick={() => moveCategory(idx, -1)}
                         disabled={idx === 0}
-                        className="rounded-lg p-1 text-[#2A3444] hover:bg-gray-100 disabled:opacity-30"
+                        className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30"
                         title="Up"
                       >
                         <ArrowUp size={14} strokeWidth={2} />
@@ -461,14 +461,14 @@ export default function RestaurantMenuBuilderPage() {
                       <button
                         onClick={() => moveCategory(idx, 1)}
                         disabled={idx === categories.length - 1}
-                        className="rounded-lg p-1 text-[#2A3444] hover:bg-gray-100 disabled:opacity-30"
+                        className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30"
                         title="Down"
                       >
                         <ArrowDown size={14} strokeWidth={2} />
                       </button>
                       <button
                         onClick={() => setCategoryModal({ mode: 'edit', data: c })}
-                        className="rounded-lg p-1 text-[#2A3444] hover:bg-gray-100"
+                        className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2]"
                         title={copy.editCategory}
                       >
                         <Edit2 size={14} strokeWidth={2} />
@@ -502,7 +502,7 @@ export default function RestaurantMenuBuilderPage() {
             {activeCategory && (
               <button
                 onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#1A2332] px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-gray-800 active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#1A2332] px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#2A3444] active:scale-95"
               >
                 <Plus size={12} strokeWidth={2} />
                 {copy.addItem}
@@ -514,15 +514,15 @@ export default function RestaurantMenuBuilderPage() {
           ) : activeCategory.items.length === 0 ? (
             <div className="p-10 text-center text-xs font-bold text-[#2A3444]">{copy.noItems}</div>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-[#E8ECF2]">
               {activeCategory.items.map((item, idx) => (
                 <li key={item.id} className="flex items-center gap-3 p-3 sm:p-4">
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#E8ECF2]">
                     {item.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={item.imageUrl} alt={item.name} loading="lazy" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-gray-400">
+                      <div className="flex h-full w-full items-center justify-center text-[#6B7280]">
                         <ImageIcon size={18} strokeWidth={2} />
                       </div>
                     )}
@@ -531,7 +531,7 @@ export default function RestaurantMenuBuilderPage() {
                     <div className="flex items-center gap-2">
                       <p className="truncate text-sm font-black text-[#1A2332]">{item.name}</p>
                       {!item.isAvailable && (
-                        <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-black uppercase text-gray-500">{copy.hidden}</span>
+                        <span className="rounded-full bg-[#E8ECF2] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#6B7280]">{copy.hidden}</span>
                       )}
                       {item.isOutOfStock && (
                         <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[9px] font-black uppercase text-red-600">{copy.outOfStock}</span>
@@ -545,15 +545,15 @@ export default function RestaurantMenuBuilderPage() {
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center">
-                    <button onClick={() => moveItem(idx, -1)} disabled={idx === 0} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-gray-100 disabled:opacity-30">
+                    <button onClick={() => moveItem(idx, -1)} disabled={idx === 0} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30">
                       <ArrowUp size={14} strokeWidth={2} />
                     </button>
-                    <button onClick={() => moveItem(idx, 1)} disabled={idx === activeCategory.items.length - 1} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-gray-100 disabled:opacity-30">
+                    <button onClick={() => moveItem(idx, 1)} disabled={idx === activeCategory.items.length - 1} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30">
                       <ArrowDown size={14} strokeWidth={2} />
                     </button>
                     <button
                       onClick={() => setItemModal({ mode: 'edit', data: { ...item, categoryId: activeCategory.id } })}
-                      className="rounded-lg p-1.5 text-[#2A3444] hover:bg-gray-100"
+                      className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2]"
                     >
                       <Edit2 size={14} strokeWidth={2} />
                     </button>
@@ -762,7 +762,7 @@ function ItemModal({
                   type="button"
                   onClick={() => toggleBadge(b)}
                   className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-all ${
-                    active ? 'border-[#F4B400] bg-[#F4B400] text-[#1A2332]' : 'border-[#E8ECF2] bg-white text-[#2A3444] hover:bg-gray-50'
+                    active ? 'border-[#F4B400] bg-[#F4B400] text-[#1A2332]' : 'border-[#E8ECF2] bg-white text-[#2A3444] hover:bg-[#F8F6F1]'
                   }`}
                 >
                   {active && <Check size={10} strokeWidth={2} />}
@@ -799,7 +799,7 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
           <h2 className="pr-10 text-xl font-extrabold uppercase tracking-tight text-[#1A2332] sm:text-2xl">{title}</h2>
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 rounded-xl p-2 text-gray-400 transition-all hover:bg-gray-100 hover:text-[#1A2332]"
+            className="absolute right-4 top-4 rounded-xl p-2 text-[#6B7280] transition-all hover:bg-[#E8ECF2] hover:text-[#1A2332]"
           >
             <X size={20} strokeWidth={2} />
           </button>
@@ -828,7 +828,7 @@ function ModalActions({ busy, copy, onClose }: { busy: boolean; copy: Record<str
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-gray-800 active:scale-95 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#2A3444] active:scale-95 disabled:opacity-50"
       >
         {busy ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2} />}
         {copy.save}

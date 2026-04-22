@@ -44,7 +44,7 @@ export default function AdminRestaurantMenuPage() {
     <div className="min-h-screen bg-[#F8F6F1] p-4 sm:p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Admin Header */}
-        <div className="flex items-center justify-between bg-[#1A2332] text-white p-6 rounded-[28px] border border-gray-800 shadow-2xl relative overflow-hidden">
+        <div className="flex items-center justify-between bg-[#1A2332] text-white p-6 rounded-[28px] border border-white/10 shadow-2xl relative overflow-hidden">
           <div className="relative z-10 flex items-center gap-4">
              <button 
                onClick={() => router.back()}

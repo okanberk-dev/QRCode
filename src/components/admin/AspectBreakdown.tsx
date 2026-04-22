@@ -144,7 +144,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
                   <span className="text-sm font-bold text-[#2A3444]">/ 5</span>
                 </div>
 
-                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#E8ECF2]">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{

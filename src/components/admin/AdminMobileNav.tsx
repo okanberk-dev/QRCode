@@ -50,7 +50,7 @@ export default function AdminMobileNav() {
             key={item.href}
             href={item.href}
             className={`flex flex-col items-center gap-0.5 transition-all flex-1 min-w-0 ${
-              isActive ? 'text-[#F4B400]' : 'text-gray-500 hover:text-gray-300'
+              isActive ? 'text-[#F4B400]' : 'text-[#6B7280] hover:text-[#C9D0DB]'
             }`}
           >
             <div className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-[#F4B400]/10' : ''}`}>

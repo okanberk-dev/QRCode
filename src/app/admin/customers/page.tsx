@@ -198,7 +198,7 @@ export default function CustomersPage() {
                             customer.plan === 'yearly' ? 'bg-[#1A2332] text-[#F4B400]'
                             : customer.plan === 'monthly' ? 'bg-[#F4B400] text-[#1A2332]'
                             : customer.plan === 'external' ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-gray-100 text-gray-500'
+                            : 'bg-[#E8ECF2] text-[#6B7280]'
                           }`}>
                             {customer.plan === 'yearly' ? 'PLATINUM' : customer.plan === 'monthly' ? 'PRO' : customer.plan === 'external' ? 'MANUEL' : 'DENEME'}
                           </span>
@@ -398,7 +398,7 @@ export default function CustomersPage() {
                                   : prev.restaurantIds.filter((id) => id !== restaurant.id),
                               }));
                             }}
-                            className="h-4 w-4 rounded border-gray-300 text-[#1A2332] focus:ring-[#F4B400]"
+                            className="h-4 w-4 rounded border-[#C9D0DB] text-[#1A2332] focus:ring-[#F4B400]"
                           />
                           <span className="text-sm font-bold text-[#1A2332]">{restaurant.name}</span>
                         </label>
@@ -412,7 +412,7 @@ export default function CustomersPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="w-full py-4 bg-[#F8F6F1] text-[#1A2332] font-black rounded-xl text-xs uppercase tracking-widest hover:bg-gray-100 transition-colors border border-[#E8ECF2]"
+                  className="w-full py-4 bg-[#F8F6F1] text-[#1A2332] font-black rounded-xl text-xs uppercase tracking-widest hover:bg-[#E8ECF2] transition-colors border border-[#E8ECF2]"
                 >
                   {t('cancel')}
                 </button>

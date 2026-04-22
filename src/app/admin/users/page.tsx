@@ -222,7 +222,7 @@ export default function UsersPage() {
                 <tr key={user.id} className="hover:bg-blue-50/50 transition-all border-b border-[#E8ECF2] group">
                   <td className="px-3 py-4 sm:px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 shrink-0 rounded-xl bg-gray-50 border border-[#E8ECF2] flex items-center justify-center text-gray-500 group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors">
+                      <div className="w-10 h-10 shrink-0 rounded-xl bg-[#F8F6F1] border border-[#E8ECF2] flex items-center justify-center text-[#6B7280] group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors">
                         <User size={18} strokeWidth={2} />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -235,7 +235,7 @@ export default function UsersPage() {
                             {user.role === 'superadmin' ? 'SUPER' : 'YÖNETİCİ'}
                           </span>
                           {user.restaurant && (
-                            <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-700 truncate max-w-[140px]">
+                            <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[#E8ECF2] text-[#2A3444] truncate max-w-[140px]">
                               {user.restaurant.name}
                             </span>
                           )}
@@ -300,7 +300,7 @@ export default function UsersPage() {
 
               <button
                 onClick={() => { setShowModal(false); setEditingId(null); setError(''); }}
-                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-gray-400 hover:text-[#1A2332] hover:bg-gray-100 rounded-xl transition-all"
+                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-[#6B7280] hover:text-[#1A2332] hover:bg-[#E8ECF2] rounded-xl transition-all"
               >
                 <X size={24} strokeWidth={2} />
               </button>
@@ -353,7 +353,7 @@ export default function UsersPage() {
               </div>
 
               {formData.role === 'manager' && (
-                <div className="bg-gray-50 rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 md:p-8 border border-[#E8ECF2] shadow-sm space-y-4 sm:space-y-6 md:space-y-8">
+                <div className="bg-[#F8F6F1] rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 md:p-8 border border-[#E8ECF2] shadow-sm space-y-4 sm:space-y-6 md:space-y-8">
                   <div className="flex gap-4 p-2 bg-white border border-[#E8ECF2] shadow-sm rounded-xl">
                     <button
                       type="button"

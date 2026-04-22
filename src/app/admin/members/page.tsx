@@ -24,7 +24,7 @@ const PLAN_LABELS: Record<string, { label: string; color: string }> = {
   trial:   { label: 'DENEME',  color: 'bg-[#F4B400]/15 text-[#F4B400] border-[#F4B400]/30' },
   monthly: { label: 'AYLIK',   color: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
   yearly:  { label: 'YILLIK',  color: 'bg-green-500/15 text-green-400 border-green-500/20' },
-  free:    { label: 'ÜCRETSİZ', color: 'bg-gray-500/15 text-gray-400 border-gray-500/20' },
+  free:    { label: 'ÜCRETSİZ', color: 'bg-[#6B7280]/15 text-[#6B7280] border-[#6B7280]/20' },
 };
 
 export default function MembersPage() {
@@ -112,7 +112,7 @@ export default function MembersPage() {
         </div>
         <button
           onClick={fetchMembers}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#F8F6F1] border border-[#E8ECF2] text-sm font-black text-[#1A2332] hover:bg-gray-100 transition-all active:scale-95"
+          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#F8F6F1] border border-[#E8ECF2] text-sm font-black text-[#1A2332] hover:bg-[#E8ECF2] transition-all active:scale-95"
         >
           <RefreshCw size={16} strokeWidth={2} />
           YENİLE
@@ -139,7 +139,7 @@ export default function MembersPage() {
                 <th className="px-3 py-4 sm:px-5 text-right">EYLEM</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-[#F8F6F1]">
               {members.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-sm font-bold text-[#6B7280]">
@@ -150,10 +150,10 @@ export default function MembersPage() {
                 const dl = daysLeft(m.trialEndsAt);
                 const trialExpired = m.plan === 'trial' && dl !== null && dl <= 0;
                 const trialSoon = m.plan === 'trial' && dl !== null && dl > 0 && dl <= 3;
-                const planMeta = PLAN_LABELS[m.plan] || { label: m.plan.toUpperCase(), color: 'bg-gray-100 text-gray-600 border-[#E8ECF2]' };
+                const planMeta = PLAN_LABELS[m.plan] || { label: m.plan.toUpperCase(), color: 'bg-[#E8ECF2] text-[#2A3444] border-[#E8ECF2]' };
 
                 return (
-                  <tr key={m.id} className="hover:bg-gray-50/50 transition-all">
+                  <tr key={m.id} className="hover:bg-[#F8F6F1]/50 transition-all">
                     <td className="px-3 py-4 sm:px-5">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-[#F8F6F1] border border-[#E8ECF2] flex items-center justify-center text-sm font-black text-[#1A2332] flex-shrink-0">
@@ -173,7 +173,7 @@ export default function MembersPage() {
                               <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-red-100 text-red-700">PASİF</span>
                             )}
                             {m.plan === 'trial' && m.trialEndsAt && (
-                              <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${trialExpired ? 'bg-red-100 text-red-700' : trialSoon ? 'bg-[#FFF8D6] text-[#B88800]' : 'bg-gray-100 text-gray-600'}`}>
+                              <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${trialExpired ? 'bg-red-100 text-red-700' : trialSoon ? 'bg-[#FFF8D6] text-[#B88800]' : 'bg-[#E8ECF2] text-[#2A3444]'}`}>
                                 {trialExpired ? 'SÜRESİ DOLDU' : `${dl}G KALDI`}
                               </span>
                             )}
@@ -219,7 +219,7 @@ export default function MembersPage() {
                     <td className="px-2 py-4 sm:px-5 text-right">
                       <button
                         onClick={() => openEdit(m)}
-                        className="px-3 sm:px-4 py-2 rounded-xl bg-[#1A2332] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-gray-800 active:scale-95 transition-all"
+                        className="px-3 sm:px-4 py-2 rounded-xl bg-[#1A2332] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-[#2A3444] active:scale-95 transition-all"
                       >
                         DÜZENLE
                       </button>
@@ -243,7 +243,7 @@ export default function MembersPage() {
               </div>
               <button
                 onClick={() => setEditingMember(null)}
-                className="p-2 text-gray-400 hover:text-[#1A2332] hover:bg-gray-100 rounded-xl transition-all"
+                className="p-2 text-[#6B7280] hover:text-[#1A2332] hover:bg-[#E8ECF2] rounded-xl transition-all"
               >
                 <X size={20} strokeWidth={2} />
               </button>
@@ -268,7 +268,7 @@ export default function MembersPage() {
                       className={`py-3 rounded-xl border-2 text-[11px] font-black uppercase tracking-widest transition-all ${
                         editPlan === p
                           ? 'bg-[#1A2332] text-white border-[#1A2332]'
-                          : 'bg-white text-[#2A3444] border-[#E8ECF2] hover:border-gray-400'
+                          : 'bg-white text-[#2A3444] border-[#E8ECF2] hover:border-[#6B7280]'
                       }`}
                     >
                       {PLAN_LABELS[p]?.label || p.toUpperCase()}
@@ -299,7 +299,7 @@ export default function MembersPage() {
                 <button
                   type="button"
                   onClick={() => setEditIsActive((v) => !v)}
-                  className={`transition-colors ${editIsActive ? 'text-green-500' : 'text-gray-400'}`}
+                  className={`transition-colors ${editIsActive ? 'text-green-500' : 'text-[#6B7280]'}`}
                 >
                   {editIsActive
                     ? <ToggleRight size={36} strokeWidth={1.5} />
@@ -320,7 +320,7 @@ export default function MembersPage() {
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 py-3 rounded-xl bg-[#1A2332] text-white text-sm font-black uppercase tracking-widest hover:bg-gray-800 disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-[#1A2332] text-white text-sm font-black uppercase tracking-widest hover:bg-[#2A3444] disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2} />}
                   KAYDET

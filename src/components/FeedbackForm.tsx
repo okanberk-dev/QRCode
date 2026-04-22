@@ -126,7 +126,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder={t('feedback_placeholder') || 'Deneyiminizi paylaşın...'}
-              className="w-full px-0 py-0 bg-transparent border-none focus:ring-0 text-[16px] text-gray-800 placeholder-gray-400 resize-none min-h-[140px] leading-relaxed font-medium"
+              className="w-full px-0 py-0 bg-transparent border-none focus:ring-0 text-[16px] text-[#1A2332] placeholder-[#6B7280] resize-none min-h-[140px] leading-relaxed font-medium"
             />
           </div>
 
@@ -134,11 +134,11 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
           {(rating > 0 && rating <= 3) && (
             <div className="space-y-5 animate-in fade-in slide-in-from-top-4 duration-500">
               <div className="px-1">
-                <h3 className="text-[14px] font-extrabold text-gray-900 uppercase tracking-tight mb-1 flex items-center gap-2">
+                <h3 className="text-[14px] font-extrabold text-[#1A2332] uppercase tracking-tight mb-1 flex items-center gap-2">
                   <span className="w-1.5 h-4 bg-blue-600 rounded-full" />
                   {t('feedback_contact_title') || 'Size ulaşmamızı ister misiniz?'}
                 </h3>
-                <p className="text-[11px] text-gray-400 font-bold tracking-tight">
+                <p className="text-[11px] text-[#6B7280] font-bold tracking-tight">
                   {t('feedback_contact_sub') || 'Deneyiminizi telafi edebilmemiz için lütfen bilgilerinizi bırakın.'}
                 </p>
               </div>
@@ -150,7 +150,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder={t('feedback_name_placeholder') || 'Adınız Soyadınız'}
-                    className="w-full bg-gray-50/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm group-hover:border-[#E8ECF2]"
+                    className="w-full bg-[#F8F6F1]/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm group-hover:border-[#E8ECF2]"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -159,14 +159,14 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder={t('feedback_phone_placeholder') || 'Telefon Numaranız'}
-                    className="w-full bg-gray-50/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-[#F8F6F1]/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
                   />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t('feedback_email_placeholder') || 'E-posta Adresiniz'}
-                    className="w-full bg-gray-50/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-[#F8F6F1]/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -178,7 +178,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                   className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                     hasKvkkConsent 
                       ? 'bg-blue-50/30 border-blue-100 shadow-sm' 
-                      : 'bg-white border-gray-50 hover:border-[#E8ECF2]'
+                      : 'bg-white border-[#F8F6F1] hover:border-[#E8ECF2]'
                   }`}
                 >
                   <div className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all border-2 ${
@@ -187,7 +187,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                     {hasKvkkConsent && <Check size={14} className="text-white" strokeWidth={4} />}
                   </div>
                   <div className="flex-1">
-                    <p className="text-[12px] font-bold text-gray-700 leading-snug">
+                    <p className="text-[12px] font-bold text-[#2A3444] leading-snug">
                       Kişisel verilerimin işlenmesine ilişkin <button type="button" onClick={(e) => openLegal('kvkk', e)} className="text-blue-600 underline underline-offset-4 decoration-2 hover:text-blue-800 transition-colors">KVKK metnini</button> okudum ve onaylıyorum.
                     </p>
                   </div>
@@ -198,7 +198,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                   className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                     hasMarketingConsent 
                       ? 'bg-emerald-50/30 border-emerald-100 shadow-sm' 
-                      : 'bg-white border-gray-50 hover:border-[#E8ECF2]'
+                      : 'bg-white border-[#F8F6F1] hover:border-[#E8ECF2]'
                   }`}
                 >
                   <div className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all border-2 ${
@@ -207,7 +207,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                     {hasMarketingConsent && <Check size={14} className="text-white" strokeWidth={4} />}
                   </div>
                   <div className="flex-1">
-                    <p className="text-[12px] font-bold text-gray-700 leading-snug">
+                    <p className="text-[12px] font-bold text-[#2A3444] leading-snug">
                       Kampanya ve duyurulardan haberdar olmak için <button type="button" onClick={(e) => openLegal('marketing', e)} className="text-emerald-600 underline underline-offset-4 decoration-2 hover:text-emerald-800 transition-colors">iletişim izni</button> veriyorum.
                     </p>
                   </div>
@@ -243,8 +243,8 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
               disabled={isSubmitting || !comment.trim()}
               className={`w-full py-5 rounded-2xl text-[15px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-3 ${
                 isSubmitting || !comment.trim()
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-[#1A2332] text-white shadow-xl hover:bg-gray-800 hover:-translate-y-1 active:scale-95'
+                  ? 'bg-[#E8ECF2] text-[#6B7280] cursor-not-allowed' 
+                  : 'bg-[#1A2332] text-white shadow-xl hover:bg-[#2A3444] hover:-translate-y-1 active:scale-95'
               }`}
             >
               {isSubmitting ? (
@@ -258,7 +258,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
             </button>
             <div className="flex items-center justify-center gap-2 mt-4 px-2">
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+               <p className="text-[10px] text-[#6B7280] font-bold uppercase tracking-widest">
                   {isLowRating ? 'ÖZEL VE GÜVENLİ GERİ BİLDİRİM' : 'GÜVENLİ GERİ BİLDİRİM'}
                </p>
             </div>
@@ -267,38 +267,38 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
 
         {/* Premium Legal Modal Overlay */}
         {showLegalModal && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-[#1A2332]/40 backdrop-blur-md animate-in fade-in duration-300">
             <div className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300">
-              <div className="p-7 border-b border-[#E8ECF2] flex items-center justify-between bg-gray-50/50">
+              <div className="p-7 border-b border-[#E8ECF2] flex items-center justify-between bg-[#F8F6F1]/50">
                 <div className="flex items-center gap-3">
                    <div className={`p-2 rounded-xl ${showLegalModal === 'kvkk' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
                       {showLegalModal === 'kvkk' ? <ShieldCheck size={20} /> : <Mail size={20} />}
                    </div>
                    <div>
-                      <h3 className="font-extrabold text-gray-900 uppercase tracking-tighter text-sm">
+                      <h3 className="font-extrabold text-[#1A2332] uppercase tracking-tighter text-sm">
                         {showLegalModal === 'kvkk' ? 'KVKK Aydınlatma Metni' : 'İletişim İzni'}
                       </h3>
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Legal & Privacy</p>
+                      <p className="text-[9px] font-bold text-[#6B7280] uppercase tracking-widest leading-none">Legal & Privacy</p>
                    </div>
                 </div>
                 <button 
                   onClick={() => setShowLegalModal(null)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white hover:shadow-sm text-gray-400 transition-all border border-transparent hover:border-[#E8ECF2]"
+                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white hover:shadow-sm text-[#6B7280] transition-all border border-transparent hover:border-[#E8ECF2]"
                 >
                   <X size={20} strokeWidth={2} />
                 </button>
               </div>
               <div className="p-8 max-h-[50vh] overflow-y-auto no-scrollbar scroll-smooth">
-                <p className="text-[14px] text-gray-600 leading-relaxed font-medium whitespace-pre-wrap">
+                <p className="text-[14px] text-[#2A3444] leading-relaxed font-medium whitespace-pre-wrap">
                   {showLegalModal === 'kvkk' 
                     ? (t('feedback_kvkk_text') || '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, bu form aracılığıyla paylaştığınız kişisel verileriniz (ad, soyad, telefon, e-posta), şikayet ve önerilerinizin değerlendirilmesi ve müşteri memnuniyetinin sağlanması amacıyla işlenmektedir. Verileriniz, yasal zorunluluklar dışında üçüncü taraflarla paylaşılmayacaktır.')
                     : (t('feedback_marketing_text') || 'Paylaştığım iletişim bilgilerine kampanya, indirim, promosyon ve yeni ürünler hakkında bilgilendirme amaçlı ticari elektronik ileti gönderilmesini kabul ediyorum.')}
                 </p>
               </div>
-              <div className="p-6 bg-gray-50/80 border-t border-[#E8ECF2] flex justify-end gap-3">
+              <div className="p-6 bg-[#F8F6F1]/80 border-t border-[#E8ECF2] flex justify-end gap-3">
                 <button 
                   onClick={() => setShowLegalModal(null)}
-                  className="w-full py-4 bg-[#1A2332] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 active:scale-95"
+                  className="w-full py-4 bg-[#1A2332] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-[#2A3444] transition-all shadow-lg shadow-[#E8ECF2] active:scale-95"
                 >
                   KAPAT
                 </button>

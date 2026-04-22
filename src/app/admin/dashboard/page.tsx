@@ -13,8 +13,8 @@ import GoogleConversionPanel from '@/components/admin/GoogleConversionPanel';
 import PlatformDistribution from '@/components/admin/PlatformDistribution';
 
 // Recharts components must be dynamic for SSR compatibility
-const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), { ssr: false, loading: () => <div className="h-[300px] w-full bg-gray-50 animate-pulse rounded-2xl" /> });
-const DayDistributionChart = dynamic(() => import('@/components/admin/DayDistributionChart'), { ssr: false, loading: () => <div className="h-[300px] w-full bg-gray-50 animate-pulse rounded-2xl" /> });
+const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), { ssr: false, loading: () => <div className="h-[300px] w-full bg-[#F8F6F1] animate-pulse rounded-2xl" /> });
+const DayDistributionChart = dynamic(() => import('@/components/admin/DayDistributionChart'), { ssr: false, loading: () => <div className="h-[300px] w-full bg-[#F8F6F1] animate-pulse rounded-2xl" /> });
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 
 interface Restaurant {
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
     <div className="p-3 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-8 sm:space-y-10 pb-32">
 
       {/* ─── Welcome Banner ─── */}
-      <div className="bg-[#1A2332] rounded-[24px] sm:rounded-[32px] border border-gray-800 p-4 sm:p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden shadow-2xl">
+      <div className="bg-[#1A2332] rounded-[24px] sm:rounded-[32px] border border-white/10 p-4 sm:p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-3 sm:space-y-4 min-w-0">
           <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 text-[#F4B400] px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em]">
             ✦ CANLI PANEL
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
           <h1 className="text-xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight break-words">
             {t('welcome')}, {displayName} 👋
           </h1>
-          <p className="text-[#6B7280] text-sm sm:text-[17px] font-bold max-w-md">Gerçek zamanlı verilerle işletmenizin nabzını tutun.</p>
+          <p className="text-white/80 text-sm sm:text-[17px] font-medium max-w-md">Gerçek zamanlı verilerle işletmenizin nabzını tutun.</p>
         </div>
 
         {/* Satisfaction Rate Badge */}
@@ -192,11 +192,11 @@ export default function AdminDashboard() {
       {/* ─── Toolbar ─── */}
       <div className="flex flex-col md:flex-row md:items-center md:flex-wrap gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm">
         <label className="flex items-center gap-2 w-full md:w-auto md:flex-1 md:max-w-[220px]">
-          <Calendar size={16} strokeWidth={2} className="text-gray-400 shrink-0" />
+          <Calendar size={16} strokeWidth={2} className="text-[#6B7280] shrink-0" />
           <select
             value={daysFilter}
             onChange={(e) => { setDaysFilter(e.target.value as DaysFilter); setPage(1); }}
-            className="w-full px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#E8ECF2] focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
+            className="w-full px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#E8ECF2] focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-[#2A3444] cursor-pointer"
           >
             <option value="1">BUGÜN</option>
             <option value="7">SON 7 GÜN</option>
@@ -210,7 +210,7 @@ export default function AdminDashboard() {
           <select
             value={selectedRestaurant}
             onChange={(e) => { setSelectedRestaurant(e.target.value); setPage(1); }}
-            className="w-full md:w-auto md:flex-1 md:max-w-[240px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#E8ECF2] focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
+            className="w-full md:w-auto md:flex-1 md:max-w-[240px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#E8ECF2] focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-[#2A3444] cursor-pointer"
           >
             <option value="all">TÜM RESTORANLAR</option>
             {restaurants.map((r) => (
@@ -222,7 +222,7 @@ export default function AdminDashboard() {
         <select
           value={selectedBranch}
           onChange={(e) => { setSelectedBranch(e.target.value); setPage(1); }}
-          className="w-full md:w-auto md:flex-1 md:max-w-[220px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#E8ECF2] focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-gray-700 cursor-pointer"
+          className="w-full md:w-auto md:flex-1 md:max-w-[220px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#E8ECF2] focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-[#2A3444] cursor-pointer"
         >
           <option value="all">TÜM ŞUBELER</option>
           {branches.map((b) => (
@@ -232,7 +232,7 @@ export default function AdminDashboard() {
 
         <button
           onClick={handleExport}
-          className="w-full md:w-auto md:ml-auto flex items-center justify-center gap-2 bg-white text-gray-700 border border-[#E8ECF2] hover:bg-gray-50 px-5 py-3 rounded-xl text-[11px] sm:text-xs font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95"
+          className="w-full md:w-auto md:ml-auto flex items-center justify-center gap-2 bg-white text-[#2A3444] border border-[#E8ECF2] hover:bg-[#F8F6F1] px-5 py-3 rounded-xl text-[11px] sm:text-xs font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95"
         >
           <Download size={16} strokeWidth={2} />
           DIŞA AKTAR
@@ -248,14 +248,14 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Link
           href="/admin/qr"
-          className="flex items-center justify-center gap-2 bg-[#1A2332] text-white px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-800 active:scale-95 transition-all"
+          className="flex items-center justify-center gap-2 bg-[#1A2332] text-white px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-[#2A3444] active:scale-95 transition-all"
         >
           <QrCode size={16} strokeWidth={2} />
           <span>QR Oluştur</span>
         </Link>
         <button
           onClick={handleShowAll}
-          className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-[#E8ECF2] px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+          className="flex items-center justify-center gap-2 bg-white text-[#2A3444] border border-[#E8ECF2] px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-[#F8F6F1] active:scale-95 transition-all"
         >
           <ListChecks size={16} strokeWidth={2} />
           <span>Tüm Yorumlar</span>
@@ -269,7 +269,7 @@ export default function AdminDashboard() {
         </button>
         <button
           onClick={handleExport}
-          className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-[#E8ECF2] px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+          className="flex items-center justify-center gap-2 bg-white text-[#2A3444] border border-[#E8ECF2] px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-[#F8F6F1] active:scale-95 transition-all"
         >
           <Download size={16} strokeWidth={2} />
           <span>CSV İndir</span>
@@ -370,7 +370,7 @@ export default function AdminDashboard() {
         <div className="lg:col-span-1 space-y-4 sm:space-y-6">
            <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm">
              <div className="flex items-center gap-3 mb-6 sm:mb-8">
-               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#FFF8D6] text-[#F4B400] flex items-center justify-center">
+               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#FFF8D6] text-[#D69E00] flex items-center justify-center">
                  <Calendar size={20} strokeWidth={2} />
                </div>
                <h3 className="text-lg sm:text-xl font-extrabold text-[#1A2332]">Puan Dağılımı</h3>
@@ -393,15 +393,15 @@ export default function AdminDashboard() {
         <div ref={feedbackTableRef} className="lg:col-span-2 space-y-4 sm:space-y-6 scroll-mt-6">
           <div className="bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm space-y-3 sm:space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-800 tracking-tight">İşletme Günlüğü</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-[#1A2332] tracking-tight">İşletme Günlüğü</h3>
               <div className="relative w-full sm:max-w-xs">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" strokeWidth={2} />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" strokeWidth={2} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                   placeholder={locale === 'en' ? 'Search comment or name...' : 'Yorum veya isim ara...'}
-                  className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl border border-[#E8ECF2] bg-white font-medium text-gray-700 outline-none focus:ring-2 focus:ring-[#F4B400] focus:border-transparent transition-all"
+                  className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl border border-[#E8ECF2] bg-white font-medium text-[#2A3444] outline-none focus:ring-2 focus:ring-[#F4B400] focus:border-transparent transition-all"
                 />
               </div>
             </div>
@@ -409,7 +409,7 @@ export default function AdminDashboard() {
               <select
                 value={filterPlatform}
                 onChange={(e) => { setFilterPlatform(e.target.value); setPage(1); }}
-                className="flex-1 sm:flex-none min-w-[140px] px-3 py-2 text-[11px] rounded-xl border border-[#E8ECF2] bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
+                className="flex-1 sm:flex-none min-w-[140px] px-3 py-2 text-[11px] rounded-xl border border-[#E8ECF2] bg-white font-bold tracking-widest text-[#2A3444] outline-none hover:bg-[#F8F6F1] focus:ring-2 focus:ring-[#E8ECF2] transition-all cursor-pointer"
               >
                 <option value="all">TÜM PLATFORMLAR</option>
                 <option value="google">GOOGLE</option>
@@ -420,7 +420,7 @@ export default function AdminDashboard() {
               <select
                 value={filterKvkk}
                 onChange={(e) => { setFilterKvkk(e.target.value); setPage(1); }}
-                className="flex-1 sm:flex-none min-w-[140px] px-3 py-2 text-[11px] rounded-xl border border-[#E8ECF2] bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
+                className="flex-1 sm:flex-none min-w-[140px] px-3 py-2 text-[11px] rounded-xl border border-[#E8ECF2] bg-white font-bold tracking-widest text-[#2A3444] outline-none hover:bg-[#F8F6F1] focus:ring-2 focus:ring-[#E8ECF2] transition-all cursor-pointer"
               >
                 <option value="all">KVKK: TÜMÜ</option>
                 <option value="true">SADECE ONAYLI</option>
@@ -429,7 +429,7 @@ export default function AdminDashboard() {
               <select
                 value={filterRating}
                 onChange={(e) => { setFilterRating(e.target.value); setPage(1); }}
-                className="flex-1 sm:flex-none min-w-[140px] px-3 py-2 text-[11px] rounded-xl border border-[#E8ECF2] bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
+                className="flex-1 sm:flex-none min-w-[140px] px-3 py-2 text-[11px] rounded-xl border border-[#E8ECF2] bg-white font-bold tracking-widest text-[#2A3444] outline-none hover:bg-[#F8F6F1] focus:ring-2 focus:ring-[#E8ECF2] transition-all cursor-pointer"
               >
                 <option value="all">{locale === 'tr' ? 'TÜM PUANLAR' : 'ALL RATINGS'}</option>
                 <option value="low">{locale === 'tr' ? 'SADECE DÜŞÜK (1-3)' : 'LOW (1-3)'}</option>
@@ -440,11 +440,11 @@ export default function AdminDashboard() {
                 <option value="1">1 {locale === 'tr' ? 'YILDIZ' : 'STARS'}</option>
               </select>
               <label className="flex items-center gap-1.5 flex-1 sm:flex-none min-w-[140px]">
-                <ArrowUpDown size={12} className="text-gray-400 shrink-0" strokeWidth={2} />
+                <ArrowUpDown size={12} className="text-[#6B7280] shrink-0" strokeWidth={2} />
                 <select
                   value={sortOrder}
                   onChange={(e) => { setSortOrder(e.target.value as 'asc' | 'desc'); setPage(1); }}
-                  className="w-full px-3 py-2 text-[11px] rounded-xl border border-[#E8ECF2] bg-white font-bold tracking-widest text-gray-600 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer"
+                  className="w-full px-3 py-2 text-[11px] rounded-xl border border-[#E8ECF2] bg-white font-bold tracking-widest text-[#2A3444] outline-none hover:bg-[#F8F6F1] focus:ring-2 focus:ring-[#E8ECF2] transition-all cursor-pointer"
                 >
                   <option value="desc">EN YENİ</option>
                   <option value="asc">EN ESKİ</option>
@@ -462,7 +462,8 @@ export default function AdminDashboard() {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="p-3 rounded-2xl border border-[#E8ECF2] bg-white text-gray-700 disabled:opacity-30 shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-[0px]"
+                aria-label="Önceki sayfa"
+                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border border-[#E8ECF2] bg-white text-[#2A3444] disabled:opacity-30 disabled:cursor-not-allowed shadow-sm hover:bg-[#F8F6F1] active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#1A2332]/25 transition-all"
               >
                 <ArrowRight size={20} className="rotate-180" strokeWidth={2} />
               </button>
@@ -472,7 +473,8 @@ export default function AdminDashboard() {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="p-3 rounded-2xl border border-[#E8ECF2] bg-white text-gray-700 disabled:opacity-30 shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-[0px]"
+                aria-label="Sonraki sayfa"
+                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border border-[#E8ECF2] bg-white text-[#2A3444] disabled:opacity-30 disabled:cursor-not-allowed shadow-sm hover:bg-[#F8F6F1] active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#1A2332]/25 transition-all"
               >
                 <ArrowRight size={20} strokeWidth={2} />
               </button>

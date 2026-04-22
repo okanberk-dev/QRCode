@@ -131,7 +131,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-[#1A2332]/40 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="w-full max-w-2xl bg-white rounded-[32px] shadow-2xl border border-[#E8ECF2] overflow-hidden animate-in zoom-in-95 duration-300">
-        <div className="flex items-center justify-between p-7 border-b border-gray-50">
+        <div className="flex items-center justify-between p-7 border-b border-[#F8F6F1]">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-[#F4B400]/10 rounded-2xl flex items-center justify-center">
               <Utensils size={24} className="text-[#F4B400]" />
@@ -140,14 +140,14 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
               <h2 className="text-2xl font-extrabold text-[#1A2332]">
                 {item ? 'Ürünü Düzenle' : 'Yeni Ürün Ekle'}
               </h2>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-0.5">
+              <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-[0.2em] mt-0.5">
                 Menü içeriğini güncelleyin
               </p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 text-gray-400 transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#E8ECF2] text-[#6B7280] transition-colors"
           >
             <X size={22} strokeWidth={2} />
           </button>
@@ -164,7 +164,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Left Column: Image */}
             <div className="space-y-4">
-               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">ÜRÜN GÖRSELİ</label>
+               <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] ml-1">ÜRÜN GÖRSELİ</label>
                <div
                  onClick={() => fileInputRef.current?.click()}
                  className={`relative h-56 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
@@ -182,12 +182,12 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                    </>
                  ) : (
                    <div className="text-center p-6 flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300">
+                      <div className="w-12 h-12 bg-[#F8F6F1] rounded-2xl flex items-center justify-center text-[#C9D0DB]">
                          {uploading ? <Loader2 size={24} className="animate-spin" /> : <Upload size={24} />}
                       </div>
                       <div>
-                        <p className="text-sm font-black text-gray-400 uppercase tracking-widest leading-tight">Görsel Yükle</p>
-                        <p className="text-[10px] font-bold text-gray-300 mt-1 max-w-[140px]">Küçük boyutta, optimize edilmiş WebP yüklenir</p>
+                        <p className="text-sm font-black text-[#6B7280] uppercase tracking-widest leading-tight">Görsel Yükle</p>
+                        <p className="text-[10px] font-bold text-[#C9D0DB] mt-1 max-w-[140px]">Küçük boyutta, optimize edilmiş WebP yüklenir</p>
                       </div>
                    </div>
                  )}
@@ -202,13 +202,13 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
 
                {/* URL fallback — dosya yükleme ile sorun yaşayan kullanıcılar için */}
                <div className="space-y-1">
-                 <label className="block text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">VEYA URL YAPIŞTIR</label>
+                 <label className="block text-[9px] font-black text-[#6B7280] uppercase tracking-[0.2em] ml-1">VEYA URL YAPIŞTIR</label>
                  <input
                    type="url"
                    value={form.imageUrl || ''}
                    onChange={(e) => setForm({ ...form, imageUrl: e.target.value || null })}
                    placeholder="https://..."
-                   className="w-full bg-gray-50 border border-[#E8ECF2] rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
+                   className="w-full bg-[#F8F6F1] border border-[#E8ECF2] rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                  />
                </div>
 
@@ -226,12 +226,12 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
             {/* Right Column: Basic Info */}
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">KATEGORİ</label>
+                <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-2 ml-1">KATEGORİ</label>
                 <select
                   required
                   value={form.categoryId}
                   onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                  className="w-full bg-gray-50 border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm appearance-none"
+                  className="w-full bg-[#F8F6F1] border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm appearance-none"
                 >
                   <option value="">Seçiniz...</option>
                   {categories.map(c => (
@@ -241,20 +241,20 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">ÜRÜN ADI</label>
+                <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-2 ml-1">ÜRÜN ADI</label>
                 <input
                   type="text"
                   required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Örn: Izgara Köfte"
-                  className="w-full bg-gray-50 border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
+                  className="w-full bg-[#F8F6F1] border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">FİYAT</label>
+                  <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-2 ml-1">FİYAT</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -263,18 +263,18 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                       value={form.price}
                       onChange={(e) => setForm({ ...form, price: e.target.value })}
                       placeholder="0.00"
-                      className="w-full bg-gray-50 border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-black focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm pr-12"
+                      className="w-full bg-[#F8F6F1] border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-black focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm pr-12"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">₺</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] font-bold text-xs">₺</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">SIRALAMA</label>
+                  <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-2 ml-1">SIRALAMA</label>
                   <input
                     type="number"
                     value={form.sortOrder}
                     onChange={(e) => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-gray-50 border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-[#F8F6F1] border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -282,7 +282,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
           </div>
 
           <div>
-            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">ÜRÜN ETİKETLERİ (ÖRN: YENİ, POPÜLER)</label>
+            <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-2 ml-1">ÜRÜN ETİKETLERİ (ÖRN: YENİ, POPÜLER)</label>
             <div className="flex flex-wrap gap-2 mb-3">
                {form.badges.map(badge => (
                  <span key={badge} className="bg-[#F4B400] text-[#1A2332] text-[10px] font-black px-2.5 py-1.5 rounded-lg flex items-center gap-2 uppercase tracking-wider shadow-sm">
@@ -300,12 +300,12 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                 onChange={(e) => setBadgeInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addBadge(); } }}
                 placeholder="Örn: Yeni"
-                className="flex-1 bg-gray-50 border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
+                className="flex-1 bg-[#F8F6F1] border border-[#E8ECF2] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
               />
               <button
                 type="button"
                 onClick={addBadge}
-                className="px-6 bg-[#1A2332] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-md active:scale-95"
+                className="px-6 bg-[#1A2332] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#2A3444] transition-all shadow-md active:scale-95"
               >
                 EKLE
               </button>
@@ -313,13 +313,13 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
           </div>
 
           <div>
-            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">ÜRÜN AÇIKLAMASI</label>
+            <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-2 ml-1">ÜRÜN AÇIKLAMASI</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Ürünün içeriğini veya detaylarını yazın..."
               rows={3}
-              className="w-full bg-gray-50 border border-[#E8ECF2] rounded-xl px-5 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm resize-none"
+              className="w-full bg-[#F8F6F1] border border-[#E8ECF2] rounded-xl px-5 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm resize-none"
             />
           </div>
 
@@ -329,14 +329,14 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
               type="button"
               onClick={() => setForm({ ...form, isAvailable: !form.isAvailable })}
               className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                form.isAvailable ? 'bg-emerald-50/50 border-emerald-100' : 'bg-gray-50 border-[#E8ECF2]'
+                form.isAvailable ? 'bg-emerald-50/50 border-emerald-100' : 'bg-[#F8F6F1] border-[#E8ECF2]'
               }`}
             >
               <div className="text-left">
                 <p className="text-[11px] font-black uppercase text-[#1A2332]">MENÜDE GÖSTER</p>
-                <p className="text-[9px] font-bold text-gray-400 tracking-tight">Kapatılırsa ürünü kimse göremez</p>
+                <p className="text-[9px] font-bold text-[#6B7280] tracking-tight">Kapatılırsa ürünü kimse göremez</p>
               </div>
-              <div className={`w-9 h-5 rounded-full relative transition-all ${form.isAvailable ? 'bg-emerald-500' : 'bg-gray-300'}`}>
+              <div className={`w-9 h-5 rounded-full relative transition-all ${form.isAvailable ? 'bg-emerald-500' : 'bg-[#C9D0DB]'}`}>
                 <div className={`absolute top-1 w-3 h-3 bg-white rounded-full shadow-sm transition-all ${form.isAvailable ? 'left-5' : 'left-1'}`} />
               </div>
             </button>
@@ -345,32 +345,32 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
               type="button"
               onClick={() => setForm({ ...form, isOutOfStock: !form.isOutOfStock })}
               className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                form.isOutOfStock ? 'bg-red-50/50 border-red-100' : 'bg-gray-50 border-[#E8ECF2]'
+                form.isOutOfStock ? 'bg-red-50/50 border-red-100' : 'bg-[#F8F6F1] border-[#E8ECF2]'
               }`}
             >
               <div className="text-left">
                 <p className="text-[11px] font-black uppercase text-[#1A2332]">STOKTA YOK</p>
-                <p className="text-[9px] font-bold text-gray-400 tracking-tight">Üzerine "Tükendi" etiketi gelir</p>
+                <p className="text-[9px] font-bold text-[#6B7280] tracking-tight">Üzerine "Tükendi" etiketi gelir</p>
               </div>
-              <div className={`w-9 h-5 rounded-full relative transition-all ${form.isOutOfStock ? 'bg-red-500' : 'bg-gray-300'}`}>
+              <div className={`w-9 h-5 rounded-full relative transition-all ${form.isOutOfStock ? 'bg-red-500' : 'bg-[#C9D0DB]'}`}>
                 <div className={`absolute top-1 w-3 h-3 bg-white rounded-full shadow-sm transition-all ${form.isOutOfStock ? 'left-5' : 'left-1'}`} />
               </div>
             </button>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-4 pt-4 border-t border-gray-50">
+          <div className="flex items-center gap-4 pt-4 border-t border-[#F8F6F1]">
             <button
               type="button"
               onClick={onClose}
-              className="px-8 py-4 text-gray-400 hover:text-[#1A2332] font-black text-xs uppercase tracking-widest transition-all"
+              className="px-8 py-4 text-[#6B7280] hover:text-[#1A2332] font-black text-xs uppercase tracking-widest transition-all"
             >
               İPTAL
             </button>
             <button
               type="submit"
               disabled={loading || uploading}
-              className="flex-1 flex items-center justify-center gap-3 py-4 bg-[#1A2332] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl active:scale-95 disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-3 py-4 bg-[#1A2332] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#2A3444] transition-all shadow-xl active:scale-95 disabled:opacity-50"
             >
               {loading ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
               {item ? 'GÜNCELLEMEYİ KAYDET' : 'ÜRÜNÜ OLUŞTUR'}

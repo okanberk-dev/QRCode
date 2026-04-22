@@ -112,7 +112,7 @@ export default function AdminRestaurantMenuPage() {
 
   const { restaurant, categories } = state;
   const status = !restaurant.menuEnabled
-    ? { label: 'KAPALI', cls: 'bg-gray-100 text-gray-600 border-[#E8ECF2]' }
+    ? { label: 'KAPALI', cls: 'bg-[#E8ECF2] text-[#2A3444] border-[#E8ECF2]' }
     : restaurant.menuPublished
     ? { label: 'YAYINDA', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
     : { label: 'TASLAK', cls: 'bg-amber-50 text-amber-700 border-amber-200' };
@@ -138,7 +138,7 @@ export default function AdminRestaurantMenuPage() {
           <Link
             href={`/menu/${restaurant.slug}`}
             target="_blank"
-            className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm transition-all hover:bg-gray-50 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm transition-all hover:bg-[#F8F6F1] active:scale-95"
           >
             <ExternalLink size={14} strokeWidth={2} />
             Genel Görünüm
@@ -198,7 +198,7 @@ export default function AdminRestaurantMenuPage() {
               <button
                 disabled={saving !== null || !restaurant.menuEnabled}
                 onClick={() => toggle('menuPublished', !restaurant.menuPublished)}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-gray-800 active:scale-95 disabled:opacity-50"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-[#2A3444] active:scale-95 disabled:opacity-50"
               >
                 {saving === 'menuPublished' ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -255,13 +255,13 @@ export default function AdminRestaurantMenuPage() {
             <Link
               href={`/menu/${restaurant.slug}`}
               target="_blank"
-              className="flex items-center gap-1.5 rounded-lg border border-[#E8ECF2] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-700 shadow-sm transition-all hover:bg-gray-50 active:scale-95"
+              className="flex items-center gap-1.5 rounded-lg border border-[#E8ECF2] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[#2A3444] shadow-sm transition-all hover:bg-[#F8F6F1] active:scale-95"
             >
               <ExternalLink size={12} strokeWidth={2} />
               Yeni Sekmede Aç
             </Link>
           ) : (
-            <div className="flex items-center gap-1.5 rounded-lg border border-[#E8ECF2] bg-gray-100 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400" title="Menü yayında değil">
+            <div className="flex items-center gap-1.5 rounded-lg border border-[#E8ECF2] bg-[#E8ECF2] px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[#6B7280]" title="Menü yayında değil">
               <ExternalLink size={12} strokeWidth={2} />
               YAYINDA DEĞİL
             </div>

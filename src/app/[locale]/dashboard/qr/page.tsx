@@ -326,7 +326,7 @@ export default function DashboardQrPage() {
         <div className="order-2 lg:order-1 space-y-4 sm:space-y-6">
           <div className="rounded-[24px] sm:rounded-[28px] border border-[#E8ECF2] bg-white p-4 sm:p-6 md:p-8 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF8D6] text-[#F4B400]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF8D6] text-[#D69E00]">
                 <QrCode size={20} strokeWidth={2} />
               </div>
               <h2 className="text-lg font-extrabold text-[#1A2332] sm:text-xl">{copy.qrPreview}</h2>
@@ -405,7 +405,7 @@ export default function DashboardQrPage() {
                     className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all ${
                       useBrandColor
                         ? 'border-[#1A2332] bg-[#1A2332] text-white shadow-md'
-                        : 'border-[#E8ECF2] bg-white text-[#2A3444] hover:border-gray-300'
+                        : 'border-[#E8ECF2] bg-white text-[#2A3444] hover:border-[#C9D0DB]'
                     }`}
                   >
                     <span
@@ -421,11 +421,11 @@ export default function DashboardQrPage() {
                   className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all ${
                     !useBrandColor
                       ? 'border-[#1A2332] bg-[#1A2332] text-white shadow-md'
-                      : 'border-[#E8ECF2] bg-white text-[#2A3444] hover:border-gray-300'
+                      : 'border-[#E8ECF2] bg-white text-[#2A3444] hover:border-[#C9D0DB]'
                   }`}
                 >
                   <span
-                    className="inline-block h-4 w-4 rounded-md border border-gray-300"
+                    className="inline-block h-4 w-4 rounded-md border border-[#C9D0DB]"
                     style={{ background: customDark }}
                   />
                   {copy.customColor}

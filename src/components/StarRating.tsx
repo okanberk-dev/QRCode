@@ -56,7 +56,7 @@ export default function StarRating({ rating, onRatingChange, t, platform }: Star
                 className={`transition-all duration-300 ${
                   isActive
                     ? 'fill-[#F4B400] text-[#F4B400] scale-110 shadow-sm'
-                    : 'text-gray-200 fill-transparent'
+                    : 'text-[#E8ECF2] fill-transparent'
                 } ${isSelected && !hoverRating ? 'fill-[#F4B400] text-[#F4B400]' : ''}`}
                 strokeWidth={isActive ? 1.5 : 1}
               />
@@ -73,11 +73,11 @@ export default function StarRating({ rating, onRatingChange, t, platform }: Star
       {/* Dynamic Label */}
       <div className="h-6 flex items-center justify-center transition-all duration-300">
         {active > 0 && labels[active] ? (
-          <span className="text-[15px] font-bold text-gray-800 animate-in fade-in zoom-in-95 duration-300">
+          <span className="text-[15px] font-bold text-[#1A2332] animate-in fade-in zoom-in-95 duration-300">
             {labels[active]}
           </span>
         ) : (
-          <span className="text-[13px] text-gray-400 font-bold uppercase tracking-[0.1em]">
+          <span className="text-[13px] text-[#6B7280] font-bold uppercase tracking-[0.1em]">
             Puan Verin
           </span>
         )}

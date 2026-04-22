@@ -27,7 +27,7 @@ export function InputField({
         {hint && (
           <span
             id={`${id}-hint`}
-            className="text-[11px] font-medium text-gray-400"
+            className="text-[11px] font-medium text-[#6B7280]"
           >
             {hint}
           </span>
@@ -46,7 +46,7 @@ export function InputField({
           onChange={e => onChange(e.target.value)}
           aria-describedby={hint ? `${id}-hint` : undefined}
           className="w-full rounded-xl border-2 border-[#1A2332] bg-white px-4 py-3
-                     text-sm text-[#1A2332] font-bold placeholder:text-gray-300
+                     text-sm text-[#1A2332] font-bold placeholder:text-[#C9D0DB]
                      focus:border-[#F4B400] focus:outline-none focus:ring-4
                      focus:ring-[#F4B400]/10 transition-all
                      shadow-sm focus:shadow-none focus:translate-y-[2px]

@@ -164,8 +164,8 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
 
       {visibleCategories.length === 0 ? (
         <div className="mx-auto max-w-xl px-6 py-20 text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-            <Sparkles size={28} className="text-gray-400" strokeWidth={2} />
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8ECF2]">
+            <Sparkles size={28} className="text-[#6B7280]" strokeWidth={2} />
           </div>
           <h2 className="text-lg font-extrabold text-[#1A2332]">{copy.emptyTitle}</h2>
           <p className="mt-1 text-sm font-bold text-[#2A3444]">{copy.emptyBody}</p>
@@ -182,7 +182,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                       key={c.id}
                       href={`#cat-${c.id}`}
                       className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all ${
-                        isActive ? 'text-white shadow-sm' : 'bg-white text-[#1A2332] hover:bg-gray-50'
+                        isActive ? 'text-white shadow-sm' : 'bg-white text-[#1A2332] hover:bg-[#F8F6F1]'
                       }`}
                       style={isActive ? { backgroundColor: restaurant.primaryColor } : undefined}
                     >
@@ -215,7 +215,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
-                        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-100 sm:h-28 sm:w-28">
+                        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[#E8ECF2] sm:h-28 sm:w-28">
                           {item.imageUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img

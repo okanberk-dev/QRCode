@@ -112,8 +112,8 @@ export default function PublicMenuPage() {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-6">
-          <div className="w-16 h-16 rounded-full border-4 border-gray-50 border-t-blue-500 animate-spin" />
-          <p className="text-sm font-black text-gray-300 tracking-[0.2em] uppercase">BUAZE</p>
+          <div className="w-16 h-16 rounded-full border-4 border-[#F8F6F1] border-t-blue-500 animate-spin" />
+          <p className="text-sm font-black text-[#C9D0DB] tracking-[0.2em] uppercase">BUAZE</p>
         </div>
       </div>
     );
@@ -124,7 +124,7 @@ export default function PublicMenuPage() {
   const themeColor = data.primaryColor || '#1A2332';
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8F6F1] selection:bg-gray-100">
+    <div className="flex flex-col min-h-screen bg-[#F8F6F1] selection:bg-[#E8ECF2]">
       
       {/* ── Fixed Header ── */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#E8ECF2]">
@@ -132,7 +132,7 @@ export default function PublicMenuPage() {
           <div className="flex items-center gap-3">
              <button 
                onClick={() => window.history.back()}
-               className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50 text-gray-900 transition-colors"
+               className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#F8F6F1] text-[#1A2332] transition-colors"
              >
                <ArrowLeft size={22} strokeWidth={2} />
              </button>
@@ -153,13 +153,13 @@ export default function PublicMenuPage() {
         {/* ── Search Bar ── */}
         <div className="max-w-xl mx-auto px-5 pb-3">
            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1A2332] transition-colors" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={18} />
               <input 
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={locale === 'tr' ? 'Ürün veya kategori ara...' : 'Search for dishes...'}
-                className="w-full h-12 bg-gray-50 border border-[#E8ECF2] rounded-2xl pl-12 pr-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all shadow-sm"
+                className="w-full h-12 bg-[#F8F6F1] border border-[#E8ECF2] rounded-2xl pl-12 pr-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#E8ECF2] focus:bg-white transition-all shadow-sm"
               />
            </div>
         </div>
@@ -188,8 +188,8 @@ export default function PublicMenuPage() {
                 }}
                 className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
                   activeCategory === cat.id 
-                    ? 'bg-[#1A2332] text-white border-[#1A2332] shadow-xl shadow-gray-200' 
-                    : 'bg-white text-gray-500 border-[#E8ECF2] hover:border-[#E8ECF2]'
+                    ? 'bg-[#1A2332] text-white border-[#1A2332] shadow-xl shadow-[#E8ECF2]' 
+                    : 'bg-white text-[#6B7280] border-[#E8ECF2] hover:border-[#E8ECF2]'
                 }`}
               >
                 {cat.name}
@@ -204,9 +204,9 @@ export default function PublicMenuPage() {
          {filteredCategories.length === 0 ? (
            <div className="py-20 text-center space-y-4">
               <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center mx-auto shadow-sm">
-                 <Search className="text-gray-200" size={32} />
+                 <Search className="text-[#E8ECF2]" size={32} />
               </div>
-              <p className="text-sm font-bold text-gray-400">{locale === 'tr' ? 'Aradığınız kritere uygun ürün bulunamadı.' : 'No items found matching your search.'}</p>
+              <p className="text-sm font-bold text-[#6B7280]">{locale === 'tr' ? 'Aradığınız kritere uygun ürün bulunamadı.' : 'No items found matching your search.'}</p>
            </div>
          ) : (
            filteredCategories.map(cat => (
@@ -215,7 +215,7 @@ export default function PublicMenuPage() {
                    <div className="h-8 w-1.5 rounded-full" style={{ backgroundColor: themeColor }} />
                    <div>
                      <h2 className="text-2xl font-extrabold text-[#1A2332] tracking-tight">{cat.name}</h2>
-                     {cat.description && <p className="text-xs font-bold text-gray-400 mt-0.5">{cat.description}</p>}
+                     {cat.description && <p className="text-xs font-bold text-[#6B7280] mt-0.5">{cat.description}</p>}
                    </div>
                 </div>
 
@@ -224,12 +224,12 @@ export default function PublicMenuPage() {
                      <div 
                        key={item.id}
                        onClick={() => setSelectedItem(item)}
-                       className="relative bg-white rounded-[28px] p-4 flex gap-4 border border-gray-50 shadow-sm active:scale-[0.98] transition-all group cursor-pointer"
+                       className="relative bg-white rounded-[28px] p-4 flex gap-4 border border-[#F8F6F1] shadow-sm active:scale-[0.98] transition-all group cursor-pointer"
                      >
                         <div className="flex-1 space-y-1.5">
                            <div className="flex items-start justify-between gap-2">
                              <div className="flex flex-col gap-1">
-                               <h3 className="font-extrabold text-[#1A2332] leading-tight group-hover:text-gray-700 transition-colors uppercase tracking-tight">{item.name}</h3>
+                               <h3 className="font-extrabold text-[#1A2332] leading-tight group-hover:text-[#2A3444] transition-colors uppercase tracking-tight">{item.name}</h3>
                                {item.badges && item.badges.length > 0 && (
                                  <div className="flex flex-wrap gap-1">
                                     {item.badges.map((badge, idx) => (
@@ -242,7 +242,7 @@ export default function PublicMenuPage() {
                              </div>
                            </div>
                            {item.description && (
-                             <p className="text-[12px] font-medium text-gray-500 line-clamp-2 leading-relaxed">{item.description}</p>
+                             <p className="text-[12px] font-medium text-[#6B7280] line-clamp-2 leading-relaxed">{item.description}</p>
                            )}
                            <div className="pt-1">
                              <span className="text-[15px] font-black text-[#1A2332]">
@@ -252,7 +252,7 @@ export default function PublicMenuPage() {
                         </div>
 
                         {item.imageUrl && (
-                          <div className="relative w-24 h-24 shrink-0 rounded-[20px] overflow-hidden border border-gray-50">
+                          <div className="relative w-24 h-24 shrink-0 rounded-[20px] overflow-hidden border border-[#F8F6F1]">
                              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                              {item.isOutOfStock && (
                                <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
@@ -280,11 +280,11 @@ export default function PublicMenuPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="mt-auto py-10 px-6 bg-gray-50/50 border-t border-[#E8ECF2]">
+      <footer className="mt-auto py-10 px-6 bg-[#F8F6F1]/50 border-t border-[#E8ECF2]">
         <div className="max-w-xl mx-auto flex flex-col items-center gap-6">
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold text-gray-300 tracking-[0.2em] uppercase">POWERED BY</span>
-            <span className="text-[10px] font-black text-gray-400 tracking-tighter uppercase">BUAZE</span>
+            <span className="text-[9px] font-bold text-[#C9D0DB] tracking-[0.2em] uppercase">POWERED BY</span>
+            <span className="text-[10px] font-black text-[#6B7280] tracking-tighter uppercase">BUAZE</span>
           </div>
         </div>
       </footer>
@@ -300,7 +300,7 @@ export default function PublicMenuPage() {
                  {selectedItem.imageUrl ? (
                    <img src={selectedItem.imageUrl} alt={selectedItem.name} className="w-full h-full object-cover" />
                  ) : (
-                   <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-200">
+                   <div className="w-full h-full bg-[#F8F6F1] flex items-center justify-center text-[#E8ECF2]">
                       <Utensils size={64} />
                    </div>
                  )}
@@ -334,22 +334,22 @@ export default function PublicMenuPage() {
                  </div>
 
                  {selectedItem.description && (
-                   <div className="space-y-2 pt-2 border-t border-gray-50">
-                      <p className="text-[11px] font-black uppercase text-gray-400 tracking-[0.2em]">{locale === 'tr' ? 'AÇIKLAMA' : 'DESCRIPTION'}</p>
-                      <p className="text-gray-500 text-sm font-bold leading-relaxed">{selectedItem.description}</p>
+                   <div className="space-y-2 pt-2 border-t border-[#F8F6F1]">
+                      <p className="text-[11px] font-black uppercase text-[#6B7280] tracking-[0.2em]">{locale === 'tr' ? 'AÇIKLAMA' : 'DESCRIPTION'}</p>
+                      <p className="text-[#6B7280] text-sm font-bold leading-relaxed">{selectedItem.description}</p>
                    </div>
                  )}
 
-                 <div className="flex items-center justify-between pt-6 border-t border-gray-50">
+                 <div className="flex items-center justify-between pt-6 border-t border-[#F8F6F1]">
                     <div className="space-y-1">
-                       <p className="text-[11px] font-black uppercase text-gray-400 tracking-[0.2em]">{locale === 'tr' ? 'FİYAT' : 'PRICE'}</p>
+                       <p className="text-[11px] font-black uppercase text-[#6B7280] tracking-[0.2em]">{locale === 'tr' ? 'FİYAT' : 'PRICE'}</p>
                        <p className="text-2xl font-black text-[#1A2332]">
                          {(selectedItem.priceCents / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {selectedItem.currency === 'TRY' ? '₺' : selectedItem.currency}
                        </p>
                     </div>
                     <button 
                       onClick={() => setSelectedItem(null)}
-                      className="px-10 py-4 bg-[#1A2332] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-800 transition-all active:scale-95 shadow-xl"
+                      className="px-10 py-4 bg-[#1A2332] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#2A3444] transition-all active:scale-95 shadow-xl"
                     >
                       {locale === 'tr' ? 'GERİ DÖN' : 'GO BACK'}
                     </button>

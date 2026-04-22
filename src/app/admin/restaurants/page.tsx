@@ -21,7 +21,7 @@ interface Restaurant {
 }
 
 function menuStatus(r: Pick<Restaurant, 'menuEnabled' | 'menuPublished'>) {
-  if (!r.menuEnabled) return { label: 'KAPALI', cls: 'bg-gray-100 text-gray-500 border-[#E8ECF2]' };
+  if (!r.menuEnabled) return { label: 'KAPALI', cls: 'bg-[#E8ECF2] text-[#6B7280] border-[#E8ECF2]' };
   if (!r.menuPublished) return { label: 'TASLAK', cls: 'bg-amber-50 text-amber-700 border-amber-200' };
   return { label: 'YAYINDA', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
 }
@@ -162,7 +162,7 @@ export default function RestaurantsPage() {
       {/* Filters and Search */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         {/* Status Filter */}
-        <div className="flex bg-gray-100/50 p-1 rounded-xl shrink-0 border border-[#E8ECF2]">
+        <div className="flex bg-[#E8ECF2]/50 p-1 rounded-xl shrink-0 border border-[#E8ECF2]">
           <button
             onClick={() => setStatusFilter('active')}
             className={`px-4 sm:px-6 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
@@ -211,8 +211,8 @@ export default function RestaurantsPage() {
       {/* Restaurant Cards Grid */}
       {restaurants.length === 0 ? (
         <div className="bg-white rounded-[24px] border border-[#E8ECF2] p-8 sm:p-16 md:p-24 text-center space-y-6 shadow-sm">
-          <div className="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto border border-[#E8ECF2]">
-            <Store size={48} className="text-gray-400" strokeWidth={2} />
+          <div className="w-24 h-24 bg-[#F8F6F1] rounded-3xl flex items-center justify-center mx-auto border border-[#E8ECF2]">
+            <Store size={48} className="text-[#6B7280]" strokeWidth={2} />
           </div>
           <div className="space-y-2">
             <h3 className="text-xl font-extrabold text-[#1A2332]">Henüz işletme kaydı yok</h3>
@@ -294,20 +294,20 @@ export default function RestaurantsPage() {
                 <div className="flex items-center gap-3">
                   <Link
                     href={`/admin/restaurants/${r.id}`}
-                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-[#1A2332] text-white rounded-xl shadow-sm hover:bg-gray-800 transition-all uppercase tracking-widest active:scale-95"
+                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-[#1A2332] text-white rounded-xl shadow-sm hover:bg-[#2A3444] transition-all uppercase tracking-widest active:scale-95"
                   >
                     YÖNET
                   </Link>
                   <Link
                     href={`/admin/restaurants/${r.id}/menu`}
-                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-gray-700 border border-[#E8ECF2] rounded-xl shadow-sm hover:bg-gray-50 transition-all uppercase tracking-widest active:scale-95 flex items-center justify-center gap-2"
+                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-[#2A3444] border border-[#E8ECF2] rounded-xl shadow-sm hover:bg-[#F8F6F1] transition-all uppercase tracking-widest active:scale-95 flex items-center justify-center gap-2"
                   >
                     <UtensilsCrossed size={14} strokeWidth={2} />
                     MENÜ
                   </Link>
                   <Link
                     href={`/admin/qr?restaurant=${r.id}`}
-                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-500 bg-white hover:text-gray-900 border border-[#E8ECF2] rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95 shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-[#6B7280] bg-white hover:text-[#1A2332] border border-[#E8ECF2] rounded-xl shadow-sm hover:bg-[#F8F6F1] transition-all active:scale-95 shrink-0"
                     title="QR KOD"
                   >
                     <ExternalLink size={18} strokeWidth={2} />
@@ -329,7 +329,7 @@ export default function RestaurantsPage() {
 
               <button
                 onClick={() => { setShowCreateModal(false); setError(''); }}
-                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-gray-400 hover:text-[#1A2332] hover:bg-gray-100 rounded-xl transition-all"
+                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-[#6B7280] hover:text-[#1A2332] hover:bg-[#E8ECF2] rounded-xl transition-all"
               >
                 <X size={24} strokeWidth={2} />
               </button>

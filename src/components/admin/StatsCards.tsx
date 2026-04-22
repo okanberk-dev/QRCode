@@ -32,7 +32,7 @@ export default function StatsCards({ stats }: StatsProps) {
       {/* Ortalama Puan */}
       <div className={CARD}>
         <div className="flex items-center justify-between mb-4 sm:mb-5">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-[#FFF8D6] text-[#F4B400] rounded-xl flex items-center justify-center group-hover:bg-[#F4B400] group-hover:text-white transition-colors">
+          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-[#FFF8D6] text-[#D69E00] rounded-xl flex items-center justify-center group-hover:bg-[#F4B400] group-hover:text-[#1A2332] transition-colors">
             <Star size={18} fill="currentColor" strokeWidth={2} />
           </div>
           <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-[#F4B400]">RATING</span>

@@ -43,7 +43,7 @@ export default async function VsSpreadsheetPage({
     {
       label: t.compare_f3, // Anlık SMS/Email Bildirimi
       buaze: <Check className="mx-auto text-green-600" />,
-      competitor: <Minus className="mx-auto text-gray-300" />,
+      competitor: <Minus className="mx-auto text-[#C9D0DB]" />,
     },
     {
         label: t.compare_f7, // Gelişmiş Analitik Panel

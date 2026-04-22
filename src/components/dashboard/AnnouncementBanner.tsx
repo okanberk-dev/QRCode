@@ -123,7 +123,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
               href={a.ctaLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3.5 py-2 rounded-xl bg-[#1A2332] text-white text-[11px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all whitespace-nowrap"
+              className="px-3.5 py-2 rounded-xl bg-[#1A2332] text-white text-[11px] font-black uppercase tracking-widest hover:bg-[#2A3444] transition-all whitespace-nowrap"
             >
               {a.ctaText}
             </a>
@@ -155,7 +155,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-gray-500 hover:text-[#1A2332] transition-colors"
+          className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-[#6B7280] hover:text-[#1A2332] transition-colors"
         >
           <ChevronDown size={14} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} strokeWidth={2} />
           {expanded ? copy.less : copy.more(rest.length)}

@@ -233,7 +233,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
               </div>
               <button 
                 onClick={() => setShowKvkk(false)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 text-gray-400 transition-colors"
+                className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-[#E8ECF2] text-[#6B7280] transition-colors"
               >
                 <X size={22} strokeWidth={2} />
               </button>
@@ -248,7 +248,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             <div className="p-7 bg-white border-t-2 border-[#1A2332] flex justify-end">
               <button 
                 onClick={() => setShowKvkk(false)}
-                className="w-full py-4 bg-[#1A2332] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-md active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                className="w-full py-4 bg-[#1A2332] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-[#2A3444] transition-all shadow-md active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
               >
                 KAPAT
               </button>

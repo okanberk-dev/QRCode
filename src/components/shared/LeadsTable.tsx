@@ -87,7 +87,7 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
         </div>
         <button 
           onClick={exportToCSV}
-          className="flex items-center gap-2 px-6 py-3 bg-[#1A2332] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg active:scale-95"
+          className="flex items-center gap-2 px-6 py-3 bg-[#1A2332] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#2A3444] transition-all shadow-lg active:scale-95"
         >
           <Download size={16} strokeWidth={2} />
           CSV İNDİR
@@ -117,7 +117,7 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
                 <th className="px-10 py-5">SON ETKİLEŞİM</th>
               </tr>
             </thead>
-            <tbody className="divide-y-2 divide-gray-50 text-sm">
+            <tbody className="divide-y-2 divide-[#F8F6F1] text-sm">
               {loading ? (
                 <tr>
                   <td colSpan={isSuperAdmin ? 4 : 3} className="py-20 text-center">
@@ -132,7 +132,7 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
                 </tr>
               ) : (
                 filteredLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-gray-50/50 transition-all group">
+                  <tr key={lead.id} className="hover:bg-[#F8F6F1]/50 transition-all group">
                     <td className="px-10 py-6">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-[#F4B400] flex items-center justify-center text-[#1A2332] shadow-sm group-hover:scale-105 transition-transform">

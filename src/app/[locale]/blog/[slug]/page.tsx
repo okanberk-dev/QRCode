@@ -123,7 +123,7 @@ export default async function BlogPostPage({
             </div>
             <Link
               href={`${base}/auth/register`}
-              className="px-8 py-4 bg-[#F4B400] text-white text-[15px] font-extrabold rounded-xl border border-[#1A2332] shadow-sm hover:bg-[#E8870A] active:translate-y-1 active:shadow-none transition-all flex border flex-shrink-0 gap-2 items-center"
+              className="px-8 py-4 bg-[#F4B400] text-[#1A2332] text-[15px] font-extrabold rounded-xl shadow-sm hover:bg-[#D69E00] active:translate-y-1 active:shadow-none transition-all flex flex-shrink-0 gap-2 items-center"
             >
               {locale === 'tr' ? 'Ücretsiz Başla' : 'Start for Free'} <ArrowRight size={18} />
             </Link>

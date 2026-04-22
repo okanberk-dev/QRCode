@@ -118,7 +118,7 @@ export default async function RegisterPage({
               <RegisterForm locale={locale} t={t} />
             </div>
             
-            <p className="text-center text-sm font-medium text-gray-500">
+            <p className="text-center text-sm font-medium text-[#6B7280]">
               {locale === 'tr' ? 'Zaten hesabınız var mı?' : "Already have an account?"}{' '}
               <Link href={`/${locale}/auth/login`} className="text-[#1A2332] font-black hover:text-[#F4B400] hover:underline transition-all">
                 {locale === 'tr' ? 'Giriş yapın →' : 'Log in here →'}

@@ -170,7 +170,7 @@ export default function AdminProfilePage() {
                     value={formData.currentPassword}
                     onChange={(e) => setFormData(p => ({ ...p, currentPassword: e.target.value }))}
                     placeholder="••••••••"
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-gray-100"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-[#E8ECF2]"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -183,7 +183,7 @@ export default function AdminProfilePage() {
                       value={formData.newPassword}
                       onChange={(e) => setFormData(p => ({ ...p, newPassword: e.target.value }))}
                       placeholder="Min 8 karakter"
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-gray-100"
+                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-[#E8ECF2]"
                     />
                   </div>
                   <div className="space-y-2">
@@ -195,7 +195,7 @@ export default function AdminProfilePage() {
                       value={formData.confirmPassword}
                       onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
                       placeholder="Şifreyi doğrula"
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-gray-100"
+                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-[#E8ECF2]"
                     />
                   </div>
                 </div>

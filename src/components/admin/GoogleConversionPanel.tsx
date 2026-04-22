@@ -184,7 +184,7 @@ export default function GoogleConversionPanel({
             </div>
           </div>
 
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-[#F8F6F1]">
             {byRestaurant.map((rest) => (
               <RestaurantRow
                 key={rest.id}
@@ -233,7 +233,7 @@ function FunnelRow({
           {value}
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-[#E8ECF2]">
         <div
           className="h-full rounded-full transition-all"
           style={{
@@ -263,7 +263,7 @@ function RestaurantRow({
   onClick?: () => void;
 }) {
   const rateColor = rest.conversionRate === null
-    ? 'text-gray-400'
+    ? 'text-[#6B7280]'
     : rest.conversionRate >= 80
       ? 'text-emerald-600'
       : rest.conversionRate >= 40
@@ -276,7 +276,7 @@ function RestaurantRow({
     <Wrapper
       onClick={onClick}
       className={`w-full px-4 py-3.5 text-left transition-colors sm:px-5 ${
-        onClick ? 'hover:bg-gray-50 cursor-pointer' : 'cursor-default'
+        onClick ? 'hover:bg-[#F8F6F1] cursor-pointer' : 'cursor-default'
       }`}
     >
       <div className="flex items-center justify-between gap-3">
@@ -298,7 +298,7 @@ function RestaurantRow({
           <div className={`text-lg font-black tabular-nums sm:text-xl ${rateColor}`}>
             {rest.conversionRate === null ? '—' : `${rest.conversionRate.toFixed(0)}%`}
           </div>
-          <div className="mt-1 h-1.5 w-20 overflow-hidden rounded-full bg-gray-100">
+          <div className="mt-1 h-1.5 w-20 overflow-hidden rounded-full bg-[#E8ECF2]">
             <div
               className={`h-full rounded-full ${
                 rest.conversionRate === null || rest.conversionRate === 0

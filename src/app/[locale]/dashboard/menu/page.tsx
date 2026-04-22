@@ -90,8 +90,8 @@ export default function DashboardMenuPage() {
 
       {restaurants.length === 0 ? (
         <div className="bg-white rounded-[40px] border border-[#E8ECF2] p-20 text-center shadow-sm">
-           <div className="w-20 h-20 bg-gray-50 rounded-[30px] flex items-center justify-center mx-auto mb-6">
-             <Store size={36} className="text-gray-200" />
+           <div className="w-20 h-20 bg-[#F8F6F1] rounded-[30px] flex items-center justify-center mx-auto mb-6">
+             <Store size={36} className="text-[#E8ECF2]" />
            </div>
            <p className="text-xl font-black text-[#1A2332]">{copy.noRest}</p>
            <a 
@@ -113,7 +113,7 @@ export default function DashboardMenuPage() {
                   className={`flex items-center justify-between p-6 rounded-3xl border-2 transition-all text-left ${
                     selectedId === r.id 
                       ? 'bg-white border-[#F4B400] shadow-xl shadow-[#F4B400]/5' 
-                      : 'bg-white border-gray-50 hover:border-[#E8ECF2]'
+                      : 'bg-white border-[#F8F6F1] hover:border-[#E8ECF2]'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -125,10 +125,10 @@ export default function DashboardMenuPage() {
                     </div>
                     <div>
                       <p className="font-black text-[#1A2332] text-sm truncate max-w-[120px]">{r.name}</p>
-                      <p className="text-[10px] font-bold text-gray-400 mt-0.5">{r.category}</p>
+                      <p className="text-[10px] font-bold text-[#6B7280] mt-0.5">{r.category}</p>
                     </div>
                   </div>
-                  <ChevronRight size={20} className={selectedId === r.id ? 'text-[#F4B400]' : 'text-gray-200'} />
+                  <ChevronRight size={20} className={selectedId === r.id ? 'text-[#F4B400]' : 'text-[#E8ECF2]'} />
                 </button>
               ))}
             </div>

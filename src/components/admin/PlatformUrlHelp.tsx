@@ -65,7 +65,7 @@ export default function PlatformUrlHelp({ platform }: Props) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={`${guide.title} nasıl kopyalanır?`}
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#E8ECF2] bg-white text-gray-400 hover:text-[#1A2332] hover:border-gray-300 transition-colors"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#E8ECF2] bg-white text-[#6B7280] hover:text-[#1A2332] hover:border-[#C9D0DB] transition-colors"
       >
         <Info size={12} strokeWidth={2} />
       </button>
@@ -76,7 +76,7 @@ export default function PlatformUrlHelp({ platform }: Props) {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-gray-400 hover:text-[#1A2332]"
+              className="text-[#6B7280] hover:text-[#1A2332]"
             >
               <X size={14} strokeWidth={2} />
             </button>
@@ -87,7 +87,7 @@ export default function PlatformUrlHelp({ platform }: Props) {
             ))}
           </ol>
           {guide.hint && (
-            <p className="mt-2 text-[11px] text-gray-500 leading-relaxed">{guide.hint}</p>
+            <p className="mt-2 text-[11px] text-[#6B7280] leading-relaxed">{guide.hint}</p>
           )}
         </div>
       )}

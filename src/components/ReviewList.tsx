@@ -37,7 +37,7 @@ const REVIEWS = [
 
 export default function ReviewList() {
   return (
-    <div className="w-full bg-white divide-y divide-gray-100">
+    <div className="w-full bg-white divide-y divide-[#E8ECF2]">
       <div className="px-5 py-4 flex items-center justify-between">
         <h3 className="text-base font-medium text-[#1A2332]">En Alakalı Yorumlar</h3>
         <div className="flex items-center gap-4">
@@ -47,7 +47,7 @@ export default function ReviewList() {
       </div>
 
       {REVIEWS.map((review, idx) => (
-        <div key={idx} className="px-5 py-6 flex gap-4 transition-colors hover:bg-gray-50/30">
+        <div key={idx} className="px-5 py-6 flex gap-4 transition-colors hover:bg-[#F8F6F1]/30">
           {/* Avatar Area */}
           <div className="flex flex-col items-center flex-shrink-0">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-medium text-lg shadow-sm border border-white ${review.avatarColor}`}>
@@ -71,7 +71,7 @@ export default function ReviewList() {
                       <Star 
                         key={i} 
                         size={12} 
-                        className={i < review.rating ? "fill-[#F4B400] text-[#F4B400]" : "text-gray-200 fill-transparent"} 
+                        className={i < review.rating ? "fill-[#F4B400] text-[#F4B400]" : "text-[#E8ECF2] fill-transparent"} 
                       />
                     ))}
                   </div>

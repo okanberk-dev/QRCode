@@ -416,7 +416,7 @@ export default async function PizzaLocaleCaseStudy({
                       <div className="w-10 h-10 rounded-xl bg-[#F4B400] flex items-center justify-center font-black text-[#1A2332]">B</div>
                       <div className="space-y-4">
                          {[1, 2, 3, 4].map(i => (
-                           <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center ${i === 1 ? 'bg-[#F4B400]/10 text-[#F4B400]' : 'text-gray-500'}`}>
+                           <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center ${i === 1 ? 'bg-[#F4B400]/10 text-[#F4B400]' : 'text-[#6B7280]'}`}>
                              {i === 1 ? <TrendingUp size={16} /> : <div className="w-4 h-1 bg-current opacity-20 rounded-full" />}
                            </div>
                          ))}
@@ -432,7 +432,7 @@ export default async function PizzaLocaleCaseStudy({
                            <span className="text-[10px] font-black uppercase tracking-widest text-[#1A2332]">{locale === 'tr' ? 'CANLI PANEL' : 'LIVE DASHBOARD'}</span>
                          </div>
                          <div className="flex gap-1.5">
-                           {[1, 2, 3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-gray-200" />)}
+                           {[1, 2, 3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#E8ECF2]" />)}
                          </div>
                       </div>
 
@@ -466,7 +466,7 @@ export default async function PizzaLocaleCaseStudy({
                             <span className="text-[10px] font-black uppercase tracking-[0.15em] text-[#1A2332] opacity-40">{locale === 'tr' ? 'MEMNUNİYET TRENDİ' : 'SATISFACTION TREND'}</span>
                             <div className="flex gap-2">
                               <div className="w-2 h-2 rounded-full bg-[#10b981]" />
-                              <div className="w-20 h-2 bg-gray-100 rounded-full" />
+                              <div className="w-20 h-2 bg-[#E8ECF2] rounded-full" />
                             </div>
                           </div>
                           <div className="h-24 sm:h-32 flex items-end gap-1.5 sm:gap-2 pt-4">

@@ -12,7 +12,7 @@ interface WordCloudProps {
 export default function WordCloud({ words }: WordCloudProps) {
   if (!words || words.length === 0) {
     return (
-      <div className="flex items-center justify-center h-48 text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-[#E8ECF2]">
+      <div className="flex items-center justify-center h-48 text-[#6B7280] bg-[#F8F6F1] rounded-2xl border border-dashed border-[#E8ECF2]">
         Yorumlardan henüz yeterli veri toplanamadı.
       </div>
     );
@@ -23,7 +23,7 @@ export default function WordCloud({ words }: WordCloudProps) {
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#E8ECF2] h-full">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+      <h3 className="text-lg font-semibold text-[#1A2332] mb-4 flex items-center gap-2">
         <span className="w-2 h-6 bg-red-500 rounded-full"></span>
         Popüler Geri Bildirimler
       </h3>
@@ -45,7 +45,7 @@ export default function WordCloud({ words }: WordCloudProps) {
               }}
               className={`
                 transition-all duration-300 hover:scale-110 cursor-default
-                ${isTopTier ? 'text-red-600 font-bold' : 'text-gray-600 font-medium'}
+                ${isTopTier ? 'text-red-600 font-bold' : 'text-[#2A3444] font-medium'}
               `}
               title={`${word.value} kez kullanıldı`}
             >

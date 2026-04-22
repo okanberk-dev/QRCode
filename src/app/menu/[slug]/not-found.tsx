@@ -14,7 +14,7 @@ export default function MenuNotFound() {
         </p>
         <Link
           href="/"
-          className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#1A2332] px-6 py-3 text-xs font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-gray-800 active:scale-95"
+          className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#1A2332] px-6 py-3 text-xs font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-[#2A3444] active:scale-95"
         >
           <ArrowLeft size={14} strokeWidth={2} />
           Buaze Ana Sayfa

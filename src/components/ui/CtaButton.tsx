@@ -17,7 +17,7 @@ const STYLES: Record<Variant, string> = {
   // Gold — attention-grabbing primary CTA (brand guide "İkincil Buton")
   primary: 'bg-[#F4B400] text-[#1A2332] shadow-sm hover:bg-[#E0A200] hover:shadow-md focus:ring-[#F4B400]/40',
   // Ghost — subtle card-like button (brand guide "Ghost Buton")
-  secondary: 'bg-white text-[#1A2332] border border-[#E8ECF2] shadow-sm hover:border-[#1A2332] hover:shadow-md focus:ring-[#1A2332]/20',
+  secondary: 'bg-white text-[#1A2332] border border-[#E8ECF2] shadow-sm hover:border-[#1A2332] hover:shadow-md focus:ring-[#1A2332]/40',
   // Dark — dominant CTA on light backgrounds (brand guide "Birincil Buton")
   dark: 'bg-[#1A2332] text-white shadow-sm hover:bg-[#0E1525] hover:shadow-md focus:ring-[#1A2332]/40',
   // Ghost — transparent, text-only with hover wash

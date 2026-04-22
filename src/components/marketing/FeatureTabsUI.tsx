@@ -65,7 +65,7 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
                 {[1,2].map(i => <Star key={i} size={22} fill="#F4B400" strokeWidth={0} />)}
                 {[3,4,5].map(i => <Star key={i} size={22} fill="#FDEBD0" strokeWidth={0} />)}
               </div>
-              <div className="bg-[#F4B400] text-white px-3.5 py-1.5 text-[11px] font-extrabold rounded-full shadow-sm uppercase tracking-wider inline-flex items-center w-fit">
+              <div className="bg-[#F4B400] text-[#1A2332] px-3.5 py-1.5 text-[11px] font-extrabold rounded-full shadow-sm uppercase tracking-wider inline-flex items-center w-fit">
                 {locale === 'tr' ? '🔒 Özel Panele Al' : '🔒 Internal Dashboard'}
               </div>
             </div>

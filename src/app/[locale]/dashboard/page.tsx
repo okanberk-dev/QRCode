@@ -245,7 +245,7 @@ export default async function DashboardPage({
                         />
                       </div>
                     </div>
-                    <span className={`shrink-0 whitespace-nowrap text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border-2 ${restaurant.isActive ? 'bg-green-50 text-green-600 border-green-200' : 'bg-gray-50 text-[#6B7280] border-[#E8ECF2]'}`}>
+                    <span className={`shrink-0 whitespace-nowrap text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border-2 ${restaurant.isActive ? 'bg-green-50 text-green-600 border-green-200' : 'bg-[#F8F6F1] text-[#6B7280] border-[#E8ECF2]'}`}>
                       {restaurant.isActive ? (locale === 'tr' ? 'AKTİF' : 'ACTIVE') : (locale === 'tr' ? 'PASİF' : 'INACTIVE')}
                     </span>
                   </div>

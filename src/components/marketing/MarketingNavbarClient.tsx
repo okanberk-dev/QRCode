@@ -415,7 +415,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
               </Link>
               <Link
                 href={`${base}/auth/register`}
-                className="px-5 py-2 text-[14px] font-extrabold bg-[#F4B400] text-white rounded-lg border border-[#1A2332] shadow-sm hover:bg-[#E8870A] active:translate-y-[3px] active:shadow-none transition-all"
+                className="px-5 py-2 text-[14px] font-extrabold bg-[#F4B400] text-[#1A2332] rounded-lg shadow-sm hover:bg-[#D69E00] active:translate-y-[3px] active:shadow-none transition-all"
               >
                 {t.nav_register}
               </Link>
