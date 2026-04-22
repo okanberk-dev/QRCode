@@ -291,7 +291,7 @@ export default function PublicMenuPage() {
 
       {/* ── Item Detail Modal ── */}
       {selectedItem && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-300">
            <div 
              className="w-full max-w-xl bg-white rounded-t-[32px] sm:rounded-[40px] overflow-hidden animate-in slide-in-from-bottom-20 duration-500 shadow-2xl"
              onClick={(e) => e.stopPropagation()}

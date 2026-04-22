@@ -84,7 +84,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                   </td>
                   <td className="px-4 py-4 sm:px-8 sm:py-6 whitespace-nowrap">
                     <span className={`inline-flex items-center gap-1 font-bold px-3 py-1 rounded-full text-[11px] shadow-sm
-                      ${f.rating >= 4 ? 'bg-green-100 text-green-700' : f.rating === 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}
+                      ${f.rating >= 4 ? 'bg-green-100 text-green-700' : f.rating === 3 ? 'bg-[#FFF8D6] text-[#B88800]' : 'bg-red-100 text-red-700'}`}
                     >
                       {f.rating} {locale === 'tr' ? 'Yıldız' : 'Stars'}
                     </span>
@@ -159,7 +159,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                   </td>
                   <td className="px-4 py-4 sm:px-8 sm:py-6 whitespace-nowrap">
                     <div className="font-medium text-gray-900 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                      <span className="w-2 h-2 rounded-full bg-[#F4B400]"></span>
                       {f.branch || '-'}
                     </div>
                     <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mt-1">Masa: {f.tableNumber || '-'}</div>

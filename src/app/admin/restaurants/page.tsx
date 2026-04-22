@@ -382,7 +382,7 @@ export default function RestaurantsPage() {
                     <div className="min-w-0">
                       <p className="text-[12px] sm:text-[13px] font-black uppercase tracking-wide text-[#1A2332] leading-tight">
                         Google Yorum Bağlantısı
-                        <span className="ml-1 text-orange-500">*</span>
+                        <span className="ml-1 text-[#F4B400]">*</span>
                       </p>
                       <p className="mt-0.5 text-[10px] font-bold text-[#2A3444] leading-tight">
                         Olumlu yorumlar bu bağlantıya yönlendirilir

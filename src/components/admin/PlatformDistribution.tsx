@@ -16,7 +16,7 @@ const PLATFORM_COLORS: Record<string, { bg: string; bar: string; text: string; i
   google: { bg: 'bg-blue-50', bar: 'bg-[#4285F4]', text: 'text-[#4285F4]', icon: 'G' },
   yemeksepeti: { bg: 'bg-red-50', bar: 'bg-[#FA0050]', text: 'text-[#FA0050]', icon: '🍽️' },
   getir: { bg: 'bg-purple-50', bar: 'bg-[#5D3EBC]', text: 'text-[#5D3EBC]', icon: '🛵' },
-  trendyol_go: { bg: 'bg-orange-50', bar: 'bg-[#F27A1A]', text: 'text-[#F27A1A]', icon: '🧡' },
+  trendyol_go: { bg: 'bg-[#FFF8D6]', bar: 'bg-[#F27A1A]', text: 'text-[#F27A1A]', icon: '🧡' },
   unspecified: { bg: 'bg-gray-50', bar: 'bg-gray-300', text: 'text-gray-400', icon: '—' },
 };
 

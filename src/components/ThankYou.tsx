@@ -21,7 +21,7 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
           </div>
           {/* Decorative particles for success feel */}
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-100 rounded-full animate-ping" />
-          <div className="absolute -bottom-2 -left-2 w-2 h-2 bg-yellow-100 rounded-full animate-bounce" />
+          <div className="absolute -bottom-2 -left-2 w-2 h-2 bg-[#FFF8D6] rounded-full animate-bounce" />
         </div>
       </div>
 

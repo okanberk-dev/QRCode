@@ -129,7 +129,7 @@ export default async function PricingPage({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10 text-left">
 
             {/* Starter Plan */}
-            <div className="bg-white p-8 sm:p-12 rounded-[32px] sm:rounded-[40px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md flex flex-col group transition-transform hover:-translate-y-2">
+            <div className="bg-white p-8 sm:p-12 rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md flex flex-col group transition-transform hover:-translate-y-2">
               <div className="mb-6 sm:mb-8">
                 <h2 className="text-[20px] sm:text-[22px] font-black text-[#1A2332] uppercase tracking-tighter mb-2">{locale === 'tr' ? 'Başlangıç' : 'Starter'}</h2>
                 <p className="text-[13px] sm:text-[14px] text-[#2A3444] font-bold leading-snug">{locale === 'tr' ? 'Küçük işletmeler için ideal başlangıç.' : 'Ideal start for small businesses.'}</p>
@@ -151,14 +151,14 @@ export default async function PricingPage({
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-4 sm:py-5 bg-white border-[2.5px] sm:border-[3px] border-[#1A2332] text-[#1A2332] font-black text-[15px] uppercase tracking-widest rounded-2xl shadow-sm sm:shadow-sm active:translate-y-[5px] sm:active:translate-y-[6px] active:shadow-none transition-all"
+                className="block w-full text-center py-4 sm:py-5 bg-white border sm:border border-[#1A2332] text-[#1A2332] font-black text-[15px] uppercase tracking-widest rounded-2xl shadow-sm sm:shadow-sm active:translate-y-[5px] sm:active:translate-y-[6px] active:shadow-none transition-all"
               >
                 {t.pricing_monthly_cta}
               </Link>
             </div>
 
             {/* Growth Plan (Featured) */}
-            <div className="bg-[#1A2332] p-8 sm:p-12 rounded-[32px] sm:rounded-[40px] border-[3px] sm:border-[3.5px] border-[#1A2332] shadow-md sm:shadow-md relative md:scale-[1.05] flex flex-col text-white z-10 mt-4 md:mt-0">
+            <div className="bg-[#1A2332] p-8 sm:p-12 rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md relative md:scale-[1.05] flex flex-col text-white z-10 mt-4 md:mt-0">
               <div className="absolute -top-5 left-1/2 -translate-x-1/2">
                 <span className="bg-[#F4B400] text-[#1A2332] px-5 sm:px-6 py-1.5 sm:py-2 rounded-full font-black text-[10px] sm:text-[11px] uppercase tracking-[0.2em] whitespace-nowrap border-2 border-[#1A2332] shadow-md sm:shadow-md">
                    {locale === 'tr' ? 'EN POPÜLER' : 'MOST POPULAR'}
@@ -185,14 +185,14 @@ export default async function PricingPage({
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-4 sm:py-5 bg-[#F4B400] border-[2.5px] sm:border-[3px] border-[#1A2332] text-[#1A2332] font-black text-[15px] uppercase tracking-widest rounded-2xl shadow-sm sm:shadow-sm active:translate-y-[5px] sm:active:translate-y-[6px] active:shadow-none transition-all"
+                className="block w-full text-center py-4 sm:py-5 bg-[#F4B400] border sm:border border-[#1A2332] text-[#1A2332] font-black text-[15px] uppercase tracking-widest rounded-2xl shadow-sm sm:shadow-sm active:translate-y-[5px] sm:active:translate-y-[6px] active:shadow-none transition-all"
               >
                 {t.pricing_monthly_cta}
               </Link>
             </div>
 
             {/* Annual Pro Plan */}
-            <div className="bg-[#F8F6F1] p-8 sm:p-12 rounded-[32px] sm:rounded-[40px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md flex flex-col group transition-transform hover:-translate-y-2 mt-4 md:mt-0">
+            <div className="bg-[#F8F6F1] p-8 sm:p-12 rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md flex flex-col group transition-transform hover:-translate-y-2 mt-4 md:mt-0">
               <div className="mb-6 sm:mb-8">
                 <h2 className="text-[20px] sm:text-[22px] font-black text-[#1A2332] uppercase tracking-tighter mb-2">{locale === 'tr' ? 'Yıllık Pro' : 'Annual Pro'}</h2>
                 <div className="flex items-center gap-2 mb-1">
@@ -230,7 +230,7 @@ export default async function PricingPage({
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-4 sm:py-5 bg-[#1A2332] text-white border-[2.5px] sm:border-[3px] border-[#1A2332] font-black text-[15px] uppercase tracking-widest rounded-2xl shadow-sm sm:shadow-sm active:translate-y-[5px] sm:active:translate-y-[6px] active:shadow-none transition-all"
+                className="block w-full text-center py-4 sm:py-5 bg-[#1A2332] text-white border sm:border border-[#1A2332] font-black text-[15px] uppercase tracking-widest rounded-2xl shadow-sm sm:shadow-sm active:translate-y-[5px] sm:active:translate-y-[6px] active:shadow-none transition-all"
               >
                 {t.pricing_yearly_cta}
               </Link>
@@ -296,7 +296,7 @@ export default async function PricingPage({
             </p>
           </div>
 
-          <div className="rounded-[32px] sm:rounded-[40px] border-[3px] sm:border-[4px] border-[#1A2332] shadow-md sm:shadow-md bg-white overflow-hidden">
+          <div className="rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md bg-white overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[600px] sm:min-w-0">
                 <thead>
@@ -341,7 +341,7 @@ export default async function PricingPage({
       <section className="py-20 sm:py-32 px-5 sm:px-8 bg-white border-t-[3px] sm:border-t-[4px] border-[#1A2332]">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12">
           {testimonials.map((t, i) => (
-            <div key={i} className="bg-[#F8F6F1] p-8 sm:p-14 rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md space-y-6 relative overflow-hidden text-left">
+            <div key={i} className="bg-[#F8F6F1] p-8 sm:p-14 rounded-[24px] sm:rounded-[32px] border sm:border border-[#1A2332] shadow-md sm:shadow-md space-y-6 relative overflow-hidden text-left">
               <div className="absolute top-0 right-0 p-6 sm:p-8 opacity-10">
                  <Star size={60} className="sm:size-80 fill-[#1A2332]" />
               </div>

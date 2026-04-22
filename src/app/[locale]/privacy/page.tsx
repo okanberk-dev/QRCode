@@ -37,7 +37,7 @@ export default async function PrivacyPage({
       <MarketingNavbar locale={locale} t={t} />
 
       <main className="flex-1 max-w-[1000px] mx-auto w-full px-5 py-20 sm:py-32">
-        <div className="bg-white p-10 sm:p-20 rounded-[48px] border-[4px] border-[#1A2332] shadow-md relative overflow-hidden">
+        <div className="bg-white p-10 sm:p-20 rounded-[48px] border border-[#1A2332] shadow-md relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#F4B400]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
           
           <div className="mb-16 relative">

@@ -29,7 +29,7 @@ export default function PricingFaq({ faqs, title, subtitle }: PricingFaqProps) {
           {faqs.map((faq, index) => (
             <div
               key={index}
-              className={`rounded-[24px] sm:rounded-[32px] border-[3px] transition-all overflow-hidden ${
+              className={`rounded-[24px] sm:rounded-[32px] border transition-all overflow-hidden ${
                 openFaq === index
                   ? 'bg-white border-[#1A2332] shadow-md'
                   : 'bg-[#F8F6F1] border-[#1A2332] shadow-md hover:shadow-md hover:-translate-y-0.5'

@@ -84,7 +84,7 @@ export default async function ContactPage({
           <div className="space-y-6 sm:space-y-8">
             <div className="grid grid-cols-1 gap-6 sm:gap-8">
               {contactItems.map((item, i) => (
-                <div key={i} className="flex items-center gap-5 sm:gap-6 p-6 sm:p-8 bg-white rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md hover:shadow-md transition-all group">
+                <div key={i} className="flex items-center gap-5 sm:gap-6 p-6 sm:p-8 bg-white rounded-[24px] sm:rounded-[32px] border sm:border border-[#1A2332] shadow-md sm:shadow-md hover:shadow-md transition-all group">
                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#F8F6F1] border-2 border-[#1A2332] rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 transition-all text-[#1A2332] shadow-md sm:shadow-md group-hover:bg-[#F4B400]">
                     <div className="scale-90 sm:scale-100">{item.icon}</div>
                   </div>
@@ -97,7 +97,7 @@ export default async function ContactPage({
             </div>
 
             {/* Premium Support Promise (3D) */}
-            <div className="p-8 sm:p-14 bg-[#1A2332] rounded-[32px] sm:rounded-[40px] border-[3px] sm:border-[4px] border-[#1A2332] shadow-md sm:shadow-md text-white relative overflow-hidden group">
+            <div className="p-8 sm:p-14 bg-[#1A2332] rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md text-white relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-64 h-64 bg-[#F4B400]/10 rounded-full blur-[60px] translate-x-1/2 -translate-y-1/2" />
               
               <div className="flex items-center gap-4 mb-6 sm:mb-8 relative z-10">
@@ -128,8 +128,8 @@ export default async function ContactPage({
 
           {/* Form (Wrapped in 3D Container) */}
           <div className="relative group lg:mt-0 order-first lg:order-last">
-             <div className="absolute inset-0 bg-[#F4B400] rounded-[32px] sm:rounded-[48px] translate-x-3 translate-y-3 sm:translate-x-4 sm:translate-y-4 -z-10 border-[2.5px] sm:border-[3px] border-[#1A2332]" />
-             <div className="bg-white p-1 rounded-[32px] sm:rounded-[48px] border-[3px] sm:border-[4px] border-[#1A2332] overflow-hidden shadow-[8px_10px_30px_-15px_rgba(0,0,0,0.1)]">
+             <div className="absolute inset-0 bg-[#F4B400] rounded-[32px] sm:rounded-[48px] translate-x-3 translate-y-3 sm:translate-x-4 sm:translate-y-4 -z-10 border sm:border border-[#1A2332]" />
+             <div className="bg-white p-1 rounded-[32px] sm:rounded-[48px] border sm:border border-[#1A2332] overflow-hidden shadow-[8px_10px_30px_-15px_rgba(0,0,0,0.1)]">
                 <ContactForm t={t} locale={locale} />
              </div>
           </div>

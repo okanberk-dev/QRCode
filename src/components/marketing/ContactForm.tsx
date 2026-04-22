@@ -69,7 +69,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
   const labelClass = "block text-[11px] font-black uppercase tracking-[0.18em] text-[#1A2332] mb-2 ml-1";
 
   return (
-    <div className="bg-white rounded-[32px] border-[3px] border-[#1A2332] p-8 sm:p-12 shadow-md">
+    <div className="bg-white rounded-[32px] border border-[#1A2332] p-8 sm:p-12 shadow-md">
       {sent ? (
         <div className="py-16 text-center space-y-6">
           <div className="w-20 h-20 bg-[#F4B400]/10 rounded-3xl border-2 border-[#F4B400]/30 flex items-center justify-center mx-auto shadow-md">
@@ -199,7 +199,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
             type="submit"
             id="contact-submit-btn"
             disabled={loading || !kvkkChecked}
-            className={`w-full py-5 bg-[#F4B400] text-[#1A2332] font-black text-[16px] uppercase tracking-[0.1em] rounded-2xl border-[3px] border-[#1A2332] flex items-center justify-center gap-3 transition-all ${
+            className={`w-full py-5 bg-[#F4B400] text-[#1A2332] font-black text-[16px] uppercase tracking-[0.1em] rounded-2xl border border-[#1A2332] flex items-center justify-center gap-3 transition-all ${
               !kvkkChecked ? 'opacity-40 cursor-not-allowed grayscale' : 'shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none'
             }`}
           >
@@ -211,8 +211,8 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
 
       {/* MODALS */}
       {modal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#1A2332]/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#F8F6F1] rounded-[40px] w-full max-w-2xl overflow-hidden shadow-2xl border-[3px] border-[#1A2332] animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-6 bg-[#1A2332]/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-[#F8F6F1] rounded-[40px] w-full max-w-2xl overflow-hidden shadow-2xl border border-[#1A2332] animate-in zoom-in-95 duration-300">
             <div className="p-8 border-b-3 border-[#1A2332] flex items-center justify-between bg-white border-b-[3px]">
               <div className="flex items-center gap-4">
                  <div className="p-3 bg-[#F4B400]/10 rounded-2xl text-[#1A2332]">

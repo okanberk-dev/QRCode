@@ -141,11 +141,11 @@ export default function SolutionPageLayout({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-14">
             {displaySteps.map((step, i) => (
-              <div key={i} className="group relative bg-[#F8F6F1] p-8 sm:p-10 rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md hover:-translate-y-2 transition-transform duration-300">
-                <div className="absolute -top-5 -right-5 sm:-top-6 sm:-right-6 w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400] rounded-[20px] border-[3px] border-[#1A2332] shadow-md flex items-center justify-center text-[18px] sm:text-[22px] font-black text-[#1A2332] z-10 rotate-3">
+              <div key={i} className="group relative bg-[#F8F6F1] p-8 sm:p-10 rounded-[32px] border sm:border border-[#1A2332] shadow-md hover:-translate-y-2 transition-transform duration-300">
+                <div className="absolute -top-5 -right-5 sm:-top-6 sm:-right-6 w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400] rounded-[20px] border border-[#1A2332] shadow-md flex items-center justify-center text-[18px] sm:text-[22px] font-black text-[#1A2332] z-10 rotate-3">
                   {`0${i + 1}`}
                 </div>
-                <div className="w-14 h-14 bg-white rounded-2xl border-[2.5px] border-[#1A2332] flex items-center justify-center mb-8 text-[#1A2332] shadow-md">
+                <div className="w-14 h-14 bg-white rounded-2xl border border-[#1A2332] flex items-center justify-center mb-8 text-[#1A2332] shadow-md">
                   {step.icon}
                 </div>
                 <h3 className="text-[20px] sm:text-[22px] font-black text-[#1A2332] mb-4 tracking-tight">{step.title}</h3>
@@ -211,7 +211,7 @@ export default function SolutionPageLayout({
             </div>
             <div className="space-y-6">
               {faqs.map((faq, i) => (
-                <div key={i} className="bg-white border-[3px] border-[#1A2332] rounded-[24px] sm:rounded-[32px] p-7 sm:p-10 shadow-md transition-all hover:shadow-md hover:-translate-y-1">
+                <div key={i} className="bg-white border border-[#1A2332] rounded-[24px] sm:rounded-[32px] p-7 sm:p-10 shadow-md transition-all hover:shadow-md hover:-translate-y-1">
                   <h3 className="text-[16px] sm:text-[18px] font-black text-[#1A2332] mb-4 tracking-tight leading-snug">{faq.q}</h3>
                   <p className="text-[14px] sm:text-[15px] text-[#2A3444] leading-relaxed font-bold">{faq.a}</p>
                 </div>

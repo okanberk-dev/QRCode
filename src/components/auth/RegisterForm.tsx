@@ -220,7 +220,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
 
       {/* KVKK Modal */}
       {showKvkk && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#1A2332]/40 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-6 bg-[#1A2332]/40 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-[#F8F6F1] rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl border-2 border-[#1A2332] animate-in zoom-in-95 duration-300">
             <div className="p-7 border-b-2 border-[#1A2332] flex items-center justify-between bg-white">
               <div className="flex items-center gap-3">
@@ -261,7 +261,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         type="submit"
         id="register-submit-btn"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border-[3px] border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+        className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
       >
         {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" strokeWidth={2} />}
         {loading ? t.auth_register_loading.toUpperCase() : t.auth_register_btn.toUpperCase()}

@@ -71,7 +71,7 @@ export default function CaseStudies({ locale, t }: CaseStudiesProps) {
           {cases.map((cs, i) => (
             <div
               key={i}
-              className={`group flex flex-col p-8 rounded-2xl border-[2.5px] border-[#1A2332] shadow-md bg-white hover:-translate-y-2 transition-all duration-300`}
+              className={`group flex flex-col p-8 rounded-2xl border border-[#1A2332] shadow-md bg-white hover:-translate-y-2 transition-all duration-300`}
             >
               <div className="flex items-center justify-between mb-8">
                 <div className={`w-12 h-12 ${cs.color} rounded-xl border border-black/5 flex items-center justify-center`}>

@@ -20,7 +20,7 @@ function Testimonial({ quote, name, role, company, avatarUrl, initials, link, lo
   return (
     <Wrapper 
       href={link || ''}
-      className={`group relative w-full bg-white p-8 sm:p-10 rounded-2xl border-[2.5px] border-[#1A2332] shadow-md flex flex-col z-10 transition-transform duration-300 hover:-translate-y-2 ${link ? 'cursor-pointer' : ''}`}
+      className={`group relative w-full bg-white p-8 sm:p-10 rounded-2xl border border-[#1A2332] shadow-md flex flex-col z-10 transition-transform duration-300 hover:-translate-y-2 ${link ? 'cursor-pointer' : ''}`}
     >
       <div className="flex items-center justify-between mb-5">
         <div className="flex gap-1 text-[#F4B400]">

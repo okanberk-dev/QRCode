@@ -167,7 +167,7 @@ export default function AdminDashboard() {
       {/* ─── Welcome Banner ─── */}
       <div className="bg-[#1A2332] rounded-[24px] sm:rounded-[32px] border border-gray-800 p-4 sm:p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-3 sm:space-y-4 min-w-0">
-          <div className="inline-flex items-center gap-2 bg-yellow-500/10 text-yellow-500 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em]">
+          <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 text-[#F4B400] px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em]">
             ✦ CANLI PANEL
           </div>
           <h1 className="text-xl sm:text-4xl font-black text-white tracking-tight leading-tight break-words">
@@ -370,7 +370,7 @@ export default function AdminDashboard() {
         <div className="lg:col-span-1 space-y-4 sm:space-y-6">
            <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
              <div className="flex items-center gap-3 mb-6 sm:mb-8">
-               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
+               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#FFF8D6] text-[#F4B400] flex items-center justify-center">
                  <Calendar size={20} strokeWidth={2} />
                </div>
                <h3 className="text-lg sm:text-xl font-black text-[#1A2332]">Puan Dağılımı</h3>

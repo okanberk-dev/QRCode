@@ -345,7 +345,7 @@ export default function AdminBlogPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-[#1A2332]/60 backdrop-blur-md z-[100] flex items-start justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-[#1A2332]/60 backdrop-blur-md z-60 flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-[32px] w-full max-w-4xl my-8 shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-50">

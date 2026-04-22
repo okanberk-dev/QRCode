@@ -60,7 +60,7 @@ export default function AdminLogin() {
           </Link>
         </div>
 
-        <div className="w-full p-8 sm:p-10 bg-white rounded-[32px] border-[3px] border-[#1A2332] shadow-md">
+        <div className="w-full p-8 sm:p-10 bg-white rounded-[32px] border border-[#1A2332] shadow-md">
           <div className="flex justify-center mx-auto mb-8">
             <div className="w-16 h-16 bg-[#F4B400]/10 text-[#F4B400] rounded-3xl flex items-center justify-center border-2 border-[#1A2332] shadow-md">
               <ShieldCheck size={32} strokeWidth={2} />
@@ -117,7 +117,7 @@ export default function AdminLogin() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border-[3px] border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {loading ? <Loader2 className="animate-spin" size={20} /> : 'GÜVENLİ GİRİŞ YAP'}
               </button>

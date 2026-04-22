@@ -70,7 +70,7 @@ export default async function GoogleCompliancePage({
           {/* Points Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-16 sm:mb-20">
             {points.map((point, index) => (
-              <div key={index} className="bg-white p-7 sm:p-8 rounded-2xl border-[2px] sm:border-[2.5px] border-[#1A2332] shadow-md sm:shadow-md space-y-4">
+              <div key={index} className="bg-white p-7 sm:p-8 rounded-2xl border sm:border border-[#1A2332] shadow-md sm:shadow-md space-y-4">
                 <div className="w-12 h-12 bg-[#F8F6F1] rounded-xl border-2 border-[#1A2332] flex items-center justify-center">
                    <div className="scale-90 sm:scale-100">{point.icon}</div>
                 </div>
@@ -83,7 +83,7 @@ export default async function GoogleCompliancePage({
           </div>
 
           {/* Policy Section */}
-          <div className="bg-[#1A2332] text-white p-8 sm:p-12 rounded-[28px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md relative overflow-hidden">
+          <div className="bg-[#1A2332] text-white p-8 sm:p-12 rounded-[28px] sm:rounded-[32px] border sm:border border-[#1A2332] shadow-md sm:shadow-md relative overflow-hidden">
              <div className="absolute top-0 right-0 w-64 h-64 bg-[#F4B400]/10 blur-[80px] rounded-full -mr-32 -mt-32" />
              
              <div className="relative z-10 space-y-6">

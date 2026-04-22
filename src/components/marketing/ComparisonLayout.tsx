@@ -66,7 +66,7 @@ export default function ComparisonLayout({
                <p className="text-[15px] sm:text-[16px] text-[#2A3444] font-bold max-w-2xl mx-auto">{t.compare_subtitle}</p>
           </div>
 
-          <div className="overflow-x-auto touch-pan-x rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md">
+          <div className="overflow-x-auto touch-pan-x rounded-[24px] sm:rounded-[32px] border sm:border border-[#1A2332] shadow-md sm:shadow-md">
             <table className="w-full border-collapse bg-white min-w-[600px] sm:min-w-0">
               <thead>
                 <tr className="bg-[#1A2332] text-white">
@@ -116,7 +116,7 @@ export default function ComparisonLayout({
             </div>
             <div className="relative group">
                <div className="absolute inset-0 bg-[#F4B400] rounded-[32px] sm:rounded-[40px] rotate-2 scale-105 opacity-20 group-hover:rotate-1 transition-transform" />
-               <div className="relative bg-white p-8 sm:p-10 rounded-[32px] sm:rounded-[40px] border-[3px] border-[#1A2332] shadow-md sm:shadow-md space-y-6 sm:space-y-8">
+               <div className="relative bg-white p-8 sm:p-10 rounded-[32px] sm:rounded-[40px] border border-[#1A2332] shadow-md sm:shadow-md space-y-6 sm:space-y-8">
                   <div className="flex items-center gap-4 border-b-2 border-[#E8ECF2] pb-6">
                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#10b981] rounded-xl flex items-center justify-center text-white">
                         <BarChart3 size={20} className="sm:size-6" />

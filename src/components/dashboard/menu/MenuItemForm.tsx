@@ -129,7 +129,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#1A2332]/40 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-[#1A2332]/40 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="w-full max-w-2xl bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="flex items-center justify-between p-7 border-b border-gray-50">
           <div className="flex items-center gap-4">

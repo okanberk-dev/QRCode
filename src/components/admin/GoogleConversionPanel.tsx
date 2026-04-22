@@ -175,7 +175,7 @@ export default function GoogleConversionPanel({
       {showLeaderboard && (
         <div className="rounded-2xl border border-gray-100 bg-white">
           <div className="flex items-start gap-3 border-b border-gray-100 px-4 py-4 sm:px-5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-50 text-yellow-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFF8D6] text-[#D69E00]">
               <Trophy size={18} strokeWidth={2} />
             </div>
             <div className="min-w-0">

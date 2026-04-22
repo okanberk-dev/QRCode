@@ -125,8 +125,8 @@ export default async function HowItWorksPage({
 
               <div className="w-full lg:flex-1 relative">
                 <div className="relative group max-w-[320px] sm:max-w-none mx-auto">
-                  <div className="absolute inset-0 bg-[#F4B400] rounded-[32px] sm:rounded-[48px] translate-x-4 translate-y-4 sm:translate-x-6 sm:translate-y-6 group-hover:translate-x-6 group-hover:translate-y-6 sm:group-hover:translate-x-8 sm:group-hover:translate-y-8 transition-transform -z-10 border-[2.5px] sm:border-[3px] border-[#1A2332]" />
-                  <div className="bg-[#1A2332] rounded-[32px] sm:rounded-[48px] border-[3px] sm:border-[4px] border-[#1A2332] p-10 sm:p-20 flex items-center justify-center aspect-square shadow-[0_20px_50px_-10px_rgba(0,0,0,0.3)] sm:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] transition-all group-hover:-translate-y-2 overflow-hidden">
+                  <div className="absolute inset-0 bg-[#F4B400] rounded-[32px] sm:rounded-[48px] translate-x-4 translate-y-4 sm:translate-x-6 sm:translate-y-6 group-hover:translate-x-6 group-hover:translate-y-6 sm:group-hover:translate-x-8 sm:group-hover:translate-y-8 transition-transform -z-10 border sm:border border-[#1A2332]" />
+                  <div className="bg-[#1A2332] rounded-[32px] sm:rounded-[48px] border sm:border border-[#1A2332] p-10 sm:p-20 flex items-center justify-center aspect-square shadow-[0_20px_50px_-10px_rgba(0,0,0,0.3)] sm:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] transition-all group-hover:-translate-y-2 overflow-hidden">
                      <div className="text-[#F4B400] drop-shadow-[0_10px_10px_rgba(244, 180, 0,0.3)] scale-[2] sm:scale-[3.5]">
                         {step.icon}
                      </div>
@@ -149,7 +149,7 @@ export default async function HowItWorksPage({
               { icon: <BarChart3 className="text-[#F4B400] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2} />, t: locale === 'tr' ? 'Gerçek Zamanlı Analiz' : 'Real-time Analytics', d: locale === 'tr' ? 'Müşteri memnuniyet eğilimlerini anlık grafiklerle izleyin ve aksiyon alın.' : 'Monitor satisfaction trends with live charts and take immediate action.' },
               { icon: <Zap className="text-[#F4B400] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2} />, t: locale === 'tr' ? 'Işık Hızında Kurulum' : 'Lightning Setup', d: locale === 'tr' ? 'Karmaşık entegrasyonlar yok. Sisteminiz 5 dakikada geri bildirim toplamaya hazır.' : 'No complex integrations. Your system is ready to collect feedback in 5 minutes.' }
             ].map((f, i) => (
-              <div key={i} className="p-8 sm:p-10 bg-white/5 rounded-[32px] sm:rounded-[40px] border-[2.5px] sm:border-[3px] border-white/10 hover:border-[#F4B400]/50 hover:bg-white/10 transition-all group">
+              <div key={i} className="p-8 sm:p-10 bg-white/5 rounded-[32px] sm:rounded-[40px] border sm:border border-white/10 hover:border-[#F4B400]/50 hover:bg-white/10 transition-all group">
                  <div className="mb-6 w-14 h-14 sm:w-16 sm:h-16 bg-white/5 rounded-2xl flex items-center justify-center border-2 border-white/10 group-hover:scale-110 transition-transform">{f.icon}</div>
                  <h4 className="text-[20px] sm:text-[22px] font-black mb-4 uppercase tracking-tighter">{f.t}</h4>
                  <p className="text-[14px] sm:text-[15px] text-[#6B7280] font-bold leading-relaxed">{f.d}</p>
@@ -169,7 +169,7 @@ export default async function HowItWorksPage({
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <Link
               href={`${base}/auth/register`}
-              className="w-full sm:w-auto group inline-flex items-center justify-center gap-3 px-10 sm:px-12 py-5 sm:py-6 bg-[#1A2332] text-white text-[17px] sm:text-[18px] font-black rounded-[20px] sm:rounded-[24px] border-[3.5px] sm:border-[4px] border-[#1A2332] shadow-sm sm:shadow-sm hover:bg-[#1A2332] transition-all active:translate-y-[6px] sm:active:translate-y-[10px] active:shadow-none uppercase tracking-widest"
+              className="w-full sm:w-auto group inline-flex items-center justify-center gap-3 px-10 sm:px-12 py-5 sm:py-6 bg-[#1A2332] text-white text-[17px] sm:text-[18px] font-black rounded-[20px] sm:rounded-[24px] border sm:border border-[#1A2332] shadow-sm sm:shadow-sm hover:bg-[#1A2332] transition-all active:translate-y-[6px] sm:active:translate-y-[10px] active:shadow-none uppercase tracking-widest"
             >
               {locale === 'tr' ? 'HEMEN BAŞLA' : 'GET STARTED'} <ArrowRight className="group-hover:translate-x-2 transition-transform" strokeWidth={2} />
             </Link>

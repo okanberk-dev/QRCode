@@ -252,7 +252,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
 
             <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF8D6] text-[#F4B400]">
                   <Calendar size={20} strokeWidth={2} />
                 </div>
                 <h3 className="text-lg font-black text-[#1A2332]">{copy.rating}</h3>

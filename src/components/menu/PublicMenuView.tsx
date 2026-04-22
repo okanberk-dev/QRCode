@@ -51,7 +51,7 @@ const BADGE_META: Record<MenuBadge, { tr: string; en: string; icon: typeof Flame
   vegetaryen:  { tr: 'Vejetaryen',    en: 'Vegetarian',    icon: Leaf,     cls: 'bg-lime-100 text-lime-800' },
   aci:         { tr: 'Acı',           en: 'Spicy',         icon: Flame,    cls: 'bg-red-100 text-red-700' },
   sef_onerisi: { tr: 'Şef Önerisi',   en: "Chef's Pick",   icon: Star,     cls: 'bg-purple-100 text-purple-800' },
-  glutensiz:   { tr: 'Glutensiz',     en: 'Gluten-Free',   icon: WheatOff, cls: 'bg-orange-100 text-orange-800' },
+  glutensiz:   { tr: 'Glutensiz',     en: 'Gluten-Free',   icon: WheatOff, cls: 'bg-[#FFF8D6] text-[#B88800]' },
 };
 
 function BadgeChip({ badge, locale }: { badge: string; locale: 'tr' | 'en' }) {

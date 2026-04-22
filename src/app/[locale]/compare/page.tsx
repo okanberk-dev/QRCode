@@ -76,7 +76,7 @@ export default async function ComparisonPage({
       {/* ─── Comparison Table ─── */}
       <section className="py-12 sm:py-16 px-5 sm:px-8">
         <div className="max-w-[1000px] mx-auto">
-          <div className="bg-white rounded-[32px] sm:rounded-[40px] border-[3px] sm:border-[4px] border-[#1A2332] shadow-md sm:shadow-md overflow-hidden">
+          <div className="bg-white rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md overflow-hidden">
             <div className="overflow-x-auto touch-pan-x">
               <table className="w-full border-collapse min-w-[640px] sm:min-w-0">
                 <thead>
@@ -115,7 +115,7 @@ export default async function ComparisonPage({
 
           {/* New Specific VS Links */}
           <div className="mt-20 sm:mt-24 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-            <Link href={`${base}/vs/spreadsheet`} className="group p-6 sm:p-8 bg-[#F8F6F1] rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1A2332] hover:bg-[#F4B400]/10 transition-all hover:-translate-y-2">
+            <Link href={`${base}/vs/spreadsheet`} className="group p-6 sm:p-8 bg-[#F8F6F1] rounded-[24px] sm:rounded-[32px] border sm:border border-[#1A2332] hover:bg-[#F4B400]/10 transition-all hover:-translate-y-2">
                <div className="flex justify-between items-start mb-6">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl border-2 border-[#1A2332] flex items-center justify-center">
                      <Table size={20} className="sm:size-6 text-[#F4B400]" />
@@ -130,7 +130,7 @@ export default async function ComparisonPage({
                </p>
             </Link>
 
-            <Link href={`${base}/vs/individual-qr`} className="group p-6 sm:p-8 bg-[#F8F6F1] rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1A2332] hover:bg-[#F4B400]/10 transition-all hover:-translate-y-2">
+            <Link href={`${base}/vs/individual-qr`} className="group p-6 sm:p-8 bg-[#F8F6F1] rounded-[24px] sm:rounded-[32px] border sm:border border-[#1A2332] hover:bg-[#F4B400]/10 transition-all hover:-translate-y-2">
                <div className="flex justify-between items-start mb-6">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl border-2 border-[#1A2332] flex items-center justify-center">
                      <Smartphone size={20} className="sm:size-6 text-[#6366f1]" />
@@ -174,7 +174,7 @@ export default async function ComparisonPage({
                   </p>
                </div>
             </div>
-            <div className="bg-[#F8F6F1] rounded-[32px] sm:rounded-[48px] p-8 sm:p-12 border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md">
+            <div className="bg-[#F8F6F1] rounded-[32px] sm:rounded-[48px] p-8 sm:p-12 border sm:border border-[#1A2332] shadow-md sm:shadow-md">
                <div className="space-y-6">
                   <div className="bg-red-50 p-5 sm:p-6 rounded-2xl border-2 border-red-200">
                      <p className="text-red-600 font-black text-[12px] sm:text-[14px] uppercase tracking-widest">{locale === 'tr' ? 'RİSK: STATİK QR' : 'RISK: STATIC QR'}</p>
@@ -212,7 +212,7 @@ export default async function ComparisonPage({
             </div>
             <div className="lg:order-1 relative">
                 <div className="absolute inset-0 bg-[#F4B400]/5 rounded-[32px] sm:rounded-[48px] translate-x-3 translate-y-3 sm:translate-x-4 sm:translate-y-4 -z-10" />
-                <div className="bg-[#1A2332] rounded-[32px] sm:rounded-[48px] p-8 sm:p-12 text-white border-[3px] border-[#1A2332]">
+                <div className="bg-[#1A2332] rounded-[32px] sm:rounded-[48px] p-8 sm:p-12 text-white border border-[#1A2332]">
                    <p className="text-[11px] sm:text-[12px] font-black text-[#F4B400] uppercase tracking-[0.2em] mb-6 sm:mb-8">{locale === 'tr' ? 'OPERASYONEL FARK' : 'OPERATIONAL DIFFERENCE'}</p>
                    <div className="space-y-6 sm:space-y-8">
                       <div className="flex items-center gap-4">

@@ -62,7 +62,7 @@ export default async function BlogIndexPage({
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#F4B400]/5 rounded-full blur-[100px] -translate-x-1/3 translate-y-1/3" />
         
         <div className="max-w-[1000px] mx-auto text-center space-y-6 relative z-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl border-[2.5px] border-[#1A2332] shadow-md mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl border border-[#1A2332] shadow-md mb-4">
             <BookOpen size={28} className="text-[#F4B400]" />
           </div>
           <h1 className="text-[48px] sm:text-[72px] font-black tracking-[-0.04em] text-[#1A2332] leading-[0.95]">
@@ -86,7 +86,7 @@ export default async function BlogIndexPage({
               <Link
                 key={post.id}
                 href={`${base}/blog/${post.slug}`}
-                className="group bg-white rounded-3xl border-[2.5px] border-[#1A2332] shadow-md hover:-translate-y-2 transition-transform duration-300 flex flex-col overflow-hidden"
+                className="group bg-white rounded-3xl border border-[#1A2332] shadow-md hover:-translate-y-2 transition-transform duration-300 flex flex-col overflow-hidden"
               >
                 <div className="relative w-full h-[220px] border-b-[2.5px] border-[#1A2332] overflow-hidden">
                   <img

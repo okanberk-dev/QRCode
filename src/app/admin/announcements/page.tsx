@@ -347,7 +347,7 @@ export default function AdminAnnouncementsPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-[#1A2332]/60 backdrop-blur-md z-[100] flex items-start justify-center p-3 sm:p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-[#1A2332]/60 backdrop-blur-md z-60 flex items-start justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white rounded-[24px] sm:rounded-[32px] w-full max-w-3xl my-4 sm:my-8 shadow-2xl border border-gray-100 overflow-hidden">
             <div className="flex items-center justify-between p-4 sm:p-6 md:p-8 border-b border-gray-50 gap-3">
               <div className="flex items-center gap-3 sm:gap-4 min-w-0">

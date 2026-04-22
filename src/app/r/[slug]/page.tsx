@@ -186,7 +186,7 @@ function SlugContent() {
       
       {/* ═══════ High Rating Redirect Overlay ═══════ */}
       {isRedirecting && (
-        <div className="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
+        <div className="fixed inset-0 bg-white z-60 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
           <div className="mb-10 scale-125">
             <div className="w-24 h-24 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-6 relative">
               <svg viewBox="0 0 48 48" className="w-12 h-12 relative z-10 animate-in zoom-in-50 duration-700">

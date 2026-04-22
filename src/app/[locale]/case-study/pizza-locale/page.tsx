@@ -95,7 +95,7 @@ export default async function PizzaLocaleCaseStudy({
       <section className="relative -mt-10 sm:-mt-16 px-5 sm:px-8">
         <div className="max-w-[1100px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {metrics.map((m, i) => (
-            <div key={i} className="bg-white p-5 sm:p-8 rounded-2xl border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md hover:-translate-y-2 transition-transform h-full">
+            <div key={i} className="bg-white p-5 sm:p-8 rounded-2xl border sm:border border-[#1A2332] shadow-md sm:shadow-md hover:-translate-y-2 transition-transform h-full">
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#F8F6F1] border-2 border-[#1A2332]/10 flex items-center justify-center">
                    <div className="scale-90 sm:scale-100">{m.icon}</div>
@@ -189,7 +189,7 @@ export default async function PizzaLocaleCaseStudy({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
               {/* Before */}
-              <div className="bg-white p-6 sm:p-8 rounded-2xl border-[2.5px] sm:border-[3px] border-[#E8ECF2] space-y-6 opacity-60">
+              <div className="bg-white p-6 sm:p-8 rounded-2xl border sm:border border-[#E8ECF2] space-y-6 opacity-60">
                 <div className="flex items-center gap-3 text-[#6B7280]">
                    <div className="w-8 h-8 rounded-full bg-[#6B7280]/20 flex items-center justify-center font-black text-[14px]">1</div>
                    <span className="text-[11px] sm:text-[12px] font-black uppercase tracking-widest">{locale === 'tr' ? 'BUAZE ÖNCESİ' : 'BEFORE BUAZE'}</span>
@@ -209,7 +209,7 @@ export default async function PizzaLocaleCaseStudy({
               </div>
 
               {/* After */}
-              <div className="bg-[#1A2332] p-7 sm:p-8 rounded-2xl border-[2.5px] sm:border-[3px] border-[#F4B400] shadow-md sm:shadow-md space-y-6 relative overflow-hidden">
+              <div className="bg-[#1A2332] p-7 sm:p-8 rounded-2xl border sm:border border-[#F4B400] shadow-md sm:shadow-md space-y-6 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-5 sm:opacity-10 pointer-events-none">
                    <Zap size={80} className="sm:size-[100px] text-[#F4B400]" />
                 </div>
@@ -255,7 +255,7 @@ export default async function PizzaLocaleCaseStudy({
               </div>
             </div>
             <div className="lg:col-span-5 relative">
-               <div className="bg-white p-6 rounded-[32px] border-[2.5px] border-[#1A2332] shadow-md">
+               <div className="bg-white p-6 rounded-[32px] border border-[#1A2332] shadow-md">
                   <div className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest mb-4">{locale === 'tr' ? 'ZİNCİR YÖNETİMİ' : 'CHAIN MANAGEMENT'}</div>
                   <div className="space-y-4">
                      {[
@@ -284,7 +284,7 @@ export default async function PizzaLocaleCaseStudy({
       {/* ─── Quote Section ─── */}
       <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#1A2332]">
         <div className="max-w-[1000px] mx-auto text-center space-y-10 sm:space-y-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#F4B400] border-[3px] border-[#1A2332] shadow-md sm:shadow-md">
+            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#F4B400] border border-[#1A2332] shadow-md sm:shadow-md">
                 <Quote size={28} className="sm:size-32 text-[#1A2332] translate-x-0.5" fill="currentColor" />
             </div>
             <p className="text-[22px] sm:text-[42px] font-black text-white leading-tight italic">
@@ -332,7 +332,7 @@ export default async function PizzaLocaleCaseStudy({
                 </div>
             </div>
             <div className="relative">
-                <div className="bg-[#1A2332] rounded-[32px] sm:rounded-[48px] p-8 sm:p-10 text-white border-[3px] sm:border-[4px] border-[#1A2332] shadow-md sm:shadow-md">
+                <div className="bg-[#1A2332] rounded-[32px] sm:rounded-[48px] p-8 sm:p-10 text-white border sm:border border-[#1A2332] shadow-md sm:shadow-md">
                     <div className="space-y-6 sm:space-y-8">
                         <div className="flex justify-between items-center border-b border-white/10 pb-5 sm:pb-6">
                             <span className="text-[10px] sm:text-[12px] font-black uppercase tracking-widest text-[#F4B400]">{locale === 'tr' ? 'CANLI OPERASYON AKIŞI' : 'LIVE OPERATIONAL FLOW'}</span>
@@ -386,7 +386,7 @@ export default async function PizzaLocaleCaseStudy({
                         desc: locale === 'tr' ? '12 lokasyondan gelen verilerle marka kalitesi zirveye taşındı.' : 'Brand quality peak with data from 12 locations.' 
                     },
                 ].map((item, i) => (
-                    <div key={i} className="p-8 bg-white rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md relative group">
+                    <div key={i} className="p-8 bg-white rounded-[32px] border sm:border border-[#1A2332] shadow-md sm:shadow-md relative group">
                         <div className="text-[40px] sm:text-[48px] font-black text-[#F4B400]/20 absolute top-4 right-8 group-hover:text-[#F4B400]/20 transition-colors">{item.step}</div>
                         <h4 className="text-[18px] sm:text-[20px] font-black mb-3 relative z-10">{item.title}</h4>
                         <p className="text-[14px] sm:text-[15px] text-[#2A3444] font-medium leading-relaxed relative z-10">{item.desc}</p>
@@ -408,7 +408,7 @@ export default async function PizzaLocaleCaseStudy({
                 </p>
             </div>
             
-            <div className="relative bg-white rounded-[32px] sm:rounded-[48px] border-[3px] sm:border-[4px] border-[#1A2332] p-3 sm:p-5 shadow-md sm:shadow-md overflow-hidden">
+            <div className="relative bg-white rounded-[32px] sm:rounded-[48px] border sm:border border-[#1A2332] p-3 sm:p-5 shadow-md sm:shadow-md overflow-hidden">
                 {/* Real-style Dashboard Mockup Container */}
                 <div className="aspect-[16/10] bg-[#F8F6F1] rounded-[24px] sm:rounded-[32px] border-2 border-[#1A2332] flex overflow-hidden shadow-inner font-sans">
                    {/* Mini Sidebar */}
@@ -448,7 +448,7 @@ export default async function PizzaLocaleCaseStudy({
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                            {[
                              { label: 'Total', val: '4.8', color: 'bg-emerald-50 text-emerald-600', icon: '★' },
-                             { label: 'New', val: '12', color: 'bg-orange-50 text-orange-600', icon: '◎' },
+                             { label: 'New', val: '12', color: 'bg-[#FFF8D6] text-[#D69E00]', icon: '◎' },
                              { label: 'Views', val: '420%', color: 'bg-blue-50 text-blue-600', icon: '◈' },
                              { label: 'Active', val: '100%', color: 'bg-purple-50 text-purple-600', icon: '✓' }
                            ].map((s, i) => (
@@ -519,7 +519,7 @@ export default async function PizzaLocaleCaseStudy({
            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
               <Link
                 href={`${base}/auth/register`}
-                className="w-full sm:w-auto px-10 py-5 bg-[#F4B400] text-[#1A2332] text-[17px] sm:text-[18px] font-black rounded-2xl border-[3.5px] sm:border-[4px] border-[#1A2332] shadow-sm sm:shadow-sm hover:bg-[#F4B400] transition-all active:translate-y-[6px] sm:active:translate-y-[8px] active:shadow-none uppercase tracking-wider"
+                className="w-full sm:w-auto px-10 py-5 bg-[#F4B400] text-[#1A2332] text-[17px] sm:text-[18px] font-black rounded-2xl border sm:border border-[#1A2332] shadow-sm sm:shadow-sm hover:bg-[#F4B400] transition-all active:translate-y-[6px] sm:active:translate-y-[8px] active:shadow-none uppercase tracking-wider"
               >
                 {t.hero_cta}
               </Link>

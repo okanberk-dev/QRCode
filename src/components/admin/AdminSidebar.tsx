@@ -77,7 +77,7 @@ export default function AdminSidebar() {
 
   const planBadge = () => {
     if (role === 'superadmin') return <span className="bg-[#F4B400] text-[#1A2332] text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1"><Crown size={9} />ADMIN</span>;
-    if (!profile?.plan || profile.plan === 'trial') return <span className="bg-orange-500/20 text-orange-400 text-[10px] font-bold px-2 py-0.5 rounded-full">DENEME</span>;
+    if (!profile?.plan || profile.plan === 'trial') return <span className="bg-[#F4B400]/20 text-[#F4B400] text-[10px] font-bold px-2 py-0.5 rounded-full">DENEME</span>;
     if (profile.plan === 'monthly') return <span className="bg-blue-500/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full">AYLIK</span>;
     if (profile.plan === 'yearly') return <span className="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">YILLIK</span>;
     return null;
@@ -93,7 +93,7 @@ export default function AdminSidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-black text-white tracking-tight leading-none">Buaze</h1>
-            <p className="text-[10px] text-gray-500 font-bold tracking-widest uppercase mt-1">{roleLabel}</p>
+            <p className="text-[10px] text-white/45 font-bold tracking-widest uppercase mt-1">{roleLabel}</p>
           </div>
           {planBadge()}
         </div>
@@ -111,10 +111,10 @@ export default function AdminSidebar() {
               className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-black text-sm border border-transparent ${
                 isActive
                   ? 'bg-[#F4B400] text-[#1A2332] shadow-sm'
-                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                  : 'text-white/60 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <item.icon size={20} className={isActive ? 'text-[#1A2332]' : 'text-gray-500 group-hover:text-white'} strokeWidth={2} />
+              <item.icon size={20} className={isActive ? 'text-[#1A2332]' : 'text-white/45 group-hover:text-white'} strokeWidth={2} />
               {item.label}
             </Link>
           );
@@ -123,14 +123,14 @@ export default function AdminSidebar() {
 
       {/* ─── Trial Warning ─── */}
       {trialInfo && !trialInfo.isExpired && trialInfo.daysLeft <= 7 && (
-        <div className="mx-4 mb-4 bg-orange-500/10 border-2 border-orange-500/20 rounded-2xl p-4">
+        <div className="mx-4 mb-4 bg-[#F4B400]/10 border-2 border-[#F4B400]/30 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Clock size={14} className="text-orange-400" strokeWidth={2} />
-            <p className="text-orange-400 text-[11px] font-black uppercase tracking-wider">Deneme Süresi</p>
+            <Clock size={14} className="text-[#F4B400]" strokeWidth={2} />
+            <p className="text-[#F4B400] text-[11px] font-black uppercase tracking-wider">Deneme Süresi</p>
           </div>
           <p className="text-white text-xs font-bold leading-tight">{trialInfo.daysLeft} gün kaldı</p>
-          <div className="mt-3 w-full bg-orange-900/30 rounded-full h-2 overflow-hidden border border-orange-500/10">
-            <div className="h-full bg-orange-400 transition-all duration-500" style={{ width: `${(trialInfo.daysLeft / 14) * 100}%` }} />
+          <div className="mt-3 w-full bg-[#F4B400]/25 rounded-full h-2 overflow-hidden border border-[#F4B400]/15">
+            <div className="h-full bg-[#F4B400] transition-all duration-500" style={{ width: `${(trialInfo.daysLeft / 14) * 100}%` }} />
           </div>
         </div>
       )}
@@ -143,14 +143,14 @@ export default function AdminSidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-black text-white truncate">{displayName}</p>
-            <p className="text-[10px] text-gray-500 font-bold truncate tracking-tight">{profile?.email || profile?.username}</p>
+            <p className="text-[10px] text-white/45 font-bold truncate tracking-tight">{profile?.email || profile?.username}</p>
           </div>
         </div>
 
         <div className="pt-2 pb-3 mb-2 border-b border-white/10 flex items-center justify-between px-2">
           <div className="flex items-center gap-2">
-            <Globe size={14} className="text-gray-400" />
-            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">{t('system_language')}</span>
+            <Globe size={14} className="text-white/60" />
+            <span className="text-[10px] uppercase font-bold text-white/60 tracking-widest">{t('system_language')}</span>
           </div>
           <select 
             value={locale}

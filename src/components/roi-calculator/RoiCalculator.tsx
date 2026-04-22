@@ -233,7 +233,7 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
     <section
       id="roi-calculator"
       aria-labelledby="roi-calc-title"
-      className="w-full bg-white rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md overflow-hidden scroll-mt-20"
+      className="w-full bg-white rounded-[24px] sm:rounded-[32px] border sm:border border-[#1A2332] shadow-md sm:shadow-md overflow-hidden scroll-mt-20"
     >
       {/* Section header */}
       <div className="px-5 sm:px-10 pt-8 sm:pt-10 pb-6 sm:pb-8 border-b-[2.5px] border-[#1A2332] bg-[#F4B400]/10">
@@ -342,7 +342,7 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
                 value={form.businessType}
                 onChange={e => handleChange('businessType', e.target.value as BusinessType)}
                 aria-label={t.fields.businessType.label}
-                className="w-full rounded-xl border-[2px] border-[#1A2332] bg-white px-4 py-3
+                className="w-full rounded-xl border border-[#1A2332] bg-white px-4 py-3
                            text-sm text-[#1A2332] font-bold focus:outline-none
                            focus:ring-4 focus:ring-[#F4B400]/30 transition-all cursor-pointer appearance-none"
                 style={{
@@ -492,7 +492,7 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
           <div className="pt-2">
             <a
               href={`/${activeLocale}/auth/register`}
-              className="group block w-full rounded-xl bg-[#1A2332] border-[2.5px] border-[#1A2332] px-6 py-4 text-center
+              className="group block w-full rounded-xl bg-[#1A2332] border border-[#1A2332] px-6 py-4 text-center
                          text-[13px] sm:text-[14px] font-black text-[#F4B400] uppercase tracking-[0.15em]
                          shadow-sm active:translate-y-[5px] active:shadow-none transition-all"
             >
@@ -527,7 +527,7 @@ function SolidCard({
 }: SolidCardProps) {
   return (
     <div
-      className={`rounded-2xl border-[2px] border-[#1A2332] bg-white ${compact ? 'p-4' : 'p-5 sm:p-6'} shadow-sm`}
+      className={`rounded-2xl border border-[#1A2332] bg-white ${compact ? 'p-4' : 'p-5 sm:p-6'} shadow-sm`}
       role="region"
       aria-label={label}
       aria-live="polite"

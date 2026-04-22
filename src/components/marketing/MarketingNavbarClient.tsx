@@ -225,11 +225,11 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
   return (
     <>
     <MobileBottomNav locale={locale} isLoggedIn={isLoggedIn} />
-    <nav className="fixed top-0 left-0 right-0 z-[100] bg-white/90 backdrop-blur-lg border-b border-[#E8ECF2]/60 h-[64px]">
+    <nav className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-lg border-b border-[#E8ECF2]/60 h-[64px]">
       <div className="max-w-[1200px] mx-auto px-5 sm:px-8 h-full flex items-center justify-between">
         {/* Logo */}
         <Link href={`${base}`} className="flex items-center gap-2 group">
-          <BuazeLogo size={28} />
+          <BuazeLogo size={28} variant="default" />
           <span className="text-[17px] font-extrabold tracking-[-0.02em] text-[#1A2332]">
             buaze<span className="text-[#F4B400]">.</span>
           </span>
@@ -258,7 +258,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
 
             {/* Dropdown Panel */}
             <div
-              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[260px] bg-white border-[2.5px] border-[#1A2332] rounded-2xl shadow-md overflow-hidden transition-all duration-200 origin-top ${
+              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[260px] bg-white border border-[#1A2332] rounded-2xl shadow-md overflow-hidden transition-all duration-200 origin-top ${
                 learnOpen
                   ? 'opacity-100 scale-100 pointer-events-auto'
                   : 'opacity-0 scale-95 pointer-events-none'
@@ -321,7 +321,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
 
             {/* Dropdown Panel (Mega Menu) */}
             <div
-              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[720px] bg-white border-[2.5px] border-[#1A2332] rounded-2xl shadow-md overflow-hidden transition-all duration-200 origin-top ${
+              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[720px] bg-white border border-[#1A2332] rounded-2xl shadow-md overflow-hidden transition-all duration-200 origin-top ${
                 solutionsOpen
                   ? 'opacity-100 scale-100 pointer-events-auto'
                   : 'opacity-0 scale-95 pointer-events-none'
@@ -401,7 +401,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
           {isLoggedIn ? (
             <Link
               href={`${base}/dashboard`}
-              className="px-5 py-2 text-[14px] font-extrabold bg-[#1A2332] text-white rounded-lg border-[2px] border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:text-[#1A2332] active:translate-y-[3px] active:shadow-none transition-all"
+              className="px-5 py-2 text-[14px] font-extrabold bg-[#1A2332] text-white rounded-lg border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:text-[#1A2332] active:translate-y-[3px] active:shadow-none transition-all"
             >
               {t.nav_dashboard || (locale === 'tr' ? 'PANELE GİT' : 'DASHBOARD')}
             </Link>
@@ -415,7 +415,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
               </Link>
               <Link
                 href={`${base}/auth/register`}
-                className="px-5 py-2 text-[14px] font-extrabold bg-[#F4B400] text-white rounded-lg border-[2px] border-[#1A2332] shadow-sm hover:bg-[#E8870A] active:translate-y-[3px] active:shadow-none transition-all"
+                className="px-5 py-2 text-[14px] font-extrabold bg-[#F4B400] text-white rounded-lg border border-[#1A2332] shadow-sm hover:bg-[#E8870A] active:translate-y-[3px] active:shadow-none transition-all"
               >
                 {t.nav_register}
               </Link>
@@ -433,8 +433,8 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <>
-          <div className="fixed inset-0 bg-black/10 z-[98]" onClick={() => setMobileMenuOpen(false)} />
-          <div className="md:hidden absolute top-[64px] left-0 right-0 bg-white border-b border-[#E8ECF2] p-5 flex flex-col gap-0.5 z-[99] shadow-lg max-h-[calc(100vh-64px)] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/10 z-50" onClick={() => setMobileMenuOpen(false)} />
+          <div className="md:hidden absolute top-[64px] left-0 right-0 bg-white border-b border-[#E8ECF2] p-5 flex flex-col gap-0.5 z-50 shadow-lg max-h-[calc(100vh-64px)] overflow-y-auto">
             
             {/* Mobile Learn Accordion */}
             <button

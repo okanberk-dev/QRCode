@@ -118,7 +118,7 @@ export default async function DashboardPage({
 
         {/* Trial Banner (Mobile) */}
         {user.plan === 'trial' && (
-          <div className={`sm:hidden p-5 rounded-[20px] border-2 flex flex-col gap-3 shadow-md ${isTrialExpiring ? 'bg-red-50 border-red-600' : 'bg-yellow-50 border-[#F4B400]'}`}>
+          <div className={`sm:hidden p-5 rounded-[20px] border-2 flex flex-col gap-3 shadow-md ${isTrialExpiring ? 'bg-red-50 border-red-600' : 'bg-[#FFF8D6] border-[#F4B400]'}`}>
             <div className="flex items-center gap-3">
               <AlertTriangle size={20} className={isTrialExpiring ? 'text-red-600' : 'text-[#F4B400]'} strokeWidth={2} />
               <span className={`text-base font-black ${isTrialExpiring ? 'text-red-700' : 'text-[#F4B400]'}`}>

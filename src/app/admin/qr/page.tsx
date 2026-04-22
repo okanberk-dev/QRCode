@@ -422,7 +422,7 @@ function QRPageContent() {
           {/* Settings Box */}
           <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 sm:p-8 space-y-6 sm:space-y-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-[#FFF8D6] text-[#F4B400] flex items-center justify-center">
                 <QrCode size={20} strokeWidth={2} />
               </div>
               <h3 className="text-xl font-black text-[#1A2332] uppercase tracking-tighter">Ayarlar</h3>

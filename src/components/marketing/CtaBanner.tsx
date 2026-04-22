@@ -8,7 +8,7 @@ interface CtaBannerProps {
 export default function CtaBanner({ locale }: CtaBannerProps) {
   const base = `/${locale}`;
   return (
-    <div className="max-w-[1000px] w-full mx-auto my-16 p-8 sm:p-20 bg-[#F8F6F1] rounded-[40px] border-[3px] border-[#1A2332] shadow-md flex flex-col items-center text-center">
+    <div className="max-w-[1000px] w-full mx-auto my-16 p-8 sm:p-20 bg-[#F8F6F1] rounded-[40px] border border-[#1A2332] shadow-md flex flex-col items-center text-center">
       <h2 className="text-[32px] sm:text-[44px] font-black text-[#1A2332] tracking-tight leading-none mb-6">
         {locale === 'tr' ? 'İtibar yönetimi konusunda ne kadar ciddisiniz?' : 'How serious are you about review management?'}
       </h2>

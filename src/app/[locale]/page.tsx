@@ -203,7 +203,7 @@ export default async function LandingPage({
                 />
 
                 {/* Neobrutalist "review card" mockup — styled visual */}
-                <div className="relative bg-white rounded-2xl border-[2.5px] border-[#1A2332] shadow-md p-5 space-y-4">
+                <div className="relative bg-white rounded-2xl border border-[#1A2332] shadow-md p-5 space-y-4">
                   {/* Browser dots */}
                   <div className="flex items-center justify-between pb-3 border-b border-[#E8ECF2]">
                     <div className="flex gap-1.5">
@@ -228,7 +228,7 @@ export default async function LandingPage({
 
                   {/* Metric chips */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#F8F6F1] border-[2px] border-[#1A2332] rounded-lg p-3 shadow-md">
+                    <div className="bg-[#F8F6F1] border border-[#1A2332] rounded-lg p-3 shadow-md">
                       <div className="text-[9px] font-black uppercase tracking-wider text-[#2A3444] mb-1">
                         {locale === 'tr' ? 'YORUMLAR' : 'REVIEWS'}
                       </div>
@@ -237,7 +237,7 @@ export default async function LandingPage({
                         <span className="text-[11px] text-[#16A34A]">↑</span>
                       </div>
                     </div>
-                    <div className="bg-[#F4B400] border-[2px] border-[#1A2332] rounded-lg p-3 shadow-md">
+                    <div className="bg-[#F4B400] border border-[#1A2332] rounded-lg p-3 shadow-md">
                       <div className="text-[9px] font-black uppercase tracking-wider text-[#1A2332] mb-1">
                         {locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION'}
                       </div>
@@ -246,7 +246,7 @@ export default async function LandingPage({
                   </div>
 
                   {/* Progress bar block */}
-                  <div className="bg-[#F8F6F1] border-[2px] border-[#1A2332] rounded-lg p-3 shadow-md">
+                  <div className="bg-[#F8F6F1] border border-[#1A2332] rounded-lg p-3 shadow-md">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-[10px] font-black uppercase tracking-wider text-[#2A3444]">
                         {locale === 'tr' ? 'BU HAFTA' : 'THIS WEEK'}
@@ -271,12 +271,12 @@ export default async function LandingPage({
                 </div>
 
                 {/* Floating QR chip */}
-                <div className="absolute -top-4 -right-1 bg-[#1A2332] text-white p-3 rounded-xl border-[2.5px] border-[#1A2332] shadow-md rotate-[6deg] z-10">
+                <div className="absolute -top-4 -right-1 bg-[#1A2332] text-white p-3 rounded-xl border border-[#1A2332] shadow-md rotate-[6deg] z-10">
                   <QrCode size={28} className="text-[#F4B400]" />
                 </div>
 
                 {/* Floating testimonial bubble (single) */}
-                <div className="relative bg-white rounded-xl border-[2.5px] border-[#1A2332] p-4 shadow-md mt-5 mx-auto max-w-[320px]">
+                <div className="relative bg-white rounded-xl border border-[#1A2332] p-4 shadow-md mt-5 mx-auto max-w-[320px]">
                   <div className="flex gap-[2px] mb-2">
                     {[1,2,3,4,5].map(i => (
                       <svg key={i} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -304,7 +304,7 @@ export default async function LandingPage({
                 />
 
                 {/* Box 1: Super easy (Top) */}
-                <div className="absolute top-2 left-0 w-[260px] bg-white rounded-xl border-[2.5px] border-[#1A2332] p-5 shadow-md z-10 transform hover:-translate-y-2 transition-transform">
+                <div className="absolute top-2 left-0 w-[260px] bg-white rounded-xl border border-[#1A2332] p-5 shadow-md z-10 transform hover:-translate-y-2 transition-transform">
                   <div className="flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
                       <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -320,7 +320,7 @@ export default async function LandingPage({
                 </div>
 
                 {/* Box 2: Really love (Middle) */}
-                <div className="absolute top-[120px] right-2 w-[290px] bg-white rounded-xl border-[2.5px] border-[#1A2332] p-5 shadow-md z-30 transform hover:-translate-y-2 transition-transform">
+                <div className="absolute top-[120px] right-2 w-[290px] bg-white rounded-xl border border-[#1A2332] p-5 shadow-md z-30 transform hover:-translate-y-2 transition-transform">
                   <div className="flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
                       <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -336,7 +336,7 @@ export default async function LandingPage({
                 </div>
 
                 {/* Box 3: Buaze makes (Bottom) */}
-                <div className="absolute top-[250px] left-6 w-[260px] bg-white rounded-xl border-[2.5px] border-[#1A2332] p-5 shadow-md z-20 transform hover:-translate-y-2 transition-transform">
+                <div className="absolute top-[250px] left-6 w-[260px] bg-white rounded-xl border border-[#1A2332] p-5 shadow-md z-20 transform hover:-translate-y-2 transition-transform">
                   <div className="flex gap-[2px] mb-3">
                     {[1,2,3,4,5].map(i => (
                       <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -385,10 +385,10 @@ export default async function LandingPage({
         className="py-16 sm:py-24 px-5 sm:px-8"
       >
         <div className="max-w-[1040px] mx-auto">
-          <div className="relative bg-white border-[2.5px] border-[#1A2332] rounded-[24px] sm:rounded-[32px] shadow-md p-6 sm:p-10 lg:p-14 overflow-hidden">
+          <div className="relative bg-white border border-[#1A2332] rounded-[24px] sm:rounded-[32px] shadow-md p-6 sm:p-10 lg:p-14 overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 items-center">
               <div className="md:col-span-2 space-y-4 text-left">
-                <div className="inline-flex items-center gap-2 bg-[#F4B400] text-[#1A2332] px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em] border-[2px] border-[#1A2332] shadow-md">
+                <div className="inline-flex items-center gap-2 bg-[#F4B400] text-[#1A2332] px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em] border border-[#1A2332] shadow-md">
                   <QrCode size={14} />
                   {locale === 'tr' ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
                 </div>
@@ -408,7 +408,7 @@ export default async function LandingPage({
                 <div className="pt-2">
                   <Link
                     href={`${base}/solutions/qr-generator`}
-                    className="inline-flex items-center gap-2 bg-[#1A2332] text-white font-extrabold text-[14px] sm:text-[15px] px-6 sm:px-7 py-3.5 sm:py-4 rounded-xl border-[2.5px] border-[#1A2332] shadow-md hover:-translate-y-0.5 hover:shadow-md active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
+                    className="inline-flex items-center gap-2 bg-[#1A2332] text-white font-extrabold text-[14px] sm:text-[15px] px-6 sm:px-7 py-3.5 sm:py-4 rounded-xl border border-[#1A2332] shadow-md hover:-translate-y-0.5 hover:shadow-md active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
                   >
                     {locale === 'tr' ? 'QR Kod Oluştur' : 'Generate a QR Code'}
                     <ArrowRight size={16} />
@@ -420,10 +420,10 @@ export default async function LandingPage({
               <div className="hidden md:flex justify-center">
                 <div
                   aria-hidden
-                  className="relative w-[180px] h-[180px] bg-[#F8F6F1] border-[2.5px] border-[#1A2332] rounded-2xl shadow-md rotate-[4deg] flex items-center justify-center"
+                  className="relative w-[180px] h-[180px] bg-[#F8F6F1] border border-[#1A2332] rounded-2xl shadow-md rotate-[4deg] flex items-center justify-center"
                 >
                   <QrCode size={112} className="text-[#1A2332]" strokeWidth={1.5} />
-                  <span className="absolute -top-2 -right-2 bg-[#F4B400] text-[#1A2332] text-[10px] font-black uppercase tracking-widest border-[2px] border-[#1A2332] rounded-full px-2.5 py-1 shadow-md">
+                  <span className="absolute -top-2 -right-2 bg-[#F4B400] text-[#1A2332] text-[10px] font-black uppercase tracking-widest border border-[#1A2332] rounded-full px-2.5 py-1 shadow-md">
                     {locale === 'tr' ? 'YENİ' : 'NEW'}
                   </span>
                 </div>
@@ -464,11 +464,11 @@ export default async function LandingPage({
                 icon: <Trophy size={24} />
               }
             ].map((item, i) => (
-              <div key={i} className="group relative bg-[#F8F6F1] p-8 rounded-2xl border-[2.5px] border-[#1A2332] shadow-md hover:-translate-y-2 transition-transform duration-300">
-                <div className="absolute -top-5 -right-5 w-14 h-14 bg-[#F4B400] rounded-full border-[2px] border-[#1A2332] shadow-md flex items-center justify-center text-[18px] font-black text-[#1A2332] z-10">
+              <div key={i} className="group relative bg-[#F8F6F1] p-8 rounded-2xl border border-[#1A2332] shadow-md hover:-translate-y-2 transition-transform duration-300">
+                <div className="absolute -top-5 -right-5 w-14 h-14 bg-[#F4B400] rounded-full border border-[#1A2332] shadow-md flex items-center justify-center text-[18px] font-black text-[#1A2332] z-10">
                   {item.step}
                 </div>
-                <div className="w-12 h-12 bg-white rounded-xl border-[2px] border-[#1A2332] flex items-center justify-center mb-6 text-[#1A2332]">
+                <div className="w-12 h-12 bg-white rounded-xl border border-[#1A2332] flex items-center justify-center mb-6 text-[#1A2332]">
                   {item.icon}
                 </div>
                 <h3 className="text-[20px] font-extrabold text-[#1A2332] mb-4">{item.title}</h3>
@@ -484,7 +484,7 @@ export default async function LandingPage({
       {/* ═══════ Google Compliance Trust Section ═══════ */}
       <section className="py-12 sm:py-16 px-5 sm:px-8">
         <div className="max-w-[1200px] mx-auto">
-          <div className="bg-white border-[2.5px] border-[#1A2332] rounded-[24px] p-6 sm:p-10 shadow-md flex flex-col md:flex-row items-center gap-8 justify-between">
+          <div className="bg-white border border-[#1A2332] rounded-[24px] p-6 sm:p-10 shadow-md flex flex-col md:flex-row items-center gap-8 justify-between">
             <div className="space-y-4 max-w-[650px]">
               <div className="inline-flex items-center gap-2 bg-[#F4B400] text-[#1A2332] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border-2 border-[#1A2332]">
                 <ShieldCheck size={14} />
@@ -522,7 +522,7 @@ export default async function LandingPage({
         className="py-16 sm:py-24 lg:py-32 px-4 sm:px-8 bg-[#F8F6F1]"
       >
         <div className="max-w-[1240px] mx-auto">
-          <div className="relative bg-[#1A2332] rounded-[24px] sm:rounded-[32px] lg:rounded-[48px] p-6 sm:p-10 lg:p-20 border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md lg:shadow-md overflow-hidden">
+          <div className="relative bg-[#1A2332] rounded-[24px] sm:rounded-[32px] lg:rounded-[48px] p-6 sm:p-10 lg:p-20 border sm:border border-[#1A2332] shadow-md sm:shadow-md lg:shadow-md overflow-hidden">
             {/* Background Accent */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#F4B400]/10 blur-[120px] rounded-full -mr-32 -mt-32 pointer-events-none" />
 
@@ -587,8 +587,8 @@ export default async function LandingPage({
               {/* Right Visual Column (3D Dash) */}
               <div className="lg:col-span-6 relative flex justify-center lg:justify-end mt-4 lg:mt-0">
                 {/* Floating Metric Chips — constrained to parent on mobile via left-0 instead of -left-X */}
-                <div className="absolute -top-6 sm:-top-8 lg:-top-16 left-0 sm:left-2 lg:-left-6 z-[40] transform hover:-translate-y-1 transition-transform cursor-default">
-                  <div className="bg-white px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl border-[2.5px] border-[#1A2332] shadow-md sm:shadow-md">
+                <div className="absolute -top-6 sm:-top-8 lg:-top-16 left-0 sm:left-2 lg:-left-6 z-20 transform hover:-translate-y-1 transition-transform cursor-default">
+                  <div className="bg-white px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl border border-[#1A2332] shadow-md sm:shadow-md">
                     <div className="text-[9px] sm:text-[10px] font-black text-[#2A3444] uppercase mb-0.5 sm:mb-1 tracking-wider">
                       {locale === 'tr' ? 'CANLI ANALİZ' : 'LIVE ANALYTICS'}
                     </div>
@@ -600,7 +600,7 @@ export default async function LandingPage({
                 </div>
 
                 {/* Main 3D Browser Mockup — full width on mobile, capped on desktop */}
-                <div className="relative w-full max-w-[500px] h-[340px] sm:h-[420px] lg:h-[440px] bg-[#1a1a1a] rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#3d3a36] shadow-md sm:shadow-md lg:shadow-md transform lg:rotate-[-2deg] flex flex-col overflow-hidden">
+                <div className="relative w-full max-w-[500px] h-[340px] sm:h-[420px] lg:h-[440px] bg-[#1a1a1a] rounded-[24px] sm:rounded-[32px] border sm:border border-[#3d3a36] shadow-md sm:shadow-md lg:shadow-md transform lg:rotate-[-2deg] flex flex-col overflow-hidden">
                    {/* Browser Bar */}
                    <div className="bg-[#1A2332] border-b border-[#3d3a36] p-4 flex gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
@@ -645,8 +645,8 @@ export default async function LandingPage({
                    </div>
 
                    {/* Floating Bottom Badge — inside-bounds on mobile, overflowing on desktop */}
-                   <div className="absolute bottom-3 sm:bottom-5 right-3 sm:right-5 lg:-right-8 z-[40]">
-                      <div className="bg-[#F4B400] text-[#1A2332] p-3 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md flex flex-col items-center gap-1 group cursor-default">
+                   <div className="absolute bottom-3 sm:bottom-5 right-3 sm:right-5 lg:-right-8 z-20">
+                      <div className="bg-[#F4B400] text-[#1A2332] p-3 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl border sm:border border-[#1A2332] shadow-md sm:shadow-md flex flex-col items-center gap-1 group cursor-default">
                          <Zap size={20} fill="#1A2332" className="group-hover:scale-110 transition-transform sm:w-6 sm:h-6" />
                          <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.1em] sm:tracking-widest whitespace-nowrap">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
                       </div>
@@ -669,7 +669,7 @@ export default async function LandingPage({
           {/* Single, responsive grid — renders plans exactly once on all sizes */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 md:pt-4">
             {/* Monthly Plan */}
-            <div className="bg-white p-6 sm:p-8 md:p-10 rounded-2xl border-[2px] border-[#1A2332] shadow-md hover:-translate-y-1 transition-transform flex flex-col">
+            <div className="bg-white p-6 sm:p-8 md:p-10 rounded-2xl border border-[#1A2332] shadow-md hover:-translate-y-1 transition-transform flex flex-col">
               <h3 className="text-[20px] font-extrabold mb-1.5 text-[#1A2332]">{t.pricing_monthly_title}</h3>
               <p className="text-[#2A3444] text-[13px] mb-6">{t.pricing_monthly_desc}</p>
               <div className="mb-6 sm:mb-8">
@@ -686,15 +686,15 @@ export default async function LandingPage({
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-white text-[#1A2332] font-extrabold text-[14px] sm:text-[15px] rounded-lg border-[2px] border-[#1A2332] shadow-sm hover:bg-[#F8F6F1] transition-all active:translate-y-[4px] active:shadow-none"
+                className="block w-full text-center py-3.5 bg-white text-[#1A2332] font-extrabold text-[14px] sm:text-[15px] rounded-lg border border-[#1A2332] shadow-sm hover:bg-[#F8F6F1] transition-all active:translate-y-[4px] active:shadow-none"
               >
                 {t.pricing_monthly_cta}
               </Link>
             </div>
 
             {/* Yearly Plan */}
-            <div className="bg-[#1A2332] p-6 sm:p-8 md:p-10 pt-10 sm:pt-10 md:pt-10 rounded-2xl border-[2px] border-[#1A2332] relative flex flex-col text-white shadow-md hover:-translate-y-1 transition-transform">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#F4B400] text-[#1A2332] px-4 py-1.5 rounded-full font-black text-[10px] sm:text-[11px] uppercase tracking-widest border-[2px] border-[#1A2332] whitespace-nowrap">
+            <div className="bg-[#1A2332] p-6 sm:p-8 md:p-10 pt-10 sm:pt-10 md:pt-10 rounded-2xl border border-[#1A2332] relative flex flex-col text-white shadow-md hover:-translate-y-1 transition-transform">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#F4B400] text-[#1A2332] px-4 py-1.5 rounded-full font-black text-[10px] sm:text-[11px] uppercase tracking-widest border border-[#1A2332] whitespace-nowrap">
                 {t.pricing_yearly_badge}
               </div>
               <h3 className="text-[20px] font-extrabold mb-1.5">{t.pricing_yearly_title}</h3>
@@ -713,7 +713,7 @@ export default async function LandingPage({
               </ul>
               <Link
                 href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-[#F4B400] text-[#1A2332] font-extrabold text-[14px] sm:text-[15px] rounded-lg border-[2px] border-[#1A2332] shadow-sm hover:bg-[#F4B400] transition-all active:translate-y-[4px] active:shadow-none"
+                className="block w-full text-center py-3.5 bg-[#F4B400] text-[#1A2332] font-extrabold text-[14px] sm:text-[15px] rounded-lg border border-[#1A2332] shadow-sm hover:bg-[#F4B400] transition-all active:translate-y-[4px] active:shadow-none"
               >
                 {t.pricing_yearly_cta}
               </Link>

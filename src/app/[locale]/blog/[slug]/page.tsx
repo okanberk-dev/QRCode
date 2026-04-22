@@ -97,8 +97,8 @@ export default async function BlogPostPage({
       </div>
 
       <main className="px-5 sm:px-8 max-w-[800px] mx-auto -mt-16 relative z-10 pb-20">
-        <div className="bg-white p-8 sm:p-12 rounded-3xl border-[2.5px] border-[#1A2332] shadow-md">
-          <div className="w-full h-[300px] sm:h-[400px] rounded-2xl overflow-hidden border-[2.5px] border-[#1A2332] mb-12 shadow-md">
+        <div className="bg-white p-8 sm:p-12 rounded-3xl border border-[#1A2332] shadow-md">
+          <div className="w-full h-[300px] sm:h-[400px] rounded-2xl overflow-hidden border border-[#1A2332] mb-12 shadow-md">
             <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
           </div>
 
@@ -111,19 +111,19 @@ export default async function BlogPostPage({
             prose-strong:font-extrabold prose-strong:text-[#1A2332]
             prose-a:text-[#F4B400] prose-a:font-bold hover:prose-a:text-[#E8870A]
             prose-li:text-[#2A3444] prose-li:font-medium
-            prose-img:border-[2.5px] prose-img:border-[#1A2332] prose-img:shadow-md
+            prose-img:border prose-img:border-[#1A2332] prose-img:shadow-md
             break-words"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 
-          <div className="mt-16 pt-10 border-t-2 border-[#E8ECF2] flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#F8F6F1] p-8 rounded-2xl border-[2.5px] border-[#1A2332] shadow-md">
+          <div className="mt-16 pt-10 border-t-2 border-[#E8ECF2] flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#F8F6F1] p-8 rounded-2xl border border-[#1A2332] shadow-md">
             <div className="space-y-2 text-center sm:text-left">
               <h4 className="text-[22px] font-black">{locale === 'tr' ? 'Dijitalde Rekabeti Geride Bırakın' : 'Leave the Competition Behind'}</h4>
               <p className="text-[15px] text-[#2A3444] font-medium">{locale === 'tr' ? '14 günlük ücretsiz deneme ile dijital itibarınızı hemen güçlendirmeye başlayın.' : 'Start strengthening your digital reputation instantly with a 14-day free trial.'}</p>
             </div>
             <Link
               href={`${base}/auth/register`}
-              className="px-8 py-4 bg-[#F4B400] text-white text-[15px] font-extrabold rounded-xl border-[2.5px] border-[#1A2332] shadow-sm hover:bg-[#E8870A] active:translate-y-1 active:shadow-none transition-all flex border flex-shrink-0 gap-2 items-center"
+              className="px-8 py-4 bg-[#F4B400] text-white text-[15px] font-extrabold rounded-xl border border-[#1A2332] shadow-sm hover:bg-[#E8870A] active:translate-y-1 active:shadow-none transition-all flex border flex-shrink-0 gap-2 items-center"
             >
               {locale === 'tr' ? 'Ücretsiz Başla' : 'Start for Free'} <ArrowRight size={18} />
             </Link>

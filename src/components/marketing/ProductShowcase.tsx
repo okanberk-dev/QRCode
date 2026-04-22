@@ -57,7 +57,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
         <div className="grid grid-cols-12 gap-8">
           {/* ── 1. QR BUILDER SCREENSHOT (wide, left) ── */}
           <figure className="col-span-7 group">
-            <div className="bg-white rounded-2xl border-[2.5px] border-[#1A2332] shadow-md overflow-hidden transition-transform duration-300 group-hover:-translate-y-1">
+            <div className="bg-white rounded-2xl border border-[#1A2332] shadow-md overflow-hidden transition-transform duration-300 group-hover:-translate-y-1">
               {/* Browser chrome */}
               <div className="flex items-center justify-between px-5 py-3 border-b-[2px] border-[#1A2332] bg-[#F8F6F1]">
                 <div className="flex gap-1.5">
@@ -90,8 +90,8 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
 
                 <div className="grid grid-cols-5 gap-5">
                   {/* QR preview (left big) */}
-                  <div className="col-span-2 bg-[#1A2332] rounded-xl p-5 flex flex-col items-center justify-center border-[2px] border-[#1A2332] shadow-md">
-                    <div className="bg-white p-3 rounded-lg border-[2px] border-[#1A2332]">
+                  <div className="col-span-2 bg-[#1A2332] rounded-xl p-5 flex flex-col items-center justify-center border border-[#1A2332] shadow-md">
+                    <div className="bg-white p-3 rounded-lg border border-[#1A2332]">
                       <QrCode size={96} className="text-[#1A2332]" strokeWidth={1.5} />
                     </div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-[#F4B400] mt-3">
@@ -109,13 +109,13 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                         {isTr ? 'Şablon' : 'Template'}
                       </label>
                       <div className="flex gap-2">
-                        <div className="flex-1 h-10 rounded-md border-[2px] border-[#1A2332] bg-[#F4B400] shadow-md flex items-center justify-center text-[11px] font-black">
+                        <div className="flex-1 h-10 rounded-md border border-[#1A2332] bg-[#F4B400] shadow-md flex items-center justify-center text-[11px] font-black">
                           {isTr ? 'Klasik' : 'Classic'}
                         </div>
-                        <div className="flex-1 h-10 rounded-md border-[2px] border-[#E8ECF2] bg-white flex items-center justify-center text-[11px] font-bold text-[#2A3444]">
+                        <div className="flex-1 h-10 rounded-md border border-[#E8ECF2] bg-white flex items-center justify-center text-[11px] font-bold text-[#2A3444]">
                           {isTr ? 'Modern' : 'Modern'}
                         </div>
-                        <div className="flex-1 h-10 rounded-md border-[2px] border-[#E8ECF2] bg-white flex items-center justify-center text-[11px] font-bold text-[#2A3444]">
+                        <div className="flex-1 h-10 rounded-md border border-[#E8ECF2] bg-white flex items-center justify-center text-[11px] font-bold text-[#2A3444]">
                           {isTr ? 'Premium' : 'Premium'}
                         </div>
                       </div>
@@ -129,7 +129,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                           (c) => (
                             <div
                               key={c}
-                              className="w-8 h-8 rounded-full border-[2px] border-[#1A2332] shadow-md"
+                              className="w-8 h-8 rounded-full border border-[#1A2332] shadow-md"
                               style={{ backgroundColor: c }}
                             />
                           ),
@@ -140,7 +140,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                       <label className="text-[10px] font-black uppercase tracking-wider text-[#2A3444] mb-1 block">
                         {isTr ? 'Hedef Konum' : 'Target Location'}
                       </label>
-                      <div className="h-10 rounded-md border-[2px] border-[#E8ECF2] bg-[#F8F6F1] px-3 flex items-center text-[12px] font-semibold text-[#1A2332]">
+                      <div className="h-10 rounded-md border border-[#E8ECF2] bg-[#F8F6F1] px-3 flex items-center text-[12px] font-semibold text-[#1A2332]">
                         Ataşehir / İstanbul
                       </div>
                     </div>
@@ -148,7 +148,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                       type="button"
                       aria-hidden="true"
                       tabIndex={-1}
-                      className="w-full h-11 rounded-md bg-[#1A2332] text-[#F4B400] text-[12px] font-black uppercase tracking-wider border-[2px] border-[#1A2332] shadow-md"
+                      className="w-full h-11 rounded-md bg-[#1A2332] text-[#F4B400] text-[12px] font-black uppercase tracking-wider border border-[#1A2332] shadow-md"
                     >
                       {isTr ? 'QR Kodu Oluştur' : 'Generate QR'}
                     </button>
@@ -157,7 +157,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
               </div>
             </div>
             <figcaption className="mt-5 flex items-start gap-3">
-              <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-[#F4B400] border-[2px] border-[#1A2332] shadow-md flex items-center justify-center">
+              <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-[#F4B400] border border-[#1A2332] shadow-md flex items-center justify-center">
                 <QrCode size={18} className="text-[#1A2332]" />
               </div>
               <div>
@@ -175,7 +175,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
 
           {/* ── 2. FEEDBACK MOBILE MOCK (narrow, right) ── */}
           <figure className="col-span-5 group">
-            <div className="relative bg-gradient-to-br from-[#1A2332] to-[#3d3a36] rounded-2xl border-[2.5px] border-[#1A2332] shadow-md overflow-hidden p-10 flex items-center justify-center min-h-[360px] transition-transform duration-300 group-hover:-translate-y-1">
+            <div className="relative bg-gradient-to-br from-[#1A2332] to-[#3d3a36] rounded-2xl border border-[#1A2332] shadow-md overflow-hidden p-10 flex items-center justify-center min-h-[360px] transition-transform duration-300 group-hover:-translate-y-1">
               {/* dot pattern bg */}
               <div
                 className="absolute inset-0 opacity-[0.08] pointer-events-none"
@@ -187,7 +187,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
               />
 
               {/* Phone frame */}
-              <div className="relative w-[220px] bg-white rounded-[28px] border-[3px] border-[#1A2332] shadow-md p-4 rotate-[-3deg]">
+              <div className="relative w-[220px] bg-white rounded-[28px] border border-[#1A2332] shadow-md p-4 rotate-[-3deg]">
                 {/* notch */}
                 <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-16 h-4 bg-[#1A2332] rounded-full" />
                 <div className="pt-5 space-y-3">
@@ -214,26 +214,26 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                       ? 'Harikaydı! Servis çok hızlıydı ve burger mükemmeldi...'
                       : 'Amazing! Service was fast and the burger was perfect...'}
                   </div>
-                  <div className="h-9 rounded-lg bg-[#F4B400] border-[2px] border-[#1A2332] shadow-md flex items-center justify-center text-[11px] font-black uppercase tracking-wider">
+                  <div className="h-9 rounded-lg bg-[#F4B400] border border-[#1A2332] shadow-md flex items-center justify-center text-[11px] font-black uppercase tracking-wider">
                     {isTr ? 'Gönder' : 'Submit'}
                   </div>
                 </div>
               </div>
 
               {/* Floating scan chip */}
-              <div className="absolute top-5 right-5 bg-[#F4B400] text-[#1A2332] px-3 py-1.5 rounded-full border-[2px] border-[#1A2332] shadow-md flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
+              <div className="absolute top-5 right-5 bg-[#F4B400] text-[#1A2332] px-3 py-1.5 rounded-full border border-[#1A2332] shadow-md flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
                 <Smartphone size={12} />
                 {isTr ? 'Tarandı' : 'Scanned'}
               </div>
 
               {/* Floating review count chip */}
-              <div className="absolute bottom-5 left-5 bg-white text-[#1A2332] px-3 py-1.5 rounded-full border-[2px] border-[#1A2332] shadow-md flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
+              <div className="absolute bottom-5 left-5 bg-white text-[#1A2332] px-3 py-1.5 rounded-full border border-[#1A2332] shadow-md flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
                 <CheckCircle2 size={12} className="text-[#16A34A]" />
                 +142 {isTr ? 'bu hafta' : 'this week'}
               </div>
             </div>
             <figcaption className="mt-5 flex items-start gap-3">
-              <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-white border-[2px] border-[#1A2332] shadow-md flex items-center justify-center">
+              <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-white border border-[#1A2332] shadow-md flex items-center justify-center">
                 <MessageSquare size={18} className="text-[#1A2332]" />
               </div>
               <div>
@@ -253,7 +253,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
 
           {/* ── 3. ANALYTICS DASHBOARD (full width below) ── */}
           <figure className="col-span-12 group mt-6">
-            <div className="bg-white rounded-2xl border-[2.5px] border-[#1A2332] shadow-md overflow-hidden transition-transform duration-300 group-hover:-translate-y-1">
+            <div className="bg-white rounded-2xl border border-[#1A2332] shadow-md overflow-hidden transition-transform duration-300 group-hover:-translate-y-1">
               {/* Browser chrome */}
               <div className="flex items-center justify-between px-5 py-3 border-b-[2px] border-[#1A2332] bg-[#F8F6F1]">
                 <div className="flex gap-1.5">
@@ -302,7 +302,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                   ].map(({ label, value, trend, Icon, bg }) => (
                     <div
                       key={label}
-                      className={`${bg} p-4 rounded-xl border-[2px] border-[#1A2332] shadow-md`}
+                      className={`${bg} p-4 rounded-xl border border-[#1A2332] shadow-md`}
                     >
                       <div className="flex items-center justify-between mb-3">
                         <Icon size={16} className="text-[#1A2332]" />
@@ -322,7 +322,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
 
                 <div className="grid grid-cols-3 gap-6">
                   {/* Chart area */}
-                  <div className="col-span-2 bg-[#F8F6F1] rounded-xl border-[2px] border-[#1A2332] p-5">
+                  <div className="col-span-2 bg-[#F8F6F1] rounded-xl border border-[#1A2332] p-5">
                     <div className="flex items-center justify-between mb-5">
                       <div>
                         <h4 className="text-[14px] font-extrabold text-[#1A2332]">
@@ -372,7 +372,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                   </div>
 
                   {/* Recent feed */}
-                  <div className="col-span-1 bg-[#F8F6F1] rounded-xl border-[2px] border-[#1A2332] p-5">
+                  <div className="col-span-1 bg-[#F8F6F1] rounded-xl border border-[#1A2332] p-5">
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="text-[14px] font-extrabold text-[#1A2332]">
                         {isTr ? 'Son Yorumlar' : 'Recent Reviews'}
@@ -427,7 +427,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
               </div>
             </div>
             <figcaption className="mt-5 flex items-start gap-3 max-w-[620px]">
-              <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-[#1A2332] border-[2px] border-[#1A2332] shadow-md flex items-center justify-center">
+              <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-[#1A2332] border border-[#1A2332] shadow-md flex items-center justify-center">
                 <BarChart3 size={18} className="text-[#F4B400]" />
               </div>
               <div>
@@ -468,9 +468,9 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
           ].map(({ Icon, label }) => (
             <div
               key={label}
-              className="bg-white border-[2px] border-[#1A2332] rounded-xl p-4 flex items-center gap-3 shadow-md"
+              className="bg-white border border-[#1A2332] rounded-xl p-4 flex items-center gap-3 shadow-md"
             >
-              <div className="w-9 h-9 flex-shrink-0 rounded-lg bg-[#F4B400] border-[2px] border-[#1A2332] flex items-center justify-center">
+              <div className="w-9 h-9 flex-shrink-0 rounded-lg bg-[#F4B400] border border-[#1A2332] flex items-center justify-center">
                 <Icon size={16} className="text-[#1A2332]" />
               </div>
               <p className="text-[13px] font-extrabold text-[#1A2332]">

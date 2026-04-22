@@ -326,7 +326,7 @@ export default function DashboardQrPage() {
         <div className="order-2 lg:order-1 space-y-4 sm:space-y-6">
           <div className="rounded-[24px] sm:rounded-[28px] border border-gray-100 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF8D6] text-[#F4B400]">
                 <QrCode size={20} strokeWidth={2} />
               </div>
               <h2 className="text-lg font-black text-[#1A2332] sm:text-xl">{copy.qrPreview}</h2>

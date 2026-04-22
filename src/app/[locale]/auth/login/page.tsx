@@ -110,7 +110,7 @@ export default async function LoginPage({
           {/* Header/Logo for mobile */}
           <div className="flex lg:hidden justify-center mb-8">
             <Link href="/" className="flex items-center gap-3 group">
-              <BuazeLogo size={36} />
+              <BuazeLogo size={36} variant="default" />
               <span className="text-2xl font-black tracking-tighter text-[#1A2332]">buaze<span className="text-[#F4B400]">.</span></span>
             </Link>
           </div>

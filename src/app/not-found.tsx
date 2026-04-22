@@ -17,7 +17,7 @@ export default function NotFound() {
 
       <div className="relative z-10 w-full max-w-md mx-auto text-center">
         {/* Sleek 3D-like container */}
-        <div className="bg-white rounded-[32px] p-10 sm:p-12 border-[3px] border-[#1A2332] shadow-md transform hover:-translate-y-2 transition-transform duration-500">
+        <div className="bg-white rounded-[32px] p-10 sm:p-12 border border-[#1A2332] shadow-md transform hover:-translate-y-2 transition-transform duration-500">
           
           <div className="flex justify-center mb-8">
             <div className="w-24 h-24 bg-[#1A2332] rounded-[24px] flex items-center justify-center border-2 border-white shadow-sm transform rotate-[-3deg] hover:rotate-[3deg] transition-transform">
@@ -39,7 +39,7 @@ export default function NotFound() {
 
           <Link 
             href="/"
-            className="inline-flex items-center justify-center gap-2 w-full px-8 py-4 bg-[#F4B400] text-[#1A2332] text-sm font-extrabold rounded-xl border-[2px] border-[#1A2332] shadow-sm hover:bg-[#F4B400] transition-all active:translate-y-[4px] active:shadow-none uppercase tracking-widest"
+            className="inline-flex items-center justify-center gap-2 w-full px-8 py-4 bg-[#F4B400] text-[#1A2332] text-sm font-extrabold rounded-xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] transition-all active:translate-y-[4px] active:shadow-none uppercase tracking-widest"
           >
             <ArrowLeft size={18} strokeWidth={2} />
             Ana Sayfaya Dön
@@ -47,7 +47,7 @@ export default function NotFound() {
         </div>
 
         <Link href="/" className="mt-8 flex items-center justify-center gap-2.5 group">
-          <BuazeLogo size={28} />
+          <BuazeLogo size={28} variant="default" />
           <span className="text-[#6B7280] font-semibold text-xs uppercase tracking-[0.2em] group-hover:text-[#1A2332] transition-colors">Buaze • Dijital İtibar</span>
         </Link>
       </div>

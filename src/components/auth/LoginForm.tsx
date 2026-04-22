@@ -137,7 +137,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         type="submit"
         id="login-submit-btn"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border-[3px] border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+        className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
       >
         {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" strokeWidth={2} />}
         {loading ? t.auth_login_loading.toUpperCase() : t.auth_login_btn.toUpperCase()}

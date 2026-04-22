@@ -21,7 +21,7 @@ function daysLeft(trialEndsAt: string | null): number | null {
 }
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
-  trial:   { label: 'DENEME',  color: 'bg-orange-500/15 text-orange-400 border-orange-500/20' },
+  trial:   { label: 'DENEME',  color: 'bg-[#F4B400]/15 text-[#F4B400] border-[#F4B400]/30' },
   monthly: { label: 'AYLIK',   color: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
   yearly:  { label: 'YILLIK',  color: 'bg-green-500/15 text-green-400 border-green-500/20' },
   free:    { label: 'ÜCRETSİZ', color: 'bg-gray-500/15 text-gray-400 border-gray-500/20' },
@@ -173,7 +173,7 @@ export default function MembersPage() {
                               <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-red-100 text-red-700">PASİF</span>
                             )}
                             {m.plan === 'trial' && m.trialEndsAt && (
-                              <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${trialExpired ? 'bg-red-100 text-red-700' : trialSoon ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}`}>
+                              <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${trialExpired ? 'bg-red-100 text-red-700' : trialSoon ? 'bg-[#FFF8D6] text-[#B88800]' : 'bg-gray-100 text-gray-600'}`}>
                                 {trialExpired ? 'SÜRESİ DOLDU' : `${dl}G KALDI`}
                               </span>
                             )}
@@ -189,7 +189,7 @@ export default function MembersPage() {
                     </td>
                     <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
                       {m.plan === 'trial' && m.trialEndsAt ? (
-                        <span className={`text-xs font-black flex items-center gap-1.5 ${trialExpired ? 'text-red-500' : trialSoon ? 'text-orange-500' : 'text-[#2A3444]'}`}>
+                        <span className={`text-xs font-black flex items-center gap-1.5 ${trialExpired ? 'text-red-500' : trialSoon ? 'text-[#F4B400]' : 'text-[#2A3444]'}`}>
                           {trialExpired ? <AlertTriangle size={14} strokeWidth={2} /> : null}
                           {trialExpired
                             ? `Süresi doldu (${Math.abs(dl!)} gün önce)`

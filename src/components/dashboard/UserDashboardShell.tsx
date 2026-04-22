@@ -81,7 +81,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
           <div className="flex h-11 w-11 items-center justify-center flex-shrink-0"><BuazeLogo size={44} variant="on-dark" /></div>
           <div className="min-w-0">
             <p className="text-lg font-black tracking-tight text-white">Buaze</p>
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-500">{copy.dashboard}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">{copy.dashboard}</p>
           </div>
         </Link>
       </div>
@@ -99,7 +99,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
               className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition-all ${
                 isActive
                   ? 'bg-[#F4B400] text-[#1A2332]'
-                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                  : 'text-white/60 hover:bg-white/5 hover:text-white'
               }`}
             >
               <Icon size={18} strokeWidth={2} />
@@ -111,8 +111,8 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
 
       {/* Trial banner */}
       {user.plan === 'trial' && trialDaysLeft !== null && (
-        <div className="mx-3 mb-3 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4">
-          <div className="mb-1.5 flex items-center gap-2 text-orange-400">
+        <div className="mx-3 mb-3 rounded-2xl border border-[#F4B400]/30 bg-[#F4B400]/10 p-4">
+          <div className="mb-1.5 flex items-center gap-2 text-[#F4B400]">
             <Crown size={13} strokeWidth={2} />
             <span className="text-[10px] font-black uppercase tracking-[0.25em]">{copy.plan}</span>
           </div>
@@ -126,7 +126,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F4B400] text-sm font-black text-[#1A2332]">{initial}</div>
           <div className="min-w-0">
             <p className="truncate text-sm font-black text-white">{displayName}</p>
-            <p className="truncate text-[11px] font-bold text-gray-500">{user.email}</p>
+            <p className="truncate text-[11px] font-bold text-white/45">{user.email}</p>
           </div>
         </div>
         <button
@@ -151,13 +151,13 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
         {/* Mobile top bar */}
         <div className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-200/60 bg-white/95 px-4 py-3 backdrop-blur lg:hidden shadow-sm">
           <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center"><BuazeLogo size={36} /></div>
+            <div className="flex h-9 w-9 items-center justify-center"><BuazeLogo size={36} variant="default" /></div>
             <span className="text-base font-black tracking-tight text-[#1A2332]">Buaze</span>
           </Link>
 
           <div className="flex items-center gap-2">
             {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 5 && (
-              <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-orange-600">
+              <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-[#FFF8D6] border border-[#FFD666]/50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#D69E00]">
                 <Crown size={10} /> {trialDaysLeft}g
               </span>
             )}
@@ -205,7 +205,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
                 key={item.href}
                 href={item.href}
                 className={`flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 transition-all ${
-                  isActive ? 'text-[#F4B400]' : 'text-gray-500 hover:text-gray-300'
+                  isActive ? 'text-[#F4B400]' : 'text-white/45 hover:text-white/75'
                 }`}
               >
                 <div className={`rounded-xl p-1.5 transition-all ${isActive ? 'bg-[#F4B400]/15' : ''}`}>

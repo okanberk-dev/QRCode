@@ -116,7 +116,7 @@ const SHARED_LAYOUT = (content: string, title: string) => `
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>${EMAIL_STYLES}</style>
 </head>
-<body style="margin:0;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'DM Sans',Roboto,Helvetica,Arial,sans-serif;">
+<body style="margin:0;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <div align="center">
     <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;">
       <tr>

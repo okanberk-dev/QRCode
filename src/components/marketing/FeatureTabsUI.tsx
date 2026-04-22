@@ -41,9 +41,9 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
       icon: <Trophy size={18} />,
       subtitle: locale === 'tr' ? 'MÜŞTERİ DENEYİMİNİ ANLIK OLARAK TAKİP EDİN' : 'TRACK CUSTOMER EXPERIENCE IN REAL-TIME',
       content: (
-        <div className="mx-auto w-full max-w-[650px] bg-[#F8F6F1] rounded-2xl md:rounded-[32px] border-[2.5px] border-[#1A2332] p-6 md:p-10 shadow-md space-y-6 md:space-y-8">
+        <div className="mx-auto w-full max-w-[650px] bg-[#F8F6F1] rounded-2xl md:rounded-[32px] border border-[#1A2332] p-6 md:p-10 shadow-md space-y-6 md:space-y-8">
           {/* Positive Review Route */}
-          <div className="bg-white rounded-xl border-[2px] border-[#1A2332] p-5 shadow-md relative hover:-translate-y-1 transition-transform">
+          <div className="bg-white rounded-xl border border-[#1A2332] p-5 shadow-md relative hover:-translate-y-1 transition-transform">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
               <div className="flex gap-1 text-[#F4B400]">
                 {[1,2,3,4,5].map(i => <Star key={i} size={22} fill="currentColor" strokeWidth={0} />)}
@@ -59,7 +59,7 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
           </div>
 
           {/* Negative Review Route */}
-          <div className="bg-[#FFF9F5] rounded-xl border-[2px] border-[#F4B400] p-5 shadow-md relative hover:-translate-y-1 transition-transform">
+          <div className="bg-[#FFF9F5] rounded-xl border border-[#F4B400] p-5 shadow-md relative hover:-translate-y-1 transition-transform">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
               <div className="flex gap-1">
                 {[1,2].map(i => <Star key={i} size={22} fill="#F4B400" strokeWidth={0} />)}
@@ -110,7 +110,7 @@ export default function FeatureTabsUI({ locale }: FeatureTabsUIProps) {
   const currentData = tabs[activeTab];
 
   return (
-    <div className="max-w-[1000px] mx-auto bg-white rounded-3xl border-[2px] border-[#1A2332] shadow-md p-8 sm:p-12 transition-all flex flex-col items-center text-center">
+    <div className="max-w-[1000px] mx-auto bg-white rounded-3xl border border-[#1A2332] shadow-md p-8 sm:p-12 transition-all flex flex-col items-center text-center">
       
       {/* Title */}
       <h2 className="text-[28px] sm:text-[36px] font-extrabold text-[#1A2332] tracking-[-0.02em] mb-3">

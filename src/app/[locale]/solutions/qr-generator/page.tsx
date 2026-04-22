@@ -143,7 +143,7 @@ export default async function QRGeneratorPage({
             </nav>
 
             <div className="max-w-[720px] space-y-5">
-              <div className="inline-flex items-center gap-2 bg-[#F4B400] text-[#1A2332] px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em] border-[2px] border-[#1A2332] shadow-md">
+              <div className="inline-flex items-center gap-2 bg-[#F4B400] text-[#1A2332] px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em] border border-[#1A2332] shadow-md">
                 <QrCode size={14} />
                 {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
               </div>
@@ -177,7 +177,7 @@ export default async function QRGeneratorPage({
           className="pb-16 sm:pb-24 px-5 sm:px-8"
         >
           <div className="max-w-[1200px] mx-auto">
-            <div className="bg-white border-[2.5px] border-[#1A2332] rounded-[24px] sm:rounded-[32px] shadow-md p-6 sm:p-10 lg:p-14">
+            <div className="bg-white border border-[#1A2332] rounded-[24px] sm:rounded-[32px] shadow-md p-6 sm:p-10 lg:p-14">
               <h2
                 id="generator-title"
                 className="text-[24px] sm:text-[32px] font-extrabold text-[#1A2332] tracking-[-0.02em] mb-2 text-balance"
@@ -245,9 +245,9 @@ export default async function QRGeneratorPage({
               ].map(({ Icon, title, desc }) => (
                 <article
                   key={title}
-                  className="bg-[#F8F6F1] border-[2px] border-[#1A2332] rounded-2xl p-6 shadow-md hover:-translate-y-1 transition-transform"
+                  className="bg-[#F8F6F1] border border-[#1A2332] rounded-2xl p-6 shadow-md hover:-translate-y-1 transition-transform"
                 >
-                  <div className="w-11 h-11 rounded-xl bg-[#F4B400] border-[2px] border-[#1A2332] flex items-center justify-center mb-4">
+                  <div className="w-11 h-11 rounded-xl bg-[#F4B400] border border-[#1A2332] flex items-center justify-center mb-4">
                     <Icon size={20} className="text-[#1A2332]" />
                   </div>
                   <h3 className="text-[17px] font-extrabold text-[#1A2332] mb-2">
@@ -263,7 +263,7 @@ export default async function QRGeneratorPage({
             <div className="mt-10 sm:mt-14 text-center">
               <Link
                 href={`${base}/auth/register`}
-                className="inline-flex items-center gap-2 bg-[#1A2332] text-white font-extrabold text-[14px] sm:text-[15px] px-7 py-4 rounded-xl border-[2.5px] border-[#1A2332] shadow-md hover:-translate-y-0.5 hover:shadow-md active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
+                className="inline-flex items-center gap-2 bg-[#1A2332] text-white font-extrabold text-[14px] sm:text-[15px] px-7 py-4 rounded-xl border border-[#1A2332] shadow-md hover:-translate-y-0.5 hover:shadow-md active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
               >
                 {isTr ? 'Ücretsiz hesap oluştur' : 'Create a free account'}
                 <ChevronRight size={16} />

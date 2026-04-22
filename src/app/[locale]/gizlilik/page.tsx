@@ -30,7 +30,7 @@ export default async function PrivacyPage({
       <MarketingNavbar locale={locale} t={t} />
 
       <main className="flex-1 max-w-[900px] mx-auto w-full px-5 py-20 sm:py-32">
-        <div className="bg-white p-8 sm:p-16 rounded-[32px] border-[3px] border-[#1A2332] shadow-md">
+        <div className="bg-white p-8 sm:p-16 rounded-[32px] border border-[#1A2332] shadow-md">
           <h1 className="text-[28px] sm:text-[42px] font-black text-[#1A2332] leading-tight mb-10 tracking-[-0.03em]">
              {locale === 'tr' ? 'Gizlilik' : 'Privacy'} <span className="text-[#F4B400]">{locale === 'tr' ? 'Politikası' : 'Policy'}</span>
           </h1>

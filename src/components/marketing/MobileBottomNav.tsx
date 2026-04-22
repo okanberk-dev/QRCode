@@ -76,7 +76,7 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
 
       <nav
         aria-label={locale === 'tr' ? 'Mobil alt menü' : 'Mobile bottom navigation'}
-        className="md:hidden fixed bottom-0 left-0 right-0 z-[95] bg-white border-t-[2.5px] border-[#1A2332] shadow-[0_-4px_0_0_rgba(14, 21, 37,0.04)]"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#1A2332] shadow-md"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <ul className="flex items-stretch justify-around h-[68px] max-w-[520px] mx-auto px-2">
@@ -89,7 +89,7 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
                 <li key={item.href} className="flex-1 flex items-start justify-center -mt-5">
                   <Link
                     href={item.href}
-                    className="flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-full bg-[#F4B400] border-[2.5px] border-[#1A2332] shadow-sm active:translate-y-[3px] active:shadow-none transition-all"
+                    className="flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-full bg-[#F4B400] border border-[#1A2332] shadow-sm active:translate-y-[3px] active:shadow-none transition-all"
                     aria-label={item.label}
                   >
                     <item.Icon size={22} className="text-[#1A2332]" strokeWidth={2} />
