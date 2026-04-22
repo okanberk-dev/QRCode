@@ -1,4 +1,17 @@
 import { SYSTEM_FEEDBACK } from './constants';
+
+// Escape user-supplied content before injecting into HTML email bodies.
+// Resend renders HTML; without escaping, comments / names containing tags
+// would render as markup or break the layout.
+function escapeHtml(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 /**
  * Sends an email via Resend HTTP API.
  * This is the ONLY email sending method — no SMTP fallback.
@@ -93,7 +106,7 @@ const EMAIL_STYLES = `
     box-shadow: 6px 6px 0px #1e293b; 
   }
   .btn { 
-    background-color: #FF9A14; 
+    background-color: #F4B400; 
     border: 3px solid #1e293b; 
     box-shadow: 4px 4px 0px #1e293b; 
     color: #1e293b !important;
@@ -101,7 +114,7 @@ const EMAIL_STYLES = `
   @media (prefers-color-scheme: dark) {
     body { background-color: #0f172a !important; color: #f1f5f9 !important; }
     .card { background-color: #1e293b !important; border-color: #334155 !important; box-shadow: 6px 6px 0px #000000 !important; color: #f1f5f9 !important; }
-    .btn { background-color: #FF9A14 !important; border-color: #000000 !important; box-shadow: 4px 4px 0px #000000 !important; color: #000000 !important; }
+    .btn { background-color: #F4B400 !important; border-color: #000000 !important; box-shadow: 4px 4px 0px #000000 !important; color: #000000 !important; }
     .text-muted { color: #94a3b8 !important; }
     .bg-accent { background-color: #334155 !important; }
     .border-accent { border-color: #475569 !important; }
@@ -116,7 +129,7 @@ const SHARED_LAYOUT = (content: string, title: string) => `
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>${EMAIL_STYLES}</style>
 </head>
-<body style="margin:0;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'DM Sans',Roboto,Helvetica,Arial,sans-serif;">
+<body style="margin:0;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <div align="center">
     <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;">
       <tr>
@@ -125,7 +138,7 @@ const SHARED_LAYOUT = (content: string, title: string) => `
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:32px;">
             <tr>
               <td>
-                <div style="background:#FF9A14;border:2px solid #1e293b;border-radius:10px;width:40px;height:40px;text-align:center;display:inline-block;vertical-align:middle;">
+                <div style="background:#F4B400;border:2px solid #1e293b;border-radius:10px;width:40px;height:40px;text-align:center;display:inline-block;vertical-align:middle;">
                   <span style="font-size:20px;font-weight:900;color:#1e293b;line-height:40px;">B</span>
                 </div>
                 <span style="font-size:24px;font-weight:900;margin-left:12px;vertical-align:middle;">Buaze</span>
@@ -174,12 +187,12 @@ export interface NotificationParams {
 function renderStars(rating: number): string {
   const filled = '★'.repeat(rating);
   const empty = '☆'.repeat(5 - rating);
-  return `<span style="color:#FF9A14;font-size:28px;letter-spacing:2px;">${filled}</span><span style="color:#d1d5db;font-size:28px;letter-spacing:2px;">${empty}</span>`;
+  return `<span style="color:#F4B400;font-size:28px;letter-spacing:2px;">${filled}</span><span style="color:#d1d5db;font-size:28px;letter-spacing:2px;">${empty}</span>`;
 }
 
 function getRatingColor(rating: number): string {
   if (rating <= 2) return '#ef4444';
-  if (rating === 3) return '#FF9A14';
+  if (rating === 3) return '#F4B400';
   return '#22c55e';
 }
 
@@ -201,11 +214,13 @@ export async function sendFeedbackNotification(data: NotificationParams) {
     return;
   }
 
-  const restaurantName = data.restaurantName || 'Restoran';
+  const rawRestaurantName = data.restaurantName || 'Restoran';
+  const restaurantName = escapeHtml(rawRestaurantName);
   const ratingColor = getRatingColor(data.rating);
   const ratingLabel = getRatingLabel(data.rating);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
   const isCritical = data.rating <= 2;
+  const safeComment = data.comment ? escapeHtml(data.comment).replace(/\n/g, '<br>') : '';
 
   const content = `
     <h1 style="margin:0 0 8px;font-size:28px;font-weight:900;letter-spacing:-1px;">Yeni Değerlendirme!</h1>
@@ -221,17 +236,17 @@ export async function sendFeedbackNotification(data: NotificationParams) {
     <div style="margin-bottom:24px;">
       <p style="margin:0 0 8px;font-size:12px;font-weight:800;text-transform:uppercase;opacity:0.6;">Müşteri Yorumu</p>
       <div style="background:#f1f5f9;border-radius:12px;padding:20px;font-style:italic;line-height:1.6;" class="bg-accent font-dark">
-        "${data.comment.replace(/\n/g, '<br>')}"
+        "${safeComment}"
       </div>
     </div>
     ` : ''}
 
     <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:32px;">
-      ${data.branch ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Şube</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${data.branch}</td></tr>` : ''}
-      ${data.tableNumber ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Masa</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${data.tableNumber}</td></tr>` : ''}
-      ${data.name ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Müşteri</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${data.name}</td></tr>` : ''}
-      ${data.phone ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Telefon</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${data.phone}</td></tr>` : ''}
-      ${data.email ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">E-posta</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${data.email}</td></tr>` : ''}
+      ${data.branch ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Şube</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${escapeHtml(data.branch)}</td></tr>` : ''}
+      ${data.tableNumber ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Masa</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${escapeHtml(data.tableNumber)}</td></tr>` : ''}
+      ${data.name ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Müşteri</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${escapeHtml(data.name)}</td></tr>` : ''}
+      ${data.phone ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Telefon</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${escapeHtml(data.phone)}</td></tr>` : ''}
+      ${data.email ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">E-posta</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${escapeHtml(data.email)}</td></tr>` : ''}
       <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Tarih</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${new Date().toLocaleString('tr-TR')}</td></tr>
     </table>
 
@@ -242,14 +257,14 @@ export async function sendFeedbackNotification(data: NotificationParams) {
     </div>
   `;
 
-  const subject = `${isCritical ? '🚨' : '✨'} ${data.rating} Yıldız - ${restaurantName}`;
+  const subject = `${isCritical ? '🚨' : '✨'} ${data.rating} Yıldız - ${rawRestaurantName}`;
   const html = SHARED_LAYOUT(content, 'Feedback Alert');
-  
+
   await sendResendEmail({
     to: recipientEmail,
     subject,
     html,
-    text: `${restaurantName}: ${data.rating} Yıldız Değerlendirme Alındı.`,
+    text: `${rawRestaurantName}: ${data.rating} Yıldız Değerlendirme Alındı.`,
   });
 }
 
@@ -303,7 +318,7 @@ export async function sendWeeklyDigest(params: WeeklyDigestParams) {
   const distRows = [5, 4, 3, 2, 1].map(star => {
     const count = stats.distribution[star] || 0;
     const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
-    const barColor = star >= 4 ? '#22c55e' : star === 3 ? '#FF9A14' : '#ef4444';
+    const barColor = star >= 4 ? '#22c55e' : star === 3 ? '#F4B400' : '#ef4444';
     return `
       <tr>
         <td style="padding:4px 0;width:30px;font-size:12px;font-weight:800;">${star}★</td>
@@ -325,7 +340,7 @@ export async function sendWeeklyDigest(params: WeeklyDigestParams) {
       <tr>
         <td style="width:50%;padding-right:10px;">
           <div class="card" style="padding:20px;text-align:center;border-radius:12px;box-shadow:4px 4px 0px #1e293b;">
-            <div style="font-size:32px;font-weight:900;color:#FF9A14;">${stats.avgRating}</div>
+            <div style="font-size:32px;font-weight:900;color:#F4B400;">${stats.avgRating}</div>
             <div style="font-size:11px;font-weight:800;text-transform:uppercase;opacity:0.6;">${copy.avg}</div>
           </div>
         </td>

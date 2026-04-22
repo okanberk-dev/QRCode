@@ -1,44 +1,55 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── Buaze Brand Palette (2026-04) ── */
-  --color-brand-orange: #FF9A14;       /* Trust Orange — Primary Accent */
-  --color-brand-navy: #0F2348;         /* Deep Navy — Primary Wordmark */
-  --color-brand-slate: #243554;        /* Slate Navy — Secondary UI */
-  --color-brand-mist: #F5F4F1;         /* Soft Mist — Background */
-  --color-brand-gray: #C9D0DB;         /* Cool Gray — Neutral Support */
+  /* ── Buaze Brand Palette (2026-04 v2) ── */
+  --color-brand-ink: #0E1525;          /* Ink — deepest, near-black */
+  --color-brand-navy: #1A2332;         /* Navy — primary wordmark / sidebar */
+  --color-brand-slate: #2A3444;        /* Slate — secondary UI / muted headings */
+  --color-brand-gold: #F4B400;         /* Gold — primary accent */
+  --color-brand-amber: #FFD666;        /* Amber — soft accent / logo curl */
+  --color-brand-ivory: #F8F6F1;        /* Ivory — page background */
+  --color-brand-cloud: #E8ECF2;        /* Cloud — neutral borders */
 
   /* Semantic aliases */
-  --color-primary-50: #FFF5E6;
-  --color-primary-100: #FFE8C2;
-  --color-primary-500: #FF9A14;
-  --color-primary-600: #E8870A;
-  --color-primary-700: #D07A08;
+  --color-primary-50: #FFF8D6;
+  --color-primary-100: #FFEEA0;
+  --color-primary-500: #F4B400;
+  --color-primary-600: #D69E00;
+  --color-primary-700: #B88800;
 
-  --color-accent-400: #FFB74D;
-  --color-accent-500: #FF9A14;
-  
-  --color-background: #F5F4F1;
+  --color-accent-400: #FFD666;
+  --color-accent-500: #F4B400;
+
+  --color-background: #F8F6F1;
   --color-surface: #ffffff;
-  
-  --color-text-main: #0F2348;
-  --color-text-muted: #243554;
-  --color-text-light: #6B7B93;
+
+  --color-text-main: #1A2332;
+  --color-text-muted: #2A3444;
+  --color-text-light: #6B7280;
 
   --color-success: #1e8e3e;
   --color-error: #d93025;
 
-  /* Legacy aliases (backward compat) */
-  --color-brand-dark: #0F2348;
-  --color-brand-primary: #FF9A14;
-  --color-brand-accent: #FF9A14;
+  /* Legacy aliases (CLAUDE.md referansları — backward compat) */
+  --color-brand-orange: #F4B400;
+  --color-brand-dark: #1A2332;
+  --color-brand-navy-legacy: #1A2332;
+  --color-brand-mist: #F8F6F1;
+  --color-brand-gray: #E8ECF2;
+  --color-brand-primary: #F4B400;
+  --color-brand-accent: #F4B400;
+
+  /* Font stack */
+  --font-body: var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-manrope), var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 :root {
   background-color: var(--color-background);
   color: var(--color-text-main);
-  font-family: 'DM Sans', 'DM Sans', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -47,6 +58,13 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.015em;
+  color: var(--color-text-main);
 }
 
 /* Custom animations for the stars and forms */

@@ -32,8 +32,8 @@ export default function AdminRestaurantMenuPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F5F4F1]">
-        <Loader2 className="animate-spin text-[#0F2348] w-10 h-10" />
+      <div className="flex h-screen items-center justify-center bg-[#F8F6F1]">
+        <Loader2 className="animate-spin text-[#1A2332] w-10 h-10" />
       </div>
     );
   }
@@ -41,16 +41,16 @@ export default function AdminRestaurantMenuPage() {
   if (!restaurant) return null;
 
   return (
-    <div className="min-h-screen bg-[#F5F4F1] p-4 sm:p-6 md:p-10">
+    <div className="min-h-screen bg-[#F8F6F1] p-4 sm:p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Admin Header */}
-        <div className="flex items-center justify-between bg-[#0F2348] text-white p-6 rounded-[28px] border border-gray-800 shadow-2xl relative overflow-hidden">
+        <div className="flex items-center justify-between bg-[#1A2332] text-white p-6 rounded-[28px] border border-white/10 shadow-2xl relative overflow-hidden">
           <div className="relative z-10 flex items-center gap-4">
              <button 
                onClick={() => router.back()}
                className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-95"
              >
-               <ArrowLeft size={20} strokeWidth={3} />
+               <ArrowLeft size={20} strokeWidth={2} />
              </button>
              <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -58,7 +58,7 @@ export default function AdminRestaurantMenuPage() {
                       <ShieldCheck size={10} /> SUPERADMIN YETKİSİ
                    </div>
                 </div>
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight">{restaurant.name} - Menü Yönetimi</h1>
+                <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">{restaurant.name} - Menü Yönetimi</h1>
              </div>
           </div>
           {/* Background pattern */}

@@ -17,7 +17,7 @@ export default async function Image() {
     (
       <div
         style={{
-          background: 'linear-gradient(135deg, #0F2348 0%, #111111 100%)',
+          background: 'linear-gradient(135deg, #1A2332 0%, #111111 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -37,7 +37,7 @@ export default async function Image() {
             right: '-10%',
             width: '600px',
             height: '600px',
-            background: 'radial-gradient(circle, rgba(234,88,12,0.15) 0%, rgba(234,88,12,0) 70%)',
+            background: 'radial-gradient(circle, rgba(244, 180, 0,0.15) 0%, rgba(244, 180, 0,0) 70%)',
             borderRadius: '50%',
           }}
         />
@@ -48,7 +48,7 @@ export default async function Image() {
             left: '-10%',
             width: '800px',
             height: '800px',
-            background: 'radial-gradient(circle, rgba(253,191,29,0.15) 0%, rgba(253,191,29,0) 70%)',
+            background: 'radial-gradient(circle, rgba(244, 180, 0,0.15) 0%, rgba(244, 180, 0,0) 70%)',
             borderRadius: '50%',
           }}
         />
@@ -74,7 +74,7 @@ export default async function Image() {
               lineHeight: 1,
             }}
           >
-            buaze<span style={{ color: '#FF9A14' }}>.</span>
+            buaze<span style={{ color: '#F4B400' }}>.</span>
           </div>
 
           {/* Subtitle */}
@@ -82,7 +82,7 @@ export default async function Image() {
             style={{
               fontSize: '42px',
               fontWeight: 700,
-              color: '#6B7B93',
+              color: '#6B7280',
               marginTop: '40px',
               textAlign: 'center',
               lineHeight: 1.2,
@@ -93,7 +93,7 @@ export default async function Image() {
               gap: '12px'
             }}
           >
-            <span style={{ color: '#FF9A14' }}>Google Puanınızı</span>
+            <span style={{ color: '#F4B400' }}>Google Puanınızı</span>
             <span>Otomatik Olarak Yükseltin</span>
           </div>
 
@@ -113,13 +113,13 @@ export default async function Image() {
                 width="48"
                 height="48"
                 viewBox="0 0 24 24"
-                fill="#FF9A14"
-                stroke="#FF9A14"
+                fill="#F4B400"
+                stroke="#F4B400"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 style={{
-                  filter: 'drop-shadow(0px 4px 12px rgba(253, 191, 29, 0.4))'
+                  filter: 'drop-shadow(0px 4px 12px rgba(244, 180, 0, 0.4))'
                 }}
               >
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -136,7 +136,7 @@ export default async function Image() {
               alignItems: 'center',
               fontSize: '24px',
               fontWeight: 600,
-              color: '#243554',
+              color: '#2A3444',
               letterSpacing: '0.05em',
             }}
           >

@@ -74,7 +74,7 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
     {
       title: isTr ? 'Güven Oluşturur' : 'Builds Trust',
       desc: isTr ? 'Potansiyel müvekkiller bir hukuk bürosunu araştırırken Google yorumlarına bakar. Olumlu yorumlar karar verdirir.' : 'Potential clients look at Google reviews when researching a law firm. Positive reviews drive decision-making.',
-      icon: <Star size={20} className="text-[#FF9A14]" />,
+      icon: <Star size={20} className="text-[#F4B400]" />,
     },
     {
       title: isTr ? 'Referans Zinciri' : 'Referral Chain',

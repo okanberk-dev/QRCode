@@ -21,20 +21,20 @@ export default function RatingChart({ distribution, totalCount }: RatingChartPro
         
         return (
           <div key={star} className="flex items-center gap-4">
-            <div className="flex items-center gap-1 w-12 text-sm text-[#6B7B93] font-black whitespace-nowrap uppercase tracking-tighter">
+            <div className="flex items-center gap-1 w-12 text-sm text-[#6B7280] font-black whitespace-nowrap uppercase tracking-tighter">
               {star} <StarIcon />
             </div>
             
-            <div className="flex-1 h-3 bg-[#F5F4F1] rounded-full overflow-hidden border border-[#C9D0DB]">
+            <div className="flex-1 h-3 bg-[#F8F6F1] rounded-full overflow-hidden border border-[#E8ECF2]">
               <div 
-                className="h-full rounded-full bg-[#FF9A14] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] transition-all duration-500"
+                className="h-full rounded-full bg-[#F4B400] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] transition-all duration-500"
                 style={{ width: `${percentage}%` }}
               />
             </div>
             
             <div className="w-20 text-right text-sm">
-              <span className="font-black text-[#0F2348]">{count}</span>
-              <span className="text-[#6B7B93] text-[10px] font-bold ml-1">({displayPercentage}%)</span>
+              <span className="font-black text-[#1A2332]">{count}</span>
+              <span className="text-[#6B7280] text-[10px] font-bold ml-1">({displayPercentage}%)</span>
             </div>
           </div>
         );
@@ -45,7 +45,7 @@ export default function RatingChart({ distribution, totalCount }: RatingChartPro
 
 function StarIcon() {
   return (
-    <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+    <svg className="w-4 h-4 text-[#6B7280]" fill="currentColor" viewBox="0 0 20 20">
       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
     </svg>
   );

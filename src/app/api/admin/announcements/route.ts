@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { validateAnnouncement } from '@/lib/validations';
-import { revalidatePath } from 'next/cache';
 import { ApiErrors } from '@/lib/api-errors';
 
 async function requireSuperadmin(req: NextRequest) {
@@ -69,7 +68,6 @@ export async function POST(req: NextRequest) {
     const announcement = await prisma.announcement.create({
       data: { ...result.data, createdBy },
     });
-    revalidatePath('/[locale]/dashboard', 'layout');
     return NextResponse.json({ announcement }, { status: 201 });
   } catch (error) {
     console.error('[API announcements POST]', error);

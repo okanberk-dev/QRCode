@@ -84,7 +84,7 @@ export default function GoogleConversionPanel({
 
   if (totalResponses === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-gray-200 bg-white/60 p-6 text-center text-sm font-bold text-[#243554]">
+      <div className="rounded-2xl border border-dashed border-[#E8ECF2] bg-white/60 p-6 text-center text-sm font-bold text-[#2A3444]">
         {copy.noData}
       </div>
     );
@@ -115,10 +115,10 @@ export default function GoogleConversionPanel({
             label={copy.highRating}
             value={highRatings}
             pct={highPct}
-            color="#FF9A14"
+            color="#F4B400"
             bg="bg-amber-50"
             text="text-amber-600"
-            icon={<Star size={16} strokeWidth={2.5} fill="currentColor" />}
+            icon={<Star size={16} strokeWidth={2} fill="currentColor" />}
           />
           <FunnelRow
             label={copy.sent}
@@ -127,7 +127,7 @@ export default function GoogleConversionPanel({
             color="#10b981"
             bg="bg-emerald-50"
             text="text-emerald-600"
-            icon={<ExternalLink size={14} strokeWidth={3} />}
+            icon={<ExternalLink size={14} strokeWidth={2} />}
           />
         </div>
 
@@ -138,14 +138,14 @@ export default function GoogleConversionPanel({
               {copy.rate}
             </p>
             <div className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-4xl font-black tabular-nums tracking-tight text-[#0F2348] sm:text-5xl">
+              <span className="text-4xl font-black tabular-nums tracking-tight text-[#1A2332] sm:text-5xl">
                 {conversionRate === null ? '—' : conversionRate.toFixed(1)}
               </span>
               {conversionRate !== null && (
-                <span className="text-xl font-black text-[#243554] sm:text-2xl">%</span>
+                <span className="text-xl font-black text-[#2A3444] sm:text-2xl">%</span>
               )}
             </div>
-            <p className="mt-2 text-[11px] font-bold text-[#243554]">
+            <p className="mt-2 text-[11px] font-bold text-[#2A3444]">
               {sentToGoogle} / {highRatings} {copy.highRatingsLabel} → {copy.sentLabel}
             </p>
           </div>
@@ -154,7 +154,7 @@ export default function GoogleConversionPanel({
             <div className="flex-1 rounded-2xl border-2 border-red-200 bg-red-50 p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-red-500 text-white">
-                  <AlertTriangle size={16} strokeWidth={3} />
+                  <AlertTriangle size={16} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
                   <p className="flex items-baseline gap-2 text-[13px] font-black text-red-700">
@@ -173,18 +173,18 @@ export default function GoogleConversionPanel({
 
       {/* ─── Leaderboard ─── */}
       {showLeaderboard && (
-        <div className="rounded-2xl border border-gray-100 bg-white">
-          <div className="flex items-start gap-3 border-b border-gray-100 px-4 py-4 sm:px-5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-50 text-yellow-600">
-              <Trophy size={18} strokeWidth={2.75} />
+        <div className="rounded-2xl border border-[#E8ECF2] bg-white">
+          <div className="flex items-start gap-3 border-b border-[#E8ECF2] px-4 py-4 sm:px-5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFF8D6] text-[#D69E00]">
+              <Trophy size={18} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <h4 className="text-[13px] font-black text-[#0F2348]">{copy.leaderboardTitle}</h4>
-              <p className="mt-0.5 text-[11px] font-bold text-[#243554]">{copy.leaderboardSub}</p>
+              <h4 className="text-[13px] font-extrabold text-[#1A2332]">{copy.leaderboardTitle}</h4>
+              <p className="mt-0.5 text-[11px] font-bold text-[#2A3444]">{copy.leaderboardSub}</p>
             </div>
           </div>
 
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-[#F8F6F1]">
             {byRestaurant.map((rest) => (
               <RestaurantRow
                 key={rest.id}
@@ -219,21 +219,21 @@ function FunnelRow({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-3 sm:p-4">
+    <div className="rounded-2xl border border-[#E8ECF2] bg-white p-3 sm:p-4">
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${bg} ${text}`}>
-            {icon ?? <ArrowDownRight size={14} strokeWidth={3} />}
+            {icon ?? <ArrowDownRight size={14} strokeWidth={2} />}
           </div>
-          <span className="truncate text-[11px] font-black uppercase tracking-widest text-[#243554]">
+          <span className="truncate text-[11px] font-black uppercase tracking-widest text-[#2A3444]">
             {label}
           </span>
         </div>
-        <span className="shrink-0 text-lg font-black tabular-nums text-[#0F2348] sm:text-xl">
+        <span className="shrink-0 text-lg font-black tabular-nums text-[#1A2332] sm:text-xl">
           {value}
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-[#E8ECF2]">
         <div
           className="h-full rounded-full transition-all"
           style={{
@@ -263,7 +263,7 @@ function RestaurantRow({
   onClick?: () => void;
 }) {
   const rateColor = rest.conversionRate === null
-    ? 'text-gray-400'
+    ? 'text-[#6B7280]'
     : rest.conversionRate >= 80
       ? 'text-emerald-600'
       : rest.conversionRate >= 40
@@ -276,19 +276,19 @@ function RestaurantRow({
     <Wrapper
       onClick={onClick}
       className={`w-full px-4 py-3.5 text-left transition-colors sm:px-5 ${
-        onClick ? 'hover:bg-gray-50 cursor-pointer' : 'cursor-default'
+        onClick ? 'hover:bg-[#F8F6F1] cursor-pointer' : 'cursor-default'
       }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-black text-[#0F2348]">{rest.name}</p>
+          <p className="truncate text-[13px] font-black text-[#1A2332]">{rest.name}</p>
           {!rest.hasGoogleLink ? (
             <p className="mt-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-600">
-              <Link2Off size={11} strokeWidth={3} />
+              <Link2Off size={11} strokeWidth={2} />
               {copy.noGoogleLink} · {copy.setLink} →
             </p>
           ) : (
-            <p className="mt-1 text-[10px] font-bold text-[#243554]">
+            <p className="mt-1 text-[10px] font-bold text-[#2A3444]">
               {rest.sentToGoogle} / {rest.highRatings} {copy.highRatingsLabel} → {copy.sentLabel}
             </p>
           )}
@@ -298,7 +298,7 @@ function RestaurantRow({
           <div className={`text-lg font-black tabular-nums sm:text-xl ${rateColor}`}>
             {rest.conversionRate === null ? '—' : `${rest.conversionRate.toFixed(0)}%`}
           </div>
-          <div className="mt-1 h-1.5 w-20 overflow-hidden rounded-full bg-gray-100">
+          <div className="mt-1 h-1.5 w-20 overflow-hidden rounded-full bg-[#E8ECF2]">
             <div
               className={`h-full rounded-full ${
                 rest.conversionRate === null || rest.conversionRate === 0

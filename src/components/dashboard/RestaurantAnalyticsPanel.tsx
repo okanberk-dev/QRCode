@@ -2,20 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { BarChart3, Calendar, Loader2, SlidersHorizontal, TrendingUp } from 'lucide-react';
+import { BarChart3, Calendar, Layers, Loader2, SlidersHorizontal, TrendingUp } from 'lucide-react';
 import StatsCards from '@/components/admin/StatsCards';
 import RatingChart from '@/components/admin/RatingChart';
 import AspectBreakdown from '@/components/admin/AspectBreakdown';
 import GoogleConversionPanel from '@/components/admin/GoogleConversionPanel';
+import PlatformDistribution from '@/components/admin/PlatformDistribution';
 
 const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), {
   ssr: false,
-  loading: () => <div className="h-[320px] w-full animate-pulse rounded-3xl bg-[#F5F4F1]" />,
+  loading: () => <div className="h-[320px] w-full animate-pulse rounded-3xl bg-[#F8F6F1]" />,
 });
 
 const DayDistributionChart = dynamic(() => import('@/components/admin/DayDistributionChart'), {
   ssr: false,
-  loading: () => <div className="h-[320px] w-full animate-pulse rounded-3xl bg-[#F5F4F1]" />,
+  loading: () => <div className="h-[320px] w-full animate-pulse rounded-3xl bg-[#F8F6F1]" />,
 });
 
 interface RestaurantOption {
@@ -58,6 +59,12 @@ interface StatsResponse {
       conversionRate: number | null;
     }>;
   };
+  platformDistribution?: Array<{
+    platform: string;
+    label: string;
+    count: number;
+    avgRating?: number | null;
+  }>;
 }
 
 interface RestaurantAnalyticsPanelProps {
@@ -83,6 +90,8 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
         aspectsSub: 'Yemek, servis ve atmosfer puanlarınızı karşılaştırın.',
         google: 'Google Yorum Dönüşümü',
         googleSub: 'Memnun müşterilerin kaçı Google\'a yorum bırakmaya yönlendiriliyor.',
+        platforms: 'Platform Dağılımı',
+        platformsSub: 'Yorumlarınızın Google, Yemeksepeti, Getir ve Trendyol GO arasındaki dağılımı.',
       }
     : {
         title: 'Advanced Analytics',
@@ -95,6 +104,8 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
         aspectsSub: 'Compare your food, service and atmosphere scores.',
         google: 'Google Review Conversion',
         googleSub: 'How many happy customers actually reach Google to leave a review.',
+        platforms: 'Platform Distribution',
+        platformsSub: 'How your reviews split across Google, Yemeksepeti, Getir and Trendyol GO.',
       };
 
   useEffect(() => {
@@ -126,15 +137,15 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+      <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h2 className="text-xl font-black text-[#0F2348] sm:text-2xl">{copy.title}</h2>
-            <p className="mt-2 text-sm font-bold text-[#243554]">{copy.subtitle}</p>
+            <h2 className="text-xl font-extrabold text-[#1A2332] sm:text-2xl">{copy.title}</h2>
+            <p className="mt-2 text-sm font-bold text-[#2A3444]">{copy.subtitle}</p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex rounded-2xl bg-[#F5F4F1] p-1">
+            <div className="flex rounded-2xl bg-[#F8F6F1] p-1">
               {[
                 { value: '7', label: '7G' },
                 { value: '30', label: '30G' },
@@ -145,7 +156,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
                   type="button"
                   onClick={() => setDaysFilter(tab.value)}
                   className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.2em] transition-all ${
-                    daysFilter === tab.value ? 'bg-[#0F2348] text-white' : 'text-[#243554]'
+                    daysFilter === tab.value ? 'bg-[#1A2332] text-white' : 'text-[#2A3444]'
                   }`}
                 >
                   {tab.label}
@@ -157,7 +168,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
               <select
                 value={selectedRestaurant}
                 onChange={(event) => setSelectedRestaurant(event.target.value)}
-                className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-[#0F2348] outline-none transition-all focus:ring-2 focus:ring-[#FF9A14]"
+                className="rounded-2xl border border-[#E8ECF2] bg-white px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
               >
                 <option value="all">{copy.all}</option>
                 {restaurants.map((restaurant) => (
@@ -172,22 +183,22 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
       </div>
 
       {loading && !stats ? (
-        <div className="flex min-h-[280px] items-center justify-center rounded-[28px] border border-gray-100 bg-white shadow-sm">
-          <Loader2 className="h-10 w-10 animate-spin text-[#0F2348]" />
+        <div className="flex min-h-[280px] items-center justify-center rounded-[28px] border border-[#E8ECF2] bg-white shadow-sm">
+          <Loader2 className="h-10 w-10 animate-spin text-[#1A2332]" />
         </div>
       ) : stats ? (
         <>
           <StatsCards stats={stats} />
 
           {stats.aspects && (
-            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-4 flex items-center gap-3 sm:mb-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                  <SlidersHorizontal size={20} strokeWidth={2.75} />
+                  <SlidersHorizontal size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-black text-[#0F2348]">{copy.aspects}</h3>
-                  <p className="mt-0.5 text-xs font-bold text-[#243554]">{copy.aspectsSub}</p>
+                  <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.aspects}</h3>
+                  <p className="mt-0.5 text-xs font-bold text-[#2A3444]">{copy.aspectsSub}</p>
                 </div>
               </div>
               <AspectBreakdown aspects={stats.aspects} locale={locale} />
@@ -195,14 +206,14 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
           )}
 
           {stats.googleConversion && (
-            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-4 flex items-center gap-3 sm:mb-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                  <TrendingUp size={20} strokeWidth={2.75} />
+                  <TrendingUp size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-black text-[#0F2348]">{copy.google}</h3>
-                  <p className="mt-0.5 text-xs font-bold text-[#243554]">{copy.googleSub}</p>
+                  <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.google}</h3>
+                  <p className="mt-0.5 text-xs font-bold text-[#2A3444]">{copy.googleSub}</p>
                 </div>
               </div>
               <GoogleConversionPanel
@@ -213,40 +224,55 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
             </div>
           )}
 
+          {stats.platformDistribution && stats.platformDistribution.length > 0 && (
+            <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-4 flex items-center gap-3 sm:mb-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
+                  <Layers size={20} strokeWidth={2} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.platforms}</h3>
+                  <p className="mt-0.5 text-xs font-bold text-[#2A3444]">{copy.platformsSub}</p>
+                </div>
+              </div>
+              <PlatformDistribution data={stats.platformDistribution} locale={locale} />
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                  <TrendingUp size={20} strokeWidth={2.75} />
+                  <TrendingUp size={20} strokeWidth={2} />
                 </div>
-                <h3 className="text-lg font-black text-[#0F2348]">{copy.trends}</h3>
+                <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.trends}</h3>
               </div>
               <TrendsChart data={stats.trends} />
             </div>
 
-            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
-                  <Calendar size={20} strokeWidth={2.75} />
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF8D6] text-[#D69E00]">
+                  <Calendar size={20} strokeWidth={2} />
                 </div>
-                <h3 className="text-lg font-black text-[#0F2348]">{copy.rating}</h3>
+                <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.rating}</h3>
               </div>
               <RatingChart distribution={stats.distribution} totalCount={stats.totalCount} />
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+          <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                <BarChart3 size={20} strokeWidth={2.75} />
+                <BarChart3 size={20} strokeWidth={2} />
               </div>
-              <h3 className="text-lg font-black text-[#0F2348]">{copy.days}</h3>
+              <h3 className="text-lg font-extrabold text-[#1A2332]">{copy.days}</h3>
             </div>
             <DayDistributionChart data={stats.dayDistribution} />
           </div>
         </>
       ) : (
-        <div className="rounded-[28px] border border-dashed border-gray-200 bg-white px-5 py-16 text-center text-sm font-bold text-[#243554] shadow-sm">
+        <div className="rounded-[28px] border border-dashed border-[#E8ECF2] bg-white px-5 py-16 text-center text-sm font-bold text-[#2A3444] shadow-sm">
           {locale === 'tr' ? 'Henüz analiz üretilecek veri bulunamadı.' : 'No analytics data yet.'}
         </div>
       )}

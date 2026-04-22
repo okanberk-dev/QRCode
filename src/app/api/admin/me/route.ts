@@ -25,10 +25,12 @@ export async function GET(req: NextRequest) {
       });
 
       if (user) {
-        const restaurant = await prisma.restaurant.findFirst({
+        const restaurants = await prisma.restaurant.findMany({
           where: { userId: user.id },
-          select: { id: true }
+          select: { id: true },
+          orderBy: { createdAt: 'asc' },
         });
+        const restaurantIds = restaurants.map(r => r.id);
 
         return NextResponse.json({
           id: user.id,
@@ -38,7 +40,8 @@ export async function GET(req: NextRequest) {
           role: 'restaurant_owner',
           plan: user.plan,
           trialEndsAt: user.trialEndsAt,
-          restaurantId: restaurant?.id || actor.restaurantId || null
+          restaurantId: restaurantIds[0] || null,
+          restaurantIds,
         });
       }
     } catch (e) {
@@ -62,7 +65,8 @@ export async function GET(req: NextRequest) {
         role: adminUser.role || 'superadmin',
         plan: null,
         trialEndsAt: null,
-        restaurantId: adminUser.restaurantId || null
+        restaurantId: adminUser.restaurantId || null,
+        restaurantIds: adminUser.restaurantId ? [adminUser.restaurantId] : [],
       });
     }
   } catch (e) {

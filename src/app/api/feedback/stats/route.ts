@@ -16,19 +16,21 @@ export async function GET(req: NextRequest) {
     const branchParam = req.nextUrl.searchParams.get('branch');
     const today = new Date();
 
-    // Build base date filter (supports: today/1, month, numeric days, all)
+    // Build base date filter (supports: today/1, month, numeric days, all).
+    // UTC-based to match the /feedback route and stay consistent regardless of
+    // server timezone.
     const dateFilter: any = {};
     if (daysParam === '1' || daysParam === 'today') {
-      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+      const startOfToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0));
       dateFilter.createdAt = { gte: startOfToday };
     } else if (daysParam === 'month') {
-      const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+      const firstOfMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1, 0, 0, 0, 0));
       dateFilter.createdAt = { gte: firstOfMonth };
     } else if (daysParam && daysParam !== 'all') {
       const days = parseInt(daysParam);
       if (Number.isFinite(days) && days > 0) {
         const pastDate = new Date();
-        pastDate.setDate(today.getDate() - days);
+        pastDate.setUTCDate(pastDate.getUTCDate() - days);
         dateFilter.createdAt = { gte: pastDate };
       }
     }
@@ -61,8 +63,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
-    // Today filter
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    // Today filter (UTC — matches /feedback?days=today behaviour).
+    const startOfToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
 
     // Basic stats
     const totalCount = await prisma.feedback.count({ where: dateFilter });
@@ -251,16 +253,19 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' }
     });
 
-    const daysMap: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 0: 0 };
+    // Day.getDay(): 0=Sun, 1=Mon, ..., 6=Sat
+    const daysMap: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
     dayDistributionRaw.forEach((f: any) => {
-      const day = f.createdAt.getDay(); // 0 is Sunday, 1 is Monday...
+      const day = f.createdAt.getDay();
       daysMap[day] = (daysMap[day] || 0) + 1;
     });
 
-    const dayLabels = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
-    const dayDistribution = [1, 2, 3, 4, 5, 6, 0].map(d => ({
-      name: dayLabels[d],
-      count: daysMap[d]
+    // Display Mon..Sun in Turkish week order.
+    const weekOrder = [1, 2, 3, 4, 5, 6, 0];
+    const weekLabels = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+    const dayDistribution = weekOrder.map((d, i) => ({
+      name: weekLabels[i],
+      count: daysMap[d],
     }));
 
     // Word Cloud - Sample last 1000 comments for performance
@@ -312,8 +317,8 @@ export async function GET(req: NextRequest) {
     };
 
     const platformDistribution = platformGroupRaw.map((row: any) => ({
-      platform: row.platform || 'google',
-      label: row.platform ? (platformLabels[row.platform] || row.platform) : 'Google',
+      platform: row.platform || 'unspecified',
+      label: row.platform ? (platformLabels[row.platform] || row.platform) : 'Genel',
       count: row._count,
       avgRating: round1(row._avg?.rating),
     }));

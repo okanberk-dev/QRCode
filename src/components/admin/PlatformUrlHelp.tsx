@@ -65,20 +65,20 @@ export default function PlatformUrlHelp({ platform }: Props) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={`${guide.title} nasıl kopyalanır?`}
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 hover:text-[#0F2348] hover:border-gray-300 transition-colors"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#E8ECF2] bg-white text-[#6B7280] hover:text-[#1A2332] hover:border-[#C9D0DB] transition-colors"
       >
-        <Info size={12} strokeWidth={2.75} />
+        <Info size={12} strokeWidth={2} />
       </button>
       {open && (
-        <div className="absolute left-0 top-7 z-50 w-72 rounded-2xl border border-gray-100 bg-white p-4 text-[12px] font-medium text-[#0F2348] shadow-xl">
-          <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b border-gray-100">
-            <p className="text-[12px] font-black uppercase tracking-wider text-[#0F2348]">{guide.title}</p>
+        <div className="absolute left-0 top-7 z-50 w-72 rounded-2xl border border-[#E8ECF2] bg-white p-4 text-[12px] font-medium text-[#1A2332] shadow-xl">
+          <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b border-[#E8ECF2]">
+            <p className="text-[12px] font-black uppercase tracking-wider text-[#1A2332]">{guide.title}</p>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-gray-400 hover:text-[#0F2348]"
+              className="text-[#6B7280] hover:text-[#1A2332]"
             >
-              <X size={14} strokeWidth={2.5} />
+              <X size={14} strokeWidth={2} />
             </button>
           </div>
           <ol className="list-decimal pl-4 space-y-1 text-[12px]">
@@ -87,7 +87,7 @@ export default function PlatformUrlHelp({ platform }: Props) {
             ))}
           </ol>
           {guide.hint && (
-            <p className="mt-2 text-[11px] text-gray-500 leading-relaxed">{guide.hint}</p>
+            <p className="mt-2 text-[11px] text-[#6B7280] leading-relaxed">{guide.hint}</p>
           )}
         </div>
       )}

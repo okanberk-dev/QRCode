@@ -38,7 +38,7 @@ export default function AdminMobileNav() {
 
   return (
     <div
-      className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0F2348] border-t border-white/10 z-50 flex items-center justify-around px-2 pt-2 shadow-[0_-4px_20px_0_rgba(0,0,0,0.4)] backdrop-blur-md bg-opacity-95"
+      className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1A2332] border-t border-white/10 z-50 flex items-center justify-around px-2 pt-2 shadow-[0_-4px_20px_0_rgba(0,0,0,0.4)] backdrop-blur-md bg-opacity-95"
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)' }}
     >
       {filteredItems.map((item) => {
@@ -50,10 +50,10 @@ export default function AdminMobileNav() {
             key={item.href}
             href={item.href}
             className={`flex flex-col items-center gap-0.5 transition-all flex-1 min-w-0 ${
-              isActive ? 'text-[#FF9A14]' : 'text-gray-500 hover:text-gray-300'
+              isActive ? 'text-[#F4B400]' : 'text-[#6B7280] hover:text-[#C9D0DB]'
             }`}
           >
-            <div className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-[#FF9A14]/10' : ''}`}>
+            <div className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-[#F4B400]/10' : ''}`}>
               <Icon size={20} strokeWidth={isActive ? 3 : 2} />
             </div>
             <span className="text-[9px] font-black uppercase tracking-tight truncate max-w-full">{item.label}</span>

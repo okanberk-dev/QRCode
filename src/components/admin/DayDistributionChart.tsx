@@ -36,7 +36,7 @@ export default function DayDistributionChart({ data }: DayDistributionChartProps
                 boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                 padding: '12px'
               }}
-              labelStyle={{ fontWeight: 800, color: '#0F2348', marginBottom: '4px' }}
+              labelStyle={{ fontWeight: 800, color: '#1A2332', marginBottom: '4px' }}
             />
             <Bar 
               dataKey="count" 
@@ -47,8 +47,8 @@ export default function DayDistributionChart({ data }: DayDistributionChartProps
               {data.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
-                  fill={entry.count === Math.max(...data.map(d => d.count)) ? '#FF9A14' : '#e5e7eb'} 
-                  className="hover:fill-[#0F2348] transition-colors"
+                  fill={entry.count === Math.max(...data.map(d => d.count)) ? '#F4B400' : '#e5e7eb'} 
+                  className="hover:fill-[#1A2332] transition-colors"
                 />
               ))}
             </Bar>

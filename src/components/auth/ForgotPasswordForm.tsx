@@ -52,7 +52,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
       <div className="space-y-5">
         <div className="rounded-2xl border-2 border-green-500/20 bg-green-50 p-5 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-green-500 text-white">
-            <Check size={22} strokeWidth={3} />
+            <Check size={22} strokeWidth={2} />
           </div>
           <p className="text-[14px] font-black text-green-700">
             {locale === 'tr' ? 'Kod gönderildi!' : 'Code sent!'}
@@ -73,10 +73,10 @@ export default function ForgotPasswordForm({ locale }: Props) {
               router.push(`/${locale}/auth/reset-password`);
             }
           }}
-          className="w-full flex items-center justify-center gap-2 bg-[#FF9A14] text-[#0F2348] font-black py-4 rounded-2xl border-[3px] border-[#0F2348] shadow-[0_6px_0_0_#0F2348] hover:bg-[#EAB308] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all group"
+          className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all group"
         >
           {locale === 'tr' ? 'KODU GİR' : 'ENTER CODE'}
-          <ArrowRight size={18} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
+          <ArrowRight size={18} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />
         </button>
 
         <button
@@ -86,7 +86,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
             setToken('');
             setEmail('');
           }}
-          className="w-full text-[11px] font-black uppercase tracking-widest text-[#243554] hover:text-[#0F2348] transition-colors"
+          className="w-full text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332] transition-colors"
         >
           {locale === 'tr' ? 'Farklı bir e-posta dene' : 'Try a different email'}
         </button>
@@ -103,11 +103,11 @@ export default function ForgotPasswordForm({ locale }: Props) {
       )}
 
       <div className="space-y-2">
-        <label htmlFor="forgot-email" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7B93] ml-1">
+        <label htmlFor="forgot-email" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280] ml-1">
           {locale === 'tr' ? 'E-posta Adresiniz' : 'Your Email'}
         </label>
         <div className="relative">
-          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7B93]" size={18} strokeWidth={2.5} />
+          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280]" size={18} strokeWidth={2} />
           <input
             id="forgot-email"
             type="email"
@@ -116,7 +116,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="can@sirket.com"
-            className="w-full pl-11 pr-5 py-4 bg-[#F5F4F1] rounded-xl border-2 border-[#0F2348] focus:border-[#FF9A14] focus:shadow-[0_0_0_4px_rgba(253,191,29,0.1)] outline-none transition-all font-bold text-sm"
+            className="w-full pl-11 pr-5 py-4 bg-[#F8F6F1] rounded-xl border-2 border-[#1A2332] focus:border-[#F4B400] focus:shadow-[0_0_0_4px_rgba(244, 180, 0,0.1)] outline-none transition-all font-bold text-sm"
           />
         </div>
       </div>
@@ -124,9 +124,9 @@ export default function ForgotPasswordForm({ locale }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#FF9A14] text-[#0F2348] font-black py-4 rounded-2xl border-[3px] border-[#0F2348] shadow-[0_6px_0_0_#0F2348] hover:bg-[#EAB308] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+        className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
       >
-        {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <ArrowRight size={20} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />}
+        {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <ArrowRight size={20} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />}
         {loading
           ? (locale === 'tr' ? 'GÖNDERİLİYOR...' : 'SENDING...')
           : (locale === 'tr' ? 'SIFIRLAMA KODU GÖNDER' : 'SEND RESET CODE')}

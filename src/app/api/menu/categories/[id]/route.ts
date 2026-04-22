@@ -57,18 +57,27 @@ export async function DELETE(
     const access = await requireRestaurantAccess(req, existing.restaurantId);
     if (!access.ok) return access.res;
 
-    // Check if there are items in this category
-    const itemsCount = await prisma.menuItem.count({
-      where: { categoryId: id, deletedAt: null },
-    });
-
-    if (itemsCount > 0) {
-      return NextResponse.json({ error: 'İçinde ürün bulunan bir kategoriyi silemezsiniz. Önce ürünleri silin veya taşıyın.' }, { status: 400 });
+    // Count + delete in a single transaction so a concurrent insert can't
+    // slip between the check and the delete.
+    try {
+      await prisma.$transaction(async (tx) => {
+        const itemsCount = await tx.menuItem.count({
+          where: { categoryId: id, deletedAt: null },
+        });
+        if (itemsCount > 0) {
+          throw Object.assign(new Error('CATEGORY_NOT_EMPTY'), { apiCode: 'CATEGORY_NOT_EMPTY' });
+        }
+        await tx.menuCategory.delete({ where: { id } });
+      });
+    } catch (txError: any) {
+      if (txError?.apiCode === 'CATEGORY_NOT_EMPTY' || txError?.code === 'P2003') {
+        return NextResponse.json(
+          { error: 'İçinde ürün bulunan bir kategoriyi silemezsiniz. Önce ürünleri silin veya taşıyın.' },
+          { status: 400 },
+        );
+      }
+      throw txError;
     }
-
-    await prisma.menuCategory.delete({
-      where: { id },
-    });
 
     await touchMenuUpdated(existing.restaurantId);
     return NextResponse.json({ success: true });

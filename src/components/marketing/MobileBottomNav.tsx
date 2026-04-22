@@ -76,7 +76,7 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
 
       <nav
         aria-label={locale === 'tr' ? 'Mobil alt menü' : 'Mobile bottom navigation'}
-        className="md:hidden fixed bottom-0 left-0 right-0 z-[95] bg-white border-t-[2.5px] border-[#0F2348] shadow-[0_-4px_0_0_rgba(31,30,29,0.04)]"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#1A2332] shadow-md"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <ul className="flex items-stretch justify-around h-[68px] max-w-[520px] mx-auto px-2">
@@ -89,10 +89,10 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
                 <li key={item.href} className="flex-1 flex items-start justify-center -mt-5">
                   <Link
                     href={item.href}
-                    className="flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-full bg-[#FF9A14] border-[2.5px] border-[#0F2348] shadow-[0_4px_0_0_#0F2348] active:translate-y-[3px] active:shadow-none transition-all"
+                    className="flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-full bg-[#F4B400] border border-[#1A2332] shadow-sm active:translate-y-[3px] active:shadow-none transition-all"
                     aria-label={item.label}
                   >
-                    <item.Icon size={22} className="text-[#0F2348]" strokeWidth={2.5} />
+                    <item.Icon size={22} className="text-[#1A2332]" strokeWidth={2} />
                   </Link>
                 </li>
               );
@@ -103,18 +103,18 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
                 <Link
                   href={item.href}
                   className={`relative h-full flex flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${
-                    active ? 'text-[#0F2348]' : 'text-[#243554]'
+                    active ? 'text-[#1A2332]' : 'text-[#2A3444]'
                   }`}
                   aria-current={active ? 'page' : undefined}
                 >
                   <item.Icon
                     size={20}
                     strokeWidth={active ? 2.5 : 2}
-                    className={active ? 'text-[#FF9A14]' : 'text-[#243554]'}
+                    className={active ? 'text-[#F4B400]' : 'text-[#2A3444]'}
                   />
                   <span
                     className={`text-[10px] leading-none tracking-tight ${
-                      active ? 'font-extrabold text-[#0F2348]' : 'font-semibold text-[#243554]'
+                      active ? 'font-extrabold text-[#1A2332]' : 'font-semibold text-[#2A3444]'
                     }`}
                   >
                     {item.label}
@@ -122,7 +122,7 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
                   {active && (
                     <span
                       aria-hidden="true"
-                      className="absolute top-0 w-8 h-[3px] bg-[#FF9A14] rounded-b-full"
+                      className="absolute top-0 w-8 h-[3px] bg-[#F4B400] rounded-b-full"
                     />
                   )}
                 </Link>

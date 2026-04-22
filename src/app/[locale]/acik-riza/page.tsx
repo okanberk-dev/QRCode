@@ -32,29 +32,29 @@ export default async function ConsentPage({
   const isTr = locale === 'tr';
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-[#F5F4F1] selection:bg-[#FF9A14]/30">
+    <div className="min-h-screen flex flex-col font-sans bg-[#F8F6F1] selection:bg-[#F4B400]/30">
       <MarketingNavbar locale={locale} t={t} />
 
       <main className="flex-1 max-w-[1000px] mx-auto w-full px-5 py-20 sm:py-32">
-        <div className="bg-white p-10 sm:p-20 rounded-[48px] border-[4px] border-[#0F2348] shadow-[15px_20px_0_0_#FF9A14] relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF9A14]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
+        <div className="bg-white p-10 sm:p-20 rounded-[48px] border border-[#1A2332] shadow-md relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#F4B400]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
           
           <div className="mb-16 relative">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#0F2348] text-white rounded-xl mb-6 shadow-[4px_4px_0_0_#FF9A14]">
-               <ShieldCheck size={14} className="text-[#FF9A14]" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#1A2332] text-white rounded-xl mb-6 shadow-md">
+               <ShieldCheck size={14} className="text-[#F4B400]" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'ONAY METNİ' : 'CONSENT FORM'}</span>
             </div>
-            <h1 className="text-[32px] sm:text-[52px] font-black text-[#0F2348] tracking-tight leading-[1.1] mb-4 whitespace-pre-line">
+            <h1 className="text-[32px] sm:text-[52px] font-extrabold text-[#1A2332] tracking-tight leading-[1.1] mb-4 whitespace-pre-line">
               {isTr ? 'Kişisel Verilerin İşlenmesi\nAçık Rıza Beyanı' : 'Explicit Consent for\nPersonal Data Processing'}
             </h1>
-            <p className="text-[13px] text-[#6B7B93] font-black uppercase tracking-widest">
+            <p className="text-[13px] text-[#6B7280] font-black uppercase tracking-widest">
               {isTr ? 'Son güncelleme: 13 Nisan 2026' : 'Last updated: April 13, 2026'}
             </p>
           </div>
           
           <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-12 text-[16px] sm:text-[18px] leading-relaxed font-medium">
-             <div className="p-8 bg-[#F5F4F1] rounded-3xl border-2 border-[#0F2348] border-dashed">
-               <p className="font-black text-[#0F2348] m-0">
+             <div className="p-8 bg-[#F8F6F1] rounded-3xl border-2 border-[#1A2332] border-dashed">
+               <p className="font-black text-[#1A2332] m-0">
                  {isTr 
                    ? 'Buaze platformu üzerinden sunulan hizmetlerden yararlanırken, kişisel verilerinizin işlenmesine yönelik hür iradenizle verdiğiniz onay beyanıdır.' 
                    : 'This is the consent declaration you give with your free will for the processing of your personal data while benefiting from the services offered through the Buaze platform.'}
@@ -74,11 +74,11 @@ export default async function ConsentPage({
                     isTr ? 'Müşteri memnuniyet anketleri' : 'Customer satisfaction surveys',
                     isTr ? 'Yurt dışı sunucu altyapı kullanımı' : 'Use of international server infra'
                   ].map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-4 bg-white border-2 border-[#0F2348] rounded-2xl shadow-[4px_4px_0_0_#FF9A14]">
-                       <div className="w-5 h-5 rounded-lg bg-[#0F2348] flex items-center justify-center text-white border border-[#0F2348]">
-                          <Zap size={10} className="text-[#FF9A14]" strokeWidth={3} />
+                    <div key={idx} className="flex items-center gap-3 p-4 bg-white border-2 border-[#1A2332] rounded-2xl shadow-md">
+                       <div className="w-5 h-5 rounded-lg bg-[#1A2332] flex items-center justify-center text-white border border-[#1A2332]">
+                          <Zap size={10} className="text-[#F4B400]" strokeWidth={2} />
                        </div>
-                       <span className="text-[14px] font-black text-[#0F2348] uppercase tracking-tight">{item}</span>
+                       <span className="text-[14px] font-black text-[#1A2332] uppercase tracking-tight">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -90,16 +90,16 @@ export default async function ConsentPage({
                   : 'I give consent with my free will for my data to be transferred to and processed by technology infrastructure companies (whose servers may be abroad) from which servers/cloud providers are used.'}
               </p>
 
-               <div className="pt-16 border-t-2 border-[#F5F4F1] flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
+               <div className="pt-16 border-t-2 border-[#F8F6F1] flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
                  <div className="space-y-1">
-                   <p className="text-[14px] font-black text-[#0F2348] uppercase tracking-widest leading-none">
+                   <p className="text-[14px] font-black text-[#1A2332] uppercase tracking-widest leading-none">
                      {isTr ? 'RIZA GERİ ÇEKME' : 'WITHDRAW CONSENT'}
                    </p>
-                   <p className="text-[14px] text-[#6B7B93] font-bold">
+                   <p className="text-[14px] text-[#6B7280] font-bold">
                      {isTr ? 'Dilediğiniz zaman çekebilirsiniz.' : 'You can withdraw at any time.'}
                    </p>
                  </div>
-                 <a href="mailto:hello@buaze.com" className="px-10 py-5 bg-[#0F2348] text-white rounded-2xl text-[15px] font-black shadow-[6px_8px_0_0_#FF9A14] hover:bg-[#0F2348] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-widest">
+                 <a href="mailto:hello@buaze.com" className="px-10 py-5 bg-[#1A2332] text-white rounded-2xl text-[15px] font-black shadow-md hover:bg-[#1A2332] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-widest">
                    hello@buaze.com
                  </a>
                </div>

@@ -65,7 +65,7 @@ export default function DashboardMenuPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-[#0F2348]" />
+        <Loader2 className="h-10 w-10 animate-spin text-[#1A2332]" />
       </div>
     );
   }
@@ -76,27 +76,27 @@ export default function DashboardMenuPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10 lg:py-12 space-y-10 animate-in fade-in duration-700">
       
       {/* Header Section */}
-      <div className="bg-[#0F2348] rounded-[40px] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl">
+      <div className="bg-[#1A2332] rounded-[40px] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-4">
-          <div className="inline-flex items-center gap-2 bg-[#FF9A14]/10 text-[#FF9A14] px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.25em]">
+          <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 text-[#F4B400] px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.25em]">
             <UtensilsCrossed size={16} /> ✦ DİJİTAL MENÜ
           </div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">{copy.title}</h1>
-          <p className="text-[#6B7B93] text-sm md:text-lg font-bold max-w-2xl">{copy.subtitle}</p>
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">{copy.title}</h1>
+          <p className="text-[#6B7280] text-sm md:text-lg font-bold max-w-2xl">{copy.subtitle}</p>
         </div>
         {/* Background Accent */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF9A14]/5 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F4B400]/5 rounded-full blur-3xl -mr-20 -mt-20" />
       </div>
 
       {restaurants.length === 0 ? (
-        <div className="bg-white rounded-[40px] border border-gray-100 p-20 text-center shadow-sm">
-           <div className="w-20 h-20 bg-gray-50 rounded-[30px] flex items-center justify-center mx-auto mb-6">
-             <Store size={36} className="text-gray-200" />
+        <div className="bg-white rounded-[40px] border border-[#E8ECF2] p-20 text-center shadow-sm">
+           <div className="w-20 h-20 bg-[#F8F6F1] rounded-[30px] flex items-center justify-center mx-auto mb-6">
+             <Store size={36} className="text-[#E8ECF2]" />
            </div>
-           <p className="text-xl font-black text-[#0F2348]">{copy.noRest}</p>
+           <p className="text-xl font-black text-[#1A2332]">{copy.noRest}</p>
            <a 
              href={`/${locale}/dashboard/restaurants`}
-             className="mt-6 inline-flex items-center justify-center px-8 py-4 bg-[#FF9A14] text-[#0F2348] rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95"
+             className="mt-6 inline-flex items-center justify-center px-8 py-4 bg-[#F4B400] text-[#1A2332] rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95"
            >
              {copy.addRest}
            </a>
@@ -112,8 +112,8 @@ export default function DashboardMenuPage() {
                   onClick={() => setSelectedId(r.id)}
                   className={`flex items-center justify-between p-6 rounded-3xl border-2 transition-all text-left ${
                     selectedId === r.id 
-                      ? 'bg-white border-[#FF9A14] shadow-xl shadow-[#FF9A14]/5' 
-                      : 'bg-white border-gray-50 hover:border-gray-200'
+                      ? 'bg-white border-[#F4B400] shadow-xl shadow-[#F4B400]/5' 
+                      : 'bg-white border-[#F8F6F1] hover:border-[#E8ECF2]'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -124,11 +124,11 @@ export default function DashboardMenuPage() {
                       {r.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-black text-[#0F2348] text-sm truncate max-w-[120px]">{r.name}</p>
-                      <p className="text-[10px] font-bold text-gray-400 mt-0.5">{r.category}</p>
+                      <p className="font-black text-[#1A2332] text-sm truncate max-w-[120px]">{r.name}</p>
+                      <p className="text-[10px] font-bold text-[#6B7280] mt-0.5">{r.category}</p>
                     </div>
                   </div>
-                  <ChevronRight size={20} className={selectedId === r.id ? 'text-[#FF9A14]' : 'text-gray-200'} />
+                  <ChevronRight size={20} className={selectedId === r.id ? 'text-[#F4B400]' : 'text-[#E8ECF2]'} />
                 </button>
               ))}
             </div>

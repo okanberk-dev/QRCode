@@ -48,7 +48,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
       key: 'food' as const,
       label: copy.food,
       icon: UtensilsCrossed,
-      color: '#FF9A14',
+      color: '#F4B400',
       bg: 'bg-amber-50',
       text: 'text-amber-600',
       ...aspects.food,
@@ -89,7 +89,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
 
   if (!anyData) {
     return (
-      <div className="rounded-2xl border border-dashed border-gray-200 bg-white/60 p-6 text-center text-sm font-bold text-[#243554]">
+      <div className="rounded-2xl border border-dashed border-[#E8ECF2] bg-white/60 p-6 text-center text-sm font-bold text-[#2A3444]">
         {copy.noData}
       </div>
     );
@@ -108,28 +108,28 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
           <div
             key={item.key}
             className={`relative overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition-all sm:p-5 ${
-              isWorst ? 'border-red-300 ring-2 ring-red-100' : 'border-gray-100'
+              isWorst ? 'border-red-300 ring-2 ring-red-100' : 'border-[#E8ECF2]'
             }`}
           >
             {isWorst && (
               <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-red-600 ring-1 ring-red-200">
-                <TrendingDown size={10} strokeWidth={3} />
+                <TrendingDown size={10} strokeWidth={2} />
                 {copy.worst}
               </span>
             )}
             {isBest && (
               <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-600 ring-1 ring-emerald-200">
-                <TrendingUp size={10} strokeWidth={3} />
+                <TrendingUp size={10} strokeWidth={2} />
                 {copy.best}
               </span>
             )}
 
             <div className="mb-3 flex items-center gap-2.5">
               <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${item.bg} ${item.text}`}>
-                <Icon size={18} strokeWidth={2.5} />
+                <Icon size={18} strokeWidth={2} />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-[11px] font-black uppercase tracking-widest text-[#6B7B93]">
+                <p className="truncate text-[11px] font-black uppercase tracking-widest text-[#6B7280]">
                   {item.label}
                 </p>
               </div>
@@ -138,13 +138,13 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
             {hasData ? (
               <>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-black tabular-nums tracking-tight text-[#0F2348] sm:text-4xl">
+                  <span className="text-3xl font-black tabular-nums tracking-tight text-[#1A2332] sm:text-4xl">
                     {item.avg!.toFixed(1)}
                   </span>
-                  <span className="text-sm font-bold text-[#243554]">/ 5</span>
+                  <span className="text-sm font-bold text-[#2A3444]">/ 5</span>
                 </div>
 
-                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#E8ECF2]">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
@@ -154,13 +154,13 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
                   />
                 </div>
 
-                <p className="mt-3 text-[11px] font-bold text-[#243554]">
+                <p className="mt-3 text-[11px] font-bold text-[#2A3444]">
                   {item.count} {copy.respondents}
                 </p>
               </>
             ) : (
-              <div className="flex items-center gap-2 py-4 text-[#6B7B93]">
-                <Minus size={18} strokeWidth={3} />
+              <div className="flex items-center gap-2 py-4 text-[#6B7280]">
+                <Minus size={18} strokeWidth={2} />
                 <span className="text-xs font-bold">—</span>
               </div>
             )}

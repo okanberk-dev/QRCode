@@ -51,7 +51,7 @@ const BADGE_META: Record<MenuBadge, { tr: string; en: string; icon: typeof Flame
   vegetaryen:  { tr: 'Vejetaryen',    en: 'Vegetarian',    icon: Leaf,     cls: 'bg-lime-100 text-lime-800' },
   aci:         { tr: 'Acı',           en: 'Spicy',         icon: Flame,    cls: 'bg-red-100 text-red-700' },
   sef_onerisi: { tr: 'Şef Önerisi',   en: "Chef's Pick",   icon: Star,     cls: 'bg-purple-100 text-purple-800' },
-  glutensiz:   { tr: 'Glutensiz',     en: 'Gluten-Free',   icon: WheatOff, cls: 'bg-orange-100 text-orange-800' },
+  glutensiz:   { tr: 'Glutensiz',     en: 'Gluten-Free',   icon: WheatOff, cls: 'bg-[#FFF8D6] text-[#B88800]' },
 };
 
 function BadgeChip({ badge, locale }: { badge: string; locale: 'tr' | 'en' }) {
@@ -60,7 +60,7 @@ function BadgeChip({ badge, locale }: { badge: string; locale: 'tr' | 'en' }) {
   const Icon = meta.icon;
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${meta.cls}`}>
-      <Icon size={10} strokeWidth={3} />
+      <Icon size={10} strokeWidth={2} />
       {meta[locale]}
     </span>
   );
@@ -118,7 +118,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
   const priceLocale = locale === 'tr' ? 'tr-TR' : 'en-US';
 
   return (
-    <div className="min-h-full bg-[#F5F4F1]">
+    <div className="min-h-full bg-[#F8F6F1]">
       <header className="relative overflow-hidden">
         <div
           className="absolute inset-0"
@@ -132,14 +132,14 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
             </div>
             <div className="min-w-0 flex-1 text-white">
               <p className="text-[11px] font-black uppercase tracking-[0.25em] opacity-80">{restaurant.category}</p>
-              <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{restaurant.name}</h1>
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">{restaurant.name}</h1>
               <p className="mt-1 text-[11px] font-bold uppercase tracking-widest opacity-75">{copy.menuOf}</p>
             </div>
           </div>
           <div className="mx-auto mt-5 flex max-w-2xl flex-wrap gap-3 text-xs font-bold text-white/90">
             {restaurant.address && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur">
-                <MapPin size={12} strokeWidth={2.75} />
+                <MapPin size={12} strokeWidth={2} />
                 <span className="max-w-[60vw] truncate">{restaurant.address}</span>
               </span>
             )}
@@ -148,13 +148,13 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                 href={`tel:${restaurant.phone.replace(/\s/g, '')}`}
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur transition-all hover:bg-white/25 active:scale-95"
               >
-                <Phone size={12} strokeWidth={2.75} />
+                <Phone size={12} strokeWidth={2} />
                 {restaurant.phone}
               </a>
             )}
             {restaurant.workingHours && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur">
-                <Clock size={12} strokeWidth={2.75} />
+                <Clock size={12} strokeWidth={2} />
                 {restaurant.workingHours}
               </span>
             )}
@@ -164,15 +164,15 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
 
       {visibleCategories.length === 0 ? (
         <div className="mx-auto max-w-xl px-6 py-20 text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-            <Sparkles size={28} className="text-gray-400" strokeWidth={2} />
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8ECF2]">
+            <Sparkles size={28} className="text-[#6B7280]" strokeWidth={2} />
           </div>
-          <h2 className="text-lg font-black text-[#0F2348]">{copy.emptyTitle}</h2>
-          <p className="mt-1 text-sm font-bold text-[#243554]">{copy.emptyBody}</p>
+          <h2 className="text-lg font-extrabold text-[#1A2332]">{copy.emptyTitle}</h2>
+          <p className="mt-1 text-sm font-bold text-[#2A3444]">{copy.emptyBody}</p>
         </div>
       ) : (
         <>
-          <nav className="sticky top-0 z-30 border-b border-gray-200/80 bg-[#F5F4F1]/95 backdrop-blur">
+          <nav className="sticky top-0 z-30 border-b border-[#E8ECF2]/80 bg-[#F8F6F1]/95 backdrop-blur">
             <div className="mx-auto max-w-2xl overflow-x-auto px-3 py-3 no-scrollbar">
               <div className="flex gap-2">
                 {visibleCategories.map((c) => {
@@ -182,7 +182,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                       key={c.id}
                       href={`#cat-${c.id}`}
                       className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all ${
-                        isActive ? 'text-white shadow-sm' : 'bg-white text-[#0F2348] hover:bg-gray-50'
+                        isActive ? 'text-white shadow-sm' : 'bg-white text-[#1A2332] hover:bg-[#F8F6F1]'
                       }`}
                       style={isActive ? { backgroundColor: restaurant.primaryColor } : undefined}
                     >
@@ -201,9 +201,9 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-5">
-                    <h2 className="text-xl font-black tracking-tight text-[#0F2348] sm:text-2xl">{category.name}</h2>
+                    <h2 className="text-xl font-extrabold tracking-tight text-[#1A2332] sm:text-2xl">{category.name}</h2>
                     {category.description && (
-                      <p className="mt-1 text-sm font-bold text-[#243554]">{category.description}</p>
+                      <p className="mt-1 text-sm font-bold text-[#2A3444]">{category.description}</p>
                     )}
                     <div className="mt-2 h-1 w-12 rounded-full" style={{ backgroundColor: restaurant.primaryColor }} />
                   </div>
@@ -211,11 +211,11 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                     {items.map((item) => (
                       <article
                         key={item.id}
-                        className={`flex gap-4 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm transition-all sm:p-4 ${
+                        className={`flex gap-4 rounded-2xl border border-[#E8ECF2] bg-white p-3 shadow-sm transition-all sm:p-4 ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
-                        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-100 sm:h-28 sm:w-28">
+                        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[#E8ECF2] sm:h-28 sm:w-28">
                           {item.imageUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
@@ -236,7 +236,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-[15px] font-black leading-tight text-[#0F2348]">{item.name}</h3>
+                            <h3 className="text-[15px] font-extrabold leading-tight text-[#1A2332]">{item.name}</h3>
                             <span
                               className="shrink-0 text-sm font-black sm:text-base"
                               style={{ color: restaurant.primaryColor }}
@@ -245,7 +245,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                             </span>
                           </div>
                           {item.description && (
-                            <p className="mt-1 line-clamp-3 text-xs font-bold text-[#243554] sm:text-[13px]">{item.description}</p>
+                            <p className="mt-1 line-clamp-3 text-xs font-bold text-[#2A3444] sm:text-[13px]">{item.description}</p>
                           )}
                           {item.badges.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1">
@@ -261,7 +261,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                 </section>
               );
             })}
-            <footer className="pt-4 pb-6 text-center text-[10px] font-bold uppercase tracking-widest text-[#6B7B93]">
+            <footer className="pt-4 pb-6 text-center text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
               Powered by Buaze
             </footer>
           </main>

@@ -13,10 +13,11 @@ import { ApiErrors } from '@/lib/api-errors';
  * Security: protected by CRON_SECRET header to prevent unauthorized triggers.
  */
 export async function GET(req: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret. CRON_SECRET must be configured — otherwise the
+  // endpoint refuses every request to avoid an open public trigger.
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

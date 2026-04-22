@@ -13,8 +13,9 @@ export interface PanelActor {
   source: 'admin' | 'user';
 }
 
-// Built-in fallback secret. Used when JWT_SECRET is not configured.
-// For production security, always set JWT_SECRET in your environment.
+// Dev-only fallback secret. The literal value lives in the public repo so
+// it MUST NOT be used in production — getSecret() refuses to fall back when
+// NODE_ENV === 'production'.
 const DEV_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
 let warnedAboutFallback = false;
 let warnedAboutShortSecret = false;
@@ -28,14 +29,17 @@ export function getSecret(): Uint8Array {
     }
     return new TextEncoder().encode(secret);
   }
-  // Fallback: use built-in secret with a loud warning. The app will still
-  // function correctly — this is safe for single-instance deployments.
-  // For maximum security, set JWT_SECRET in your environment variables.
+  if (process.env.NODE_ENV === 'production') {
+    // Refuse to sign/verify with the public fallback in production. This
+    // throws on the first JWT operation so the misconfiguration surfaces
+    // immediately instead of silently using a known-public key.
+    throw new Error('JWT_SECRET is required in production. Configure a 32+ byte random value in your environment.');
+  }
   if (!warnedAboutFallback) {
     warnedAboutFallback = true;
     console.warn(
-      '[Buaze] JWT_SECRET is not configured. Using built-in fallback. ' +
-      'For better security, set JWT_SECRET to a 32+ byte random value in your hosting provider.',
+      '[Buaze] JWT_SECRET is not configured. Using dev-only fallback. ' +
+      'Set JWT_SECRET to a 32+ byte random value before deploying.',
     );
   }
   return new TextEncoder().encode(DEV_FALLBACK_SECRET);
@@ -109,7 +113,9 @@ export async function getPanelActorFromRequest(req: NextRequest): Promise<PanelA
       role,
       restaurantId: getStringClaim(adminPayload, 'restaurantId'),
       username: getStringClaim(adminPayload, 'username'),
-      email: getStringClaim(adminPayload, 'username'),
+      // Prefer explicit email claim; fall back to username (legacy admin
+      // tokens whose username doubles as the contact identifier).
+      email: getStringClaim(adminPayload, 'email') || getStringClaim(adminPayload, 'username'),
       plan: getStringClaim(adminPayload, 'plan'),
       source: 'admin',
     };
@@ -122,7 +128,7 @@ export async function getPanelActorFromRequest(req: NextRequest): Promise<PanelA
       role: 'restaurant_owner',
       restaurantId: getStringClaim(legacyAdminPayload, 'restaurantId'),
       username: getStringClaim(legacyAdminPayload, 'username'),
-      email: getStringClaim(legacyAdminPayload, 'username'),
+      email: getStringClaim(legacyAdminPayload, 'email') || getStringClaim(legacyAdminPayload, 'username'),
       plan: getStringClaim(legacyAdminPayload, 'plan'),
       source: 'user',
     };

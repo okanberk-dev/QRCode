@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { SYSTEM_FEEDBACK } from '@/lib/constants';
 
 const PLATFORM_LABELS: Record<string, string> = {
   google: 'Google',
