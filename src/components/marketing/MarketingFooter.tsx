@@ -43,7 +43,7 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
 
           {/* Col 2: Product */}
           <div>
-            <h4 className="text-white/40 font-extrabold uppercase tracking-widest text-[10px] mb-6">
+            <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">
               {locale === 'tr' ? 'Ürün' : 'Product'}
             </h4>
             <ul className="space-y-3.5 text-[13px] font-medium text-[#E8ECF2]">
@@ -58,7 +58,7 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
 
           {/* Col 3: Legal */}
           <div>
-            <h4 className="text-white/40 font-extrabold uppercase tracking-widest text-[10px] mb-6">
+            <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">
               {locale === 'tr' ? 'Yasal' : 'Legal'}
             </h4>
             <ul className="space-y-3.5 text-[13px] font-medium text-[#E8ECF2]">
@@ -74,7 +74,7 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
 
           {/* Col 4: Platform */}
           <div>
-            <h4 className="text-white/40 font-extrabold uppercase tracking-widest text-[10px] mb-6">Platform</h4>
+            <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">Platform</h4>
             <ul className="space-y-3.5 text-[13px] font-medium text-[#E8ECF2]">
               <li><Link href={`${base}/auth/login`} className="hover:text-[#F4B400] transition-colors font-bold">{locale === 'tr' ? 'Giriş Yap' : 'Log In'}</Link></li>
               <li><Link href={`${base}/auth/register`} className="hover:text-[#F4B400] transition-colors font-bold text-[#F4B400]">{locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}</Link></li>
@@ -84,14 +84,14 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
 
         {/* Bottom */}
         <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <p className="text-white/30 text-[11px] font-medium">
+          <p className="text-white/60 text-[11px] font-medium">
             © {new Date().getFullYear()} Buaze. {t.footer_copyright}
           </p>
           <div className="flex items-center gap-6">
-             <Link href={`${base}/terms`} className="text-white/30 text-[10px] font-bold hover:text-white transition-colors uppercase tracking-widest">
+             <Link href={`${base}/terms`} className="text-white/60 text-[10px] font-bold hover:text-white transition-colors uppercase tracking-widest">
                {locale === 'tr' ? 'Şartlar' : 'Terms'}
              </Link>
-             <Link href={`${base}/privacy`} className="text-white/30 text-[10px] font-bold hover:text-white transition-colors uppercase tracking-widest">
+             <Link href={`${base}/privacy`} className="text-white/60 text-[10px] font-bold hover:text-white transition-colors uppercase tracking-widest">
                {locale === 'tr' ? 'Gizlilik' : 'Privacy'}
              </Link>
           </div>

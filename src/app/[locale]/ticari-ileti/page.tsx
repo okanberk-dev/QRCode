@@ -91,7 +91,7 @@ export default async function ConsentMarketingPage({
                      ? 'Dilediğiniz zaman, hiçbir gerekçe göstermeksizin bu onayı geri çekebilirsiniz. Her iletimizde size abonelikten çıkma seçeneği sunulmaktadır.'
                      : 'You can withdraw this consent at any time without giving any reason. Every message we send offers you an unsubscribe option.'}
                  </p>
-                 <div className="p-8 bg-[#1A2332] text-[#6B7280] rounded-[32px] border-4 border-[#1A2332] shadow-md">
+                 <div className="p-8 bg-[#1A2332] text-white/80 rounded-[32px] border-4 border-[#1A2332] shadow-md">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                        <p className="text-[14px] font-bold text-white max-w-[400px]">
                          {isTr 

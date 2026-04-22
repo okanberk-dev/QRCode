@@ -610,7 +610,7 @@ export default async function LandingPage({
                          <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
                          <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
                       </div>
-                      <div className="flex-1 bg-white/8 border border-white/10 rounded-md px-3 py-1 text-[9px] sm:text-[10px] text-white/50 font-mono truncate">
+                      <div className="flex-1 bg-white/10 border border-white/15 rounded-md px-3 py-1 text-[9px] sm:text-[10px] text-white/75 font-mono truncate">
                         buaze.com/admin/dashboard
                       </div>
                    </div>
@@ -675,7 +675,7 @@ export default async function LandingPage({
                          <span className="text-[9px] sm:text-[10px] text-white/80 font-medium truncate">
                            {locale === 'tr' ? '"Harika bir deneyim, kesinlikle tavsiye ederim."' : '"Great experience, highly recommend!"'}
                          </span>
-                         <span className="text-[8px] text-white/40 font-medium flex-shrink-0">2dk</span>
+                         <span className="text-[8px] text-white/60 font-medium flex-shrink-0">2dk</span>
                       </div>
                    </div>
                 </div>

@@ -89,12 +89,12 @@ export default async function LoginPage({
                       <Star size={16} className="fill-[#F4B400] text-[#F4B400]" />
                     ) : null}
                   </div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.1em] text-white/40 mt-1">{stat.label}</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.1em] text-white/70 mt-1">{stat.label}</div>
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center gap-2.5 text-white/50 text-[12px] font-bold bg-white/5 py-4 px-5 rounded-2xl border border-white/5">
+            <div className="flex items-center gap-2.5 text-white/75 text-[12px] font-bold bg-white/5 py-4 px-5 rounded-2xl border border-white/5">
               <Shield size={16} className="text-green-500 flex-shrink-0" />
               {locale === 'tr' ? 'KVKK uyumlu · Endüstriyel şifreleme' : 'GDPR compliant · Industry-standard encryption'}
             </div>

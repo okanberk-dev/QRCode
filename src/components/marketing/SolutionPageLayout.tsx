@@ -273,7 +273,7 @@ export default function SolutionPageLayout({
                 </div>
                 <div className="space-y-2">
                   <h4 className="text-[18px] sm:text-[20px] font-extrabold text-white tracking-tight">{b.title}</h4>
-                  <p className="text-[13px] sm:text-[14px] text-[#6B7280] font-bold leading-relaxed">{b.desc}</p>
+                  <p className="text-[13px] sm:text-[14px] text-white/80 font-medium leading-relaxed">{b.desc}</p>
                 </div>
               </div>
             ))}
@@ -356,7 +356,7 @@ export default function SolutionPageLayout({
           <h2 className="text-[28px] sm:text-[48px] font-extrabold text-white tracking-tight leading-tight">
             {locale === 'tr' ? 'İşletmenizi Bugün Büyütün' : 'Grow Your Business Today'}
           </h2>
-          <p className="text-[15px] sm:text-[18px] text-[#6B7280] font-bold">
+          <p className="text-[15px] sm:text-[18px] text-white/80 font-medium">
             {locale === 'tr' ? '14 gün ücretsiz dene. Kredi kartı gerekmez.' : '14-day free trial. No credit card required.'}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">

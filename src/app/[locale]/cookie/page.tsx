@@ -83,7 +83,7 @@ export default async function CookiePage({
                     ? 'Çoğu tarayıcı çerezleri otomatik olarak kabul eder ancak dilediğiniz zaman tarayıcı ayarlarınızdan çerezleri reddedebilir veya silebilirsiniz.'
                     : 'Most browsers automatically accept cookies, but you can reject or delete cookies from your browser settings at any time.'}
                 </p>
-                <div className="p-6 bg-[#1A2332] text-[#6B7280] rounded-2xl border-2 border-[#1A2332]">
+                <div className="p-6 bg-[#1A2332] text-white/80 rounded-2xl border-2 border-[#1A2332]">
                    <p className="font-bold mb-3 text-white">{isTr ? 'Tarayıcı Bazlı Yönetim:' : 'Browser-Based Management:'}</p>
                    <ul className="text-[14px] space-y-2 list-disc pl-5">
                       <li>Google Chrome: Ayarlar {'>'} Gizlilik {'>'} Çerezler</li>

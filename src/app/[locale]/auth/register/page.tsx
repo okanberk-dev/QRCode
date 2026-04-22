@@ -93,7 +93,7 @@ export default async function RegisterPage({
               ))}
             </ul>
             
-            <div className="flex items-center gap-3 text-white/30 text-[11px] font-bold mt-12 bg-white/5 py-4 px-5 rounded-2xl border border-white/5 inline-flex">
+            <div className="flex items-center gap-3 text-white/70 text-[11px] font-bold mt-12 bg-white/5 py-4 px-5 rounded-2xl border border-white/5 inline-flex">
               <Shield size={16} className="text-green-500" />
               {locale === 'tr' ? 'KVKK uyumlu & Endüstriyel Şifreleme' : 'GDPR compliant & Industry-standard Encryption'}
             </div>
