@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
@@ -77,6 +78,10 @@ export async function PUT(req: NextRequest) {
             })
       )
     );
+
+    // Invalidate every route cache so logo/metadata changes surface immediately
+    revalidatePath('/', 'layout');
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[site-settings PUT]', err);

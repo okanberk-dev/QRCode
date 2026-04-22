@@ -3,6 +3,8 @@ import { Manrope, Inter } from 'next/font/google';
 import './globals.css';
 import { getSiteSettings } from '@/lib/site-settings';
 
+export const dynamic = 'force-dynamic';
+
 const manrope = Manrope({
   subsets: ['latin'],
   weight: ['500', '600', '700', '800'],

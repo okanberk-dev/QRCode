@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from 'next/cache';
 import { prisma } from './prisma';
 
 export interface SiteSettings {
@@ -70,6 +71,7 @@ function parseKeywords(raw: string | undefined): string[] | null {
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {
+  noStore();
   try {
     const rows = await prisma.settings.findMany({
       where: { key: { startsWith: KEY_PREFIX } },
