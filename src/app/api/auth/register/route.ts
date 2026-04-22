@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { signJwt } from '@/lib/auth';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
+import { isStrongPassword } from '@/lib/validations';
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,9 +35,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (password.length < 8) {
+    if (!isStrongPassword(password)) {
       return NextResponse.json(
-        { error: 'Şifre en az 8 karakter olmalıdır.' },
+        { error: 'Şifre en az 8 karakter uzunluğunda olmalı, en az bir harf ve bir rakam içermelidir.' },
         { status: 400 }
       );
     }

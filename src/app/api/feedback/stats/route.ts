@@ -16,19 +16,21 @@ export async function GET(req: NextRequest) {
     const branchParam = req.nextUrl.searchParams.get('branch');
     const today = new Date();
 
-    // Build base date filter (supports: today/1, month, numeric days, all)
+    // Build base date filter (supports: today/1, month, numeric days, all).
+    // UTC-based to match the /feedback route and stay consistent regardless of
+    // server timezone.
     const dateFilter: any = {};
     if (daysParam === '1' || daysParam === 'today') {
-      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+      const startOfToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0));
       dateFilter.createdAt = { gte: startOfToday };
     } else if (daysParam === 'month') {
-      const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+      const firstOfMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1, 0, 0, 0, 0));
       dateFilter.createdAt = { gte: firstOfMonth };
     } else if (daysParam && daysParam !== 'all') {
       const days = parseInt(daysParam);
       if (Number.isFinite(days) && days > 0) {
         const pastDate = new Date();
-        pastDate.setDate(today.getDate() - days);
+        pastDate.setUTCDate(pastDate.getUTCDate() - days);
         dateFilter.createdAt = { gte: pastDate };
       }
     }
@@ -61,8 +63,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
-    // Today filter
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    // Today filter (UTC — matches /feedback?days=today behaviour).
+    const startOfToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
 
     // Basic stats
     const totalCount = await prisma.feedback.count({ where: dateFilter });

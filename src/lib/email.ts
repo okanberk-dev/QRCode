@@ -1,4 +1,17 @@
 import { SYSTEM_FEEDBACK } from './constants';
+
+// Escape user-supplied content before injecting into HTML email bodies.
+// Resend renders HTML; without escaping, comments / names containing tags
+// would render as markup or break the layout.
+function escapeHtml(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 /**
  * Sends an email via Resend HTTP API.
  * This is the ONLY email sending method — no SMTP fallback.
@@ -201,11 +214,13 @@ export async function sendFeedbackNotification(data: NotificationParams) {
     return;
   }
 
-  const restaurantName = data.restaurantName || 'Restoran';
+  const rawRestaurantName = data.restaurantName || 'Restoran';
+  const restaurantName = escapeHtml(rawRestaurantName);
   const ratingColor = getRatingColor(data.rating);
   const ratingLabel = getRatingLabel(data.rating);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
   const isCritical = data.rating <= 2;
+  const safeComment = data.comment ? escapeHtml(data.comment).replace(/\n/g, '<br>') : '';
 
   const content = `
     <h1 style="margin:0 0 8px;font-size:28px;font-weight:900;letter-spacing:-1px;">Yeni Değerlendirme!</h1>
@@ -221,17 +236,17 @@ export async function sendFeedbackNotification(data: NotificationParams) {
     <div style="margin-bottom:24px;">
       <p style="margin:0 0 8px;font-size:12px;font-weight:800;text-transform:uppercase;opacity:0.6;">Müşteri Yorumu</p>
       <div style="background:#f1f5f9;border-radius:12px;padding:20px;font-style:italic;line-height:1.6;" class="bg-accent font-dark">
-        "${data.comment.replace(/\n/g, '<br>')}"
+        "${safeComment}"
       </div>
     </div>
     ` : ''}
 
     <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:32px;">
-      ${data.branch ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Şube</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${data.branch}</td></tr>` : ''}
-      ${data.tableNumber ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Masa</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${data.tableNumber}</td></tr>` : ''}
-      ${data.name ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Müşteri</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${data.name}</td></tr>` : ''}
-      ${data.phone ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Telefon</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${data.phone}</td></tr>` : ''}
-      ${data.email ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">E-posta</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${data.email}</td></tr>` : ''}
+      ${data.branch ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Şube</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${escapeHtml(data.branch)}</td></tr>` : ''}
+      ${data.tableNumber ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Masa</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${escapeHtml(data.tableNumber)}</td></tr>` : ''}
+      ${data.name ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Müşteri</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${escapeHtml(data.name)}</td></tr>` : ''}
+      ${data.phone ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Telefon</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${escapeHtml(data.phone)}</td></tr>` : ''}
+      ${data.email ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">E-posta</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${escapeHtml(data.email)}</td></tr>` : ''}
       <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;opacity:0.6;" class="border-accent">Tarih</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:right;" class="border-accent">${new Date().toLocaleString('tr-TR')}</td></tr>
     </table>
 
@@ -242,14 +257,14 @@ export async function sendFeedbackNotification(data: NotificationParams) {
     </div>
   `;
 
-  const subject = `${isCritical ? '🚨' : '✨'} ${data.rating} Yıldız - ${restaurantName}`;
+  const subject = `${isCritical ? '🚨' : '✨'} ${data.rating} Yıldız - ${rawRestaurantName}`;
   const html = SHARED_LAYOUT(content, 'Feedback Alert');
-  
+
   await sendResendEmail({
     to: recipientEmail,
     subject,
     html,
-    text: `${restaurantName}: ${data.rating} Yıldız Değerlendirme Alındı.`,
+    text: `${rawRestaurantName}: ${data.rating} Yıldız Değerlendirme Alındı.`,
   });
 }
 

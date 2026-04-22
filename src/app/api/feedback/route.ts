@@ -6,6 +6,12 @@ import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/validations';
 import { ApiErrors } from '@/lib/api-errors';
 
+function parseAspectRating(value: unknown): number | null {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n) || n < 1 || n > 5) return null;
+  return Math.round(n);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for') || (req as any).ip || 'unknown';
@@ -31,9 +37,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Feedback received' }, { status: 201 });
     }
 
-    // Validate platform value if provided
+    // Validate platform value if provided. Falsy / unknown → null so the
+    // feedback isn't misattributed to Google when the customer never picked
+    // a platform via QR.
     const validPlatforms = ['google', 'yemeksepeti', 'getir', 'trendyol_go'];
-    const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : 'google';
+    const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : null;
 
     // Validation
     if (!isValidRating(rating)) {
@@ -79,10 +87,10 @@ export async function POST(req: NextRequest) {
         hasMarketingConsent: body.hasMarketingConsent ?? false,
         restaurantId,
         platform: sanitizedPlatform,
-        // Rich Feedback Additions
-        foodRating: aspects?.food ? Number(aspects.food) : null,
-        serviceRating: aspects?.service ? Number(aspects.service) : null,
-        atmosphereRating: aspects?.atmosphere ? Number(aspects.atmosphere) : null,
+        // Rich Feedback Additions — coerce safely; non-1..5 inputs become null.
+        foodRating: parseAspectRating(aspects?.food),
+        serviceRating: parseAspectRating(aspects?.service),
+        atmosphereRating: parseAspectRating(aspects?.atmosphere),
       },
     });
 
