@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getSiteSettings } from '@/lib/site-settings';
+
+async function loadSiteBranding(): Promise<{ logoUrl: string | null; faviconUrl: string | null }> {
+  try {
+    const rows = await prisma.settings.findMany({
+      where: { key: { in: ['site.logo_url', 'site.favicon_url'] } },
+    });
+    const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    return {
+      logoUrl: map['site.logo_url'] || null,
+      faviconUrl: map['site.favicon_url'] || null,
+    };
+  } catch {
+    return { logoUrl: null, faviconUrl: null };
+  }
+}
 
 export async function GET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
@@ -10,7 +24,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
   }
 
-  const { logoUrl, faviconUrl } = await getSiteSettings();
+  const { logoUrl, faviconUrl } = await loadSiteBranding();
 
   // If this is a restaurant_owner, fetch their extra info from the users table
   if (actor.role === 'restaurant_owner') {

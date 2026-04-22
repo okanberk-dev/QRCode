@@ -1,4 +1,3 @@
-import { cache } from 'react';
 import { prisma } from './prisma';
 
 export interface SiteSettings {
@@ -70,7 +69,7 @@ function parseKeywords(raw: string | undefined): string[] | null {
   return parts.length ? parts : null;
 }
 
-export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
+export async function getSiteSettings(): Promise<SiteSettings> {
   try {
     const rows = await prisma.settings.findMany({
       where: { key: { startsWith: KEY_PREFIX } },
@@ -92,4 +91,4 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
   } catch {
     return SITE_SETTINGS_DEFAULTS;
   }
-});
+}
