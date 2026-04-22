@@ -101,8 +101,10 @@ model Feedback {
   createdAt           DateTime    @default(now()) @map("created_at")
 
   restaurantId        String?     @map("restaurant_id")
-  restaurant          Restaurant? @relation(fields: [restaurantId], references: [id])
+  restaurant          Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
+  @@index([restaurantId, createdAt])
+  @@index([ipAddress, createdAt])
   @@map("feedback")
 }
 
