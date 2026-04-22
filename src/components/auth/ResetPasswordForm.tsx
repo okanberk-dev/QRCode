@@ -68,7 +68,7 @@ export default function ResetPasswordForm({ locale }: Props) {
     return (
       <div className="rounded-2xl border-2 border-green-500/20 bg-green-50 p-6 text-center">
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500 text-white">
-          <Check size={26} strokeWidth={3} />
+          <Check size={26} strokeWidth={2} />
         </div>
         <p className="text-[15px] font-black text-green-700">
           {locale === 'tr' ? 'Şifreniz güncellendi!' : 'Password updated!'}
@@ -150,7 +150,7 @@ export default function ResetPasswordForm({ locale }: Props) {
             onClick={() => setShowPassword((v) => !v)}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-[#2A3444] hover:text-[#1A2332]"
           >
-            {showPassword ? <EyeOff size={20} strokeWidth={2.5} /> : <Eye size={20} strokeWidth={2.5} />}
+            {showPassword ? <EyeOff size={20} strokeWidth={2} /> : <Eye size={20} strokeWidth={2} />}
           </button>
         </div>
       </div>
@@ -160,7 +160,7 @@ export default function ResetPasswordForm({ locale }: Props) {
         disabled={loading}
         className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border-[3px] border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
       >
-        {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <ArrowRight size={20} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />}
+        {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <ArrowRight size={20} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />}
         {loading
           ? (locale === 'tr' ? 'GÜNCELLENİYOR...' : 'UPDATING...')
           : (locale === 'tr' ? 'ŞİFREYİ GÜNCELLE' : 'UPDATE PASSWORD')}

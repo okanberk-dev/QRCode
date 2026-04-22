@@ -122,11 +122,11 @@ export default function AdminRestaurantMenuPage() {
       <div className="flex flex-col gap-4 rounded-[24px] border border-gray-100 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-8">
         <div className="min-w-0 space-y-1">
           <Link href="/admin/restaurants" className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332]">
-            <ArrowLeft size={14} strokeWidth={3} />
+            <ArrowLeft size={14} strokeWidth={2} />
             İşletmelere Dön
           </Link>
           <h1 className="flex items-center gap-3 text-2xl font-black tracking-tight text-[#1A2332] sm:text-3xl">
-            <UtensilsCrossed size={22} strokeWidth={3} />
+            <UtensilsCrossed size={22} strokeWidth={2} />
             {restaurant.name} · Menü
           </h1>
           <p className="text-[13px] font-bold text-[#2A3444]">Süperadmin moderasyon: menü özelliğini tamamen kapatın veya yayından kaldırın.</p>
@@ -140,7 +140,7 @@ export default function AdminRestaurantMenuPage() {
             target="_blank"
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm transition-all hover:bg-gray-50 active:scale-95"
           >
-            <ExternalLink size={14} strokeWidth={3} />
+            <ExternalLink size={14} strokeWidth={2} />
             Genel Görünüm
           </Link>
         </div>
@@ -156,7 +156,7 @@ export default function AdminRestaurantMenuPage() {
         <div className="rounded-[20px] border border-gray-100 bg-white p-5 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
-              <ShieldAlert size={18} strokeWidth={2.75} />
+              <ShieldAlert size={18} strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
               <h3 className="text-sm font-black uppercase tracking-widest text-[#1A2332]">Menü Özelliği</h3>
@@ -175,9 +175,9 @@ export default function AdminRestaurantMenuPage() {
                 {saving === 'menuEnabled' ? (
                   <Loader2 size={14} className="animate-spin" />
                 ) : restaurant.menuEnabled ? (
-                  <PowerOff size={14} strokeWidth={3} />
+                  <PowerOff size={14} strokeWidth={2} />
                 ) : (
-                  <Power size={14} strokeWidth={3} />
+                  <Power size={14} strokeWidth={2} />
                 )}
                 {restaurant.menuEnabled ? 'Menüyü Kapat' : 'Menüyü Aç'}
               </button>
@@ -188,7 +188,7 @@ export default function AdminRestaurantMenuPage() {
         <div className="rounded-[20px] border border-gray-100 bg-white p-5 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-              <Eye size={18} strokeWidth={2.75} />
+              <Eye size={18} strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
               <h3 className="text-sm font-black uppercase tracking-widest text-[#1A2332]">Yayın Durumu</h3>
@@ -203,9 +203,9 @@ export default function AdminRestaurantMenuPage() {
                 {saving === 'menuPublished' ? (
                   <Loader2 size={14} className="animate-spin" />
                 ) : restaurant.menuPublished ? (
-                  <EyeOff size={14} strokeWidth={3} />
+                  <EyeOff size={14} strokeWidth={2} />
                 ) : (
-                  <Eye size={14} strokeWidth={3} />
+                  <Eye size={14} strokeWidth={2} />
                 )}
                 {restaurant.menuPublished ? 'Yayından Kaldır' : 'Yayına Al'}
               </button>
@@ -220,7 +220,7 @@ export default function AdminRestaurantMenuPage() {
                   target="_blank"
                   className="mt-4 flex w-fit items-center gap-2 rounded-xl border border-amber-200 bg-amber-100 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-amber-800 transition-all hover:bg-amber-200 active:scale-95"
                 >
-                  <ExternalLink size={14} strokeWidth={3} />
+                  <ExternalLink size={14} strokeWidth={2} />
                   Canlı Menüyü Aç
                 </Link>
               )}
@@ -257,12 +257,12 @@ export default function AdminRestaurantMenuPage() {
               target="_blank"
               className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-700 shadow-sm transition-all hover:bg-gray-50 active:scale-95"
             >
-              <ExternalLink size={12} strokeWidth={3} />
+              <ExternalLink size={12} strokeWidth={2} />
               Yeni Sekmede Aç
             </Link>
           ) : (
             <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400" title="Menü yayında değil">
-              <ExternalLink size={12} strokeWidth={3} />
+              <ExternalLink size={12} strokeWidth={2} />
               YAYINDA DEĞİL
             </div>
           )}

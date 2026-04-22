@@ -149,7 +149,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
             onClick={onClose}
             className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 text-gray-400 transition-colors"
           >
-            <X size={22} strokeWidth={2.5} />
+            <X size={22} strokeWidth={2} />
           </button>
         </div>
 
@@ -288,7 +288,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                  <span key={badge} className="bg-[#F4B400] text-[#1A2332] text-[10px] font-black px-2.5 py-1.5 rounded-lg flex items-center gap-2 uppercase tracking-wider shadow-sm">
                    {badge}
                    <button type="button" onClick={() => removeBadge(badge)} className="hover:text-red-600 transition-colors">
-                     <X size={12} strokeWidth={3} />
+                     <X size={12} strokeWidth={2} />
                    </button>
                  </span>
                ))}

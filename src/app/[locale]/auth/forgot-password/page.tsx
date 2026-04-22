@@ -38,7 +38,7 @@ export default async function ForgotPasswordPage({
             href={`/${locale}/auth/login`}
             className="inline-flex items-center gap-2 text-[12px] font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332] mb-5 transition-colors"
           >
-            <ArrowLeft size={14} strokeWidth={3} />
+            <ArrowLeft size={14} strokeWidth={2} />
             {locale === 'tr' ? 'Girişe Dön' : 'Back to Login'}
           </Link>
 

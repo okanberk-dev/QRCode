@@ -89,7 +89,7 @@ export default function AdminSidebar() {
       <div className="p-6 border-b border-white/10 mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 flex-shrink-0">
-            <BuazeLogo size={40} />
+            <BuazeLogo size={40} variant="on-dark" />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-black text-white tracking-tight leading-none">Buaze</h1>
@@ -114,7 +114,7 @@ export default function AdminSidebar() {
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <item.icon size={20} className={isActive ? 'text-[#1A2332]' : 'text-gray-500 group-hover:text-white'} strokeWidth={2.5} />
+              <item.icon size={20} className={isActive ? 'text-[#1A2332]' : 'text-gray-500 group-hover:text-white'} strokeWidth={2} />
               {item.label}
             </Link>
           );
@@ -125,7 +125,7 @@ export default function AdminSidebar() {
       {trialInfo && !trialInfo.isExpired && trialInfo.daysLeft <= 7 && (
         <div className="mx-4 mb-4 bg-orange-500/10 border-2 border-orange-500/20 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Clock size={14} className="text-orange-400" strokeWidth={3} />
+            <Clock size={14} className="text-orange-400" strokeWidth={2} />
             <p className="text-orange-400 text-[11px] font-black uppercase tracking-wider">Deneme Süresi</p>
           </div>
           <p className="text-white text-xs font-bold leading-tight">{trialInfo.daysLeft} gün kaldı</p>
@@ -166,7 +166,7 @@ export default function AdminSidebar() {
           onClick={handleLogout}
           className="flex items-center justify-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-2xl transition-all w-full text-sm font-bold border border-transparent active:scale-95"
         >
-          <LogOut size={16} strokeWidth={2.5} />
+          <LogOut size={16} strokeWidth={2} />
           {t('logout')}
         </button>
       </div>
@@ -183,14 +183,14 @@ export default function AdminSidebar() {
       {/* Mobile Top Bar */}
       <div className="lg:hidden bg-[#1A2332] border-b border-white/10 px-5 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8"><BuazeLogo size={32} /></div>
+          <div className="w-8 h-8"><BuazeLogo size={32} variant="on-dark" /></div>
           <span className="text-white font-black text-lg tracking-tight">Buaze</span>
         </div>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white p-2 hover:bg-white/5 transition-colors rounded-xl">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {mobileOpen
-              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16M4 18h16" />}
+              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
           </svg>
         </button>
       </div>

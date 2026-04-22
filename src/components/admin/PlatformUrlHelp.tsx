@@ -67,7 +67,7 @@ export default function PlatformUrlHelp({ platform }: Props) {
         aria-label={`${guide.title} nasıl kopyalanır?`}
         className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 hover:text-[#1A2332] hover:border-gray-300 transition-colors"
       >
-        <Info size={12} strokeWidth={2.75} />
+        <Info size={12} strokeWidth={2} />
       </button>
       {open && (
         <div className="absolute left-0 top-7 z-50 w-72 rounded-2xl border border-gray-100 bg-white p-4 text-[12px] font-medium text-[#1A2332] shadow-xl">
@@ -78,7 +78,7 @@ export default function PlatformUrlHelp({ platform }: Props) {
               onClick={() => setOpen(false)}
               className="text-gray-400 hover:text-[#1A2332]"
             >
-              <X size={14} strokeWidth={2.5} />
+              <X size={14} strokeWidth={2} />
             </button>
           </div>
           <ol className="list-decimal pl-4 space-y-1 text-[12px]">

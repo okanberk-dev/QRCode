@@ -40,7 +40,7 @@ export default function NotFound() {
             href="/"
             className="inline-flex items-center justify-center gap-2 w-full px-8 py-4 bg-[#F4B400] text-[#1A2332] text-sm font-extrabold rounded-xl border-[2px] border-[#1A2332] shadow-sm hover:bg-[#F4B400] transition-all active:translate-y-[4px] active:shadow-none uppercase tracking-widest"
           >
-            <ArrowLeft size={18} strokeWidth={2.5} />
+            <ArrowLeft size={18} strokeWidth={2} />
             Ana Sayfaya Dön
           </Link>
         </div>

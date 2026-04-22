@@ -118,7 +118,7 @@ export default function GoogleConversionPanel({
             color="#F4B400"
             bg="bg-amber-50"
             text="text-amber-600"
-            icon={<Star size={16} strokeWidth={2.5} fill="currentColor" />}
+            icon={<Star size={16} strokeWidth={2} fill="currentColor" />}
           />
           <FunnelRow
             label={copy.sent}
@@ -127,7 +127,7 @@ export default function GoogleConversionPanel({
             color="#10b981"
             bg="bg-emerald-50"
             text="text-emerald-600"
-            icon={<ExternalLink size={14} strokeWidth={3} />}
+            icon={<ExternalLink size={14} strokeWidth={2} />}
           />
         </div>
 
@@ -154,7 +154,7 @@ export default function GoogleConversionPanel({
             <div className="flex-1 rounded-2xl border-2 border-red-200 bg-red-50 p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-red-500 text-white">
-                  <AlertTriangle size={16} strokeWidth={3} />
+                  <AlertTriangle size={16} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
                   <p className="flex items-baseline gap-2 text-[13px] font-black text-red-700">
@@ -176,7 +176,7 @@ export default function GoogleConversionPanel({
         <div className="rounded-2xl border border-gray-100 bg-white">
           <div className="flex items-start gap-3 border-b border-gray-100 px-4 py-4 sm:px-5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-50 text-yellow-600">
-              <Trophy size={18} strokeWidth={2.75} />
+              <Trophy size={18} strokeWidth={2} />
             </div>
             <div className="min-w-0">
               <h4 className="text-[13px] font-black text-[#1A2332]">{copy.leaderboardTitle}</h4>
@@ -223,7 +223,7 @@ function FunnelRow({
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${bg} ${text}`}>
-            {icon ?? <ArrowDownRight size={14} strokeWidth={3} />}
+            {icon ?? <ArrowDownRight size={14} strokeWidth={2} />}
           </div>
           <span className="truncate text-[11px] font-black uppercase tracking-widest text-[#2A3444]">
             {label}
@@ -284,7 +284,7 @@ function RestaurantRow({
           <p className="truncate text-[13px] font-black text-[#1A2332]">{rest.name}</p>
           {!rest.hasGoogleLink ? (
             <p className="mt-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-600">
-              <Link2Off size={11} strokeWidth={3} />
+              <Link2Off size={11} strokeWidth={2} />
               {copy.noGoogleLink} · {copy.setLink} →
             </p>
           ) : (

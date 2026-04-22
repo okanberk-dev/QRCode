@@ -78,7 +78,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
       {/* Logo */}
       <div className="border-b border-white/10 px-5 py-5">
         <Link href={`/${locale}/dashboard`} className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center flex-shrink-0"><BuazeLogo size={44} /></div>
+          <div className="flex h-11 w-11 items-center justify-center flex-shrink-0"><BuazeLogo size={44} variant="on-dark" /></div>
           <div className="min-w-0">
             <p className="text-lg font-black tracking-tight text-white">Buaze</p>
             <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-500">{copy.dashboard}</p>
@@ -102,7 +102,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <Icon size={18} strokeWidth={2.75} />
+              <Icon size={18} strokeWidth={2} />
               <span>{item.label}</span>
             </Link>
           );
@@ -113,7 +113,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
       {user.plan === 'trial' && trialDaysLeft !== null && (
         <div className="mx-3 mb-3 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4">
           <div className="mb-1.5 flex items-center gap-2 text-orange-400">
-            <Crown size={13} strokeWidth={2.75} />
+            <Crown size={13} strokeWidth={2} />
             <span className="text-[10px] font-black uppercase tracking-[0.25em]">{copy.plan}</span>
           </div>
           <p className="text-sm font-black text-white">{trialDaysLeft} {copy.trialLeft}</p>
@@ -133,7 +133,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
           onClick={handleLogout}
           className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black text-red-400 transition-all hover:bg-red-500/10 hover:text-red-300 active:scale-95"
         >
-          <LogOut size={16} strokeWidth={2.75} />
+          <LogOut size={16} strokeWidth={2} />
           {copy.logout}
         </button>
       </div>
@@ -165,7 +165,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
               onClick={() => setDrawerOpen((v) => !v)}
               className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1A2332] text-sm font-black text-[#F4B400]"
             >
-              {drawerOpen ? <X size={18} strokeWidth={2.75} /> : <span>{initial}</span>}
+              {drawerOpen ? <X size={18} strokeWidth={2} /> : <span>{initial}</span>}
             </button>
           </div>
         </div>

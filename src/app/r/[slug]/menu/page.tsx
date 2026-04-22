@@ -134,7 +134,7 @@ export default function PublicMenuPage() {
                onClick={() => window.history.back()}
                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50 text-gray-900 transition-colors"
              >
-               <ArrowLeft size={22} strokeWidth={2.5} />
+               <ArrowLeft size={22} strokeWidth={2} />
              </button>
              <h1 className="font-black text-lg tracking-tight text-[#1A2332] truncate max-w-[180px]">{data.name}</h1>
           </div>
@@ -308,7 +308,7 @@ export default function PublicMenuPage() {
                    onClick={() => setSelectedItem(null)}
                    className="absolute top-5 right-5 w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/40 transition-all active:scale-90"
                  >
-                   <X size={20} strokeWidth={3} />
+                   <X size={20} strokeWidth={2} />
                  </button>
               </div>
 

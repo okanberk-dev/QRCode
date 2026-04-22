@@ -180,7 +180,7 @@ export default function AdminDashboard() {
         {satisfactionRate !== null && (
           <div className="bg-white rounded-[20px] sm:rounded-[24px] px-4 sm:px-6 md:px-10 py-4 sm:py-6 md:py-8 text-center flex-shrink-0 relative z-10 shadow-lg border border-gray-100 self-stretch md:self-auto">
             <div className="flex items-center gap-2 justify-center mb-1.5 sm:mb-2">
-              <TrendingUp size={20} className="text-[#F4B400]" strokeWidth={3} />
+              <TrendingUp size={20} className="text-[#F4B400]" strokeWidth={2} />
               <span className="text-[10px] sm:text-[11px] text-[#6B7280] font-black uppercase tracking-widest">{t('satisfaction')}</span>
             </div>
             <p className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A2332] tracking-tighter">{satisfactionRate}%</p>
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
       {/* ─── Toolbar ─── */}
       <div className="flex flex-col md:flex-row md:items-center md:flex-wrap gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
         <label className="flex items-center gap-2 w-full md:w-auto md:flex-1 md:max-w-[220px]">
-          <Calendar size={16} strokeWidth={2.5} className="text-gray-400 shrink-0" />
+          <Calendar size={16} strokeWidth={2} className="text-gray-400 shrink-0" />
           <select
             value={daysFilter}
             onChange={(e) => { setDaysFilter(e.target.value as DaysFilter); setPage(1); }}
@@ -234,7 +234,7 @@ export default function AdminDashboard() {
           onClick={handleExport}
           className="w-full md:w-auto md:ml-auto flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 px-5 py-3 rounded-xl text-[11px] sm:text-xs font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95"
         >
-          <Download size={16} strokeWidth={3} />
+          <Download size={16} strokeWidth={2} />
           DIŞA AKTAR
         </button>
       </div>
@@ -250,28 +250,28 @@ export default function AdminDashboard() {
           href="/admin/qr"
           className="flex items-center justify-center gap-2 bg-[#1A2332] text-white px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-800 active:scale-95 transition-all"
         >
-          <QrCode size={16} strokeWidth={2.5} />
+          <QrCode size={16} strokeWidth={2} />
           <span>QR Oluştur</span>
         </Link>
         <button
           onClick={handleShowAll}
           className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
         >
-          <ListChecks size={16} strokeWidth={2.5} />
+          <ListChecks size={16} strokeWidth={2} />
           <span>Tüm Yorumlar</span>
         </button>
         <button
           onClick={handleShowLow}
           className="flex items-center justify-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-red-50 active:scale-95 transition-all"
         >
-          <AlertTriangle size={16} strokeWidth={2.5} />
+          <AlertTriangle size={16} strokeWidth={2} />
           <span>Düşük Puanlılar</span>
         </button>
         <button
           onClick={handleExport}
           className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
         >
-          <Download size={16} strokeWidth={2.5} />
+          <Download size={16} strokeWidth={2} />
           <span>CSV İndir</span>
         </button>
       </div>
@@ -281,7 +281,7 @@ export default function AdminDashboard() {
         <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
           <div className="mb-4 sm:mb-6 flex items-center gap-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <SlidersHorizontal size={20} strokeWidth={3} />
+              <SlidersHorizontal size={20} strokeWidth={2} />
             </div>
             <div className="min-w-0">
               <h3 className="text-lg sm:text-xl font-black text-[#1A2332]">Kategori Analizi</h3>
@@ -299,7 +299,7 @@ export default function AdminDashboard() {
         <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
           <div className="mb-4 sm:mb-6 flex items-center gap-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <TrendingUp size={20} strokeWidth={3} />
+              <TrendingUp size={20} strokeWidth={2} />
             </div>
             <div className="min-w-0">
               <h3 className="text-lg sm:text-xl font-black text-[#1A2332]">
@@ -325,7 +325,7 @@ export default function AdminDashboard() {
         <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
           <div className="mb-4 sm:mb-6 flex items-center gap-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
-              <Layers size={20} strokeWidth={3} />
+              <Layers size={20} strokeWidth={2} />
             </div>
             <div className="min-w-0">
               <h3 className="text-lg sm:text-xl font-black text-[#1A2332]">
@@ -347,7 +347,7 @@ export default function AdminDashboard() {
         <div className="lg:col-span-2 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden min-h-[260px] sm:min-h-[350px] md:min-h-[400px]">
           <div className="flex items-center gap-3 mb-6 sm:mb-8">
             <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <TrendingUp size={20} strokeWidth={3} />
+              <TrendingUp size={20} strokeWidth={2} />
             </div>
             <h3 className="text-lg sm:text-xl font-black text-[#1A2332]">Trend Analizi</h3>
           </div>
@@ -356,7 +356,7 @@ export default function AdminDashboard() {
         <div className="lg:col-span-1 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm overflow-hidden min-h-[260px] sm:min-h-[350px] md:min-h-[400px]">
           <div className="flex items-center gap-3 mb-6 sm:mb-8">
             <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <BarChart3 size={20} strokeWidth={3} />
+              <BarChart3 size={20} strokeWidth={2} />
             </div>
             <h3 className="text-lg sm:text-xl font-black text-[#1A2332]">Günlük Dağılım</h3>
           </div>
@@ -371,7 +371,7 @@ export default function AdminDashboard() {
            <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
              <div className="flex items-center gap-3 mb-6 sm:mb-8">
                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
-                 <Calendar size={20} strokeWidth={3} />
+                 <Calendar size={20} strokeWidth={2} />
                </div>
                <h3 className="text-lg sm:text-xl font-black text-[#1A2332]">Puan Dağılımı</h3>
              </div>
@@ -381,7 +381,7 @@ export default function AdminDashboard() {
            <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
              <div className="flex items-center gap-3 mb-6 sm:mb-8">
                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center">
-                 <TrendingUp size={20} strokeWidth={3} />
+                 <TrendingUp size={20} strokeWidth={2} />
                </div>
                <h3 className="text-lg sm:text-xl font-black text-[#1A2332]">Anahtar Kelimeler</h3>
              </div>
@@ -395,7 +395,7 @@ export default function AdminDashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h3 className="text-lg sm:text-xl font-bold text-gray-800 tracking-tight">İşletme Günlüğü</h3>
               <div className="relative w-full sm:max-w-xs">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" strokeWidth={2.5} />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" strokeWidth={2} />
                 <input
                   type="text"
                   value={searchQuery}
@@ -440,7 +440,7 @@ export default function AdminDashboard() {
                 <option value="1">1 {locale === 'tr' ? 'YILDIZ' : 'STARS'}</option>
               </select>
               <label className="flex items-center gap-1.5 flex-1 sm:flex-none min-w-[140px]">
-                <ArrowUpDown size={12} className="text-gray-400 shrink-0" strokeWidth={2.5} />
+                <ArrowUpDown size={12} className="text-gray-400 shrink-0" strokeWidth={2} />
                 <select
                   value={sortOrder}
                   onChange={(e) => { setSortOrder(e.target.value as 'asc' | 'desc'); setPage(1); }}
@@ -464,7 +464,7 @@ export default function AdminDashboard() {
                 disabled={page === 1}
                 className="p-3 rounded-2xl border border-gray-200 bg-white text-gray-700 disabled:opacity-30 shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-[0px]"
               >
-                <ArrowRight size={20} className="rotate-180" strokeWidth={2.5} />
+                <ArrowRight size={20} className="rotate-180" strokeWidth={2} />
               </button>
               <span className="px-6 py-3 bg-[#1A2332] text-white rounded-2xl font-bold text-sm shadow-md tracking-widest">
                 {page} / {totalPages}
@@ -474,7 +474,7 @@ export default function AdminDashboard() {
                 disabled={page >= totalPages}
                 className="p-3 rounded-2xl border border-gray-200 bg-white text-gray-700 disabled:opacity-30 shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-[0px]"
               >
-                <ArrowRight size={20} strokeWidth={2.5} />
+                <ArrowRight size={20} strokeWidth={2} />
               </button>
             </div>
           )}

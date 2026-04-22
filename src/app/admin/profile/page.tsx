@@ -106,7 +106,7 @@ export default function AdminProfilePage() {
         <div className="space-y-8">
           <div className="p-6 sm:p-8 bg-[#1A2332] rounded-[32px] sm:rounded-[40px] border-2 border-[#1A2332] shadow-md sm:shadow-md space-y-6">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[20px] bg-[#F4B400] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
-              <ShieldCheck size={28} className="text-[#1A2332]" strokeWidth={2.5} />
+              <ShieldCheck size={28} className="text-[#1A2332]" strokeWidth={2} />
             </div>
             <div className="space-y-2">
               <h4 className="text-white font-black uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
@@ -122,13 +122,13 @@ export default function AdminProfilePage() {
           <form onSubmit={handleSubmit} className="bg-white rounded-[24px] sm:rounded-[40px] border-2 border-[#1A2332] shadow-md sm:shadow-md p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-10">
             {error && (
               <div className="flex items-center gap-4 p-5 bg-red-50 border-2 border-red-500/20 rounded-2xl text-red-600 text-[13px] font-black uppercase tracking-widest shadow-sm">
-                <AlertCircle size={20} strokeWidth={3} className="flex-shrink-0" />
+                <AlertCircle size={20} strokeWidth={2} className="flex-shrink-0" />
                 {error}
               </div>
             )}
             {success && (
               <div className="flex items-center gap-4 p-5 bg-green-50 border-2 border-[#10b981]/20 rounded-2xl text-[#10b981] text-[13px] font-black uppercase tracking-widest shadow-sm">
-                <Check size={20} strokeWidth={3} className="flex-shrink-0" />
+                <Check size={20} strokeWidth={2} className="flex-shrink-0" />
                 {success}
               </div>
             )}
@@ -137,7 +137,7 @@ export default function AdminProfilePage() {
             <div className="space-y-6 sm:space-y-8">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
-                  <User size={16} strokeWidth={3} />
+                  <User size={16} strokeWidth={2} />
                 </div>
                 <h3 className="text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">Hesap Bilgileri</h3>
               </div>
@@ -155,7 +155,7 @@ export default function AdminProfilePage() {
             <div className="pt-6 sm:pt-10 border-t-4 border-[#F8F6F1] space-y-6 sm:space-y-8">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
-                  <Key size={16} strokeWidth={3} />
+                  <Key size={16} strokeWidth={2} />
                 </div>
                 <h3 className="text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">Şifre Değiştir</h3>
               </div>
@@ -209,12 +209,12 @@ export default function AdminProfilePage() {
             >
               {saving ? (
                 <>
-                  <Loader2 className="animate-spin" size={20} strokeWidth={3} />
+                  <Loader2 className="animate-spin" size={20} strokeWidth={2} />
                   GÜNCELLENİYOR...
                 </>
               ) : (
                 <>
-                  <ShieldCheck size={20} strokeWidth={3} />
+                  <ShieldCheck size={20} strokeWidth={2} />
                   ŞİFREYİ GÜNCELLE
                 </>
               )}

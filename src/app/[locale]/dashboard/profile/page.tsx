@@ -106,7 +106,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#F8F6F1]">
-        <Loader2 className="animate-spin text-[#1A2332] w-12 h-12" strokeWidth={3} />
+        <Loader2 className="animate-spin text-[#1A2332] w-12 h-12" strokeWidth={2} />
       </div>
     );
   }
@@ -120,7 +120,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
           className="inline-flex items-center gap-2 text-xs font-black text-[#2A3444] hover:text-[#1A2332] transition-all uppercase tracking-widest group"
         >
           <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#1A2332] flex items-center justify-center shadow-md group-hover:translate-y-0.5 group-hover:shadow-none transition-all">
-            <ArrowLeft size={16} strokeWidth={3} />
+            <ArrowLeft size={16} strokeWidth={2} />
           </div>
           {locale === 'tr' ? 'Dashboard\'a Dön' : 'Back to Dashboard'}
         </Link>
@@ -139,7 +139,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
 
             <div className="p-6 sm:p-8 bg-[#1A2332] rounded-[32px] sm:rounded-[40px] border-2 border-[#1A2332] shadow-md sm:shadow-md space-y-6">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[20px] bg-[#F4B400] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
-                <ShieldCheck size={28} className="text-[#1A2332]" strokeWidth={2.5} />
+                <ShieldCheck size={28} className="text-[#1A2332]" strokeWidth={2} />
               </div>
               <div className="space-y-2">
                 <h4 className="text-white font-black uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
@@ -155,13 +155,13 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
             <form onSubmit={handleSubmit} className="bg-white rounded-[24px] sm:rounded-[40px] border-2 border-[#1A2332] shadow-md sm:shadow-md p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-10">
               {error && (
                 <div className="flex items-center gap-4 p-5 bg-red-50 border-2 border-red-500/20 rounded-2xl text-red-600 text-[13px] font-black uppercase tracking-widest shadow-sm">
-                  <AlertCircle size={20} strokeWidth={3} />
+                  <AlertCircle size={20} strokeWidth={2} />
                   {error}
                 </div>
               )}
               {success && (
                 <div className="flex items-center gap-4 p-5 bg-green-50 border-2 border-[#10b981]/20 rounded-2xl text-[#10b981] text-[13px] font-black uppercase tracking-widest shadow-sm">
-                  <Check size={20} strokeWidth={3} />
+                  <Check size={20} strokeWidth={2} />
                   {success}
                 </div>
               )}
@@ -170,7 +170,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
               <div className="space-y-6 sm:space-y-8">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
-                    <User size={16} strokeWidth={3} />
+                    <User size={16} strokeWidth={2} />
                   </div>
                   <h3 className="text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">Kişisel Bilgiler</h3>
                 </div>
@@ -203,7 +203,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
               <div className="pt-6 sm:pt-10 border-t-4 border-[#F8F6F1] space-y-6 sm:space-y-8">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
-                    <Globe size={16} strokeWidth={3} />
+                    <Globe size={16} strokeWidth={2} />
                   </div>
                   <h3 className="text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">Sistem Dili</h3>
                 </div>
@@ -225,7 +225,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
               <div className="pt-6 sm:pt-10 border-t-4 border-[#F8F6F1] space-y-6 sm:space-y-8">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
-                    <Key size={16} strokeWidth={3} />
+                    <Key size={16} strokeWidth={2} />
                   </div>
                   <h3 className="text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">Şifre Değiştir</h3>
                 </div>
@@ -273,12 +273,12 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
               >
                 {saving ? (
                   <>
-                    <Loader2 className="animate-spin" size={20} strokeWidth={3} />
+                    <Loader2 className="animate-spin" size={20} strokeWidth={2} />
                     GÜNCELLENİYOR...
                   </>
                 ) : (
                   <>
-                    <ShieldCheck size={20} strokeWidth={3} />
+                    <ShieldCheck size={20} strokeWidth={2} />
                     {t.profile_update_btn}
                   </>
                 )}

@@ -92,7 +92,7 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
                     className="flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-full bg-[#F4B400] border-[2.5px] border-[#1A2332] shadow-sm active:translate-y-[3px] active:shadow-none transition-all"
                     aria-label={item.label}
                   >
-                    <item.Icon size={22} className="text-[#1A2332]" strokeWidth={2.5} />
+                    <item.Icon size={22} className="text-[#1A2332]" strokeWidth={2} />
                   </Link>
                 </li>
               );

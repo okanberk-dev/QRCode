@@ -156,7 +156,7 @@ export default function CustomersPage() {
 
       {/* Search Bar */}
       <div className="relative group">
-        <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={20} strokeWidth={3} />
+        <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={20} strokeWidth={2} />
         <input
           type="text"
           placeholder={t('search_placeholder')}
@@ -187,7 +187,7 @@ export default function CustomersPage() {
                   <td className="px-3 py-4 sm:px-6 md:px-10">
                     <div className="flex items-center gap-3 sm:gap-4">
                       <div className="hidden sm:flex w-14 h-14 rounded-2xl bg-[#1A2332] text-[#F4B400] items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                        <User size={24} strokeWidth={2.5} />
+                        <User size={24} strokeWidth={2} />
                       </div>
                       <div className="flex flex-col min-w-0 flex-1">
                         <span className="font-black text-[#1A2332] text-[15px] sm:text-[16px] tracking-tight truncate">{customer.name || 'İsimsiz Müşteri'}</span>
@@ -226,7 +226,7 @@ export default function CustomersPage() {
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         : 'bg-white text-[#6B7280] border-[#F8F6F1]'
                     }`}>
-                      {customer.plan === 'yearly' ? <Crown size={16} strokeWidth={3} /> : customer.plan === 'monthly' ? <BadgeCheck size={16} strokeWidth={3} /> : customer.plan === 'external' ? <BadgeCheck size={16} strokeWidth={3} /> : <AlertCircle size={16} strokeWidth={3} />}
+                      {customer.plan === 'yearly' ? <Crown size={16} strokeWidth={2} /> : customer.plan === 'monthly' ? <BadgeCheck size={16} strokeWidth={2} /> : customer.plan === 'external' ? <BadgeCheck size={16} strokeWidth={2} /> : <AlertCircle size={16} strokeWidth={2} />}
                       {customer.plan === 'yearly' ? 'PLATINUM' : customer.plan === 'monthly' ? 'PRO PLAN' : customer.plan === 'external' ? 'MANUEL' : 'DENEME'}
                     </div>
                   </td>
@@ -255,14 +255,14 @@ export default function CustomersPage() {
                         className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[#1A2332] bg-white border border-gray-200 shadow-sm rounded-xl hover:bg-[#F4B400] active:translate-y-1 transition-all"
                         title={t('edit')}
                       >
-                        <Plus className="rotate-45" size={18} strokeWidth={3} />
+                        <Plus className="rotate-45" size={18} strokeWidth={2} />
                       </button>
                       <button
                         onClick={() => handleDelete(customer.id)}
                         className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#ef4444] border hover:border-[#1A2332] shadow-sm rounded-xl hover:bg-red-600 active:translate-y-1 transition-all"
                         title={t('delete')}
                       >
-                        <Trash2 size={18} strokeWidth={3} />
+                        <Trash2 size={18} strokeWidth={2} />
                       </button>
                     </div>
                   </td>

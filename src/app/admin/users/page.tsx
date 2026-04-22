@@ -187,14 +187,14 @@ export default function UsersPage() {
           onClick={() => { setEditingId(null); setFormData({ username: '', password: '', role: 'manager', restaurantId: '' }); setShowModal(true); }}
           className="flex items-center justify-center gap-2 sm:gap-3 bg-[#F4B400] text-[#1A2332] px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#F4B400] active:scale-95 transition-all group"
         >
-          <Plus size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
+          <Plus size={20} strokeWidth={2} className="group-hover:rotate-90 transition-transform" />
           YENİ HESAP AÇ
         </button>
       </div>
 
       {/* Search Bar */}
       <div className="relative group">
-        <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={20} strokeWidth={3} />
+        <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={20} strokeWidth={2} />
         <input
           type="text"
           placeholder={t('search_placeholder')}
@@ -223,7 +223,7 @@ export default function UsersPage() {
                   <td className="px-3 py-4 sm:px-6">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 shrink-0 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-500 group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors">
-                        <User size={18} strokeWidth={2.5} />
+                        <User size={18} strokeWidth={2} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <span className="font-bold text-[#1A2332] text-[14px] truncate block">{user.username}</span>
@@ -249,7 +249,7 @@ export default function UsersPage() {
                         ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
                         : 'bg-emerald-50 text-emerald-600 border-emerald-100'
                     }`}>
-                      {user.role === 'superadmin' ? <ShieldCheck size={14} strokeWidth={3} /> : <Store size={14} strokeWidth={3} />}
+                      {user.role === 'superadmin' ? <ShieldCheck size={14} strokeWidth={2} /> : <Store size={14} strokeWidth={2} />}
                       {user.role === 'superadmin' ? 'SUPER ADMIN' : 'YÖNETİCİ'}
                     </span>
                   </td>
@@ -269,14 +269,14 @@ export default function UsersPage() {
                         className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[#1A2332] bg-white border-2 border-[#1A2332] shadow-md rounded-xl hover:bg-[#F4B400] active:translate-y-1 active:shadow-none transition-all"
                         title="Düzenle"
                       >
-                        <Plus className="rotate-45" size={18} strokeWidth={3} />
+                        <Plus className="rotate-45" size={18} strokeWidth={2} />
                       </button>
                       <button
                         onClick={() => handleDelete(user.id)}
                         className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#ef4444] border-2 border-[#1A2332] shadow-md rounded-xl hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
                         title="Sil"
                       >
-                        <Trash2 size={18} strokeWidth={3} />
+                        <Trash2 size={18} strokeWidth={2} />
                       </button>
                     </div>
                   </td>
@@ -302,7 +302,7 @@ export default function UsersPage() {
                 onClick={() => { setShowModal(false); setEditingId(null); setError(''); }}
                 className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-gray-400 hover:text-[#1A2332] hover:bg-gray-100 rounded-xl transition-all"
               >
-                <X size={24} strokeWidth={3} />
+                <X size={24} strokeWidth={2} />
               </button>
             </div>
 
@@ -437,7 +437,7 @@ export default function UsersPage() {
                   disabled={isSubmitting}
                   className="flex items-center justify-center gap-2 sm:gap-3 bg-[#1A2332] text-white px-6 sm:px-10 py-3 sm:py-4 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-sm hover:scale-95 transition-all disabled:opacity-50"
                 >
-                  {isSubmitting ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <Plus size={20} className={editingId ? 'rotate-45' : ''} strokeWidth={3} />}
+                  {isSubmitting ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <Plus size={20} className={editingId ? 'rotate-45' : ''} strokeWidth={2} />}
                   {editingId ? 'GÜNCELLEMEYİ KAYDET' : 'HESABI OLUŞTUR'}
                 </button>
               </div>

@@ -145,7 +145,7 @@ export default async function PricingPage({
               <ul className="space-y-4 mb-8 sm:mb-10 flex-1">
                 {[t.pricing_feature_unlimited_qr, t.pricing_feature_feedback, locale === 'tr' ? 'Akıllı Filtreleme' : 'Smart Filtering', 'E-posta Desteği'].map(feat => (
                   <li key={feat} className="flex items-start gap-3 text-[14px] sm:text-[15px] text-[#1A2332] font-bold">
-                    <CheckCircle2 size={18} className="text-[#6B7280] flex-shrink-0 mt-0.5" strokeWidth={3} /> {feat}
+                    <CheckCircle2 size={18} className="text-[#6B7280] flex-shrink-0 mt-0.5" strokeWidth={2} /> {feat}
                   </li>
                 ))}
               </ul>
@@ -179,7 +179,7 @@ export default async function PricingPage({
               <ul className="space-y-4 mb-8 sm:mb-10 flex-1">
                 {[locale === 'tr' ? "Starter'daki Her Şey" : "Everything in Starter", locale === 'tr' ? "Çoklu Lokasyon (3'e kadar)" : "Multi-Location (up to 3)", locale === 'tr' ? 'Öncelikli Destek' : 'Priority Support', locale === 'tr' ? 'Gelişmiş Analitik' : 'Advanced Analytics'].map(feat => (
                   <li key={feat} className="flex items-start gap-3 text-[14px] sm:text-[15px] text-[#F8F6F1] font-bold">
-                    <CheckCircle2 size={18} className="text-[#F4B400] flex-shrink-0 mt-0.5" strokeWidth={3} /> {feat}
+                    <CheckCircle2 size={18} className="text-[#F4B400] flex-shrink-0 mt-0.5" strokeWidth={2} /> {feat}
                   </li>
                 ))}
               </ul>
@@ -224,7 +224,7 @@ export default async function PricingPage({
               <ul className="space-y-4 mb-8 sm:mb-10 flex-1">
                 {[locale === 'tr' ? 'Büyüme Planındaki Her Şey' : 'Everything in Growth', locale === 'tr' ? 'Sınırsız Şube' : 'Unlimited Locations', locale === 'tr' ? '7/24 Öncelikli Destek' : '24/7 Priority Support', 'API Erişimi'].map(feat => (
                   <li key={feat} className="flex items-start gap-3 text-[14px] sm:text-[15px] text-[#1A2332] font-bold">
-                    <CheckCircle2 size={18} className="text-[#10b981] flex-shrink-0 mt-0.5" strokeWidth={3} /> {feat}
+                    <CheckCircle2 size={18} className="text-[#10b981] flex-shrink-0 mt-0.5" strokeWidth={2} /> {feat}
                   </li>
                 ))}
               </ul>
@@ -320,12 +320,12 @@ export default async function PricingPage({
                       <td className="p-5 sm:p-8 text-[13px] sm:text-[15px] font-black text-[#1A2332] uppercase tracking-tighter">{row.name}</td>
                       <td className="p-5 sm:p-8 text-center border-l-2 border-[#F8F6F1]">
                         <div className="flex justify-center">
-                          {row.m ? <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#10b981] flex items-center justify-center text-white border-2 border-[#1A2332] shadow-md sm:shadow-md"><CheckCircle2 size={14} className="sm:size-[16px]" strokeWidth={3} /></div> : <span className="text-[#6B7280] font-black">—</span>}
+                          {row.m ? <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#10b981] flex items-center justify-center text-white border-2 border-[#1A2332] shadow-md sm:shadow-md"><CheckCircle2 size={14} className="sm:size-[16px]" strokeWidth={2} /></div> : <span className="text-[#6B7280] font-black">—</span>}
                         </div>
                       </td>
                       <td className="p-5 sm:p-8 text-center border-l-2 border-[#F8F6F1]">
                         <div className="flex justify-center">
-                          {row.y ? <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#F4B400] flex items-center justify-center text-[#1A2332] border-2 border-[#1A2332] shadow-md sm:shadow-md"><CheckCircle2 size={14} className="sm:size-[16px]" strokeWidth={3} /></div> : <span className="text-[#6B7280] font-black">—</span>}
+                          {row.y ? <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#F4B400] flex items-center justify-center text-[#1A2332] border-2 border-[#1A2332] shadow-md sm:shadow-md"><CheckCircle2 size={14} className="sm:size-[16px]" strokeWidth={2} /></div> : <span className="text-[#6B7280] font-black">—</span>}
                         </div>
                       </td>
                     </tr>
@@ -346,7 +346,7 @@ export default async function PricingPage({
                  <Star size={60} className="sm:size-80 fill-[#1A2332]" />
               </div>
               <div className="flex gap-1 mb-4 sm:mb-6">
-                {[1,2,3,4,5].map(s => <Star key={s} size={18} className="sm:size-[20px] fill-[#F4B400] text-[#1A2332]" strokeWidth={2.5} />)}
+                {[1,2,3,4,5].map(s => <Star key={s} size={18} className="sm:size-[20px] fill-[#F4B400] text-[#1A2332]" strokeWidth={2} />)}
               </div>
               <p className="text-[16px] sm:text-[19px] text-[#1A2332] leading-relaxed font-bold italic mb-6">“{t.text}”</p>
               <div className="flex items-center gap-4">

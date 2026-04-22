@@ -127,7 +127,7 @@ export default function DashboardRestaurantDetailPage() {
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
       <div className="flex items-center gap-3">
         <Link href={`/${locale}/dashboard/restaurants`} className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
-          <ArrowLeft size={18} strokeWidth={2.75} />
+          <ArrowLeft size={18} strokeWidth={2} />
         </Link>
         <div>
           <h1 className="text-2xl font-black text-[#1A2332]">{formData.name || (locale === 'tr' ? 'İşletme' : 'Location')}</h1>
@@ -239,7 +239,7 @@ export default function DashboardRestaurantDetailPage() {
 
         <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-6 flex items-center gap-3">
-            <ExternalLink size={18} strokeWidth={2.75} className="text-[#1A2332]" />
+            <ExternalLink size={18} strokeWidth={2} className="text-[#1A2332]" />
             <h2 className="text-lg font-black text-[#1A2332]">{locale === 'tr' ? 'Harici Bağlantılar ve Bildirimler' : 'External Links & Notifications'}</h2>
           </div>
 
@@ -318,7 +318,7 @@ export default function DashboardRestaurantDetailPage() {
             disabled={deleting}
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-black text-red-600 disabled:opacity-60"
           >
-            {deleting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 size={18} strokeWidth={2.75} />}
+            {deleting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 size={18} strokeWidth={2} />}
             {locale === 'tr' ? 'Pasife Al' : 'Deactivate'}
           </button>
 
@@ -328,7 +328,7 @@ export default function DashboardRestaurantDetailPage() {
               target="_blank"
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-[#1A2332]"
             >
-              <ExternalLink size={18} strokeWidth={2.75} />
+              <ExternalLink size={18} strokeWidth={2} />
               {locale === 'tr' ? 'Önizle' : 'Preview'}
             </Link>
             <button
@@ -336,7 +336,7 @@ export default function DashboardRestaurantDetailPage() {
               disabled={saving}
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#1A2332] px-5 py-3 text-sm font-black text-white disabled:opacity-60"
             >
-              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save size={18} strokeWidth={2.75} />}
+              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save size={18} strokeWidth={2} />}
               {locale === 'tr' ? 'Kaydet' : 'Save'}
             </button>
           </div>

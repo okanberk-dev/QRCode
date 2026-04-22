@@ -54,7 +54,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
             className="inline-flex items-center gap-2 text-xs font-black text-[#2A3444] hover:text-[#1A2332] transition-all uppercase tracking-widest group"
           >
             <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#1A2332] flex items-center justify-center shadow-md group-hover:translate-y-0.5 group-hover:shadow-none transition-all">
-              <ArrowLeft size={16} strokeWidth={3} />
+              <ArrowLeft size={16} strokeWidth={2} />
             </div>
             {locale === 'tr' ? 'Dashboard\'a Dön' : 'Back to Dashboard'}
           </Link>
@@ -114,7 +114,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-[#F4B400]">
-                <Settings size={20} strokeWidth={3} />
+                <Settings size={20} strokeWidth={2} />
                 <h4 className="font-black uppercase text-sm tracking-wide">{locale === 'tr' ? 'Düzenli Takip' : 'Regular Monitoring'}</h4>
               </div>
               <p className="text-[#6B7280] text-sm font-bold leading-relaxed">
@@ -125,7 +125,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
             </div>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-[#F4B400]">
-                <MessageSquare size={20} strokeWidth={3} />
+                <MessageSquare size={20} strokeWidth={2} />
                 <h4 className="font-black uppercase text-sm tracking-wide">{locale === 'tr' ? 'Kişiselleştirme' : 'Personalization'}</h4>
               </div>
               <p className="text-[#6B7280] text-sm font-bold leading-relaxed">

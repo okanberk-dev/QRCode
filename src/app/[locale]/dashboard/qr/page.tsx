@@ -327,7 +327,7 @@ export default function DashboardQrPage() {
           <div className="rounded-[24px] sm:rounded-[28px] border border-gray-100 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
-                <QrCode size={20} strokeWidth={3} />
+                <QrCode size={20} strokeWidth={2} />
               </div>
               <h2 className="text-lg font-black text-[#1A2332] sm:text-xl">{copy.qrPreview}</h2>
             </div>
@@ -357,7 +357,7 @@ export default function DashboardQrPage() {
                     onClick={() => setTableNumber((value) => (value && Number(value) > 1 ? String(Number(value) - 1) : ''))}
                     className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#1A2332] shadow-sm"
                   >
-                    <Minus size={18} strokeWidth={2.75} />
+                    <Minus size={18} strokeWidth={2} />
                   </button>
                   <input
                     type="text"
@@ -371,7 +371,7 @@ export default function DashboardQrPage() {
                     onClick={() => setTableNumber((value) => (value ? String(Number(value) + 1) : '1'))}
                     className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#1A2332] shadow-sm"
                   >
-                    <Plus size={18} strokeWidth={2.75} />
+                    <Plus size={18} strokeWidth={2} />
                   </button>
                 </div>
               </div>
@@ -449,7 +449,7 @@ export default function DashboardQrPage() {
                   onClick={copyUrl}
                   className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-white"
                 >
-                  {copied ? <Check size={14} strokeWidth={3} /> : <Copy size={14} strokeWidth={3} />}
+                  {copied ? <Check size={14} strokeWidth={2} /> : <Copy size={14} strokeWidth={2} />}
                   {copied ? copy.copied : copy.copy}
                 </button>
               </div>
@@ -463,19 +463,19 @@ export default function DashboardQrPage() {
                 disabled={generating || !selectedId}
                 className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#1A2332] px-4 sm:px-5 py-3 text-xs sm:text-sm font-black text-white transition-all disabled:opacity-50"
               >
-                {generating ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} strokeWidth={2.75} />}
+                {generating ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} strokeWidth={2} />}
                 {copy.refresh}
               </button>
               <button type="button" onClick={() => downloadQr('svg')} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#1A2332] shadow-sm">
-                <Download size={18} strokeWidth={2.75} />
+                <Download size={18} strokeWidth={2} />
                 SVG
               </button>
               <button type="button" onClick={() => downloadQr('png')} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#1A2332] shadow-sm">
-                <Download size={18} strokeWidth={2.75} />
+                <Download size={18} strokeWidth={2} />
                 PNG
               </button>
               <button type="button" onClick={handlePrint} className="col-span-2 sm:col-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#1A2332] shadow-sm">
-                <Printer size={18} strokeWidth={2.75} />
+                <Printer size={18} strokeWidth={2} />
                 {copy.print}
               </button>
             </div>
@@ -530,7 +530,7 @@ export default function DashboardQrPage() {
           <div className="mb-4 sm:mb-5 flex items-center justify-between gap-3">
              <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#1A2332] text-[#F4B400]">
-                   <QrCode size={20} strokeWidth={3} />
+                   <QrCode size={20} strokeWidth={2} />
                 </div>
                 <h2 className="text-lg font-black text-[#1A2332] sm:text-xl">{copy.qrPreview}</h2>
                 {selectedPlatform && PLATFORM_BADGE[selectedPlatform] && (
@@ -541,7 +541,7 @@ export default function DashboardQrPage() {
              </div>
              {duplicateWarning && (
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
-                   <AlertCircle size={12} strokeWidth={2.5} />
+                   <AlertCircle size={12} strokeWidth={2} />
                    Zaten Mevcut
                 </div>
              )}
@@ -565,7 +565,7 @@ export default function DashboardQrPage() {
             ) : qrError ? (
               <div className="flex flex-col items-center gap-3 text-center px-4">
                 <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center">
-                  <QrCode size={24} strokeWidth={2.5} className="text-red-400" />
+                  <QrCode size={24} strokeWidth={2} className="text-red-400" />
                 </div>
                 <p className="text-sm font-black text-red-500 uppercase tracking-wide">{qrError}</p>
                 <button

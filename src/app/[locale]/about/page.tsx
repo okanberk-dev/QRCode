@@ -86,7 +86,7 @@ export default async function AboutPage({
           {/* Mission */}
           <div className="bg-white p-8 sm:p-14 rounded-[32px] sm:rounded-[40px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md space-y-6 flex flex-col items-start transition-transform hover:-translate-y-2">
             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400] border-[2.5px] sm:border-[3px] border-[#1A2332] text-[#1A2332] rounded-2xl flex items-center justify-center shadow-md">
-              <Target size={28} className="sm:size-8" strokeWidth={2.5} />
+              <Target size={28} className="sm:size-8" strokeWidth={2} />
             </div>
             <h2 className="text-[26px] sm:text-[34px] font-black text-[#1A2332] tracking-tight leading-tight">{t.about_mission_title}</h2>
             <p className="text-[15px] sm:text-[17px] text-[#2A3444] leading-relaxed font-bold">{t.about_mission_desc}</p>
@@ -95,7 +95,7 @@ export default async function AboutPage({
           {/* Vision */}
           <div className="bg-[#1A2332] p-8 sm:p-14 rounded-[32px] sm:rounded-[40px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md space-y-6 flex flex-col items-start transition-transform hover:-translate-y-2">
             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400] border-[2.5px] sm:border-[3px] border-[#1A2332] text-white rounded-2xl flex items-center justify-center shadow-md">
-               <Eye size={28} className="sm:size-8" strokeWidth={2.5} />
+               <Eye size={28} className="sm:size-8" strokeWidth={2} />
             </div>
             <h2 className="text-[26px] sm:text-[34px] font-black text-white tracking-tight leading-tight">{t.about_vision_title}</h2>
             <p className="text-[15px] sm:text-[17px] text-[#6B7280] leading-relaxed font-bold">{t.about_vision_desc}</p>

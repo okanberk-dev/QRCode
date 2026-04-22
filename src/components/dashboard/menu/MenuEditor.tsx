@@ -252,7 +252,7 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 px-6 py-4 bg-white text-[#1A2332] border border-gray-200 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:bg-gray-50 active:scale-95 shadow-sm"
               >
-                <ExternalLink size={18} strokeWidth={3} />
+                <ExternalLink size={18} strokeWidth={2} />
                 ÖNİZLEME
               </a>
             )}
@@ -263,7 +263,7 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
               }}
               className="flex items-center justify-center gap-2 px-6 py-4 bg-[#F4B400] text-[#1A2332] rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-[#F4B400]/10"
             >
-              <Plus size={18} strokeWidth={3} />
+              <Plus size={18} strokeWidth={2} />
               YENİ KATEGORİ
             </button>
           </div>
@@ -281,7 +281,7 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                   onClick={handleRemoveLogo}
                   className="p-2 text-red-400 hover:text-red-500 transition-colors"
                 >
-                  <CloseIcon size={20} strokeWidth={3} />
+                  <CloseIcon size={20} strokeWidth={2} />
                 </button>
               )}
               <label className="cursor-pointer group">
@@ -372,14 +372,14 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                      className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all disabled:opacity-30"
                      title="Yukarı Taşı"
                    >
-                     <ChevronUp size={16} strokeWidth={3} />
+                     <ChevronUp size={16} strokeWidth={2} />
                    </button>
                    <button
                      onClick={() => handleReorder('category', category.id, 'down')}
                      className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all disabled:opacity-30"
                      title="Aşağı Taşı"
                    >
-                     <ChevronDown size={16} strokeWidth={3} />
+                     <ChevronDown size={16} strokeWidth={2} />
                    </button>
                 </div>
 
@@ -403,13 +403,13 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                     }}
                     className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] hover:border-[#F4B400] flex items-center justify-center transition-all shadow-sm"
                   >
-                    <Pencil size={18} strokeWidth={2.5} />
+                    <Pencil size={18} strokeWidth={2} />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category.id)}
                     className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-red-500 hover:border-red-100 flex items-center justify-center transition-all shadow-sm"
                   >
-                    <Trash2 size={18} strokeWidth={2.5} />
+                    <Trash2 size={18} strokeWidth={2} />
                   </button>
                   <div className="h-8 w-[1px] bg-gray-200 mx-2" />
                   <button
@@ -420,7 +420,7 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                     }}
                     className="flex items-center gap-2 px-4 py-2.5 bg-[#1A2332] text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg active:scale-95"
                   >
-                    <Plus size={14} strokeWidth={3} />
+                    <Plus size={14} strokeWidth={2} />
                     Ürün Ekle
                   </button>
                 </div>
@@ -468,13 +468,13 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                              onClick={() => handleReorder('item', item.id, 'up')}
                              className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all"
                            >
-                             <ChevronUp size={14} strokeWidth={3} />
+                             <ChevronUp size={14} strokeWidth={2} />
                           </button>
                           <button
                              onClick={() => handleReorder('item', item.id, 'down')}
                              className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all"
                            >
-                             <ChevronDown size={14} strokeWidth={3} />
+                             <ChevronDown size={14} strokeWidth={2} />
                           </button>
                           <div className="w-[1px] h-4 bg-gray-100 mx-1" />
                           <button
@@ -485,13 +485,13 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                             }}
                             className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-[#1A2332] flex items-center justify-center transition-all shadow-sm"
                           >
-                            <Pencil size={14} strokeWidth={2.5} />
+                            <Pencil size={14} strokeWidth={2} />
                           </button>
                           <button
                             onClick={() => handleDeleteItem(item.id)}
                             className="w-8 h-8 rounded-lg bg-white border border-gray-100 text-gray-400 hover:text-red-500 flex items-center justify-center transition-all shadow-sm"
                           >
-                            <Trash2 size={14} strokeWidth={2.5} />
+                            <Trash2 size={14} strokeWidth={2} />
                           </button>
                         </div>
                       </div>

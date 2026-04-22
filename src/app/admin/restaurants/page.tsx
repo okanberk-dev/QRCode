@@ -154,7 +154,7 @@ export default function RestaurantsPage() {
           onClick={() => setShowCreateModal(true)}
           className="flex items-center justify-center gap-2 sm:gap-3 bg-[#F4B400] text-[#1A2332] px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#F4B400] transition-all active:scale-95 group"
         >
-          <Plus size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
+          <Plus size={20} strokeWidth={2} className="group-hover:rotate-90 transition-transform" />
           Yeni İşletme
         </button>
       </div>
@@ -197,7 +197,7 @@ export default function RestaurantsPage() {
 
         {/* Search Bar */}
         <div className="relative group w-full max-w-md">
-          <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={20} strokeWidth={3} />
+          <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={20} strokeWidth={2} />
           <input
             type="text"
             placeholder={t('search_placeholder')}
@@ -212,7 +212,7 @@ export default function RestaurantsPage() {
       {restaurants.length === 0 ? (
         <div className="bg-white rounded-[24px] border border-gray-100 p-8 sm:p-16 md:p-24 text-center space-y-6 shadow-sm">
           <div className="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto border border-gray-100">
-            <Store size={48} className="text-gray-400" strokeWidth={2.5} />
+            <Store size={48} className="text-gray-400" strokeWidth={2} />
           </div>
           <div className="space-y-2">
             <h3 className="text-xl font-black text-[#1A2332]">Henüz işletme kaydı yok</h3>
@@ -222,7 +222,7 @@ export default function RestaurantsPage() {
             onClick={() => setShowCreateModal(true)}
             className="inline-flex items-center gap-3 bg-[#F4B400] text-[#1A2332] px-10 py-4 rounded-2xl text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#F4B400] transition-all active:scale-95"
           >
-            <Plus size={20} strokeWidth={3} />
+            <Plus size={20} strokeWidth={2} />
             İşletme Ekle
           </button>
         </div>
@@ -302,7 +302,7 @@ export default function RestaurantsPage() {
                     href={`/admin/restaurants/${r.id}/menu`}
                     className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-gray-700 border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all uppercase tracking-widest active:scale-95 flex items-center justify-center gap-2"
                   >
-                    <UtensilsCrossed size={14} strokeWidth={2.75} />
+                    <UtensilsCrossed size={14} strokeWidth={2} />
                     MENÜ
                   </Link>
                   <Link
@@ -310,7 +310,7 @@ export default function RestaurantsPage() {
                     className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-500 bg-white hover:text-gray-900 border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95 shrink-0"
                     title="QR KOD"
                   >
-                    <ExternalLink size={18} strokeWidth={2.5} />
+                    <ExternalLink size={18} strokeWidth={2} />
                   </Link>
                 </div>
               </div>
@@ -331,7 +331,7 @@ export default function RestaurantsPage() {
                 onClick={() => { setShowCreateModal(false); setError(''); }}
                 className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-gray-400 hover:text-[#1A2332] hover:bg-gray-100 rounded-xl transition-all"
               >
-                <X size={24} strokeWidth={3} />
+                <X size={24} strokeWidth={2} />
               </button>
             </div>
 
@@ -377,7 +377,7 @@ export default function RestaurantsPage() {
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F4B400] shadow-sm">
-                      <MapPin size={15} strokeWidth={3} className="text-[#1A2332]" />
+                      <MapPin size={15} strokeWidth={2} className="text-[#1A2332]" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-[12px] sm:text-[13px] font-black uppercase tracking-wide text-[#1A2332] leading-tight">
@@ -395,7 +395,7 @@ export default function RestaurantsPage() {
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-[#1A2332] transition-all hover:bg-[#F4B400]/20 active:scale-95"
                     aria-label="Info"
                   >
-                    <Info size={15} strokeWidth={2.75} />
+                    <Info size={15} strokeWidth={2} />
                   </button>
                 </div>
 
@@ -413,7 +413,7 @@ export default function RestaurantsPage() {
                       rel="noreferrer"
                       className="mt-3 inline-flex items-center gap-1.5 text-[#F4B400] font-black text-[11px] uppercase tracking-widest underline underline-offset-2"
                     >
-                      <ExternalLink size={12} strokeWidth={2.75} />
+                      <ExternalLink size={12} strokeWidth={2} />
                       Google Haritalar&apos;ı Aç
                     </a>
                   </div>
@@ -496,7 +496,7 @@ export default function RestaurantsPage() {
                   disabled={creating}
                   className="flex items-center justify-center gap-2 sm:gap-3 bg-[#1A2332] text-white px-6 sm:px-10 py-3 sm:py-4 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-sm hover:scale-95 transition-all disabled:opacity-50"
                 >
-                  {creating ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <Plus size={20} strokeWidth={3} />}
+                  {creating ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <Plus size={20} strokeWidth={2} />}
                   İŞLETMEYİ KAYDET
                 </button>
               </div>

@@ -59,7 +59,7 @@ export default function TrendsChart({ data }: TrendsChartProps) {
               dataKey="count" 
               name="Taramalar"
               stroke="#1A2332" 
-              strokeWidth={3}
+              strokeWidth={2}
               fillOpacity={1} 
               fill="url(#colorCount)" 
             />
@@ -69,7 +69,7 @@ export default function TrendsChart({ data }: TrendsChartProps) {
               dataKey="avgRating" 
               name="Ort. Puan"
               stroke="#F4B400" 
-              strokeWidth={3}
+              strokeWidth={2}
               dot={{ r: 4, fill: '#F4B400', strokeWidth: 2, stroke: '#fff' }}
             />
           </AreaChart>

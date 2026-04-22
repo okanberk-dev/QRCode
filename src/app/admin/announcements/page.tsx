@@ -228,7 +228,7 @@ export default function AdminAnnouncementsPage() {
           onClick={openNew}
           className="flex items-center gap-2 px-6 py-3 bg-[#F4B400] text-[#1A2332] rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#f5b914] transition-all shadow-lg shadow-[#F4B400]/10 active:scale-95"
         >
-          <Plus size={18} strokeWidth={3} />
+          <Plus size={18} strokeWidth={2} />
           Yeni Duyuru
         </button>
       </div>
@@ -281,7 +281,7 @@ export default function AdminAnnouncementsPage() {
                 }`}
               >
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${sev.chip}`}>
-                  <SevIcon size={22} strokeWidth={2.5} />
+                  <SevIcon size={22} strokeWidth={2} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
@@ -312,7 +312,7 @@ export default function AdminAnnouncementsPage() {
                     className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center transition-all"
                     title="Düzenle"
                   >
-                    <Pencil size={18} strokeWidth={2.5} />
+                    <Pencil size={18} strokeWidth={2} />
                   </button>
                   {deleteConfirm === a.id ? (
                     <div className="flex items-center gap-2">
@@ -335,7 +335,7 @@ export default function AdminAnnouncementsPage() {
                       className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-all"
                       title="Sil"
                     >
-                      <Trash2 size={18} strokeWidth={2.5} />
+                      <Trash2 size={18} strokeWidth={2} />
                     </button>
                   )}
                 </div>
@@ -352,7 +352,7 @@ export default function AdminAnnouncementsPage() {
             <div className="flex items-center justify-between p-4 sm:p-6 md:p-8 border-b border-gray-50 gap-3">
               <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 bg-[#F4B400]/10 rounded-2xl flex items-center justify-center">
-                  {editing ? <Pencil size={20} className="text-[#F4B400]" strokeWidth={3} /> : <Plus size={20} className="text-[#F4B400]" strokeWidth={3} />}
+                  {editing ? <Pencil size={20} className="text-[#F4B400]" strokeWidth={2} /> : <Plus size={20} className="text-[#F4B400]" strokeWidth={2} />}
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-lg sm:text-xl font-black text-[#1A2332] truncate">{editing ? 'Duyuruyu Düzenle' : 'Yeni Duyuru'}</h2>
@@ -363,7 +363,7 @@ export default function AdminAnnouncementsPage() {
                 onClick={() => setShowForm(false)}
                 className="w-10 h-10 shrink-0 flex items-center justify-center text-gray-400 hover:text-[#1A2332] hover:bg-gray-50 rounded-xl transition-all"
               >
-                <X size={20} strokeWidth={3} />
+                <X size={20} strokeWidth={2} />
               </button>
             </div>
 

@@ -76,7 +76,7 @@ export default async function ConsentPage({
                   ].map((item, idx) => (
                     <div key={idx} className="flex items-center gap-3 p-4 bg-white border-2 border-[#1A2332] rounded-2xl shadow-md">
                        <div className="w-5 h-5 rounded-lg bg-[#1A2332] flex items-center justify-center text-white border border-[#1A2332]">
-                          <Zap size={10} className="text-[#F4B400]" strokeWidth={3} />
+                          <Zap size={10} className="text-[#F4B400]" strokeWidth={2} />
                        </div>
                        <span className="text-[14px] font-black text-[#1A2332] uppercase tracking-tight">{item}</span>
                     </div>

@@ -423,7 +423,7 @@ function QRPageContent() {
           <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 sm:p-8 space-y-6 sm:space-y-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
-                <QrCode size={20} strokeWidth={3} />
+                <QrCode size={20} strokeWidth={2} />
               </div>
               <h3 className="text-xl font-black text-[#1A2332] uppercase tracking-tighter">Ayarlar</h3>
             </div>
@@ -456,7 +456,7 @@ function QRPageContent() {
                     onClick={() => setTableNumber(t => t && Number(t) > 1 ? String(Number(t) - 1) : '')}
                     className="w-14 h-14 rounded-xl border border-gray-200 bg-white text-gray-700 flex items-center justify-center shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
                   >
-                    <Minus size={20} strokeWidth={2.5} />
+                    <Minus size={20} strokeWidth={2} />
                   </button>
                   <input
                     type="text"
@@ -470,7 +470,7 @@ function QRPageContent() {
                     onClick={() => setTableNumber(t => t ? String(Number(t) + 1) : '1')}
                     className="w-14 h-14 rounded-xl border border-gray-200 bg-white text-gray-700 flex items-center justify-center shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
                   >
-                    <Plus size={20} strokeWidth={2.5} />
+                    <Plus size={20} strokeWidth={2} />
                   </button>
                 </div>
               </div>
@@ -524,7 +524,7 @@ function QRPageContent() {
               {/* Colour customisation */}
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1 flex items-center gap-2">
-                  <Palette size={14} strokeWidth={3} /> Renk
+                  <Palette size={14} strokeWidth={2} /> Renk
                 </label>
                 <div className="flex items-center gap-3">
                   <button
@@ -574,7 +574,7 @@ function QRPageContent() {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">
-                    <Layers size={20} strokeWidth={3} />
+                    <Layers size={20} strokeWidth={2} />
                   </div>
                   <div className="text-left">
                     <h3 className="text-sm font-black text-[#1A2332] uppercase tracking-widest">Toplu QR</h3>
@@ -619,7 +619,7 @@ function QRPageContent() {
                     disabled={batchLoading}
                     className="w-full flex items-center justify-center gap-2 bg-[#1A2332] text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm hover:bg-gray-800 disabled:opacity-60 transition-all"
                   >
-                    {batchLoading ? <Loader2 size={16} className="animate-spin" /> : <Layers size={16} strokeWidth={3} />}
+                    {batchLoading ? <Loader2 size={16} className="animate-spin" /> : <Layers size={16} strokeWidth={2} />}
                     OLUŞTUR (Maks. 50)
                   </button>
 
@@ -638,7 +638,7 @@ function QRPageContent() {
                         onClick={printBatch}
                         className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm hover:bg-gray-50"
                       >
-                        <Printer size={16} strokeWidth={2.5} /> HEPSİNİ YAZDIR
+                        <Printer size={16} strokeWidth={2} /> HEPSİNİ YAZDIR
                       </button>
                     </div>
                   )}
@@ -661,7 +661,7 @@ function QRPageContent() {
                   onClick={copyUrl}
                   className={`p-2 rounded-xl border-2 transition-all ${copied ? 'bg-green-500 border-green-400 text-white' : 'bg-white/10 border-white/10 text-white/50 hover:bg-white/20'}`}
                 >
-                  {copied ? <Check size={16} strokeWidth={3} /> : <Copy size={16} strokeWidth={3} />}
+                  {copied ? <Check size={16} strokeWidth={2} /> : <Copy size={16} strokeWidth={2} />}
                 </button>
               </div>
 
@@ -691,7 +691,7 @@ function QRPageContent() {
                   disabled={exporting || history.length === 0}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 active:scale-95 transition-all text-[10px] font-black uppercase tracking-widest shadow-sm disabled:opacity-50"
                 >
-                  {exporting ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} strokeWidth={2.5} />}
+                  {exporting ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} strokeWidth={2} />}
                   DIŞA AKTAR
                 </button>
               </div>
@@ -754,7 +754,7 @@ function QRPageContent() {
                                 : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                             }`}
                           >
-                            {copiedId === item.id ? <Check size={11} strokeWidth={3} /> : <Copy size={11} strokeWidth={3} />}
+                            {copiedId === item.id ? <Check size={11} strokeWidth={2} /> : <Copy size={11} strokeWidth={2} />}
                             {copiedId === item.id ? 'Kopyalandı' : 'Linki Kopyala'}
                           </button>
                           <button
@@ -762,7 +762,7 @@ function QRPageContent() {
                             onClick={() => downloadHistoryItem(item)}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
                           >
-                            <Download size={11} strokeWidth={3} />
+                            <Download size={11} strokeWidth={2} />
                             PNG İndir
                           </button>
                         </div>
@@ -798,7 +798,7 @@ function QRPageContent() {
               <div className="flex items-center gap-2">
                 {duplicateWarning && (
                   <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
-                    <AlertCircle size={12} strokeWidth={2.5} />
+                    <AlertCircle size={12} strokeWidth={2} />
                     Daha önce oluşturuldu
                   </div>
                 )}
@@ -807,14 +807,14 @@ function QRPageContent() {
                   disabled={generating || !selectedId}
                   className="flex items-center gap-2 text-[11px] sm:text-xs font-bold text-gray-600 hover:text-gray-900 transition-all disabled:opacity-30 border border-gray-200 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white shadow-sm hover:bg-gray-50 active:scale-95 uppercase tracking-widest"
                 >
-                  <RefreshCw size={14} strokeWidth={2.5} className={generating ? 'animate-spin' : ''} />
+                  <RefreshCw size={14} strokeWidth={2} className={generating ? 'animate-spin' : ''} />
                   YENİLE
                 </button>
               </div>
             </div>
             {duplicateWarning && (
               <div className="sm:hidden w-full mb-4 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-bold">
-                <AlertCircle size={14} strokeWidth={2.5} />
+                <AlertCircle size={14} strokeWidth={2} />
                 Bu kombinasyonla daha önce QR oluşturuldu.
               </div>
             )}
@@ -823,7 +823,7 @@ function QRPageContent() {
             <div className="flex-1 flex items-center justify-center w-full min-h-[260px] sm:min-h-[300px]">
               {generating ? (
                 <div className="flex items-center justify-center w-56 h-56 sm:w-72 sm:h-72">
-                  <Loader2 className="animate-spin text-[#1A2332] w-12 h-12" strokeWidth={3} />
+                  <Loader2 className="animate-spin text-[#1A2332] w-12 h-12" strokeWidth={2} />
                 </div>
               ) : qrSvg ? (
                 <div
@@ -832,7 +832,7 @@ function QRPageContent() {
                 />
               ) : (
                 <div className="w-56 h-56 sm:w-72 sm:h-72 bg-gray-50 rounded-[20px] sm:rounded-[24px] flex flex-col items-center justify-center border-2 border-dashed border-gray-200 text-center p-5 sm:p-8">
-                  <QrCode size={48} strokeWidth={2.5} className={`${qrError ? 'text-red-300' : 'text-gray-300'} mb-4`} />
+                  <QrCode size={48} strokeWidth={2} className={`${qrError ? 'text-red-300' : 'text-gray-300'} mb-4`} />
                   <p className={`text-[11px] sm:text-[13px] font-black uppercase tracking-widest ${qrError ? 'text-red-500' : 'text-[#6B7280]'}`}>
                     {qrError
                       ? qrError
@@ -856,7 +856,7 @@ function QRPageContent() {
             {qrSvg && (
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-3 sm:p-4 mt-6 sm:mt-10 mb-6 sm:mb-10 flex items-center gap-3 sm:gap-4 max-w-sm">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-green-100 text-green-500 flex items-center justify-center flex-shrink-0">
-                  <Check size={18} strokeWidth={3} />
+                  <Check size={18} strokeWidth={2} />
                 </div>
                 <p className="text-[11px] sm:text-[12px] font-bold text-[#2A3444] leading-tight">
                   Bu QR kodu masalara, menülere veya girişe yerleştirerek müşteri geri bildirimi toplamaya başlayın.
@@ -871,21 +871,21 @@ function QRPageContent() {
                   onClick={() => downloadQR('png')}
                   className="col-span-2 flex items-center justify-center gap-3 bg-[#1A2332] text-white px-6 sm:px-8 py-4 sm:py-5 rounded-2xl text-[12px] sm:text-[13px] font-bold uppercase tracking-widest border border-gray-800 shadow-md hover:bg-gray-800 active:scale-95 transition-all group"
                 >
-                  <Download size={20} strokeWidth={2.5} className="group-hover:translate-y-0.5 transition-transform" />
+                  <Download size={20} strokeWidth={2} className="group-hover:translate-y-0.5 transition-transform" />
                   PNG OLARAK İNDİR (HD)
                 </button>
                 <button
                   onClick={() => downloadQR('svg')}
                   className="flex items-center justify-center gap-2 sm:gap-3 bg-white text-gray-700 border border-gray-200 px-3 sm:px-6 py-3 sm:py-4 rounded-2xl text-[11px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
                 >
-                  <Download size={16} strokeWidth={2.5} />
+                  <Download size={16} strokeWidth={2} />
                   SVG
                 </button>
                 <button
                   onClick={handlePrint}
                   className="flex items-center justify-center gap-2 sm:gap-3 bg-white text-gray-700 border border-gray-200 px-3 sm:px-6 py-3 sm:py-4 rounded-2xl text-[11px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
                 >
-                  <Printer size={16} strokeWidth={2.5} />
+                  <Printer size={16} strokeWidth={2} />
                   YAZDIR
                 </button>
               </div>

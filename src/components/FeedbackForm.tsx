@@ -285,7 +285,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                   onClick={() => setShowLegalModal(null)}
                   className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white hover:shadow-sm text-gray-400 transition-all border border-transparent hover:border-gray-100"
                 >
-                  <X size={20} strokeWidth={2.5} />
+                  <X size={20} strokeWidth={2} />
                 </button>
               </div>
               <div className="p-8 max-h-[50vh] overflow-y-auto no-scrollbar scroll-smooth">

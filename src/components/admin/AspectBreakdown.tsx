@@ -113,20 +113,20 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
           >
             {isWorst && (
               <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-red-600 ring-1 ring-red-200">
-                <TrendingDown size={10} strokeWidth={3} />
+                <TrendingDown size={10} strokeWidth={2} />
                 {copy.worst}
               </span>
             )}
             {isBest && (
               <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-600 ring-1 ring-emerald-200">
-                <TrendingUp size={10} strokeWidth={3} />
+                <TrendingUp size={10} strokeWidth={2} />
                 {copy.best}
               </span>
             )}
 
             <div className="mb-3 flex items-center gap-2.5">
               <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${item.bg} ${item.text}`}>
-                <Icon size={18} strokeWidth={2.5} />
+                <Icon size={18} strokeWidth={2} />
               </div>
               <div className="min-w-0">
                 <p className="truncate text-[11px] font-black uppercase tracking-widest text-[#6B7280]">
@@ -160,7 +160,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
               </>
             ) : (
               <div className="flex items-center gap-2 py-4 text-[#6B7280]">
-                <Minus size={18} strokeWidth={3} />
+                <Minus size={18} strokeWidth={2} />
                 <span className="text-xs font-bold">—</span>
               </div>
             )}

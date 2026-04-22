@@ -63,7 +63,7 @@ export default function AdminLogin() {
         <div className="w-full p-8 sm:p-10 bg-white rounded-[32px] border-[3px] border-[#1A2332] shadow-md">
           <div className="flex justify-center mx-auto mb-8">
             <div className="w-16 h-16 bg-[#F4B400]/10 text-[#F4B400] rounded-3xl flex items-center justify-center border-2 border-[#1A2332] shadow-md">
-              <ShieldCheck size={32} strokeWidth={2.5} />
+              <ShieldCheck size={32} strokeWidth={2} />
             </div>
           </div>
           
@@ -127,7 +127,7 @@ export default function AdminLogin() {
 
         <div className="mt-10 text-center">
           <Link href="/tr/auth/login" className="inline-flex items-center gap-2 text-[13px] font-black text-[#2A3444] hover:text-[#F4B400] transition-colors border-b-2 border-transparent hover:border-[#F4B400]/30 pb-1">
-            Müşteri misiniz? Buradan giriş yapın <ArrowRight size={16} strokeWidth={2.5} />
+            Müşteri misiniz? Buradan giriş yapın <ArrowRight size={16} strokeWidth={2} />
           </Link>
         </div>
       </div>

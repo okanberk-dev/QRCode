@@ -111,7 +111,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
         role={a.severity === 'critical' ? 'alert' : 'status'}
       >
         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${style.accent}`}>
-          <Icon size={18} strokeWidth={2.5} />
+          <Icon size={18} strokeWidth={2} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-black leading-tight">{a.title}</p>
@@ -135,7 +135,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
               aria-label={copy.dismiss}
               className="h-8 w-8 rounded-xl text-current/70 hover:bg-black/5 flex items-center justify-center transition-colors"
             >
-              <X size={16} strokeWidth={2.5} />
+              <X size={16} strokeWidth={2} />
             </button>
           )}
         </div>
@@ -157,7 +157,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
           onClick={() => setExpanded((v) => !v)}
           className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-gray-500 hover:text-[#1A2332] transition-colors"
         >
-          <ChevronDown size={14} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} strokeWidth={2.75} />
+          <ChevronDown size={14} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} strokeWidth={2} />
           {expanded ? copy.less : copy.more(rest.length)}
         </button>
       )}

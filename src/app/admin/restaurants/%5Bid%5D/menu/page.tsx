@@ -50,7 +50,7 @@ export default function AdminRestaurantMenuPage() {
                onClick={() => router.back()}
                className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-95"
              >
-               <ArrowLeft size={20} strokeWidth={3} />
+               <ArrowLeft size={20} strokeWidth={2} />
              </button>
              <div>
                 <div className="flex items-center gap-2 mb-1">

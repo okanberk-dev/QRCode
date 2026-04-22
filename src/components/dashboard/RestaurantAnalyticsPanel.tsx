@@ -194,7 +194,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
             <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-4 flex items-center gap-3 sm:mb-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                  <SlidersHorizontal size={20} strokeWidth={2.75} />
+                  <SlidersHorizontal size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-lg font-black text-[#1A2332]">{copy.aspects}</h3>
@@ -209,7 +209,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
             <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-4 flex items-center gap-3 sm:mb-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                  <TrendingUp size={20} strokeWidth={2.75} />
+                  <TrendingUp size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-lg font-black text-[#1A2332]">{copy.google}</h3>
@@ -228,7 +228,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
             <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-4 flex items-center gap-3 sm:mb-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
-                  <Layers size={20} strokeWidth={2.75} />
+                  <Layers size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-lg font-black text-[#1A2332]">{copy.platforms}</h3>
@@ -243,7 +243,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
             <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                  <TrendingUp size={20} strokeWidth={2.75} />
+                  <TrendingUp size={20} strokeWidth={2} />
                 </div>
                 <h3 className="text-lg font-black text-[#1A2332]">{copy.trends}</h3>
               </div>
@@ -253,7 +253,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
             <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-500">
-                  <Calendar size={20} strokeWidth={2.75} />
+                  <Calendar size={20} strokeWidth={2} />
                 </div>
                 <h3 className="text-lg font-black text-[#1A2332]">{copy.rating}</h3>
               </div>
@@ -264,7 +264,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
           <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                <BarChart3 size={20} strokeWidth={2.75} />
+                <BarChart3 size={20} strokeWidth={2} />
               </div>
               <h3 className="text-lg font-black text-[#1A2332]">{copy.days}</h3>
             </div>

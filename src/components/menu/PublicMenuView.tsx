@@ -60,7 +60,7 @@ function BadgeChip({ badge, locale }: { badge: string; locale: 'tr' | 'en' }) {
   const Icon = meta.icon;
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${meta.cls}`}>
-      <Icon size={10} strokeWidth={3} />
+      <Icon size={10} strokeWidth={2} />
       {meta[locale]}
     </span>
   );
@@ -139,7 +139,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
           <div className="mx-auto mt-5 flex max-w-2xl flex-wrap gap-3 text-xs font-bold text-white/90">
             {restaurant.address && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur">
-                <MapPin size={12} strokeWidth={2.75} />
+                <MapPin size={12} strokeWidth={2} />
                 <span className="max-w-[60vw] truncate">{restaurant.address}</span>
               </span>
             )}
@@ -148,13 +148,13 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
                 href={`tel:${restaurant.phone.replace(/\s/g, '')}`}
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur transition-all hover:bg-white/25 active:scale-95"
               >
-                <Phone size={12} strokeWidth={2.75} />
+                <Phone size={12} strokeWidth={2} />
                 {restaurant.phone}
               </a>
             )}
             {restaurant.workingHours && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur">
-                <Clock size={12} strokeWidth={2.75} />
+                <Clock size={12} strokeWidth={2} />
                 {restaurant.workingHours}
               </span>
             )}

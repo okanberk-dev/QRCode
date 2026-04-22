@@ -114,14 +114,14 @@ export default function MembersPage() {
           onClick={fetchMembers}
           className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#F8F6F1] border border-gray-200 text-sm font-black text-[#1A2332] hover:bg-gray-100 transition-all active:scale-95"
         >
-          <RefreshCw size={16} strokeWidth={2.5} />
+          <RefreshCw size={16} strokeWidth={2} />
           YENİLE
         </button>
       </div>
 
       {success && (
         <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-2xl text-green-700 text-sm font-black">
-          <Check size={18} strokeWidth={3} /> {success}
+          <Check size={18} strokeWidth={2} /> {success}
         </div>
       )}
 
@@ -190,7 +190,7 @@ export default function MembersPage() {
                     <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
                       {m.plan === 'trial' && m.trialEndsAt ? (
                         <span className={`text-xs font-black flex items-center gap-1.5 ${trialExpired ? 'text-red-500' : trialSoon ? 'text-orange-500' : 'text-[#2A3444]'}`}>
-                          {trialExpired ? <AlertTriangle size={14} strokeWidth={3} /> : null}
+                          {trialExpired ? <AlertTriangle size={14} strokeWidth={2} /> : null}
                           {trialExpired
                             ? `Süresi doldu (${Math.abs(dl!)} gün önce)`
                             : `${dl} gün kaldı`}
@@ -201,7 +201,7 @@ export default function MembersPage() {
                     </td>
                     <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-[#2A3444]">
-                        <Store size={14} strokeWidth={2.5} />
+                        <Store size={14} strokeWidth={2} />
                         {m._count.restaurants}
                       </div>
                     </td>
@@ -245,7 +245,7 @@ export default function MembersPage() {
                 onClick={() => setEditingMember(null)}
                 className="p-2 text-gray-400 hover:text-[#1A2332] hover:bg-gray-100 rounded-xl transition-all"
               >
-                <X size={20} strokeWidth={3} />
+                <X size={20} strokeWidth={2} />
               </button>
             </div>
 
@@ -322,7 +322,7 @@ export default function MembersPage() {
                   disabled={saving}
                   className="flex-1 py-3 rounded-xl bg-[#1A2332] text-white text-sm font-black uppercase tracking-widest hover:bg-gray-800 disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={3} />}
+                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2} />}
                   KAYDET
                 </button>
               </div>

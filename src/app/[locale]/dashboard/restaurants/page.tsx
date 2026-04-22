@@ -221,7 +221,7 @@ export default function DashboardRestaurantsPage() {
           onClick={() => setShowCreateModal(true)}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#F4B400] px-6 py-3 text-sm font-black text-[#1A2332] shadow-sm"
         >
-          <Plus size={18} strokeWidth={2.75} />
+          <Plus size={18} strokeWidth={2} />
           {copy.add}
         </button>
       </div>
@@ -240,7 +240,7 @@ export default function DashboardRestaurantsPage() {
       {restaurants.length === 0 ? (
         <div className="rounded-[28px] border border-gray-100 bg-white px-6 py-16 text-center shadow-sm sm:px-10">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-[#F8F6F1] text-[#1A2332]">
-            <Store size={36} strokeWidth={2.5} />
+            <Store size={36} strokeWidth={2} />
           </div>
           <h2 className="text-xl font-black text-[#1A2332]">{copy.emptyTitle}</h2>
           <p className="mx-auto mt-2 max-w-lg text-sm font-bold text-[#2A3444]">{copy.emptyText}</p>
@@ -317,7 +317,7 @@ export default function DashboardRestaurantsPage() {
                       target="_blank"
                       className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-[#1A2332]"
                     >
-                      <ExternalLink size={18} strokeWidth={2.75} />
+                      <ExternalLink size={18} strokeWidth={2} />
                     </Link>
                   </div>
                 </div>
@@ -339,7 +339,7 @@ export default function DashboardRestaurantsPage() {
                 }}
                 className="absolute right-5 top-5 rounded-2xl p-2 text-[#2A3444] transition-all hover:bg-white"
               >
-                <X size={20} strokeWidth={2.75} />
+                <X size={20} strokeWidth={2} />
               </button>
             </div>
 
@@ -384,7 +384,7 @@ export default function DashboardRestaurantsPage() {
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F4B400] shadow-sm">
-                        <MapPin size={15} strokeWidth={3} className="text-[#1A2332]" />
+                        <MapPin size={15} strokeWidth={2} className="text-[#1A2332]" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-[12px] sm:text-[13px] font-black uppercase tracking-wide text-[#1A2332] leading-tight">
@@ -402,7 +402,7 @@ export default function DashboardRestaurantsPage() {
                       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-[#1A2332] transition-all hover:bg-[#F4B400]/20 active:scale-95"
                       aria-label="Info"
                     >
-                      <Info size={15} strokeWidth={2.75} />
+                      <Info size={15} strokeWidth={2} />
                     </button>
                   </div>
 
@@ -422,7 +422,7 @@ export default function DashboardRestaurantsPage() {
                         rel="noreferrer"
                         className="mt-3 inline-flex items-center gap-1.5 text-[#F4B400] font-black text-[11px] uppercase tracking-widest underline underline-offset-2"
                       >
-                        <ExternalLink size={12} strokeWidth={2.75} />
+                        <ExternalLink size={12} strokeWidth={2} />
                         {locale === 'tr' ? "Google Haritalar'ı Aç" : 'Open Google Maps'}
                       </a>
                     </div>
@@ -537,7 +537,7 @@ export default function DashboardRestaurantsPage() {
                   disabled={creating}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#1A2332] px-5 py-3 text-sm font-black text-white disabled:opacity-60"
                 >
-                  {creating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus size={18} strokeWidth={2.75} />}
+                  {creating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus size={18} strokeWidth={2} />}
                   {copy.add}
                 </button>
               </div>

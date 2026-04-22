@@ -208,7 +208,7 @@ export default function AdminBlogPage() {
             onClick={openNew}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#F4B400] text-[#1A2332] rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#f5b914] transition-all shadow-lg shadow-[#F4B400]/10 active:scale-95 whitespace-nowrap"
           >
-            <Plus size={18} strokeWidth={3} />
+            <Plus size={18} strokeWidth={2} />
             Yeni Yazı
           </button>
         </div>
@@ -304,14 +304,14 @@ export default function AdminBlogPage() {
                   className="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 hover:text-[#1A2332] hover:bg-gray-100 flex items-center justify-center transition-all"
                   title="Görüntüle"
                 >
-                  <Eye size={18} strokeWidth={2.5} />
+                  <Eye size={18} strokeWidth={2} />
                 </a>
                 <button
                   onClick={() => openEdit(post)}
                   className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center transition-all"
                   title="Düzenle"
                 >
-                  <Pencil size={18} strokeWidth={2.5} />
+                  <Pencil size={18} strokeWidth={2} />
                 </button>
                 {deleteConfirm === post.id ? (
                   <div className="flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
@@ -334,7 +334,7 @@ export default function AdminBlogPage() {
                     className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-all"
                     title="Sil"
                   >
-                    <Trash2 size={18} strokeWidth={2.5} />
+                    <Trash2 size={18} strokeWidth={2} />
                   </button>
                 )}
               </div>
@@ -351,7 +351,7 @@ export default function AdminBlogPage() {
             <div className="flex items-center justify-between p-8 border-b border-gray-50">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-[#F4B400]/10 rounded-2xl flex items-center justify-center">
-                  {editingPost ? <Pencil size={20} className="text-[#F4B400]" strokeWidth={3} /> : <Plus size={20} className="text-[#F4B400]" strokeWidth={3} />}
+                  {editingPost ? <Pencil size={20} className="text-[#F4B400]" strokeWidth={2} /> : <Plus size={20} className="text-[#F4B400]" strokeWidth={2} />}
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-[#1A2332]">{editingPost ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı'}</h2>
@@ -362,7 +362,7 @@ export default function AdminBlogPage() {
                 onClick={() => setShowForm(false)}
                 className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#1A2332] hover:bg-gray-50 rounded-xl transition-all"
               >
-                <X size={20} strokeWidth={3} />
+                <X size={20} strokeWidth={2} />
               </button>
             </div>
 

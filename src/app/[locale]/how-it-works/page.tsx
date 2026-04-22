@@ -114,7 +114,7 @@ export default async function HowItWorksPage({
                      ].map((item, idx) => (
                        <div key={idx} className="flex items-center gap-3">
                           <div className="w-6 h-6 rounded-lg bg-[#1A2332] flex items-center justify-center text-white border-2 border-[#1A2332] shadow-md">
-                             <Zap size={12} strokeWidth={3} className="text-[#F4B400]" />
+                             <Zap size={12} strokeWidth={2} className="text-[#F4B400]" />
                           </div>
                           <span className="text-[12px] sm:text-[13px] font-black text-[#1A2332] uppercase tracking-widest">{item}</span>
                        </div>
@@ -145,9 +145,9 @@ export default async function HowItWorksPage({
         <div className="max-w-[1200px] mx-auto relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
             {[
-              { icon: <MessageSquare className="text-[#F4B400] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2.5} />, t: locale === 'tr' ? 'Geri Bildirim Yönetimi' : 'Feedback Management', d: locale === 'tr' ? 'Müşteri deneyimini anlık olarak yapılandırılmış veriye dönüştürerek marka itibarınızı profesyonelce korur.' : 'Protects your brand reputation by converting customer experience into real-time structured data.' },
-              { icon: <BarChart3 className="text-[#F4B400] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2.5} />, t: locale === 'tr' ? 'Gerçek Zamanlı Analiz' : 'Real-time Analytics', d: locale === 'tr' ? 'Müşteri memnuniyet eğilimlerini anlık grafiklerle izleyin ve aksiyon alın.' : 'Monitor satisfaction trends with live charts and take immediate action.' },
-              { icon: <Zap className="text-[#F4B400] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2.5} />, t: locale === 'tr' ? 'Işık Hızında Kurulum' : 'Lightning Setup', d: locale === 'tr' ? 'Karmaşık entegrasyonlar yok. Sisteminiz 5 dakikada geri bildirim toplamaya hazır.' : 'No complex integrations. Your system is ready to collect feedback in 5 minutes.' }
+              { icon: <MessageSquare className="text-[#F4B400] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2} />, t: locale === 'tr' ? 'Geri Bildirim Yönetimi' : 'Feedback Management', d: locale === 'tr' ? 'Müşteri deneyimini anlık olarak yapılandırılmış veriye dönüştürerek marka itibarınızı profesyonelce korur.' : 'Protects your brand reputation by converting customer experience into real-time structured data.' },
+              { icon: <BarChart3 className="text-[#F4B400] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2} />, t: locale === 'tr' ? 'Gerçek Zamanlı Analiz' : 'Real-time Analytics', d: locale === 'tr' ? 'Müşteri memnuniyet eğilimlerini anlık grafiklerle izleyin ve aksiyon alın.' : 'Monitor satisfaction trends with live charts and take immediate action.' },
+              { icon: <Zap className="text-[#F4B400] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2} />, t: locale === 'tr' ? 'Işık Hızında Kurulum' : 'Lightning Setup', d: locale === 'tr' ? 'Karmaşık entegrasyonlar yok. Sisteminiz 5 dakikada geri bildirim toplamaya hazır.' : 'No complex integrations. Your system is ready to collect feedback in 5 minutes.' }
             ].map((f, i) => (
               <div key={i} className="p-8 sm:p-10 bg-white/5 rounded-[32px] sm:rounded-[40px] border-[2.5px] sm:border-[3px] border-white/10 hover:border-[#F4B400]/50 hover:bg-white/10 transition-all group">
                  <div className="mb-6 w-14 h-14 sm:w-16 sm:h-16 bg-white/5 rounded-2xl flex items-center justify-center border-2 border-white/10 group-hover:scale-110 transition-transform">{f.icon}</div>
@@ -171,7 +171,7 @@ export default async function HowItWorksPage({
               href={`${base}/auth/register`}
               className="w-full sm:w-auto group inline-flex items-center justify-center gap-3 px-10 sm:px-12 py-5 sm:py-6 bg-[#1A2332] text-white text-[17px] sm:text-[18px] font-black rounded-[20px] sm:rounded-[24px] border-[3.5px] sm:border-[4px] border-[#1A2332] shadow-sm sm:shadow-sm hover:bg-[#1A2332] transition-all active:translate-y-[6px] sm:active:translate-y-[10px] active:shadow-none uppercase tracking-widest"
             >
-              {locale === 'tr' ? 'HEMEN BAŞLA' : 'GET STARTED'} <ArrowRight className="group-hover:translate-x-2 transition-transform" strokeWidth={3} />
+              {locale === 'tr' ? 'HEMEN BAŞLA' : 'GET STARTED'} <ArrowRight className="group-hover:translate-x-2 transition-transform" strokeWidth={2} />
             </Link>
           </div>
           <p className="text-[11px] sm:text-[12px] font-black text-[#6B7280] uppercase tracking-[0.2em] leading-relaxed">

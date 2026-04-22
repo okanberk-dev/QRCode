@@ -120,7 +120,7 @@ export default async function DashboardPage({
         {user.plan === 'trial' && (
           <div className={`sm:hidden p-5 rounded-[20px] border-2 flex flex-col gap-3 shadow-md ${isTrialExpiring ? 'bg-red-50 border-red-600' : 'bg-yellow-50 border-[#F4B400]'}`}>
             <div className="flex items-center gap-3">
-              <AlertTriangle size={20} className={isTrialExpiring ? 'text-red-600' : 'text-[#F4B400]'} strokeWidth={3} />
+              <AlertTriangle size={20} className={isTrialExpiring ? 'text-red-600' : 'text-[#F4B400]'} strokeWidth={2} />
               <span className={`text-base font-black ${isTrialExpiring ? 'text-red-700' : 'text-[#F4B400]'}`}>
                 {trialDaysLeft} {t.dash_trial_days} kaldı
               </span>
@@ -172,11 +172,11 @@ export default async function DashboardPage({
           <div className="bg-white rounded-[24px] border-2 border-[#1A2332] shadow-md overflow-hidden">
             <div className="bg-[#F8F6F1] border-b-2 border-[#1A2332] px-5 sm:px-8 py-4 sm:py-5 flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
-                <Star className="text-[#F4B400]" size={18} strokeWidth={3} fill="currentColor" />
+                <Star className="text-[#F4B400]" size={18} strokeWidth={2} fill="currentColor" />
                 <h3 className="text-base sm:text-lg font-black text-[#1A2332] uppercase tracking-tighter italic">{t.dash_latest_feedbacks}</h3>
               </div>
               <Link href={`/${locale}/dashboard/feedbacks`} className="text-[10px] font-black text-[#2A3444] hover:text-[#1A2332] uppercase tracking-widest flex items-center gap-1.5">
-                {t.dash_see_all} <ArrowRight size={14} strokeWidth={3} />
+                {t.dash_see_all} <ArrowRight size={14} strokeWidth={2} />
               </Link>
             </div>
             <div className="divide-y-2 divide-[#F8F6F1]">
@@ -186,7 +186,7 @@ export default async function DashboardPage({
                     <div className="flex items-center gap-2.5">
                       <div className="flex text-[#F4B400]">
                         {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={12} fill={i < fb.rating ? "currentColor" : "none"} strokeWidth={3} />
+                          <Star key={i} size={12} fill={i < fb.rating ? "currentColor" : "none"} strokeWidth={2} />
                         ))}
                       </div>
                       <span className="text-[9px] font-black text-[#6B7280] uppercase tracking-widest">{fb.restaurant?.name}</span>
@@ -210,7 +210,7 @@ export default async function DashboardPage({
               href={`/${locale}/dashboard/restaurants`}
               className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#1A2332] text-white font-black rounded-xl border-2 border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:text-[#1A2332] active:translate-y-[2px] active:shadow-sm transition-all text-xs sm:text-sm uppercase tracking-wider"
             >
-              {t.dash_add_restaurant} <ArrowRight size={18} strokeWidth={3} />
+              {t.dash_add_restaurant} <ArrowRight size={18} strokeWidth={2} />
             </Link>
           </div>
 
@@ -290,7 +290,7 @@ export default async function DashboardPage({
               href={`/${locale}/pricing`}
               className="whitespace-nowrap flex items-center gap-3 px-8 sm:px-10 py-4 sm:py-5 bg-[#F4B400] text-[#1A2332] font-black text-base sm:text-lg rounded-xl sm:rounded-2xl border-2 border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none transition-all"
             >
-              {t.dash_upgrade} <ArrowRight size={20} strokeWidth={3} />
+              {t.dash_upgrade} <ArrowRight size={20} strokeWidth={2} />
             </Link>
           </div>
         )}

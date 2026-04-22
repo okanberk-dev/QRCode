@@ -52,7 +52,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
       <div className="space-y-5">
         <div className="rounded-2xl border-2 border-green-500/20 bg-green-50 p-5 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-green-500 text-white">
-            <Check size={22} strokeWidth={3} />
+            <Check size={22} strokeWidth={2} />
           </div>
           <p className="text-[14px] font-black text-green-700">
             {locale === 'tr' ? 'Kod gönderildi!' : 'Code sent!'}
@@ -76,7 +76,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
           className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border-[3px] border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all group"
         >
           {locale === 'tr' ? 'KODU GİR' : 'ENTER CODE'}
-          <ArrowRight size={18} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
+          <ArrowRight size={18} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />
         </button>
 
         <button
@@ -107,7 +107,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
           {locale === 'tr' ? 'E-posta Adresiniz' : 'Your Email'}
         </label>
         <div className="relative">
-          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280]" size={18} strokeWidth={2.5} />
+          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280]" size={18} strokeWidth={2} />
           <input
             id="forgot-email"
             type="email"
@@ -126,7 +126,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
         disabled={loading}
         className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border-[3px] border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
       >
-        {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <ArrowRight size={20} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />}
+        {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <ArrowRight size={20} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />}
         {loading
           ? (locale === 'tr' ? 'GÖNDERİLİYOR...' : 'SENDING...')
           : (locale === 'tr' ? 'SIFIRLAMA KODU GÖNDER' : 'SEND RESET CODE')}

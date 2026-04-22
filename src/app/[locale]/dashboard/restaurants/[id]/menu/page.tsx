@@ -334,7 +334,7 @@ export default function RestaurantMenuBuilderPage() {
             onClick={() => router.push(`/${locale}/dashboard/restaurants/${id}/menu`)}
             className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white hover:bg-white/20 active:scale-95"
           >
-            <X size={14} strokeWidth={3} />
+            <X size={14} strokeWidth={2} />
             {copy.exitPreview}
           </button>
         </div>
@@ -353,11 +353,11 @@ export default function RestaurantMenuBuilderPage() {
               href={`/${locale}/dashboard/menu`}
               className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332]"
             >
-              <ArrowLeft size={14} strokeWidth={3} />
+              <ArrowLeft size={14} strokeWidth={2} />
               {copy.backToMenus}
             </Link>
             <h1 className="flex items-center gap-3 text-2xl font-black tracking-tight text-[#1A2332] sm:text-3xl">
-              <UtensilsCrossed size={22} strokeWidth={3} />
+              <UtensilsCrossed size={22} strokeWidth={2} />
               {restaurant.name}
             </h1>
             <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#2A3444]">
@@ -372,7 +372,7 @@ export default function RestaurantMenuBuilderPage() {
               href={`/${locale}/dashboard/restaurants/${id}/menu?preview=1`}
               className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-gray-50 active:scale-95"
             >
-              <Eye size={14} strokeWidth={3} />
+              <Eye size={14} strokeWidth={2} />
               {copy.preview}
             </Link>
             {restaurant.menuPublished && (
@@ -381,7 +381,7 @@ export default function RestaurantMenuBuilderPage() {
                 target="_blank"
                 className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-gray-50 active:scale-95"
               >
-                <ChevronRight size={14} strokeWidth={3} />
+                <ChevronRight size={14} strokeWidth={2} />
                 {copy.viewPublic}
               </Link>
             )}
@@ -394,7 +394,7 @@ export default function RestaurantMenuBuilderPage() {
                   : 'bg-[#1A2332] text-white hover:bg-gray-800'
               }`}
             >
-              {publishBusy ? <Loader2 size={14} className="animate-spin" /> : restaurant.menuPublished ? <EyeOff size={14} strokeWidth={3} /> : <Eye size={14} strokeWidth={3} />}
+              {publishBusy ? <Loader2 size={14} className="animate-spin" /> : restaurant.menuPublished ? <EyeOff size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
               {restaurant.menuPublished ? copy.unpublish : copy.publish}
             </button>
           </div>
@@ -422,7 +422,7 @@ export default function RestaurantMenuBuilderPage() {
               onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#F4B400] px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F4B400] active:scale-95"
             >
-              <Plus size={12} strokeWidth={3} />
+              <Plus size={12} strokeWidth={2} />
               {copy.addCategory}
             </button>
           </div>
@@ -456,7 +456,7 @@ export default function RestaurantMenuBuilderPage() {
                         className="rounded-lg p-1 text-[#2A3444] hover:bg-gray-100 disabled:opacity-30"
                         title="Up"
                       >
-                        <ArrowUp size={14} strokeWidth={2.75} />
+                        <ArrowUp size={14} strokeWidth={2} />
                       </button>
                       <button
                         onClick={() => moveCategory(idx, 1)}
@@ -464,21 +464,21 @@ export default function RestaurantMenuBuilderPage() {
                         className="rounded-lg p-1 text-[#2A3444] hover:bg-gray-100 disabled:opacity-30"
                         title="Down"
                       >
-                        <ArrowDown size={14} strokeWidth={2.75} />
+                        <ArrowDown size={14} strokeWidth={2} />
                       </button>
                       <button
                         onClick={() => setCategoryModal({ mode: 'edit', data: c })}
                         className="rounded-lg p-1 text-[#2A3444] hover:bg-gray-100"
                         title={copy.editCategory}
                       >
-                        <Edit2 size={14} strokeWidth={2.75} />
+                        <Edit2 size={14} strokeWidth={2} />
                       </button>
                       <button
                         onClick={() => deleteCategory(c.id)}
                         className="rounded-lg p-1 text-red-500 hover:bg-red-50"
                         title={copy.delete}
                       >
-                        <Trash2 size={14} strokeWidth={2.75} />
+                        <Trash2 size={14} strokeWidth={2} />
                       </button>
                     </div>
                   </li>
@@ -504,7 +504,7 @@ export default function RestaurantMenuBuilderPage() {
                 onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#1A2332] px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-gray-800 active:scale-95"
               >
-                <Plus size={12} strokeWidth={3} />
+                <Plus size={12} strokeWidth={2} />
                 {copy.addItem}
               </button>
             )}
@@ -546,22 +546,22 @@ export default function RestaurantMenuBuilderPage() {
                   </div>
                   <div className="flex shrink-0 items-center">
                     <button onClick={() => moveItem(idx, -1)} disabled={idx === 0} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-gray-100 disabled:opacity-30">
-                      <ArrowUp size={14} strokeWidth={2.75} />
+                      <ArrowUp size={14} strokeWidth={2} />
                     </button>
                     <button onClick={() => moveItem(idx, 1)} disabled={idx === activeCategory.items.length - 1} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-gray-100 disabled:opacity-30">
-                      <ArrowDown size={14} strokeWidth={2.75} />
+                      <ArrowDown size={14} strokeWidth={2} />
                     </button>
                     <button
                       onClick={() => setItemModal({ mode: 'edit', data: { ...item, categoryId: activeCategory.id } })}
                       className="rounded-lg p-1.5 text-[#2A3444] hover:bg-gray-100"
                     >
-                      <Edit2 size={14} strokeWidth={2.75} />
+                      <Edit2 size={14} strokeWidth={2} />
                     </button>
                     <button
                       onClick={() => deleteItem(item.id)}
                       className="rounded-lg p-1.5 text-red-500 hover:bg-red-50"
                     >
-                      <Trash2 size={14} strokeWidth={2.75} />
+                      <Trash2 size={14} strokeWidth={2} />
                     </button>
                   </div>
                 </li>
@@ -765,7 +765,7 @@ function ItemModal({
                     active ? 'border-[#F4B400] bg-[#F4B400] text-[#1A2332]' : 'border-gray-200 bg-white text-[#2A3444] hover:bg-gray-50'
                   }`}
                 >
-                  {active && <Check size={10} strokeWidth={3} />}
+                  {active && <Check size={10} strokeWidth={2} />}
                   {BADGE_LABELS[b][locale]}
                 </button>
               );
@@ -801,7 +801,7 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
             onClick={onClose}
             className="absolute right-4 top-4 rounded-xl p-2 text-gray-400 transition-all hover:bg-gray-100 hover:text-[#1A2332]"
           >
-            <X size={20} strokeWidth={3} />
+            <X size={20} strokeWidth={2} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-5 sm:p-7">{children}</div>
@@ -830,7 +830,7 @@ function ModalActions({ busy, copy, onClose }: { busy: boolean; copy: Record<str
         disabled={busy}
         className="inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-gray-800 active:scale-95 disabled:opacity-50"
       >
-        {busy ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={3} />}
+        {busy ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2} />}
         {copy.save}
       </button>
     </div>

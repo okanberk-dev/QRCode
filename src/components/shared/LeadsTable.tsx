@@ -89,14 +89,14 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
           onClick={exportToCSV}
           className="flex items-center gap-2 px-6 py-3 bg-[#1A2332] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg active:scale-95"
         >
-          <Download size={16} strokeWidth={3} />
+          <Download size={16} strokeWidth={2} />
           CSV İNDİR
         </button>
       </div>
 
       {/* Search Bar */}
       <div className="relative group">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={20} strokeWidth={3} />
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={20} strokeWidth={2} />
         <input
           type="text"
           placeholder="İsim, e-posta, telefon veya işletme ara..."
@@ -136,7 +136,7 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
                     <td className="px-10 py-6">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-[#F4B400] flex items-center justify-center text-[#1A2332] shadow-sm group-hover:scale-105 transition-transform">
-                          <User size={20} strokeWidth={3} />
+                          <User size={20} strokeWidth={2} />
                         </div>
                         <div>
                           <p className="font-black text-[#1A2332] text-base tracking-tight">{lead.name || 'İsimsiz'}</p>

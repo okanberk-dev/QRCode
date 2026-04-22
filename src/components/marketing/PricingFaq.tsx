@@ -45,7 +45,7 @@ export default function PricingFaq({ faqs, title, subtitle }: PricingFaqProps) {
                 <div className={`w-10 h-10 rounded-xl border-2 border-[#1A2332] flex items-center justify-center transition-all ${openFaq === index ? 'bg-[#F4B400] rotate-180' : 'bg-white'}`}>
                   <ChevronDown
                     size={20}
-                    strokeWidth={3}
+                    strokeWidth={2}
                     className={`${openFaq === index ? 'text-[#1A2332]' : 'text-[#1A2332]'}`}
                   />
                 </div>

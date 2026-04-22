@@ -68,7 +68,7 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
               className="inline-flex items-center gap-2 text-xs font-black text-[#2A3444] hover:text-[#1A2332] transition-all uppercase tracking-widest group"
             >
               <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#1A2332] flex items-center justify-center shadow-md group-hover:translate-y-0.5 group-hover:shadow-none transition-all">
-                <ArrowLeft size={16} strokeWidth={3} />
+                <ArrowLeft size={16} strokeWidth={2} />
               </div>
               {locale === 'tr' ? 'Dashboard\'a Dön' : 'Back to Dashboard'}
             </Link>
@@ -122,7 +122,7 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
         <div className="relative">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-24 sm:py-40 bg-white rounded-[24px] sm:rounded-[40px] border-2 border-[#1A2332] shadow-md sm:shadow-md">
-              <Loader2 className="animate-spin text-[#1A2332] w-12 h-12 mb-4" strokeWidth={3} />
+              <Loader2 className="animate-spin text-[#1A2332] w-12 h-12 mb-4" strokeWidth={2} />
               <span className="text-xs font-black text-[#6B7280] uppercase tracking-[0.3em]">Yükleniyor...</span>
             </div>
           ) : feedbacks.length === 0 ? (
@@ -143,7 +143,7 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
                     disabled={page === 1}
                     className="w-14 h-14 rounded-2xl border-2 border-[#1A2332] bg-white text-[#1A2332] flex items-center justify-center shadow-sm hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all"
                   >
-                    <ChevronRight className="rotate-180" size={24} strokeWidth={3} />
+                    <ChevronRight className="rotate-180" size={24} strokeWidth={2} />
                   </button>
                   
                   <div className="px-8 h-14 rounded-2xl bg-[#1A2332] text-white flex items-center justify-center font-black text-sm tracking-widest border-2 border-[#1A2332] shadow-sm">
@@ -155,7 +155,7 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
                     disabled={page >= totalPages}
                     className="w-14 h-14 rounded-2xl border-2 border-[#1A2332] bg-white text-[#1A2332] flex items-center justify-center shadow-sm hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all"
                   >
-                    <ChevronRight size={24} strokeWidth={3} />
+                    <ChevronRight size={24} strokeWidth={2} />
                   </button>
                 </div>
               )}
@@ -177,7 +177,7 @@ export default async function FeedbacksPage({ params }: { params: Promise<{ loca
   return (
     <Suspense fallback={
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8F6F1]">
-        <Loader2 className="animate-spin text-[#1A2332] w-12 h-12 mb-4" strokeWidth={3} />
+        <Loader2 className="animate-spin text-[#1A2332] w-12 h-12 mb-4" strokeWidth={2} />
         <span className="text-xs font-black text-[#6B7280] uppercase tracking-[0.3em]">Yükleniyor...</span>
       </div>
     }>

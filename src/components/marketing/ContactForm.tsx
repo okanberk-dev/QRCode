@@ -203,7 +203,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
               !kvkkChecked ? 'opacity-40 cursor-not-allowed grayscale' : 'shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none'
             }`}
           >
-            {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <Send size={20} strokeWidth={3} />}
+            {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <Send size={20} strokeWidth={2} />}
             {t.contact_form_submit}
           </button>
         </form>

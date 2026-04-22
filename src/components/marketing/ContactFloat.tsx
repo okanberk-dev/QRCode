@@ -18,7 +18,7 @@ export function ContactFloat({ locale }: { locale: string }) {
         <path
           d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.87 9.87 0 01-4-.83L3 21l1.9-5.1C3.7 14.73 3 13.43 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
           stroke="#1A2332"
-          strokeWidth={2.5}
+          strokeWidth={2}
           strokeLinecap="round"
           strokeLinejoin="round"
         />

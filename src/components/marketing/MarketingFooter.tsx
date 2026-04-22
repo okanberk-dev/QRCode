@@ -31,7 +31,7 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
           {/* Col 1: Brand */}
           <div className="sm:col-span-2 md:col-span-1 min-w-0">
             <Link href={base} className="flex items-center gap-2 mb-5 group inline-flex">
-              <BuazeLogo size={28} className="opacity-90 group-hover:opacity-100 transition-opacity" />
+              <BuazeLogo size={28} variant="on-dark" className="opacity-90 group-hover:opacity-100 transition-opacity" />
               <span className="text-[17px] font-extrabold tracking-[-0.02em] text-white">
                 buaze<span className="text-[#F4B400]">.</span>
               </span>

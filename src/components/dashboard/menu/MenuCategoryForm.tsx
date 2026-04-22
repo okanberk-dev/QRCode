@@ -81,7 +81,7 @@ export default function MenuCategoryForm({ restaurantId, category, onClose, onSu
             onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 text-gray-400 transition-colors"
           >
-            <X size={18} strokeWidth={2.5} />
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
 
