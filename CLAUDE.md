@@ -85,11 +85,14 @@ Müşteri QR'dan gelirken URL'de `platform` parametresi taşıyor: `google | yem
 
 Renkler & label haritası şu dosyalarda tekrarlanıyor (ortak modüle çıkarma kararı: **hayır** — abstraction kaçınma ilkesi):
 - `src/components/admin/FeedbackTable.tsx` → `PLATFORM_CONFIG`
-- `src/components/admin/PlatformDistribution.tsx` → `PLATFORM_COLORS`
-- `src/app/admin/dashboard/page.tsx` → `PLATFORM_MINI`
+- `src/components/admin/PlatformDistribution.tsx` → `PLATFORM_COLORS` (tek platform dağılım bileşeni — hem admin hem owner panelinde kullanılıyor)
 - `src/app/admin/qr/page.tsx` → `PLATFORM_BADGE`
 
-Yeni bir platform eklemek gerekirse: bu 4 haritaya + `prisma/schema.prisma`'daki ilgili enum/string alanına + QR public akışına (`/r/[slug]`) ekle.
+Yeni bir platform eklemek gerekirse: bu 3 haritaya + `prisma/schema.prisma`'daki ilgili enum/string alanına + QR public akışına (`/r/[slug]`) ekle.
+
+### Platform dağılımı nerede gösteriliyor?
+- **Admin paneli** (`src/app/admin/dashboard/page.tsx`) → `<PlatformDistribution>` (detaylı bar chart + pills). Eskiden üstte ayrı bir "Platform Mini Cards" grid'i vardı — duplikasyon olduğu için kaldırıldı (2026-04).
+- **Owner paneli** (`src/components/dashboard/RestaurantAnalyticsPanel.tsx`) → `<PlatformDistribution>`. Aynı bileşen. Mobile'da da tam görünür (bar chart flex-wrap + `w-24 sm:w-28` label).
 
 ---
 
@@ -238,5 +241,5 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 
 ---
 
-_Son güncelleme: 2026-04 — Buaze marka kimliği entegrasyonu (Trust Orange + Deep Navy + DM Sans)_
+_Son güncelleme: 2026-04 — Admin panelde duplicate Platform Mini Cards kaldırıldı; owner paneline (RestaurantAnalyticsPanel) Platform Dağılımı eklendi (mobile'da da paket servis stat'ları görünür). CSV export'ta eksik `SYSTEM_FEEDBACK` import fix'lendi, `/api/feedback` rating filtresine NaN guard eklendi._
 

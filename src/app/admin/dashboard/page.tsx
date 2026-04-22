@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { Download, Loader2, TrendingUp, Calendar, BarChart3, ArrowRight, SlidersHorizontal, Layers, QrCode, ListChecks, AlertTriangle, Search, ArrowUpDown, Star } from 'lucide-react';
+import { Download, Loader2, TrendingUp, Calendar, BarChart3, ArrowRight, SlidersHorizontal, Layers, QrCode, ListChecks, AlertTriangle, Search, ArrowUpDown } from 'lucide-react';
 import StatsCards from '@/components/admin/StatsCards';
 import FeedbackTable from '@/components/admin/FeedbackTable';
 import RatingChart from '@/components/admin/RatingChart';
@@ -24,15 +24,6 @@ interface Restaurant {
 }
 
 type DaysFilter = '1' | '7' | '30' | 'month' | 'all';
-
-const PLATFORM_MINI: Array<{ key: string; label: string; barClass: string; textClass: string; bgClass: string }> = [
-  { key: 'google', label: 'Google', barClass: 'bg-[#4285F4]', textClass: 'text-[#4285F4]', bgClass: 'bg-blue-50' },
-  { key: 'yemeksepeti', label: 'Yemeksepeti', barClass: 'bg-[#FA0050]', textClass: 'text-[#FA0050]', bgClass: 'bg-red-50' },
-  { key: 'getir', label: 'Getir', barClass: 'bg-[#5D3EBC]', textClass: 'text-[#5D3EBC]', bgClass: 'bg-purple-50' },
-  { key: 'trendyol_go', label: 'Trendyol GO', barClass: 'bg-[#F27A1A]', textClass: 'text-[#F27A1A]', bgClass: 'bg-orange-50' },
-];
-
-
 
 export default function AdminDashboard() {
   const { t, locale } = useAdminTranslation();
@@ -252,42 +243,6 @@ export default function AdminDashboard() {
       <div className="w-full">
         {stats && <StatsCards stats={stats} />}
       </div>
-
-      {/* ─── Platform Mini Cards ─── */}
-      {stats?.platformDistribution && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {PLATFORM_MINI.map((p) => {
-            const found = stats.platformDistribution.find((x: any) => x.platform === p.key);
-            const count = found?.count ?? 0;
-            const avg = found?.avgRating;
-            return (
-              <div key={p.key} className="bg-white p-4 sm:p-5 rounded-[20px] border border-gray-100 shadow-sm flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className={`w-8 h-8 rounded-lg ${p.bgClass} ${p.textClass} flex items-center justify-center text-[11px] font-black`}>
-                    {p.label.charAt(0)}
-                  </span>
-                  <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wider ${p.textClass} truncate`}>{p.label}</span>
-                </div>
-                <div className="flex items-end justify-between">
-                  <div>
-                    <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Yorum</p>
-                    <p className="text-xl sm:text-2xl font-black text-[#0F2348] tabular-nums tracking-tighter">{count}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ort.</p>
-                    <p className="text-sm sm:text-base font-black text-[#0F2348] tabular-nums flex items-center gap-1">
-                      {avg != null ? avg.toFixed(1) : '—'}
-                      {avg != null && <Star size={12} fill="#FF9A14" className="text-[#FF9A14]" strokeWidth={0} />}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-
 
       {/* ─── Quick Actions ─── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

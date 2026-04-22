@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { BarChart3, Calendar, Loader2, SlidersHorizontal, TrendingUp } from 'lucide-react';
+import { BarChart3, Calendar, Layers, Loader2, SlidersHorizontal, TrendingUp } from 'lucide-react';
 import StatsCards from '@/components/admin/StatsCards';
 import RatingChart from '@/components/admin/RatingChart';
 import AspectBreakdown from '@/components/admin/AspectBreakdown';
 import GoogleConversionPanel from '@/components/admin/GoogleConversionPanel';
+import PlatformDistribution from '@/components/admin/PlatformDistribution';
 
 const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), {
   ssr: false,
@@ -58,6 +59,12 @@ interface StatsResponse {
       conversionRate: number | null;
     }>;
   };
+  platformDistribution?: Array<{
+    platform: string;
+    label: string;
+    count: number;
+    avgRating?: number | null;
+  }>;
 }
 
 interface RestaurantAnalyticsPanelProps {
@@ -83,6 +90,8 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
         aspectsSub: 'Yemek, servis ve atmosfer puanlarınızı karşılaştırın.',
         google: 'Google Yorum Dönüşümü',
         googleSub: 'Memnun müşterilerin kaçı Google\'a yorum bırakmaya yönlendiriliyor.',
+        platforms: 'Platform Dağılımı',
+        platformsSub: 'Yorumlarınızın Google, Yemeksepeti, Getir ve Trendyol GO arasındaki dağılımı.',
       }
     : {
         title: 'Advanced Analytics',
@@ -95,6 +104,8 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
         aspectsSub: 'Compare your food, service and atmosphere scores.',
         google: 'Google Review Conversion',
         googleSub: 'How many happy customers actually reach Google to leave a review.',
+        platforms: 'Platform Distribution',
+        platformsSub: 'How your reviews split across Google, Yemeksepeti, Getir and Trendyol GO.',
       };
 
   useEffect(() => {
@@ -210,6 +221,21 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
                 locale={locale}
                 hideLeaderboard={selectedRestaurant !== 'all'}
               />
+            </div>
+          )}
+
+          {stats.platformDistribution && stats.platformDistribution.length > 0 && (
+            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-4 flex items-center gap-3 sm:mb-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
+                  <Layers size={20} strokeWidth={2.75} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-black text-[#0F2348]">{copy.platforms}</h3>
+                  <p className="mt-0.5 text-xs font-bold text-[#243554]">{copy.platformsSub}</p>
+                </div>
+              </div>
+              <PlatformDistribution data={stats.platformDistribution} locale={locale} />
             </div>
           )}
 
