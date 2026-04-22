@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Target, Eye, ShieldCheck, Heart, Users, Zap } from 'lucide-react';
+import { Target, Eye, ShieldCheck, Heart, Users, Zap, TrendingUp, MessageSquare, ArrowRight } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { cookies } from 'next/headers';
@@ -15,20 +15,26 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const isTr = locale === 'tr';
+  const title = isTr ? 'Hakkımızda | Buaze — Dijital İtibar Yönetimi Platformu' : 'About Us | Buaze — Digital Reputation Management Platform';
+  const description = isTr
+    ? 'Buaze, restoranlar, oteller, klinikler ve daha fazlası için QR tabanlı müşteri geri bildirimi ve itibar yönetimi sunan Türkiye\'nin öncü SaaS platformudur. Misyonumuzu, vizyonumuzu ve değerlerimizi keşfedin.'
+    : 'Buaze is Turkey\'s leading SaaS platform offering QR-based customer feedback and reputation management for restaurants, hotels, clinics, and more. Discover our mission, vision, and values.';
   return {
-    title: {
-      absolute: locale === 'tr' ? 'Hakkımızda | Buaze' : 'About Us | Buaze'
-    },
-    description: locale === 'tr'
-      ? 'Buaze ekibini tanıyın ve işletmelerin dijital itibarını nasıl profesyonelleştirdiğimizi keşfedin.'
-      : 'Meet the Buaze team and discover how we professionalize digital reputation for businesses.',
+    title: { absolute: title },
+    description,
+    keywords: isTr
+      ? ['buaze hakkında', 'dijital itibar yönetimi şirketi', 'restoran itibar platformu', 'müşteri geri bildirim sistemi', 'QR yorum yönetimi', 'Türkiye SaaS itibar', 'google yorum artırma platform']
+      : ['about buaze', 'digital reputation management company', 'restaurant reputation platform', 'customer feedback system Turkey', 'QR review management', 'reputation SaaS Turkey'],
     openGraph: {
-      title: locale === 'tr' ? 'Hakkımızda | Buaze' : 'About Us | Buaze',
-      description: locale === 'tr' ? 'Buaze ekibini tanıyın...' : 'Meet the Buaze team...',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/about`,
+      images: [{ url: 'https://buaze.com/og-image.png', width: 1200, height: 630, alt: 'Buaze — Dijital İtibar Yönetimi' }],
     },
     alternates: {
       canonical: `https://buaze.com/${locale}/about`,
-      languages: { 'tr': 'https://buaze.com/tr/about', 'en': 'https://buaze.com/en/about' },
+      languages: { 'tr': 'https://buaze.com/tr/about', 'en': 'https://buaze.com/en/about', 'x-default': 'https://buaze.com/en/about' },
     },
   };
 }
@@ -42,6 +48,24 @@ export default async function AboutPage({
   const { locale } = await params;
   const t = getTranslations(locale);
   const base = `/${locale}`;
+  const isTr = locale === 'tr';
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: isTr ? 'Hakkımızda | Buaze' : 'About Us | Buaze',
+    url: `https://buaze.com/${locale}/about`,
+    description: isTr
+      ? 'Buaze, işletmelerin dijital itibarını yöneten ve büyüten Türkiye\'nin öncü SaaS platformudur.'
+      : 'Buaze is Turkey\'s leading SaaS platform for managing and growing digital reputation for businesses.',
+    publisher: {
+      '@type': 'Organization',
+      name: 'Buaze',
+      url: 'https://buaze.com',
+      logo: 'https://buaze.com/favicon.svg',
+      sameAs: ['https://twitter.com/buaze', 'https://www.linkedin.com/company/buaze'],
+    },
+  };
 
   const values = [
     { icon: <ShieldCheck size={22} />, title: t.about_val1_title, desc: t.about_val1_desc },
@@ -50,8 +74,19 @@ export default async function AboutPage({
     { icon: <Users size={22} />, title: t.about_val4_title, desc: t.about_val4_desc },
   ];
 
+  const numbers = [
+    { num: '500+', label: isTr ? 'Aktif İşletme' : 'Active Businesses' },
+    { num: '%92', label: isTr ? 'İtibar Artışı' : 'Reputation Growth' },
+    { num: '4.8', label: isTr ? 'Ort. Google Skoru' : 'Avg. Google Score' },
+    { num: '<5dk', label: isTr ? 'Kurulum Süresi' : 'Setup Time' },
+  ];
+
   return (
     <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Page Header ─── */}
@@ -61,7 +96,7 @@ export default async function AboutPage({
           <div className="max-w-[720px] space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md">
                <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-               <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">{locale === 'tr' ? 'BİZ KİMİZ?' : 'WHO ARE WE?'}</span>
+               <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">{isTr ? 'BİZ KİMİZ?' : 'WHO ARE WE?'}</span>
             </div>
             <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332]">
               {t.about_hero_title_1}{' '}
@@ -74,12 +109,24 @@ export default async function AboutPage({
         </div>
       </section>
 
+      {/* ─── Numbers / Social Proof ─── */}
+      <section className="py-10 sm:py-14 px-5 sm:px-8 bg-[#F4B400] border-y-[3px] sm:border-y-[4px] border-[#1A2332]">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {numbers.map((item, i) => (
+            <div key={i} className="space-y-1.5">
+              <div className="text-[32px] sm:text-[52px] font-black text-[#1A2332] tracking-tighter leading-none">{item.num}</div>
+              <div className="text-[10px] sm:text-[11px] font-black text-[#1A2332]/70 uppercase tracking-[0.15em]">{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ─── Mission & Vision (3D Cards) ─── */}
       <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1] border-t border-[#E8ECF2]">
         <div className="max-w-[1200px] mx-auto text-center mb-16 sm:mb-20">
-           <p className="text-[12px] font-black uppercase tracking-widest text-[#F4B400] mb-4">{locale === 'tr' ? 'GELECEĞİ ŞEKİLLENDİRİYORUZ' : 'SHAPING THE FUTURE'}</p>
+           <p className="text-[12px] font-black uppercase tracking-widest text-[#F4B400] mb-4">{isTr ? 'GELECEĞİ ŞEKİLLENDİRİYORUZ' : 'SHAPING THE FUTURE'}</p>
            <h2 className="text-[34px] sm:text-[56px] font-extrabold text-[#1A2332] tracking-tight leading-[1.1] sm:leading-none">
-              {locale === 'tr' ? 'Amacımız ve Vizyonumuz' : 'Our Purpose & Vision'}
+              {isTr ? 'Amacımız ve Vizyonumuz' : 'Our Purpose & Vision'}
            </h2>
         </div>
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
@@ -89,7 +136,7 @@ export default async function AboutPage({
               <Target size={28} className="sm:size-8" strokeWidth={2} />
             </div>
             <h2 className="text-[26px] sm:text-[34px] font-extrabold text-[#1A2332] tracking-tight leading-tight">{t.about_mission_title}</h2>
-            <p className="text-[15px] sm:text-[17px] text-[#2A3444] leading-relaxed font-bold">{t.about_mission_desc}</p>
+            <p className="text-[15px] sm:text-[17px] text-[#2A3444] leading-relaxed font-medium">{t.about_mission_desc}</p>
           </div>
 
           {/* Vision */}
@@ -98,21 +145,20 @@ export default async function AboutPage({
                <Eye size={28} className="sm:size-8" strokeWidth={2} />
             </div>
             <h2 className="text-[26px] sm:text-[34px] font-extrabold text-white tracking-tight leading-tight">{t.about_vision_title}</h2>
-            <p className="text-[15px] sm:text-[17px] text-white/75 leading-relaxed font-medium">{t.about_vision_desc}</p>
+            <p className="text-[15px] sm:text-[17px] text-white/85 leading-relaxed font-medium">{t.about_vision_desc}</p>
           </div>
         </div>
       </section>
 
       {/* ─── Values (Enriched 3D Grid) ─── */}
       <section className="py-20 sm:py-40 px-5 sm:px-8 bg-[#1A2332] overflow-hidden relative">
-        {/* Background decorative elements */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#F4B400]/5 rounded-full blur-[150px] -z-0" />
-        
+
         <div className="max-w-[1200px] mx-auto relative z-10">
           <div className="mb-12 sm:mb-24 space-y-4 text-center sm:text-left">
-            <p className="text-[11px] sm:text-[13px] font-black text-[#F4B400] uppercase tracking-widest">{locale === 'tr' ? 'TEMEL DEĞERLERİMİZ' : 'OUR CORE VALUES'}</p>
+            <p className="text-[11px] sm:text-[13px] font-black text-[#F4B400] uppercase tracking-widest">{isTr ? 'TEMEL DEĞERLERİMİZ' : 'OUR CORE VALUES'}</p>
             <h2 className="text-[34px] sm:text-[56px] font-extrabold text-white tracking-tight leading-[1.1] sm:leading-none">{t.about_values_title}</h2>
-            <p className="text-[15px] sm:text-[16px] font-bold text-[#6B7280] max-w-[500px] mx-auto sm:mx-0">{t.about_values_subtitle}</p>
+            <p className="text-[15px] sm:text-[16px] font-medium text-white/75 max-w-[500px] mx-auto sm:mx-0">{t.about_values_subtitle}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
@@ -122,8 +168,78 @@ export default async function AboutPage({
                   {value.icon}
                 </div>
                 <div className="space-y-2 sm:space-y-3">
-                  <h4 className="text-[18px] sm:text-[20px] font-extrabold text-white uppercase tracking-tighter leading-tight">{value.title}</h4>
-                  <p className="text-[13px] sm:text-[14px] text-[#6B7280] leading-relaxed font-bold">{value.desc}</p>
+                  <h3 className="text-[18px] sm:text-[20px] font-extrabold text-white uppercase tracking-tighter leading-tight">{value.title}</h3>
+                  <p className="text-[13px] sm:text-[14px] text-white/75 leading-relaxed font-medium">{value.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Story / Why We Built This ─── */}
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1] border-t border-[#E8ECF2]">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+          {/* Left: text */}
+          <div className="space-y-6">
+            <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#F4B400]">
+              {isTr ? 'NEDEN BULDUK?' : 'WHY WE BUILT THIS'}
+            </p>
+            <h2 className="text-[28px] sm:text-[42px] font-extrabold text-[#1A2332] tracking-tight leading-tight">
+              {isTr
+                ? 'Bir restoranın kaybettiği itibar bizi harekete geçirdi'
+                : 'A restaurant\'s lost reputation set us in motion'}
+            </h2>
+            <div className="space-y-4 text-[15px] sm:text-[16px] text-[#2A3444] leading-relaxed font-medium">
+              <p>
+                {isTr
+                  ? 'İşletme sahipleriyle konuşurken fark ettik: müşteri memnuniyetsizliği çoğu zaman işletmeye değil, doğrudan Google\'a gidiyordu. Bir yıldızlık yorum, aylar içinde kasıp kavurabiliyordu. Buna bir çözüm olmalıydı.'
+                  : 'Talking with business owners, we noticed a pattern: customer dissatisfaction was going straight to Google instead of to the business. A one-star review could do months of damage. There had to be a better way.'}
+              </p>
+              <p>
+                {isTr
+                  ? 'QR tabanlı akıllı yönlendirme fikri burada doğdu. Memnun müşteriler Google\'a, memnun olmayanlar doğrudan işletme paneline yönlendirilsin. Basit, etkili, adil.'
+                  : 'That\'s where the idea of QR-based smart routing was born. Happy customers go to Google; unhappy ones go straight to the business dashboard. Simple, effective, fair.'}
+              </p>
+              <p>
+                {isTr
+                  ? 'Bugün 500\'den fazla işletme Buaze ile itibarını yönetiyor. Her yeni müşteri, platformumuzu daha iyi hale getirmemize katkıda bulunuyor.'
+                  : 'Today, over 500 businesses manage their reputation with Buaze. Every new customer helps make our platform better.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Right: feature highlights */}
+          <div className="space-y-4">
+            {[
+              {
+                icon: <MessageSquare size={20} className="text-[#F4B400]" />,
+                title: isTr ? 'Akıllı Yönlendirme' : 'Smart Routing',
+                desc: isTr ? 'Yüksek puanlar Google\'a, düşük puanlar panele.' : 'High ratings go to Google, low ones go to your dashboard.',
+              },
+              {
+                icon: <TrendingUp size={20} className="text-[#F4B400]" />,
+                title: isTr ? 'Organik İtibar Artışı' : 'Organic Reputation Growth',
+                desc: isTr ? 'Yorum hacmi artar, Google sıralamanız yükselir.' : 'Review volume grows, your Google ranking climbs.',
+              },
+              {
+                icon: <ShieldCheck size={20} className="text-[#F4B400]" />,
+                title: isTr ? 'Kriz Öncesi Müdahale' : 'Pre-Crisis Intervention',
+                desc: isTr ? 'Sorun büyümeden fark edin ve çözün.' : 'Spot and resolve problems before they escalate.',
+              },
+              {
+                icon: <Zap size={20} className="text-[#F4B400]" />,
+                title: isTr ? '5 Dakikada Kurulum' : '5-Minute Setup',
+                desc: isTr ? 'QR kodunuzu yazdırın, masaya koyun, başlayın.' : 'Print your QR code, place it, and you\'re live.',
+              },
+            ].map((item, i) => (
+              <div key={i} className="flex gap-4 bg-white border border-[#E8ECF2] rounded-2xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all">
+                <div className="flex-shrink-0 w-10 h-10 bg-[#F4B400]/10 rounded-xl border border-[#F4B400]/20 flex items-center justify-center">
+                  {item.icon}
+                </div>
+                <div className="space-y-0.5 min-w-0">
+                  <h3 className="text-[15px] font-extrabold text-[#1A2332]">{item.title}</h3>
+                  <p className="text-[13px] text-[#2A3444] font-medium leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -134,22 +250,31 @@ export default async function AboutPage({
       {/* ─── Final CTA ─── */}
       <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1]">
         <div className="max-w-[1200px] mx-auto">
-          <div className="bg-white border sm:border border-[#1A2332] rounded-[32px] sm:rounded-[50px] p-8 sm:p-20 shadow-md sm:shadow-md flex flex-col md:flex-row items-center justify-between gap-8 sm:gap-12 text-center md:text-left relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#F4B400]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
-            <div className="space-y-4 sm:space-y-6 relative">
-              <h3 className="text-[28px] sm:text-[48px] font-extrabold text-[#1A2332] tracking-tight leading-[1.1]">
-                {locale === 'tr' ? 'Hemen başlayın, ilk 14 gün bizden.' : 'Start today, first 14 days on us.'}
+          <div className="bg-[#1A2332] rounded-[32px] sm:rounded-[50px] p-8 sm:p-20 shadow-md flex flex-col md:flex-row items-center justify-between gap-8 sm:gap-12 text-center md:text-left relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#F4B400]/8 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
+            <div className="space-y-4 sm:space-y-5 relative">
+              <h3 className="text-[28px] sm:text-[44px] font-extrabold text-white tracking-tight leading-[1.1]">
+                {isTr ? 'Hemen başlayın, ilk 14 gün bizden.' : 'Start today, first 14 days on us.'}
               </h3>
-              <p className="text-[16px] sm:text-[19px] text-[#2A3444] font-bold">
-                {locale === 'tr' ? 'Kredi kartı gerekmez, 5 dakikada kurulum.' : 'No credit card required, 5-minute setup.'}
+              <p className="text-[16px] sm:text-[18px] text-white/80 font-medium">
+                {isTr ? 'Kredi kartı gerekmez, 5 dakikada kurulum.' : 'No credit card required, 5-minute setup.'}
               </p>
             </div>
-            <Link
-              href={`${base}/auth/register`}
-              className="w-full sm:w-auto flex-shrink-0 px-10 py-5 sm:py-6 bg-[#1A2332] text-white text-[17px] sm:text-[18px] font-black rounded-[20px] sm:rounded-[24px] border sm:border border-[#1A2332] shadow-sm sm:shadow-sm hover:bg-[#1A2332] transition-all active:translate-y-[6px] sm:active:translate-y-[8px] active:shadow-none uppercase tracking-widest relative z-10"
-            >
-              {locale === 'tr' ? 'Ücretsiz Dene' : 'Start Free Trial'}
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0 relative w-full sm:w-auto">
+              <Link
+                href={`${base}/auth/register`}
+                className="flex items-center justify-center gap-2 px-8 py-5 bg-[#F4B400] text-[#1A2332] text-[16px] sm:text-[17px] font-black rounded-[20px] border border-[#F4B400] shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all uppercase tracking-wide"
+              >
+                {isTr ? 'Ücretsiz Dene' : 'Start Free Trial'}
+                <ArrowRight size={18} />
+              </Link>
+              <Link
+                href={`${base}/how-it-works`}
+                className="flex items-center justify-center gap-2 px-8 py-5 bg-white/10 text-white text-[16px] sm:text-[17px] font-bold rounded-[20px] border border-white/20 hover:bg-white/15 transition-all"
+              >
+                {isTr ? 'Nasıl Çalışır?' : 'How It Works'}
+              </Link>
+            </div>
           </div>
         </div>
       </section>

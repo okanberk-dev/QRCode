@@ -13,11 +13,21 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
   
+  const title = isTr ? 'Sıkça Sorulan Sorular | Buaze — SSS' : 'Frequently Asked Questions | Buaze — FAQ';
+  const description = isTr
+    ? 'Buaze hakkında merak ettiğiniz tüm soruların cevapları. QR itibar yönetimi, akıllı yönlendirme, fiyatlandırma ve kurulum hakkında detaylı bilgi alın.'
+    : 'Find answers to all your questions about Buaze — QR reputation management, smart routing, pricing, and setup explained in detail.';
   return {
-    title: isTr ? 'Sıkça Sorulan Sorular - Buaze' : 'Frequently Asked Questions - Buaze',
-    description: isTr 
-      ? 'Buaze hakkında merak ettiğiniz tüm soruların cevapları. İtibar yönetimi, otomasyonlar ve fiyatlandırma hakkında bilgi alın.'
-      : 'Find answers to all your questions about Buaze. Learn more about reputation management, automations, and pricing.',
+    title: { absolute: title },
+    description,
+    keywords: isTr
+      ? ['buaze sık sorulan sorular', 'dijital itibar yönetimi SSS', 'QR yorum sistemi sorular', 'itibar yönetimi nasıl çalışır']
+      : ['buaze FAQ', 'digital reputation management questions', 'QR review system FAQ', 'reputation management how it works'],
+    alternates: {
+      canonical: `https://buaze.com/${locale}/faq`,
+      languages: { 'tr': 'https://buaze.com/tr/faq', 'en': 'https://buaze.com/en/faq', 'x-default': 'https://buaze.com/en/faq' },
+    },
+    openGraph: { title, description, url: `https://buaze.com/${locale}/faq` },
   };
 }
 

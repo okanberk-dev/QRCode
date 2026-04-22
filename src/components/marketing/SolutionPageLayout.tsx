@@ -1,4 +1,4 @@
-import { Star, QrCode, ShieldCheck, TrendingUp, ArrowRight, Zap, Users } from 'lucide-react';
+import { Star, QrCode, ShieldCheck, TrendingUp, ArrowRight, Zap, Users, ChevronRight, Utensils, Hotel, Stethoscope, Scissors, Dumbbell, Scale, Home as HomeIcon, Car, Sparkles, GraduationCap, PawPrint, Building2 } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import type { Locale, Translations } from '@/lib/translations';
@@ -21,12 +21,49 @@ interface SolutionPageLayoutProps {
   benefits?: { title: string; desc: string; icon: ReactNode }[];
   faqs?: { q: string; a: string }[];
   isLoggedIn?: boolean;
+  /** URL slug for this page (e.g. "restaurants"). Auto-derived from industryKey if omitted. */
+  slug?: string;
+  /** Optional intro paragraph displayed between hero and steps sections. */
+  overview?: string;
 }
+
+const INDUSTRY_SLUG_MAP: Record<string, string> = {
+  res: 'restaurants',
+  hot: 'hotels',
+  hea: 'healthcare',
+  den: 'dentists',
+  bsa: 'beauty-salon',
+  gym: 'gym',
+  vet: 'veterinary',
+  law: 'law-firms',
+  re: 'real-estate',
+  auto: 'auto-service',
+  aes: 'aesthetic',
+  sch: 'schools',
+  bho: 'boutique-hotels',
+};
+
+const ALL_SOLUTIONS = [
+  { slug: 'restaurants', icon: <Utensils size={16} />, tr: 'Restoran & Kafeler', en: 'Restaurants & Cafes' },
+  { slug: 'hotels', icon: <Hotel size={16} />, tr: 'Oteller', en: 'Hotels' },
+  { slug: 'healthcare', icon: <Stethoscope size={16} />, tr: 'Sağlık Klinikleri', en: 'Healthcare Clinics' },
+  { slug: 'dentists', icon: <Stethoscope size={16} />, tr: 'Diş Klinikleri', en: 'Dental Clinics' },
+  { slug: 'beauty-salon', icon: <Scissors size={16} />, tr: 'Güzellik Salonları', en: 'Beauty Salons' },
+  { slug: 'gym', icon: <Dumbbell size={16} />, tr: 'Spor Salonları', en: 'Gyms & Fitness' },
+  { slug: 'veterinary', icon: <PawPrint size={16} />, tr: 'Veterinerler', en: 'Veterinary Clinics' },
+  { slug: 'law-firms', icon: <Scale size={16} />, tr: 'Hukuk Firmaları', en: 'Law Firms' },
+  { slug: 'real-estate', icon: <HomeIcon size={16} />, tr: 'Emlak', en: 'Real Estate' },
+  { slug: 'auto-service', icon: <Car size={16} />, tr: 'Araç Servisleri', en: 'Auto Services' },
+  { slug: 'aesthetic', icon: <Sparkles size={16} />, tr: 'Estetik & Kozmetik', en: 'Aesthetic & Cosmetics' },
+  { slug: 'schools', icon: <GraduationCap size={16} />, tr: 'Okullar & Kurslar', en: 'Schools & Courses' },
+  { slug: 'boutique-hotels', icon: <Building2 size={16} />, tr: 'Butik Oteller', en: 'Boutique Hotels' },
+];
 
 export default function SolutionPageLayout({
   locale,
   t,
   icon,
+  industryKey,
   industryBadge,
   h1Prefix,
   h1Suffix,
@@ -37,8 +74,13 @@ export default function SolutionPageLayout({
   benefits,
   faqs,
   isLoggedIn,
+  slug: slugProp,
+  overview,
 }: SolutionPageLayoutProps) {
   const base = `/${locale}`;
+  const currentSlug = slugProp ?? INDUSTRY_SLUG_MAP[industryKey] ?? '';
+  const canonicalUrl = `https://buaze.com/${locale}/solutions/${currentSlug}`;
+  const relatedSolutions = ALL_SOLUTIONS.filter(s => s.slug !== currentSlug).slice(0, 4);
 
   // Default steps if not provided
   const displaySteps = steps || [
@@ -97,14 +139,60 @@ export default function SolutionPageLayout({
     { num: '<5dk', label: locale === 'tr' ? 'KURULUM'      : 'SETUP',             context: locale === 'tr' ? 'Hızlı entegrasyon' : 'Fast integration' },
   ];
 
+  // JSON-LD: BreadcrumbList + optional FAQPage
+  const jsonLdSchemas: object[] = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: locale === 'tr' ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+        { '@type': 'ListItem', position: 2, name: locale === 'tr' ? 'Çözümler' : 'Solutions', item: `https://buaze.com/${locale}/solutions` },
+        { '@type': 'ListItem', position: 3, name: industryBadge, item: canonicalUrl },
+      ],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Service',
+      name: `${h1Prefix} ${h1Suffix}`,
+      description,
+      provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+      areaServed: { '@type': 'Country', name: 'Turkey' },
+      url: canonicalUrl,
+    },
+  ];
+  if (faqs && faqs.length > 0) {
+    jsonLdSchemas.push({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map(f => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+    });
+  }
+
   return (
     <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchemas) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero */}
       <section className="pt-20 sm:pt-32 pb-12 sm:pb-16 px-5 sm:px-8 bg-[#F8F6F1] relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-[150px] translate-x-1/3 -translate-y-1/3" style={{ backgroundColor: `${accentColor}0d` }} />
         <div className="max-w-[1200px] mx-auto relative content-left">
+          {/* Breadcrumb */}
+          <nav aria-label={locale === 'tr' ? 'Site yolu' : 'Breadcrumb'} className="mb-8 text-[12px] sm:text-[13px] font-medium text-[#2A3444] flex items-center flex-wrap gap-1.5">
+            <Link href={base} className="hover:text-[#1A2332] transition-colors">{locale === 'tr' ? 'Ana Sayfa' : 'Home'}</Link>
+            <ChevronRight size={14} className="text-[#6B7280]" aria-hidden />
+            <span className="text-[#2A3444]">{locale === 'tr' ? 'Çözümler' : 'Solutions'}</span>
+            <ChevronRight size={14} className="text-[#6B7280]" aria-hidden />
+            <span className="text-[#1A2332] font-bold">{industryBadge}</span>
+          </nav>
+
           <div className="max-w-[720px] space-y-6">
             <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md">
               {icon}
@@ -127,6 +215,15 @@ export default function SolutionPageLayout({
           </div>
         </div>
       </section>
+
+      {/* Overview (optional intro paragraph) */}
+      {overview && (
+        <section className="py-10 sm:py-14 px-5 sm:px-8 bg-white border-t border-[#E8ECF2]">
+          <div className="max-w-[800px] mx-auto">
+            <p className="text-[16px] sm:text-[18px] text-[#2A3444] leading-relaxed font-medium">{overview}</p>
+          </div>
+        </section>
+      )}
 
       {/* Steps */}
       <section className="py-16 sm:py-32 px-5 sm:px-8 bg-white border-y-[3px] border-[#1A2332]">
@@ -215,6 +312,37 @@ export default function SolutionPageLayout({
                   <h3 className="text-[16px] sm:text-[18px] font-extrabold text-[#1A2332] mb-4 tracking-tight leading-snug">{faq.q}</h3>
                   <p className="text-[14px] sm:text-[15px] text-[#2A3444] leading-relaxed font-bold">{faq.a}</p>
                 </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Related Solutions */}
+      {relatedSolutions.length > 0 && (
+        <section className="py-16 sm:py-20 px-5 sm:px-8 bg-[#F8F6F1] border-t border-[#E8ECF2]">
+          <div className="max-w-[1200px] mx-auto">
+            <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#F4B400] mb-4 text-center">
+              {locale === 'tr' ? 'DİĞER SEKTÖRLER' : 'OTHER INDUSTRIES'}
+            </p>
+            <h2 className="text-[22px] sm:text-[28px] font-extrabold text-[#1A2332] tracking-tight text-center mb-10">
+              {locale === 'tr' ? 'Farklı sektörler için de çözümlerimiz var' : 'We have solutions for other industries too'}
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {relatedSolutions.map(sol => (
+                <Link
+                  key={sol.slug}
+                  href={`${base}/solutions/${sol.slug}`}
+                  className="group flex items-center gap-3 bg-white border border-[#1A2332] rounded-2xl p-4 sm:p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all"
+                >
+                  <div className="flex-shrink-0 w-9 h-9 bg-[#F4B400]/10 border border-[#F4B400]/30 rounded-xl flex items-center justify-center text-[#1A2332] group-hover:bg-[#F4B400]/20 transition-colors">
+                    {sol.icon}
+                  </div>
+                  <span className="text-[13px] sm:text-[14px] font-bold text-[#1A2332] leading-tight">
+                    {locale === 'tr' ? sol.tr : sol.en}
+                  </span>
+                  <ChevronRight size={14} className="ml-auto text-[#6B7280] flex-shrink-0 group-hover:text-[#F4B400] transition-colors" />
+                </Link>
               ))}
             </div>
           </div>

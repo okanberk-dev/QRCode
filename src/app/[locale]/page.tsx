@@ -544,7 +544,7 @@ export default async function LandingPage({
                       {locale === 'tr' ? 'Komuta Merkezi' : 'Command Center'}
                     </span>
                   </h2>
-                  <p className="text-[15px] sm:text-[17px] lg:text-[18px] text-white/75 font-medium leading-relaxed max-w-[520px] text-pretty">
+                  <p className="text-[15px] sm:text-[17px] lg:text-[18px] text-white/90 font-medium leading-relaxed max-w-[520px] text-pretty">
                     {locale === 'tr'
                       ? 'Buaze sadece veri toplamaz; itibarınızı proaktif bir zırh gibi korur ve her etkileşimi kalıcı bir güvene dönüştürür.'
                       : 'Buaze doesn\'t just collect data; it protects your reputation like a proactive shield and turns every interaction into lasting trust.'}
@@ -575,7 +575,7 @@ export default async function LandingPage({
                         <h3 className="text-[16px] sm:text-[17px] font-extrabold text-white">
                           {item.title}
                         </h3>
-                        <p className="text-[13px] text-white/65 leading-relaxed">
+                        <p className="text-[13px] text-white/80 leading-relaxed">
                           {item.desc}
                         </p>
                       </div>
@@ -599,58 +599,85 @@ export default async function LandingPage({
                   </div>
                 </div>
 
-                {/* Main 3D Browser Mockup — full width on mobile, capped on desktop */}
-                <div className="relative w-full max-w-[500px] h-[340px] sm:h-[420px] lg:h-[440px] bg-[#0E1525] rounded-[24px] sm:rounded-[32px] border border-white/10 shadow-2xl shadow-[#F4B400]/10 transform lg:rotate-[-2deg] flex flex-col overflow-hidden">
+                {/* Main 3D Browser Mockup — admin panel visual language */}
+                <div className="relative w-full max-w-[500px] h-[380px] sm:h-[440px] lg:h-[460px] bg-[#0E1525] rounded-[24px] sm:rounded-[32px] border border-white/10 shadow-2xl shadow-[#F4B400]/10 transform lg:rotate-[-2deg] flex flex-col overflow-hidden">
                    {/* Browser Bar */}
-                   <div className="bg-[#1A2332] border-b border-white/10 p-4 flex gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
-                   </div>
-
-                   {/* Mock Content */}
-                   <div className="p-6 sm:p-8 space-y-6 flex-1 text-left">
-                      <div className="space-y-3">
-                         <div className="h-4 bg-white/10 w-1/3 rounded-full" />
-                         <div className="flex gap-2">
-                            {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#F4B400" strokeWidth={0} />)}
-                         </div>
+                   <div className="bg-[#1A2332] border-b border-white/10 px-4 py-3 flex items-center gap-3 flex-shrink-0">
+                      <div className="flex gap-1.5">
+                         <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
+                         <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
+                         <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
                       </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
-                            <div className="text-[10px] text-white/70 font-bold uppercase tracking-wider">{locale === 'tr' ? 'YORUMLAR' : 'REVIEWS'}</div>
-                            <div className="text-[20px] font-black text-white flex items-baseline gap-1.5">
-                              +142
-                              <span className="text-[10px] font-bold text-[#F4B400]">↑ 23%</span>
-                            </div>
-                         </div>
-                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
-                            <div className="text-[10px] text-white/70 font-bold uppercase tracking-wider">{locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION'}</div>
-                            <div className="text-[20px] font-black text-[#F4B400] flex items-baseline gap-1.5">
-                              99%
-                              <span className="text-[10px] font-bold text-white/60">4.8★</span>
-                            </div>
-                         </div>
-                      </div>
-
-                      <div className="bg-white/5 p-5 rounded-xl border border-white/10">
-                         <div className="flex justify-between items-center mb-4">
-                            <div className="h-3 bg-white/10 w-1/4 rounded-full" />
-                            <div className="h-3 bg-[#F4B400]/20 w-10 rounded-full" />
-                         </div>
-                         <div className="space-y-2">
-                            <div className="h-2 bg-white/5 w-full rounded-full overflow-hidden">
-                               <div className="h-full w-[85%] bg-[#F4B400] shadow-[0_0_15px_rgba(244,180,0,0.4)]" />
-                            </div>
-                            <div className="h-2 bg-white/5 w-full rounded-full overflow-hidden">
-                               <div className="h-full w-[65%] bg-[#F4B400] opacity-60" />
-                            </div>
-                         </div>
+                      <div className="flex-1 bg-white/8 border border-white/10 rounded-md px-3 py-1 text-[9px] sm:text-[10px] text-white/50 font-mono truncate">
+                        buaze.com/admin/dashboard
                       </div>
                    </div>
 
-                   {/* Floating Bottom Badge — inside-bounds on mobile, overflowing on desktop */}
+                   {/* Mock Dashboard Content */}
+                   <div className="p-3 sm:p-4 space-y-3 flex-1 overflow-hidden text-left">
+                      {/* Stat Cards */}
+                      <div className="grid grid-cols-2 gap-2">
+                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
+                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'TOPLAM YORUM' : 'TOTAL REVIEWS'}</div>
+                            <div className="text-[17px] sm:text-[20px] font-black text-white flex items-baseline gap-1">
+                              142
+                              <span className="text-[9px] font-bold text-[#4ade80]">↑ 23%</span>
+                            </div>
+                         </div>
+                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
+                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'ORT. PUAN' : 'AVG. SCORE'}</div>
+                            <div className="text-[17px] sm:text-[20px] font-black text-[#F4B400] flex items-baseline gap-1">
+                              4.8
+                              <span className="text-[9px] font-bold text-white/60">/ 5.0</span>
+                            </div>
+                         </div>
+                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
+                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'QR TARAMA' : 'QR SCANS'}</div>
+                            <div className="text-[17px] sm:text-[20px] font-black text-white flex items-baseline gap-1">
+                              891
+                              <span className="text-[9px] font-bold text-[#4ade80]">↑ 41%</span>
+                            </div>
+                         </div>
+                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
+                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'OLUMLU YÖN.' : 'POS. REDIRECT'}</div>
+                            <div className="text-[17px] sm:text-[20px] font-black text-[#4ade80] flex items-baseline gap-1">
+                              %82
+                              <span className="text-[9px] font-bold text-white/60">{locale === 'tr' ? 'oran' : 'rate'}</span>
+                            </div>
+                         </div>
+                      </div>
+
+                      {/* Platform Distribution */}
+                      <div className="bg-white/5 p-3 rounded-xl border border-white/10 space-y-2">
+                         <div className="text-[8px] sm:text-[9px] text-white/70 font-black uppercase tracking-wider mb-1">{locale === 'tr' ? 'PLATFORM DAĞILIMI' : 'PLATFORM BREAKDOWN'}</div>
+                         {[
+                           { label: 'Google', pct: 72, color: '#4285F4' },
+                           { label: 'Yemeksepeti', pct: 18, color: '#FA0050' },
+                           { label: 'Getir', pct: 10, color: '#5D3EBC' },
+                         ].map(p => (
+                           <div key={p.label} className="flex items-center gap-2">
+                             <span className="text-[7px] sm:text-[8px] font-bold text-white/70 w-16 sm:w-20 shrink-0">{p.label}</span>
+                             <div className="flex-1 h-1.5 bg-white/8 rounded-full overflow-hidden">
+                               <div className="h-full rounded-full" style={{ width: `${p.pct}%`, backgroundColor: p.color }} />
+                             </div>
+                             <span className="text-[7px] sm:text-[8px] font-bold text-white/60 w-6 text-right">{p.pct}%</span>
+                           </div>
+                         ))}
+                      </div>
+
+                      {/* Mini Review Row */}
+                      <div className="bg-white/5 px-3 py-2.5 rounded-xl border border-white/10 flex items-center gap-3">
+                         <div className="flex gap-0.5 flex-shrink-0">
+                            {[1,2,3,4,5].map(i => <Star key={i} size={9} fill="#F4B400" strokeWidth={0} />)}
+                         </div>
+                         <span className="text-[9px] sm:text-[10px] text-white/80 font-medium truncate">
+                           {locale === 'tr' ? '"Harika bir deneyim, kesinlikle tavsiye ederim."' : '"Great experience, highly recommend!"'}
+                         </span>
+                         <span className="text-[8px] text-white/40 font-medium flex-shrink-0">2dk</span>
+                      </div>
+                   </div>
+
+                   {/* Floating Bottom Badge */}
                    <div className="absolute bottom-3 sm:bottom-5 right-3 sm:right-5 lg:-right-8 z-20">
                       <div className="bg-[#F4B400] text-[#1A2332] p-3 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl border sm:border border-[#1A2332] shadow-md sm:shadow-md flex flex-col items-center gap-1 group cursor-default">
                          <Zap size={20} fill="#1A2332" className="group-hover:scale-110 transition-transform sm:w-6 sm:h-6" />
