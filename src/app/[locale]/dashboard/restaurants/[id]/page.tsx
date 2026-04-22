@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Loader2, Mail, Save, Trash2 } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
+import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 
 export default function DashboardRestaurantDetailPage() {
   const params = useParams();
@@ -254,7 +255,10 @@ export default function DashboardRestaurantDetailPage() {
             </label>
 
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Google Place ID / Link</span>
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f] inline-flex items-center gap-2">
+                Google Place ID / Link
+                <PlatformUrlHelp platform="google" />
+              </span>
               <input
                 type="text"
                 value={formData.googlePlaceId}
@@ -264,7 +268,10 @@ export default function DashboardRestaurantDetailPage() {
             </label>
 
             <label className="space-y-2 sm:col-span-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Getir Yemek URL</span>
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f] inline-flex items-center gap-2">
+                Getir Yemek URL
+                <PlatformUrlHelp platform="getir" />
+              </span>
               <input
                 type="url"
                 value={formData.getirYemekUrl}
@@ -275,7 +282,10 @@ export default function DashboardRestaurantDetailPage() {
             </label>
 
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Yemek Sepeti URL</span>
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f] inline-flex items-center gap-2">
+                Yemek Sepeti URL
+                <PlatformUrlHelp platform="yemeksepeti" />
+              </span>
               <input
                 type="url"
                 value={formData.yemekSepetiUrl}
@@ -286,7 +296,10 @@ export default function DashboardRestaurantDetailPage() {
             </label>
 
             <label className="space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">Trendyol Yemek URL</span>
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f] inline-flex items-center gap-2">
+                Trendyol Yemek URL
+                <PlatformUrlHelp platform="trendyol" />
+              </span>
               <input
                 type="url"
                 value={formData.trendyolYemekUrl}

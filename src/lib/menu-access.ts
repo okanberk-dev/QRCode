@@ -8,13 +8,22 @@ export async function requireRestaurantAccess(req: NextRequest, restaurantId: st
   if (!actor) {
     return { ok: false as const, res: NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 }) };
   }
-  const isAdmin = actor.role === 'superadmin' || isAdminRole(actor.role);
-  if (!isAdmin) {
-    const allowed = await canAccessRestaurant(actor, restaurantId);
-    if (!allowed) {
-      return { ok: false as const, res: NextResponse.json({ error: 'Bu restorana erişiminiz yok' }, { status: 403 }) };
+  // Superadmin: global access. Manager: scoped to their own restaurantId.
+  // Everyone else (restaurant_owner): checked via canAccessRestaurant.
+  const isSuperadmin = actor.role === 'superadmin';
+  if (!isSuperadmin) {
+    if (actor.role === 'manager') {
+      if ((actor as any).restaurantId !== restaurantId) {
+        return { ok: false as const, res: NextResponse.json({ error: 'Bu restorana erişiminiz yok' }, { status: 403 }) };
+      }
+    } else {
+      const allowed = await canAccessRestaurant(actor, restaurantId);
+      if (!allowed) {
+        return { ok: false as const, res: NextResponse.json({ error: 'Bu restorana erişiminiz yok' }, { status: 403 }) };
+      }
     }
   }
+  const isAdmin = isSuperadmin || isAdminRole(actor.role);
   return { ok: true as const, actor, isAdmin };
 }
 

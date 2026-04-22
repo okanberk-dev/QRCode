@@ -16,6 +16,7 @@ interface MenuItem {
   priceCents: number;
   currency: string;
   imageUrl: string | null;
+  isAvailable: boolean;
   isOutOfStock: boolean;
   sortOrder: number;
   badges: string[];
@@ -164,7 +165,7 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
             {/* Left Column: Image */}
             <div className="space-y-4">
                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">ÜRÜN GÖRSELİ</label>
-               <div 
+               <div
                  onClick={() => fileInputRef.current?.click()}
                  className={`relative h-56 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
                    form.imageUrl ? 'border-gray-100' : 'border-gray-200 hover:border-[#FDBF1D] hover:bg-[#FDBF1D]/5'
@@ -190,17 +191,30 @@ export default function MenuItemForm({ restaurantId, categories, item, onClose, 
                       </div>
                    </div>
                  )}
-                 <input 
-                   type="file" 
-                   ref={fileInputRef} 
-                   onChange={handleImageUpload} 
-                   accept="image/*" 
-                   className="hidden" 
+                 <input
+                   type="file"
+                   ref={fileInputRef}
+                   onChange={handleImageUpload}
+                   accept="image/*"
+                   className="hidden"
                  />
                </div>
+
+               {/* URL fallback — dosya yükleme ile sorun yaşayan kullanıcılar için */}
+               <div className="space-y-1">
+                 <label className="block text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">VEYA URL YAPIŞTIR</label>
+                 <input
+                   type="url"
+                   value={form.imageUrl || ''}
+                   onChange={(e) => setForm({ ...form, imageUrl: e.target.value || null })}
+                   placeholder="https://..."
+                   className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm"
+                 />
+               </div>
+
                {form.imageUrl && (
-                 <button 
-                   type="button" 
+                 <button
+                   type="button"
                    onClick={() => setForm({ ...form, imageUrl: null })}
                    className="flex items-center gap-2 text-[10px] font-black text-red-400 hover:text-red-500 uppercase tracking-widest pl-1"
                  >

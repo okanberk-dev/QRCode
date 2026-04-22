@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, Store } from 'lucide-react';
 import Link from 'next/link';
+import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 
 export default function RestaurantDetailPage() {
   const params = useParams();
@@ -22,6 +23,9 @@ export default function RestaurantDetailPage() {
     address: '',
     phone: '',
     googlePlaceId: '',
+    getirYemekUrl: '',
+    yemekSepetiUrl: '',
+    trendyolYemekUrl: '',
     notificationEmail: '',
     primaryColor: '#1a73e8',
     isActive: true,
@@ -40,6 +44,9 @@ export default function RestaurantDetailPage() {
             address: data.address || '',
             phone: data.phone || '',
             googlePlaceId: data.googlePlaceId || '',
+            getirYemekUrl: data.getirYemekUrl || '',
+            yemekSepetiUrl: data.yemekSepetiUrl || '',
+            trendyolYemekUrl: data.trendyolYemekUrl || '',
             notificationEmail: data.notificationEmail || '',
             primaryColor: data.primaryColor || '#1a73e8',
             isActive: data.isActive ?? true,
@@ -247,7 +254,10 @@ export default function RestaurantDetailPage() {
               <p className="text-xs text-gray-400 mt-1">1-2-3 yıldız puanlarında bu e-posta adresine bildirim gönderilir.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Google Place ID veya Harita Linki</label>
+              <label className="text-sm font-medium text-gray-700 mb-1 inline-flex items-center gap-2">
+                Google Place ID veya Harita Linki
+                <PlatformUrlHelp platform="google" />
+              </label>
               <input
                 type="text"
                 value={formData.googlePlaceId}
@@ -256,6 +266,48 @@ export default function RestaurantDetailPage() {
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#111827] focus:ring-2 focus:ring-[#111827] outline-none text-sm font-mono shadow-sm transition-all"
               />
               <p className="text-xs text-gray-400 mt-1">Mekan kimliğini ya da Google Haritalar Yorum linkini direkt ekleyebilirsiniz. Olumlu geri bildirimler buraya yönlendirilecek.</p>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 inline-flex items-center gap-2">
+                Getir Yemek URL
+                <PlatformUrlHelp platform="getir" />
+              </label>
+              <input
+                type="url"
+                value={formData.getirYemekUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, getirYemekUrl: e.target.value }))}
+                placeholder="https://getir.com/yemek/..."
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#5D3EBC] focus:ring-2 focus:ring-[#5D3EBC] outline-none text-sm shadow-sm transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 inline-flex items-center gap-2">
+                Yemek Sepeti URL
+                <PlatformUrlHelp platform="yemeksepeti" />
+              </label>
+              <input
+                type="url"
+                value={formData.yemekSepetiUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, yemekSepetiUrl: e.target.value }))}
+                placeholder="https://www.yemeksepeti.com/..."
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#FA0050] focus:ring-2 focus:ring-[#FA0050] outline-none text-sm shadow-sm transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 inline-flex items-center gap-2">
+                Trendyol Yemek URL
+                <PlatformUrlHelp platform="trendyol" />
+              </label>
+              <input
+                type="url"
+                value={formData.trendyolYemekUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, trendyolYemekUrl: e.target.value }))}
+                placeholder="https://www.trendyol.com/..."
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#F27A1A] focus:ring-2 focus:ring-[#F27A1A] outline-none text-sm shadow-sm transition-all"
+              />
             </div>
           </div>
         </div>

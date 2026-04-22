@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, ExternalLink, Eye, EyeOff, Loader2, Power, PowerOff, ShieldAlert, UtensilsCrossed } from 'lucide-react';
 import PublicMenuView, { type MenuCategoryView, type RestaurantView } from '@/components/menu/PublicMenuView';
+import MenuEditor from '@/components/dashboard/menu/MenuEditor';
 
 interface MenuState {
   restaurant: RestaurantView & { menuEnabled: boolean; menuPublished: boolean; menuUpdatedAt: string | null };
@@ -210,10 +211,26 @@ export default function AdminRestaurantMenuPage() {
         </div>
       </div>
 
+      {/* Admin edit access — superadmin/manager can directly manage the
+          restaurant's menu content (categories, items, logo) from here. */}
       <div className="overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm">
         <div className="border-b border-gray-100 bg-[#FCFBF7] p-5">
-          <h2 className="text-sm font-black uppercase tracking-widest text-[#111827]">Salt Okunur Önizleme</h2>
-          <p className="mt-1 text-[11px] font-bold text-[#6b6760]">Genel menü sayfasının tam olarak nasıl göründüğünü gösterir.</p>
+          <h2 className="text-sm font-black uppercase tracking-widest text-[#111827]">Menü Düzenle</h2>
+          <p className="mt-1 text-[11px] font-bold text-[#6b6760]">Kategorileri, ürünleri ve logoyu bu panelden doğrudan yönetebilirsiniz.</p>
+        </div>
+        <div className="p-4 sm:p-6">
+          <MenuEditor
+            restaurantId={restaurant.id}
+            restaurantName={restaurant.name}
+            primaryColor={restaurant.primaryColor || '#1a73e8'}
+          />
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm">
+        <div className="border-b border-gray-100 bg-[#FCFBF7] p-5">
+          <h2 className="text-sm font-black uppercase tracking-widest text-[#111827]">Genel Önizleme</h2>
+          <p className="mt-1 text-[11px] font-bold text-[#6b6760]">Müşteri tarafında menünün nasıl göründüğü.</p>
         </div>
         <PublicMenuView restaurant={restaurant} categories={categories} locale="tr" />
       </div>

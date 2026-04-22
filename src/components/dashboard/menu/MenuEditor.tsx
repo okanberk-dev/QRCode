@@ -270,14 +270,14 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
         </div>
 
         {/* Logo Aspect */}
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
            <div className="space-y-1 flex-1">
               <h4 className="text-xs font-black text-[#111827] uppercase tracking-widest">MENÜ LOGOSU</h4>
               <p className="text-[11px] font-bold text-gray-400">Menü sayfasının başında görüntülenecek işletme logosu.</p>
            </div>
            <div className="flex items-center gap-4">
               {restaurantData?.menuLogoUrl && (
-                <button 
+                <button
                   onClick={handleRemoveLogo}
                   className="p-2 text-red-400 hover:text-red-500 transition-colors"
                 >
@@ -297,14 +297,46 @@ export default function MenuEditor({ restaurantId, restaurantName, primaryColor 
                       {uploadingLogo ? 'YÜKLENİYOR...' : (restaurantData?.menuLogoUrl ? 'LOGOYU DEĞİŞTİR' : 'LOGO YÜKLE')}
                     </span>
                   </div>
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    onChange={handleLogoUpload} 
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={handleLogoUpload}
                     accept="image/*"
                   />
               </label>
            </div>
+        </div>
+
+        {/* URL fallback for logo */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 -mt-2">
+          <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] whitespace-nowrap">VEYA URL YAPIŞTIR</label>
+          <input
+            type="url"
+            value={restaurantData?.menuLogoUrl || ''}
+            onChange={async (e) => {
+              const newUrl = e.target.value.trim() || null;
+              setRestaurantData((prev) => prev ? { ...prev, menuLogoUrl: newUrl } : null);
+            }}
+            onBlur={async (e) => {
+              const newUrl = e.target.value.trim() || null;
+              setError(null);
+              try {
+                const res = await fetch(`/api/restaurants/${restaurantId}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ menuLogoUrl: newUrl }),
+                });
+                if (!res.ok) {
+                  const data = await res.json().catch(() => null);
+                  throw new Error(data?.error || 'Logo kaydedilemedi');
+                }
+              } catch (err: any) {
+                setError(err.message);
+              }
+            }}
+            placeholder="https://... (dosya yükleyemiyorsan dışarıdaki bir URL yapıştırabilirsin)"
+            className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#FDBF1D] focus:bg-white transition-all shadow-sm"
+          />
         </div>
       </div>
 
