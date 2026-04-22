@@ -9,8 +9,8 @@ export function ContactFloat({ locale }: { locale: string }) {
     <Link
       href={`/${locale}/contact`}
       aria-label={locale === 'tr' ? 'Destek al' : 'Get support'}
-      className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center
-                 rounded-full bg-[#F4B400] border-3 border-[#1A2332] shadow-md 
+      className="fixed right-4 bottom-[88px] md:right-6 md:bottom-6 z-50 flex h-14 w-14 items-center justify-center
+                 rounded-full bg-[#F4B400] border-3 border-[#1A2332] shadow-md
                  transition-all hover:-translate-y-1 hover:shadow-md
                  focus:outline-none focus:ring-4 focus:ring-[#F4B400]/50 active:translate-y-1 active:shadow-none"
     >

@@ -566,16 +566,16 @@ export default async function LandingPage({
                   ].map((item, i) => (
                     <div
                       key={i}
-                      className="group flex gap-4 sm:gap-5 bg-white/5 border border-white/10 p-4 sm:p-6 rounded-2xl hover:bg-white/10 hover:border-[#F4B400]/30 transition-all hover:translate-x-2"
+                      className="group flex gap-4 sm:gap-5 bg-white/[0.08] border border-white/15 p-5 sm:p-6 rounded-2xl hover:bg-white/[0.12] hover:border-[#F4B400]/40 transition-all hover:translate-x-2"
                     >
-                      <div className="flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 bg-[#F4B400]/10 rounded-xl border border-[#F4B400]/20 flex items-center justify-center group-hover:bg-[#F4B400]/15 transition-colors">
+                      <div className="flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 bg-[#F4B400]/15 rounded-xl border border-[#F4B400]/30 flex items-center justify-center group-hover:bg-[#F4B400]/25 transition-colors">
                         {item.icon}
                       </div>
-                      <div className="space-y-1 min-w-0">
-                        <h3 className="text-[16px] sm:text-[17px] font-extrabold text-white">
+                      <div className="space-y-1.5 min-w-0">
+                        <h3 className="text-[16px] sm:text-[18px] font-extrabold text-white leading-tight">
                           {item.title}
                         </h3>
-                        <p className="text-[13px] text-white/80 leading-relaxed">
+                        <p className="text-[13px] sm:text-[14px] text-white/85 font-medium leading-relaxed">
                           {item.desc}
                         </p>
                       </div>
@@ -599,8 +599,10 @@ export default async function LandingPage({
                   </div>
                 </div>
 
+                {/* Mockup wrapper — allows the floating badge to escape the clipped inner */}
+                <div className="relative w-full max-w-[500px] transform lg:rotate-[-2deg]">
                 {/* Main 3D Browser Mockup — admin panel visual language */}
-                <div className="relative w-full max-w-[500px] h-[380px] sm:h-[440px] lg:h-[460px] bg-[#0E1525] rounded-[24px] sm:rounded-[32px] border border-white/10 shadow-2xl shadow-[#F4B400]/10 transform lg:rotate-[-2deg] flex flex-col overflow-hidden">
+                <div className="relative w-full h-[380px] sm:h-[440px] lg:h-[460px] bg-[#0E1525] rounded-[24px] sm:rounded-[32px] border border-white/10 shadow-2xl shadow-[#F4B400]/10 flex flex-col overflow-hidden">
                    {/* Browser Bar */}
                    <div className="bg-[#1A2332] border-b border-white/10 px-4 py-3 flex items-center gap-3 flex-shrink-0">
                       <div className="flex gap-1.5">
@@ -676,14 +678,15 @@ export default async function LandingPage({
                          <span className="text-[8px] text-white/40 font-medium flex-shrink-0">2dk</span>
                       </div>
                    </div>
+                </div>
 
-                   {/* Floating Bottom Badge */}
-                   <div className="absolute bottom-3 sm:bottom-5 right-3 sm:right-5 lg:-right-8 z-20">
-                      <div className="bg-[#F4B400] text-[#1A2332] p-3 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl border sm:border border-[#1A2332] shadow-md sm:shadow-md flex flex-col items-center gap-1 group cursor-default">
-                         <Zap size={20} fill="#1A2332" className="group-hover:scale-110 transition-transform sm:w-6 sm:h-6" />
-                         <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.1em] sm:tracking-widest whitespace-nowrap">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
-                      </div>
+                {/* Floating Bottom Badge — positioned relative to wrapper, escapes clip */}
+                <div className="absolute -bottom-3 right-3 sm:-bottom-4 sm:right-4 lg:-bottom-5 lg:-right-5 z-20">
+                   <div className="bg-[#F4B400] text-[#1A2332] px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl border border-[#1A2332] shadow-lg flex items-center gap-2 group cursor-default">
+                      <Zap size={16} fill="#1A2332" className="sm:w-[18px] sm:h-[18px] group-hover:scale-110 transition-transform" />
+                      <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.1em] whitespace-nowrap">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
                    </div>
+                </div>
                 </div>
               </div>
             </div>
@@ -756,20 +759,60 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════ Final CTA ═══════ */}
-      <section className="py-16 sm:py-24 px-5 sm:px-8 text-center bg-[#1A2332] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-        <div className="relative z-10 max-w-[600px] mx-auto space-y-7">
-          <h2 className="text-[32px] sm:text-[42px] font-extrabold text-white leading-[1.15] tracking-[-0.02em]">
-            {t.cta_title_1} <br />
-            <span className="text-[#F4B400]">{t.cta_title_2}</span>
+      <section className="py-20 sm:py-28 lg:py-32 px-5 sm:px-8 text-center bg-[#1A2332] relative overflow-hidden">
+        {/* Subtle dotted pattern */}
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        {/* Gold glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#F4B400]/8 blur-[140px] rounded-full pointer-events-none" />
+
+        <div className="relative z-10 max-w-[760px] mx-auto space-y-7 sm:space-y-8">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 border border-[#F4B400]/25 rounded-full px-4 py-1.5">
+            <Zap size={14} className="text-[#F4B400]" fill="#F4B400" />
+            <span className="text-[10px] sm:text-[11px] font-black text-[#F4B400] uppercase tracking-[0.15em]">
+              {locale === 'tr' ? '14 GÜN ÜCRETSİZ' : '14-DAY FREE TRIAL'}
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h2 className="text-[30px] sm:text-[44px] lg:text-[56px] font-extrabold text-white leading-[1.08] tracking-[-0.025em] text-balance px-2">
+            {t.cta_title_1}{' '}
+            <span className="bg-gradient-to-r from-[#F4B400] to-[#FFD666] bg-clip-text text-transparent">
+              {t.cta_title_2}
+            </span>
           </h2>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <CtaButton variant="primary" href={`${base}/auth/register`}>
+
+          {/* Supporting description */}
+          <p className="text-[15px] sm:text-[17px] lg:text-[18px] text-white/80 font-medium max-w-[560px] mx-auto leading-relaxed text-pretty">
+            {locale === 'tr'
+              ? 'Kredi kartı gerekmez. 5 dakikada kurulum, anında kullanım. 500+ işletmenin tercihi.'
+              : 'No credit card required. 5-minute setup, instant access. Trusted by 500+ businesses.'}
+          </p>
+
+          {/* CTA buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-2">
+            <CtaButton variant="primary" href={`${base}/auth/register`} className="w-full sm:w-auto">
               {t.cta_button} <ArrowRight size={18} className="ml-2" />
             </CtaButton>
-            <CtaButton variant="secondary" href={`${base}/pricing`}>
+            <CtaButton variant="secondary" href={`${base}/pricing`} className="w-full sm:w-auto">
               {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
             </CtaButton>
+          </div>
+
+          {/* Trust indicators */}
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pt-4 text-[12px] sm:text-[13px] text-white/70 font-semibold">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={15} className="text-[#4ade80]" />
+              {locale === 'tr' ? '500+ aktif işletme' : '500+ active businesses'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={15} className="text-[#4ade80]" />
+              {locale === 'tr' ? '%92 itibar artışı' : '92% reputation growth'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={15} className="text-[#4ade80]" />
+              {locale === 'tr' ? '5dk kurulum' : '5-min setup'}
+            </span>
           </div>
         </div>
       </section>
