@@ -49,7 +49,7 @@ export default function AdminRestaurantMenuPage() {
           address: r.address ?? null,
           phone: r.phone ?? null,
           workingHours: r.workingHours ?? null,
-          primaryColor: r.primaryColor ?? '#FF9A14',
+          primaryColor: r.primaryColor ?? '#F4B400',
           menuEnabled: r.menuEnabled ?? true,
           menuPublished: r.menuPublished ?? false,
           menuUpdatedAt: r.menuUpdatedAt ?? null,
@@ -100,7 +100,7 @@ export default function AdminRestaurantMenuPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-[#0F2348]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#1A2332]" />
       </div>
     );
   }
@@ -121,15 +121,15 @@ export default function AdminRestaurantMenuPage() {
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
       <div className="flex flex-col gap-4 rounded-[24px] border border-gray-100 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-8">
         <div className="min-w-0 space-y-1">
-          <Link href="/admin/restaurants" className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#243554] hover:text-[#0F2348]">
+          <Link href="/admin/restaurants" className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332]">
             <ArrowLeft size={14} strokeWidth={3} />
             İşletmelere Dön
           </Link>
-          <h1 className="flex items-center gap-3 text-2xl font-black tracking-tight text-[#0F2348] sm:text-3xl">
+          <h1 className="flex items-center gap-3 text-2xl font-black tracking-tight text-[#1A2332] sm:text-3xl">
             <UtensilsCrossed size={22} strokeWidth={3} />
             {restaurant.name} · Menü
           </h1>
-          <p className="text-[13px] font-bold text-[#243554]">Süperadmin moderasyon: menü özelliğini tamamen kapatın veya yayından kaldırın.</p>
+          <p className="text-[13px] font-bold text-[#2A3444]">Süperadmin moderasyon: menü özelliğini tamamen kapatın veya yayından kaldırın.</p>
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-widest ${status.cls}`}>
@@ -138,7 +138,7 @@ export default function AdminRestaurantMenuPage() {
           <Link
             href={`/menu/${restaurant.slug}`}
             target="_blank"
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0F2348] shadow-sm transition-all hover:bg-gray-50 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm transition-all hover:bg-gray-50 active:scale-95"
           >
             <ExternalLink size={14} strokeWidth={3} />
             Genel Görünüm
@@ -159,8 +159,8 @@ export default function AdminRestaurantMenuPage() {
               <ShieldAlert size={18} strokeWidth={2.75} />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-black uppercase tracking-widest text-[#0F2348]">Menü Özelliği</h3>
-              <p className="mt-1 text-xs font-bold text-[#243554]">
+              <h3 className="text-sm font-black uppercase tracking-widest text-[#1A2332]">Menü Özelliği</h3>
+              <p className="mt-1 text-xs font-bold text-[#2A3444]">
                 Kapatılırsa ne restoran sahibi düzenleyebilir ne de genel menü sayfası görünür (404).
               </p>
               <button
@@ -191,14 +191,14 @@ export default function AdminRestaurantMenuPage() {
               <Eye size={18} strokeWidth={2.75} />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-black uppercase tracking-widest text-[#0F2348]">Yayın Durumu</h3>
-              <p className="mt-1 text-xs font-bold text-[#243554]">
+              <h3 className="text-sm font-black uppercase tracking-widest text-[#1A2332]">Yayın Durumu</h3>
+              <p className="mt-1 text-xs font-bold text-[#2A3444]">
                 Yayından kaldırırsanız genel sayfa 404 döner; işletme yeniden yayınlayabilir.
               </p>
               <button
                 disabled={saving !== null || !restaurant.menuEnabled}
                 onClick={() => toggle('menuPublished', !restaurant.menuPublished)}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0F2348] px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-gray-800 active:scale-95 disabled:opacity-50"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-gray-800 active:scale-95 disabled:opacity-50"
               >
                 {saving === 'menuPublished' ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -210,7 +210,7 @@ export default function AdminRestaurantMenuPage() {
                 {restaurant.menuPublished ? 'Yayından Kaldır' : 'Yayına Al'}
               </button>
               {restaurant.menuUpdatedAt && (
-                <p className="mt-3 text-[10px] font-bold uppercase tracking-widest text-[#6B7B93]">
+                <p className="mt-3 text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
                   Son güncelleme: {new Date(restaurant.menuUpdatedAt).toLocaleString('tr-TR')}
                 </p>
               )}
@@ -232,24 +232,24 @@ export default function AdminRestaurantMenuPage() {
       {/* Admin edit access — superadmin/manager can directly manage the
           restaurant's menu content (categories, items, logo) from here. */}
       <div className="overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm">
-        <div className="border-b border-gray-100 bg-[#F5F4F1] p-5">
-          <h2 className="text-sm font-black uppercase tracking-widest text-[#0F2348]">Menü Düzenle</h2>
-          <p className="mt-1 text-[11px] font-bold text-[#243554]">Kategorileri, ürünleri ve logoyu bu panelden doğrudan yönetebilirsiniz.</p>
+        <div className="border-b border-gray-100 bg-[#F8F6F1] p-5">
+          <h2 className="text-sm font-black uppercase tracking-widest text-[#1A2332]">Menü Düzenle</h2>
+          <p className="mt-1 text-[11px] font-bold text-[#2A3444]">Kategorileri, ürünleri ve logoyu bu panelden doğrudan yönetebilirsiniz.</p>
         </div>
         <div className="p-4 sm:p-6">
           <MenuEditor
             restaurantId={restaurant.id}
             restaurantName={restaurant.name}
-            primaryColor={restaurant.primaryColor || '#FF9A14'}
+            primaryColor={restaurant.primaryColor || '#F4B400'}
           />
         </div>
       </div>
 
       <div className="overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-100 bg-[#F5F4F1] p-5">
+        <div className="flex items-center justify-between border-b border-gray-100 bg-[#F8F6F1] p-5">
           <div>
-            <h2 className="text-sm font-black uppercase tracking-widest text-[#0F2348]">Genel Önizleme</h2>
-            <p className="mt-1 text-[11px] font-bold text-[#243554]">Müşteri tarafında menünün nasıl göründüğü.</p>
+            <h2 className="text-sm font-black uppercase tracking-widest text-[#1A2332]">Genel Önizleme</h2>
+            <p className="mt-1 text-[11px] font-bold text-[#2A3444]">Müşteri tarafında menünün nasıl göründüğü.</p>
           </div>
           {restaurant.menuPublished && restaurant.menuEnabled ? (
             <Link

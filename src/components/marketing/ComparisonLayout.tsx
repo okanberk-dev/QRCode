@@ -36,55 +36,55 @@ export default function ComparisonLayout({
   const base = `/${locale}`;
 
   return (
-    <div className="min-h-screen bg-[#F5F4F1] text-[#0F2348] font-sans pt-[64px] selection:bg-[#FF9A14]/30">
+    <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero */}
-      <section className="pt-20 sm:pt-32 pb-16 sm:pb-24 px-5 sm:px-8 bg-[#F5F4F1] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#FF9A14]/5 rounded-full blur-[150px] translate-x-1/3 -translate-y-1/3" />
+      <section className="pt-20 sm:pt-32 pb-16 sm:pb-24 px-5 sm:px-8 bg-[#F8F6F1] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#F4B400]/5 rounded-full blur-[150px] translate-x-1/3 -translate-y-1/3" />
         <div className="max-w-[1200px] mx-auto relative text-center space-y-6 sm:space-y-8">
-          <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#0F2348] rounded-full shadow-[4px_4px_0_0_#FF9A14]">
-            <Shield size={16} className="text-[#FF9A14]" />
+          <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md">
+            <Shield size={16} className="text-[#F4B400]" />
             <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">
               {locale === 'tr' ? `BUAZE VS ${vsName.toUpperCase()}` : `BUAZE VS ${vsName.toUpperCase()}`}
             </span>
           </div>
-          <h1 className="text-[34px] sm:text-[72px] font-black leading-[1] sm:leading-[0.95] tracking-tight text-[#0F2348] max-w-[900px] mx-auto">
+          <h1 className="text-[34px] sm:text-[72px] font-black leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332] max-w-[900px] mx-auto">
             {heroTitle}
           </h1>
-          <p className="text-[17px] sm:text-[22px] text-[#243554] font-bold leading-relaxed max-w-[700px] mx-auto">
+          <p className="text-[17px] sm:text-[22px] text-[#2A3444] font-bold leading-relaxed max-w-[700px] mx-auto">
             {heroDesc}
           </p>
         </div>
       </section>
 
       {/* Comparison Table */}
-      <section className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-y border-[#C9D0DB]">
+      <section className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-y border-[#E8ECF2]">
         <div className="max-w-[1100px] mx-auto">
           <div className="mb-12 sm:mb-16 text-center space-y-4">
                <h2 className="text-[28px] sm:text-[48px] font-black tracking-tight">{t.compare_title}</h2>
-               <p className="text-[15px] sm:text-[16px] text-[#243554] font-bold max-w-2xl mx-auto">{t.compare_subtitle}</p>
+               <p className="text-[15px] sm:text-[16px] text-[#2A3444] font-bold max-w-2xl mx-auto">{t.compare_subtitle}</p>
           </div>
 
-          <div className="overflow-x-auto touch-pan-x rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#0F2348] shadow-[8px_10px_0_0_#0F2348] sm:shadow-[12px_14px_0_0_#0F2348]">
+          <div className="overflow-x-auto touch-pan-x rounded-[24px] sm:rounded-[32px] border-[2.5px] sm:border-[3px] border-[#1A2332] shadow-md sm:shadow-md">
             <table className="w-full border-collapse bg-white min-w-[600px] sm:min-w-0">
               <thead>
-                <tr className="bg-[#0F2348] text-white">
+                <tr className="bg-[#1A2332] text-white">
                   <th className="p-4 sm:p-6 text-left text-[11px] sm:text-[14px] font-black uppercase tracking-widest border-r border-white/10">{t.compare_feat_name}</th>
-                  <th className="p-4 sm:p-6 text-center text-[12px] sm:text-[16px] font-black uppercase tracking-widest border-r border-white/10 bg-[#FF9A14] text-[#0F2348]">{t.compare_buaze}</th>
+                  <th className="p-4 sm:p-6 text-center text-[12px] sm:text-[16px] font-black uppercase tracking-widest border-r border-white/10 bg-[#F4B400] text-[#1A2332]">{t.compare_buaze}</th>
                   <th className="p-4 sm:p-6 text-center text-[11px] sm:text-[14px] font-black uppercase tracking-widest">{vsName}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y-2 divide-[#0F2348]/5">
+              <tbody className="divide-y-2 divide-[#1A2332]/5">
                 {rows.map((row, i) => (
-                  <tr key={i} className={row.isHeader ? 'bg-[#F5F4F1]' : 'hover:bg-[#F5F4F1]/50 transition-colors'}>
-                    <td className={`p-4 sm:p-6 border-r-2 border-[#0F2348]/5 ${row.isHeader ? 'font-black text-[#243554] text-[11px] sm:text-[12px] uppercase' : 'font-bold text-[#0F2348] text-[14px] sm:text-[16px]'}`}>
+                  <tr key={i} className={row.isHeader ? 'bg-[#F8F6F1]' : 'hover:bg-[#F8F6F1]/50 transition-colors'}>
+                    <td className={`p-4 sm:p-6 border-r-2 border-[#1A2332]/5 ${row.isHeader ? 'font-black text-[#2A3444] text-[11px] sm:text-[12px] uppercase' : 'font-bold text-[#1A2332] text-[14px] sm:text-[16px]'}`}>
                       {row.label}
                     </td>
-                    <td className="p-4 sm:p-6 text-center border-r-2 border-[#0F2348]/5 bg-[#FF9A14]/5 font-black text-[#0F2348]">
+                    <td className="p-4 sm:p-6 text-center border-r-2 border-[#1A2332]/5 bg-[#F4B400]/5 font-black text-[#1A2332]">
                       {row.buaze}
                     </td>
-                    <td className="p-4 sm:p-6 text-center font-bold text-[#243554] text-[14px] sm:text-[16px]">
+                    <td className="p-4 sm:p-6 text-center font-bold text-[#2A3444] text-[14px] sm:text-[16px]">
                       {row.competitor}
                     </td>
                   </tr>
@@ -96,13 +96,13 @@ export default function ComparisonLayout({
       </section>
 
       {/* Deep Argument Section */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F5F4F1]">
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1]">
          <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16 items-center">
             <div className="space-y-6 sm:space-y-8">
-               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#FF9A14]/10 rounded-2xl border-2 border-[#FF9A14]/20 flex items-center justify-center">
-                  <AlertCircle size={28} className="sm:size-8 text-[#FF9A14]" />
+               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400]/10 rounded-2xl border-2 border-[#F4B400]/20 flex items-center justify-center">
+                  <AlertCircle size={28} className="sm:size-8 text-[#F4B400]" />
                </div>
-               <h2 className="text-[30px] sm:text-[54px] font-black leading-[1.1] tracking-tight text-[#0F2348]">
+               <h2 className="text-[30px] sm:text-[54px] font-black leading-[1.1] tracking-tight text-[#1A2332]">
                   {argumentTitle}
                </h2>
                <div className="text-[16px] sm:text-[18px] text-[#4a4742] leading-relaxed font-medium space-y-4 sm:space-y-6">
@@ -115,15 +115,15 @@ export default function ComparisonLayout({
                </div>
             </div>
             <div className="relative group">
-               <div className="absolute inset-0 bg-[#FF9A14] rounded-[32px] sm:rounded-[40px] rotate-2 scale-105 opacity-20 group-hover:rotate-1 transition-transform" />
-               <div className="relative bg-white p-8 sm:p-10 rounded-[32px] sm:rounded-[40px] border-[3px] border-[#0F2348] shadow-[8px_10px_0_0_#0F2348] sm:shadow-[12px_16px_0_0_#0F2348] space-y-6 sm:space-y-8">
-                  <div className="flex items-center gap-4 border-b-2 border-[#C9D0DB] pb-6">
+               <div className="absolute inset-0 bg-[#F4B400] rounded-[32px] sm:rounded-[40px] rotate-2 scale-105 opacity-20 group-hover:rotate-1 transition-transform" />
+               <div className="relative bg-white p-8 sm:p-10 rounded-[32px] sm:rounded-[40px] border-[3px] border-[#1A2332] shadow-md sm:shadow-md space-y-6 sm:space-y-8">
+                  <div className="flex items-center gap-4 border-b-2 border-[#E8ECF2] pb-6">
                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#10b981] rounded-xl flex items-center justify-center text-white">
                         <BarChart3 size={20} className="sm:size-6" />
                      </div>
                      <div>
                         <div className="text-[13px] sm:text-[14px] font-black">{locale === 'tr' ? 'BUAZE ETKİSİ' : 'BUAZE IMPACT'}</div>
-                        <div className="text-[10px] sm:text-[11px] font-bold text-[#243554] uppercase tracking-widest">{locale === 'tr' ? 'Gerçek Zamanlı Veri' : 'Real-time Data'}</div>
+                        <div className="text-[10px] sm:text-[11px] font-bold text-[#2A3444] uppercase tracking-widest">{locale === 'tr' ? 'Gerçek Zamanlı Veri' : 'Real-time Data'}</div>
                      </div>
                   </div>
                   <div className="space-y-4 sm:space-y-6">
@@ -132,9 +132,9 @@ export default function ComparisonLayout({
                         { label: locale === 'tr' ? 'Yorum Dönüşümü' : 'Review Conversion', value: '%68' },
                         { label: locale === 'tr' ? 'Müşteri Kaybı' : 'Churn Rate', value: '-%90' },
                      ].map((item, i) => (
-                        <div key={i} className="flex justify-between items-center bg-[#F5F4F1] p-4 rounded-xl border border-[#0F2348]/5">
-                           <span className="font-bold text-[#243554] text-[14px] sm:text-[16px]">{item.label}</span>
-                           <span className="font-black text-[#0F2348] text-[16px] sm:text-[18px]">{item.value}</span>
+                        <div key={i} className="flex justify-between items-center bg-[#F8F6F1] p-4 rounded-xl border border-[#1A2332]/5">
+                           <span className="font-bold text-[#2A3444] text-[14px] sm:text-[16px]">{item.label}</span>
+                           <span className="font-black text-[#1A2332] text-[16px] sm:text-[18px]">{item.value}</span>
                         </div>
                      ))}
                   </div>
@@ -144,23 +144,23 @@ export default function ComparisonLayout({
       </section>
 
       {/* NEW: SEO Deep Content (Pain Points & Verdict) */}
-      <section className="py-20 sm:py-24 px-5 sm:px-8 bg-white border-t border-[#C9D0DB]">
+      <section className="py-20 sm:py-24 px-5 sm:px-8 bg-white border-t border-[#E8ECF2]">
          <div className="max-w-[1000px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16">
             <div className="space-y-4 sm:space-y-6">
                <h3 className="text-[22px] sm:text-[24px] font-black flex items-center gap-2">
                   <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-[14px] sm:text-[16px]">!</span>
                   {t.compare_pain_title}
                </h3>
-               <p className="text-[15px] sm:text-[16px] text-[#243554] font-medium leading-relaxed">
+               <p className="text-[15px] sm:text-[16px] text-[#2A3444] font-medium leading-relaxed">
                   {vsName === 'Spreadsheet' ? t.compare_pain_spreadsheet : t.compare_pain_static}
                </p>
             </div>
-            <div className="space-y-4 sm:space-y-6 p-6 sm:p-8 bg-[#F5F4F1] rounded-[24px] sm:rounded-[32px] border-2 border-[#0F2348] shadow-[4px_6px_0_0_#FF9A14] sm:shadow-[6px_8px_0_0_#FF9A14]">
+            <div className="space-y-4 sm:space-y-6 p-6 sm:p-8 bg-[#F8F6F1] rounded-[24px] sm:rounded-[32px] border-2 border-[#1A2332] shadow-md sm:shadow-md">
                <h3 className="text-[22px] sm:text-[24px] font-black flex items-center gap-2">
-                  <Zap size={22} className="sm:size-6 text-[#FF9A14]" />
+                  <Zap size={22} className="sm:size-6 text-[#F4B400]" />
                   {t.compare_verdict_title}
                </h3>
-               <p className="text-[14px] sm:text-[15px] text-[#0F2348] font-bold leading-relaxed">
+               <p className="text-[14px] sm:text-[15px] text-[#1A2332] font-bold leading-relaxed">
                   {t.compare_verdict_desc}
                </p>
             </div>
@@ -168,13 +168,13 @@ export default function ComparisonLayout({
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 sm:py-32 px-5 sm:px-8 bg-[#0F2348] text-white relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FF9A14]/5 rounded-full blur-[150px]" />
+      <section className="py-24 sm:py-32 px-5 sm:px-8 bg-[#1A2332] text-white relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#F4B400]/5 rounded-full blur-[150px]" />
         <div className="max-w-[800px] mx-auto text-center space-y-8 sm:space-y-10 relative z-10">
           <h2 className="text-[32px] sm:text-[64px] font-black leading-[1.1] sm:leading-[1] tracking-tight">
             {locale === 'tr' ? 'Daha Fazla Beklemeyin' : 'Don\'t Wait Any Longer'}
           </h2>
-          <p className="text-[17px] sm:text-[20px] text-[#6B7B93] font-medium max-w-[600px] mx-auto">
+          <p className="text-[17px] sm:text-[20px] text-[#6B7280] font-medium max-w-[600px] mx-auto">
              {locale === 'tr' ? 'Onlarca işletme gibi siz de manuel süreçleri geride bırakın.' : 'Join dozens of businesses leaving manual processes behind.'}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-4">

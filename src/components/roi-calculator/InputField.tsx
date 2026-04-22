@@ -21,7 +21,7 @@ export function InputField({
   return (
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5">
-        <label htmlFor={id} className="text-sm font-bold text-[#0F2348]">
+        <label htmlFor={id} className="text-sm font-bold text-[#1A2332]">
           {label}
         </label>
         {hint && (
@@ -45,11 +45,11 @@ export function InputField({
           value={value}
           onChange={e => onChange(e.target.value)}
           aria-describedby={hint ? `${id}-hint` : undefined}
-          className="w-full rounded-xl border-2 border-[#0F2348] bg-white px-4 py-3
-                     text-sm text-[#0F2348] font-bold placeholder:text-gray-300
-                     focus:border-[#FF9A14] focus:outline-none focus:ring-4
-                     focus:ring-[#FF9A14]/10 transition-all
-                     shadow-[0_4px_0_0_#0F2348] focus:shadow-none focus:translate-y-[2px]
+          className="w-full rounded-xl border-2 border-[#1A2332] bg-white px-4 py-3
+                     text-sm text-[#1A2332] font-bold placeholder:text-gray-300
+                     focus:border-[#F4B400] focus:outline-none focus:ring-4
+                     focus:ring-[#F4B400]/10 transition-all
+                     shadow-sm focus:shadow-none focus:translate-y-[2px]
                      [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       </div>

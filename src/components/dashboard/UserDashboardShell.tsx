@@ -74,7 +74,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
   };
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col bg-[#0F2348]">
+    <div className="flex h-full flex-col bg-[#1A2332]">
       {/* Logo */}
       <div className="border-b border-white/10 px-5 py-5">
         <Link href={`/${locale}/dashboard`} className="flex items-center gap-3">
@@ -98,7 +98,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
               onClick={() => setDrawerOpen(false)}
               className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition-all ${
                 isActive
-                  ? 'bg-[#FF9A14] text-[#0F2348]'
+                  ? 'bg-[#F4B400] text-[#1A2332]'
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
@@ -123,7 +123,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
       {/* User footer */}
       <div className="border-t border-white/10 bg-black/20 p-3">
         <div className="mb-2 flex items-center gap-3 rounded-2xl border border-white/5 bg-white/5 px-3 py-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FF9A14] text-sm font-black text-[#0F2348]">{initial}</div>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F4B400] text-sm font-black text-[#1A2332]">{initial}</div>
           <div className="min-w-0">
             <p className="truncate text-sm font-black text-white">{displayName}</p>
             <p className="truncate text-[11px] font-bold text-gray-500">{user.email}</p>
@@ -141,7 +141,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
   );
 
   return (
-    <div className="min-h-screen bg-[#F5F4F1] lg:flex lg:h-screen lg:overflow-hidden">
+    <div className="min-h-screen bg-[#F8F6F1] lg:flex lg:h-screen lg:overflow-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden h-full w-64 shrink-0 border-r border-white/5 lg:flex">
         <SidebarContent />
@@ -152,7 +152,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
         <div className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-200/60 bg-white/95 px-4 py-3 backdrop-blur lg:hidden shadow-sm">
           <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center"><BuazeLogo size={36} /></div>
-            <span className="text-base font-black tracking-tight text-[#0F2348]">Buaze</span>
+            <span className="text-base font-black tracking-tight text-[#1A2332]">Buaze</span>
           </Link>
 
           <div className="flex items-center gap-2">
@@ -163,7 +163,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
             )}
             <button
               onClick={() => setDrawerOpen((v) => !v)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0F2348] text-sm font-black text-[#FF9A14]"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1A2332] text-sm font-black text-[#F4B400]"
             >
               {drawerOpen ? <X size={18} strokeWidth={2.75} /> : <span>{initial}</span>}
             </button>
@@ -193,7 +193,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
 
       {/* Mobile bottom nav — all 6 items */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 bg-[#0F2348]/97 border-t border-white/10 backdrop-blur-md lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 bg-[#1A2332]/97 border-t border-white/10 backdrop-blur-md lg:hidden"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.25rem)' }}
       >
         <div className="flex items-stretch">
@@ -205,10 +205,10 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
                 key={item.href}
                 href={item.href}
                 className={`flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 transition-all ${
-                  isActive ? 'text-[#FF9A14]' : 'text-gray-500 hover:text-gray-300'
+                  isActive ? 'text-[#F4B400]' : 'text-gray-500 hover:text-gray-300'
                 }`}
               >
-                <div className={`rounded-xl p-1.5 transition-all ${isActive ? 'bg-[#FF9A14]/15' : ''}`}>
+                <div className={`rounded-xl p-1.5 transition-all ${isActive ? 'bg-[#F4B400]/15' : ''}`}>
                   <Icon size={19} strokeWidth={isActive ? 2.75 : 2} />
                 </div>
                 <span className="text-[8px] font-black uppercase tracking-tight leading-none">{item.label}</span>

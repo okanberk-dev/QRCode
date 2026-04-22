@@ -69,7 +69,7 @@ export default async function AutoServiceSolutionPage({ params }: { params: Prom
     {
       title: isTr ? 'Araç Sahibi Güveni' : 'Vehicle Owner Trust',
       desc: isTr ? 'Araç sahipleri servis seçerken Google yorumlarına güvenir. Yüksek puan = tercih edilme.' : 'Vehicle owners trust Google reviews when choosing a service. High rating = being chosen.',
-      icon: <Star size={20} className="text-[#FF9A14]" />,
+      icon: <Star size={20} className="text-[#F4B400]" />,
     },
     {
       title: isTr ? 'Otomatik Servis Takibi' : 'Automatic Service Follow-up',

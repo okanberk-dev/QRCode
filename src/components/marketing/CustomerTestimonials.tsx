@@ -20,47 +20,47 @@ function Testimonial({ quote, name, role, company, avatarUrl, initials, link, lo
   return (
     <Wrapper 
       href={link || ''}
-      className={`group relative w-full bg-white p-8 sm:p-10 rounded-2xl border-[2.5px] border-[#0F2348] shadow-[6px_8px_0_0_#0F2348] flex flex-col z-10 transition-transform duration-300 hover:-translate-y-2 ${link ? 'cursor-pointer' : ''}`}
+      className={`group relative w-full bg-white p-8 sm:p-10 rounded-2xl border-[2.5px] border-[#1A2332] shadow-md flex flex-col z-10 transition-transform duration-300 hover:-translate-y-2 ${link ? 'cursor-pointer' : ''}`}
     >
       <div className="flex items-center justify-between mb-5">
-        <div className="flex gap-1 text-[#FF9A14]">
+        <div className="flex gap-1 text-[#F4B400]">
           {[1, 2, 3, 4, 5].map((i) => (
             <Star key={i} size={18} fill="currentColor" strokeWidth={0} />
           ))}
         </div>
-        <div className="bg-[#0F2348] rounded-full p-1 border border-[#0F2348] shadow-[0_2px_0_0_#0F2348]">
-          <div className="bg-white rounded-full p-1 text-[#0F2348]">
+        <div className="bg-[#1A2332] rounded-full p-1 border border-[#1A2332] shadow-sm">
+          <div className="bg-white rounded-full p-1 text-[#1A2332]">
             <ShieldCheck size={12} />
           </div>
         </div>
       </div>
       
-      <blockquote className="text-[15px] sm:text-[16px] text-[#0F2348] mb-8 leading-relaxed font-bold italic">
+      <blockquote className="text-[15px] sm:text-[16px] text-[#1A2332] mb-8 leading-relaxed font-bold italic">
         "{quote}"
       </blockquote>
 
-      <div className="mt-auto flex items-center gap-3 border-t border-[#C9D0DB] pt-5">
+      <div className="mt-auto flex items-center gap-3 border-t border-[#E8ECF2] pt-5">
         {avatarUrl ? (
           <img
             src={avatarUrl}
             alt={name}
             width={44}
             height={44}
-            className="h-11 w-11 rounded-full object-cover border-2 border-[#0F2348]"
+            className="h-11 w-11 rounded-full object-cover border-2 border-[#1A2332]"
           />
         ) : (
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FF9A14] text-sm font-black text-[#0F2348] border-2 border-[#0F2348] shadow-[2px_2px_0_0_#0F2348]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F4B400] text-sm font-black text-[#1A2332] border-2 border-[#1A2332] shadow-md">
             {initials}
           </div>
         )}
         <div className="min-w-0">
-          <p className="text-[14px] font-black text-[#0F2348] truncate">{name}</p>
-          <p className="text-[11px] font-bold text-[#243554] uppercase tracking-wider truncate">
+          <p className="text-[14px] font-black text-[#1A2332] truncate">{name}</p>
+          <p className="text-[11px] font-bold text-[#2A3444] uppercase tracking-wider truncate">
             {role}, {company}
           </p>
         </div>
         {link && (
-          <div className="ml-auto text-[10px] font-black text-[#FF9A14] uppercase tracking-widest hidden sm:flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+          <div className="ml-auto text-[10px] font-black text-[#F4B400] uppercase tracking-widest hidden sm:flex items-center gap-1 group-hover:translate-x-1 transition-transform">
             {isTr ? 'HİKAYEYİ OKU' : 'VIEW CASE'}
           </div>
         )}
@@ -99,14 +99,14 @@ export default function CustomerTestimonials({ locale }: CustomerTestimonialsPro
   ];
 
   return (
-    <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F5F4F1]">
+    <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1]">
       <div className="max-w-[800px] mx-auto text-center mb-16 sm:mb-24">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border-2 border-[#0F2348] rounded-full shadow-[3px_3px_0_0_#0F2348] mb-6">
-           <span className="text-[10px] font-black uppercase tracking-widest text-[#0F2348]">{isTr ? 'REFERANSLARIMIZ' : 'OUR TESTIMONIALS'}</span>
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border-2 border-[#1A2332] rounded-full shadow-md mb-6">
+           <span className="text-[10px] font-black uppercase tracking-widest text-[#1A2332]">{isTr ? 'REFERANSLARIMIZ' : 'OUR TESTIMONIALS'}</span>
         </div>
-        <h2 className="text-[36px] sm:text-[60px] font-black text-[#0F2348] tracking-tight leading-none">
+        <h2 className="text-[36px] sm:text-[60px] font-black text-[#1A2332] tracking-tight leading-none">
           {isTr ? 'Yüzlerce işletme ' : 'Hundreds of businesses '}
-          <span className="text-[#FF9A14]">{isTr ? 'Buaze' : 'trust Buaze'}</span>
+          <span className="text-[#F4B400]">{isTr ? 'Buaze' : 'trust Buaze'}</span>
           {isTr ? 'ye güveniyor' : ''}
         </h2>
       </div>

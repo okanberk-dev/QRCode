@@ -67,7 +67,7 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
       
       <button 
         onClick={() => window.location.reload()}
-        className="mt-12 text-sm font-bold text-gray-400 hover:text-[#FF9A14] transition-colors"
+        className="mt-12 text-sm font-bold text-gray-400 hover:text-[#F4B400] transition-colors"
       >
         {t('feedback_close')}
       </button>

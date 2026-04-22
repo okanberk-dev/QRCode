@@ -30,32 +30,32 @@ export default async function ResetPasswordPage({
   const t = getTranslations(locale);
 
   return (
-    <div className="min-h-screen bg-[#F5F4F1] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8F6F1] flex flex-col font-sans">
       <MarketingNavbar locale={locale} t={t} />
 
       <main className="flex-1 flex items-center justify-center p-6 sm:p-10 pt-[80px]">
         <div className="w-full max-w-[440px]">
           <Link
             href={`/${locale}/auth/login`}
-            className="inline-flex items-center gap-2 text-[12px] font-black uppercase tracking-widest text-[#243554] hover:text-[#0F2348] mb-5 transition-colors"
+            className="inline-flex items-center gap-2 text-[12px] font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332] mb-5 transition-colors"
           >
             <ArrowLeft size={14} strokeWidth={3} />
             {locale === 'tr' ? 'Girişe Dön' : 'Back to Login'}
           </Link>
 
-          <div className="bg-white rounded-2xl border border-[#C9D0DB] p-8 sm:p-9 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.06)]">
+          <div className="bg-white rounded-2xl border border-[#E8ECF2] p-8 sm:p-9 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.06)]">
             <div className="mb-7">
-              <h1 className="text-[24px] font-extrabold text-[#0F2348] tracking-[-0.01em]">
+              <h1 className="text-[24px] font-extrabold text-[#1A2332] tracking-[-0.01em]">
                 {locale === 'tr' ? 'Şifreyi Sıfırla' : 'Reset Password'}
               </h1>
-              <p className="text-[13px] text-[#243554] mt-1 leading-relaxed">
+              <p className="text-[13px] text-[#2A3444] mt-1 leading-relaxed">
                 {locale === 'tr'
                   ? 'E-postanıza gönderilen 6 haneli kodu ve yeni şifrenizi girin.'
                   : 'Enter the 6-digit code from your email and your new password.'}
               </p>
             </div>
 
-            <Suspense fallback={<div className="h-52 animate-pulse bg-[#F5F4F1] rounded-lg" />}>
+            <Suspense fallback={<div className="h-52 animate-pulse bg-[#F8F6F1] rounded-lg" />}>
               <ResetPasswordForm locale={locale} />
             </Suspense>
           </div>

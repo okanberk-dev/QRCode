@@ -69,22 +69,22 @@ export default async function GymSolutionPage({ params }: { params: Promise<{ lo
     {
       title: isTr ? 'Üye Bağlılığı' : 'Member Loyalty',
       desc: isTr ? 'Geri bildirim alan üye salonunuza bağlılık hisseder. Yıllık üyelik yenileme oranı artar.' : 'Members who receive feedback feel connected to your gym. Annual membership renewal rate increases.',
-      icon: <Star size={20} className="text-[#FF9A14]" />,
+      icon: <Star size={20} className="text-[#F4B400]" />,
     },
     {
       title: isTr ? 'Antrenör Performansı' : 'Trainer Performance',
       desc: isTr ? 'Her antrenör için ayrı metrikler. Hangi antrenörün üyelerden daha iyi değerlendirme aldığını görün.' : 'Separate metrics for each trainer. See which trainer gets better reviews from members.',
-      icon: <Users size={20} className="text-[#FF9A14]" />,
+      icon: <Users size={20} className="text-[#F4B400]" />,
     },
     {
       title: isTr ? 'Ekipman Takibi' : 'Equipment Tracking',
       desc: isTr ? 'Üyeler hangi ekipman sorunlarını bildiriyor? Geri bildirimlerle bakım önceliklerini belirleyin.' : 'Which equipment issues are members reporting? Determine maintenance priorities with feedback.',
-      icon: <Dumbbell size={20} className="text-[#FF9A14]" />,
+      icon: <Dumbbell size={20} className="text-[#F4B400]" />,
     },
     {
       title: isTr ? 'Google\'da Büyü' : 'Grow on Google',
       desc: isTr ? '"Yakınımdaki spor salonu" aramasında üst sıralara çıkın. Daha fazla yorum = daha fazla üye.' : 'Rise to the top for "gym near me" searches. More reviews = more members.',
-      icon: <TrendingUp size={20} className="text-[#FF9A14]" />,
+      icon: <TrendingUp size={20} className="text-[#F4B400]" />,
     },
   ];
 
@@ -109,7 +109,7 @@ export default async function GymSolutionPage({ params }: { params: Promise<{ lo
       h1Prefix={t.sol_gym_h1.split(' ').slice(0, -1).join(' ')}
       h1Suffix={t.sol_gym_h1.split(' ').slice(-1)[0]}
       description={t.sol_gym_p}
-      accentColor="#FF9A14"
+      accentColor="#F4B400"
       stats={stats}
       steps={steps}
       benefits={benefits}

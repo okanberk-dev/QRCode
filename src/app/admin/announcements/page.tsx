@@ -179,15 +179,15 @@ export default function AdminAnnouncementsPage() {
   const filtered = filterStatus === 'all' ? announcements : announcements.filter(a => a.status === filterStatus);
 
   return (
-    <div className="flex-1 min-h-screen bg-[#F5F4F1] p-3 sm:p-6 md:p-10 space-y-8">
+    <div className="flex-1 min-h-screen bg-[#F8F6F1] p-3 sm:p-6 md:p-10 space-y-8">
       {/* Banner Header */}
-      <div className="bg-[#0F2348] rounded-[24px] sm:rounded-[32px] border border-gray-800 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
+      <div className="bg-[#1A2332] rounded-[24px] sm:rounded-[32px] border border-gray-800 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-[#FF9A14]/10 text-[#FF9A14] px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em]">
+          <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 text-[#F4B400] px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em]">
             ✦ İLETİŞİM MERKEZİ
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">Duyurular</h1>
-          <p className="text-[#6B7B93] text-sm sm:text-base font-bold max-w-md">
+          <p className="text-[#6B7280] text-sm sm:text-base font-bold max-w-md">
             Restoran panellerinin üstünde tüm müşterilerinize duyurular gösterin.
           </p>
         </div>
@@ -216,7 +216,7 @@ export default function AdminAnnouncementsPage() {
               key={f.k}
               onClick={() => setFilterStatus(f.k as 'all' | Status)}
               className={`px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
-                filterStatus === f.k ? 'bg-[#0F2348] text-white shadow-md' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                filterStatus === f.k ? 'bg-[#1A2332] text-white shadow-md' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
               }`}
             >
               {f.label}
@@ -226,7 +226,7 @@ export default function AdminAnnouncementsPage() {
 
         <button
           onClick={openNew}
-          className="flex items-center gap-2 px-6 py-3 bg-[#FF9A14] text-[#0F2348] rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#f5b914] transition-all shadow-lg shadow-[#FF9A14]/10 active:scale-95"
+          className="flex items-center gap-2 px-6 py-3 bg-[#F4B400] text-[#1A2332] rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#f5b914] transition-all shadow-lg shadow-[#F4B400]/10 active:scale-95"
         >
           <Plus size={18} strokeWidth={3} />
           Yeni Duyuru
@@ -255,7 +255,7 @@ export default function AdminAnnouncementsPage() {
       {/* List */}
       {loading ? (
         <div className="flex items-center justify-center py-24">
-          <Loader2 size={32} className="animate-spin text-[#FF9A14]" />
+          <Loader2 size={32} className="animate-spin text-[#F4B400]" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-16 text-center space-y-4">
@@ -276,7 +276,7 @@ export default function AdminAnnouncementsPage() {
             return (
               <div
                 key={a.id}
-                className={`bg-white border rounded-[24px] p-5 flex flex-col sm:flex-row sm:items-center gap-5 transition-all hover:shadow-md hover:border-[#FF9A14]/30 ${
+                className={`bg-white border rounded-[24px] p-5 flex flex-col sm:flex-row sm:items-center gap-5 transition-all hover:shadow-md hover:border-[#F4B400]/30 ${
                   a.status === 'published' ? 'border-gray-100' : 'border-gray-100 opacity-70'
                 }`}
               >
@@ -347,21 +347,21 @@ export default function AdminAnnouncementsPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-[#0F2348]/60 backdrop-blur-md z-[100] flex items-start justify-center p-3 sm:p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-[#1A2332]/60 backdrop-blur-md z-[100] flex items-start justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white rounded-[24px] sm:rounded-[32px] w-full max-w-3xl my-4 sm:my-8 shadow-2xl border border-gray-100 overflow-hidden">
             <div className="flex items-center justify-between p-4 sm:p-6 md:p-8 border-b border-gray-50 gap-3">
               <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 bg-[#FF9A14]/10 rounded-2xl flex items-center justify-center">
-                  {editing ? <Pencil size={20} className="text-[#FF9A14]" strokeWidth={3} /> : <Plus size={20} className="text-[#FF9A14]" strokeWidth={3} />}
+                <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 bg-[#F4B400]/10 rounded-2xl flex items-center justify-center">
+                  {editing ? <Pencil size={20} className="text-[#F4B400]" strokeWidth={3} /> : <Plus size={20} className="text-[#F4B400]" strokeWidth={3} />}
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-lg sm:text-xl font-black text-[#0F2348] truncate">{editing ? 'Duyuruyu Düzenle' : 'Yeni Duyuru'}</h2>
+                  <h2 className="text-lg sm:text-xl font-black text-[#1A2332] truncate">{editing ? 'Duyuruyu Düzenle' : 'Yeni Duyuru'}</h2>
                   <p className="text-gray-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest mt-0.5">Restoran panellerinde gösterilecek</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowForm(false)}
-                className="w-10 h-10 shrink-0 flex items-center justify-center text-gray-400 hover:text-[#0F2348] hover:bg-gray-50 rounded-xl transition-all"
+                className="w-10 h-10 shrink-0 flex items-center justify-center text-gray-400 hover:text-[#1A2332] hover:bg-gray-50 rounded-xl transition-all"
               >
                 <X size={20} strokeWidth={3} />
               </button>
@@ -378,7 +378,7 @@ export default function AdminAnnouncementsPage() {
                   value={form.title}
                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   placeholder="Örn: Yeni QR tasarımları yayında!"
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                 />
               </div>
 
@@ -392,7 +392,7 @@ export default function AdminAnnouncementsPage() {
                   value={form.message}
                   onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
                   placeholder="Detayları buraya yazın..."
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-medium placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm resize-none"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-medium placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm resize-none"
                 />
               </div>
 
@@ -407,7 +407,7 @@ export default function AdminAnnouncementsPage() {
                         type="button"
                         onClick={() => setForm(f => ({ ...f, severity: s }))}
                         className={`py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                          form.severity === s ? 'bg-[#0F2348] text-white shadow-lg' : 'text-gray-400 hover:text-[#0F2348]'
+                          form.severity === s ? 'bg-[#1A2332] text-white shadow-lg' : 'text-gray-400 hover:text-[#1A2332]'
                         }`}
                       >
                         {SEVERITY_META[s].label}
@@ -424,7 +424,7 @@ export default function AdminAnnouncementsPage() {
                         type="button"
                         onClick={() => setForm(f => ({ ...f, locale: l }))}
                         className={`py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                          form.locale === l ? 'bg-[#0F2348] text-white shadow-lg' : 'text-gray-400 hover:text-[#0F2348]'
+                          form.locale === l ? 'bg-[#1A2332] text-white shadow-lg' : 'text-gray-400 hover:text-[#1A2332]'
                         }`}
                       >
                         {l === 'all' ? 'TÜMÜ' : l.toUpperCase()}
@@ -442,7 +442,7 @@ export default function AdminAnnouncementsPage() {
                     type="datetime-local"
                     value={form.startDate}
                     onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
                 <div>
@@ -451,7 +451,7 @@ export default function AdminAnnouncementsPage() {
                     type="datetime-local"
                     value={form.endDate}
                     onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
                 <div>
@@ -460,7 +460,7 @@ export default function AdminAnnouncementsPage() {
                     type="number"
                     value={form.priority}
                     onChange={e => setForm(f => ({ ...f, priority: Number(e.target.value) }))}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -475,7 +475,7 @@ export default function AdminAnnouncementsPage() {
                     value={form.ctaText}
                     onChange={e => setForm(f => ({ ...f, ctaText: e.target.value }))}
                     placeholder="Detayları gör"
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
                 <div>
@@ -485,7 +485,7 @@ export default function AdminAnnouncementsPage() {
                     value={form.ctaLink}
                     onChange={e => setForm(f => ({ ...f, ctaLink: e.target.value }))}
                     placeholder="https://..."
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -494,13 +494,13 @@ export default function AdminAnnouncementsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex items-center justify-between p-5 bg-gray-50 rounded-[20px] border border-gray-100">
                   <div className="space-y-0.5">
-                    <p className="text-[#0F2348] text-[13px] font-black uppercase tracking-tight">{form.isDismissible ? 'KAPATILABİLİR' : 'HER ZAMAN GÖRÜNÜR'}</p>
+                    <p className="text-[#1A2332] text-[13px] font-black uppercase tracking-tight">{form.isDismissible ? 'KAPATILABİLİR' : 'HER ZAMAN GÖRÜNÜR'}</p>
                     <p className="text-gray-500 text-[11px] font-bold">{form.isDismissible ? 'Kullanıcı banner\u2019ı kapatabilir.' : 'Banner kapatılamaz.'}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setForm(f => ({ ...f, isDismissible: !f.isDismissible }))}
-                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.isDismissible ? 'bg-[#FF9A14]' : 'bg-gray-300'}`}
+                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.isDismissible ? 'bg-[#F4B400]' : 'bg-gray-300'}`}
                   >
                     <span className={`absolute top-1 left-1 w-4.5 h-4.5 bg-white rounded-full shadow-md transition-all duration-300 ${form.isDismissible ? 'translate-x-5.5' : ''}`} />
                   </button>
@@ -508,7 +508,7 @@ export default function AdminAnnouncementsPage() {
 
                 <div className="flex items-center justify-between p-5 bg-gray-50 rounded-[20px] border border-gray-100">
                   <div className="space-y-0.5">
-                    <p className="text-[#0F2348] text-[13px] font-black uppercase tracking-tight">{form.status === 'published' ? 'YAYINDA' : 'TASLAK'}</p>
+                    <p className="text-[#1A2332] text-[13px] font-black uppercase tracking-tight">{form.status === 'published' ? 'YAYINDA' : 'TASLAK'}</p>
                     <p className="text-gray-500 text-[11px] font-bold">{form.status === 'published' ? 'Tüm restoranlarda görünür.' : 'Sadece admin panelinde.'}</p>
                   </div>
                   <button
@@ -526,14 +526,14 @@ export default function AdminAnnouncementsPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-8 py-3.5 text-gray-500 hover:text-[#0F2348] font-black text-xs uppercase tracking-widest transition-all"
+                  className="px-8 py-3.5 text-gray-500 hover:text-[#1A2332] font-black text-xs uppercase tracking-widest transition-all"
                 >
                   İPTAL
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex items-center gap-2 px-10 py-3.5 bg-[#0F2348] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl shadow-gray-200 disabled:opacity-50 active:scale-95"
+                  className="flex items-center gap-2 px-10 py-3.5 bg-[#1A2332] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl shadow-gray-200 disabled:opacity-50 active:scale-95"
                 >
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                   {editing ? 'GÜNCELLE' : 'KAYDET'}

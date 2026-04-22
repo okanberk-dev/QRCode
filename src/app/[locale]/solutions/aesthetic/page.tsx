@@ -69,7 +69,7 @@ export default async function AestheticSolutionPage({ params }: { params: Promis
     {
       title: isTr ? 'Hassas Alanda Güven İnşası' : 'Building Trust in Sensitive Field',
       desc: isTr ? 'Estetik kararlar büyük güven gerektirir. Gerçek hasta yorumları potansiyel hastanın korkusunu giderir.' : 'Aesthetic decisions require great trust. Real patient reviews eliminate potential patients\' fears.',
-      icon: <Star size={20} className="text-[#FF9A14]" />,
+      icon: <Star size={20} className="text-[#F4B400]" />,
     },
     {
       title: isTr ? 'Hasta Gizliliği' : 'Patient Privacy',

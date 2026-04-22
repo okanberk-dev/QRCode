@@ -22,13 +22,13 @@ export default function GoogleTabs({ activeTab, onTabChange }: GoogleTabsProps) 
             onClick={() => onTabChange(tab.id)}
             className={`px-4 py-3.5 text-sm font-medium transition-all relative ${
               activeTab === tab.id 
-                ? "text-[#FF9A14]" 
-                : "text-[#6B7B93] hover:text-[#0F2348]"
+                ? "text-[#F4B400]" 
+                : "text-[#6B7280] hover:text-[#1A2332]"
             }`}
           >
             {tab.label}
             {activeTab === tab.id && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF9A14] rounded-t-full" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F4B400] rounded-t-full" />
             )}
           </button>
         ))}

@@ -60,7 +60,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
         width: 480,
         margin: 2,
         errorCorrectionLevel: 'H',
-        color: { dark: '#0F2348', light: '#FFFFFF' },
+        color: { dark: '#1A2332', light: '#FFFFFF' },
       },
       (err) => {
         setIsGenerating(false);
@@ -124,7 +124,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
         <div className="space-y-2">
           <label
             htmlFor="qr-url"
-            className="text-[13px] font-black uppercase tracking-[0.12em] text-[#0F2348] flex items-center gap-2"
+            className="text-[13px] font-black uppercase tracking-[0.12em] text-[#1A2332] flex items-center gap-2"
           >
             <Link2 size={14} />
             {isTr ? 'Web sitesi adresi' : 'Website URL'}
@@ -145,7 +145,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
               placeholder="https://example.com/menu"
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? 'qr-url-error' : 'qr-url-hint'}
-              className="w-full px-5 py-4 text-[15px] sm:text-[16px] bg-white border-[2.5px] border-[#0F2348] rounded-xl shadow-[4px_4px_0_0_#0F2348] focus:outline-none focus:shadow-[2px_2px_0_0_#0F2348] focus:translate-x-[2px] focus:translate-y-[2px] transition-all placeholder:text-[#6B7B93] text-[#0F2348] font-medium"
+              className="w-full px-5 py-4 text-[15px] sm:text-[16px] bg-white border-[2.5px] border-[#1A2332] rounded-xl shadow-md focus:outline-none focus:shadow-md focus:translate-x-[2px] focus:translate-y-[2px] transition-all placeholder:text-[#6B7280] text-[#1A2332] font-medium"
             />
           </div>
           {error ? (
@@ -158,7 +158,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
               {error}
             </p>
           ) : (
-            <p id="qr-url-hint" className="text-[12px] text-[#243554] font-medium">
+            <p id="qr-url-hint" className="text-[12px] text-[#2A3444] font-medium">
               {isTr
                 ? 'Menü, rezervasyon veya bilgi sayfası gibi herhangi bir genel bağlantıyı yapıştırın.'
                 : 'Paste any public link — a menu, reservation page, or info page.'}
@@ -168,14 +168,14 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
 
         <button
           type="submit"
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#FF9A14] text-[#0F2348] font-extrabold text-[15px] px-7 py-4 rounded-xl border-[2.5px] border-[#0F2348] shadow-[5px_6px_0_0_#0F2348] hover:-translate-y-0.5 hover:shadow-[6px_7px_0_0_#0F2348] active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-extrabold text-[15px] px-7 py-4 rounded-xl border-[2.5px] border-[#1A2332] shadow-md hover:-translate-y-0.5 hover:shadow-md active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
         >
           <Sparkles size={18} />
           {isTr ? 'QR Kodu Oluştur' : 'Generate QR Code'}
         </button>
 
         {/* Helper list */}
-        <ul className="pt-4 space-y-2.5 border-t-[2px] border-dashed border-[#C9D0DB]">
+        <ul className="pt-4 space-y-2.5 border-t-[2px] border-dashed border-[#E8ECF2]">
           {[
             isTr ? 'Yalnızca bu URL için benzersiz QR' : 'A QR dedicated to this URL only',
             isTr ? 'Yüksek çözünürlüklü PNG indirme' : 'High-resolution PNG download',
@@ -183,7 +183,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           ].map((item) => (
             <li
               key={item}
-              className="flex items-start gap-2 text-[13px] sm:text-[14px] font-medium text-[#0F2348]"
+              className="flex items-start gap-2 text-[13px] sm:text-[14px] font-medium text-[#1A2332]"
             >
               <Check size={16} className="text-[#16A34A] flex-shrink-0 mt-0.5" />
               <span>{item}</span>
@@ -194,21 +194,21 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
 
       {/* ─── Preview side ─── */}
       <figure
-        className="lg:col-span-2 bg-white border-[2.5px] border-[#0F2348] rounded-2xl shadow-[6px_8px_0_0_#0F2348] p-5 sm:p-7 space-y-5"
+        className="lg:col-span-2 bg-white border-[2.5px] border-[#1A2332] rounded-2xl shadow-md p-5 sm:p-7 space-y-5"
       >
         <div className="flex items-center justify-between">
-          <div className="inline-flex items-center gap-1.5 bg-[#F5F4F1] border-[2px] border-[#0F2348] rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]">
+          <div className="inline-flex items-center gap-1.5 bg-[#F8F6F1] border-[2px] border-[#1A2332] rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]">
             <QrCode size={12} />
             {isTr ? 'CANLI ÖNİZLEME' : 'LIVE PREVIEW'}
           </div>
           {isGenerating && (
-            <span className="text-[10px] font-bold text-[#243554] uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-[#2A3444] uppercase tracking-wider">
               {isTr ? 'OLUŞTURULUYOR...' : 'GENERATING...'}
             </span>
           )}
         </div>
 
-        <div className="relative bg-[#F5F4F1] border-[2px] border-[#0F2348] rounded-xl p-4 aspect-square flex items-center justify-center">
+        <div className="relative bg-[#F8F6F1] border-[2px] border-[#1A2332] rounded-xl p-4 aspect-square flex items-center justify-center">
           <canvas
             ref={canvasRef}
             className="w-full h-full max-w-[360px] max-h-[360px]"
@@ -221,7 +221,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           />
         </div>
 
-        <figcaption className="text-center text-[12px] font-medium text-[#243554] break-all px-2">
+        <figcaption className="text-center text-[12px] font-medium text-[#2A3444] break-all px-2">
           {submittedUrl}
         </figcaption>
 
@@ -229,7 +229,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           <button
             type="button"
             onClick={handleDownload}
-            className="inline-flex items-center justify-center gap-1.5 bg-[#0F2348] text-white font-extrabold text-[13px] px-4 py-3 rounded-lg border-[2px] border-[#0F2348] shadow-[3px_4px_0_0_#FF9A14] hover:-translate-y-0.5 hover:shadow-[4px_5px_0_0_#FF9A14] active:translate-x-[3px] active:translate-y-[4px] active:shadow-none transition-all"
+            className="inline-flex items-center justify-center gap-1.5 bg-[#1A2332] text-white font-extrabold text-[13px] px-4 py-3 rounded-lg border-[2px] border-[#1A2332] shadow-md hover:-translate-y-0.5 hover:shadow-md active:translate-x-[3px] active:translate-y-[4px] active:shadow-none transition-all"
           >
             <Download size={14} />
             PNG
@@ -237,7 +237,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex items-center justify-center gap-1.5 bg-white text-[#0F2348] font-extrabold text-[13px] px-4 py-3 rounded-lg border-[2px] border-[#0F2348] shadow-[3px_4px_0_0_#0F2348] hover:-translate-y-0.5 hover:shadow-[4px_5px_0_0_#0F2348] active:translate-x-[3px] active:translate-y-[4px] active:shadow-none transition-all"
+            className="inline-flex items-center justify-center gap-1.5 bg-white text-[#1A2332] font-extrabold text-[13px] px-4 py-3 rounded-lg border-[2px] border-[#1A2332] shadow-md hover:-translate-y-0.5 hover:shadow-md active:translate-x-[3px] active:translate-y-[4px] active:shadow-none transition-all"
             aria-label={isTr ? 'Bağlantıyı kopyala' : 'Copy link'}
           >
             {copied ? <Check size={14} /> : <Copy size={14} />}

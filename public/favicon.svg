@@ -1,11 +1,9 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="64" height="64" rx="14" fill="#0F2348"/>
-  <!-- Speech bubble b shape -->
-  <path d="M20 12C20 12 20 44 20 44C20 44 22 48 26 49C26 49 22 52 18 51C14 50 13 47 13 44V12C13 10 15 9 17 10L20 12Z" fill="#FF9A14"/>
-  <circle cx="28" cy="34" r="14" fill="#FF9A14"/>
-  <circle cx="28" cy="34" r="8.5" fill="#0F2348"/>
-  <!-- Checkmark -->
-  <path d="M24 34L27 37L33 31" stroke="#FF9A14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <!-- Tail -->
-  <path d="M20 43L16 51L25 44" fill="#FF9A14"/>
+  <rect width="64" height="64" rx="14" fill="#1A2332"/>
+  <!-- Ascender -->
+  <rect x="15" y="10" width="8" height="40" rx="4" fill="#F8F6F1"/>
+  <!-- Bowl ring -->
+  <circle cx="34" cy="42" r="12" stroke="#F8F6F1" stroke-width="6.5" fill="none"/>
+  <!-- Gold curl accent -->
+  <path d="M 46 42 A 12 12 0 0 1 34 54" stroke="#F4B400" stroke-width="6.5" stroke-linecap="round" fill="none"/>
 </svg>

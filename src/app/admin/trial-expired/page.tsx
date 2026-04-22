@@ -8,7 +8,7 @@ export default function TrialExpiredPage() {
         {/* Card */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
           {/* Top banner */}
-          <div className="bg-[#0F2348] px-8 py-8 text-center">
+          <div className="bg-[#1A2332] px-8 py-8 text-center">
             <div className="w-16 h-16 bg-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Clock size={32} className="text-orange-400" />
             </div>
@@ -24,12 +24,12 @@ export default function TrialExpiredPage() {
 
             {/* Plan options */}
             <div className="space-y-3 mb-6">
-              <div className="border-2 border-[#FF9A14] rounded-2xl p-4 bg-[#FF9A14]/5">
+              <div className="border-2 border-[#F4B400] rounded-2xl p-4 bg-[#F4B400]/5">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-[#0F2348]">Aylık Plan</span>
-                  <span className="bg-[#FF9A14] text-[#0F2348] text-xs font-black px-2 py-0.5 rounded-full">Popüler</span>
+                  <span className="font-bold text-[#1A2332]">Aylık Plan</span>
+                  <span className="bg-[#F4B400] text-[#1A2332] text-xs font-black px-2 py-0.5 rounded-full">Popüler</span>
                 </div>
-                <p className="text-2xl font-black text-[#0F2348]">₺299 <span className="text-sm font-normal text-gray-500">/ ay</span></p>
+                <p className="text-2xl font-black text-[#1A2332]">₺299 <span className="text-sm font-normal text-gray-500">/ ay</span></p>
                 <div className="mt-3 space-y-1.5">
                   {['Sınırsız QR Kodu', 'Anlık E-posta Bildirimleri', 'Detaylı Analitik', 'Google Yorum Yönlendirme'].map(f => (
                     <div key={f} className="flex items-center gap-2 text-xs text-gray-600">
@@ -42,19 +42,19 @@ export default function TrialExpiredPage() {
 
               <div className="border border-gray-200 rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-[#0F2348]">Yıllık Plan</span>
+                  <span className="font-bold text-[#1A2332]">Yıllık Plan</span>
                   <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">%30 İndirim</span>
                 </div>
-                <p className="text-2xl font-black text-[#0F2348]">₺209 <span className="text-sm font-normal text-gray-500">/ ay (yıllık)</span></p>
+                <p className="text-2xl font-black text-[#1A2332]">₺209 <span className="text-sm font-normal text-gray-500">/ ay (yıllık)</span></p>
               </div>
             </div>
 
             {/* CTA */}
             <a
               href="mailto:hello@buaze.com?subject=Plan Yükseltme Talebi"
-              className="flex items-center justify-center gap-2 w-full bg-[#0F2348] hover:bg-[#1f2937] text-white font-bold py-3.5 rounded-2xl text-sm transition-all shadow-lg hover:shadow-xl"
+              className="flex items-center justify-center gap-2 w-full bg-[#1A2332] hover:bg-[#1f2937] text-white font-bold py-3.5 rounded-2xl text-sm transition-all shadow-lg hover:shadow-xl"
             >
-              <Zap size={16} className="text-[#FF9A14]" />
+              <Zap size={16} className="text-[#F4B400]" />
               Planı Yükselt — hello@buaze.com
             </a>
 

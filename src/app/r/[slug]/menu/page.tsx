@@ -121,10 +121,10 @@ export default function PublicMenuPage() {
 
   if (!data) return notFound();
 
-  const themeColor = data.primaryColor || '#0F2348';
+  const themeColor = data.primaryColor || '#1A2332';
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F5F4F1] selection:bg-gray-100">
+    <div className="flex flex-col min-h-screen bg-[#F8F6F1] selection:bg-gray-100">
       
       {/* ── Fixed Header ── */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
@@ -136,7 +136,7 @@ export default function PublicMenuPage() {
              >
                <ArrowLeft size={22} strokeWidth={2.5} />
              </button>
-             <h1 className="font-black text-lg tracking-tight text-[#0F2348] truncate max-w-[180px]">{data.name}</h1>
+             <h1 className="font-black text-lg tracking-tight text-[#1A2332] truncate max-w-[180px]">{data.name}</h1>
           </div>
           <div 
             className="w-10 h-10 rounded-2xl flex items-center justify-center text-white text-base font-black shadow-lg overflow-hidden shrink-0"
@@ -153,7 +153,7 @@ export default function PublicMenuPage() {
         {/* ── Search Bar ── */}
         <div className="max-w-xl mx-auto px-5 pb-3">
            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#0F2348] transition-colors" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1A2332] transition-colors" size={18} />
               <input 
                 type="text"
                 value={searchQuery}
@@ -188,7 +188,7 @@ export default function PublicMenuPage() {
                 }}
                 className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
                   activeCategory === cat.id 
-                    ? 'bg-[#0F2348] text-white border-[#0F2348] shadow-xl shadow-gray-200' 
+                    ? 'bg-[#1A2332] text-white border-[#1A2332] shadow-xl shadow-gray-200' 
                     : 'bg-white text-gray-500 border-gray-100 hover:border-gray-200'
                 }`}
               >
@@ -214,7 +214,7 @@ export default function PublicMenuPage() {
                 <div className="flex items-center gap-4">
                    <div className="h-8 w-1.5 rounded-full" style={{ backgroundColor: themeColor }} />
                    <div>
-                     <h2 className="text-2xl font-black text-[#0F2348] tracking-tight">{cat.name}</h2>
+                     <h2 className="text-2xl font-black text-[#1A2332] tracking-tight">{cat.name}</h2>
                      {cat.description && <p className="text-xs font-bold text-gray-400 mt-0.5">{cat.description}</p>}
                    </div>
                 </div>
@@ -229,11 +229,11 @@ export default function PublicMenuPage() {
                         <div className="flex-1 space-y-1.5">
                            <div className="flex items-start justify-between gap-2">
                              <div className="flex flex-col gap-1">
-                               <h3 className="font-black text-[#0F2348] leading-tight group-hover:text-gray-700 transition-colors uppercase tracking-tight">{item.name}</h3>
+                               <h3 className="font-black text-[#1A2332] leading-tight group-hover:text-gray-700 transition-colors uppercase tracking-tight">{item.name}</h3>
                                {item.badges && item.badges.length > 0 && (
                                  <div className="flex flex-wrap gap-1">
                                     {item.badges.map((badge, idx) => (
-                                      <span key={idx} className="bg-[#FF9A14] text-[#0F2348] text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
+                                      <span key={idx} className="bg-[#F4B400] text-[#1A2332] text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
                                          {badge}
                                       </span>
                                     ))}
@@ -245,7 +245,7 @@ export default function PublicMenuPage() {
                              <p className="text-[12px] font-medium text-gray-500 line-clamp-2 leading-relaxed">{item.description}</p>
                            )}
                            <div className="pt-1">
-                             <span className="text-[15px] font-black text-[#0F2348]">
+                             <span className="text-[15px] font-black text-[#1A2332]">
                                {(item.priceCents / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {item.currency === 'TRY' ? '₺' : item.currency}
                              </span>
                            </div>
@@ -315,7 +315,7 @@ export default function PublicMenuPage() {
               <div className="p-8 space-y-6">
                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-3xl font-black text-[#0F2348] leading-tight uppercase tracking-tight">{selectedItem.name}</h2>
+                      <h2 className="text-3xl font-black text-[#1A2332] leading-tight uppercase tracking-tight">{selectedItem.name}</h2>
                       {selectedItem.isOutOfStock && (
                         <span className="px-2 py-1 rounded-lg bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-tighter border border-red-100">
                           {locale === 'tr' ? 'STOKTA YOK' : 'OUT OF STOCK'}
@@ -325,7 +325,7 @@ export default function PublicMenuPage() {
                     {selectedItem.badges && selectedItem.badges.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                          {selectedItem.badges.map((badge, idx) => (
-                           <span key={idx} className="bg-[#FF9A14] text-[#0F2348] text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider shadow-sm">
+                           <span key={idx} className="bg-[#F4B400] text-[#1A2332] text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider shadow-sm">
                              {badge}
                            </span>
                          ))}
@@ -343,13 +343,13 @@ export default function PublicMenuPage() {
                  <div className="flex items-center justify-between pt-6 border-t border-gray-50">
                     <div className="space-y-1">
                        <p className="text-[11px] font-black uppercase text-gray-400 tracking-[0.2em]">{locale === 'tr' ? 'FİYAT' : 'PRICE'}</p>
-                       <p className="text-2xl font-black text-[#0F2348]">
+                       <p className="text-2xl font-black text-[#1A2332]">
                          {(selectedItem.priceCents / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {selectedItem.currency === 'TRY' ? '₺' : selectedItem.currency}
                        </p>
                     </div>
                     <button 
                       onClick={() => setSelectedItem(null)}
-                      className="px-10 py-4 bg-[#0F2348] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-800 transition-all active:scale-95 shadow-xl"
+                      className="px-10 py-4 bg-[#1A2332] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-800 transition-all active:scale-95 shadow-xl"
                     >
                       {locale === 'tr' ? 'GERİ DÖN' : 'GO BACK'}
                     </button>

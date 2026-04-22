@@ -79,7 +79,7 @@ export default async function HotelSolutionPage({ params }: { params: Promise<{ 
     {
       title: isTr ? 'Misafir Sadakati' : 'Guest Loyalty',
       desc: isTr ? 'Geri bildirim alan misafir kendini özel hisseder. Tekrar rezervasyon oranı %89\'a kadar çıkar.' : 'Guests who receive feedback feel valued. Repeat booking rate increases up to 89%.',
-      icon: <Star size={20} className="text-[#FF9A14]" />,
+      icon: <Star size={20} className="text-[#F4B400]" />,
     },
     {
       title: isTr ? 'Çok Şubeli Analitik' : 'Multi-Property Analytics',

@@ -43,7 +43,7 @@ export default function RestaurantsPage() {
     googlePlaceId: '',
     address: '',
     phone: '',
-    primaryColor: '#FF9A14',
+    primaryColor: '#F4B400',
   });
   const [isManualSlug, setIsManualSlug] = useState(false);
   const [showGoogleInfo, setShowGoogleInfo] = useState(false);
@@ -113,7 +113,7 @@ export default function RestaurantsPage() {
       }
 
       setShowCreateModal(false);
-      setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googlePlaceId: '', address: '', phone: '', primaryColor: '#FF9A14' });
+      setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googlePlaceId: '', address: '', phone: '', primaryColor: '#F4B400' });
       setIsManualSlug(false);
       fetchRestaurants();
     } catch (err) {
@@ -138,7 +138,7 @@ export default function RestaurantsPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#0F2348] w-8 h-8" />
+        <Loader2 className="animate-spin text-[#1A2332] w-8 h-8" />
       </div>
     );
   }
@@ -147,12 +147,12 @@ export default function RestaurantsPage() {
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-gray-100 shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#0F2348] tracking-tight uppercase">İşletmeler</h1>
-          <p className="text-[#243554] text-[13px] sm:text-[15px] font-bold">Platformdaki tüm restoranları ve şubeleri yönetin.</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#1A2332] tracking-tight uppercase">İşletmeler</h1>
+          <p className="text-[#2A3444] text-[13px] sm:text-[15px] font-bold">Platformdaki tüm restoranları ve şubeleri yönetin.</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 sm:gap-3 bg-[#FF9A14] text-[#0F2348] px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#EAB308] transition-all active:scale-95 group"
+          className="flex items-center justify-center gap-2 sm:gap-3 bg-[#F4B400] text-[#1A2332] px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#F4B400] transition-all active:scale-95 group"
         >
           <Plus size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
           Yeni İşletme
@@ -167,8 +167,8 @@ export default function RestaurantsPage() {
             onClick={() => setStatusFilter('active')}
             className={`px-4 sm:px-6 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
               statusFilter === 'active' 
-                ? 'bg-white text-[#0F2348] shadow-sm' 
-                : 'text-[#243554] hover:text-[#0F2348]'
+                ? 'bg-white text-[#1A2332] shadow-sm' 
+                : 'text-[#2A3444] hover:text-[#1A2332]'
             }`}
           >
             Aktif
@@ -177,8 +177,8 @@ export default function RestaurantsPage() {
             onClick={() => setStatusFilter('passive')}
             className={`px-4 sm:px-6 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
               statusFilter === 'passive' 
-                ? 'bg-white text-[#0F2348] shadow-sm' 
-                : 'text-[#243554] hover:text-[#0F2348]'
+                ? 'bg-white text-[#1A2332] shadow-sm' 
+                : 'text-[#2A3444] hover:text-[#1A2332]'
             }`}
           >
             Pasif
@@ -187,8 +187,8 @@ export default function RestaurantsPage() {
             onClick={() => setStatusFilter('all')}
             className={`px-4 sm:px-6 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
               statusFilter === 'all' 
-                ? 'bg-white text-[#0F2348] shadow-sm' 
-                : 'text-[#243554] hover:text-[#0F2348]'
+                ? 'bg-white text-[#1A2332] shadow-sm' 
+                : 'text-[#2A3444] hover:text-[#1A2332]'
             }`}
           >
             Tümü
@@ -197,13 +197,13 @@ export default function RestaurantsPage() {
 
         {/* Search Bar */}
         <div className="relative group w-full max-w-md">
-          <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7B93] group-focus-within:text-[#0F2348] transition-colors" size={20} strokeWidth={3} />
+          <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={20} strokeWidth={3} />
           <input
             type="text"
             placeholder={t('search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white border border-gray-100 rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-3 sm:py-4 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#FF9A14] transition-all"
+            className="w-full bg-white border border-gray-100 rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-3 sm:py-4 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#F4B400] transition-all"
           />
         </div>
       </div>
@@ -215,12 +215,12 @@ export default function RestaurantsPage() {
             <Store size={48} className="text-gray-400" strokeWidth={2.5} />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-black text-[#0F2348]">Henüz işletme kaydı yok</h3>
-            <p className="text-[#243554] font-bold">İlk restoranınızı ekleyerek dijital itibarınızı yönetmeye başlayın.</p>
+            <h3 className="text-xl font-black text-[#1A2332]">Henüz işletme kaydı yok</h3>
+            <p className="text-[#2A3444] font-bold">İlk restoranınızı ekleyerek dijital itibarınızı yönetmeye başlayın.</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-3 bg-[#FF9A14] text-[#0F2348] px-10 py-4 rounded-2xl text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#EAB308] transition-all active:scale-95"
+            className="inline-flex items-center gap-3 bg-[#F4B400] text-[#1A2332] px-10 py-4 rounded-2xl text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#F4B400] transition-all active:scale-95"
           >
             <Plus size={20} strokeWidth={3} />
             İşletme Ekle
@@ -246,9 +246,9 @@ export default function RestaurantsPage() {
                       {r.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-black text-[#0F2348] text-xl tracking-tight leading-none mb-2 truncate" title={r.name}>{r.name}</h3>
+                      <h3 className="font-black text-[#1A2332] text-xl tracking-tight leading-none mb-2 truncate" title={r.name}>{r.name}</h3>
                       <div className="flex items-center gap-2">
-                        <p className="text-[13px] font-bold text-[#6B7B93] truncate">/{r.slug}</p>
+                        <p className="text-[13px] font-bold text-[#6B7280] truncate">/{r.slug}</p>
                         <CopyUrlButton 
                           url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${r.slug}`}
                           className="h-6 w-6"
@@ -258,7 +258,7 @@ export default function RestaurantsPage() {
                   </div>
                   <button
                     onClick={() => toggleActive(r.id, r.isActive)}
-                    className={`shrink-0 transition-all active:scale-90 ${r.isActive ? 'text-[#10b981]' : 'text-[#6B7B93]'}`}
+                    className={`shrink-0 transition-all active:scale-90 ${r.isActive ? 'text-[#10b981]' : 'text-[#6B7280]'}`}
                     title={r.isActive ? 'Pasifleştir' : 'Aktifleştir'}
                   >
                     {r.isActive ? (
@@ -269,24 +269,24 @@ export default function RestaurantsPage() {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-6 py-4 border-y-2 border-[#F5F4F1] flex-wrap">
+                <div className="flex items-center gap-3 sm:gap-6 py-4 border-y-2 border-[#F8F6F1] flex-wrap">
                   <div className="space-y-1 min-w-0">
-                    <p className="text-[10px] font-black text-[#6B7B93] uppercase tracking-widest leading-none">KATEGORİ</p>
-                    <p className="text-[12px] sm:text-[13px] font-black text-[#0F2348] truncate">{r.category.toUpperCase()}</p>
+                    <p className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest leading-none">KATEGORİ</p>
+                    <p className="text-[12px] sm:text-[13px] font-black text-[#1A2332] truncate">{r.category.toUpperCase()}</p>
                   </div>
-                  <div className="w-px h-8 bg-[#C9D0DB]" />
+                  <div className="w-px h-8 bg-[#E8ECF2]" />
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[#6B7B93] uppercase tracking-widest leading-none">YORUM</p>
-                    <p className="text-[12px] sm:text-[13px] font-black text-[#FF9A14]">{r._count.feedbacks}</p>
+                    <p className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest leading-none">YORUM</p>
+                    <p className="text-[12px] sm:text-[13px] font-black text-[#F4B400]">{r._count.feedbacks}</p>
                   </div>
-                  <div className="w-px h-8 bg-[#C9D0DB]" />
+                  <div className="w-px h-8 bg-[#E8ECF2]" />
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[#6B7B93] uppercase tracking-widest leading-none">MENÜ</p>
+                    <p className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest leading-none">MENÜ</p>
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest border ${menuStatus(r).cls}`}>
                         {menuStatus(r).label}
                       </span>
-                      <span className="text-[12px] sm:text-[13px] font-black text-[#0F2348]">{r._count.menuItems}</span>
+                      <span className="text-[12px] sm:text-[13px] font-black text-[#1A2332]">{r._count.menuItems}</span>
                     </div>
                   </div>
                 </div>
@@ -294,7 +294,7 @@ export default function RestaurantsPage() {
                 <div className="flex items-center gap-3">
                   <Link
                     href={`/admin/restaurants/${r.id}`}
-                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-[#0F2348] text-white rounded-xl shadow-sm hover:bg-gray-800 transition-all uppercase tracking-widest active:scale-95"
+                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-[#1A2332] text-white rounded-xl shadow-sm hover:bg-gray-800 transition-all uppercase tracking-widest active:scale-95"
                   >
                     YÖNET
                   </Link>
@@ -323,13 +323,13 @@ export default function RestaurantsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6">
           <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl border border-gray-100 w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
-            <div className="p-5 sm:p-8 md:p-10 border-b border-gray-100 bg-[#F5F4F1] relative">
-              <h2 className="text-2xl sm:text-3xl font-black text-[#0F2348] tracking-tight uppercase pr-10">Yeni İşletme</h2>
-              <p className="text-[#243554] text-xs sm:text-sm font-bold mt-2">Sisteme yeni bir restoran veya şube tanımlayın.</p>
+            <div className="p-5 sm:p-8 md:p-10 border-b border-gray-100 bg-[#F8F6F1] relative">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#1A2332] tracking-tight uppercase pr-10">Yeni İşletme</h2>
+              <p className="text-[#2A3444] text-xs sm:text-sm font-bold mt-2">Sisteme yeni bir restoran veya şube tanımlayın.</p>
 
               <button
                 onClick={() => { setShowCreateModal(false); setError(''); }}
-                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-gray-400 hover:text-[#0F2348] hover:bg-gray-100 rounded-xl transition-all"
+                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-gray-400 hover:text-[#1A2332] hover:bg-gray-100 rounded-xl transition-all"
               >
                 <X size={24} strokeWidth={3} />
               </button>
@@ -343,21 +343,21 @@ export default function RestaurantsPage() {
               )}
 
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">İşletme Adı *</label>
+                <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">İşletme Adı *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Örn: Gourmet Eats Ankara"
-                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-[15px] font-bold shadow-sm transition-all"
+                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">URL Slug (Otomatik) *</label>
+                <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">URL Slug (Otomatik) *</label>
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-                  <span className="text-[11px] sm:text-[13px] font-black text-[#243554] opacity-40 whitespace-nowrap">buaze.com/r/</span>
+                  <span className="text-[11px] sm:text-[13px] font-black text-[#2A3444] opacity-40 whitespace-nowrap">buaze.com/r/</span>
                   <input
                     type="text"
                     required
@@ -367,24 +367,24 @@ export default function RestaurantsPage() {
                       setIsManualSlug(true);
                     }}
                     placeholder="gourmet-eats"
-                    className="flex-1 min-w-0 px-3 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-[13px] sm:text-[15px] font-bold tracking-tight shadow-sm transition-all"
+                    className="flex-1 min-w-0 px-3 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[13px] sm:text-[15px] font-bold tracking-tight shadow-sm transition-all"
                   />
                 </div>
               </div>
 
               {/* ── Google Review Link — emphasized ── */}
-              <div className="rounded-2xl border-2 border-[#FF9A14]/50 bg-gradient-to-br from-[#FF9A14]/15 via-[#FF9A14]/8 to-white p-4 sm:p-5 shadow-sm">
+              <div className="rounded-2xl border-2 border-[#F4B400]/50 bg-gradient-to-br from-[#F4B400]/15 via-[#F4B400]/8 to-white p-4 sm:p-5 shadow-sm">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#FF9A14] shadow-sm">
-                      <MapPin size={15} strokeWidth={3} className="text-[#0F2348]" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F4B400] shadow-sm">
+                      <MapPin size={15} strokeWidth={3} className="text-[#1A2332]" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[12px] sm:text-[13px] font-black uppercase tracking-wide text-[#0F2348] leading-tight">
+                      <p className="text-[12px] sm:text-[13px] font-black uppercase tracking-wide text-[#1A2332] leading-tight">
                         Google Yorum Bağlantısı
                         <span className="ml-1 text-orange-500">*</span>
                       </p>
-                      <p className="mt-0.5 text-[10px] font-bold text-[#243554] leading-tight">
+                      <p className="mt-0.5 text-[10px] font-bold text-[#2A3444] leading-tight">
                         Olumlu yorumlar bu bağlantıya yönlendirilir
                       </p>
                     </div>
@@ -392,7 +392,7 @@ export default function RestaurantsPage() {
                   <button
                     type="button"
                     onClick={() => setShowGoogleInfo((v) => !v)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-[#0F2348] transition-all hover:bg-[#FF9A14]/20 active:scale-95"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-[#1A2332] transition-all hover:bg-[#F4B400]/20 active:scale-95"
                     aria-label="Info"
                   >
                     <Info size={15} strokeWidth={2.75} />
@@ -400,8 +400,8 @@ export default function RestaurantsPage() {
                 </div>
 
                 {showGoogleInfo && (
-                  <div className="mb-3 rounded-xl border border-gray-200 bg-white p-3.5 text-xs font-bold text-[#243554] leading-relaxed">
-                    <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#0F2348]">Nasıl alınır?</p>
+                  <div className="mb-3 rounded-xl border border-gray-200 bg-white p-3.5 text-xs font-bold text-[#2A3444] leading-relaxed">
+                    <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#1A2332]">Nasıl alınır?</p>
                     <ol className="ml-4 list-decimal space-y-1">
                       <li>Google Haritalar&apos;ı açın ve işletmenizi aratın.</li>
                       <li>İşletmeye tıklayın, &quot;Paylaş&quot; butonuna basın.</li>
@@ -411,7 +411,7 @@ export default function RestaurantsPage() {
                       href="https://www.google.com/maps"
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-3 inline-flex items-center gap-1.5 text-[#FF9A14] font-black text-[11px] uppercase tracking-widest underline underline-offset-2"
+                      className="mt-3 inline-flex items-center gap-1.5 text-[#F4B400] font-black text-[11px] uppercase tracking-widest underline underline-offset-2"
                     >
                       <ExternalLink size={12} strokeWidth={2.75} />
                       Google Haritalar&apos;ı Aç
@@ -424,17 +424,17 @@ export default function RestaurantsPage() {
                   value={formData.googlePlaceId}
                   onChange={(e) => setFormData((prev) => ({ ...prev, googlePlaceId: e.target.value }))}
                   placeholder="https://maps.google.com/... veya Place ID"
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm font-bold text-[#0F2348] outline-none transition-all placeholder:text-[#6B7B93] focus:ring-2 focus:ring-[#FF9A14]"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm font-bold text-[#1A2332] outline-none transition-all placeholder:text-[#6B7280] focus:ring-2 focus:ring-[#F4B400]"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Kategori</label>
+                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Kategori</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
                   >
                     <option>Restoran</option>
                     <option>Kafe</option>
@@ -447,7 +447,7 @@ export default function RestaurantsPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Tema Rengi</label>
+                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Tema Rengi</label>
                   <div className="flex items-center gap-3 sm:gap-4">
                     <input
                       type="color"
@@ -455,46 +455,46 @@ export default function RestaurantsPage() {
                       onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
                       className="w-14 h-12 sm:w-16 rounded-xl border border-gray-200 cursor-pointer p-1 bg-white shadow-sm shrink-0"
                     />
-                    <span className="text-xs sm:text-sm font-black text-[#0F2348] font-mono">{formData.primaryColor.toUpperCase()}</span>
+                    <span className="text-xs sm:text-sm font-black text-[#1A2332] font-mono">{formData.primaryColor.toUpperCase()}</span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Bildirim E-postası</label>
+                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Bildirim E-postası</label>
                   <input
                     type="email"
                     value={formData.notificationEmail}
                     onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
                     placeholder="yonetim@email.com"
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-sm font-bold shadow-sm transition-all"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold shadow-sm transition-all"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7B93] uppercase tracking-widest ml-1">Telefon Numarası</label>
+                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Telefon Numarası</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="05..."
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F5F4F1] focus:ring-2 focus:ring-[#FF9A14] outline-none text-sm font-bold shadow-sm transition-all"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-gray-200 bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold shadow-sm transition-all"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-5 pt-6 sm:pt-10 border-t-2 border-[#F5F4F1]">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-5 pt-6 sm:pt-10 border-t-2 border-[#F8F6F1]">
                 <button
                   type="button"
                   onClick={() => { setShowCreateModal(false); setError(''); }}
-                  className="px-6 sm:px-8 py-3 sm:py-4 text-xs font-black text-[#243554] hover:text-[#0F2348] uppercase tracking-widest transition-colors"
+                  className="px-6 sm:px-8 py-3 sm:py-4 text-xs font-black text-[#2A3444] hover:text-[#1A2332] uppercase tracking-widest transition-colors"
                 >
                   İPTAL
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-[#0F2348] text-white px-6 sm:px-10 py-3 sm:py-4 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-sm hover:scale-95 transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 sm:gap-3 bg-[#1A2332] text-white px-6 sm:px-10 py-3 sm:py-4 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-sm hover:scale-95 transition-all disabled:opacity-50"
                 >
                   {creating ? <Loader2 className="animate-spin" size={20} strokeWidth={3} /> : <Plus size={20} strokeWidth={3} />}
                   İŞLETMEYİ KAYDET

@@ -32,29 +32,29 @@ export default async function KvkkPage({
   const isTr = locale === 'tr';
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-[#F5F4F1] selection:bg-[#FF9A14]/30">
+    <div className="min-h-screen flex flex-col font-sans bg-[#F8F6F1] selection:bg-[#F4B400]/30">
       <MarketingNavbar locale={locale} t={t} />
 
       <main className="flex-1 max-w-[1000px] mx-auto w-full px-5 py-20 sm:py-32">
-        <div className="bg-white p-10 sm:p-20 rounded-[48px] border-[4px] border-[#0F2348] shadow-[15px_20px_0_0_#FF9A14] relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF9A14]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
+        <div className="bg-white p-10 sm:p-20 rounded-[48px] border-[4px] border-[#1A2332] shadow-md relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#F4B400]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
           
           <div className="mb-16 relative">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#0F2348] text-white rounded-xl mb-6 shadow-[4px_4px_0_0_#FF9A14]">
-               <ShieldCheck size={14} className="text-[#FF9A14]" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#1A2332] text-white rounded-xl mb-6 shadow-md">
+               <ShieldCheck size={14} className="text-[#F4B400]" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'YASAL UYARI' : 'LEGAL NOTICE'}</span>
             </div>
-            <h1 className="text-[36px] sm:text-[56px] font-black text-[#0F2348] tracking-tight leading-none mb-4 whitespace-pre-line">
+            <h1 className="text-[36px] sm:text-[56px] font-black text-[#1A2332] tracking-tight leading-none mb-4 whitespace-pre-line">
               {isTr ? 'KVKK\nAydınlatma Metni' : 'Personal Data\nProtection Policy (KVKK)'}
             </h1>
-            <p className="text-[13px] text-[#6B7B93] font-black uppercase tracking-widest">
+            <p className="text-[13px] text-[#6B7280] font-black uppercase tracking-widest">
               {isTr ? 'Son güncelleme: 13 Nisan 2026' : 'Last updated: April 13, 2026'}
             </p>
           </div>
           
           <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-12 text-[16px] sm:text-[18px] leading-relaxed font-medium">
-             <div className="p-8 bg-[#F5F4F1] rounded-3xl border-2 border-[#0F2348] border-dashed">
-               <p className="font-black text-[#0F2348] m-0">
+             <div className="p-8 bg-[#F8F6F1] rounded-3xl border-2 border-[#1A2332] border-dashed">
+               <p className="font-black text-[#1A2332] m-0">
                  {isTr 
                    ? 'Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, veri sorumlusu sıfatıyla Buaze tarafından kişisel verilerinizin işlenmesine ilişkin detayları içerir.' 
                    : 'This text contains details regarding the processing of your personal data by Buaze as the data controller in accordance with the Law No. 6698 on the Protection of Personal Data ("KVKK").'}
@@ -62,7 +62,7 @@ export default async function KvkkPage({
              </div>
 
               <section className="space-y-6">
-                <h2 className="text-[#0F2348] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '1. Veri Sorumlusu' : '1. Data Controller'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '1. Veri Sorumlusu' : '1. Data Controller'}</h2>
                 <p>
                   {isTr 
                     ? 'Buaze platformu, kullanıcılarının gizliliğine ve kişisel verilerinin korunmasına en üst düzeyde önem vermektedir. Veri sorumlusu olarak tüm süreçlerimizi KVKK standartlarına uygun şekilde yürütmekteyiz.'
@@ -71,13 +71,13 @@ export default async function KvkkPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#0F2348] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '2. Kişisel Verilerin İşlenme Amaçları' : '2. Purposes of Processing Personal Data'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '2. Kişisel Verilerin İşlenme Amaçları' : '2. Purposes of Processing Personal Data'}</h2>
                 <p>
                   {isTr
                     ? 'Kişisel verileriniz aşağıdaki amaçlarla işlenmektedir:'
                     : 'Your personal data is processed for the following purposes:'}
                 </p>
-                <ul className="list-disc pl-6 space-y-3 marker:text-[#FF9A14]">
+                <ul className="list-disc pl-6 space-y-3 marker:text-[#F4B400]">
                    <li>{isTr ? 'Hizmetlerimizin sunulması ve platformun iyileştirilmesi' : 'Provision of our services and improvement of the platform'}</li>
                    <li>{isTr ? 'Müşteri geri bildirim süreçlerinin yönetilmesi' : 'Management of customer feedback processes'}</li>
                    <li>{isTr ? 'Yasal yükümlülüklerin yerine getirilmesi' : 'Fulfillment of legal obligations'}</li>
@@ -86,7 +86,7 @@ export default async function KvkkPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#0F2348] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '3. İşlenen Veri Kategorileri' : '3. Categories of Processed Data'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '3. İşlenen Veri Kategorileri' : '3. Categories of Processed Data'}</h2>
                 <p>
                   {isTr
                    ? 'Platform kullanımı sırasında işlenen veriler; kimlik bilgileri (isim-soyisim), iletişim bilgileri (e-posta, telefon), işlem güvenliği bilgileri ve müşteri işlem verilerini kapsamaktadır.'
@@ -95,13 +95,13 @@ export default async function KvkkPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#0F2348] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '4. İlgili Kişi Hakları' : '4. Rights of the Data Subject'}</h2>
+                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-black tracking-tight">{isTr ? '4. İlgili Kişi Hakları' : '4. Rights of the Data Subject'}</h2>
                 <p>
                   {isTr
                     ? 'KVKK’nın 11. maddesi uyarınca herkes veri sorumlusuna başvurarak kendisiyle ilgili;'
                     : 'In accordance with Article 11 of the KVKK, everyone may apply to the data controller to request regarding themselves;'}
                 </p>
-                <ul className="list-disc pl-6 space-y-3 marker:text-[#FF9A14]">
+                <ul className="list-disc pl-6 space-y-3 marker:text-[#F4B400]">
                    <li>{isTr ? 'Verilerin işlenip işlenmediğini öğrenme' : 'Learning whether the data is processed or not'}</li>
                    <li>{isTr ? 'Veriler işlenmişse bilgi talep etme' : 'Requesting information if data has been processed'}</li>
                    <li>{isTr ? 'İşleme amacına uygun kullanılıp kullanılmadığını öğrenme' : 'Learning whether it is used in accordance with the processing purpose'}</li>
@@ -109,16 +109,16 @@ export default async function KvkkPage({
                 </ul>
               </section>
 
-               <div className="pt-16 border-t-2 border-[#F5F4F1] flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
+               <div className="pt-16 border-t-2 border-[#F8F6F1] flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
                  <div className="space-y-1">
-                   <p className="text-[14px] font-black text-[#0F2348] uppercase tracking-widest leading-none">
+                   <p className="text-[14px] font-black text-[#1A2332] uppercase tracking-widest leading-none">
                      {isTr ? 'VERİ TALEPLERİ İÇİN' : 'FOR DATA REQUESTS'}
                    </p>
-                   <p className="text-[14px] text-[#6B7B93] font-bold">
+                   <p className="text-[14px] text-[#6B7280] font-bold">
                      {isTr ? 'kvkk@buaze.com adresine yazın.' : 'Write to kvkk@buaze.com'}
                    </p>
                  </div>
-                 <a href="mailto:kvkk@buaze.com" className="px-10 py-5 bg-[#0F2348] text-white rounded-2xl text-[15px] font-black shadow-[6px_8px_0_0_#FF9A14] hover:bg-[#0F2348] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-widest">
+                 <a href="mailto:kvkk@buaze.com" className="px-10 py-5 bg-[#1A2332] text-white rounded-2xl text-[15px] font-black shadow-md hover:bg-[#1A2332] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-widest">
                    kvkk@buaze.com
                  </a>
                </div>

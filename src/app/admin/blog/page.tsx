@@ -153,17 +153,17 @@ export default function AdminBlogPage() {
   const filtered = filterLocale === 'all' ? posts : posts.filter(p => p.locale === filterLocale);
 
   return (
-    <div className="flex-1 min-h-screen bg-[#F5F4F1] p-3 sm:p-6 md:p-10 space-y-8">
+    <div className="flex-1 min-h-screen bg-[#F8F6F1] p-3 sm:p-6 md:p-10 space-y-8">
       {/* Banner Header */}
-      <div className="bg-[#0F2348] rounded-[24px] sm:rounded-[32px] border border-gray-800 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
+      <div className="bg-[#1A2332] rounded-[24px] sm:rounded-[32px] border border-gray-800 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-[#FF9A14]/10 text-[#FF9A14] px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em]">
+          <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 text-[#F4B400] px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em]">
             ✦ İÇERİK YÖNETİMİ
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
             Blog Yazıları
           </h1>
-          <p className="text-[#6B7B93] text-sm sm:text-base font-bold max-w-md">
+          <p className="text-[#6B7280] text-sm sm:text-base font-bold max-w-md">
             Sitenizdeki içerikleri yönetin ve yeni yazılar yayınlayın.
           </p>
         </div>
@@ -185,7 +185,7 @@ export default function AdminBlogPage() {
               onClick={() => setFilterLocale(l)}
               className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
                 filterLocale === l
-                  ? 'bg-[#0F2348] text-white shadow-md'
+                  ? 'bg-[#1A2332] text-white shadow-md'
                   : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
               }`}
             >
@@ -206,7 +206,7 @@ export default function AdminBlogPage() {
           </button>
           <button
             onClick={openNew}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#FF9A14] text-[#0F2348] rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#f5b914] transition-all shadow-lg shadow-[#FF9A14]/10 active:scale-95 whitespace-nowrap"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#F4B400] text-[#1A2332] rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#f5b914] transition-all shadow-lg shadow-[#F4B400]/10 active:scale-95 whitespace-nowrap"
           >
             <Plus size={18} strokeWidth={3} />
             Yeni Yazı
@@ -236,7 +236,7 @@ export default function AdminBlogPage() {
       {/* Blog Posts Table */}
       {loading ? (
         <div className="flex items-center justify-center py-24">
-          <Loader2 size={32} className="animate-spin text-[#FF9A14]" />
+          <Loader2 size={32} className="animate-spin text-[#F4B400]" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-16 text-center space-y-4">
@@ -253,7 +253,7 @@ export default function AdminBlogPage() {
           {filtered.map(post => (
             <div
               key={post.id}
-              className={`group bg-white border rounded-[24px] p-4 flex flex-col sm:flex-row sm:items-center gap-5 transition-all hover:shadow-md hover:border-[#FF9A14]/30 ${
+              className={`group bg-white border rounded-[24px] p-4 flex flex-col sm:flex-row sm:items-center gap-5 transition-all hover:shadow-md hover:border-[#F4B400]/30 ${
                 post.isActive ? 'border-gray-100' : 'border-gray-100 opacity-60 grayscale-[0.5]'
               }`}
             >
@@ -287,7 +287,7 @@ export default function AdminBlogPage() {
                     <span className="text-[10px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg bg-gray-50 text-gray-500">Pasif</span>
                   )}
                 </div>
-                <h3 className="text-gray-900 font-bold text-[15px] leading-tight group-hover:text-[#0F2348] transition-colors">{post.title}</h3>
+                <h3 className="text-gray-900 font-bold text-[15px] leading-tight group-hover:text-[#1A2332] transition-colors">{post.title}</h3>
                 <div className="flex items-center gap-2 mt-2">
                   <p className="text-gray-400 text-[11px] font-bold uppercase tracking-wider">{post.date}</p>
                   <span className="w-1 h-1 rounded-full bg-gray-300" />
@@ -301,7 +301,7 @@ export default function AdminBlogPage() {
                   href={`https://buaze.com/${post.locale}/blog/${post.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 hover:text-[#0F2348] hover:bg-gray-100 flex items-center justify-center transition-all"
+                  className="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 hover:text-[#1A2332] hover:bg-gray-100 flex items-center justify-center transition-all"
                   title="Görüntüle"
                 >
                   <Eye size={18} strokeWidth={2.5} />
@@ -345,22 +345,22 @@ export default function AdminBlogPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-[#0F2348]/60 backdrop-blur-md z-[100] flex items-start justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-[#1A2332]/60 backdrop-blur-md z-[100] flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-[32px] w-full max-w-4xl my-8 shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-50">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[#FF9A14]/10 rounded-2xl flex items-center justify-center">
-                  {editingPost ? <Pencil size={20} className="text-[#FF9A14]" strokeWidth={3} /> : <Plus size={20} className="text-[#FF9A14]" strokeWidth={3} />}
+                <div className="w-12 h-12 bg-[#F4B400]/10 rounded-2xl flex items-center justify-center">
+                  {editingPost ? <Pencil size={20} className="text-[#F4B400]" strokeWidth={3} /> : <Plus size={20} className="text-[#F4B400]" strokeWidth={3} />}
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-[#0F2348]">{editingPost ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı'}</h2>
+                  <h2 className="text-xl font-black text-[#1A2332]">{editingPost ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı'}</h2>
                   <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-0.5">{editingPost ? editingPost.title : 'Harika bir içerik oluşturun'}</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowForm(false)}
-                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#0F2348] hover:bg-gray-50 rounded-xl transition-all"
+                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#1A2332] hover:bg-gray-50 rounded-xl transition-all"
               >
                 <X size={20} strokeWidth={3} />
               </button>
@@ -380,8 +380,8 @@ export default function AdminBlogPage() {
                         onClick={() => setForm(f => ({ ...f, locale: l }))}
                         className={`flex-1 py-3 rounded-xl text-xs font-black transition-all ${
                           form.locale === l
-                            ? 'bg-[#0F2348] text-white shadow-lg'
-                            : 'text-gray-400 hover:text-[#0F2348]'
+                            ? 'bg-[#1A2332] text-white shadow-lg'
+                            : 'text-gray-400 hover:text-[#1A2332]'
                         }`}
                       >
                         {l === 'tr' ? '🇹🇷 TÜRKÇE' : '🇺🇸 ENGLISH'}
@@ -397,7 +397,7 @@ export default function AdminBlogPage() {
                     value={form.slug}
                     onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
                     placeholder="ornek-yazi-basligi"
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -411,7 +411,7 @@ export default function AdminBlogPage() {
                   value={form.title}
                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   placeholder={form.locale === 'tr' ? "Başlığı buraya girin..." : "Enter title here..."}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                 />
               </div>
 
@@ -424,7 +424,7 @@ export default function AdminBlogPage() {
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   placeholder="Arama sonuçlarında görünecek kısa açıklama..."
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm resize-none"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm resize-none"
                 />
               </div>
 
@@ -437,7 +437,7 @@ export default function AdminBlogPage() {
                     value={form.coverImage}
                     onChange={e => setForm(f => ({ ...f, coverImage: e.target.value }))}
                     placeholder="https://images.unsplash.com/..."
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
                 <div>
@@ -446,7 +446,7 @@ export default function AdminBlogPage() {
                     type="text"
                     value={form.author}
                     onChange={e => setForm(f => ({ ...f, author: e.target.value }))}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -459,7 +459,7 @@ export default function AdminBlogPage() {
                     value={form.date}
                     onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                     placeholder={form.locale === 'tr' ? "15 Mart 2026" : "March 15, 2026"}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
                 <div>
@@ -469,7 +469,7 @@ export default function AdminBlogPage() {
                     value={form.readTime}
                     onChange={e => setForm(f => ({ ...f, readTime: e.target.value }))}
                     placeholder={form.locale === 'tr' ? "4 dk okuma" : "4 min read"}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-5 py-3.5 text-gray-900 text-sm font-bold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -477,13 +477,13 @@ export default function AdminBlogPage() {
               {/* Active toggle */}
               <div className="flex items-center justify-between p-5 bg-gray-50 rounded-[20px] border border-gray-100">
                 <div className="space-y-0.5">
-                  <p className="text-[#0F2348] text-[13px] font-black uppercase tracking-tight">{form.isActive ? 'YAYINDA' : 'TASLAK'}</p>
+                  <p className="text-[#1A2332] text-[13px] font-black uppercase tracking-tight">{form.isActive ? 'YAYINDA' : 'TASLAK'}</p>
                   <p className="text-gray-500 text-[11px] font-bold">{form.isActive ? 'Yazı sitede tüm ziyaretçilere görünür.' : 'Yazı sadece panelde görünür.'}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
-                  className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.isActive ? 'bg-[#FF9A14]' : 'bg-gray-300'}`}
+                  className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.isActive ? 'bg-[#F4B400]' : 'bg-gray-300'}`}
                 >
                   <span className={`absolute top-1 left-1 w-4.5 h-4.5 bg-white rounded-full shadow-md transition-all duration-300 ${form.isActive ? 'translate-x-5.5' : ''}`} />
                 </button>
@@ -497,7 +497,7 @@ export default function AdminBlogPage() {
                   rows={12}
                   value={form.content}
                   onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-[20px] px-5 py-4 text-gray-900 text-sm font-mono placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF9A14] focus:bg-white transition-all shadow-inner leading-relaxed"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-[20px] px-5 py-4 text-gray-900 text-sm font-mono placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F4B400] focus:bg-white transition-all shadow-inner leading-relaxed"
                 />
               </div>
 
@@ -506,14 +506,14 @@ export default function AdminBlogPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-8 py-3.5 text-gray-500 hover:text-[#0F2348] font-black text-xs uppercase tracking-widest transition-all"
+                  className="px-8 py-3.5 text-gray-500 hover:text-[#1A2332] font-black text-xs uppercase tracking-widest transition-all"
                 >
                   İPTAL
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex items-center gap-2 px-10 py-3.5 bg-[#0F2348] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl shadow-gray-200 disabled:opacity-50 active:scale-95"
+                  className="flex items-center gap-2 px-10 py-3.5 bg-[#1A2332] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-xl shadow-gray-200 disabled:opacity-50 active:scale-95"
                 >
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                   {editingPost ? 'GÜNCELLE' : 'YAYINLA'}

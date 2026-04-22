@@ -170,7 +170,7 @@ export default async function LocaleLayout({
   ];
 
   return (
-    <div className="antialiased bg-white text-[#0F2348] min-h-screen flex flex-col">
+    <div className="antialiased bg-white text-[#1A2332] min-h-screen flex flex-col">
       <script
         type="application/ld+json"
         // JSON-LD is safe to inject — it's a static, server-generated object.

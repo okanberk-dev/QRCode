@@ -55,15 +55,15 @@ export default function StarRating({ rating, onRatingChange, t, platform }: Star
                 size={48}
                 className={`transition-all duration-300 ${
                   isActive
-                    ? 'fill-[#FF9A14] text-[#FF9A14] scale-110 shadow-sm'
+                    ? 'fill-[#F4B400] text-[#F4B400] scale-110 shadow-sm'
                     : 'text-gray-200 fill-transparent'
-                } ${isSelected && !hoverRating ? 'fill-[#FF9A14] text-[#FF9A14]' : ''}`}
+                } ${isSelected && !hoverRating ? 'fill-[#F4B400] text-[#F4B400]' : ''}`}
                 strokeWidth={isActive ? 1.5 : 1}
               />
               
               {/* Subtle glow effect for active stars */}
               {isActive && (
-                <div className="absolute inset-0 bg-[#FF9A14] opacity-5 blur-xl rounded-full scale-150 pointer-events-none transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-[#F4B400] opacity-5 blur-xl rounded-full scale-150 pointer-events-none transition-opacity duration-500" />
               )}
             </button>
           );

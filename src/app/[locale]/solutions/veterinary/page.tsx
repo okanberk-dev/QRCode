@@ -69,7 +69,7 @@ export default async function VeterinarySolutionPage({ params }: { params: Promi
     {
       title: isTr ? 'Evcil Hayvan Sahipleri Güven İster' : 'Pet Owners Want Trust',
       desc: isTr ? 'Hayvanlı ebeveynler kliniği seçerken yorumları dikkatle inceler. Bol olumlu yorum tercih sebebi olur.' : 'Pet parents carefully review ratings when choosing a clinic. Many positive reviews become a reason for choice.',
-      icon: <Star size={20} className="text-[#FF9A14]" />,
+      icon: <Star size={20} className="text-[#F4B400]" />,
     },
     {
       title: isTr ? 'Veteriner Hekim Puanları' : 'Vet Doctor Ratings',

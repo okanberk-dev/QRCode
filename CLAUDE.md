@@ -204,42 +204,58 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 
 ---
 
-## 11. Marka Kimliği & Tasarım Sistemi (2026-04 güncellendi)
+## 11. Marka Kimliği & Tasarım Sistemi (2026-04 v2 güncellendi)
 
 ### Renk Paleti
 
 | Token | Hex | Kullanım |
 |---|---|---|
-| Trust Orange | `#FF9A14` | Primary accent, buttons, aktif nav, logo |
-| Deep Navy | `#0F2348` | Sidebar, wordmark, text-main |
-| Slate Navy | `#243554` | Secondary UI, muted text |
-| Soft Mist | `#F5F4F1` | Sayfa arka planı |
-| Cool Gray | `#C9D0DB` | Border, neutral support |
+| Ink | `#0E1525` | En koyu ton, logo ascender, selective text |
+| Navy | `#1A2332` | Sidebar, text-main, buton dark variant |
+| Slate | `#2A3444` | Secondary UI, muted text |
+| Gold | `#F4B400` | Primary accent, buttons, aktif nav, logo curl |
+| Amber | `#FFD666` | Soft accent (hover highlight, gradient stops) |
+| Ivory | `#F8F6F1` | Sayfa arka planı |
+| Cloud | `#E8ECF2` | Border, neutral support |
 
-**CSS token'ları:** `globals.css` → `@theme {}` bloğunda tanımlı.
-**Tailwind:** Inline `bg-[#FF9A14]`, `text-[#0F2348]` gibi arbitrary value'lar kullanılıyor.
+**CSS token'ları:** `globals.css` → `@theme {}` bloğunda tanımlı (`--color-brand-ink`, `--color-brand-navy`, `--color-brand-gold`, vb.).
+**Tailwind:** Inline `bg-[#F4B400]`, `text-[#1A2332]` gibi arbitrary value'lar kullanılıyor — shared PLATFORM_CONFIG modülü gibi abstraction yapılmadı (üç yerden fazla tekrar olunca değerlendirilir).
 
 ### Logo
-- `src/components/marketing/BuazeLogo.tsx` — SVG bileşeni
-- Şekil: Küçük harfli `b` → speech bubble formunda, içinde onay işareti
-- Gradient: `#FFB347 → #FF9A14` (sarımsı-turuncu → canlı turuncu)
-- **Admin sidebar, user dashboard ve marketing navbar** içinde kullanılıyor
+- `src/components/marketing/BuazeLogo.tsx` — SVG bileşeni (API: `size`, `className`).
+- Şekil: Küçük harfli `b` → sade ascender + outer ring + **signature Gold curl** (bowl'un sağ-alt çeyreğinde). Checkmark ve speech-bubble kuyruğu **kaldırıldı** (v2).
+- Renk: Ink `#0E1525` gövde + Gold `#F4B400` kavis (gradient yok, düz renk).
+- **Kullanım alanları (11 import):** admin sidebar, user dashboard shell, marketing navbar & footer, auth (login/register), trial-expired. İmport'lara dokunma, sadece SVG içeriği değiştirildi.
+- `public/favicon.svg` — aynı logonun Navy kartla portresi.
 
 ### Font
-- **DM Sans** — `next/font/google` ile yüklü (`src/app/layout.tsx`)
-- Yuvarlatılmış geometrik sans-serif → logo ile uyumlu
-- Weights: 400, 500, 600, 700, 800, 900
+- **Manrope** (heading) + **Inter** (body) — `next/font/google` ile yüklü (`src/app/layout.tsx`).
+- `globals.css` içinde `h1..h6` için CSS seçiciyle Manrope otomatik uygulanır, body default Inter'dir.
+- Manrope weights: 500, 600, 700, 800. Inter weights: 400, 500, 600, 700.
+- CSS variable'ları: `--font-heading` ve `--font-body` (token-based fallback chain).
 
-### Eski renkler → Yeni karşılıklar
-| Eski | Yeni |
+### UI Stili
+- **Neo-brutalist offset shadow'lar (`shadow-[4px_5px_0_0_#...]`) tamamen kaldırıldı** (2026-04 v2) — yerine `shadow-sm/md/lg` geldi.
+- Kart border'ları Cloud (`#E8ECF2`) olmalı; Navy/Ink border'lar sadece buton ve high-contrast elemanlarda.
+- Typography weight kademeleri: heading `font-semibold`/`font-bold`, body `font-medium`/`font-semibold`. Aşırı `font-black` kullanımından kaçının.
+
+### Eski renkler → Yeni karşılıklar (v1 → v2)
+| v1 (Eski) | v2 (Yeni) |
 |---|---|
-| `#FDBF1D` (altın sarı) | `#FF9A14` Trust Orange |
-| `#1F1E1D` (koyu) | `#0F2348` Deep Navy |
-| `#111827` (Tailwind gray-900) | `#0F2348` Deep Navy |
-| `#F7F4F0` / `#FCFBF7` (krem) | `#F5F4F1` Soft Mist |
-| `#EA580C` (turuncu accent) | `#FF9A14` Trust Orange |
+| `#FF9A14` Trust Orange | `#F4B400` Gold |
+| `#FFB347` gradient top | `#FFD666` Amber |
+| `#0F2348` Deep Navy | `#1A2332` Navy |
+| `#243554` Slate Navy | `#2A3444` Slate |
+| `#F5F4F1` Soft Mist | `#F8F6F1` Ivory |
+| `#C9D0DB` Cool Gray | `#E8ECF2` Cloud |
+| `#FDBF1D` / `#EA580C` | `#F4B400` Gold |
+| `#1F1E1D` / `#111827` | `#1A2332` Navy |
+| `#F7F4F0` / `#FCFBF7` | `#F8F6F1` Ivory |
+
+### Dokunulmayan platform brand hex'leri
+`#4285F4` (Google), `#FA0050` (Yemeksepeti), `#5D3EBC` (Getir), `#F27A1A` (Trendyol GO) — `FeedbackTable.tsx`, `PlatformDistribution.tsx`, `admin/qr/page.tsx` içinde resmi marka renkleri olarak korunur.
 
 ---
 
-_Son güncelleme: 2026-04 — Admin panelde duplicate Platform Mini Cards kaldırıldı; owner paneline (RestaurantAnalyticsPanel) Platform Dağılımı eklendi (mobile'da da paket servis stat'ları görünür). CSV export'ta eksik `SYSTEM_FEEDBACK` import fix'lendi, `/api/feedback` rating filtresine NaN guard eklendi._
+_Son güncelleme: 2026-04 v2 — Brand refresh: Gold/Ink/Navy palette (eski Trust Orange + Deep Navy), Manrope+Inter font (eski DM Sans), yeni sade BuazeLogo (checkmark kaldırıldı), neo-brutalist offset shadow'lar soft shadow'larla değiştirildi. ~120 dosya, ~1800 inline hex migrate edildi. Platform brand hex'leri korundu._
 
