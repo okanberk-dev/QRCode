@@ -44,14 +44,25 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       ? restaurantIds.filter((restaurantId): restaurantId is string => typeof restaurantId === 'string' && restaurantId.trim().length > 0)
       : null;
 
+    let reassignedFrom: { restaurantId: string; previousOwnerId: string }[] = [];
+
     if (normalizedRestaurantIds) {
       const existingRestaurants = await prisma.restaurant.findMany({
         where: { id: { in: normalizedRestaurantIds } },
-        select: { id: true },
+        select: { id: true, userId: true },
       });
 
       if (existingRestaurants.length !== normalizedRestaurantIds.length) {
         return NextResponse.json({ error: 'Seçilen işletmelerden biri bulunamadı.' }, { status: 400 });
+      }
+
+      // Audit: surface restaurants currently owned by a different user.
+      reassignedFrom = existingRestaurants
+        .filter(r => r.userId && r.userId !== id)
+        .map(r => ({ restaurantId: r.id, previousOwnerId: r.userId as string }));
+
+      if (reassignedFrom.length > 0) {
+        console.warn('[ADMIN_CUSTOMER_PUT] Restaurant reassignment', { admin: admin.id, newOwner: id, reassignedFrom });
       }
     }
 
@@ -82,7 +93,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return updatedUser;
     });
 
-    return NextResponse.json(user);
+    return NextResponse.json({ ...user, reassignedFrom });
   } catch (error) {
     console.error('[ADMIN_CUSTOMER_PUT]', error);
     return NextResponse.json({ error: 'Müşteri güncellenemedi' }, { status: 500 });

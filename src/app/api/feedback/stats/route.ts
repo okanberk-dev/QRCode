@@ -251,16 +251,19 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' }
     });
 
-    const daysMap: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 0: 0 };
+    // Day.getDay(): 0=Sun, 1=Mon, ..., 6=Sat
+    const daysMap: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
     dayDistributionRaw.forEach((f: any) => {
-      const day = f.createdAt.getDay(); // 0 is Sunday, 1 is Monday...
+      const day = f.createdAt.getDay();
       daysMap[day] = (daysMap[day] || 0) + 1;
     });
 
-    const dayLabels = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
-    const dayDistribution = [1, 2, 3, 4, 5, 6, 0].map(d => ({
-      name: dayLabels[d],
-      count: daysMap[d]
+    // Display Mon..Sun in Turkish week order.
+    const weekOrder = [1, 2, 3, 4, 5, 6, 0];
+    const weekLabels = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+    const dayDistribution = weekOrder.map((d, i) => ({
+      name: weekLabels[i],
+      count: daysMap[d],
     }));
 
     // Word Cloud - Sample last 1000 comments for performance

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { isStrongPassword } from '@/lib/validations';
 import bcrypt from 'bcryptjs';
 
 export async function PUT(req: NextRequest) {
@@ -17,8 +18,11 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Mevcut şifre ve yeni şifre zorunludur' }, { status: 400 });
     }
 
-    if (newPassword.length < 8) {
-      return NextResponse.json({ error: 'Yeni şifre en az 8 karakter olmalıdır' }, { status: 400 });
+    if (!isStrongPassword(newPassword)) {
+      return NextResponse.json(
+        { error: 'Yeni şifre en az 8 karakter uzunluğunda olmalı, en az bir büyük harf ve bir rakam içermelidir' },
+        { status: 400 },
+      );
     }
 
     // Check if actor is AdminUser

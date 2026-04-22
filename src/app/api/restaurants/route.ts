@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl } = body;
+    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, userId: bodyUserId } = body;
 
     if (!name || !slug) {
       return ApiErrors.badRequest('Ad ve slug zorunludur', 'MISSING_FIELDS');
@@ -119,6 +119,28 @@ export async function POST(req: NextRequest) {
     const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
     if (!slugRegex.test(slug)) {
       return ApiErrors.badRequest('Slug sadece küçük harf, rakam ve tire içerebilir', 'INVALID_SLUG');
+    }
+
+    // Resolve owner. Owners assign to themselves. Superadmin may pass a
+    // userId to attach the restaurant to a customer; omitting userId yields
+    // an orphan (unassigned) restaurant — logged for audit.
+    let ownerUserId: string | null = null;
+    if (actor.role === 'restaurant_owner') {
+      ownerUserId = actor.id;
+    } else if (actor.role === 'superadmin') {
+      if (bodyUserId === null || bodyUserId === undefined || bodyUserId === '') {
+        ownerUserId = null;
+        console.warn('[RESTAURANTS_POST] Creating orphan restaurant', { admin: actor.id, slug });
+      } else {
+        if (typeof bodyUserId !== 'string') {
+          return ApiErrors.badRequest('Geçersiz userId', 'INVALID_USER_ID');
+        }
+        const user = await prisma.user.findUnique({ where: { id: bodyUserId }, select: { id: true } });
+        if (!user) {
+          return ApiErrors.badRequest('Belirtilen kullanıcı bulunamadı', 'INVALID_USER_ID');
+        }
+        ownerUserId = bodyUserId;
+      }
     }
 
     // Check duplicate slug
@@ -140,12 +162,15 @@ export async function POST(req: NextRequest) {
         getirYemekUrl: getirYemekUrl || null,
         yemekSepetiUrl: yemekSepetiUrl || null,
         trendyolYemekUrl: trendyolYemekUrl || null,
-        ...(actor.role === 'restaurant_owner' && { userId: actor.id })
+        userId: ownerUserId,
       },
     });
 
     return NextResponse.json(restaurant, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      return ApiErrors.conflict('Bu slug zaten kullanılıyor');
+    }
     console.error('Failed to create restaurant:', error);
     return ApiErrors.internalError('Restoran oluşturulamadı');
   }

@@ -87,7 +87,9 @@ export async function POST(req: NextRequest) {
     });
 
     // Send email for 1, 2, 3 stars
+    let emailSent: boolean | null = null;
     if (rating <= 3) {
+      emailSent = false;
       try {
         await sendFeedbackNotification({
           rating,
@@ -102,13 +104,14 @@ export async function POST(req: NextRequest) {
           aspects,
           feedbackId: feedback.id,
         });
+        emailSent = true;
       } catch (err) {
         // Log but don't fail the entire request - the feedback IS in the DB!
         console.error('Email notification failed but saving succeeded:', err);
       }
     }
 
-    return NextResponse.json({ success: true, id: feedback.id }, { status: 201 });
+    return NextResponse.json({ success: true, id: feedback.id, emailSent }, { status: 201 });
   } catch (error) {
     console.error('Feedback submission error (Detailed):', error);
     return ApiErrors.internalError('Sunucu hatası veya veritabanı bağlantı sorunu. Lütfen tekrar deneyiniz.');
@@ -181,13 +184,14 @@ export async function GET(req: NextRequest) {
   }
 
   // Date filter (supports today/1, month, numeric days, all)
+  // UTC-based to stay consistent regardless of server timezone.
   if (daysParam === 'today' || daysParam === '1') {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
     where.createdAt = { ...where.createdAt, gte: today };
   } else if (daysParam === 'month') {
     const now = new Date();
-    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
     where.createdAt = { ...where.createdAt, gte: firstOfMonth };
   } else if (daysParam && daysParam !== 'all') {
     const days = parseInt(daysParam);

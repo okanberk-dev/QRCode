@@ -80,25 +80,13 @@ export async function POST(req: NextRequest) {
     resetRateLimit(`user-login:ip:${ip}`);
     resetRateLimit(`user-login:email:${email.toLowerCase()}`);
 
-    // Sign user JWT
-    let payloadRestaurantId = null;
-    try {
-      const userRestaurant = await prisma.restaurant.findFirst({
-        where: { userId: user.id }
-      });
-      if (userRestaurant) {
-        payloadRestaurantId = userRestaurant.id;
-      }
-    } catch (e) {
-      console.error("Kullanıcı restoranı çekilemedi");
-    }
-
+    // Sign user JWT — restaurantId is intentionally omitted; owners can have
+    // multiple restaurants and scoping is resolved per-request via getScopedRestaurantIds().
     const token = await signJwt({
       userId: user.id,
       email: user.email,
       role: user.role,
       plan: user.plan,
-      restaurantId: payloadRestaurantId
     });
 
     const response = NextResponse.json({

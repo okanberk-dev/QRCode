@@ -80,51 +80,65 @@ export async function POST(req: NextRequest) {
       return ApiErrors.badRequest('Manager rolü için bir restoran seçilmelidir', 'MISSING_RESTAURANT');
     }
 
-    const existingUser = await prisma.adminUser.findUnique({
-      where: { username },
-    });
-
-    if (existingUser) {
-      return ApiErrors.conflict('Bu kullanıcı adı zaten kullanılıyor');
-    }
-
-    let finalRestaurantId = restaurantId;
-
-    if (role === 'manager' && isNewRestaurant && restaurantData) {
-      const existingRest = await prisma.restaurant.findUnique({ where: { slug: restaurantData.slug } });
-      if (existingRest) {
-        return ApiErrors.badRequest('Bu URL Slug zaten kullanımda', 'SLUG_IN_USE');
-      }
-
-      const rest = await prisma.restaurant.create({
-        data: {
-          name: restaurantData.name,
-          slug: restaurantData.slug,
-          address: restaurantData.address || null,
-          phone: restaurantData.phone || null,
-        }
-      });
-      finalRestaurantId = rest.id;
-    } else if (restaurantId) {
-      const rest = await prisma.restaurant.findUnique({ where: { id: restaurantId } });
-      if (!rest) {
-        return ApiErrors.badRequest('Seçilen restoran bulunamadı', 'INVALID_RESTAURANT');
-      }
-    }
-
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const newUser = await prisma.adminUser.create({
-      data: {
-        username,
-        passwordHash: hashedPassword,
-        role,
-        restaurantId: role === 'manager' ? finalRestaurantId : null,
-      },
-      select: { id: true, username: true, role: true, restaurantId: true }
-    });
+    try {
+      const newUser = await prisma.$transaction(async (tx) => {
+        const existingUser = await tx.adminUser.findUnique({ where: { username } });
+        if (existingUser) {
+          throw Object.assign(new Error('USERNAME_TAKEN'), { apiCode: 'USERNAME_TAKEN' });
+        }
 
-    return NextResponse.json({ success: true, user: newUser }, { status: 201 });
+        let finalRestaurantId = restaurantId;
+
+        if (role === 'manager' && isNewRestaurant && restaurantData) {
+          const rest = await tx.restaurant.create({
+            data: {
+              name: restaurantData.name,
+              slug: restaurantData.slug,
+              address: restaurantData.address || null,
+              phone: restaurantData.phone || null,
+            },
+          });
+          finalRestaurantId = rest.id;
+        } else if (restaurantId) {
+          const rest = await tx.restaurant.findUnique({ where: { id: restaurantId } });
+          if (!rest) {
+            throw Object.assign(new Error('INVALID_RESTAURANT'), { apiCode: 'INVALID_RESTAURANT' });
+          }
+        }
+
+        return await tx.adminUser.create({
+          data: {
+            username,
+            passwordHash: hashedPassword,
+            role,
+            restaurantId: role === 'manager' ? finalRestaurantId : null,
+          },
+          select: { id: true, username: true, role: true, restaurantId: true },
+        });
+      });
+
+      return NextResponse.json({ success: true, user: newUser }, { status: 201 });
+    } catch (txError: any) {
+      if (txError?.apiCode === 'USERNAME_TAKEN') {
+        return ApiErrors.conflict('Bu kullanıcı adı zaten kullanılıyor');
+      }
+      if (txError?.apiCode === 'INVALID_RESTAURANT') {
+        return ApiErrors.badRequest('Seçilen restoran bulunamadı', 'INVALID_RESTAURANT');
+      }
+      if (txError?.code === 'P2002') {
+        const target = Array.isArray(txError.meta?.target) ? txError.meta.target.join(',') : String(txError.meta?.target || '');
+        if (target.includes('slug')) {
+          return ApiErrors.conflict('Bu URL Slug zaten kullanımda');
+        }
+        if (target.includes('username')) {
+          return ApiErrors.conflict('Bu kullanıcı adı zaten kullanılıyor');
+        }
+        return ApiErrors.conflict('Benzersiz alan çakışması');
+      }
+      throw txError;
+    }
   } catch (error) {
     console.error('Failed to create user:', error);
     return ApiErrors.internalError('Kullanıcı oluşturulamadı');

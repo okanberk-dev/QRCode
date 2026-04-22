@@ -41,7 +41,7 @@ interface FormState {
 const EMPTY_FORM: FormState = {
   title: '',
   message: '',
-  status: 'draft',
+  status: 'published',
   severity: 'info',
   locale: 'all',
   priority: 0,
