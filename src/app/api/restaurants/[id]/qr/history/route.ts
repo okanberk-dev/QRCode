@@ -30,7 +30,6 @@ export async function GET(
           qrUrl: true,
           tableNumber: true,
           platform: true,
-          serviceType: true,
           createdAt: true,
         },
       });

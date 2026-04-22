@@ -12,7 +12,6 @@ interface FeedbackItem {
   branch: string | null;
   tableNumber: string | null;
   createdAt: string;
-  serviceType: string | null;
   foodRating: number | null;
   serviceRating: number | null;
   atmosphereRating: number | null;
@@ -48,15 +47,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
     );
   }
 
-  const getServiceLabel = (type: string | null | undefined) => {
-    if (!type) return null;
-    const labels: Record<string, any> = {
-      dine_in: { tr: 'Yerinde', en: 'Dine-in', color: 'bg-blue-50 text-blue-600 border-blue-100' },
-      takeout: { tr: 'Paket', en: 'Takeout', color: 'bg-orange-50 text-orange-600 border-orange-100' },
-      delivery: { tr: 'Teslimat', en: 'Delivery', color: 'bg-purple-50 text-purple-600 border-purple-100' }
-    };
-    return labels[type] || { tr: type, en: type, color: 'bg-gray-50 text-gray-600 border-gray-100' };
-  };
+
 
   const getPlatformBadge = (platform: string | null) => {
     if (!platform) return null;
@@ -80,7 +71,6 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
           </thead>
           <tbody className="divide-y divide-gray-100">
             {feedbacks.map((f) => {
-              const service = getServiceLabel(f.serviceType);
               const platformBadge = getPlatformBadge(f.platform);
               return (
                 <tr
@@ -111,11 +101,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                   <td className="px-4 py-4 sm:px-8 sm:py-6 max-w-[200px] sm:max-w-sm">
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {service && (
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${service.color}`}>
-                            {locale === 'tr' ? service.tr : service.en}
-                          </span>
-                        )}
+
                         <div className="text-gray-900 font-medium line-clamp-2 leading-relaxed italic">
                           {f.comment ? `"${f.comment}"` : '-'}
                         </div>

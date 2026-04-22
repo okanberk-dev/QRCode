@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw } from 'lucide-react';
+import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
 import { copyToClipboard } from '@/lib/clipboard';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 
@@ -17,8 +17,16 @@ interface QrHistoryItem {
   id: string;
   qrUrl: string;
   tableNumber: string | null;
+  platform: string | null;
   createdAt: string;
 }
+
+const PLATFORM_BADGE: Record<string, { label: string; bg: string }> = {
+  google: { label: 'Google', bg: 'bg-[#4285F4]' },
+  yemeksepeti: { label: 'Yemeksepeti', bg: 'bg-[#FA0050]' },
+  getir: { label: 'Getir', bg: 'bg-[#5D3EBC]' },
+  trendyol_go: { label: 'Trendyol GO', bg: 'bg-[#F27A1A]' },
+};
 
 export default function DashboardQrPage() {
   const params = useParams();
@@ -33,11 +41,15 @@ export default function DashboardQrPage() {
   const [qrSvg, setQrSvg] = useState('');
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [qrError, setQrError] = useState('');
   const [useBrandColor, setUseBrandColor] = useState(true);
   const [customDark, setCustomDark] = useState('#000000');
+  const [selectedPlatform, setSelectedPlatform] = useState('');
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
+  
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
   const safeEnvAppUrl = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
     ? envAppUrl
@@ -66,8 +78,8 @@ export default function DashboardQrPage() {
   const qrTargetUrl = useMemo(() => {
     if (!selectedRestaurant) return '';
 
-    return `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}`;
-  }, [appUrl, selectedRestaurant, tableNumber]);
+    return `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}${selectedPlatform ? `&platform=${selectedPlatform}` : ''}`;
+  }, [appUrl, selectedRestaurant, tableNumber, selectedPlatform]);
 
   const activeDark = useBrandColor && selectedRestaurant?.primaryColor
     ? selectedRestaurant.primaryColor
@@ -92,6 +104,8 @@ export default function DashboardQrPage() {
         brandColor: 'Marka Rengi',
         customColor: 'Özel Renk',
         colorLabel: 'QR Renk',
+        platform: 'Platform',
+        genel: 'Genel (Platform Yok)',
       }
     : {
         title: 'QR Management',
@@ -111,6 +125,8 @@ export default function DashboardQrPage() {
         brandColor: 'Brand Color',
         customColor: 'Custom Color',
         colorLabel: 'QR Color',
+        platform: 'Platform',
+        genel: 'General (No Platform)',
       };
 
   const LS_KEY = (id: string) => `qr_history_${id}`;
@@ -126,7 +142,7 @@ export default function DashboardQrPage() {
   const saveToLocalHistory = (restaurantId: string, item: QrHistoryItem) => {
     try {
       const existing = readLocalHistory(restaurantId);
-      const updated = [item, ...existing.filter((e) => e.id !== item.id)].slice(0, 30);
+      const updated = [item, ...existing.filter((e) => e.id !== item.id)].slice(0, 50);
       localStorage.setItem(LS_KEY(restaurantId), JSON.stringify(updated));
     } catch {}
   };
@@ -143,7 +159,6 @@ export default function DashboardQrPage() {
       const apiItems: QrHistoryItem[] = response.ok ? (await response.json()) : [];
       const localItems = readLocalHistory(restaurantId);
 
-      // Merge: prefer API, fill in from local, dedupe by id, sort newest first
       const seen = new Set<string>();
       const merged: QrHistoryItem[] = [];
       for (const item of [...apiItems, ...localItems]) {
@@ -153,7 +168,7 @@ export default function DashboardQrPage() {
         }
       }
       merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setHistory(merged.slice(0, 30));
+      setHistory(merged.slice(0, 50));
     } catch {
       setHistory(readLocalHistory(restaurantId));
     } finally {
@@ -164,11 +179,22 @@ export default function DashboardQrPage() {
   const generateQr = async () => {
     if (!selectedId) return;
 
+    // Check for duplicate
+    const dup = history.find(h =>
+      (h.tableNumber || '') === (tableNumber || '') &&
+      (h.platform || '') === (selectedPlatform || '')
+    );
+    if (dup) {
+      setDuplicateWarning(true);
+      setTimeout(() => setDuplicateWarning(false), 4000);
+    }
+
     setGenerating(true);
     setQrError('');
     try {
       const query = new URLSearchParams({ format: 'svg', dark: activeDark });
       if (tableNumber) query.append('table', tableNumber);
+      if (selectedPlatform) query.append('platform', selectedPlatform);
 
       const response = await fetch(`/api/restaurants/${selectedId}/qr?${query.toString()}`);
       if (!response.ok) {
@@ -187,15 +213,15 @@ export default function DashboardQrPage() {
       const svg = await response.text();
       setQrSvg(svg);
 
-      // Persist to localStorage so history survives without the DB table
       const newItem: QrHistoryItem = {
         id: `local_${Date.now()}`,
         qrUrl: qrTargetUrl,
         tableNumber: tableNumber || null,
+        platform: selectedPlatform || null,
         createdAt: new Date().toISOString(),
       };
       saveToLocalHistory(selectedId, newItem);
-      await fetchHistory(selectedId);
+      setTimeout(() => fetchHistory(selectedId), 200);
     } catch (error) {
       console.error(error);
       setQrError('Bağlantı hatası. İnternet bağlantınızı kontrol edin.');
@@ -208,7 +234,7 @@ export default function DashboardQrPage() {
     if (selectedId) {
       generateQr();
     }
-  }, [selectedId, tableNumber, activeDark]);
+  }, [selectedId, tableNumber, activeDark, selectedPlatform]);
 
   useEffect(() => {
     if (selectedId) {
@@ -221,6 +247,7 @@ export default function DashboardQrPage() {
 
     const query = new URLSearchParams({ format, dark: activeDark });
     if (tableNumber) query.append('table', tableNumber);
+    if (selectedPlatform) query.append('platform', selectedPlatform);
 
     const response = await fetch(`/api/restaurants/${selectedId}/qr?${query.toString()}`);
     if (!response.ok) return;
@@ -271,6 +298,13 @@ export default function DashboardQrPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     }
+  };
+
+  const copyHistoryItem = (item: QrHistoryItem) => {
+    if (!item.qrUrl) return;
+    copyToClipboard(item.qrUrl);
+    setCopiedId(item.id);
+    setTimeout(() => setCopiedId(null), 1800);
   };
 
   if (loading) {
@@ -341,6 +375,21 @@ export default function DashboardQrPage() {
                   </button>
                 </div>
               </div>
+            </div>
+
+            <div className="mt-5 space-y-2">
+              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#ada89f]">{copy.platform}</span>
+              <select
+                value={selectedPlatform}
+                onChange={(event) => setSelectedPlatform(event.target.value)}
+                className="w-full rounded-2xl border border-gray-200 bg-[#FCFBF7] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#FDBF1D]"
+              >
+                <option value="">{copy.genel}</option>
+                <option value="google">GOOGLE</option>
+                <option value="yemeksepeti">YEMEKSEPETİ</option>
+                <option value="getir">GETİR</option>
+                <option value="trendyol_go">TRENDYOL GO</option>
+              </select>
             </div>
 
             {/* ─── Color Picker ─── */}
@@ -459,9 +508,16 @@ export default function DashboardQrPage() {
                         <p className="truncate text-xs font-black text-[#111827]">{item.qrUrl}</p>
                         <CopyUrlButton url={item.qrUrl} className="h-6 w-6 shrink-0" />
                       </div>
-                      <p className="mt-0.5 text-[10px] font-bold text-[#6b6760]">
-                        {item.tableNumber ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}` : (locale === 'tr' ? 'Genel QR' : 'General QR')}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[10px] font-bold text-[#6b6760]">
+                          {item.tableNumber ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}` : (locale === 'tr' ? 'Genel QR' : 'General QR')}
+                        </p>
+                        {item.platform && PLATFORM_BADGE[item.platform] && (
+                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase text-white ${PLATFORM_BADGE[item.platform].bg}`}>
+                            {PLATFORM_BADGE[item.platform].label}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))
@@ -471,11 +527,24 @@ export default function DashboardQrPage() {
         </div>
 
         <div className="order-1 lg:order-2 rounded-[24px] sm:rounded-[28px] border border-gray-100 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
-          <div className="mb-4 sm:mb-5 flex items-center gap-3">
-            <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#111827] text-[#FDBF1D]">
-              <QrCode size={20} strokeWidth={3} />
-            </div>
-            <h2 className="text-lg font-black text-[#111827] sm:text-xl">{copy.qrPreview}</h2>
+          <div className="mb-4 sm:mb-5 flex items-center justify-between gap-3">
+             <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#111827] text-[#FDBF1D]">
+                   <QrCode size={20} strokeWidth={3} />
+                </div>
+                <h2 className="text-lg font-black text-[#111827] sm:text-xl">{copy.qrPreview}</h2>
+                {selectedPlatform && PLATFORM_BADGE[selectedPlatform] && (
+                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-white shadow-sm ${PLATFORM_BADGE[selectedPlatform].bg}`}>
+                    {PLATFORM_BADGE[selectedPlatform].label}
+                  </span>
+                )}
+             </div>
+             {duplicateWarning && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
+                   <AlertCircle size={12} strokeWidth={2.5} />
+                   Zaten Mevcut
+                </div>
+             )}
           </div>
 
           <div className="flex min-h-[260px] sm:min-h-[360px] items-center justify-center rounded-[24px] sm:rounded-[28px] border border-dashed border-gray-200 bg-[#FCFBF7] p-4 sm:p-6">

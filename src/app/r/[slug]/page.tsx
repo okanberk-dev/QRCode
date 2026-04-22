@@ -2,12 +2,10 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
-import { Star, Loader2, MapPin, ChevronRight, X, UtensilsCrossed } from 'lucide-react';
+import { Star, ChevronRight, X } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import FeedbackForm, { FeedbackFormHandle } from '@/components/FeedbackForm';
 import ThankYou from '@/components/ThankYou';
-import BusinessSummary from '@/components/BusinessSummary';
-import Link from 'next/link';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 
 interface RestaurantData {
@@ -40,12 +38,6 @@ function SlugContent() {
 
   // --- Platform from QR ---
   const platformParam = searchParams.get('platform') || '';
-
-  // --- Service Type from QR (dine_in | takeout | delivery) ---
-  const rawServiceType = searchParams.get('serviceType') || '';
-  const serviceTypeParam = ['dine_in', 'takeout', 'delivery'].includes(rawServiceType)
-    ? rawServiceType
-    : '';
 
   // --- Locale Handling ---
   const [locale, setLocale] = useState<Locale>('tr');
@@ -105,8 +97,6 @@ function SlugContent() {
   if (restaurant?.yemekSepetiUrl) platforms.push({ name: 'Yemek Sepeti', url: restaurant.yemekSepetiUrl, color: '#FA0050', icon: '🍽️' });
   if (restaurant?.trendyolYemekUrl) platforms.push({ name: 'Trendyol Yemek', url: restaurant.trendyolYemekUrl, color: '#F27A1A', icon: '🧡' });
 
-  const [showPlatformPicker, setShowPlatformPicker] = useState(false);
-
   const handleRatingChange = async (newRating: number) => {
     if (!restaurant) return;
     setRating(newRating);
@@ -125,7 +115,6 @@ function SlugContent() {
             comment: 'High Rating Redirect',
             restaurantSlug: slug,
             platform: platformParam || null,
-            serviceType: serviceTypeParam || null,
           })
         });
       } catch (e) {
@@ -149,11 +138,9 @@ function SlugContent() {
           return;
         }
       }
-
-      // If multiple platforms → show picker, if single → auto redirect, if none → thank you
-      if (platforms.length > 1) {
-        setShowPlatformPicker(true);
-      } else if (platforms.length === 1) {
+      
+      // Auto-redirect to first available platform or show thank you
+      if (platforms.length >= 1) {
         setIsRedirecting(true);
         setTimeout(() => {
           window.location.href = platforms[0].url;
@@ -168,8 +155,8 @@ function SlugContent() {
     }
   };
 
-  const showForm = rating > 0 && rating <= 3 && !formSubmitted && !showPlatformPicker;
-  const showThankYou = formSubmitted && !showPlatformPicker;
+  const showForm = rating > 0 && rating <= 3 && !formSubmitted;
+  const showThankYou = formSubmitted;
 
   // --- Loading State ---
   if (loading) {
@@ -256,34 +243,8 @@ function SlugContent() {
       {/* ═══════ Main Content Area ═══════ */}
       <div className="max-w-xl mx-auto w-full px-6 py-6 flex-1">
         
-        {!showThankYou && !showForm && !showPlatformPicker && (
+        {!showThankYou && !showForm && (
             <div className="space-y-10 mt-4">
-               {/* ── Menu CTA ── */}
-               <Link 
-                 href={`/r/${slug}/menu${searchParams.toString() ? '?' + searchParams.toString() : ''}`}
-                 className="flex items-center justify-between p-5 rounded-[28px] border-2 border-[#111827] bg-[#111827] text-white shadow-xl shadow-gray-200 active:scale-95 transition-all group"
-               >
-                 <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-[#FDBF1D]">
-                      <UtensilsCrossed size={24} strokeWidth={2.75} />
-                   </div>
-                   <div>
-                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#FDBF1D] opacity-80">DİJİTAL MENÜ</p>
-                     <p className="text-lg font-black tracking-tight">{locale === 'tr' ? 'Menüyü İncele' : 'View Menu'}</p>
-                   </div>
-                 </div>
-                 <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                    <ChevronRight size={20} strokeWidth={3} />
-                 </div>
-               </Link>
-
-               <div className="relative py-2 text-center">
-                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                    <div className="w-full border-t border-gray-100"></div>
-                  </div>
-                  <span className="relative z-10 px-4 bg-white text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">{locale === 'tr' ? 'VEYA' : 'OR'}</span>
-               </div>
-
                <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
             </div>
         )}
@@ -300,7 +261,6 @@ function SlugContent() {
               restaurantSlug={slug}
               restaurantName={restaurant.name}
               platform={platformParam || undefined}
-              serviceType={serviceTypeParam || undefined}
               t={t}
             />
           </div>
@@ -310,68 +270,11 @@ function SlugContent() {
             <ThankYou rating={rating} googleReviewUrl={googleUrl} t={t} />
         )}
 
-        {/* ═══════ Platform Picker (High Rating + Multiple Platforms) ═══════ */}
-        {showPlatformPicker && !isRedirecting && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
-                <Star className="w-8 h-8 text-green-500 fill-green-500" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {locale === 'tr' ? 'Harika! Teşekkürler 🎉' : 'Awesome! Thank you 🎉'}
-              </h2>
-              <p className="text-sm text-gray-500 font-medium mt-2 px-4">
-                {locale === 'tr'
-                  ? 'Deneyiminizi bir platformda da paylaşmak ister misiniz?'
-                  : 'Would you like to share your experience on a platform?'}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {platforms.map((platform) => (
-                <a
-                  key={platform.name}
-                  href={platform.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-4 w-full p-4 rounded-2xl border-2 border-gray-100 bg-white hover:border-gray-300 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm group"
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold shrink-0 shadow-sm"
-                    style={{ backgroundColor: platform.color }}
-                  >
-                    {platform.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 text-[15px]">{platform.name}</p>
-                    <p className="text-xs text-gray-400 font-medium truncate">
-                      {locale === 'tr' ? 'Değerlendirmenizi paylaşın' : 'Share your review'}
-                    </p>
-                  </div>
-                  <ChevronRight size={20} className="text-gray-300 group-hover:text-gray-500 transition-colors shrink-0" />
-                </a>
-              ))}
-            </div>
-
-            <button
-              onClick={() => {
-                setShowPlatformPicker(false);
-                setFormSubmitted(true);
-              }}
-              className="w-full mt-6 py-3 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              {locale === 'tr' ? 'Şimdi değil, teşekkürler' : 'Not now, thanks'}
-            </button>
-          </div>
-        )}
-
-        {!showThankYou && !showForm && !showPlatformPicker && rating === 0 && (
+        {!showThankYou && !showForm && rating === 0 && (
             <div className="mt-4">
                <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
             </div>
         )}
-
-
       </div>
 
       {/* ═══════ Footer ═══════ */}

@@ -28,13 +28,11 @@ export async function GET(
   const table = searchParams.get('table') || '';
   const format = (searchParams.get('format') || 'svg').toLowerCase();
   const platform = searchParams.get('platform') || '';
-  const serviceType = searchParams.get('serviceType') || '';
 
   const validPlatforms = ['google', 'yemeksepeti', 'getir', 'trendyol_go'];
   const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : '';
 
-  const validServiceTypes = ['dine_in', 'takeout', 'delivery'];
-  const sanitizedServiceType = serviceType && validServiceTypes.includes(serviceType) ? serviceType : '';
+
 
   if (format !== 'svg' && format !== 'png') {
     return NextResponse.json({ error: 'Geçersiz format' }, { status: 400 });
@@ -111,9 +109,7 @@ export async function GET(
     if (sanitizedPlatform) {
       qrUrl += `&platform=${sanitizedPlatform}`;
     }
-    if (sanitizedServiceType) {
-      qrUrl += `&serviceType=${sanitizedServiceType}`;
-    }
+
 
     // Track generation — non-fatal if the qr_generations table hasn't been
     // provisioned yet (e.g. first deploy before `prisma db push`).
@@ -125,7 +121,6 @@ export async function GET(
             qrUrl,
             tableNumber: table || null,
             platform: sanitizedPlatform || null,
-            serviceType: sanitizedServiceType || null,
           },
         });
 

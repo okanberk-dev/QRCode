@@ -162,7 +162,6 @@ export interface NotificationParams {
   tableNumber?: string | null;
   restaurantName?: string;
   toEmail?: string | null;
-  serviceType?: string | null;
   aspects?: {
     food?: number;
     service?: number;
