@@ -175,8 +175,9 @@ export async function GET(req: NextRequest) {
     where.rating = { lte: 3 };
   } else if (ratingFilter === 'positive') {
     where.rating = { gte: 4 };
-  } else if (ratingFilter) {
-    where.rating = parseInt(ratingFilter, 10);
+  } else if (ratingFilter && ratingFilter !== 'all') {
+    const r = parseInt(ratingFilter, 10);
+    if (Number.isFinite(r)) where.rating = r;
   }
 
   // Date filter (supports today/1, month, numeric days, all)
