@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getSiteSettings } from '@/lib/site-settings';
 
 export async function GET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
@@ -8,6 +9,8 @@ export async function GET(req: NextRequest) {
   if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
   }
+
+  const { logoUrl, faviconUrl } = await getSiteSettings();
 
   // If this is a restaurant_owner, fetch their extra info from the users table
   if (actor.role === 'restaurant_owner') {
@@ -42,6 +45,8 @@ export async function GET(req: NextRequest) {
           trialEndsAt: user.trialEndsAt,
           restaurantId: restaurantIds[0] || null,
           restaurantIds,
+          logoUrl,
+          faviconUrl,
         });
       }
     } catch (e) {
@@ -67,6 +72,8 @@ export async function GET(req: NextRequest) {
         trialEndsAt: null,
         restaurantId: adminUser.restaurantId || null,
         restaurantIds: adminUser.restaurantId ? [adminUser.restaurantId] : [],
+        logoUrl,
+        faviconUrl,
       });
     }
   } catch (e) {
@@ -82,6 +89,8 @@ export async function GET(req: NextRequest) {
     role: actor.role || 'superadmin',
     plan: actor.plan,
     trialEndsAt: null,
-    restaurantId: actor.restaurantId || null
+    restaurantId: actor.restaurantId || null,
+    logoUrl,
+    faviconUrl,
   });
 }

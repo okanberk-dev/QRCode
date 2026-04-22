@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import UserDashboardShell from '@/components/dashboard/UserDashboardShell';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { Locale } from '@/lib/translations';
+import { getSiteSettings } from '@/lib/site-settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,11 +83,13 @@ export default async function DashboardLayout({
   }
 
   const announcements = await fetchActiveAnnouncements(locale);
+  const { logoUrl } = await getSiteSettings();
 
   return (
     <UserDashboardShell
       locale={locale}
       announcements={announcements}
+      logoUrl={logoUrl}
       user={{
         name: user.name,
         email: user.email,

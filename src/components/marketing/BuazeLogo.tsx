@@ -4,9 +4,24 @@ interface BuazeLogoProps {
   size?: number;
   className?: string;
   variant?: LogoVariant;
+  imageUrl?: string | null;
 }
 
-export default function BuazeLogo({ size = 40, className = '', variant = 'default' }: BuazeLogoProps) {
+export default function BuazeLogo({ size = 40, className = '', variant = 'default', imageUrl }: BuazeLogoProps) {
+  if (imageUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={imageUrl}
+        width={size}
+        height={size}
+        className={className}
+        alt="Buaze"
+        style={{ objectFit: 'contain' }}
+      />
+    );
+  }
+
   // Unique gradient id per variant so multiple instances on the same page don't clash
   const gradientId = `buazeLogoGrad-${variant}`;
 

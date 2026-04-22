@@ -19,6 +19,7 @@ interface UserDashboardShellProps {
   locale: Locale;
   user: DashboardUser;
   announcements?: DashboardAnnouncement[];
+  logoUrl?: string | null;
   children: React.ReactNode;
 }
 
@@ -29,7 +30,7 @@ function getDaysLeft(trialEndsAt: string | null) {
   return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-export default function UserDashboardShell({ locale, user, announcements = [], children }: UserDashboardShellProps) {
+export default function UserDashboardShell({ locale, user, announcements = [], logoUrl, children }: UserDashboardShellProps) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -98,7 +99,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
       {/* Logo */}
       <div className="border-b border-white/10 px-5 py-5">
         <Link href={`/${locale}/dashboard`} className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center flex-shrink-0"><BuazeLogo size={44} variant="on-dark" /></div>
+          <div className="flex h-11 w-11 items-center justify-center flex-shrink-0"><BuazeLogo size={44} variant="on-dark" imageUrl={logoUrl} /></div>
           <div className="min-w-0">
             <p className="text-lg font-black tracking-tight text-white">Buaze</p>
             <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">{copy.dashboard}</p>
@@ -171,7 +172,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
         {/* Mobile top bar */}
         <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#E8ECF2]/60 bg-white/95 px-4 py-3 backdrop-blur lg:hidden shadow-sm">
           <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center"><BuazeLogo size={36} variant="default" /></div>
+            <div className="flex h-9 w-9 items-center justify-center"><BuazeLogo size={36} variant="default" imageUrl={logoUrl} /></div>
             <span className="text-base font-black tracking-tight text-[#1A2332]">Buaze</span>
           </Link>
 

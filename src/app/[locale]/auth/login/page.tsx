@@ -9,6 +9,7 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
+import { getSiteSettings } from '@/lib/site-settings';
 
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 
@@ -48,6 +49,7 @@ export default async function LoginPage({
   }
 
   const t = getTranslations(locale);
+  const { logoUrl } = await getSiteSettings();
 
   const stats = [
     { val: '1,284', label: locale === 'tr' ? 'İşlenen Geri Bildirim' : 'Processed Feedback' },
@@ -65,7 +67,7 @@ export default async function LoginPage({
         <div className="hidden lg:flex w-[44%] bg-[#1A2332] text-white flex-col justify-center px-12 xl:px-16 py-16 relative overflow-hidden">
           <div className="relative z-10 max-w-[400px]">
             <Link href={`/${locale}`} className="inline-flex items-center gap-3 mb-10 group">
-              <BuazeLogo size={48} variant="on-dark" />
+              <BuazeLogo size={48} variant="on-dark" imageUrl={logoUrl} />
               <span className="text-[24px] font-extrabold tracking-[-0.02em] text-white">
                 buaze<span className="text-[#F4B400]">.</span>
               </span>
@@ -110,7 +112,7 @@ export default async function LoginPage({
           {/* Header/Logo for mobile */}
           <div className="flex lg:hidden justify-center mb-8">
             <Link href="/" className="flex items-center gap-3 group">
-              <BuazeLogo size={36} variant="default" />
+              <BuazeLogo size={36} variant="default" imageUrl={logoUrl} />
               <span className="text-2xl font-black tracking-tighter text-[#1A2332]">buaze<span className="text-[#F4B400]">.</span></span>
             </Link>
           </div>

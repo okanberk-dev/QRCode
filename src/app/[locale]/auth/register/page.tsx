@@ -9,6 +9,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
+import { getSiteSettings } from '@/lib/site-settings';
 
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 
@@ -48,6 +49,7 @@ export default async function RegisterPage({
   }
 
   const t = getTranslations(locale);
+  const { logoUrl } = await getSiteSettings();
 
   const trialFeatures = locale === 'tr'
     ? ['Sınırsız QR Tarama', 'Dahili Geri Bildirim Sistemi', 'Yönetici Paneli', 'Kredi kartı gerekmez']
@@ -62,7 +64,7 @@ export default async function RegisterPage({
         <div className="hidden lg:flex w-[44%] bg-[#1A2332] text-white flex-col justify-center px-12 xl:px-16 py-16 relative overflow-hidden">
           <div className="relative z-10 max-w-lg">
             <Link href={`/${locale}`} className="inline-flex items-center gap-3 mb-10 group">
-              <BuazeLogo size={48} variant="on-dark" />
+              <BuazeLogo size={48} variant="on-dark" imageUrl={logoUrl} />
               <span className="text-[24px] font-extrabold tracking-[-0.02em] text-white">
                 buaze<span className="text-[#F4B400]">.</span>
               </span>

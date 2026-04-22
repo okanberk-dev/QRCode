@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Manrope, Inter } from 'next/font/google';
 import './globals.css';
+import { getSiteSettings } from '@/lib/site-settings';
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -16,24 +17,29 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://buaze.com'),
-  title: {
-    default: 'Buaze | Dijital İtibar ve Geri Bildirim Yönetimi',
-    template: '%s | Buaze',
-  },
-  description:
-    'Buaze, işletmeler için QR kod tabanlı dijital itibar ve müşteri geri bildirim yönetim platformudur. Google yorumlarınızı büyütün, müşteri deneyimini ölçün.',
-  alternates: {
-    canonical: 'https://buaze.com',
-  },
-  icons: {
-    icon: '/favicon.svg',
-  },
-  verification: {
-    google: 'FYUcNyiNfUTFfmZBl_Xqb_YCFqBpD-PcpHHiGDz_kZ0',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await getSiteSettings();
+  return {
+    metadataBase: new URL('https://buaze.com'),
+    title: {
+      default: s.titleDefaultTr,
+      template: s.titleTemplate,
+    },
+    description: s.descriptionTr,
+    alternates: {
+      canonical: 'https://buaze.com',
+    },
+    icons: {
+      icon: s.faviconUrl || '/favicon.svg',
+    },
+    openGraph: s.ogImageUrl
+      ? { images: [{ url: s.ogImageUrl, width: 1200, height: 630 }] }
+      : undefined,
+    verification: {
+      google: 'FYUcNyiNfUTFfmZBl_Xqb_YCFqBpD-PcpHHiGDz_kZ0',
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: 'device-width',

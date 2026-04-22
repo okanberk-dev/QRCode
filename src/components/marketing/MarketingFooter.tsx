@@ -1,8 +1,8 @@
-'use client';
-
 import Link from 'next/link';
+import { Instagram } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
+import { getSiteSettings } from '@/lib/site-settings';
 
 interface MarketingFooterProps {
   locale: Locale;
@@ -21,8 +21,9 @@ interface MarketingFooterProps {
   };
 }
 
-export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
+export default async function MarketingFooter({ locale, t }: MarketingFooterProps) {
   const base = `/${locale}`;
+  const s = await getSiteSettings();
 
   return (
     <footer className="bg-[#1A2332] pt-16 pb-8 px-5 sm:px-8 text-white border-t border-white/5">
@@ -31,7 +32,7 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
           {/* Col 1: Brand */}
           <div className="sm:col-span-2 md:col-span-1 min-w-0">
             <Link href={base} className="flex items-center gap-2 mb-5 group inline-flex">
-              <BuazeLogo size={28} variant="on-dark" className="opacity-90 group-hover:opacity-100 transition-opacity" />
+              <BuazeLogo size={28} variant="on-dark" imageUrl={s.logoUrl} className="opacity-90 group-hover:opacity-100 transition-opacity" />
               <span className="text-[17px] font-extrabold tracking-[-0.02em] text-white">
                 buaze<span className="text-[#F4B400]">.</span>
               </span>
@@ -39,6 +40,19 @@ export default function MarketingFooter({ locale, t }: MarketingFooterProps) {
             <p className="text-[#E8ECF2] text-[13px] leading-relaxed mb-5">
               {t.siteDescription || 'Restoranınızın dijital itibarını profesyonelce yönetin.'}
             </p>
+
+            {/* Social */}
+            <div className="flex items-center gap-2">
+              <a
+                href="https://instagram.com/buazerating"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram — buazerating"
+                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-[#F4B400] hover:text-[#1A2332] hover:border-[#F4B400] transition-colors"
+              >
+                <Instagram size={18} />
+              </a>
+            </div>
           </div>
 
           {/* Col 2: Product */}

@@ -42,9 +42,10 @@ interface MarketingNavbarProps {
     nav_dashboard?: string;
   };
   isLoggedIn?: boolean;
+  logoUrl?: string | null;
 }
 
-export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavbarProps) {
+export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: MarketingNavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [solutionsOpen, setSolutionsOpen] = useState(false);
@@ -229,7 +230,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn }: MarketingNavb
       <div className="max-w-[1200px] mx-auto px-5 sm:px-8 h-full flex items-center justify-between">
         {/* Logo */}
         <Link href={`${base}`} className="flex items-center gap-2 group">
-          <BuazeLogo size={28} variant="default" />
+          <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
           <span className="text-[17px] font-extrabold tracking-[-0.02em] text-[#1A2332]">
             buaze<span className="text-[#F4B400]">.</span>
           </span>
