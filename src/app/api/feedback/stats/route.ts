@@ -312,6 +312,27 @@ export async function GET(req: NextRequest) {
       avgRating: round1(row._avg?.rating),
     }));
 
+    // Service type distribution (dine_in / takeout / delivery)
+    const serviceTypeGroupRaw = await prisma.feedback.groupBy({
+      by: ['serviceType'],
+      where: dateFilter,
+      _count: true,
+      _avg: { rating: true },
+    });
+
+    const serviceTypeLabels: Record<string, string> = {
+      dine_in: 'Yerinde',
+      takeout: 'Paket Servis',
+      delivery: 'Teslimat',
+    };
+
+    const serviceTypeDistribution = serviceTypeGroupRaw.map((row: any) => ({
+      serviceType: row.serviceType || 'unspecified',
+      label: row.serviceType ? (serviceTypeLabels[row.serviceType] || row.serviceType) : 'Belirtilmemiş',
+      count: row._count,
+      avgRating: round1(row._avg?.rating),
+    }));
+
     return NextResponse.json({
       totalCount,
       todayCount,
@@ -325,6 +346,7 @@ export async function GET(req: NextRequest) {
       aspects, // Food / Service / Atmosphere breakdown
       googleConversion, // Google review conversion funnel + per-restaurant breakdown
       platformDistribution, // Platform-based review counts
+      serviceTypeDistribution, // Service type (dine_in/takeout/delivery) breakdown
     });
   } catch (error) {
     console.error('Failed to fetch stats:', error);

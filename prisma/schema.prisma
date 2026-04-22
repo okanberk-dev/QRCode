@@ -66,6 +66,7 @@ model QrGeneration {
   qrUrl         String      @map("qr_url")
   tableNumber   String?     @map("table_number")
   platform      String?     @map("platform")    // google | yemeksepeti | getir | trendyol_go
+  serviceType   String?     @map("service_type") // dine_in | takeout | delivery
   createdAt     DateTime    @default(now()) @map("created_at")
 
   restaurantId  String      @map("restaurant_id")

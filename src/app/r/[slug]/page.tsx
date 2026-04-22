@@ -41,6 +41,12 @@ function SlugContent() {
   // --- Platform from QR ---
   const platformParam = searchParams.get('platform') || '';
 
+  // --- Service Type from QR (dine_in | takeout | delivery) ---
+  const rawServiceType = searchParams.get('serviceType') || '';
+  const serviceTypeParam = ['dine_in', 'takeout', 'delivery'].includes(rawServiceType)
+    ? rawServiceType
+    : '';
+
   // --- Locale Handling ---
   const [locale, setLocale] = useState<Locale>('tr');
   useEffect(() => {
@@ -119,6 +125,7 @@ function SlugContent() {
             comment: 'High Rating Redirect',
             restaurantSlug: slug,
             platform: platformParam || null,
+            serviceType: serviceTypeParam || null,
           })
         });
       } catch (e) {
@@ -286,13 +293,14 @@ function SlugContent() {
             <div className="mb-6 scale-90 -mt-2">
               <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
             </div>
-            <FeedbackForm 
+            <FeedbackForm
               ref={formRef}
-              rating={rating} 
+              rating={rating}
               onSuccess={() => setFormSubmitted(true)}
               restaurantSlug={slug}
               restaurantName={restaurant.name}
               platform={platformParam || undefined}
+              serviceType={serviceTypeParam || undefined}
               t={t}
             />
           </div>

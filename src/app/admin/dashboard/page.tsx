@@ -32,6 +32,12 @@ const PLATFORM_MINI: Array<{ key: string; label: string; barClass: string; textC
   { key: 'trendyol_go', label: 'Trendyol GO', barClass: 'bg-[#F27A1A]', textClass: 'text-[#F27A1A]', bgClass: 'bg-orange-50' },
 ];
 
+const SERVICE_TYPE_MINI: Array<{ key: string; label: string; textClass: string; bgClass: string }> = [
+  { key: 'dine_in', label: 'Yerinde', textClass: 'text-blue-600', bgClass: 'bg-blue-50' },
+  { key: 'takeout', label: 'Paket Servis', textClass: 'text-orange-600', bgClass: 'bg-orange-50' },
+  { key: 'delivery', label: 'Teslimat', textClass: 'text-purple-600', bgClass: 'bg-purple-50' },
+];
+
 export default function AdminDashboard() {
   const { t, locale } = useAdminTranslation();
   const [stats, setStats] = useState<any>(null);
@@ -280,6 +286,43 @@ export default function AdminDashboard() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ─── Service Type Mini Cards (Yerinde / Paket / Teslimat) ─── */}
+      {stats?.serviceTypeDistribution && (
+        <div className="space-y-2">
+          <h3 className="text-[11px] sm:text-xs font-black text-[#ada89f] uppercase tracking-widest ml-1">Servis Türü Dağılımı</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            {SERVICE_TYPE_MINI.map((s) => {
+              const found = stats.serviceTypeDistribution.find((x: any) => x.serviceType === s.key);
+              const count = found?.count ?? 0;
+              const avg = found?.avgRating;
+              return (
+                <div key={s.key} className="bg-white p-4 sm:p-5 rounded-[20px] border border-gray-100 shadow-sm flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-8 h-8 rounded-lg ${s.bgClass} ${s.textClass} flex items-center justify-center text-[11px] font-black uppercase`}>
+                      {s.label.charAt(0)}
+                    </span>
+                    <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wider ${s.textClass} truncate`}>{s.label}</span>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Yorum</p>
+                      <p className="text-xl sm:text-2xl font-black text-[#1f1e1d] tabular-nums tracking-tighter">{count}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ort.</p>
+                      <p className="text-sm sm:text-base font-black text-[#1f1e1d] tabular-nums flex items-center gap-1">
+                        {avg != null ? avg.toFixed(1) : '—'}
+                        {avg != null && <Star size={12} fill="#FDBF1D" className="text-[#FDBF1D]" strokeWidth={0} />}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

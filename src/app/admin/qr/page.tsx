@@ -18,6 +18,7 @@ interface QrHistoryItem {
   qrUrl: string;
   tableNumber: string | null;
   platform: string | null;
+  serviceType: string | null;
   createdAt: string;
 }
 
@@ -26,6 +27,12 @@ const PLATFORM_BADGE: Record<string, { label: string; bg: string }> = {
   yemeksepeti: { label: 'Yemeksepeti', bg: 'bg-[#FA0050]' },
   getir: { label: 'Getir', bg: 'bg-[#5D3EBC]' },
   trendyol_go: { label: 'Trendyol GO', bg: 'bg-[#F27A1A]' },
+};
+
+const SERVICE_TYPE_BADGE: Record<string, { label: string; bg: string }> = {
+  dine_in: { label: 'Yerinde', bg: 'bg-blue-500' },
+  takeout: { label: 'Paket', bg: 'bg-orange-500' },
+  delivery: { label: 'Teslimat', bg: 'bg-purple-500' },
 };
 
 function QRPageContent() {
@@ -62,6 +69,9 @@ function QRPageContent() {
   // Platform selection
   const [selectedPlatform, setSelectedPlatform] = useState('');
 
+  // Service type selection (dine_in | takeout | delivery)
+  const [selectedServiceType, setSelectedServiceType] = useState('');
+
   useEffect(() => {
     Promise.all([
       fetch('/api/restaurants').then(res => res.ok ? res.json() : []),
@@ -94,7 +104,7 @@ function QRPageContent() {
     ? window.location.origin.replace(/\/+$/, '')
     : 'https://buaze.com');
   const qrTargetUrl = selectedRestaurant
-    ? `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}${selectedPlatform ? `&platform=${selectedPlatform}` : ''}`
+    ? `${appUrl}/r/${selectedRestaurant.slug}?source=qr${tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : ''}${selectedPlatform ? `&platform=${selectedPlatform}` : ''}${selectedServiceType ? `&serviceType=${selectedServiceType}` : ''}`
     : '';
 
   const LS_KEY = (id: string) => `qr_history_${id}`;
@@ -147,16 +157,18 @@ function QRPageContent() {
     const query = new URLSearchParams({ format, width: String(size), dark: activeDark });
     if (tableNumber) query.append('table', tableNumber);
     if (selectedPlatform) query.append('platform', selectedPlatform);
+    if (selectedServiceType) query.append('serviceType', selectedServiceType);
     return query;
   };
 
   const generateQR = async () => {
     if (!selectedId) return;
 
-    // Check for duplicate (same table + platform) before generating
+    // Check for duplicate (same table + platform + service type) before generating
     const dup = history.find(h =>
       (h.tableNumber || '') === (tableNumber || '') &&
-      (h.platform || '') === (selectedPlatform || '')
+      (h.platform || '') === (selectedPlatform || '') &&
+      (h.serviceType || '') === (selectedServiceType || '')
     );
     if (dup) {
       setDuplicateWarning(true);
@@ -177,6 +189,7 @@ function QRPageContent() {
           qrUrl: qrTargetUrl,
           tableNumber: tableNumber || null,
           platform: selectedPlatform || null,
+          serviceType: selectedServiceType || null,
           createdAt: new Date().toISOString(),
         });
         fetchHistory(selectedId);
@@ -200,7 +213,7 @@ function QRPageContent() {
     if (selectedId) {
       generateQR();
     }
-  }, [selectedId, tableNumber, activeDark, size, selectedPlatform]);
+  }, [selectedId, tableNumber, activeDark, size, selectedPlatform, selectedServiceType]);
 
   useEffect(() => {
     if (selectedId) {
@@ -333,6 +346,7 @@ function QRPageContent() {
     const q = new URLSearchParams({ format: 'png', width: String(size), dark: activeDark });
     if (item.tableNumber) q.append('table', item.tableNumber);
     if (item.platform) q.append('platform', item.platform);
+    if (item.serviceType) q.append('serviceType', item.serviceType);
     try {
       const res = await fetch(`/api/restaurants/${selectedId}/qr?${q.toString()}`);
       if (!res.ok) {
@@ -344,7 +358,7 @@ function QRPageContent() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `qr-${selectedRestaurant?.slug || 'code'}${item.tableNumber ? `-masa-${item.tableNumber}` : ''}${item.platform ? `-${item.platform}` : ''}.png`;
+      a.download = `qr-${selectedRestaurant?.slug || 'code'}${item.tableNumber ? `-masa-${item.tableNumber}` : ''}${item.platform ? `-${item.platform}` : ''}${item.serviceType ? `-${item.serviceType}` : ''}.png`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -448,6 +462,24 @@ function QRPageContent() {
                 </select>
                 <p className="text-[10px] text-[#ada89f] font-bold pl-1">
                   Seçilen platforma özel QR oluşturulur. Gelen yorumlar bu platform altında listelenir.
+                </p>
+              </div>
+
+              {/* Service Type Selector */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-[#ada89f] uppercase tracking-widest ml-1">Servis Türü</label>
+                <select
+                  value={selectedServiceType}
+                  onChange={(e) => setSelectedServiceType(e.target.value)}
+                  className="w-full px-5 py-4 rounded-xl border border-gray-200 bg-[#FCFBF7] focus:ring-2 focus:ring-[#FDBF1D] outline-none text-sm font-bold uppercase tracking-widest transition-all appearance-none cursor-pointer shadow-sm"
+                >
+                  <option value="">GENEL (SERVİS FARK ETMEZ)</option>
+                  <option value="dine_in">YERİNDE YEME</option>
+                  <option value="takeout">PAKET SERVİS</option>
+                  <option value="delivery">TESLİMAT</option>
+                </select>
+                <p className="text-[10px] text-[#ada89f] font-bold pl-1">
+                  Servis türüne özel QR oluşturulur (ör. paket poşetine yapıştırmak için "Paket Servis").
                 </p>
               </div>
 
@@ -652,6 +684,7 @@ function QRPageContent() {
                 ) : (
                   history.map((item) => {
                     const badge = item.platform ? PLATFORM_BADGE[item.platform] : null;
+                    const serviceBadge = item.serviceType ? SERVICE_TYPE_BADGE[item.serviceType] : null;
                     return (
                       <div key={item.id} className="p-3 hover:bg-[#FCFBF7] transition-colors flex flex-col gap-2">
                         <div className="flex items-start gap-3">
@@ -660,6 +693,7 @@ function QRPageContent() {
                             onClick={() => {
                               setTableNumber(item.tableNumber || '');
                               setSelectedPlatform(item.platform || '');
+                              setSelectedServiceType(item.serviceType || '');
                             }}
                             className="shrink-0 rounded-lg bg-[#FCFBF7] border border-gray-200 px-2 py-1.5 text-center min-w-[60px] hover:border-gray-300 active:scale-95 transition-all"
                           >
@@ -682,6 +716,11 @@ function QRPageContent() {
                               ) : (
                                 <span className="inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-500 border border-gray-200">
                                   Genel
+                                </span>
+                              )}
+                              {serviceBadge && (
+                                <span className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider text-white ${serviceBadge.bg}`}>
+                                  {serviceBadge.label}
                                 </span>
                               )}
                             </div>
