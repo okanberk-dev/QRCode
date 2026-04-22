@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft, ArrowDown, ArrowUp, Check, ChevronRight, Download, Edit2, Eye, EyeOff,
+  ArrowLeft, ArrowDown, ArrowUp, BarChart3, Check, ChevronRight, Download, Edit2, Eye, EyeOff,
   GripVertical, Image as ImageIcon, Loader2, Plus, QrCode, Save, Trash2, UtensilsCrossed, X,
 } from 'lucide-react';
 import {
@@ -113,6 +113,7 @@ export default function RestaurantMenuBuilderPage() {
       downloadQr: isTr ? 'İndir' : 'Download',
       qrFormat: isTr ? 'Format' : 'Format',
       dragToReorder: isTr ? 'Sırala' : 'Reorder',
+      analytics: isTr ? 'Analitik' : 'Analytics',
     }),
     [isTr],
   );
@@ -414,7 +415,7 @@ export default function RestaurantMenuBuilderPage() {
             {copy.exitPreview}
           </button>
         </div>
-        <PublicMenuView restaurant={restaurant} categories={categories} locale={locale} />
+        <PublicMenuView restaurant={restaurant} categories={categories} locale={locale} disableAnalytics />
       </div>
     );
   }
@@ -458,6 +459,13 @@ export default function RestaurantMenuBuilderPage() {
               <QrCode size={14} strokeWidth={2} />
               {copy.menuQr}
             </button>
+            <Link
+              href={`/${locale}/dashboard/restaurants/${id}/menu/analytics`}
+              className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F8F6F1] active:scale-95"
+            >
+              <BarChart3 size={14} strokeWidth={2} />
+              {copy.analytics}
+            </Link>
             {restaurant.menuPublished && (
               <Link
                 href={`/menu/${restaurant.slug}`}

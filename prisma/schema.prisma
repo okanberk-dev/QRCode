@@ -59,6 +59,7 @@ model Restaurant {
   adminUsers        AdminUser[]
   menuCategories    MenuCategory[]
   menuItems         MenuItem[]
+  analyticsEvents   MenuAnalyticsEvent[]
 
   @@map("restaurants")
 }
@@ -192,6 +193,26 @@ model MenuItem {
   @@index([restaurantId])
   @@index([categoryId, sortOrder])
   @@map("menu_items")
+}
+
+model MenuAnalyticsEvent {
+  id           String     @id @default(cuid())
+  restaurantId String     @map("restaurant_id")
+  categoryId   String?    @map("category_id")
+  productId    String?    @map("product_id")
+  eventType    String     @map("event_type")   // menu_view | menu_category_click | menu_product_view | menu_product_click | menu_upsell_click
+  sessionId    String     @map("session_id")
+  sourceType   String?    @map("source_type")  // qr | direct | table | link | delivery
+  metadata     Json?
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, eventType, createdAt])
+  @@index([restaurantId, categoryId, eventType, createdAt])
+  @@index([restaurantId, productId, eventType, createdAt])
+  @@index([restaurantId, sessionId, createdAt])
+  @@map("menu_analytics_events")
 }
 
 model BlogPost {

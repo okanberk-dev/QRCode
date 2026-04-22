@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Clock, MapPin, Phone, Flame, Leaf, Star, Sparkles, WheatOff } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import type { MenuBadge, MenuTheme } from '@/lib/validations';
+import { useMenuAnalytics, useProductViewTracking } from '@/hooks/useMenuAnalytics';
 
 export interface MenuItemView {
   id: string;
@@ -44,6 +45,7 @@ interface PublicMenuViewProps {
   restaurant: RestaurantView;
   categories: MenuCategoryView[];
   locale?: 'tr' | 'en';
+  disableAnalytics?: boolean; // true for admin preview mode
 }
 
 const BADGE_META: Record<MenuBadge, { tr: string; en: string; icon: typeof Flame; cls: string }> = {
@@ -105,14 +107,47 @@ type LayoutProps = {
   locale: 'tr' | 'en';
   copy: { emptyTitle: string; emptyBody: string; outOfStock: string; menuOf: string };
   priceLocale: string;
+  setProductRef: (productId: string, el: HTMLElement | null) => void;
+  onCategoryClick: (categoryId: string) => void;
+  onProductClick: (productId: string, categoryId: string | null) => void;
 };
 
-export default function PublicMenuView({ restaurant, categories, locale = 'tr' }: PublicMenuViewProps) {
+export default function PublicMenuView({ restaurant, categories, locale = 'tr', disableAnalytics }: PublicMenuViewProps) {
   const visibleCategories = useMemo(
     () => categories.filter((c) => c.isVisible && c.items.some((i) => i.isAvailable)),
     [categories],
   );
   const [activeId, setActiveId] = useState<string | null>(visibleCategories[0]?.id ?? null);
+
+  const analyticsEnabled = !disableAnalytics;
+  const analytics = useMenuAnalytics({ slug: restaurant.slug, enabled: analyticsEnabled });
+
+  useEffect(() => {
+    if (!analyticsEnabled) return;
+    analytics.trackMenuView();
+    // Only on mount; the hook dedupes subsequent fires anyway.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analyticsEnabled]);
+
+  const trackedProducts = useMemo(
+    () =>
+      visibleCategories.flatMap((c) =>
+        c.items.filter((i) => i.isAvailable).map((i) => ({ productId: i.id, categoryId: c.id })),
+      ),
+    [visibleCategories],
+  );
+  const setProductRef = useProductViewTracking({
+    enabled: analyticsEnabled,
+    track: analytics.trackProductView,
+    products: trackedProducts,
+  });
+
+  const onCategoryClick = (categoryId: string) => {
+    if (analyticsEnabled) analytics.trackCategoryClick(categoryId);
+  };
+  const onProductClick = (productId: string, categoryId: string | null) => {
+    if (analyticsEnabled) analytics.trackProductClick(productId, categoryId);
+  };
 
   useEffect(() => {
     if (!visibleCategories.length) return;
@@ -145,7 +180,10 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
   };
   const priceLocale = locale === 'tr' ? 'tr-TR' : 'en-US';
 
-  const layoutProps: LayoutProps = { restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale };
+  const layoutProps: LayoutProps = {
+    restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale,
+    setProductRef, onCategoryClick, onProductClick,
+  };
 
   switch (restaurant.menuTheme) {
     case 'modern':
@@ -163,7 +201,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr' }
 // ──────────────────────────────────────────────────────────────────────────
 // Classic (default) — original design
 
-function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale }: LayoutProps) {
+function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
     <div className="min-h-full bg-[#F8F6F1]">
       <header className="relative overflow-hidden">
@@ -200,6 +238,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                     <a
                       key={c.id}
                       href={`#cat-${c.id}`}
+                      onClick={() => onCategoryClick(c.id)}
                       className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all ${
                         isActive ? 'text-white shadow-sm' : 'bg-white text-[#1A2332] hover:bg-[#F8F6F1]'
                       }`}
@@ -230,7 +269,10 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                     {items.map((item) => (
                       <article
                         key={item.id}
-                        className={`flex gap-4 rounded-2xl border border-[#E8ECF2] bg-white p-3 shadow-sm transition-all sm:p-4 ${
+                        data-pid={item.id}
+                        ref={(el) => setProductRef(item.id, el)}
+                        onClick={() => onProductClick(item.id, category.id)}
+                        className={`flex cursor-pointer gap-4 rounded-2xl border border-[#E8ECF2] bg-white p-3 shadow-sm transition-all sm:p-4 ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
@@ -291,7 +333,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
 // ──────────────────────────────────────────────────────────────────────────
 // Modern — grid cards with image-forward design, overlay price
 
-function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale }: LayoutProps) {
+function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
     <div className="min-h-full bg-white">
       <header className="border-b border-[#E8ECF2] bg-white">
@@ -325,6 +367,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                     <a
                       key={c.id}
                       href={`#cat-${c.id}`}
+                      onClick={() => onCategoryClick(c.id)}
                       className="shrink-0 rounded-full border-2 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest transition-all"
                       style={{
                         borderColor: isActive ? accent : '#E8ECF2',
@@ -354,7 +397,10 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                     {items.map((item) => (
                       <article
                         key={item.id}
-                        className={`group overflow-hidden rounded-2xl border border-[#E8ECF2] bg-white shadow-sm transition-all hover:shadow-md ${
+                        data-pid={item.id}
+                        ref={(el) => setProductRef(item.id, el)}
+                        onClick={() => onProductClick(item.id, category.id)}
+                        className={`group cursor-pointer overflow-hidden rounded-2xl border border-[#E8ECF2] bg-white shadow-sm transition-all hover:shadow-md ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
@@ -407,7 +453,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
 // ──────────────────────────────────────────────────────────────────────────
 // Elegant — magazine, single column, minimal dividers
 
-function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale }: LayoutProps) {
+function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
     <div className="min-h-full bg-white" style={{ fontFamily: 'var(--font-heading), var(--font-body)' }}>
       <header className="border-b border-[#E8ECF2] bg-white">
@@ -437,6 +483,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
                     <a
                       key={c.id}
                       href={`#cat-${c.id}`}
+                      onClick={() => onCategoryClick(c.id)}
                       className="shrink-0 border-b-2 px-1 py-1.5 text-[10px] font-bold uppercase tracking-[0.25em] transition-all"
                       style={{
                         borderColor: isActive ? accent : 'transparent',
@@ -470,7 +517,10 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
                     {items.map((item) => (
                       <article
                         key={item.id}
-                        className={`flex items-start gap-5 py-5 sm:py-6 ${item.isOutOfStock ? 'opacity-60' : ''}`}
+                        data-pid={item.id}
+                        ref={(el) => setProductRef(item.id, el)}
+                        onClick={() => onProductClick(item.id, category.id)}
+                        className={`flex cursor-pointer items-start gap-5 py-5 sm:py-6 ${item.isOutOfStock ? 'opacity-60' : ''}`}
                       >
                         {item.imageUrl && (
                           <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded sm:h-24 sm:w-24">
@@ -517,7 +567,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
 // ──────────────────────────────────────────────────────────────────────────
 // Gastronomy — dark theme, gold/accent details, chef-driven
 
-function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale }: LayoutProps) {
+function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
     <div className="min-h-full bg-[#0E1525] text-white" style={{ fontFamily: 'var(--font-heading), var(--font-body)' }}>
       <header className="relative overflow-hidden border-b border-white/10">
@@ -548,6 +598,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                     <a
                       key={c.id}
                       href={`#cat-${c.id}`}
+                      onClick={() => onCategoryClick(c.id)}
                       className="shrink-0 rounded-full border px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] transition-all"
                       style={{
                         borderColor: isActive ? accent : 'rgba(255,255,255,0.2)',
@@ -582,7 +633,10 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                     {items.map((item) => (
                       <article
                         key={item.id}
-                        className={`flex gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:bg-white/10 sm:p-5 ${
+                        data-pid={item.id}
+                        ref={(el) => setProductRef(item.id, el)}
+                        onClick={() => onProductClick(item.id, category.id)}
+                        className={`flex cursor-pointer gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:bg-white/10 sm:p-5 ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
