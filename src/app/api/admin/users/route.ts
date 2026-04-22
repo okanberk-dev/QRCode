@@ -3,12 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { isStrongPassword } from '@/lib/validations';
 import bcrypt from 'bcryptjs';
+import { ApiErrors } from '@/lib/api-errors';
 
 export async function GET(req: NextRequest) {
   const admin: any = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-  }
+  if (!admin) return ApiErrors.unauthorized();
+  if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
   try {
     const { searchParams } = new URL(req.url);
@@ -39,62 +39,61 @@ export async function GET(req: NextRequest) {
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
     });
   } catch (error) {
-    return NextResponse.json({ error: 'Kullanıcılar getirilemedi' }, { status: 500 });
+    console.error('Failed to fetch users:', error);
+    return ApiErrors.internalError('Kullanıcılar çekilemedi');
   }
 }
 
 export async function POST(req: NextRequest) {
   const admin: any = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
-  }
+  if (!admin) return ApiErrors.unauthorized();
+  if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
   try {
     const body = await req.json();
     const { username, password, role, restaurantId, isNewRestaurant, restaurantData } = body;
 
     if (!username || !password || !role) {
-      return NextResponse.json({ error: 'Eksik bilgi' }, { status: 400 });
+      return ApiErrors.badRequest('Kullanıcı adı, şifre ve rol zorunludur', 'MISSING_FIELDS');
     }
 
-    if (typeof username !== 'string' || username.length < 3 || username.length > 64 || !/^[A-Za-z0-9._-]+$/.test(username)) {
-      return NextResponse.json(
-        { error: 'Kullanıcı adı 3-64 karakter olmalı ve sadece harf, rakam, . _ - içerebilir.' },
-        { status: 400 }
-      );
+    if (username.length < 3) {
+      return ApiErrors.badRequest('Kullanıcı adı en az 3 karakter olmalıdır', 'INVALID_USERNAME');
     }
 
     if (!isStrongPassword(password)) {
-      return NextResponse.json(
-        { error: 'Şifre en az 8 karakter, en az bir harf ve bir rakam içermelidir.' },
-        { status: 400 }
+      return ApiErrors.badRequest(
+        'Şifre en az 8 karakter uzunluğunda olmalı, en az bir büyük harf ve bir rakam içermelidir',
+        'WEAK_PASSWORD'
       );
     }
 
     if (role !== 'superadmin' && role !== 'manager') {
-      return NextResponse.json({ error: 'Geçersiz rol' }, { status: 400 });
+      return ApiErrors.badRequest('Geçersiz rol', 'INVALID_ROLE');
     }
 
     if (role === 'manager' && isNewRestaurant) {
       if (!restaurantData?.name || !restaurantData?.slug) {
-        return NextResponse.json({ error: 'Yeni restoran için isim ve URL zorunludur' }, { status: 400 });
+        return ApiErrors.badRequest('Yeni restoran için isim ve URL zorunludur', 'MISSING_RESTAURANT_DATA');
       }
+    } else if (role === 'manager' && !restaurantId) {
+      return ApiErrors.badRequest('Manager rolü için bir restoran seçilmelidir', 'MISSING_RESTAURANT');
     }
 
-    const existing = await prisma.adminUser.findUnique({ where: { username } });
-    if (existing) {
-      return NextResponse.json({ error: 'Bu kullanıcı adı zaten alınmış' }, { status: 400 });
-    }
+    const existingUser = await prisma.adminUser.findUnique({
+      where: { username },
+    });
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    if (existingUser) {
+      return ApiErrors.conflict('Bu kullanıcı adı zaten kullanılıyor');
+    }
 
     let finalRestaurantId = restaurantId;
 
     if (role === 'manager' && isNewRestaurant && restaurantData) {
-      // Sluğun daha önce kullanılıp kullanılmadığını kontrol et
       const existingRest = await prisma.restaurant.findUnique({ where: { slug: restaurantData.slug } });
       if (existingRest) {
-        return NextResponse.json({ error: 'Bu URL Slug zaten kullanımda' }, { status: 400 });
+        return ApiErrors.badRequest('Bu URL Slug zaten kullanımda', 'SLUG_IN_USE');
       }
 
       const rest = await prisma.restaurant.create({
@@ -106,21 +105,56 @@ export async function POST(req: NextRequest) {
         }
       });
       finalRestaurantId = rest.id;
+    } else if (restaurantId) {
+      const rest = await prisma.restaurant.findUnique({ where: { id: restaurantId } });
+      if (!rest) {
+        return ApiErrors.badRequest('Seçilen restoran bulunamadı', 'INVALID_RESTAURANT');
+      }
     }
 
-    const user = await prisma.adminUser.create({
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const newUser = await prisma.adminUser.create({
       data: {
         username,
         passwordHash: hashedPassword,
         role,
-        restaurantId: role === 'manager' ? finalRestaurantId : null
+        restaurantId: role === 'manager' ? finalRestaurantId : null,
       },
-      select: { id: true, username: true, role: true }
+      select: { id: true, username: true, role: true, restaurantId: true }
     });
 
-    return NextResponse.json(user, { status: 201 });
-  } catch (error: any) {
-    console.error('[ADMIN_USER_CREATE]', error);
-    return NextResponse.json({ error: 'Kullanıcı oluşturulamadı' }, { status: 500 });
+    return NextResponse.json({ success: true, user: newUser }, { status: 201 });
+  } catch (error) {
+    console.error('Failed to create user:', error);
+    return ApiErrors.internalError('Kullanıcı oluşturulamadı');
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const admin: any = await getAdminFromRequest(req);
+  if (!admin) return ApiErrors.unauthorized();
+  if (admin.role !== 'superadmin') return ApiErrors.forbidden();
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return ApiErrors.badRequest('Kullanıcı ID si gerekli', 'MISSING_ID');
+    }
+
+    if (id === admin.id) {
+      return ApiErrors.badRequest('Kendi hesabınızı silemezsiniz', 'CANNOT_DELETE_SELF');
+    }
+
+    await prisma.adminUser.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Failed to delete user:', error);
+    return ApiErrors.internalError('Kullanıcı silinemedi');
   }
 }

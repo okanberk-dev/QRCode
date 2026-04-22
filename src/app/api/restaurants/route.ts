@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
     const { searchParams: adminParams } = new URL(req.url);
     const page = Math.max(1, parseInt(adminParams.get('page') || '1'));
     const limit = Math.min(100, Math.max(1, parseInt(adminParams.get('limit') || '20')));
+    const status = adminParams.get('status') || 'active';
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -59,6 +60,13 @@ export async function GET(req: NextRequest) {
     if (scopedIds !== null) {
       where.id = { in: scopedIds };
     }
+
+    if (status === 'active') {
+      where.isActive = true;
+    } else if (status === 'passive') {
+      where.isActive = false;
+    }
+    // 'all' means no filter on isActive
 
     const [restaurants, total] = await Promise.all([
       prisma.restaurant.findMany({

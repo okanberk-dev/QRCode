@@ -30,6 +30,7 @@ export default function RestaurantsPage() {
   const { t } = useAdminTranslation();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'active' | 'passive' | 'all'>('active');
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -47,10 +48,11 @@ export default function RestaurantsPage() {
   const [isManualSlug, setIsManualSlug] = useState(false);
   const [showGoogleInfo, setShowGoogleInfo] = useState(false);
 
-  const fetchRestaurants = async () => {
+  const fetchRestaurants = async (filter?: string) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/restaurants');
+      const currentFilter = filter || statusFilter;
+      const res = await fetch(`/api/restaurants?status=${currentFilter}`);
       if (res.ok) {
         const result = await res.json();
         // Handle both older array response and newer { data, meta } shape
@@ -65,7 +67,7 @@ export default function RestaurantsPage() {
 
   useEffect(() => {
     fetchRestaurants();
-  }, []);
+  }, [statusFilter]);
 
   // Auto-generate slug from name
   const handleNameChange = (name: string) => {
@@ -157,16 +159,53 @@ export default function RestaurantsPage() {
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative group">
-        <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#ada89f] group-focus-within:text-[#111827] transition-colors" size={20} strokeWidth={3} />
-        <input
-          type="text"
-          placeholder={t('search_placeholder')}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border border-gray-100 rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-4 sm:py-5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#FDBF1D] transition-all"
-        />
+      {/* Filters and Search */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        {/* Status Filter */}
+        <div className="flex bg-gray-100/50 p-1 rounded-xl shrink-0 border border-gray-100">
+          <button
+            onClick={() => setStatusFilter('active')}
+            className={`px-4 sm:px-6 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
+              statusFilter === 'active' 
+                ? 'bg-white text-[#111827] shadow-sm' 
+                : 'text-[#6b6760] hover:text-[#111827]'
+            }`}
+          >
+            Aktif
+          </button>
+          <button
+            onClick={() => setStatusFilter('passive')}
+            className={`px-4 sm:px-6 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
+              statusFilter === 'passive' 
+                ? 'bg-white text-[#111827] shadow-sm' 
+                : 'text-[#6b6760] hover:text-[#111827]'
+            }`}
+          >
+            Pasif
+          </button>
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`px-4 sm:px-6 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
+              statusFilter === 'all' 
+                ? 'bg-white text-[#111827] shadow-sm' 
+                : 'text-[#6b6760] hover:text-[#111827]'
+            }`}
+          >
+            Tümü
+          </button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative group w-full max-w-md">
+          <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#ada89f] group-focus-within:text-[#111827] transition-colors" size={20} strokeWidth={3} />
+          <input
+            type="text"
+            placeholder={t('search_placeholder')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-white border border-gray-100 rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-3 sm:py-4 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#FDBF1D] transition-all"
+          />
+        </div>
       </div>
 
       {/* Restaurant Cards Grid */}

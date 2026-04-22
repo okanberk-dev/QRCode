@@ -46,6 +46,7 @@ function QRPageContent() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [qrError, setQrError] = useState('');
   const [duplicateWarning, setDuplicateWarning] = useState(false);
 
@@ -357,6 +358,44 @@ function QRPageContent() {
     }
   };
 
+  const handleExportHistory = async () => {
+    if (!selectedId) return;
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/restaurants/${selectedId}/qr/export`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        alert(err?.error || 'Dışa aktarma başarısız.');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const disposition = res.headers.get('Content-Disposition');
+      let filename = `qr-gecmisi-${selectedId}.csv`;
+      if (disposition && disposition.indexOf('filename=') !== -1) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(disposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, '');
+        }
+      }
+      
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Bağlantı hatası.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
@@ -644,8 +683,18 @@ function QRPageContent() {
           {selectedRestaurant && (
             <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 sm:p-8 space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-[#111827] uppercase tracking-widest">Son 50 QR</h4>
-                <span className="text-[10px] font-black text-[#ada89f]">{history.length}/50</span>
+                <div className="flex items-center gap-3">
+                  <h4 className="text-sm font-black text-[#111827] uppercase tracking-widest">Son 50 QR</h4>
+                  <span className="text-[10px] font-black text-[#ada89f] px-2 py-0.5 bg-gray-100 rounded-md">{history.length}/50</span>
+                </div>
+                <button
+                  onClick={handleExportHistory}
+                  disabled={exporting || history.length === 0}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 active:scale-95 transition-all text-[10px] font-black uppercase tracking-widest shadow-sm disabled:opacity-50"
+                >
+                  {exporting ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} strokeWidth={2.5} />}
+                  DIŞA AKTAR
+                </button>
               </div>
               <p className="text-[12px] text-[#6b6760] font-semibold">
                 50 kayıt aşıldığında en eski QR otomatik silinir, en yeniler tutulur.

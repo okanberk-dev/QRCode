@@ -1,5 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ApiErrors } from '@/lib/api-errors';
+import { getAdminFromRequest } from '@/lib/auth';
+
+async function requireSuperadmin(req: NextRequest) {
+  const admin = await getAdminFromRequest(req);
+  if (!admin) {
+    return { ok: false as const, res: ApiErrors.unauthorized() };
+  }
+  if (admin.role !== 'superadmin') {
+    return { ok: false as const, res: ApiErrors.forbidden() };
+  }
+  return { ok: true as const, admin };
+}
 
 const BLOG_POSTS_TR = [
   {
@@ -196,7 +209,10 @@ const BLOG_POSTS_EN = [
   },
 ];
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await requireSuperadmin(req);
+  if (!auth.ok) return auth.res;
+
   try {
     let seeded = 0;
     for (const post of [...BLOG_POSTS_TR, ...BLOG_POSTS_EN]) {
@@ -210,6 +226,6 @@ export async function GET() {
     return NextResponse.json({ success: true, seeded });
   } catch (error) {
     console.error('[Seed Error]', error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    return ApiErrors.internalError('Blog yazıları örneklenemedi');
   }
 }

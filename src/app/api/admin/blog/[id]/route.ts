@@ -1,10 +1,24 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { ApiErrors } from '@/lib/api-errors';
+import { getAdminFromRequest } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+async function requireSuperadmin(req: NextRequest) {
+  const admin = await getAdminFromRequest(req);
+  if (!admin) {
+    return { ok: false as const, res: ApiErrors.unauthorized() };
+  }
+  if (admin.role !== 'superadmin') {
+    return { ok: false as const, res: ApiErrors.forbidden() };
+  }
+  return { ok: true as const, admin };
+}
 
 // PUT - update existing post
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const gate = await requireSuperadmin(req);
+  if (!gate.ok) return gate.res;
+
   try {
     const { id } = await params;
     const body = await req.json();
@@ -18,24 +32,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({ post });
   } catch (error: any) {
     if (error?.code === 'P2025') {
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+      return ApiErrors.notFound('Blog yazısı bulunamadı');
     }
     console.error('[API blog PUT]', error);
-    return NextResponse.json({ error: 'Failed to update blog post' }, { status: 500 });
+    return ApiErrors.internalError('Blog yazısı güncellenemedi');
   }
 }
 
 // DELETE - remove post
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const gate = await requireSuperadmin(req);
+  if (!gate.ok) return gate.res;
+
   try {
     const { id } = await params;
     await prisma.blogPost.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     if (error?.code === 'P2025') {
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+      return ApiErrors.notFound('Blog yazısı bulunamadı');
     }
     console.error('[API blog DELETE]', error);
-    return NextResponse.json({ error: 'Failed to delete blog post' }, { status: 500 });
+    return ApiErrors.internalError('Blog yazısı silinemedi');
   }
 }

@@ -1,9 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
+import { getAdminFromRequest } from '@/lib/auth';
+
+async function requireSuperadmin(req: NextRequest) {
+  const admin = await getAdminFromRequest(req);
+  if (!admin) {
+    return { ok: false as const, res: ApiErrors.unauthorized() };
+  }
+  if (admin.role !== 'superadmin') {
+    return { ok: false as const, res: ApiErrors.forbidden() };
+  }
+  return { ok: true as const, admin };
+}
 
 // GET - list all posts
 export async function GET(req: NextRequest) {
+  const gate = await requireSuperadmin(req);
+  if (!gate.ok) return gate.res;
+
   try {
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
@@ -42,7 +57,10 @@ export async function GET(req: NextRequest) {
 }
 
 // POST - create new post
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const gate = await requireSuperadmin(req);
+  if (!gate.ok) return gate.res;
+
   try {
     const body = await req.json();
     const { slug, locale, title, description, content, date, readTime, author, coverImage } = body;
