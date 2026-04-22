@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Crown, LayoutDashboard, LogOut, MessageSquareText, QrCode, Store, User, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BookOpen, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, QrCode, Store, User, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -32,6 +32,7 @@ function getDaysLeft(trialEndsAt: string | null) {
 export default function UserDashboardShell({ locale, user, announcements = [], children }: UserDashboardShellProps) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const trialDaysLeft = getDaysLeft(user.trialEndsAt);
 
   const copy = useMemo(() => {
@@ -47,6 +48,8 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
       logout: isTr ? 'Çıkış' : 'Logout',
       plan: isTr ? 'Plan' : 'Plan',
       trialLeft: isTr ? 'gün kaldı' : 'days left',
+      more: isTr ? 'Daha fazla' : 'More',
+      leads: isTr ? 'Müşteri Listesi' : 'Customer List',
     };
   }, [locale]);
 
@@ -56,10 +59,27 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
     { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
-    { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: locale === 'tr' ? 'Müşteri Listesi' : 'Customer List' },
+    { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
     { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
     { href: `/${locale}/dashboard/profile`, icon: User, label: copy.profile },
   ];
+
+  // Mobile bottom nav: 4 primary tabs + "More" sheet for the rest.
+  const bottomNavItems = [
+    { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
+    { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
+    { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
+    { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
+  ];
+  const moreSheetItems = [
+    { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
+    { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
+    { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
+    { href: `/${locale}/dashboard/profile`, icon: User, label: copy.profile },
+  ];
+  const moreActive = moreSheetItems.some(
+    (i) => pathname === i.href || pathname?.startsWith(`${i.href}/`),
+  );
 
   const displayName = user.name?.trim() || user.email.split('@')[0];
   const initial = displayName.charAt(0).toUpperCase();
@@ -191,32 +211,133 @@ export default function UserDashboardShell({ locale, user, announcements = [], c
         </div>
       )}
 
-      {/* Mobile bottom nav — all 6 items */}
-      <div
-        className="fixed bottom-0 left-0 right-0 z-40 bg-[#1A2332]/97 border-t border-white/10 backdrop-blur-md lg:hidden"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.25rem)' }}
+      {/* Mobile bottom nav — 4 primary tabs + More */}
+      <nav
+        aria-label={copy.dashboard}
+        className="fixed bottom-0 left-0 right-0 z-40 bg-[#1A2332]/95 border-t border-white/10 backdrop-blur-md shadow-[0_-4px_20px_0_rgba(0,0,0,0.35)] lg:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="flex items-stretch">
-          {navItems.map((item) => {
+        <ul className="flex items-stretch px-2 pt-2 pb-1.5">
+          {bottomNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 transition-all ${
-                  isActive ? 'text-[#F4B400]' : 'text-white/45 hover:text-white/75'
-                }`}
-              >
-                <div className={`rounded-xl p-1.5 transition-all ${isActive ? 'bg-[#F4B400]/15' : ''}`}>
-                  <Icon size={19} strokeWidth={isActive ? 2.75 : 2} />
-                </div>
-                <span className="text-[8px] font-black uppercase tracking-tight leading-none">{item.label}</span>
-              </Link>
+              <li key={item.href} className="flex-1 min-w-0">
+                <Link
+                  href={item.href}
+                  aria-label={item.label}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`relative flex flex-col items-center gap-1 px-1 py-1.5 rounded-xl transition-colors ${
+                    isActive ? 'text-[#F4B400]' : 'text-[#E8ECF2]/70 hover:text-white'
+                  }`}
+                >
+                  {isActive && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#F4B400] rounded-b-full"
+                    />
+                  )}
+                  <span className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-[#F4B400]/15' : ''}`}>
+                    <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full leading-none">
+                    {item.label}
+                  </span>
+                </Link>
+              </li>
             );
           })}
+          <li className="flex-1 min-w-0">
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              aria-label={copy.more}
+              aria-expanded={moreOpen}
+              aria-haspopup="dialog"
+              className={`relative flex w-full flex-col items-center gap-1 px-1 py-1.5 rounded-xl transition-colors ${
+                moreActive ? 'text-[#F4B400]' : 'text-[#E8ECF2]/70 hover:text-white'
+              }`}
+            >
+              {moreActive && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#F4B400] rounded-b-full"
+                />
+              )}
+              <span className={`p-2 rounded-xl transition-colors ${moreActive ? 'bg-[#F4B400]/15' : ''}`}>
+                <MoreHorizontal size={20} strokeWidth={moreActive ? 2.5 : 2} />
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full leading-none">
+                {copy.more}
+              </span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      {/* Mobile "More" bottom sheet */}
+      {moreOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={copy.more}>
+          <button
+            type="button"
+            aria-label="close"
+            className="absolute inset-0 bg-[#0E1525]/60 backdrop-blur-sm"
+            onClick={() => setMoreOpen(false)}
+          />
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-[#1A2332] rounded-t-3xl border-t border-white/10 shadow-2xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+          >
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+            <div className="mb-3 flex items-center justify-between px-2">
+              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/60">{copy.more}</p>
+              <button
+                type="button"
+                onClick={() => setMoreOpen(false)}
+                aria-label="close"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/60 hover:bg-white/5 hover:text-white"
+              >
+                <X size={18} strokeWidth={2} />
+              </button>
+            </div>
+            <ul className="space-y-1">
+              {moreSheetItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={() => setMoreOpen(false)}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${
+                        isActive
+                          ? 'bg-[#F4B400] text-[#1A2332]'
+                          : 'text-white/80 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      <Icon size={18} strokeWidth={2} />
+                      <span>{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+              <li className="pt-2 mt-2 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoreOpen(false);
+                    handleLogout();
+                  }}
+                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
+                >
+                  <LogOut size={18} strokeWidth={2} />
+                  <span>{copy.logout}</span>
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
