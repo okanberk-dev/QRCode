@@ -1,14 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft, ArrowDown, ArrowUp, Check, ChevronRight, Edit2, Eye, EyeOff, Image as ImageIcon,
-  Loader2, Plus, Save, Trash2, UtensilsCrossed, X,
+  ArrowLeft, ArrowDown, ArrowUp, Check, ChevronRight, Download, Edit2, Eye, EyeOff,
+  GripVertical, Image as ImageIcon, Loader2, Plus, QrCode, Save, Trash2, UtensilsCrossed, X,
 } from 'lucide-react';
+import {
+  DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import PublicMenuView, { type MenuCategoryView, type MenuItemView, type RestaurantView } from '@/components/menu/PublicMenuView';
-import { MENU_BADGES, type MenuBadge } from '@/lib/validations';
+import { MENU_BADGES, MENU_THEMES, type MenuBadge, type MenuTheme } from '@/lib/validations';
 import { formatPrice, parsePriceInput } from '@/lib/format';
 import type { Locale } from '@/lib/translations';
 
@@ -16,6 +22,8 @@ interface RestaurantShape extends RestaurantView {
   menuEnabled: boolean;
   menuPublished: boolean;
   menuUpdatedAt: string | null;
+  menuTheme: MenuTheme;
+  menuAccentColor: string | null;
 }
 
 interface CategoryShape extends MenuCategoryView {}
@@ -49,6 +57,8 @@ export default function RestaurantMenuBuilderPage() {
   const [itemModal, setItemModal] = useState<null | { mode: 'create' | 'edit'; data: Partial<MenuItemView> & { categoryId?: string } }>(null);
   const [busy, setBusy] = useState(false);
   const [publishBusy, setPublishBusy] = useState(false);
+  const [themeSaving, setThemeSaving] = useState(false);
+  const [qrModal, setQrModal] = useState(false);
 
   const copy = useMemo(
     () => ({
@@ -92,6 +102,17 @@ export default function RestaurantMenuBuilderPage() {
       draft: isTr ? 'Taslak' : 'Draft',
       disabled: isTr ? 'Kapalı' : 'Disabled',
       lastUpdated: isTr ? 'Son güncelleme' : 'Last updated',
+      menuDesign: isTr ? 'Menü Tasarımı' : 'Menu Design',
+      themeLabel: isTr ? 'Tema' : 'Theme',
+      themeClassic: isTr ? 'Klasik' : 'Classic',
+      themeModern: isTr ? 'Modern' : 'Modern',
+      themeElegant: isTr ? 'Şık' : 'Elegant',
+      themeGastronomy: isTr ? 'Gastronomi' : 'Gastronomy',
+      accentColor: isTr ? 'Renk' : 'Accent Color',
+      menuQr: isTr ? 'Menü QR' : 'Menu QR',
+      downloadQr: isTr ? 'İndir' : 'Download',
+      qrFormat: isTr ? 'Format' : 'Format',
+      dragToReorder: isTr ? 'Sırala' : 'Reorder',
     }),
     [isTr],
   );
@@ -120,6 +141,8 @@ export default function RestaurantMenuBuilderPage() {
         menuEnabled: r.menuEnabled ?? true,
         menuPublished: r.menuPublished ?? false,
         menuUpdatedAt: r.menuUpdatedAt ?? null,
+        menuTheme: (MENU_THEMES as readonly string[]).includes(r.menuTheme) ? r.menuTheme : 'classic',
+        menuAccentColor: r.menuAccentColor ?? null,
       });
       const cats: CategoryShape[] = (c.categories ?? []).map((cat: CategoryShape) => ({
         ...cat,
@@ -138,6 +161,32 @@ export default function RestaurantMenuBuilderPage() {
   }, [id, fetchAll]);
 
   const activeCategory = categories.find((c) => c.id === activeCategoryId) || null;
+
+  // ── DnD sensors ──
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+  );
+
+  // ── Theme ops ──
+  const saveTheme = async (patch: { menuTheme?: MenuTheme; menuAccentColor?: string | null }) => {
+    if (!restaurant) return;
+    setThemeSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/restaurants/${id}/theme`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Tema kaydedilemedi');
+      setRestaurant((prev) => prev ? { ...prev, ...data } : prev);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setThemeSaving(false);
+  };
 
   // ── Category ops ──
   const saveCategory = async (payload: Partial<CategoryShape>) => {
@@ -182,25 +231,40 @@ export default function RestaurantMenuBuilderPage() {
     }
   };
 
-  const moveCategory = async (index: number, dir: -1 | 1) => {
-    const target = categories[index + dir];
-    const current = categories[index];
-    if (!target || !current) return;
+  const reorderCategories = async (newOrder: CategoryShape[]) => {
+    setCategories(newOrder);
     const payload = {
-      categories: [
-        { id: current.id, sortOrder: target.sortOrder },
-        { id: target.id, sortOrder: current.sortOrder },
-      ],
+      categories: newOrder.map((c, i) => ({ id: c.id, sortOrder: i })),
     };
+    try {
+      await fetch(`/api/restaurants/${id}/menu/reorder`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      await fetchAll();
+    } catch (e) {
+      setError((e as Error).message);
+      await fetchAll();
+    }
+  };
+
+  const moveCategory = async (index: number, dir: -1 | 1) => {
     const next = [...categories];
-    [next[index], next[index + dir]] = [next[index + dir], next[index]];
-    setCategories(next);
-    await fetch(`/api/restaurants/${id}/menu/reorder`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    await fetchAll();
+    const swap = index + dir;
+    if (swap < 0 || swap >= next.length) return;
+    [next[index], next[swap]] = [next[swap], next[index]];
+    await reorderCategories(next);
+  };
+
+  const onCategoryDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = categories.findIndex((c) => c.id === active.id);
+    const newIndex = categories.findIndex((c) => c.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const next = arrayMove(categories, oldIndex, newIndex);
+    await reorderCategories(next);
   };
 
   // ── Item ops ──
@@ -253,31 +317,43 @@ export default function RestaurantMenuBuilderPage() {
     }
   };
 
+  const reorderItems = async (categoryId: string, newOrder: MenuItemView[]) => {
+    const nextCats = categories.map((c) => (c.id === categoryId ? { ...c, items: newOrder } : c));
+    setCategories(nextCats);
+    const payload = {
+      items: newOrder.map((item, i) => ({ id: item.id, sortOrder: i })),
+    };
+    try {
+      await fetch(`/api/restaurants/${id}/menu/reorder`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      await fetchAll();
+    } catch (e) {
+      setError((e as Error).message);
+      await fetchAll();
+    }
+  };
+
   const moveItem = async (index: number, dir: -1 | 1) => {
     if (!activeCategory) return;
+    const items = [...activeCategory.items];
+    const swap = index + dir;
+    if (swap < 0 || swap >= items.length) return;
+    [items[index], items[swap]] = [items[swap], items[index]];
+    await reorderItems(activeCategory.id, items);
+  };
+
+  const onItemDragEnd = async (event: DragEndEvent) => {
+    if (!activeCategory) return;
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
     const items = activeCategory.items;
-    const target = items[index + dir];
-    const current = items[index];
-    if (!target || !current) return;
-    const payload = {
-      items: [
-        { id: current.id, sortOrder: target.sortOrder },
-        { id: target.id, sortOrder: current.sortOrder },
-      ],
-    };
-    const nextCats = categories.map((c) => {
-      if (c.id !== activeCategory.id) return c;
-      const list = [...c.items];
-      [list[index], list[index + dir]] = [list[index + dir], list[index]];
-      return { ...c, items: list };
-    });
-    setCategories(nextCats);
-    await fetch(`/api/restaurants/${id}/menu/reorder`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    await fetchAll();
+    const oldIndex = items.findIndex((it) => it.id === active.id);
+    const newIndex = items.findIndex((it) => it.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    await reorderItems(activeCategory.id, arrayMove(items, oldIndex, newIndex));
   };
 
   const togglePublish = async () => {
@@ -375,6 +451,13 @@ export default function RestaurantMenuBuilderPage() {
               <Eye size={14} strokeWidth={2} />
               {copy.preview}
             </Link>
+            <button
+              onClick={() => setQrModal(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F8F6F1] active:scale-95"
+            >
+              <QrCode size={14} strokeWidth={2} />
+              {copy.menuQr}
+            </button>
             {restaurant.menuPublished && (
               <Link
                 href={`/menu/${restaurant.slug}`}
@@ -412,6 +495,14 @@ export default function RestaurantMenuBuilderPage() {
         </div>
       )}
 
+      {/* Menu Design (theme + accent color) */}
+      <ThemePanel
+        restaurant={restaurant}
+        copy={copy}
+        saving={themeSaving}
+        onChange={saveTheme}
+      />
+
       {/* Two-pane builder */}
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         {/* Categories */}
@@ -429,62 +520,28 @@ export default function RestaurantMenuBuilderPage() {
           {categories.length === 0 ? (
             <div className="p-5 text-center text-xs font-bold text-[#2A3444]">{copy.noCategories}</div>
           ) : (
-            <ul className="divide-y divide-[#E8ECF2]">
-              {categories.map((c, idx) => {
-                const isActive = c.id === activeCategoryId;
-                return (
-                  <li
-                    key={c.id}
-                    className={`flex items-center gap-2 p-3 text-sm transition-all ${isActive ? 'bg-[#F4B400]/15' : 'hover:bg-[#F8F6F1]'}`}
-                  >
-                    <button
-                      onClick={() => setActiveCategoryId(c.id)}
-                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-black text-[#1A2332]">{c.name}</p>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
-                          {c.items.length} {isTr ? 'ürün' : 'items'}
-                          {!c.isVisible && <span className="ml-1 text-amber-600">· {copy.hidden}</span>}
-                        </p>
-                      </div>
-                    </button>
-                    <div className="flex shrink-0 items-center">
-                      <button
-                        onClick={() => moveCategory(idx, -1)}
-                        disabled={idx === 0}
-                        className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30"
-                        title="Up"
-                      >
-                        <ArrowUp size={14} strokeWidth={2} />
-                      </button>
-                      <button
-                        onClick={() => moveCategory(idx, 1)}
-                        disabled={idx === categories.length - 1}
-                        className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30"
-                        title="Down"
-                      >
-                        <ArrowDown size={14} strokeWidth={2} />
-                      </button>
-                      <button
-                        onClick={() => setCategoryModal({ mode: 'edit', data: c })}
-                        className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2]"
-                        title={copy.editCategory}
-                      >
-                        <Edit2 size={14} strokeWidth={2} />
-                      </button>
-                      <button
-                        onClick={() => deleteCategory(c.id)}
-                        className="rounded-lg p-1 text-red-500 hover:bg-red-50"
-                        title={copy.delete}
-                      >
-                        <Trash2 size={14} strokeWidth={2} />
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onCategoryDragEnd}>
+              <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                <ul className="divide-y divide-[#E8ECF2]">
+                  {categories.map((c, idx) => (
+                    <SortableCategoryRow
+                      key={c.id}
+                      category={c}
+                      isActive={c.id === activeCategoryId}
+                      isFirst={idx === 0}
+                      isLast={idx === categories.length - 1}
+                      isTr={isTr}
+                      copy={copy}
+                      onSelect={() => setActiveCategoryId(c.id)}
+                      onMoveUp={() => moveCategory(idx, -1)}
+                      onMoveDown={() => moveCategory(idx, 1)}
+                      onEdit={() => setCategoryModal({ mode: 'edit', data: c })}
+                      onDelete={() => deleteCategory(c.id)}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
           )}
         </section>
 
@@ -514,59 +571,28 @@ export default function RestaurantMenuBuilderPage() {
           ) : activeCategory.items.length === 0 ? (
             <div className="p-10 text-center text-xs font-bold text-[#2A3444]">{copy.noItems}</div>
           ) : (
-            <ul className="divide-y divide-[#E8ECF2]">
-              {activeCategory.items.map((item, idx) => (
-                <li key={item.id} className="flex items-center gap-3 p-3 sm:p-4">
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#E8ECF2]">
-                    {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.imageUrl} alt={item.name} loading="lazy" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[#6B7280]">
-                        <ImageIcon size={18} strokeWidth={2} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-black text-[#1A2332]">{item.name}</p>
-                      {!item.isAvailable && (
-                        <span className="rounded-full bg-[#E8ECF2] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#6B7280]">{copy.hidden}</span>
-                      )}
-                      {item.isOutOfStock && (
-                        <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[9px] font-black uppercase text-red-600">{copy.outOfStock}</span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 text-[11px] font-bold text-[#2A3444]">
-                      {formatPrice(item.priceCents, item.currency, isTr ? 'tr-TR' : 'en-US')}
-                      {item.badges.length > 0 && (
-                        <span className="ml-2 text-[#6B7280]">· {item.badges.map((b) => BADGE_LABELS[b as MenuBadge]?.[locale] || b).join(', ')}</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center">
-                    <button onClick={() => moveItem(idx, -1)} disabled={idx === 0} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30">
-                      <ArrowUp size={14} strokeWidth={2} />
-                    </button>
-                    <button onClick={() => moveItem(idx, 1)} disabled={idx === activeCategory.items.length - 1} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30">
-                      <ArrowDown size={14} strokeWidth={2} />
-                    </button>
-                    <button
-                      onClick={() => setItemModal({ mode: 'edit', data: { ...item, categoryId: activeCategory.id } })}
-                      className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2]"
-                    >
-                      <Edit2 size={14} strokeWidth={2} />
-                    </button>
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      className="rounded-lg p-1.5 text-red-500 hover:bg-red-50"
-                    >
-                      <Trash2 size={14} strokeWidth={2} />
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onItemDragEnd}>
+              <SortableContext items={activeCategory.items.map((it) => it.id)} strategy={verticalListSortingStrategy}>
+                <ul className="divide-y divide-[#E8ECF2]">
+                  {activeCategory.items.map((item, idx) => (
+                    <SortableItemRow
+                      key={item.id}
+                      item={item}
+                      idx={idx}
+                      isFirst={idx === 0}
+                      isLast={idx === activeCategory.items.length - 1}
+                      isTr={isTr}
+                      locale={locale}
+                      copy={copy}
+                      onMoveUp={() => moveItem(idx, -1)}
+                      onMoveDown={() => moveItem(idx, 1)}
+                      onEdit={() => setItemModal({ mode: 'edit', data: { ...item, categoryId: activeCategory.id } })}
+                      onDelete={() => deleteItem(item.id)}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
           )}
         </section>
       </div>
@@ -594,6 +620,16 @@ export default function RestaurantMenuBuilderPage() {
           locale={locale}
           onClose={() => setItemModal(null)}
           onSave={saveItem}
+        />
+      )}
+
+      {/* Menu QR Modal */}
+      {qrModal && (
+        <MenuQrModal
+          restaurantId={id}
+          slug={restaurant.slug}
+          copy={copy}
+          onClose={() => setQrModal(false)}
         />
       )}
     </div>
@@ -834,5 +870,407 @@ function ModalActions({ busy, copy, onClose }: { busy: boolean; copy: Record<str
         {copy.save}
       </button>
     </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Sortable rows
+
+function SortableCategoryRow({
+  category, isActive, isFirst, isLast, isTr, copy,
+  onSelect, onMoveUp, onMoveDown, onEdit, onDelete,
+}: {
+  category: CategoryShape;
+  isActive: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+  isTr: boolean;
+  copy: Record<string, string>;
+  onSelect: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-1 p-3 text-sm transition-all ${isActive ? 'bg-[#F4B400]/15' : 'hover:bg-[#F8F6F1]'} ${isDragging ? 'z-10 shadow-lg' : ''}`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        aria-label={copy.dragToReorder}
+        className="cursor-grab touch-none rounded-lg p-1 text-[#6B7280] hover:bg-[#E8ECF2] active:cursor-grabbing"
+      >
+        <GripVertical size={14} strokeWidth={2} />
+      </button>
+      <button onClick={onSelect} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-black text-[#1A2332]">{category.name}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
+            {category.items.length} {isTr ? 'ürün' : 'items'}
+            {!category.isVisible && <span className="ml-1 text-amber-600">· {copy.hidden}</span>}
+          </p>
+        </div>
+      </button>
+      <div className="flex shrink-0 items-center">
+        <button onClick={onMoveUp} disabled={isFirst} className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30" title="Up">
+          <ArrowUp size={14} strokeWidth={2} />
+        </button>
+        <button onClick={onMoveDown} disabled={isLast} className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30" title="Down">
+          <ArrowDown size={14} strokeWidth={2} />
+        </button>
+        <button onClick={onEdit} className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2]" title={copy.editCategory}>
+          <Edit2 size={14} strokeWidth={2} />
+        </button>
+        <button onClick={onDelete} className="rounded-lg p-1 text-red-500 hover:bg-red-50" title={copy.delete}>
+          <Trash2 size={14} strokeWidth={2} />
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function SortableItemRow({
+  item, isFirst, isLast, isTr, locale, copy,
+  onMoveUp, onMoveDown, onEdit, onDelete,
+}: {
+  item: MenuItemView;
+  idx: number;
+  isFirst: boolean;
+  isLast: boolean;
+  isTr: boolean;
+  locale: Locale;
+  copy: Record<string, string>;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2 p-3 sm:gap-3 sm:p-4 ${isDragging ? 'z-10 bg-white shadow-lg' : ''}`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        aria-label={copy.dragToReorder}
+        className="cursor-grab touch-none rounded-lg p-1 text-[#6B7280] hover:bg-[#E8ECF2] active:cursor-grabbing"
+      >
+        <GripVertical size={14} strokeWidth={2} />
+      </button>
+      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#E8ECF2]">
+        {item.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.imageUrl} alt={item.name} loading="lazy" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-[#6B7280]">
+            <ImageIcon size={18} strokeWidth={2} />
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-black text-[#1A2332]">{item.name}</p>
+          {!item.isAvailable && (
+            <span className="rounded-full bg-[#E8ECF2] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#6B7280]">{copy.hidden}</span>
+          )}
+          {item.isOutOfStock && (
+            <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[9px] font-black uppercase text-red-600">{copy.outOfStock}</span>
+          )}
+        </div>
+        <p className="mt-0.5 text-[11px] font-bold text-[#2A3444]">
+          {formatPrice(item.priceCents, item.currency, isTr ? 'tr-TR' : 'en-US')}
+          {item.badges.length > 0 && (
+            <span className="ml-2 text-[#6B7280]">· {item.badges.map((b) => BADGE_LABELS[b as MenuBadge]?.[locale] || b).join(', ')}</span>
+          )}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center">
+        <button onClick={onMoveUp} disabled={isFirst} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30">
+          <ArrowUp size={14} strokeWidth={2} />
+        </button>
+        <button onClick={onMoveDown} disabled={isLast} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30">
+          <ArrowDown size={14} strokeWidth={2} />
+        </button>
+        <button onClick={onEdit} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2]">
+          <Edit2 size={14} strokeWidth={2} />
+        </button>
+        <button onClick={onDelete} className="rounded-lg p-1.5 text-red-500 hover:bg-red-50">
+          <Trash2 size={14} strokeWidth={2} />
+        </button>
+      </div>
+    </li>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Theme panel
+
+const THEME_SWATCHES = ['#F4B400', '#E85A4F', '#1A2332', '#0E7C66', '#8B5CF6', '#EC4899', '#0EA5E9', '#F97316'];
+
+function ThemePanel({
+  restaurant, copy, saving, onChange,
+}: {
+  restaurant: RestaurantShape;
+  copy: Record<string, string>;
+  saving: boolean;
+  onChange: (patch: { menuTheme?: MenuTheme; menuAccentColor?: string | null }) => void;
+}) {
+  const themes: { id: MenuTheme; label: string }[] = [
+    { id: 'classic', label: copy.themeClassic },
+    { id: 'modern', label: copy.themeModern },
+    { id: 'elegant', label: copy.themeElegant },
+    { id: 'gastronomy', label: copy.themeGastronomy },
+  ];
+  const currentAccent = restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#F4B400';
+
+  return (
+    <section className="rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">{copy.menuDesign}</h2>
+        {saving && <Loader2 size={14} className="animate-spin text-[#6B7280]" />}
+      </div>
+
+      <div className="mt-4 space-y-4">
+        <div>
+          <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{copy.themeLabel}</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {themes.map((t) => {
+              const active = restaurant.menuTheme === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => onChange({ menuTheme: t.id })}
+                  className={`group flex flex-col items-stretch gap-2 rounded-2xl border-2 p-2 text-left transition-all ${
+                    active ? 'border-[#F4B400] bg-[#F4B400]/5 shadow-sm' : 'border-[#E8ECF2] hover:border-[#2A3444]'
+                  }`}
+                >
+                  <ThemeThumb theme={t.id} accent={currentAccent} />
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#1A2332]">{t.label}</span>
+                    {active && <Check size={12} strokeWidth={3} className="text-[#F4B400]" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{copy.accentColor}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {THEME_SWATCHES.map((c) => {
+              const active = currentAccent.toLowerCase() === c.toLowerCase();
+              return (
+                <button
+                  key={c}
+                  onClick={() => onChange({ menuAccentColor: c })}
+                  style={{ backgroundColor: c }}
+                  className={`h-9 w-9 rounded-full border-2 transition-all active:scale-90 ${active ? 'border-[#1A2332] ring-2 ring-[#F4B400] ring-offset-2' : 'border-white shadow-sm hover:scale-110'}`}
+                  title={c}
+                />
+              );
+            })}
+            <label className="relative inline-flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[#2A3444] hover:bg-[#F8F6F1]">
+              <input
+                type="color"
+                value={currentAccent}
+                onChange={(e) => onChange({ menuAccentColor: e.target.value })}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+              <span className="text-[9px] font-black uppercase text-[#2A3444]">+</span>
+            </label>
+            {restaurant.menuAccentColor && (
+              <button
+                onClick={() => onChange({ menuAccentColor: null })}
+                className="inline-flex items-center gap-1 rounded-full border border-[#E8ECF2] px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#6B7280] hover:bg-[#F8F6F1]"
+              >
+                <X size={10} strokeWidth={2} />
+                reset
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
+  if (theme === 'classic') {
+    return (
+      <div className="relative h-20 overflow-hidden rounded-xl border border-[#E8ECF2] bg-[#F8F6F1]">
+        <div className="h-6 w-full" style={{ backgroundColor: accent }} />
+        <div className="space-y-1.5 p-2">
+          <div className="h-1.5 w-2/3 rounded bg-[#1A2332]/80" />
+          <div className="h-1 w-full rounded bg-[#6B7280]/30" />
+          <div className="h-1 w-4/5 rounded bg-[#6B7280]/30" />
+        </div>
+      </div>
+    );
+  }
+  if (theme === 'modern') {
+    return (
+      <div className="relative grid h-20 grid-cols-3 gap-1 overflow-hidden rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] p-1.5">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="rounded bg-white shadow-sm" style={{ borderBottom: `2px solid ${accent}` }} />
+        ))}
+      </div>
+    );
+  }
+  if (theme === 'elegant') {
+    return (
+      <div className="relative flex h-20 flex-col gap-1.5 overflow-hidden rounded-xl border border-[#E8ECF2] bg-white p-2">
+        <div className="mx-auto h-0.5 w-8 rounded" style={{ backgroundColor: accent }} />
+        <div className="mx-auto h-1.5 w-1/2 rounded bg-[#1A2332]" />
+        <div className="mt-1 h-px w-full bg-[#E8ECF2]" />
+        <div className="mt-1 space-y-1">
+          <div className="h-1 w-full rounded bg-[#6B7280]/30" />
+          <div className="h-1 w-4/5 rounded bg-[#6B7280]/30" />
+        </div>
+      </div>
+    );
+  }
+  // gastronomy
+  return (
+    <div className="relative h-20 overflow-hidden rounded-xl border border-[#0E1525] bg-[#0E1525] p-2">
+      <div className="h-1.5 w-1/3 rounded" style={{ backgroundColor: accent }} />
+      <div className="mt-2 h-1 w-2/3 rounded bg-white/80" />
+      <div className="mt-1 h-1 w-full rounded bg-white/30" />
+      <div className="mt-1 h-1 w-4/5 rounded bg-white/30" />
+      <div className="mt-2 h-1 w-1/4 rounded" style={{ backgroundColor: accent }} />
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Menu QR modal
+
+function MenuQrModal({
+  restaurantId, slug, copy, onClose,
+}: {
+  restaurantId: string;
+  slug: string;
+  copy: Record<string, string>;
+  onClose: () => void;
+}) {
+  const [format, setFormat] = useState<'png' | 'svg'>('png');
+  const [downloading, setDownloading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [previewSvg, setPreviewSvg] = useState<string | null>(null);
+  const previewAbort = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    previewAbort.current?.abort();
+    const ctrl = new AbortController();
+    previewAbort.current = ctrl;
+    setErr(null);
+    setPreviewSvg(null);
+    fetch(`/api/restaurants/${restaurantId}/menu/qr?format=svg&width=400`, { signal: ctrl.signal })
+      .then(async (res) => {
+        if (!res.ok) {
+          const e = await res.json().catch(() => null);
+          throw new Error(e?.error ?? 'QR oluşturulamadı');
+        }
+        return res.text();
+      })
+      .then((svg) => setPreviewSvg(svg))
+      .catch((e) => {
+        if ((e as Error).name !== 'AbortError') setErr((e as Error).message);
+      });
+    return () => ctrl.abort();
+  }, [restaurantId]);
+
+  const download = async () => {
+    setDownloading(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}/menu/qr?format=${format}`);
+      if (!res.ok) {
+        const e = await res.json().catch(() => null);
+        throw new Error(e?.error ?? 'QR indirilemedi');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `menu-qr-${slug}.${format}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setErr((e as Error).message);
+    }
+    setDownloading(false);
+  };
+
+  return (
+    <Modal title={copy.menuQr} onClose={onClose}>
+      <div className="space-y-5">
+        <div className="flex items-center justify-center rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] p-6">
+          {previewSvg ? (
+            <div
+              className="h-60 w-60"
+              dangerouslySetInnerHTML={{ __html: previewSvg }}
+            />
+          ) : err ? (
+            <p className="text-xs font-bold text-red-600">{err}</p>
+          ) : (
+            <Loader2 size={28} className="animate-spin text-[#6B7280]" />
+          )}
+        </div>
+
+        <div>
+          <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{copy.qrFormat}</p>
+          <div className="flex gap-2">
+            {(['png', 'svg'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFormat(f)}
+                className={`flex-1 rounded-xl border-2 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all ${
+                  format === f ? 'border-[#1A2332] bg-[#1A2332] text-white' : 'border-[#E8ECF2] bg-white text-[#1A2332] hover:bg-[#F8F6F1]'
+                }`}
+              >
+                {f.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 border-t-2 border-[#F8F6F1] pt-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 text-xs font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332]"
+          >
+            {copy.cancel}
+          </button>
+          <button
+            onClick={download}
+            disabled={downloading || !previewSvg}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#F4B400] px-6 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#FFD666] active:scale-95 disabled:opacity-50"
+          >
+            {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
+            {copy.downloadQr}
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }

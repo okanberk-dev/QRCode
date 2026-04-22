@@ -31,6 +31,8 @@ interface RestaurantData {
   name: string;
   menuLogoUrl: string | null;
   primaryColor: string;
+  menuTheme?: string;
+  menuAccentColor?: string | null;
   categories: Category[];
 }
 
@@ -50,6 +52,19 @@ export default function PublicMenuPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+
+  const filteredCategories = useMemo(() => {
+    if (!data) return [];
+    if (!searchQuery.trim()) return data.categories;
+
+    return data.categories.map(cat => ({
+      ...cat,
+      items: cat.items.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    })).filter(cat => cat.items.length > 0);
+  }, [data, searchQuery]);
 
   useEffect(() => {
     if (loading || filteredCategories.length === 0) return;
@@ -95,19 +110,6 @@ export default function PublicMenuPage() {
     fetchMenu();
   }, [slug]);
 
-  const filteredCategories = useMemo(() => {
-    if (!data) return [];
-    if (!searchQuery.trim()) return data.categories;
-
-    return data.categories.map(cat => ({
-      ...cat,
-      items: cat.items.filter(item => 
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    })).filter(cat => cat.items.length > 0);
-  }, [data, searchQuery]);
-
   if (loading) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
@@ -121,7 +123,7 @@ export default function PublicMenuPage() {
 
   if (!data) return notFound();
 
-  const themeColor = data.primaryColor || '#1A2332';
+  const themeColor = data.menuAccentColor || data.primaryColor || '#1A2332';
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F8F6F1] selection:bg-[#E8ECF2]">

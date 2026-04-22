@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import PublicMenuView, { type MenuCategoryView, type RestaurantView } from '@/components/menu/PublicMenuView';
+import { MENU_THEMES, type MenuTheme } from '@/lib/validations';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -77,6 +78,10 @@ export default async function PublicMenuPage({
 
   const locale = detectLocale(null, lang);
 
+  const menuTheme: MenuTheme = (MENU_THEMES as readonly string[]).includes(data.menuTheme)
+    ? (data.menuTheme as MenuTheme)
+    : 'classic';
+
   const restaurant: RestaurantView = {
     id: data.id,
     slug: data.slug,
@@ -86,6 +91,8 @@ export default async function PublicMenuPage({
     phone: data.phone,
     workingHours: data.workingHours,
     primaryColor: data.primaryColor,
+    menuTheme,
+    menuAccentColor: data.menuAccentColor ?? null,
   };
 
   const categories: MenuCategoryView[] = data.menuCategories.map((c) => ({

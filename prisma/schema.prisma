@@ -46,6 +46,8 @@ model Restaurant {
   menuPublished     Boolean    @default(false) @map("menu_published")
   menuLogoUrl       String?    @map("menu_logo_url")
   menuUpdatedAt     DateTime?  @map("menu_updated_at")
+  menuTheme         String     @default("classic") @map("menu_theme")
+  menuAccentColor   String?    @map("menu_accent_color")
   createdAt         DateTime   @default(now()) @map("created_at")
   updatedAt         DateTime   @updatedAt @map("updated_at")
 
@@ -67,6 +69,7 @@ model QrGeneration {
   tableNumber   String?     @map("table_number")
   platform      String?     @map("platform")    // google | yemeksepeti | getir | trendyol_go
   serviceType   String?     @map("service_type") // dine_in | takeout | delivery
+  type          String      @default("feedback") @map("type") // feedback | menu
   createdAt     DateTime    @default(now()) @map("created_at")
 
   restaurantId  String      @map("restaurant_id")

@@ -41,6 +41,8 @@ export async function GET(
       name: restaurant.name,
       menuLogoUrl: restaurant.menuLogoUrl,
       primaryColor: restaurant.primaryColor,
+      menuTheme: restaurant.menuTheme,
+      menuAccentColor: restaurant.menuAccentColor,
       categories: restaurant.menuCategories
     });
   } catch (error) {

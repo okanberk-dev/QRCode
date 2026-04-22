@@ -159,6 +159,12 @@ export function validateAnnouncement(body: unknown): { ok: true; data: Announcem
 
 // ─── Menu ───────────────────────────────────────────────────────────────────
 
+export const MENU_THEMES = ['classic', 'modern', 'elegant', 'gastronomy'] as const;
+export type MenuTheme = (typeof MENU_THEMES)[number];
+export function isValidMenuTheme(v: unknown): v is MenuTheme {
+  return typeof v === 'string' && (MENU_THEMES as readonly string[]).includes(v);
+}
+
 export const MENU_BADGES = ['populer', 'yeni', 'vegan', 'vegetaryen', 'aci', 'sef_onerisi', 'glutensiz'] as const;
 export type MenuBadge = (typeof MENU_BADGES)[number];
 

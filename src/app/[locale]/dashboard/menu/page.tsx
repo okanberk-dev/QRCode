@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { Loader2, Store, ChevronRight, UtensilsCrossed } from 'lucide-react';
-import MenuEditor from '@/components/dashboard/menu/MenuEditor';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Loader2, ChevronRight, UtensilsCrossed } from 'lucide-react';
 
 interface Restaurant {
   id: string;
@@ -13,54 +13,55 @@ interface Restaurant {
   slug: string;
 }
 
-export default function DashboardMenuPage() {
+export default function DashboardMenuSelectPage() {
   const params = useParams();
+  const router = useRouter();
   const locale = params.locale === 'en' ? 'en' : 'tr';
-  
+
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const copy = {
     tr: {
       title: 'Menü Yönetimi',
-      subtitle: 'Restoranlarınızın menülerini, kategorilerini ve ürünlerini buradan yönetin.',
-      select: 'Düzenlenecek İşletme Seçin',
+      subtitle: 'Hangi işletmenin menüsünü düzenlemek istiyorsunuz?',
       noRest: 'Henüz bir işletmeniz bulunmuyor.',
       addRest: 'İşletme Ekle',
-      manage: 'Menüyü Düzenle'
+      manage: 'Menüyü Düzenle',
     },
     en: {
       title: 'Menu Management',
-      subtitle: 'Manage your restaurant menus, categories, and items here.',
-      select: 'Select a Restaurant to Edit',
-      noRest: 'You don\u2019t have any restaurants yet.',
+      subtitle: 'Which restaurant’s menu would you like to edit?',
+      noRest: 'You don’t have any restaurants yet.',
       addRest: 'Add Restaurant',
-      manage: 'Edit Menu'
-    }
+      manage: 'Edit Menu',
+    },
   }[locale];
 
   useEffect(() => {
-    const fetchRestaurants = async () => {
+    let cancelled = false;
+    (async () => {
       try {
         const res = await fetch('/api/restaurants');
-        if (res.ok) {
-          const data = await res.json();
-          const list = Array.isArray(data) ? data : (data?.data || []);
-          setRestaurants(list);
-          // If only one restaurant, auto-select it
-          if (list.length === 1) {
-            setSelectedId(list[0].id);
-          }
+        if (!res.ok) {
+          setLoading(false);
+          return;
         }
-      } catch (err) {
-        console.error(err);
-      } finally {
+        const data = await res.json();
+        const list: Restaurant[] = Array.isArray(data) ? data : data?.data || [];
+        if (cancelled) return;
+        setRestaurants(list);
+        if (list.length === 1) {
+          router.replace(`/${locale}/dashboard/restaurants/${list[0].id}/menu`);
+          return;
+        }
         setLoading(false);
+      } catch {
+        if (!cancelled) setLoading(false);
       }
-    };
-    fetchRestaurants();
-  }, []);
+    })();
+    return () => { cancelled = true; };
+  }, [locale, router]);
 
   if (loading) {
     return (
@@ -70,81 +71,51 @@ export default function DashboardMenuPage() {
     );
   }
 
-  const selectedRest = restaurants.find(r => r.id === selectedId);
-
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10 lg:py-12 space-y-10 animate-in fade-in duration-700">
-      
-      {/* Header Section */}
-      <div className="bg-[#1A2332] rounded-[40px] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl">
-        <div className="relative z-10 space-y-4">
-          <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 text-[#F4B400] px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.25em]">
-            <UtensilsCrossed size={16} /> ✦ DİJİTAL MENÜ
-          </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">{copy.title}</h1>
-          <p className="text-[#6B7280] text-sm md:text-lg font-bold max-w-2xl">{copy.subtitle}</p>
-        </div>
-        {/* Background Accent */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F4B400]/5 rounded-full blur-3xl -mr-20 -mt-20" />
+    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 md:p-10">
+      <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-6 shadow-sm sm:p-8">
+        <h1 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight text-[#1A2332] sm:text-3xl">
+          <UtensilsCrossed size={22} strokeWidth={2} />
+          {copy.title}
+        </h1>
+        <p className="mt-1 text-sm font-medium text-[#6B7280]">{copy.subtitle}</p>
       </div>
 
       {restaurants.length === 0 ? (
-        <div className="bg-white rounded-[40px] border border-[#E8ECF2] p-20 text-center shadow-sm">
-           <div className="w-20 h-20 bg-[#F8F6F1] rounded-[30px] flex items-center justify-center mx-auto mb-6">
-             <Store size={36} className="text-[#E8ECF2]" />
-           </div>
-           <p className="text-xl font-black text-[#1A2332]">{copy.noRest}</p>
-           <a 
-             href={`/${locale}/dashboard/restaurants`}
-             className="mt-6 inline-flex items-center justify-center px-8 py-4 bg-[#F4B400] text-[#1A2332] rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95"
-           >
-             {copy.addRest}
-           </a>
+        <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-10 text-center shadow-sm">
+          <p className="text-sm font-bold text-[#2A3444]">{copy.noRest}</p>
+          <Link
+            href={`/${locale}/dashboard/restaurants/new`}
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#F4B400] px-5 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#FFD666] active:scale-95"
+          >
+            {copy.addRest}
+          </Link>
         </div>
       ) : (
-        <>
-          {/* Restaurant Selector (Only if > 1) */}
-          {restaurants.length > 1 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {restaurants.map(r => (
-                <button
-                  key={r.id}
-                  onClick={() => setSelectedId(r.id)}
-                  className={`flex items-center justify-between p-6 rounded-3xl border-2 transition-all text-left ${
-                    selectedId === r.id 
-                      ? 'bg-white border-[#F4B400] shadow-xl shadow-[#F4B400]/5' 
-                      : 'bg-white border-[#F8F6F1] hover:border-[#E8ECF2]'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div 
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black shrink-0 shadow-sm"
-                      style={{ backgroundColor: r.primaryColor }}
-                    >
-                      {r.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-black text-[#1A2332] text-sm truncate max-w-[120px]">{r.name}</p>
-                      <p className="text-[10px] font-bold text-[#6B7280] mt-0.5">{r.category}</p>
-                    </div>
-                  </div>
-                  <ChevronRight size={20} className={selectedId === r.id ? 'text-[#F4B400]' : 'text-[#E8ECF2]'} />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Menu Editor */}
-          {selectedId && selectedRest && (
-            <div className="animate-in slide-in-from-bottom-10 duration-700">
-              <MenuEditor 
-                restaurantId={selectedRest.id} 
-                restaurantName={selectedRest.name} 
-                primaryColor={selectedRest.primaryColor}
-              />
-            </div>
-          )}
-        </>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {restaurants.map((r) => (
+            <Link
+              key={r.id}
+              href={`/${locale}/dashboard/restaurants/${r.id}/menu`}
+              className="flex items-center gap-4 rounded-[20px] border border-[#E8ECF2] bg-white p-4 shadow-sm transition-all hover:border-[#1A2332] hover:shadow-md active:scale-[0.99]"
+            >
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-black text-white"
+                style={{ backgroundColor: r.primaryColor || '#1A2332' }}
+              >
+                {r.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-extrabold text-[#1A2332]">{r.name}</p>
+                <p className="truncate text-[11px] font-bold uppercase tracking-widest text-[#6B7280]">{r.category}</p>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-[#2A3444]">
+                {copy.manage}
+                <ChevronRight size={14} strokeWidth={2} />
+              </span>
+            </Link>
+          ))}
+        </div>
       )}
     </div>
   );
