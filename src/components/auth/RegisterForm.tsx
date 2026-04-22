@@ -178,19 +178,19 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           />
         </div>
       </div>
-+
-+      {/* Honeypot field - Invisible to humans */}
-+      <div className="opacity-0 absolute -z-10 pointer-events-none" aria-hidden="true">
-+        <label htmlFor="reg-website">Website</label>
-+        <input
-+          id="reg-website"
-+          type="text"
-+          tabIndex={-1}
-+          autoComplete="off"
-+          value={form.website}
-+          onChange={(e) => setForm(prev => ({ ...prev, website: e.target.value }))}
-+        />
-+      </div>
+
+      {/* Honeypot field - Invisible to humans */}
+      <div className="opacity-0 absolute -z-10 pointer-events-none" aria-hidden="true">
+        <label htmlFor="reg-website">Website</label>
+        <input
+          id="reg-website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={form.website}
+          onChange={(e) => setForm(prev => ({ ...prev, website: e.target.value }))}
+        />
+      </div>
 
       <div className="space-y-4 pt-2">
         <label className="flex items-start gap-4 cursor-pointer group">
