@@ -312,8 +312,8 @@ export async function GET(req: NextRequest) {
     };
 
     const platformDistribution = platformGroupRaw.map((row: any) => ({
-      platform: row.platform || 'google',
-      label: row.platform ? (platformLabels[row.platform] || row.platform) : 'Google',
+      platform: row.platform || 'unspecified',
+      label: row.platform ? (platformLabels[row.platform] || row.platform) : 'Genel',
       count: row._count,
       avgRating: round1(row._avg?.rating),
     }));

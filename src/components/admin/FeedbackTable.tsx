@@ -31,6 +31,7 @@ const PLATFORM_CONFIG: Record<string, { label: string; color: string; bg: string
   yemeksepeti: { label: 'Yemeksepeti', color: 'text-white', bg: 'bg-[#FA0050]', border: 'border-[#D10044]' },
   getir: { label: 'Getir', color: 'text-white', bg: 'bg-[#5D3EBC]', border: 'border-[#4A2FA0]' },
   trendyol_go: { label: 'Trendyol GO', color: 'text-white', bg: 'bg-[#F27A1A]', border: 'border-[#D66A15]' },
+  unspecified: { label: 'Genel', color: 'text-gray-600', bg: 'bg-gray-100', border: 'border-gray-200' },
 };
 
 export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTableProps) {
@@ -51,7 +52,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
   }
 
   const getPlatformBadge = (platform: string | null) => {
-    const p = platform || 'google';
+    const p = platform || 'unspecified';
     const config = PLATFORM_CONFIG[p];
     return config || null;
   };
