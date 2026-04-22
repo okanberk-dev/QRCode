@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     // Validate platform value if provided
     const validPlatforms = ['google', 'yemeksepeti', 'getir', 'trendyol_go'];
-    const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : null;
+    const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : 'google';
 
     // Validation
     if (!isValidRating(rating)) {
