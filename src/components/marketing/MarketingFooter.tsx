@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Instagram } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
 import { getSiteSettings } from '@/lib/site-settings';
@@ -50,7 +49,21 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 aria-label="Instagram — buazerating"
                 className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-[#F4B400] hover:text-[#1A2332] hover:border-[#F4B400] transition-colors"
               >
-                <Instagram size={18} />
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                </svg>
               </a>
             </div>
           </div>
