@@ -18,7 +18,6 @@ interface QrHistoryItem {
   qrUrl: string;
   tableNumber: string | null;
   platform: string | null;
-  platform: string | null;
   createdAt: string;
 }
 
@@ -74,7 +73,7 @@ function QRPageContent() {
       fetch('/api/admin/me').then(res => res.ok ? res.json() : null)
     ])
     .then(([restData, profileData]) => {
-      const list = Array.isArray(restData) ? restData : [];
+      const list = Array.isArray(restData) ? restData : (restData?.data || []);
       setRestaurants(list);
       setUserProfile(profileData);
 

@@ -24,7 +24,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { rating, name, email, phone, comment, source, branch, tableNumber, restaurantSlug, aspects, platform } = body;
+    const { rating, name, email, phone, comment, source, branch, tableNumber, restaurantSlug, aspects, platform, website } = body;
+
+    // Honeypot check
+    if (website) {
+      return NextResponse.json({ success: true, message: 'Feedback received' }, { status: 201 });
+    }
 
     // Validate platform value if provided
     const validPlatforms = ['google', 'yemeksepeti', 'getir', 'trendyol_go'];

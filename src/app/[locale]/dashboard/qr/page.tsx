@@ -59,7 +59,7 @@ export default function DashboardQrPage() {
     fetch('/api/restaurants')
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
-        const list = Array.isArray(data) ? data : [];
+        const list = Array.isArray(data) ? data : (data?.data || []);
         setRestaurants(list);
 
         if (!selectedId && list.length > 0) {

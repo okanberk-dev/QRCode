@@ -83,7 +83,7 @@ export default function DashboardRestaurantsPage() {
       }
 
       const data = await response.json();
-      setRestaurants(Array.isArray(data) ? data : []);
+      setRestaurants(Array.isArray(data) ? data : (data?.data || []));
     } catch (err) {
       console.error(err);
       setFetchError('Bağlantı hatası. Lütfen sayfayı yenileyin.');

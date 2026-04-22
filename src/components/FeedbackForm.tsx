@@ -29,6 +29,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [comment, setComment] = useState('');
+    const [website, setWebsite] = useState('');
 
     const handleSubmit = async () => {
       if (!comment.trim()) {
@@ -57,6 +58,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
             restaurantSlug,
             platform: platform || null,
             aspects: null,
+            website: website, // Honeypot
           })
         });
 
@@ -93,6 +95,19 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
               onChange={(e) => setComment(e.target.value)}
               placeholder={t('feedback_placeholder') || 'Deneyiminizi paylaşın...'}
               className="w-full px-0 py-0 bg-transparent border-none focus:ring-0 text-[16px] text-gray-800 placeholder-gray-400 resize-none min-h-[140px] leading-relaxed"
+            />
+          </div>
+
+          {/* Honeypot field - Invisible to humans */}
+          <div className="opacity-0 absolute -z-10 pointer-events-none" aria-hidden="true">
+            <label htmlFor="website">Website</label>
+            <input
+              id="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
             />
           </div>
 

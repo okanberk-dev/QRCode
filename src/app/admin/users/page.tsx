@@ -55,7 +55,8 @@ export default function UsersPage() {
       
       const restRes = await fetch('/api/restaurants');
       if (restRes.ok) {
-        setRestaurants(await restRes.json());
+        const restData = await restRes.json();
+        setRestaurants(Array.isArray(restData) ? restData : (restData?.data || []));
       }
     } catch (e) {
       console.error(e);

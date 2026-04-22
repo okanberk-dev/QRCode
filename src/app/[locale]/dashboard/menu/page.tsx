@@ -46,10 +46,11 @@ export default function DashboardMenuPage() {
         const res = await fetch('/api/restaurants');
         if (res.ok) {
           const data = await res.json();
-          setRestaurants(data);
+          const list = Array.isArray(data) ? data : (data?.data || []);
+          setRestaurants(list);
           // If only one restaurant, auto-select it
-          if (data.length === 1) {
-            setSelectedId(data[0].id);
+          if (list.length === 1) {
+            setSelectedId(list[0].id);
           }
         }
       } catch (err) {

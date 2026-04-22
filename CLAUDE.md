@@ -22,7 +22,7 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 
 | Alan | Seçim | Not |
 |---|---|---|
-| Framework | Next.js 15 (App Router, `src/app`) | `output: "standalone"` — Coolify/Docker için |
+| Framework | Next.js 15 (App Router, `src/app`) | Vercel Deployment |
 | Dil | TypeScript (strict, ama `ignoreBuildErrors: true` — dikkat) | |
 | DB | PostgreSQL **via Supabase** | `DATABASE_URL` (pgbouncer 6543) + `DIRECT_URL` (5432 migration için) |
 | ORM | Prisma 6 | `prisma db push` Dockerfile'da otomatik |
@@ -33,37 +33,22 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 | QR | qrcode | `/api/restaurants/[id]/qr` |
 | Mail | nodemailer | Bildirim emaili |
 | i18n | `src/app/[locale]/...` + `src/lib/translations.ts` | tr / en |
-| Deploy | Coolify (self-hosted Docker) | `Dockerfile` + standalone |
+| Deploy | Vercel (Production) | Otomatik Git entegrasyonu |
 
 ---
 
-## 3. Depolama Mimarisi (ÖNEMLİ — yanlış anlaşılmaya müsait)
+## 3. Depolama Mimarisi (Vercel Geçişi Sonrası ÖNEMLİ)
 
-**Supabase yalnızca PostgreSQL için kullanılıyor. Supabase Storage KULLANILMIYOR.**
+**UYARI:** Vercel, salt-okunur ve geçici (ephemeral) bir dosya sistemi kullanır. Mevcut yerel disk (`public/uploads`) tabanlı görsel yükleme sistemi Vercel'de **çalışmayacaktır**.
 
-| Veri | Nerede | Dayanıklılık |
+| Veri | Nerede | Not |
 |---|---|---|
-| Veritabanı (users, feedback, menu, ...) | Supabase PostgreSQL | Kalıcı (Supabase tarafı) |
-| Menü/ürün görselleri & restoran logosu | Konteyner içi `/app/public/uploads/menu/` | **Yalnızca Coolify volume mount ile kalıcı** |
-| QR PNG çıktısı | Runtime'da on-the-fly üretilir, diske yazılmaz | — |
+| Veritabanı | Supabase PostgreSQL | Kalıcı |
+| Menü/ürün görselleri | Yerel Disk (public/uploads) | **Vercel'de geçicidir, silinir.** |
 
-### Coolify'da kalıcı görsel saklama (MUTLAKA yapılacak)
-
-1. Coolify → ilgili servis → **Persistent Storage**
-2. Volume ekle:
-   - **Name:** `buaze-uploads` (serbest)
-   - **Mount Path:** `/app/public/uploads`
-3. Redeploy
-
-Volume mount yoksa her deploy/restart uyguluktan sonra yüklenen tüm görseller **kaybolur** (`public/` build time'da `COPY` ile kopyalanıyor).
-
-### Neden local disk + volume?
-- Supabase Storage entegrasyonu henüz yok (ek dependency + service role key gerekir).
-- Yerel disk + volume, deploy edilmiş sistemde **yeni dependency olmadan** çalışır.
-- İleride Supabase Storage'a geçmek istenirse: `@supabase/supabase-js` ekle, `SUPABASE_SERVICE_ROLE_KEY` env ekle, `src/app/api/menu/upload/route.ts`'i rewrite et, eski URL'leri migrate et.
-
-### Dockerfile permission detayları
-`public/` dizini **`nextjs:nodejs` sahibi** olarak kopyalanıyor (satır 44). Runtime user (`uid 1001`) `public/uploads/menu/` dizinine yazabilir. Daha önce bu chown eksikti → EACCES → upload başarısız oluyordu.
+### Çözüm Önerisi (Storage Migration)
+Vercel'e geçiş sonrası görsellerin kalıcı olması için **Supabase Storage** veya **Vercel Blob** entegrasyonu yapılmalıdır.
+- Mevcut `src/app/api/menu/upload/route.ts` dosyası Supabase SDK kullanacak şekilde güncellenmelidir.
 
 ---
 

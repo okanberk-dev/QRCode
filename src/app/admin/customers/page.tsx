@@ -56,7 +56,7 @@ export default function CustomersPage() {
 
       if (restaurantsRes.ok) {
         const restaurantData = await restaurantsRes.json();
-        setRestaurants(Array.isArray(restaurantData) ? restaurantData : []);
+        setRestaurants(Array.isArray(restaurantData) ? restaurantData : (restaurantData?.data || []));
       }
     } catch (e) {
       console.error(e);

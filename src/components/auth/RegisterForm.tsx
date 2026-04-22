@@ -35,7 +35,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [kvkkConsent, setKvkkConsent] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '', restaurantName: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', restaurantName: '', website: '' });
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -178,6 +178,19 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           />
         </div>
       </div>
++
++      {/* Honeypot field - Invisible to humans */}
++      <div className="opacity-0 absolute -z-10 pointer-events-none" aria-hidden="true">
++        <label htmlFor="reg-website">Website</label>
++        <input
++          id="reg-website"
++          type="text"
++          tabIndex={-1}
++          autoComplete="off"
++          value={form.website}
++          onChange={(e) => setForm(prev => ({ ...prev, website: e.target.value }))}
++        />
++      </div>
 
       <div className="space-y-4 pt-2">
         <label className="flex items-start gap-4 cursor-pointer group">

@@ -18,7 +18,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password, name, restaurantName } = await req.json();
+    const { email, password, name, restaurantName, website } = await req.json();
+    
+    // Honeypot check
+    if (website) {
+      // Silently ignore or return success to trick the bot
+      return NextResponse.json({ success: true, message: 'Registration received' }, { status: 201 });
+    }
 
     // Validate required fields
     if (!email || !password) {
