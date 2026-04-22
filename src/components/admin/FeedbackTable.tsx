@@ -51,10 +51,9 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
   }
 
   const getPlatformBadge = (platform: string | null) => {
-    if (!platform) return null;
-    const config = PLATFORM_CONFIG[platform];
-    if (!config) return null;
-    return config;
+    const p = platform || 'google';
+    const config = PLATFORM_CONFIG[p];
+    return config || null;
   };
 
   return (

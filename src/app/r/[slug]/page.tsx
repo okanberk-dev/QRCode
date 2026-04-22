@@ -38,7 +38,7 @@ function SlugContent() {
   const formRef = useRef<FeedbackFormHandle>(null);
 
   // --- Platform from QR ---
-  const platformParam = searchParams.get('platform') || '';
+  const platformParam = searchParams.get('platform') || 'google';
 
   // --- Locale Handling ---
   const [locale, setLocale] = useState<Locale>('tr');
@@ -244,24 +244,26 @@ function SlugContent() {
       {/* ═══════ Main Content Area ═══════ */}
       <div className="max-w-xl mx-auto w-full px-6 py-6 flex-1">
         
-        {!showThankYou && !showForm && (
-            <div className="space-y-10 mt-4">
-               <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
-            </div>
+        {!showThankYou && (
+          <div className="mb-8">
+            <StarRating 
+              rating={rating} 
+              onRatingChange={handleRatingChange} 
+              t={t} 
+              platform={platformParam || 'google'} 
+            />
+          </div>
         )}
 
         {showForm && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="mb-6 scale-90 -mt-2">
-              <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
-            </div>
             <FeedbackForm
               ref={formRef}
-              rating={rating}
+              rating={Number(rating)}
               onSuccess={() => setFormSubmitted(true)}
               restaurantSlug={slug}
               restaurantName={restaurant.name}
-              platform={platformParam || undefined}
+              platform={platformParam || 'google'}
               t={t}
             />
           </div>
@@ -269,12 +271,6 @@ function SlugContent() {
 
         {showThankYou && (
             <ThankYou rating={rating} googleReviewUrl={googleUrl} t={t} />
-        )}
-
-        {!showThankYou && !showForm && rating === 0 && (
-            <div className="mt-4">
-               <StarRating rating={rating} onRatingChange={handleRatingChange} t={t} />
-            </div>
         )}
       </div>
 

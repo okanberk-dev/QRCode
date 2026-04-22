@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 import sharp from 'sharp';
 import crypto from 'crypto';
 
@@ -44,29 +42,13 @@ export async function POST(req: NextRequest) {
       .webp({ quality: 80 })
       .toBuffer();
 
-    // 4. Save to disk
-    const fileName = `${crypto.randomUUID()}.webp`;
-    const uploadDir = path.join(process.cwd(), 'public/uploads/menu');
-
-    try {
-      await mkdir(uploadDir, { recursive: true });
-      const filePath = path.join(uploadDir, fileName);
-      await writeFile(filePath, processedImage);
-    } catch (fsErr: any) {
-      // EACCES / EROFS typically mean the runtime user can't write to
-      // `public/uploads/menu`. On Coolify this usually means the Dockerfile
-      // permissions fix is missing or the persistent volume isn't mounted.
-      console.error('[API_MENU_UPLOAD] filesystem error', {
-        code: fsErr?.code, errno: fsErr?.errno, path: fsErr?.path, message: fsErr?.message,
-      });
-      const hint = fsErr?.code === 'EACCES'
-        ? 'Sunucuda yazma izni yok (public/uploads/menu). Lütfen sistem yöneticinize bildirin.'
-        : 'Dosya sunucuya yazılamadı.';
-      return NextResponse.json({ error: hint }, { status: 500 });
-    }
-
-    // 5. Return URL
-    const url = `/uploads/menu/${fileName}`;
+    // 4. Return as Data URL (Vercel-safe)
+    // On Vercel, the filesystem is read-only. Storing images as Base64 strings 
+    // in the database is a reliable way to handle small volumes of media without 
+    // external storage setup (S3/Cloudinary/Vercel Blob).
+    const base64 = processedImage.toString('base64');
+    const url = `data:image/webp;base64,${base64}`;
+    
     return NextResponse.json({ url });
   } catch (error) {
     console.error('[API_MENU_UPLOAD]', error);

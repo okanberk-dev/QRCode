@@ -7,11 +7,21 @@ interface StarRatingProps {
   rating: number;
   onRatingChange: (rating: number) => void;
   t: (key: any) => string;
+  platform?: string;
 }
 
-export default function StarRating({ rating, onRatingChange, t }: StarRatingProps) {
+export default function StarRating({ rating, onRatingChange, t, platform }: StarRatingProps) {
   const [hoverRating, setHoverRating] = useState(0);
   const active = hoverRating || rating;
+
+  const platformLabels: Record<string, { label: string; bg: string }> = {
+    google: { label: 'Google', bg: 'bg-[#4285F4]' },
+    yemeksepeti: { label: 'Yemeksepeti', bg: 'bg-[#FA0050]' },
+    getir: { label: 'Getir', bg: 'bg-[#5D3EBC]' },
+    trendyol_go: { label: 'Trendyol GO', bg: 'bg-[#F27A1A]' },
+  };
+
+  const currentPlatform = platform ? platformLabels[platform] : null;
 
   const labels: Record<number, string> = {
     1: t('rating_very_poor'),
@@ -22,7 +32,14 @@ export default function StarRating({ rating, onRatingChange, t }: StarRatingProp
   };
 
   return (
-    <div className="flex flex-col items-center gap-8 w-full py-4">
+    <div className="flex flex-col items-center gap-6 w-full py-2">
+      {/* Platform Badge */}
+      {currentPlatform && (
+        <div className={`px-4 py-1.5 rounded-full ${currentPlatform.bg} text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-sm animate-in fade-in slide-in-from-top-2 duration-700`}>
+          {currentPlatform.label} {t('rating_title_suffix') || 'DEĞERLENDİRMESİ'}
+        </div>
+      )}
+      
       {/* Stars Row */}
       <div className="flex flex-row gap-3 justify-center items-center w-full">
         {[1, 2, 3, 4, 5].map((star) => {

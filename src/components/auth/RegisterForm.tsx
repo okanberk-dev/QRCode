@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Loader2, Eye, EyeOff, CheckCircle2, ArrowRight, X } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 
 interface RegisterFormProps {
@@ -37,6 +37,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   const [kvkkConsent, setKvkkConsent] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', restaurantName: '', website: '' });
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showKvkk, setShowKvkk] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,9 +207,43 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             <CheckCircle2 className="absolute inset-0 m-auto text-[#111827] opacity-0 peer-checked:opacity-100 transition-opacity" size={14} strokeWidth={3} />
           </div>
           <span className="text-[12px] font-bold text-[#6b6760] leading-relaxed select-none">
-            {t.auth_kvkk_consent}
+            {locale === 'tr' ? 'Üye olarak' : 'By signing up,'} <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowKvkk(true); }} className="text-[#111827] underline decoration-[#FDBF1D] decoration-2 underline-offset-2 hover:bg-[#FDBF1D]/10 transition-colors">KVKK metnini</button> {locale === 'tr' ? 'okudum ve kabul ediyorum.' : 'I have read and accept the data processing policy.'}
           </span>
         </label>
+
+      {/* KVKK Modal */}
+      {showKvkk && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#111827]/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-[#FCFBF7] rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl border-2 border-[#1f1e1d] animate-in zoom-in-95 duration-300">
+            <div className="p-7 border-b-2 border-[#1f1e1d] flex items-center justify-between bg-white">
+              <h3 className="font-black text-[#111827] uppercase tracking-tighter">
+                KVKK Aydınlatma Metni
+              </h3>
+              <button 
+                onClick={() => setShowKvkk(false)}
+                className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 text-gray-400 transition-colors"
+              >
+                <X size={22} strokeWidth={3} />
+              </button>
+            </div>
+            <div className="p-8 max-h-[50vh] overflow-y-auto no-scrollbar">
+              <p className="text-sm text-[#6b6760] leading-relaxed font-bold whitespace-pre-wrap">
+                {locale === 'tr' 
+                  ? '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kayıt sırasında paylaştığınız kişisel verileriniz, hizmetlerimizin sunulması, kullanıcı hesabınızın yönetilmesi ve yasal yükümlülüklerin yerine getirilmesi amacıyla işlenmektedir. Verileriniz, yasal zorunluluklar dışında üçüncü taraflarla paylaşılmayacaktır.'
+                  : 'In accordance with the Personal Data Protection laws, your personal data shared during registration is processed for the purposes of providing our services, managing your user account, and fulfilling legal obligations. Your data will not be shared with third parties except for legal obligations.'}
+              </p>
+            </div>
+            <div className="p-7 bg-white border-t-2 border-[#1f1e1d] flex justify-end">
+              <button 
+                onClick={() => setShowKvkk(false)}
+                className="px-10 py-4 bg-[#111827] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-[4px_4px_0_0_#FDBF1D] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+              >
+                KAPAT
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
         <p className="text-[11px] text-[#ada89f] font-bold leading-relaxed px-1">
           {t.auth_terms_consent_1}{' '}

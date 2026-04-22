@@ -38,7 +38,9 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
     const [hasKvkkConsent, setHasKvkkConsent] = useState(false);
     const [hasMarketingConsent, setHasMarketingConsent] = useState(false);
 
-    const isLowRating = rating > 0 && rating <= 3;
+    const isLowRating = rating <= 3;
+
+    const [showLegalModal, setShowLegalModal] = useState<'kvkk' | 'marketing' | null>(null);
 
     const handleSubmit = async () => {
       if (!comment.trim()) {
@@ -46,7 +48,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
         return;
       }
 
-      if (isLowRating) {
+      if (rating > 0 && rating <= 3) {
         if (!name.trim()) {
           setError(t('feedback_error_name') || 'Lütfen isminizi belirtin.');
           return;
@@ -73,7 +75,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
             email: email.trim() || null,
             phone: phone.trim() || null,
             comment: comment.trim(),
-            hasKvkkConsent: isLowRating ? hasKvkkConsent : true,
+            hasKvkkConsent: rating > 3 ? true : hasKvkkConsent,
             hasMarketingConsent,
             rating,
             source,
@@ -104,11 +106,17 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
     useImperativeHandle(ref, () => ({
       submit: handleSubmit,
       isSubmitting,
-      canSubmit: comment.trim().length > 0 && (!isLowRating || (name.trim().length > 0 && (phone.trim().length > 0 || email.trim().length > 0) && hasKvkkConsent)),
+      canSubmit: comment.trim().length > 0 && (rating > 3 || (name.trim().length > 0 && (phone.trim().length > 0 || email.trim().length > 0) && hasKvkkConsent)),
     }));
 
+    const openLegal = (type: 'kvkk' | 'marketing', e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setShowLegalModal(type);
+    };
+
     return (
-      <div className="w-full mt-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+      <div className="w-full mt-4">
         <div className="space-y-6">
           {/* Experience Input Section */}
           <div className="bg-white rounded-2xl border-2 border-gray-100 p-6 focus-within:border-blue-500 transition-all duration-300 shadow-sm">
@@ -123,8 +131,8 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
           </div>
 
           {/* Lead Generation Section (Conditional) */}
-          {isLowRating && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
+          {(rating > 0 && rating <= 3) && (
+            <div className="space-y-4">
               <div className="p-1">
                 <p className="text-[13px] font-black text-gray-900 uppercase tracking-tighter mb-1">
                   {t('feedback_contact_title') || 'Size ulaşmamızı ister misiniz?'}
@@ -175,7 +183,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                     </svg>
                   </div>
                   <span className="text-[11px] text-gray-500 font-bold leading-tight group-hover:text-gray-700 transition-colors">
-                    {t('feedback_kvkk_label') || 'Kişisel verilerimin işlenmesine ilişkin KVKK metnini okudum ve onaylıyorum.'}
+                    Kişisel verilerimin işlenmesine ilişkin <button type="button" onClick={(e) => openLegal('kvkk', e)} className="text-blue-600 underline hover:text-blue-800 transition-colors">KVKK metnini</button> okudum ve onaylıyorum.
                   </span>
                 </label>
 
@@ -192,12 +200,95 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                     </svg>
                   </div>
                   <span className="text-[11px] text-gray-500 font-bold leading-tight group-hover:text-gray-700 transition-colors">
-                    {t('feedback_marketing_label') || 'Kampanya ve duyurulardan haberdar olmak için iletişim izni veriyorum.'}
+                    Kampanya ve duyurulardan haberdar olmak için <button type="button" onClick={(e) => openLegal('marketing', e)} className="text-blue-600 underline hover:text-blue-800 transition-colors">iletişim izni</button> veriyorum.
                   </span>
                 </label>
               </div>
             </div>
           )}
+
+          {/* Honeypot field - Invisible to humans */}
+          <div className="opacity-0 absolute -z-10 pointer-events-none" aria-hidden="true">
+            <label htmlFor="website">Website</label>
+            <input
+              id="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-xs font-bold border border-red-100 animate-in fade-in slide-in-from-top-1">
+              {error}
+            </div>
+          )}
+
+          {/* Guidelines/Privacy Text */}
+          <div className="flex items-start gap-3 px-2 mt-2">
+            <div className="p-1 px-1.5 rounded-md bg-blue-50 text-blue-500">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <p className="text-[11px] text-gray-400 leading-tight font-medium">
+              {!isLowRating && (t('feedback_disclaimer') + ' ' + t('feedback_private_note'))}
+              {isLowRating && (t('feedback_low_disclaimer') || 'Bilgileriniz sadece restoran yetkilisi ile paylaşılacaktır.')}
+            </p>
+          </div>
+
+          {/* Submit Button */}
+          <button 
+            onClick={handleSubmit}
+            disabled={isSubmitting || !comment.trim()}
+            className={`w-full py-4 mt-2 rounded-2xl text-[16px] font-extrabold transition-all flex items-center justify-center gap-2 ${
+              isSubmitting || !comment.trim()
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none' 
+                : 'bg-blue-600 text-white shadow-[0_4px_0_0_#1e3a8a] border-2 border-blue-700 hover:bg-blue-500 hover:-translate-y-1 hover:shadow-[0_6px_0_0_#1e3a8a] active:translate-y-2 active:shadow-none'
+            }`}
+          >
+            {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : t('feedback_post')}
+          </button>
+        </div>
+
+        {/* Legal Modal Overlay */}
+        {showLegalModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-black text-gray-900 uppercase tracking-tighter">
+                  {showLegalModal === 'kvkk' ? 'KVKK Aydınlatma Metni' : 'İletişim İzni'}
+                </h3>
+                <button 
+                  onClick={() => setShowLegalModal(null)}
+                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 text-gray-400 transition-colors"
+                >
+                  <X size={22} strokeWidth={2.5} />
+                </button>
+              </div>
+              <div className="p-8 max-h-[60vh] overflow-y-auto no-scrollbar">
+                <p className="text-sm text-gray-600 leading-relaxed font-medium whitespace-pre-wrap">
+                  {showLegalModal === 'kvkk' 
+                    ? (t('feedback_kvkk_text') || '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, bu form aracılığıyla paylaştığınız kişisel verileriniz (ad, soyad, telefon, e-posta), şikayet ve önerilerinizin değerlendirilmesi ve müşteri memnuniyetinin sağlanması amacıyla işlenmektedir. Verileriniz, yasal zorunluluklar dışında üçüncü taraflarla paylaşılmayacaktır.')
+                    : (t('feedback_marketing_text') || 'Paylaştığım iletişim bilgilerine kampanya, indirim, promosyon ve yeni ürünler hakkında bilgilendirme amaçlı ticari elektronik ileti gönderilmesini kabul ediyorum.')}
+                </p>
+              </div>
+              <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end">
+                <button 
+                  onClick={() => setShowLegalModal(null)}
+                  className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md active:scale-95"
+                >
+                  KAPAT
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+    );
+  }
+);
 
           {/* Honeypot field - Invisible to humans */}
           <div className="opacity-0 absolute -z-10 pointer-events-none" aria-hidden="true">
