@@ -575,7 +575,7 @@ export default async function LandingPage({
                         <h3 className="text-[16px] sm:text-[18px] font-extrabold text-white leading-tight">
                           {item.title}
                         </h3>
-                        <p className="text-[13px] sm:text-[14px] text-white/85 font-medium leading-relaxed">
+                        <p className="text-[13px] sm:text-[14px] text-white/90 font-medium leading-relaxed">
                           {item.desc}
                         </p>
                       </div>
@@ -777,7 +777,7 @@ export default async function LandingPage({
           {/* Headline */}
           <h2 className="text-[30px] sm:text-[44px] lg:text-[56px] font-extrabold text-white leading-[1.08] tracking-[-0.025em] text-balance px-2">
             {t.cta_title_1}{' '}
-            <span className="bg-gradient-to-r from-[#F4B400] to-[#FFD666] bg-clip-text text-transparent">
+            <span className="text-white">
               {t.cta_title_2}
             </span>
           </h2>
