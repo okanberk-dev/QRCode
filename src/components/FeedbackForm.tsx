@@ -2,7 +2,7 @@
 
 import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Loader2, Camera } from 'lucide-react';
+import { Loader2, Camera, X } from 'lucide-react';
 
 interface FeedbackFormProps {
   rating: number;
@@ -285,56 +285,6 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
           </div>
         )}
       </div>
-
-    );
-  }
-);
-
-          {/* Honeypot field - Invisible to humans */}
-          <div className="opacity-0 absolute -z-10 pointer-events-none" aria-hidden="true">
-            <label htmlFor="website">Website</label>
-            <input
-              id="website"
-              type="text"
-              tabIndex={-1}
-              autoComplete="off"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-xs font-bold border border-red-100 animate-in fade-in slide-in-from-top-1">
-              {error}
-            </div>
-          )}
-
-          {/* Guidelines/Privacy Text */}
-          <div className="flex items-start gap-3 px-2 mt-2">
-            <div className="p-1 px-1.5 rounded-md bg-blue-50 text-blue-500">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <p className="text-[11px] text-gray-400 leading-tight font-medium">
-              {!isLowRating && (t('feedback_disclaimer') + ' ' + t('feedback_private_note'))}
-              {isLowRating && (t('feedback_low_disclaimer') || 'Bilgileriniz sadece restoran yetkilisi ile paylaşılacaktır.')}
-            </p>
-          </div>
-
-          {/* Submit Button */}
-          <button 
-            onClick={handleSubmit}
-            disabled={isSubmitting || !comment.trim()}
-            className={`w-full py-4 mt-2 rounded-2xl text-[16px] font-extrabold transition-all flex items-center justify-center gap-2 ${
-              isSubmitting || !comment.trim()
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none' 
-                : 'bg-blue-600 text-white shadow-[0_4px_0_0_#1e3a8a] border-2 border-blue-700 hover:bg-blue-500 hover:-translate-y-1 hover:shadow-[0_6px_0_0_#1e3a8a] active:translate-y-2 active:shadow-none'
-            }`}
-          >
-            {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : t('feedback_post')}
-          </button>
-        </div>
-      </div>
-
     );
   }
 );
