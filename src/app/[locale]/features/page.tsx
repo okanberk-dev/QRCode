@@ -210,7 +210,7 @@ export default async function FeaturesPage({
             </Link>
             <Link
               href={`${base}/pricing`}
-              className="inline-flex items-center justify-center gap-2 border-2 border-[#0A0A0A] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
+              className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
             >
               {isTr ? 'Fiyatları gör' : 'See pricing'}
             </Link>

@@ -12,8 +12,8 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 |-----|--------|--------|----|-------|
 | 0 | Baseline audit + design.md iskelet + `.design/` + §16 | `claude/design-phase-0-baseline` | #39 draft | ✅ Tamamlandı |
 | 1 | Chrome + Homepage v3 (animated counter, bento, marquee, sticky CTA, toast, video modal) | `claude/design-phase-1-home` | #40 draft | ✅ Tamamlandı |
-| 2 | Auth + Onboarding (5 adım + confetti + 404) | `claude/design-phase-2-auth-onboarding` | draft | 🔄 Devam |
-| 3 | Marketing secondary (features, AI Co-Pilot, pricing, ROI, QR, integrations, compare, stories, case-study) | `claude/design-phase-3-marketing` | — | ⏳ Bekliyor |
+| 2 | Auth + Onboarding (5 adım + confetti + 404) | `claude/design-phase-2-auth-onboarding` | #42 draft | ✅ Tamamlandı |
+| 3 | Marketing secondary (features, AI Co-Pilot, pricing, ROI, QR, integrations, compare, stories, case-study) | `claude/design-phase-3-marketing` | draft | 🔄 Devam |
 | 4 | Solutions (7 sektör) | `claude/design-phase-4-solutions` | — | ⏳ Bekliyor |
 | 5 | Content (blog, faq, help, about, careers, contact, 8 legal) | `claude/design-phase-5-content` | — | ⏳ Bekliyor |
 | 6 | Admin core (dashboard, reviews, QR wizard, analytics, restaurants, settings) | `claude/design-phase-6-admin-core` | — | ⏳ Bekliyor |
@@ -133,6 +133,45 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 **Sonraki faz için not:**
 - Faz 3 — Marketing secondary: /features, /features/ai-copilot (yeni), /pricing, /roi, /qr, /integrations, /compare (yeni), /customer-stories, /case-study/[slug] (yeni), /en uluslararası. İçerik öncelikle `.design/site/site-marketing.jsx` + `site-pages3.jsx` + `site-pages4.jsx`'ten okunmalı.
 - `QRGeneratorForm` ve `BlogPost` Prisma sorgularına kesinlikle dokunulmaz.
+
+---
+
+### Faz 3 — 2026-04-23
+
+**Kapsam:** Marketing secondary pages. Başlangıçta 10 sayfa için planlanmıştı ama audit sonucu daraldı:
+
+**Audit sonucu:**
+- `/pricing`, `/integrations`, `/customer-stories`, `/compare` (mevcut 341 satır karşılaştırma tablosu) — zaten Pulse-clean (0 lingering pattern), dokunulmadı
+- `/features` + `/roi` — her biri tek bir `border-2 border-[#0A0A0A]` kalıntısı vardı, sed ile `border border-[#0A0A0A]` yapıldı
+- `/case-study/pizza-locale` zaten mevcuttu ama dinamik `[slug]` yoktu; route segment precedence (static beats dynamic) sayesinde yan yana yaşayabilirler → dinamik route eklendi
+- `/solutions/qr-generator` (plan'daki `/qr`) zaten Pulse
+- EN uluslararası ayrımı homepage'de zaten branch'liyor — ayrı route gerekmedi
+
+**Yeni dosyalar:**
+- `src/app/[locale]/features/ai-copilot/page.tsx` — AI Co-Pilot ürün sayfası: Pulse hero (animated badge + lime-slanted keyword), canlı demo mockup'ı (Mert D. / 2★ yorum + OpenAI tarafından draftlanmış Türkçe yanıt + `⚡ 1.4s` rozeti), 4 özellik kartı (puan-farkında + dil + düzenle/gönder + fallback), 3 spec kartı (model / latency / $/draft), lime CTA band. TR + EN metaboru + locale alternates.
+- `src/app/[locale]/case-study/[slug]/page.tsx` — 3 mock vaka (kadikoy-bistro / hotel-nora / derma-klinik) ile dinamik route. Her vaka: hero metni + 4-stat grid + 3 "süreç özeti" kartı + koyu quote bölümü + "başka sektörlerden" ilgili link kartları. `STUDIES` listesi dosya içinde; Prisma `CaseStudy` modeli `scaffolding.ts`'de yorumla dokümante.
+- `src/app/api/roi/save/route.ts` — 501 scaffold + per-IP rate limit (10 / 10dk); `ROIRequest` Prisma modeli yorumda belgelenir.
+
+**Değişen dosyalar:**
+- `src/app/[locale]/features/page.tsx` — `border-2 border-[#0A0A0A]` → `border border-[#0A0A0A]` (1 instance, CTA butonu)
+- `src/app/[locale]/roi/page.tsx` — aynı dönüşüm (1 instance)
+- `src/lib/scaffolding.ts` — 3 yeni Prisma model yorumu: `NewsletterSubscriber` (Phase 1 yetiminden), `CaseStudy` (Phase 3), `ROIRequest` (Phase 3). Her biri unique/index önerileriyle.
+
+**Backend etkisi:** Tek yeni API `/api/roi/save` (501). Hiçbir mevcut route, Prisma modeli, auth helper değişmedi. `QRGeneratorForm` → `/api/qr-generate`, `BlogPost` Prisma sorgusu, `ContactForm` → `/api/contact` hepsi dokunulmadı.
+
+**Verification:**
+- `npx tsc --noEmit` yeni dosyalarda 0 hata (pre-existing globals.css side-effect dışında)
+- `/tr/features/ai-copilot` → 200
+- `/tr/case-study/kadikoy-bistro` + `/tr/case-study/hotel-nora` + `/tr/case-study/derma-klinik` → 200
+- `/tr/case-study/does-not-exist` → 404
+- `/tr/case-study/pizza-locale` → 200 (mevcut static route precedence korunuyor)
+- `POST /api/roi/save` → `{ error: 'not_implemented', received: {...} }` (status 501)
+- `/tr/features` ve `/tr/roi` görsel regresyon yok (yalnızca border weight değişti)
+
+**Sonraki faz için not:**
+- Faz 4 — Solutions: 7 sektör sayfası `/solutions/{restoran,delivery,otel,klinik,hukuk,spa,perakende}`. Mevcut `SolutionPageLayout.tsx` (varsa) Pulse'a hizalanır veya 13 sayfalık layout abstraction tekrar kullanılır.
+- Delivery sayfası Yemeksepeti + Getir + Trendyol GO logolarıyla özel; `.design/site/site-pages3.jsx` DeliverySolutionPage refere.
+- Otel/Klinik/Hukuk/Spa/Perakende için `.design/site/site-pages4.jsx` refere.
 
 ---
 

@@ -187,6 +187,54 @@
 //   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 //   @@map("onboarding_progress")
 // }
+//
+// model NewsletterSubscriber {
+//   id         String   @id @default(cuid())
+//   email      String   @unique
+//   locale     String   @default("tr")        // tr | en
+//   source     String?  // "footer" | "blog" | etc.
+//   ip         String?
+//   createdAt  DateTime @default(now()) @map("created_at")
+//   unsubscribedAt DateTime? @map("unsubscribed_at")
+//   @@index([createdAt])
+//   @@map("newsletter_subscribers")
+// }
+//
+// model CaseStudy {
+//   id         String   @id @default(cuid())
+//   slug       String   @unique
+//   brand      String
+//   sector     String
+//   location   String
+//   heroTr     String   @db.Text
+//   heroEn     String   @db.Text
+//   subtitleTr String?  @db.Text
+//   subtitleEn String?  @db.Text
+//   stats      Json     // [{label:{tr,en}, value}]
+//   highlights Json     // [{tr, en}]
+//   quoteTr    String?  @db.Text
+//   quoteEn    String?  @db.Text
+//   personName String?
+//   personRole Json?    // {tr, en}
+//   isPublished Boolean @default(true) @map("is_published")
+//   publishedAt DateTime @default(now()) @map("published_at")
+//   @@index([isPublished, publishedAt])
+//   @@map("case_studies")
+// }
+//
+// model ROIRequest {
+//   id            String   @id @default(cuid())
+//   email         String?
+//   restaurantName String? @map("restaurant_name")
+//   tables        Int?
+//   avgTicket     Decimal? @db.Decimal(10, 2) @map("avg_ticket")
+//   noShowRate    Float?   @map("no_show_rate")
+//   projection    Json?    // computed ROI numbers snapshot
+//   ip            String?
+//   createdAt     DateTime @default(now()) @map("created_at")
+//   @@index([email, createdAt])
+//   @@map("roi_requests")
+// }
 // ─────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server';
