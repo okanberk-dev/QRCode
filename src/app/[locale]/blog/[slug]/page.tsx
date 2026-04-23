@@ -5,21 +5,24 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Clock, User, ArrowRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: Locale; slug: string }>;
-}, _parent: ResolvingMetadata): Promise<Metadata> {
+export async function generateMetadata(
+  {
+    params,
+  }: {
+    params: Promise<{ locale: Locale; slug: string }>;
+  },
+  _parent: ResolvingMetadata,
+): Promise<Metadata> {
   const { locale, slug } = await params;
   const post = await prisma.blogPost.findUnique({
     where: { slug_locale: { slug, locale } },
   });
-  
+
   if (!post) return { title: 'Post Not Found' };
 
   return {
@@ -48,8 +51,10 @@ export default async function BlogPostPage({
   const { locale, slug } = await params;
   const t = getTranslations(locale);
   const base = `/${locale}`;
-  
+  const isTr = locale === 'tr';
+
   const post = await prisma.blogPost.findUnique({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     where: { slug_locale: { slug, locale }, isActive: true } as any,
   });
 
@@ -66,70 +71,88 @@ export default async function BlogPostPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] font-sans pt-[64px] selection:bg-[#C6F24E]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* Article Hero */}
-      <div className="w-full bg-[#0A0A0A] relative pt-16 pb-32 px-5 sm:px-8 overflow-hidden z-0">
-        <div className="absolute inset-0 opacity-40">
-          <img src={post.coverImage} alt="Background" className="w-full h-full object-cover blur-sm scale-105" />
-          <div className="absolute inset-0 bg-black/60" />
-        </div>
-        <div className="max-w-[800px] mx-auto relative z-10">
-          <Link href={`${base}/blog`} className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-full text-[13px] font-bold text-white transition-all mb-8 group">
-            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> {t.blog_backToBlog}
+      {/* Header */}
+      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-10 border-b border-[#EDEDED]">
+        <div className="max-w-[760px] mx-auto">
+          <Link
+            href={`${base}/blog`}
+            className="pulse-eyebrow inline-flex items-center gap-2 text-[#737373] hover:text-[#0A0A0A] mb-8 transition-colors"
+          >
+            <ArrowLeft size={14} strokeWidth={2} />
+            {t.blog_backToBlog.toUpperCase()}
           </Link>
-          
-          <h1 className="text-[36px] sm:text-[56px] font-extrabold leading-[1.05] tracking-[-0.03em] text-white mb-8">
+
+          <div className="pulse-eyebrow text-[#737373] flex items-center gap-3 flex-wrap">
+            <span>{post.date}</span>
+            <span>·</span>
+            <span>{post.readTime}</span>
+            <span>·</span>
+            <span>{post.author}</span>
+          </div>
+
+          <h1 className="mt-5 text-[34px] sm:text-[52px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
             {post.title}
           </h1>
-          
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-[14px] font-bold text-white/80">
-            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-md"><Calendar size={16} className="text-[#C6F24E]"/> {post.date}</span>
-            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-md"><Clock size={16} className="text-[#10b981]"/> {post.readTime}</span>
-            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-md"><User size={16} className="text-[#C6F24E]"/> {post.author}</span>
-          </div>
+
+          <p className="mt-5 text-[17px] text-[#525252] leading-[1.6] max-w-[640px]">
+            {post.description}
+          </p>
         </div>
-      </div>
+      </section>
 
-      <main className="px-5 sm:px-8 max-w-[800px] mx-auto -mt-16 relative z-10 pb-20">
-        <div className="bg-white p-8 sm:p-12 rounded-3xl border border-[#0A0A0A] shadow-md">
-          <div className="w-full h-[300px] sm:h-[400px] rounded-2xl overflow-hidden border border-[#0A0A0A] mb-12 shadow-md">
-            <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
-          </div>
+      {/* Cover */}
+      <section className="px-6 sm:px-10 pt-10">
+        <div className="max-w-[880px] mx-auto aspect-[16/9] overflow-hidden rounded-3xl border border-[#EDEDED]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
+        </div>
+      </section>
 
-          <article
-            className="prose prose-lg max-w-none 
-            prose-headings:font-black prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
-            prose-h2:text-[28px] prose-h2:mt-12 prose-h2:mb-6
-            prose-h3:text-[22px] prose-h3:mt-8 prose-h3:mb-4
-            prose-p:text-[#1A1A1A] prose-p:font-medium prose-p:leading-relaxed prose-p:mb-6 prose-p:text-[17px]
-            prose-strong:font-extrabold prose-strong:text-[#0A0A0A]
-            prose-a:text-[#C6F24E] prose-a:font-bold hover:prose-a:text-[#E8870A]
-            prose-li:text-[#1A1A1A] prose-li:font-medium
-            prose-img:border prose-img:border-[#0A0A0A] prose-img:shadow-md
+      {/* Body */}
+      <main className="px-6 sm:px-10 py-14 max-w-[720px] mx-auto">
+        <article
+          className="prose prose-lg max-w-none
+            prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
+            prose-h2:text-[26px] prose-h2:mt-12 prose-h2:mb-5
+            prose-h3:text-[20px] prose-h3:mt-8 prose-h3:mb-3
+            prose-p:text-[#0A0A0A] prose-p:leading-[1.7] prose-p:mb-6 prose-p:text-[17px]
+            prose-strong:font-medium prose-strong:text-[#0A0A0A]
+            prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4 hover:prose-a:text-[#A8D62E]
+            prose-li:text-[#0A0A0A] prose-li:leading-[1.7]
+            prose-blockquote:border-l-2 prose-blockquote:border-[#C6F24E] prose-blockquote:pl-5 prose-blockquote:text-[#525252] prose-blockquote:not-italic
+            prose-img:rounded-2xl prose-img:border prose-img:border-[#EDEDED]
             break-words"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
-
-          <div className="mt-16 pt-10 border-t-2 border-[#EDEDED] flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#FFFFFF] p-8 rounded-2xl border border-[#0A0A0A] shadow-md">
-            <div className="space-y-2 text-center sm:text-left">
-              <h4 className="text-[22px] font-extrabold">{locale === 'tr' ? 'Dijitalde Rekabeti Geride Bırakın' : 'Leave the Competition Behind'}</h4>
-              <p className="text-[15px] text-[#1A1A1A] font-medium">{locale === 'tr' ? '14 günlük ücretsiz deneme ile dijital itibarınızı hemen güçlendirmeye başlayın.' : 'Start strengthening your digital reputation instantly with a 14-day free trial.'}</p>
-            </div>
-            <Link
-              href={`${base}/auth/register`}
-              className="px-8 py-4 bg-[#C6F24E] text-[#0A0A0A] text-[15px] font-extrabold rounded-xl shadow-sm hover:bg-[#A8D62E] active:translate-y-1 active:shadow-none transition-all flex flex-shrink-0 gap-2 items-center"
-            >
-              {locale === 'tr' ? 'Ücretsiz Başla' : 'Start for Free'} <ArrowRight size={18} />
-            </Link>
-          </div>
-        </div>
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
       </main>
+
+      {/* CTA */}
+      <section className="px-6 sm:px-10 pb-20">
+        <div className="max-w-[880px] mx-auto bg-[#0A0A0A] rounded-3xl p-8 sm:p-10 text-white flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="text-center sm:text-left">
+            <h3 className="text-[22px] sm:text-[26px] font-medium text-white tracking-[-0.02em] leading-tight">
+              {isTr ? 'Dijitalde rekabeti geride bırakın.' : 'Leave the competition behind.'}
+            </h3>
+            <p className="mt-2 text-[14px] text-white/70">
+              {isTr ? '14 günlük ücretsiz deneme, kredi kartı gerekmez.' : '14-day free trial, no card required.'}
+            </p>
+          </div>
+          <Link
+            href={`${base}/auth/register`}
+            className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#A8D62E] transition-colors shrink-0"
+          >
+            {isTr ? 'Ücretsiz başla' : 'Start for free'}
+            <span aria-hidden>→</span>
+          </Link>
+        </div>
+      </section>
 
       <MarketingFooter locale={locale} t={t} />
     </div>

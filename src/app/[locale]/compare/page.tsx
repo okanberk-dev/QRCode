@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Check, X, Info, Zap, Shield, BarChart3, Users, Smartphone, Globe, ArrowRight, Table } from 'lucide-react';
+import { Check, X, Minus } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 
@@ -20,7 +20,7 @@ export async function generateMetadata({
     description: t.compare_subtitle,
     alternates: {
       canonical: `https://buaze.com/${locale}/compare`,
-      languages: { 'tr': 'https://buaze.com/tr/compare', 'en': 'https://buaze.com/en/compare' },
+      languages: { tr: 'https://buaze.com/tr/compare', en: 'https://buaze.com/en/compare' },
     },
   };
 }
@@ -33,6 +33,7 @@ export default async function ComparisonPage({
   const { locale } = await params;
   const t = getTranslations(locale);
   const base = `/${locale}`;
+  const isTr = locale === 'tr';
 
   type FeatureStatus = boolean | 'limited';
   type Row = { label: string; buaze: FeatureStatus; static: FeatureStatus; sheet: FeatureStatus };
@@ -47,211 +48,290 @@ export default async function ComparisonPage({
     { label: t.compare_f7, buaze: true, static: 'limited', sheet: 'limited' },
   ];
 
-  const FeatureIcon = ({ status }: { status: boolean | 'limited' }) => {
-    if (status === true) return <div className="w-8 h-8 rounded-full bg-[#10b981]/10 flex items-center justify-center mx-auto border-2 border-[#10b981]"><Check size={20} className="text-[#10b981]" /></div>;
-    if (status === 'limited') return <div className="w-8 h-8 rounded-full bg-[#C6F24E]/10 flex items-center justify-center mx-auto border-2 border-[#C6F24E]"><Info size={20} className="text-[#C6F24E]" /></div>;
-    return <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center mx-auto border-2 border-red-200"><X size={20} className="text-red-400" /></div>;
+  const FeatureIcon = ({ status, highlight }: { status: FeatureStatus; highlight?: boolean }) => {
+    if (status === true)
+      return (
+        <span
+          className={`inline-flex w-7 h-7 rounded-full items-center justify-center ${
+            highlight ? 'bg-[#C6F24E]' : 'bg-[#EAF9B8]'
+          }`}
+        >
+          <Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} />
+        </span>
+      );
+    if (status === 'limited')
+      return (
+        <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF3C7] items-center justify-center">
+          <Minus size={14} className="text-[#92400E]" strokeWidth={2.5} />
+        </span>
+      );
+    return (
+      <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF2F2] items-center justify-center">
+        <X size={14} className="text-[#B91C1C]" strokeWidth={2.5} />
+      </span>
+    );
   };
 
+  const heroWords = t.compare_hero_h1.split(' ');
+  const heroHead = heroWords.slice(0, -3).join(' ');
+  const heroTail = heroWords.slice(-3).join(' ');
+
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] font-sans pt-[64px] selection:bg-[#C6F24E]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* ─── Hero Section ─── */}
-      <section className="pt-20 sm:pt-32 pb-12 px-5 sm:px-8 overflow-hidden relative">
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#C6F24E]/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
-        <div className="max-w-[1200px] mx-auto text-center relative">
-          <div className="max-w-[800px] mx-auto space-y-6 sm:space-y-8">
-            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight">
-              {t.compare_hero_h1.split(' ').slice(0, -3).join(' ')} <br className="hidden sm:block"/>
-              <span className="text-[#C6F24E]">{t.compare_hero_h1.split(' ').slice(-3).join(' ')}</span>
-            </h1>
-            <p className="text-[17px] sm:text-[22px] text-[#1A1A1A] font-bold leading-relaxed px-2">
-              {t.compare_hero_p}
-            </p>
-          </div>
+      {/* ─── Hero ─── */}
+      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-24 pb-12 sm:pb-16">
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
+          width="100%"
+          height="100%"
+        >
+          <defs>
+            <pattern id="cmpHeroGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#cmpHeroGrid)" />
+        </svg>
+        <div className="relative max-w-[900px] mx-auto text-center">
+          <span className="pulse-eyebrow text-[#737373]">
+            {isTr ? 'Karşılaştırma' : 'Comparison'}
+          </span>
+          <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[68px] font-medium leading-[1] tracking-[-0.035em] text-[#0A0A0A]">
+            {heroHead}{' '}
+            <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">{heroTail}</span>
+          </h1>
+          <p className="mt-6 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[620px] mx-auto">
+            {t.compare_hero_p}
+          </p>
         </div>
       </section>
 
       {/* ─── Comparison Table ─── */}
-      <section className="py-12 sm:py-16 px-5 sm:px-8">
+      <section className="px-6 sm:px-10 pb-16 sm:pb-20">
         <div className="max-w-[1000px] mx-auto">
-          <div className="bg-white rounded-[32px] sm:rounded-[40px] border sm:border border-[#0A0A0A] shadow-md sm:shadow-md overflow-hidden">
-            <div className="overflow-x-auto touch-pan-x">
-              <table className="w-full border-collapse min-w-[640px] sm:min-w-0">
+          <div className="rounded-3xl border border-[#EDEDED] bg-white overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse min-w-[640px]">
                 <thead>
-                  <tr className="bg-[#0A0A0A] text-white">
-                    <th className="p-5 sm:p-8 text-left text-[11px] sm:text-[14px] font-black uppercase tracking-widest border-b border-white/10">{t.compare_feat_name}</th>
-                    <th className="p-5 sm:p-8 text-center text-[11px] sm:text-[14px] font-black uppercase tracking-widest border-b border-white/10 text-[#C6F24E]">{t.compare_buaze}</th>
-                    <th className="p-5 sm:p-8 text-center text-[11px] sm:text-[14px] font-black uppercase tracking-widest border-b border-white/10">{t.compare_static}</th>
-                    <th className="p-5 sm:p-8 text-center text-[11px] sm:text-[14px] font-black uppercase tracking-widest border-b border-white/10">{t.compare_sheet}</th>
+                  <tr className="bg-[#FAFAFA] border-b border-[#EDEDED]">
+                    <th className="p-5 pulse-eyebrow text-[#737373] text-left">{t.compare_feat_name}</th>
+                    <th className="p-5 pulse-eyebrow text-[#0A0A0A] text-center bg-[#EAF9B8]">
+                      {t.compare_buaze}
+                    </th>
+                    <th className="p-5 pulse-eyebrow text-[#737373] text-center">{t.compare_static}</th>
+                    <th className="p-5 pulse-eyebrow text-[#737373] text-center">{t.compare_sheet}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#EDEDED]">
                   {rows.map((row, i) => (
-                    <tr key={i} className="group hover:bg-[#FFFFFF] transition-colors">
-                      <td className="p-5 sm:p-8 text-[14px] sm:text-[17px] font-black group-hover:pl-10 transition-all">{row.label}</td>
-                      <td className="p-5 sm:p-8 text-center"><FeatureIcon status={row.buaze} /></td>
-                      <td className="p-5 sm:p-8 text-center"><FeatureIcon status={row.static} /></td>
-                      <td className="p-5 sm:p-8 text-center"><FeatureIcon status={row.sheet} /></td>
+                    <tr key={i}>
+                      <td className="p-5 text-[14px] font-medium text-[#0A0A0A]">{row.label}</td>
+                      <td className="p-5 text-center bg-[#EAF9B8]/30">
+                        <FeatureIcon status={row.buaze} highlight />
+                      </td>
+                      <td className="p-5 text-center">
+                        <FeatureIcon status={row.static} />
+                      </td>
+                      <td className="p-5 text-center">
+                        <FeatureIcon status={row.sheet} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
-          
-          <div className="mt-8 flex flex-wrap justify-center gap-6 sm:gap-12 text-[10px] sm:text-[12px] font-black text-[#8a847a] uppercase tracking-wider">
-             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full border-2 border-[#10b981]" /> {t.compare_yes}
-             </div>
-             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full border-2 border-red-300" /> {t.compare_no}
-             </div>
-             <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full border-2 border-[#C6F24E]" /> {t.compare_limited}
-             </div>
+
+          <div className="mt-6 flex flex-wrap justify-center gap-6 text-[12px] text-[#525252]">
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 rounded-full bg-[#EAF9B8] flex items-center justify-center">
+                <Check size={10} className="text-[#0A0A0A]" strokeWidth={3} />
+              </span>
+              {t.compare_yes}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 rounded-full bg-[#FEF3C7] flex items-center justify-center">
+                <Minus size={10} className="text-[#92400E]" strokeWidth={3} />
+              </span>
+              {t.compare_limited}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 rounded-full bg-[#FEF2F2] flex items-center justify-center">
+                <X size={10} className="text-[#B91C1C]" strokeWidth={3} />
+              </span>
+              {t.compare_no}
+            </div>
           </div>
 
-          {/* New Specific VS Links */}
-          <div className="mt-20 sm:mt-24 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-            <Link href={`${base}/vs/spreadsheet`} className="group p-6 sm:p-8 bg-[#FFFFFF] rounded-[24px] sm:rounded-[32px] border sm:border border-[#0A0A0A] hover:bg-[#C6F24E]/10 transition-all hover:-translate-y-2">
-               <div className="flex justify-between items-start mb-6">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl border-2 border-[#0A0A0A] flex items-center justify-center">
-                     <Table size={20} className="sm:size-6 text-[#C6F24E]" />
-                  </div>
-                  <ArrowRight size={20} className="sm:size-6 text-[#6B7280] group-hover:text-[#0A0A0A] transition-colors" />
-               </div>
-               <h3 className="text-[18px] sm:text-[20px] font-extrabold mb-2 leading-tight">{locale === 'tr' ? 'Buaze vs Spreadsheet' : 'Buaze vs Spreadsheet'}</h3>
-               <p className="text-[13px] sm:text-[14px] text-[#1A1A1A] font-bold leading-relaxed">
-                  {locale === 'tr'
-                    ? 'Excel tablolarının operasyonel kör noktalarından kurtulun ve otomasyonun gücünü keşfedin.'
-                    : 'Get rid of the operational blind spots of Excel spreadsheets and discover the power of automation.'}
-               </p>
+          {/* Specific comparison links */}
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <Link
+              href={`${base}/vs/spreadsheet`}
+              className="group p-7 bg-white border border-[#EDEDED] rounded-3xl hover:border-[#C6F24E] transition-colors"
+            >
+              <div className="flex justify-between items-start mb-5">
+                <div className="w-11 h-11 bg-[#EAF9B8] rounded-lg flex items-center justify-center">
+                  <span className="pulse-eyebrow text-[#0A0A0A]">XLS</span>
+                </div>
+                <span
+                  aria-hidden
+                  className="text-[#737373] group-hover:text-[#0A0A0A] group-hover:translate-x-0.5 transition-all"
+                >
+                  →
+                </span>
+              </div>
+              <h3 className="text-[18px] font-medium text-[#0A0A0A] leading-tight mb-2">
+                {isTr ? 'Buaze vs Spreadsheet' : 'Buaze vs Spreadsheet'}
+              </h3>
+              <p className="text-[13px] text-[#525252] leading-relaxed">
+                {isTr
+                  ? 'Excel tablolarının operasyonel kör noktalarından kurtulun; otomasyonun gücünü keşfedin.'
+                  : "Get rid of Excel's operational blind spots; discover the power of automation."}
+              </p>
             </Link>
 
-            <Link href={`${base}/vs/individual-qr`} className="group p-6 sm:p-8 bg-[#FFFFFF] rounded-[24px] sm:rounded-[32px] border sm:border border-[#0A0A0A] hover:bg-[#C6F24E]/10 transition-all hover:-translate-y-2">
-               <div className="flex justify-between items-start mb-6">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl border-2 border-[#0A0A0A] flex items-center justify-center">
-                     <Smartphone size={20} className="sm:size-6 text-[#6366f1]" />
-                  </div>
-                  <ArrowRight size={20} className="sm:size-6 text-[#6B7280] group-hover:text-[#0A0A0A] transition-colors" />
-               </div>
-               <h3 className="text-[18px] sm:text-[20px] font-extrabold mb-2 leading-tight">{locale === 'tr' ? 'Buaze vs Bireysel QR' : 'Buaze vs Individual QR'}</h3>
-               <p className="text-[13px] sm:text-[14px] text-[#1A1A1A] font-bold leading-relaxed">
-                  {locale === 'tr'
-                    ? 'Statik QR kodların link kısıtlamalarını ve itibar risklerini profesyonel dinamik altyapı ile aşın.'
-                    : 'Overcome the link limitations and reputation risks of static QR codes with a professional dynamic infrastructure.'}
-               </p>
+            <Link
+              href={`${base}/vs/individual-qr`}
+              className="group p-7 bg-white border border-[#EDEDED] rounded-3xl hover:border-[#C6F24E] transition-colors"
+            >
+              <div className="flex justify-between items-start mb-5">
+                <div className="w-11 h-11 bg-[#EAF9B8] rounded-lg flex items-center justify-center">
+                  <span className="pulse-eyebrow text-[#0A0A0A]">QR</span>
+                </div>
+                <span
+                  aria-hidden
+                  className="text-[#737373] group-hover:text-[#0A0A0A] group-hover:translate-x-0.5 transition-all"
+                >
+                  →
+                </span>
+              </div>
+              <h3 className="text-[18px] font-medium text-[#0A0A0A] leading-tight mb-2">
+                {isTr ? 'Buaze vs Bireysel QR' : 'Buaze vs Individual QR'}
+              </h3>
+              <p className="text-[13px] text-[#525252] leading-relaxed">
+                {isTr
+                  ? 'Statik QR kodların link kısıtlamalarını ve itibar risklerini profesyonel dinamik altyapı ile aşın.'
+                  : 'Overcome the link limitations and reputation risks of static QR codes with a professional dynamic infrastructure.'}
+              </p>
             </Link>
           </div>
         </div>
       </section>
 
       {/* ─── Deeper Dive ─── */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-white overflow-hidden">
-        <div className="max-w-[1200px] mx-auto space-y-24 sm:space-y-32">
-          
-          {/* Section 1 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-16 items-center">
-            <div className="space-y-6 sm:space-y-8">
-               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#C6F24E]/10 rounded-2xl flex items-center justify-center border-2 border-[#0A0A0A]">
-                  <Zap size={28} className="sm:size-8 text-[#0A0A0A]" />
-               </div>
-               <h2 className="text-[30px] sm:text-[48px] font-extrabold tracking-tight leading-[1.1] sm:leading-none">
-                  {locale === 'tr' ? 'Neden Statik QR Kullanmamalısınız?' : 'Why You Shouldn\'t Use Static QR Codes?'}
-               </h2>
-               <div className="space-y-4 text-[16px] sm:text-[19px] text-[#1A1A1A] font-medium leading-relaxed">
-                  <p>
-                    {locale === 'tr' 
-                      ? 'Ücretsiz oluşturulan statik QR kodların linkini bir kez bastığınızda bir daha değiştiremezsiniz. Menünüz değişirse, Google linkiniz güncellenirse tüm baskı maliyetleriniz çöpe gider.'
-                      : 'Once you print a free static QR code, you can never change its link. If your menu changes or your Google link is updated, all your printing costs go to waste.'}
-                  </p>
-                  <p>
-                    {locale === 'tr'
-                      ? 'Buaze\'de ise kodunuz değişmez, yönlendirdiğiniz sayfa ise panelinizden bir saniyede güncellenir.'
-                      : 'With Buaze, your code stays the same, while the target page is updated from your panel in a second.'}
-                  </p>
-               </div>
+      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[1200px] mx-auto space-y-20 sm:space-y-24">
+          {/* Section 1: Static QR */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div>
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'Statik QR riski' : 'Static QR risk'}
+              </span>
+              <h2 className="mt-4 text-[30px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
+                {isTr ? 'Neden statik QR kullanmamalısınız?' : "Why you shouldn't use static QR."}
+              </h2>
+              <div className="mt-5 space-y-4 text-[16px] text-[#525252] leading-[1.65]">
+                <p>
+                  {isTr
+                    ? 'Ücretsiz oluşturulan statik QR kodların linkini bir kez bastığınızda bir daha değiştiremezsiniz. Menünüz değişirse, Google linkiniz güncellenirse tüm baskı maliyetleriniz çöpe gider.'
+                    : 'Once you print a free static QR code, you can never change its link. If your menu changes or your Google link is updated, all your printing costs go to waste.'}
+                </p>
+                <p>
+                  {isTr
+                    ? "Buaze'de ise kodunuz değişmez, yönlendirdiğiniz sayfa panelinizden bir saniyede güncellenir."
+                    : 'With Buaze, your code stays the same, while the target page is updated from your panel in a second.'}
+                </p>
+              </div>
             </div>
-            <div className="bg-[#FFFFFF] rounded-[32px] sm:rounded-[48px] p-8 sm:p-12 border sm:border border-[#0A0A0A] shadow-md sm:shadow-md">
-               <div className="space-y-6">
-                  <div className="bg-red-50 p-5 sm:p-6 rounded-2xl border-2 border-red-200">
-                     <p className="text-red-600 font-black text-[12px] sm:text-[14px] uppercase tracking-widest">{locale === 'tr' ? 'RİSK: STATİK QR' : 'RISK: STATIC QR'}</p>
-                     <p className="text-red-900 font-bold mt-2 text-[15px] sm:text-[16px]">{locale === 'tr' ? 'Geri dönülemez baskı hataları ve veri kaybı.' : 'Irreversible printing errors and data loss.'}</p>
-                  </div>
-                  <div className="bg-green-50 p-5 sm:p-6 rounded-2xl border-2 border-green-200">
-                     <p className="text-green-600 font-black text-[12px] sm:text-[14px] uppercase tracking-widest">{locale === 'tr' ? 'ÇÖZÜM: BUAZE DİNAMİK' : 'SOLUTION: BUAZE DYNAMIC'}</p>
-                     <p className="text-green-900 font-bold mt-2 text-[15px] sm:text-[16px]">{locale === 'tr' ? 'Esneklik, takip edilebilirlik ve güven.' : 'Flexibility, traceability, and trust.'}</p>
-                  </div>
-               </div>
+            <div className="bg-white rounded-3xl p-8 border border-[#EDEDED] space-y-4">
+              <div className="bg-[#FEF2F2] p-5 rounded-2xl border border-[#FECACA]">
+                <span className="pulse-eyebrow text-[#B91C1C]">
+                  {isTr ? 'RİSK · STATİK QR' : 'RISK · STATIC QR'}
+                </span>
+                <p className="mt-2 text-[15px] font-medium text-[#0A0A0A]">
+                  {isTr ? 'Geri dönülemez baskı hataları, veri kaybı.' : 'Irreversible print errors, data loss.'}
+                </p>
+              </div>
+              <div className="bg-[#EAF9B8] p-5 rounded-2xl border border-[#C6F24E]">
+                <span className="pulse-eyebrow text-[#0A0A0A]">
+                  {isTr ? 'ÇÖZÜM · BUAZE DİNAMİK' : 'SOLUTION · BUAZE DYNAMIC'}
+                </span>
+                <p className="mt-2 text-[15px] font-medium text-[#0A0A0A]">
+                  {isTr ? 'Esneklik, takip edilebilirlik, güven.' : 'Flexibility, traceability, trust.'}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Section 2 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-16 items-center">
-            <div className="lg:order-2 space-y-6 sm:space-y-8">
-               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#C6F24E]/10 rounded-2xl flex items-center justify-center border-2 border-[#0A0A0A]">
-                  <BarChart3 size={28} className="sm:size-8 text-[#C6F24E]" />
-               </div>
-               <h2 className="text-[30px] sm:text-[48px] font-extrabold tracking-tight leading-[1.1] sm:leading-none">
-                  {locale === 'tr' ? 'Excel Tablolarının Gizli Maliyeti' : 'The Hidden Cost of Excel Tables'}
-               </h2>
-               <div className="space-y-4 text-[16px] sm:text-[19px] text-[#1A1A1A] font-medium leading-relaxed">
-                  <p>
-                    {locale === 'tr' 
-                      ? 'Manuel veri girişi zamanınızı çalar. Bir müşteriniz olumsuz bir deneyim yaşadığında, bunu bir Excel tablosunda 3 gün sonra görmek o müşteriyi çoktan kaybettiğiniz anlamına gelir.'
-                      : 'Manual data entry steals your time. Seeing a negative experience in an Excel table 3 days later means you\'ve already lost that customer.'}
-                  </p>
-                  <p>
-                    {locale === 'tr'
-                      ? 'Buaze ile olumsuz her deneyim saniyeler içinde telefonunuza bildirim olarak düşer. Kriz anında müdahale şansı tanır.'
-                      : 'With Buaze, every negative experience hits your phone as a notification within seconds. It offers a chance to intervene during a crisis.'}
-                  </p>
-               </div>
+          {/* Section 2: Excel */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="lg:order-2">
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'Excel gizli maliyeti' : "Excel's hidden cost"}
+              </span>
+              <h2 className="mt-4 text-[30px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
+                {isTr ? 'Excel tablolarının gizli maliyeti.' : 'The hidden cost of Excel.'}
+              </h2>
+              <div className="mt-5 space-y-4 text-[16px] text-[#525252] leading-[1.65]">
+                <p>
+                  {isTr
+                    ? 'Manuel veri girişi zamanınızı çalar. Olumsuz deneyimi Excel\'de üç gün sonra görmek, o müşteriyi çoktan kaybettiğiniz anlamına gelir.'
+                    : 'Manual data entry steals your time. Seeing a negative experience in Excel three days later means you\'ve already lost that customer.'}
+                </p>
+                <p>
+                  {isTr
+                    ? 'Buaze ile her olumsuz deneyim saniyeler içinde telefonunuza bildirim olarak düşer. Kriz anında müdahale şansı tanır.'
+                    : 'With Buaze, every negative experience hits your phone as a notification within seconds. It offers a chance to intervene during a crisis.'}
+                </p>
+              </div>
             </div>
-            <div className="lg:order-1 relative">
-                <div className="absolute inset-0 bg-[#C6F24E]/5 rounded-[32px] sm:rounded-[48px] translate-x-3 translate-y-3 sm:translate-x-4 sm:translate-y-4 -z-10" />
-                <div className="bg-[#0A0A0A] rounded-[32px] sm:rounded-[48px] p-8 sm:p-12 text-white border border-[#0A0A0A]">
-                   <p className="text-[11px] sm:text-[12px] font-black text-[#C6F24E] uppercase tracking-[0.2em] mb-6 sm:mb-8">{locale === 'tr' ? 'OPERASYONEL FARK' : 'OPERATIONAL DIFFERENCE'}</p>
-                   <div className="space-y-6 sm:space-y-8">
-                      <div className="flex items-center gap-4">
-                         <div className="w-2 h-2 rounded-full bg-red-400" />
-                         <span className="text-[#6B7280] font-medium text-[14px] sm:text-[16px]">{locale === 'tr' ? 'Excel: Ortalama Reaksiyon - 72 Saat' : 'Excel: Average Reaction - 72 Hours'}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                         <div className="w-2 h-2 rounded-full bg-[#10b981]" />
-                         <span className="text-white font-black text-[14px] sm:text-[16px]">{locale === 'tr' ? 'Buaze: Ortalama Reaksiyon - 4 Dakika' : 'Buaze: Average Reaction - 4 Minutes'}</span>
-                      </div>
-                   </div>
+            <div className="lg:order-1 bg-[#0A0A0A] rounded-3xl p-8 sm:p-10 text-white">
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'Operasyonel fark' : 'Operational difference'}
+              </span>
+              <div className="mt-6 space-y-5">
+                <div className="flex items-center gap-3">
+                  <span className="w-2 h-2 rounded-full bg-[#B91C1C]" />
+                  <span className="text-white/70 text-[15px]">
+                    {isTr ? 'Excel · Ortalama reaksiyon 72 saat' : 'Excel · Avg reaction 72 hours'}
+                  </span>
                 </div>
+                <div className="flex items-center gap-3">
+                  <span className="w-2 h-2 rounded-full bg-[#C6F24E] pulse-heartbeat" />
+                  <span className="text-white text-[15px] font-medium">
+                    {isTr ? 'Buaze · Ortalama reaksiyon 4 dakika' : 'Buaze · Avg reaction 4 minutes'}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-
         </div>
       </section>
 
       {/* ─── Final CTA ─── */}
-      <section className="py-24 sm:py-32 px-5 sm:px-8 bg-[#FFFFFF] border-t border-[#EDEDED]">
-        <div className="max-w-[800px] mx-auto text-center space-y-10 sm:space-y-12">
-            <h2 className="text-[32px] sm:text-[56px] font-extrabold tracking-tight leading-[1.1] sm:leading-none">
-              {locale === 'tr' ? 'Profesyonel İtibar Yönetimine Geçin' : 'Switch to Professional Reputation Management'}
-            </h2>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-6">
-              <Link
-                href={`${base}/auth/register`}
-                className="w-full sm:w-auto px-10 py-5 bg-[#C6F24E] text-[#0A0A0A] text-[17px] sm:text-[18px] font-black rounded-2xl border-[4.5px] border-[#0A0A0A] shadow-sm hover:bg-[#C6F24E] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-wider"
-              >
-                {t.hero_cta}
-              </Link>
-              <Link
-                href={`${base}/pricing`}
-                className="group flex items-center gap-2 text-[15px] font-black text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
-              >
-                <span>{locale === 'tr' ? 'Fiyatlandırmayı İncele' : 'Explore Pricing'}</span>
-                <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />
-              </Link>
-            </div>
+      <section className="px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[800px] mx-auto text-center">
+          <h2 className="text-[32px] sm:text-[48px] font-medium tracking-[-0.035em] leading-[1.05] text-[#0A0A0A]">
+            {isTr ? 'Profesyonel itibar yönetimine geçin.' : 'Switch to professional reputation management.'}
+          </h2>
+          <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+            <Link
+              href={`${base}/auth/register`}
+              className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
+            >
+              {t.hero_cta}
+              <span aria-hidden>→</span>
+            </Link>
+            <Link
+              href={`${base}/pricing`}
+              className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
+            >
+              {isTr ? 'Planları incele' : 'Browse plans'}
+            </Link>
+          </div>
         </div>
       </section>
 

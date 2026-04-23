@@ -3,7 +3,11 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import { Zap, Users, Trophy, ArrowRight, MessageSquare, BarChart3, QrCode } from 'lucide-react';
+import {
+  IllusCompass,
+  IllusInbox,
+  IllusChart,
+} from '@/components/marketing/PulseIllustrations';
 import Link from 'next/link';
 
 export async function generateMetadata({
@@ -25,7 +29,7 @@ export async function generateMetadata({
       : ['QR reputation management how it works', 'customer feedback system setup', 'Google review collection system', 'digital reputation steps'],
     alternates: {
       canonical: `https://buaze.com/${locale}/how-it-works`,
-      languages: { 'tr': 'https://buaze.com/tr/how-it-works', 'en': 'https://buaze.com/en/how-it-works', 'x-default': 'https://buaze.com/en/how-it-works' },
+      languages: { tr: 'https://buaze.com/tr/how-it-works', en: 'https://buaze.com/en/how-it-works', 'x-default': 'https://buaze.com/en/how-it-works' },
     },
     openGraph: {
       title,
@@ -45,38 +49,55 @@ export default async function HowItWorksPage({
   const { locale } = await params;
   const t = getTranslations(locale);
   const base = `/${locale}`;
-
   const isTr = locale === 'tr';
 
   const steps = [
     {
       id: '01',
-      title: isTr ? 'Profesyonel QR Kodunuzu Oluşturun' : 'Create Your Professional QR Code',
+      title: isTr ? 'QR ile yakala' : 'Capture via QR',
       desc: isTr
-        ? 'İşletmenize özel, estetik ve dikkat çekici QR kodları saniyeler içinde panelimizden tasarlayın.'
-        : 'Design aesthetic and remarkable QR codes specific to your business from our panel in seconds.',
-      icon: <QrCode size={32} />,
-      color: '#C6F24E'
+        ? 'İşletmene özel QR\'ı masaya, yapışkana, menüye yapıştır. Müşteri tek tarama ile doğrudan akıllı akışa düşer.'
+        : 'Stick your branded QR on tables, stickers, menus. One scan routes the customer into your smart flow.',
+      Ill: IllusCompass,
+      perks: isTr
+        ? ['2 dakikada hazır', 'Özel tasarım', 'Toplu indir', 'Sayfa başı analiz']
+        : ['Ready in 2 minutes', 'Custom design', 'Bulk download', 'Per-page analytics'],
     },
     {
       id: '02',
-      title: isTr ? 'Müşteri Deneyimini Basitleştirin' : 'Simplify Customer Experience',
+      title: isTr ? 'Tek panelde topla' : 'Collect in one panel',
       desc: isTr
-        ? 'Müşterileriniz tek bir tarama ile doğrudan sizin belirlediğiniz akıllı akışa yönlendirilsin.'
-        : 'Your customers are directed directly to the smart flow you specify with a single scan.',
-      icon: <Users size={32} />,
-      color: '#C6F24E'
+        ? 'Google, Yemeksepeti, Getir, Trendyol ve dahili kanaldan gelen yorumlar aynı akışta birleşir. Düşük puanlar dahili forma, yüksek puanlar platforma gider.'
+        : 'Google, Yemeksepeti, Getir, Trendyol and internal channel reviews merge into one feed. Low ratings route to your internal form; high ratings go public.',
+      Ill: IllusInbox,
+      perks: isTr
+        ? ['Anlık bildirim', 'Otomatik etiketleme', 'Ekip atama', 'Mobil yönetim']
+        : ['Live notifications', 'Auto-tagging', 'Team assignment', 'Mobile admin'],
     },
     {
       id: '03',
-      title: isTr ? 'Operasyonları Yönetin' : 'Manage Operations',
+      title: isTr ? 'Büyümeyi ölç' : 'Measure growth',
       desc: isTr
-        ? 'Geri bildirim akışını anlık takip edin ve krizleri operasyonel olarak profesyonelce yönetin.'
-        : 'Monitor feedback flow in real-time and manage crises operationally and professionally.',
-      icon: <Trophy size={32} />,
-      color: '#C6F24E'
-    }
+        ? 'Puan, kanal, şube ve saat bazında trendleri oku. Hangi aksiyonun neyi değiştirdiğini net gör; ekibi veriyle yönet.'
+        : 'Read trends by rating, channel, branch and hour. See exactly which action moved what; manage the team with data.',
+      Ill: IllusChart,
+      perks: isTr
+        ? ['Gerçek zamanlı grafik', 'CSV dışa aktar', 'Şube karşılaştırma', 'SLA takibi']
+        : ['Real-time charts', 'CSV export', 'Branch benchmarks', 'SLA tracking'],
+    },
   ];
+
+  const features = isTr
+    ? [
+        { t: 'Geri bildirim yönetimi', d: 'Müşteri deneyimini yapılandırılmış veriye çevirir, itibarınızı korur.' },
+        { t: 'Gerçek zamanlı analiz', d: 'Eğilimleri canlı grafiklerle izleyin, zamanında aksiyon alın.' },
+        { t: 'Işık hızında kurulum', d: 'Karmaşık entegrasyon yok. 5 dakikada yorum toplamaya başlarsınız.' },
+      ]
+    : [
+        { t: 'Feedback management', d: 'Turns customer experience into structured data, keeps your reputation intact.' },
+        { t: 'Real-time analytics', d: 'Monitor trends with live charts, act while it still matters.' },
+        { t: 'Lightning setup', d: 'No complex integrations. You start collecting reviews in 5 minutes.' },
+      ];
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -106,80 +127,86 @@ export default async function HowItWorksPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] font-sans pt-[64px] selection:bg-[#C6F24E]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* ─── Hero Section (3D Enriched) ─── */}
-      <section className="pt-20 sm:pt-32 pb-12 sm:pb-20 px-5 sm:px-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#C6F24E]/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
-        <div className="max-w-[1200px] mx-auto text-center space-y-8 relative">
-          <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#0A0A0A] rounded-full shadow-md sm:shadow-md">
-             <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em]">{locale === 'tr' ? 'SİSTEM NASIL ÇALIŞIR?' : 'HOW THE SYSTEM WORKS'}</span>
-          </div>
-          <h1 className="text-[34px] sm:text-[84px] font-extrabold leading-[1.1] sm:leading-[0.9] tracking-tight sm:tracking-[-0.05em] text-[#0A0A0A]">
-             {locale === 'tr' ? 'İtibar Yönetiminin' : 'The Future of'}<br/>
-             <span className="text-[#C6F24E]">{locale === 'tr' ? 'Dijital Geleceği' : 'Digital Reputation'}</span>
+      {/* ─── Hero ─── */}
+      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-24 pb-16 sm:pb-20">
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
+          width="100%"
+          height="100%"
+        >
+          <defs>
+            <pattern id="hiwGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#hiwGrid)" />
+        </svg>
+        <div className="relative max-w-[900px] mx-auto text-center">
+          <span className="pulse-eyebrow text-[#737373]">
+            {isTr ? 'Sistem nasıl çalışır' : 'How the system works'}
+          </span>
+          <h1 className="mt-5 text-[40px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+            {isTr ? (
+              <>
+                Üç adım,{' '}
+                <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">üç saniye</span>.
+              </>
+            ) : (
+              <>
+                Three steps,{' '}
+                <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">three seconds</span>.
+              </>
+            )}
           </h1>
-          <p className="text-[16px] sm:text-[22px] text-[#1A1A1A] max-w-[640px] mx-auto leading-relaxed font-bold">
-             {locale === 'tr' 
-               ? 'Karmaşık algoritmaları ve müşteri psikolojisini birleştirdik. İşletmenizi büyütmek için gereken her şeyi 3 basit adıma indirdik.' 
-               : 'We combined complex algorithms with customer psychology. We reduced everything you need to grow your business into 3 simple steps.'}
+          <p className="mt-6 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[560px] mx-auto">
+            {isTr
+              ? 'Karmaşık yazılımı ve müşteri psikolojisini sade bir akışa indirdik. Kurulum beş dakika, sonuç ömür boyu.'
+              : 'We reduced complex software and customer psychology into a simple flow. Five-minute setup, lifetime return.'}
           </p>
         </div>
       </section>
 
-      {/* ─── Detailed Steps (Tactile 3D) ─── */}
-      <section className="py-16 sm:py-40 px-5 sm:px-8 bg-white border-y-[3px] sm:border-y-[4px] border-[#0A0A0A]">
-        <div className="max-w-[1100px] mx-auto space-y-24 sm:space-y-48">
+      {/* ─── Detailed Steps ─── */}
+      <section className="px-6 sm:px-10 pb-24 sm:pb-32">
+        <div className="max-w-[1100px] mx-auto space-y-24 sm:space-y-32">
           {steps.map((step, i) => (
-            <div key={i} className={`flex flex-col ${i % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-12 sm:gap-16 lg:gap-24 relative`}>
-              {/* Step indicator line */}
-              {i < steps.length - 1 && (
-                <div className="absolute left-1/2 bottom-[-160px] hidden lg:block w-[4px] h-[120px] bg-[#FFFFFF] -translate-x-1/2" />
-              )}
-              
-              <div className="w-full lg:flex-1 space-y-6 sm:space-y-8 text-center lg:text-left">
-                <div className="text-[60px] sm:text-[120px] font-black text-[#C6F24E]/15 leading-none absolute -top-8 left-0 lg:-top-10 lg:-left-10 pointer-events-none select-none w-full lg:w-auto">
-                   {step.id}
-                </div>
-                <div className="relative z-10 space-y-4 sm:space-y-6">
-                  <h2 className="text-[28px] sm:text-[52px] font-extrabold leading-[1.1] tracking-tight sm:tracking-[-0.03em] text-[#0A0A0A]">
-                     {step.title}
-                  </h2>
-                  <p className="text-[15px] sm:text-[19px] text-[#1A1A1A] leading-relaxed font-bold">
-                     {step.desc}
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-[400px] mx-auto lg:mx-0">
-                     {[
-                       locale === 'tr' ? 'Anlık Bildirimler' : 'Instant Alerts',
-                       locale === 'tr' ? 'Tam Özelleştirme' : 'Full Customization',
-                       locale === 'tr' ? 'Mobil Yönetim' : 'Mobile Admin',
-                       locale === 'tr' ? 'Google Entegrasyonu' : 'Google Integration'
-                     ].map((item, idx) => (
-                       <div key={idx} className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-lg bg-[#0A0A0A] flex items-center justify-center text-white border-2 border-[#0A0A0A] shadow-md">
-                             <Zap size={12} strokeWidth={2} className="text-[#C6F24E]" />
-                          </div>
-                          <span className="text-[12px] sm:text-[13px] font-black text-[#0A0A0A] uppercase tracking-widest">{item}</span>
-                       </div>
-                     ))}
-                  </div>
+            <div
+              key={i}
+              className={`flex flex-col ${i % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-12 lg:gap-20`}
+            >
+              <div className="w-full lg:flex-1 space-y-5 text-center lg:text-left">
+                <span className="pulse-eyebrow text-[#A8D62E]">
+                  {isTr ? 'ADIM' : 'STEP'} {step.id}
+                </span>
+                <h2 className="text-[32px] sm:text-[44px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
+                  {step.title}
+                </h2>
+                <p className="text-[16px] sm:text-[17px] text-[#525252] leading-[1.6] max-w-[480px] mx-auto lg:mx-0">
+                  {step.desc}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[480px] mx-auto lg:mx-0 pt-2">
+                  {step.perks.map((p) => (
+                    <div key={p} className="flex items-center gap-2.5 text-[14px] text-[#0A0A0A]">
+                      <span className="w-4 h-4 rounded-full bg-[#C6F24E] flex items-center justify-center text-[#0A0A0A] text-[10px] font-bold shrink-0">
+                        ✓
+                      </span>
+                      {p}
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="w-full lg:flex-1 relative">
-                <div className="relative group max-w-[320px] sm:max-w-none mx-auto">
-                  <div className="absolute inset-0 bg-[#C6F24E] rounded-[32px] sm:rounded-[48px] translate-x-4 translate-y-4 sm:translate-x-6 sm:translate-y-6 group-hover:translate-x-6 group-hover:translate-y-6 sm:group-hover:translate-x-8 sm:group-hover:translate-y-8 transition-transform -z-10 border sm:border border-[#0A0A0A]" />
-                  <div className="bg-[#0A0A0A] rounded-[32px] sm:rounded-[48px] border sm:border border-[#0A0A0A] p-10 sm:p-20 flex items-center justify-center aspect-square shadow-[0_20px_50px_-10px_rgba(0,0,0,0.3)] sm:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] transition-all group-hover:-translate-y-2 overflow-hidden">
-                     <div className="text-[#C6F24E] drop-shadow-[0_10px_10px_rgba(198, 242, 78,0.3)] scale-[2] sm:scale-[3.5]">
-                        {step.icon}
-                     </div>
-                     <div className="absolute inset-0 bg-gradient-to-tr from-[#C6F24E]/10 to-transparent pointer-events-none" />
-                  </div>
+              <div className="w-full lg:flex-1 flex justify-center">
+                <div className="bg-[#FAFAFA] border border-[#EDEDED] rounded-3xl p-10 sm:p-14 flex items-center justify-center aspect-square max-w-[380px] w-full">
+                  <step.Ill size={240} className="w-full h-auto max-w-[260px]" />
                 </div>
               </div>
             </div>
@@ -187,44 +214,58 @@ export default async function HowItWorksPage({
         </div>
       </section>
 
-      {/* ─── Features Grid (Premium 3D) ─── */}
-      <section className="py-20 sm:py-40 px-5 sm:px-8 bg-[#0A0A0A] text-white relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_120%,rgba(198, 242, 78,0.15),transparent)] pointer-events-none" />
-        <div className="max-w-[1200px] mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
-            {[
-              { icon: <MessageSquare className="text-[#C6F24E] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2} />, t: locale === 'tr' ? 'Geri Bildirim Yönetimi' : 'Feedback Management', d: locale === 'tr' ? 'Müşteri deneyimini anlık olarak yapılandırılmış veriye dönüştürerek marka itibarınızı profesyonelce korur.' : 'Protects your brand reputation by converting customer experience into real-time structured data.' },
-              { icon: <BarChart3 className="text-[#C6F24E] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2} />, t: locale === 'tr' ? 'Gerçek Zamanlı Analiz' : 'Real-time Analytics', d: locale === 'tr' ? 'Müşteri memnuniyet eğilimlerini anlık grafiklerle izleyin ve aksiyon alın.' : 'Monitor satisfaction trends with live charts and take immediate action.' },
-              { icon: <Zap className="text-[#C6F24E] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2} />, t: locale === 'tr' ? 'Işık Hızında Kurulum' : 'Lightning Setup', d: locale === 'tr' ? 'Karmaşık entegrasyonlar yok. Sisteminiz 5 dakikada geri bildirim toplamaya hazır.' : 'No complex integrations. Your system is ready to collect feedback in 5 minutes.' }
-            ].map((f, i) => (
-              <div key={i} className="p-8 sm:p-10 bg-white/5 rounded-[32px] sm:rounded-[40px] border sm:border border-white/10 hover:border-[#C6F24E]/50 hover:bg-white/10 transition-all group">
-                 <div className="mb-6 w-14 h-14 sm:w-16 sm:h-16 bg-white/5 rounded-2xl flex items-center justify-center border-2 border-white/10 group-hover:scale-110 transition-transform">{f.icon}</div>
-                 <h4 className="text-[20px] sm:text-[22px] font-extrabold mb-4 uppercase tracking-tighter">{f.t}</h4>
-                 <p className="text-[14px] sm:text-[15px] text-[#6B7280] font-bold leading-relaxed">{f.d}</p>
+      {/* ─── Features ─── */}
+      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="mb-12 max-w-[720px]">
+            <span className="pulse-eyebrow text-[#C6F24E]">
+              {isTr ? 'Motor içeride' : 'The engine inside'}
+            </span>
+            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-white">
+              {isTr ? 'Sade görünüyor. Arkasında yazılım.' : 'Looks simple. Backed by software.'}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {features.map((f) => (
+              <div
+                key={f.t}
+                className="p-7 bg-white/5 rounded-2xl border border-white/10"
+              >
+                <div className="mb-5 w-10 h-10 rounded-full bg-[#C6F24E] flex items-center justify-center">
+                  <span className="text-[#0A0A0A] text-[18px]">✦</span>
+                </div>
+                <h3 className="text-[20px] font-medium mb-3 text-white">{f.t}</h3>
+                <p className="text-[14px] text-white/70 leading-[1.6]">{f.d}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── Final CTA Section ─── */}
-      <section className="py-20 sm:py-40 px-5 sm:px-8 bg-[#FFFFFF]">
-        <div className="max-w-[1000px] mx-auto text-center space-y-10 sm:space-y-12">
-          <h2 className="text-[32px] sm:text-[72px] font-extrabold mb-4 sm:mb-8 leading-[1.1] sm:leading-[0.9] tracking-tight sm:tracking-[-0.05em] text-[#0A0A0A]">
-             {locale === 'tr' ? 'Başarı Hikayenizi Yazmaya' : 'Ready to Start Writing'}<br/>
-             <span className="text-[#C6F24E]">{locale === 'tr' ? 'Şimdi Başlayın' : 'Your Success Story?'}</span>
+      {/* ─── Final CTA ─── */}
+      <section className="bg-[#C6F24E] px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[900px] mx-auto text-center">
+          <h2 className="text-[36px] sm:text-[56px] font-medium leading-[1.02] tracking-[-0.04em] text-[#0A0A0A]">
+            {isTr ? 'Başarı hikâyeni bugün başlat.' : 'Start writing your success story today.'}
           </h2>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+          <p className="mt-5 text-[16px] sm:text-[17px] text-[#1A1A1A] max-w-[520px] mx-auto">
+            {isTr ? 'Kurulum 2 dakika. Kart bilgisi istemiyoruz. İlk 14 gün ücretsiz.' : '2-minute setup. No card required. First 14 days free.'}
+          </p>
+          <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
             <Link
               href={`${base}/auth/register`}
-              className="w-full sm:w-auto group inline-flex items-center justify-center gap-3 px-10 sm:px-12 py-5 sm:py-6 bg-[#0A0A0A] text-white text-[17px] sm:text-[18px] font-black rounded-[20px] sm:rounded-[24px] border sm:border border-[#0A0A0A] shadow-sm sm:shadow-sm hover:bg-[#0A0A0A] transition-all active:translate-y-[6px] sm:active:translate-y-[10px] active:shadow-none uppercase tracking-widest"
+              className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
             >
-              {locale === 'tr' ? 'HEMEN BAŞLA' : 'GET STARTED'} <ArrowRight className="group-hover:translate-x-2 transition-transform" strokeWidth={2} />
+              {isTr ? 'Hemen başla' : 'Get started'}
+              <span aria-hidden>→</span>
+            </Link>
+            <Link
+              href={`${base}/pricing`}
+              className="inline-flex items-center justify-center gap-2 border-2 border-[#0A0A0A] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
+            >
+              {isTr ? 'Planları incele' : 'Browse plans'}
             </Link>
           </div>
-          <p className="text-[11px] sm:text-[12px] font-black text-[#6B7280] uppercase tracking-[0.2em] leading-relaxed">
-            {locale === 'tr' ? 'KREDİ KARTI GEREKMEZ • 14 GÜN ÜCRETSİZ ERİŞİM' : 'NO CREDIT CARD REQUIRED • 14 DAYS FREE ACCESS'}
-          </p>
         </div>
       </section>
 

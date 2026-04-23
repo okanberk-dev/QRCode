@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { Send, Loader2, Check, X } from 'lucide-react';
 
 interface ContactFormProps {
   t: {
@@ -21,7 +21,6 @@ interface ContactFormProps {
   locale: string;
 }
 
-// Minimum human fill time — bots typically submit in milliseconds.
 const MIN_FILL_MS = 2500;
 
 export default function ContactForm({ t, locale }: ContactFormProps) {
@@ -31,8 +30,8 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
   const [kvkkChecked, setKvkkChecked] = useState(false);
   const [modal, setModal] = useState<'kvkk' | 'marketing' | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  // Captures form mount time so we can detect robotic instant-submits on submit.
   const renderedAtRef = useRef<number>(Date.now());
+  const isTr = locale !== 'en';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,12 +39,10 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
     setError('');
 
     const formData = new FormData(e.target as HTMLFormElement);
-    // Honeypot — real users can't reach this field; bots typically fill it.
     const honeypot = (formData.get('website') as string) || '';
     const elapsed = Date.now() - renderedAtRef.current;
 
     if (honeypot.trim() !== '' || elapsed < MIN_FILL_MS) {
-      // Pretend success to avoid giving bots signal that their fill failed.
       setSent(true);
       setLoading(false);
       if (formRef.current) formRef.current.reset();
@@ -75,40 +72,43 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
         setSent(true);
         if (formRef.current) formRef.current.reset();
       } else {
-        setError(responseData.error || 'Bir hata oluştu, lütfen tekrar deneyin.');
+        setError(responseData.error || (isTr ? 'Bir hata oluştu, lütfen tekrar deneyin.' : 'Something went wrong, please try again.'));
       }
-    } catch (err: unknown) {
-      setError('Bağlantı hatası. Lütfen tekrar deneyin.');
+    } catch {
+      setError(isTr ? 'Bağlantı hatası. Lütfen tekrar deneyin.' : 'Connection error. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const inputClass = "w-full px-5 py-4 bg-[#FFFFFF] rounded-xl border-2 border-[#0A0A0A] focus:border-[#C6F24E] focus:ring-4 focus:ring-[#C6F24E]/10 focus:bg-white outline-none transition-all text-[15px] text-[#0A0A0A] font-bold placeholder-[#6B7280] shadow-sm focus:shadow-none focus:translate-y-[2px]";
-  const labelClass = "block text-[11px] font-black uppercase tracking-[0.18em] text-[#0A0A0A] mb-2 ml-1";
+  const inputClass =
+    'w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]';
+  const labelClass = 'pulse-eyebrow text-[#737373] ml-1 mb-2 block';
 
   return (
-    <div className="bg-white rounded-[32px] border border-[#0A0A0A] p-8 sm:p-12 shadow-md">
+    <div className="bg-white rounded-3xl p-8 sm:p-10">
       {sent ? (
-        <div className="py-16 text-center space-y-6">
-          <div className="w-20 h-20 bg-[#C6F24E]/10 rounded-3xl border-2 border-[#C6F24E]/30 flex items-center justify-center mx-auto shadow-md">
-            <CheckCircle2 size={40} className="text-[#C6F24E]" />
+        <div className="py-14 text-center space-y-5">
+          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+            <Check size={26} strokeWidth={2.5} />
           </div>
-          <div className="space-y-3">
-            <h3 className="text-[24px] font-extrabold text-[#0A0A0A] tracking-tighter">{t.contact_success_title}</h3>
-            <p className="text-[15px] font-bold text-[#1A1A1A] max-w-sm mx-auto">{t.contact_success_desc}</p>
+          <div className="space-y-2">
+            <h3 className="text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em]">
+              {t.contact_success_title}
+            </h3>
+            <p className="text-[14px] text-[#525252] max-w-sm mx-auto leading-relaxed">
+              {t.contact_success_desc}
+            </p>
           </div>
           <button
             onClick={() => setSent(false)}
-            className="text-[14px] font-black text-[#C6F24E] hover:text-[#0A0A0A] underline decoration-2 underline-offset-8 transition-colors"
+            className="pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
           >
             {t.contact_success_again}
           </button>
         </div>
       ) : (
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-7">
-          {/* Honeypot — hidden from humans (keyboard, screen readers, visual). Bots parsing
-              the DOM may fill this and will be silently rejected. */}
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
           <div
             aria-hidden="true"
             style={{
@@ -122,25 +122,20 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
             }}
           >
             <label htmlFor="contact-website">Website</label>
-            <input
-              id="contact-website"
-              name="website"
-              type="text"
-              tabIndex={-1}
-              autoComplete="off"
-              defaultValue=""
-            />
+            <input id="contact-website" name="website" type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
           </div>
 
           {error && (
-            <div className="bg-red-50 text-red-600 border-2 border-red-500/20 px-5 py-4 rounded-xl text-[14px] font-bold shadow-md">
+            <div className="bg-[#FEF2F2] text-[#B91C1C] px-4 py-3 rounded-xl text-[13px] font-medium border border-[#FECACA]">
               {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>{t.contact_form_name}</label>
+              <label htmlFor="contact-name" className={labelClass}>
+                {t.contact_form_name}
+              </label>
               <input
                 required
                 name="name"
@@ -151,7 +146,9 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
               />
             </div>
             <div>
-              <label className={labelClass}>{t.contact_form_email}</label>
+              <label htmlFor="contact-email" className={labelClass}>
+                {t.contact_form_email}
+              </label>
               <input
                 required
                 name="email"
@@ -163,9 +160,11 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>{t.contact_form_business}</label>
+              <label htmlFor="contact-business" className={labelClass}>
+                {t.contact_form_business}
+              </label>
               <input
                 type="text"
                 name="business"
@@ -175,7 +174,9 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
               />
             </div>
             <div>
-              <label className={labelClass}>TELEFON NUMARASI / PHONE</label>
+              <label htmlFor="contact-phone" className={labelClass}>
+                {isTr ? 'TELEFON' : 'PHONE'}
+              </label>
               <input
                 type="tel"
                 name="phone"
@@ -187,7 +188,9 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
           </div>
 
           <div>
-            <label className={labelClass}>{t.contact_form_message}</label>
+            <label htmlFor="contact-message" className={labelClass}>
+              {t.contact_form_message}
+            </label>
             <textarea
               required
               name="message"
@@ -198,42 +201,91 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
             />
           </div>
 
-          <div className="space-y-4 pt-3">
-            <div 
+          <div className="space-y-3 pt-2">
+            <div
               onClick={() => setKvkkChecked(!kvkkChecked)}
-              className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
-                kvkkChecked 
-                  ? 'bg-[#C6F24E]/10 border-[#C6F24E]/20 shadow-sm' 
-                  : 'bg-white border-[#0A0A0A]/5 hover:border-[#0A0A0A]/10'
+              className={`flex items-start gap-3 p-4 rounded-2xl border transition-colors cursor-pointer ${
+                kvkkChecked ? 'bg-[#EAF9B8] border-[#C6F24E]' : 'bg-white border-[#EDEDED] hover:border-[#D4D4D4]'
               }`}
             >
-              <div className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all border-2 ${
-                kvkkChecked ? 'bg-[#0A0A0A] border-[#0A0A0A]' : 'bg-white border-[#0A0A0A]'
-              }`}>
-                {kvkkChecked && <CheckCircle2 size={14} className="text-white" strokeWidth={4} />}
+              <div
+                className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+                  kvkkChecked ? 'bg-[#0A0A0A]' : 'bg-white border border-[#D4D4D4]'
+                }`}
+              >
+                {kvkkChecked && <Check size={12} className="text-[#C6F24E]" strokeWidth={3.5} />}
               </div>
-              <div className="flex-1">
-                <label htmlFor="contact-kvkk" className="text-[12px] font-bold text-[#1A1A1A] leading-tight cursor-pointer select-none">
-                  {locale === 'en' ? (
-                    <>I have read and <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); setModal('kvkk'); }} className="text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:bg-[#C6F24E]/10 transition-colors">accept</span> the processing of my personal data under the Privacy Policy.</>
-                  ) : (
-                    <><span onClick={(e) => { e.preventDefault(); e.stopPropagation(); setModal('kvkk'); }} className="text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:bg-[#C6F24E]/10 transition-colors">KVKK ve Gizlilik Politikası</span> kapsamında kişisel verilerimin işlenmesini okudum ve kabul ediyorum.</>
-                  )}
-                </label>
-              </div>
+              <input type="checkbox" name="kvkk" checked={kvkkChecked} onChange={() => {}} className="sr-only" />
+              <label htmlFor="contact-kvkk" className="text-[12px] font-medium text-[#0A0A0A] leading-relaxed cursor-pointer select-none flex-1">
+                {isTr ? (
+                  <>
+                    <span
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setModal('kvkk');
+                      }}
+                      className="text-[#0A0A0A] underline decoration-[#0A0A0A]/30 decoration-1 underline-offset-4 hover:decoration-[#0A0A0A]"
+                    >
+                      KVKK ve Gizlilik Politikası
+                    </span>{' '}
+                    kapsamında kişisel verilerimin işlenmesini okudum ve kabul ediyorum.
+                  </>
+                ) : (
+                  <>
+                    I have read and{' '}
+                    <span
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setModal('kvkk');
+                      }}
+                      className="text-[#0A0A0A] underline decoration-[#0A0A0A]/30 decoration-1 underline-offset-4 hover:decoration-[#0A0A0A]"
+                    >
+                      accept
+                    </span>{' '}
+                    the processing of my personal data under the Privacy Policy.
+                  </>
+                )}
+              </label>
             </div>
-            <div className="flex items-start gap-4 px-4">
+
+            <div className="flex items-start gap-3 px-2">
               <input
                 type="checkbox"
                 name="marketing"
                 id="contact-marketing"
-                className="mt-1 w-5 h-5 rounded border-2 border-[#0A0A0A] text-[#0A0A0A] focus:ring-[#C6F24E] accent-[#C6F24E] cursor-pointer"
+                className="mt-1 w-4 h-4 rounded border border-[#D4D4D4] focus:ring-2 focus:ring-[#C6F24E] accent-[#0A0A0A] cursor-pointer"
               />
-              <label htmlFor="contact-marketing" className="text-[12px] font-bold text-[#6B7280] leading-tight cursor-pointer">
-                {locale === 'en' ? (
-                  <>I agree to receive <span onClick={(e) => { e.preventDefault(); setModal('marketing'); }} className="text-[#0A0A0A] underline decoration-2 underline-offset-4 hover:bg-[#C6F24E]/10 transition-colors">commercial electronic messages</span> regarding campaigns, announcements, and updates.</>
+              <label htmlFor="contact-marketing" className="text-[12px] text-[#525252] leading-relaxed cursor-pointer">
+                {isTr ? (
+                  <>
+                    Kampanya, duyuru ve yenilikler hakkında{' '}
+                    <span
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setModal('marketing');
+                      }}
+                      className="text-[#0A0A0A] underline decoration-[#0A0A0A]/30 decoration-1 underline-offset-4 hover:decoration-[#0A0A0A]"
+                    >
+                      ticari elektronik ileti
+                    </span>{' '}
+                    almayı kabul ediyorum.
+                  </>
                 ) : (
-                  <>Kampanya, duyuru ve yenilikler hakkında <span onClick={(e) => { e.preventDefault(); setModal('marketing'); }} className="text-[#0A0A0A] underline decoration-2 underline-offset-4 hover:bg-[#C6F24E]/10 transition-colors">ticari elektronik ileti</span> almayı kabul ediyorum.</>
+                  <>
+                    I agree to receive{' '}
+                    <span
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setModal('marketing');
+                      }}
+                      className="text-[#0A0A0A] underline decoration-[#0A0A0A]/30 decoration-1 underline-offset-4 hover:decoration-[#0A0A0A]"
+                    >
+                      commercial electronic messages
+                    </span>{' '}
+                    regarding campaigns, announcements, and updates.
+                  </>
                 )}
               </label>
             </div>
@@ -243,11 +295,11 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
             type="submit"
             id="contact-submit-btn"
             disabled={loading || !kvkkChecked}
-            className={`w-full py-5 bg-[#C6F24E] text-[#0A0A0A] font-black text-[16px] uppercase tracking-[0.1em] rounded-2xl border border-[#0A0A0A] flex items-center justify-center gap-3 transition-all ${
-              !kvkkChecked ? 'opacity-40 cursor-not-allowed grayscale' : 'shadow-sm hover:bg-[#C6F24E] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none'
+            className={`w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium text-[14px] py-3.5 rounded-full transition-colors ${
+              !kvkkChecked || loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#1A1A1A]'
             }`}
           >
-            {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <Send size={20} strokeWidth={2} />}
+            {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : <Send size={16} strokeWidth={2} />}
             {t.contact_form_submit}
           </button>
         </form>
@@ -256,69 +308,103 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
       {/* MODALS */}
       {modal && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-6 bg-[#0A0A0A]/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#FFFFFF] rounded-[40px] w-full max-w-2xl overflow-hidden shadow-2xl border border-[#0A0A0A] animate-in zoom-in-95 duration-300">
-            <div className="p-8 border-b-3 border-[#0A0A0A] flex items-center justify-between bg-white border-b-[3px]">
-              <div className="flex items-center gap-4">
-                 <div className="p-3 bg-[#C6F24E]/10 rounded-2xl text-[#0A0A0A]">
-                    <CheckCircle2 size={24} />
-                 </div>
-                 <h3 className="text-xl font-extrabold text-[#0A0A0A] tracking-tighter uppercase">
-                   {modal === 'kvkk' 
-                     ? (locale === 'en' ? 'Privacy Policy & Terms' : 'KVKK Aydınlatma Metni') 
-                     : (locale === 'en' ? 'Commercial Electronic Message Consent' : 'Ticari Elektronik İleti Onayı')}
-                 </h3>
-              </div>
-              <button 
+          <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-[0_20px_60px_rgba(10,10,10,0.25)] border border-[#EDEDED] animate-in zoom-in-95 duration-300">
+            <div className="p-6 border-b border-[#EDEDED] flex items-center justify-between">
+              <h3 className="text-[16px] font-medium text-[#0A0A0A] tracking-[-0.01em]">
+                {modal === 'kvkk'
+                  ? isTr
+                    ? 'KVKK Aydınlatma Metni'
+                    : 'Privacy Policy & Terms'
+                  : isTr
+                  ? 'Ticari Elektronik İleti Onayı'
+                  : 'Commercial Electronic Message Consent'}
+              </h3>
+              <button
                 onClick={() => setModal(null)}
-                className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#FFFFFF] border-2 border-[#0A0A0A] hover:bg-white text-[#0A0A0A] transition-all shadow-md active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[#FAFAFA] text-[#737373] hover:text-[#0A0A0A] transition-colors"
+                aria-label="Close"
               >
-                <span className="text-2xl font-black">×</span>
+                <X size={20} strokeWidth={2} />
               </button>
             </div>
-            <div className="p-10 max-h-[60vh] overflow-y-auto no-scrollbar bg-white">
-              <div className="text-[15px] font-bold text-[#1A1A1A] space-y-6 leading-relaxed">
-                {modal === 'kvkk' && (
-                  locale === 'en' ? (
+            <div className="p-7 max-h-[55vh] overflow-y-auto">
+              <div className="text-[13px] text-[#525252] space-y-4 leading-[1.65]">
+                {modal === 'kvkk' &&
+                  (isTr ? (
                     <>
-                      <p><strong>1. Data Controller:</strong> As Buaze (hereinafter referred to as the "Company"), we process your personal data in our capacity as the data controller in accordance with applicable data protection laws, including the GDPR and KVKK.</p>
-                      <p><strong>2. Processed Personal Data and Purposes:</strong> Data you provide via our contact forms (such as your name, email, phone number, and message content) is processed strictly for the purposes of evaluating your requests, getting in touch with you, providing necessary support services, and managing our service processes.</p>
-                      <p><strong>3. Method and Legal Basis for Data Collection:</strong> Your personal data is collected electronically via our website. This data is processed based on the legal grounds that "processing is necessary for the legitimate interests pursued by the controller" provided that it does not harm the fundamental rights and freedoms of the data subject, and "processing is directly related to the establishment or performance of a contract".</p>
-                      <p><strong>4. Transfer of Personal Data:</strong> Your processed personal data may be transferred to authorized public institutions to fulfill legal obligations, and securely to infrastructure/server providers (e.g., data hosting services) we utilize to fulfill our contractual obligations.</p>
-                      <p><strong>5. Your Rights:</strong> By applying to the data controller, you have the right to learn whether your personal data is being processed, request information if it has been processed, learn the purpose of the processing, know the third parties to whom it was transferred, request correction of incomplete/incorrect data, and request its deletion.</p>
+                      <p>
+                        <strong className="text-[#0A0A0A] font-medium">1. Veri Sorumlusunun Kimliği:</strong> Buaze
+                        olarak (bundan böyle "Şirket" olarak anılacaktır), 6698 sayılı Kişisel Verilerin Korunması
+                        Kanunu ("KVKK") uyarınca veri sorumlusu sıfatıyla kişisel verilerinizi işlemekteyiz.
+                      </p>
+                      <p>
+                        <strong className="text-[#0A0A0A] font-medium">2. İşlenen Kişisel Verileriniz ve İşlenme Amaçları:</strong>{' '}
+                        Ad soyad, e-posta, telefon numarası ve mesaj içeriği gibi bize iletişim formu aracılığıyla ilettiğiniz verileriniz; taleplerinizin değerlendirilmesi, sizinle iletişime geçilmesi, gerekli destek hizmetinin sağlanması ve hizmet süreçlerimizin yürütülmesi amaçlarıyla sınırlı olarak işlenmektedir.
+                      </p>
+                      <p>
+                        <strong className="text-[#0A0A0A] font-medium">3. Kişisel Veri Toplamanın Yöntemi ve Hukuki Sebebi:</strong>{' '}
+                        Kişisel verileriniz, web sitemizde yer alan Formlar aracılığıyla elektronik ortamda toplanmaktadır. Bu veriler KVKK madde 5/2 uyarınca meşru menfaat ve sözleşmenin kurulması hukuki sebeplerine dayanılarak işlenmektedir.
+                      </p>
+                      <p>
+                        <strong className="text-[#0A0A0A] font-medium">4. Kişisel Verilerin Aktarımı:</strong> İşlenen kişisel verileriniz, yasal yükümlülüklerin yerine getirilmesi amacıyla yetkili kamu kurum ve kuruluşları ile sözleşmesel yükümlülüklerimizin ifası için hizmet aldığımız altyapı/sunucu sağlayıcılarına KVKK md. 8 ve 9 çerçevesinde aktarılabilecektir.
+                      </p>
+                      <p>
+                        <strong className="text-[#0A0A0A] font-medium">5. Haklarınız:</strong> KVKK madde 11 uyarınca, veri sorumlusuna başvurarak kişisel verilerinizin işlenip işlenmediğini öğrenme, bilgi talep etme, düzeltilmesini veya silinmesini isteme hakkına sahipsiniz.
+                      </p>
                     </>
                   ) : (
                     <>
-                      <p><strong>1. Veri Sorumlusunun Kimliği:</strong> Buaze olarak (bundan böyle “Şirket” olarak anılacaktır), 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) uyarınca veri sorumlusu sıfatıyla kişisel verilerinizi işlemekteyiz.</p>
-                      <p><strong>2. İşlenen Kişisel Verileriniz ve İşlenme Amaçları:</strong> Ad soyad, e-posta, telefon numarası ve mesaj içeriği gibi bize iletişim formu aracılığıyla ilettiğiniz verileriniz; taleplerinizin değerlendirilmesi, sizinle iletişime geçilmesi, gerekli destek hizmetinin sağlanması ve hizmet süreçlerimizin yürütülmesi amaçlarıyla sınırlı olarak işlenmektedir.</p>
-                      <p><strong>3. Kişisel Veri Toplamanın Yöntemi ve Hukuki Sebebi:</strong> Kişisel verileriniz, web sitemizde yer alan Formlar aracılığıyla elektronik ortamda toplanmaktadır. Bu veriler KVKK madde 5/2 uyarınca "ilgili kişinin temel hak ve özgürlüklerine zarar vermemek kaydıyla, veri sorumlusunun meşru menfaatleri için veri işlenmesinin zorunlu olması" ve "bir sözleşmenin kurulması veya ifasıyla doğrudan doğruya ilgili olması" hukuki sebeplerine dayanılarak işlenmektedir.</p>
-                      <p><strong>4. Kişisel Verilerin Aktarımı:</strong> İşlenen kişisel verileriniz, yasal yükümlülüklerin yerine getirilmesi amacıyla yetkili kamu kurum ve kuruluşları ile sözleşmesel yükümlülüklerimizin ifası için hizmet aldığımız altyapı/sunucu sağlayıcılarına (örnek: veri barındırma hizmetleri) KVKK md. 8 ve 9 çerçevesinde aktarılabilecektir.</p>
-                      <p><strong>5. Haklarınız:</strong> KVKK madde 11 uyarınca, veri sorumlusuna başvurarak kişisel verilerinizin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme, işlenme amacına uygun kullanılıp kullanılmadığını öğrenme, aktarıldığı 3. kişileri bilme, eksik/yanlış düzeltilmesini isteme, silinmesini isteme hakkına sahipsiniz.</p>
+                      <p>
+                        <strong className="text-[#0A0A0A] font-medium">1. Data Controller:</strong> As Buaze (hereinafter the "Company"), we process your personal data in our capacity as the data controller in accordance with applicable data protection laws, including GDPR and KVKK.
+                      </p>
+                      <p>
+                        <strong className="text-[#0A0A0A] font-medium">2. Processed Personal Data and Purposes:</strong> Data you provide via our contact forms (name, email, phone, message content) is processed strictly for evaluating your requests, getting in touch, providing support services, and managing our service processes.
+                      </p>
+                      <p>
+                        <strong className="text-[#0A0A0A] font-medium">3. Method and Legal Basis:</strong> Your personal data is collected electronically via our website, based on legitimate interest and contract performance legal grounds.
+                      </p>
+                      <p>
+                        <strong className="text-[#0A0A0A] font-medium">4. Transfer of Personal Data:</strong> Your processed personal data may be transferred to authorized public institutions to fulfill legal obligations, and securely to infrastructure providers used to fulfill our contractual obligations.
+                      </p>
+                      <p>
+                        <strong className="text-[#0A0A0A] font-medium">5. Your Rights:</strong> You have the right to learn whether your personal data is being processed, request information, correction, and deletion by applying to the data controller.
+                      </p>
                     </>
-                  )
-                )}
-                {modal === 'marketing' && (
-                  locale === 'en' ? (
+                  ))}
+                {modal === 'marketing' &&
+                  (isTr ? (
                     <>
-                      <p>In accordance with applicable laws, you hereby give your consent for our Company (Buaze) to send commercial electronic messages via methods such as SMS, email, or direct calling to the contact address you have provided through the contact form, in order to inform you about campaigns, promotions, announcements, and new features related to our products and services.</p>
-                      <p>Your contact information will be processed strictly for this purpose and utilized exclusively in marketing or promotional activities. You consent in advance to its transfer to reliable business partners we collaborate with for infrastructure, technical support, and message delivery processes (solely for the purpose of sending newsletters and announcements).</p>
-                      <p>You can revoke this consent and stop the messages entirely free of charge at any time without giving any reason. You can exercise your opt-out right by clicking the "Unsubscribe" link at the bottom of the emails sent to you or by contacting us directly.</p>
+                      <p>
+                        Bize iletişim formu üzerinden sağlamış olduğunuz iletişim adresinize, 6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun uyarınca Şirketimiz (Buaze) tarafından sunulan ürün ve hizmetlerle ilgili kampanyalar, promosyonlar, duyurular ve yeni özellikler hakkında bilgilendirme yapılması amacıyla SMS, e-posta veya arama gibi yöntemlerle ticari elektronik ileti gönderilmesine onay vermektesiniz.
+                      </p>
+                      <p>
+                        İletişim bilgileriniz sadece bu amaca yönelik olarak işlenecek ve pazarlama veya tanıtım faaliyetlerinde kullanılacaktır.
+                      </p>
+                      <p>
+                        Bu onayı istediğiniz zaman hiçbir gerekçe göstermeksizin iptal edebilir ve iletilerin size gönderilmesini ücretsiz olarak durdurabilirsiniz.
+                      </p>
                     </>
                   ) : (
                     <>
-                      <p>Bize iletişim formu üzerinden sağlamış olduğunuz iletişim adresinize, 6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun uyarınca Şirketimiz (Buaze) tarafından sunulan ürün ve hizmetlerle ilgili kampanyalar, promosyonlar, duyurular ve yeni özellikler hakkında bilgilendirme yapılması amacıyla SMS, e-posta veya arama gibi yöntemlerle ticari elektronik ileti gönderilmesine onay vermektesiniz.</p>
-                      <p>İletişim bilgileriniz sadece bu amaca yönelik olarak işlenecek ve pazarlama veya tanıtım faaliyetlerinde kullanılacaktır. Altyapı, teknik destek ve ileti gönderimi süreçlerinde iş birliği yaptığımız güvenilir iş ortaklarına aktarılmasına (salt bülten ve duyuru gönderme amacıyla) peşinen muvafakat ediyorsunuz.</p>
-                      <p>Bu onayı istediğiniz zaman hiçbir gerekçe göstermeksizin iptal edebilir ve iletilerin size gönderilmesini ücretsiz olarak durdurabilirsiniz. Reddetme hakkınızı size gönderilen e-postaların altındaki "Abonelikten Çık" (Unsubscribe) linkine tıklayarak veya doğrudan tarafımıza ulaşarak kullanabilirsiniz.</p>
+                      <p>
+                        You hereby give your consent for Buaze to send commercial electronic messages via SMS, email, or direct calling to the contact address you provided, in order to inform you about campaigns, promotions, announcements, and new features.
+                      </p>
+                      <p>
+                        Your contact information will be processed strictly for this purpose and utilized exclusively in marketing activities.
+                      </p>
+                      <p>
+                        You can revoke this consent and stop the messages entirely free of charge at any time by clicking the "Unsubscribe" link in our emails or contacting us directly.
+                      </p>
                     </>
-                  )
-                )}
+                  ))}
               </div>
             </div>
-            <div className="p-8 bg-[#FFFFFF] border-t-[3px] border-[#0A0A0A] flex justify-end">
-              <button 
+            <div className="p-6 border-t border-[#EDEDED] flex justify-end">
+              <button
                 onClick={() => setModal(null)}
-                className="w-full py-5 bg-[#0A0A0A] text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] hover:bg-black transition-all shadow-md active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                className="w-full py-3.5 bg-[#0A0A0A] text-white rounded-full font-medium text-[14px] hover:bg-[#1A1A1A] transition-colors"
               >
-                {locale === 'en' ? 'I UNDERSTAND' : 'ANLADIM'}
+                {isTr ? 'Anladım' : 'I understand'}
               </button>
             </div>
           </div>
