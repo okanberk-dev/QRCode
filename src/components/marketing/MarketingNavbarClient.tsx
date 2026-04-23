@@ -3,7 +3,7 @@
 import {
   Menu, X, Globe, ChevronDown, Utensils, BedDouble, HeartPulse, BookOpen,
   Stethoscope, Sparkles, PawPrint, Home, Car, Scissors, Dumbbell, Scale, GraduationCap, Bed, Layers,
-  Zap, TrendingUp
+  Zap, TrendingUp, QrCode
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useTransition, useRef, useEffect } from 'react';
@@ -293,6 +293,24 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
                 </Link>
 
                 <Link
+                  href={`${base}/solutions/qr-generator`}
+                  onClick={() => setLearnOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <QrCode size={15} />
+                  </div>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-[14px] font-medium text-[#0A0A0A]">
+                      {locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}
+                    </span>
+                    <span className="pulse-eyebrow bg-[#C6F24E] text-[#0A0A0A] px-1.5 py-0.5 rounded">
+                      {locale === 'tr' ? 'YENİ' : 'NEW'}
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
                   href={`${base}/customer-stories`}
                   onClick={() => setLearnOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
@@ -400,15 +418,6 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             </div>
           </div>
 
-          <Link
-            href={`${base}/solutions/qr-generator`}
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
-          >
-            {locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}
-            <span className="pulse-eyebrow bg-[#EAF9B8] text-[#0A0A0A] px-1.5 py-0.5 rounded">
-              {locale === 'tr' ? 'YENİ' : 'NEW'}
-            </span>
-          </Link>
           <Link href={`${base}/pricing`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_pricing}</Link>
           <Link href={`${base}/about`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_about}</Link>
           <Link href={`${base}/contact`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_contact}</Link>
@@ -493,7 +502,17 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             {mobileLearnOpen && (
               <div className="pl-3 space-y-0.5 pb-1">
                 <Link
-                  href={`${base}/#how-it-works`}
+                  href={`${base}/features`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <Zap size={15} />
+                  </div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Özellikler' : 'Features'}</div>
+                </Link>
+                <Link
+                  href={`${base}/how-it-works`}
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
                 >
@@ -501,6 +520,33 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
                     <Utensils size={15} />
                   </div>
                   <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_features}</div>
+                </Link>
+                <Link
+                  href={`${base}/solutions/qr-generator`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <QrCode size={15} />
+                  </div>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-[14px] font-medium text-[#0A0A0A]">
+                      {locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}
+                    </span>
+                    <span className="pulse-eyebrow bg-[#C6F24E] text-[#0A0A0A] px-1.5 py-0.5 rounded">
+                      {locale === 'tr' ? 'YENİ' : 'NEW'}
+                    </span>
+                  </div>
+                </Link>
+                <Link
+                  href={`${base}/customer-stories`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <TrendingUp size={15} />
+                  </div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Başarı Hikayeleri' : 'Customer Stories'}</div>
                 </Link>
                 <Link
                   href={`${base}/blog`}
@@ -572,16 +618,6 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
               </div>
             )}
 
-            <Link
-              href={`${base}/solutions/qr-generator`}
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
-            >
-              {locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}
-              <span className="pulse-eyebrow bg-[#EAF9B8] text-[#0A0A0A] px-1.5 py-0.5 rounded">
-                {locale === 'tr' ? 'YENİ' : 'NEW'}
-              </span>
-            </Link>
             <Link href={`${base}/about`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_about}</Link>
             <Link href={`${base}/pricing`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_pricing}</Link>
             <Link href={`${base}/contact`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_contact}</Link>
