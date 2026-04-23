@@ -476,7 +476,26 @@ export default async function LandingPage({
                 : 'Google, Tripadvisor, Yemeksepeti, Getir — reviews from every platform meet inside Buaze. Spot the negative first and resolve it before it grows.'}
             </p>
 
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Platform logos row — review + delivery platforms that Buaze pulls into the inbox */}
+            <div className="mt-6">
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'DESTEKLENEN PLATFORMLAR' : 'SUPPORTED PLATFORMS'}
+              </span>
+              <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                {(['google', 'tripadvisor', 'yemeksepeti', 'getir-yemek', 'trendyol-go', 'migros-hemen'] as const).map(
+                  (id) => (
+                    <div
+                      key={id}
+                      className="rounded-xl bg-white/5 border border-white/10 p-1.5 backdrop-blur"
+                    >
+                      <PlatformLogo id={id} size={32} rounded={8} />
+                    </div>
+                  ),
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {darkFeatures.map((f) => (
                 <div key={f.t} className="flex items-start gap-3">
                   <span className="mt-0.5 w-6 h-6 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[12px] font-bold shrink-0">

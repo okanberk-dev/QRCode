@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Loader2, Search, Flag, UserPlus, Sparkles, RotateCw, Pencil, Send, Plus, Inbox } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { buildReplyTemplate } from '@/lib/scaffolding';
 
 // Feedback shape returned by /api/feedback (subset of what we use)
 interface FeedbackRow {
@@ -126,19 +127,104 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     ? { service: 'Servis', food: 'Yemek', price: 'Fiyat', atmosphere: 'Atmosfer' }
     : { service: 'Service', food: 'Food', price: 'Price', atmosphere: 'Atmosphere' };
 
-  const aiSuggestion = active
-    ? isTr
-      ? `Merhaba ${customerName.split(' ')[0]}, değerli geri bildiriminiz için teşekkür ederiz. ${
-          active.rating >= 4
-            ? 'Deneyiminizden memnun kalmanıza çok sevindik, ekibimize ileteceğiz. Yeniden ağırlamak için sabırsızlanıyoruz.'
-            : 'Yaşadıklarınız için özür dileriz — değerli yorumunuzu işletme yönetimine doğrudan ileteceğiz. Sizi tekrar ağırlamak ve bu deneyimi düzeltmek için fırsat verirseniz memnun oluruz.'
-        }`
-      : `Hi ${customerName.split(' ')[0]}, thank you for taking the time to share your experience. ${
-          active.rating >= 4
-            ? "We're thrilled you enjoyed your visit and we will pass this on to the team. Looking forward to seeing you again."
-            : "We're sorry your experience fell short — we're forwarding your note directly to management. We would love a chance to make this right on your next visit."
-        }`
-    : '';
+  // Draft suggestion generated locally until the AI backend is wired
+  // (src/app/api/feedback/[id]/suggest-reply/route.ts currently returns
+  // a deterministic template via buildReplyTemplate).
+  const [aiSuggestion, setAiSuggestion] = useState('');
+  const [aiRegenerating, setAiRegenerating] = useState(false);
+
+  useEffect(() => {
+    if (!active) return setAiSuggestion('');
+    // Optimistic local draft
+    setAiSuggestion(
+      buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }),
+    );
+    // Ask the (scaffolded) server for a richer reply — falls back silently
+    (async () => {
+      try {
+        const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            locale,
+            rating: active.rating,
+            name: active.customerName,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data?.suggestion === 'string') setAiSuggestion(data.suggestion);
+        }
+      } catch {
+        /* keep local template */
+      }
+    })();
+  }, [active, locale]);
+
+  const regenerateAi = async () => {
+    if (!active) return;
+    setAiRegenerating(true);
+    try {
+      const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          locale,
+          rating: active.rating,
+          name: active.customerName,
+          variant: Math.random().toString(36).slice(2, 8),
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (typeof data?.suggestion === 'string') setAiSuggestion(data.suggestion);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setAiRegenerating(false);
+    }
+  };
+
+  const sendReply = async () => {
+    if (!active || !replyDraft.trim()) return;
+    try {
+      await fetch(`/api/feedback/${active.id}/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: replyDraft, channel: 'internal' }),
+      });
+    } catch {
+      /* non-blocking — backend scaffolded, user will wire */
+    }
+    setReplyDraft('');
+  };
+
+  const flagFeedback = async () => {
+    if (!active) return;
+    try {
+      await fetch(`/api/feedback/${active.id}/flag`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'manual' }),
+      });
+    } catch {
+      /* non-blocking */
+    }
+  };
+
+  const assignFeedback = async () => {
+    if (!active) return;
+    try {
+      await fetch(`/api/feedback/${active.id}/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigneeId: null }),
+      });
+    } catch {
+      /* non-blocking */
+    }
+  };
 
   return (
     <div className="flex h-[calc(100vh-140px)] flex-col lg:flex-row" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -312,6 +398,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               <div className="flex shrink-0 gap-1.5">
                 <button
                   type="button"
+                  onClick={flagFeedback}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] px-2.5 py-1.5 text-[11px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors"
                   title={isTr ? 'Bayrakla işaretle' : 'Flag'}
                 >
@@ -320,6 +407,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 </button>
                 <button
                   type="button"
+                  onClick={assignFeedback}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] px-2.5 py-1.5 text-[11px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors"
                   title={isTr ? 'Ekibe ata' : 'Assign'}
                 >
@@ -377,9 +465,11 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 </button>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-4 py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors"
+                  onClick={regenerateAi}
+                  disabled={aiRegenerating}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-4 py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50"
                 >
-                  <RotateCw size={12} strokeWidth={2} />
+                  <RotateCw size={12} strokeWidth={2} className={aiRegenerating ? 'animate-spin' : ''} />
                   {isTr ? 'Yeniden öner' : 'Regenerate'}
                 </button>
                 <button
@@ -417,6 +507,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 </div>
                 <button
                   type="button"
+                  onClick={sendReply}
                   disabled={!replyDraft.trim()}
                   className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[#1A1A1A] transition-colors disabled:opacity-40"
                 >

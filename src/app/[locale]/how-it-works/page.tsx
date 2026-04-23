@@ -9,7 +9,6 @@ import {
   IllusChart,
   IllusShield,
 } from '@/components/marketing/PulseIllustrations';
-import Link from 'next/link';
 
 export async function generateMetadata({
   params,
@@ -49,7 +48,6 @@ export default async function HowItWorksPage({
 }) {
   const { locale } = await params;
   const t = getTranslations(locale);
-  const base = `/${locale}`;
   const isTr = locale === 'tr';
 
   const steps = [
@@ -176,69 +174,89 @@ export default async function HowItWorksPage({
         </div>
       </section>
 
-      {/* ─── Detailed Steps ─── */}
-      <section className="px-6 sm:px-10 pb-24 sm:pb-32">
-        <div className="max-w-[1100px] mx-auto space-y-24 sm:space-y-32">
-          {steps.map((step, i) => (
-            <div
-              key={i}
-              className={`flex flex-col ${i % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-12 lg:gap-20`}
-            >
-              <div className="w-full lg:flex-1 space-y-5 text-center lg:text-left">
-                <span className="pulse-eyebrow text-[#A8D62E]">
-                  {isTr ? 'ADIM' : 'STEP'} {step.id}
-                </span>
-                <h2 className="text-[32px] sm:text-[44px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
-                  {step.title}
-                </h2>
-                <p className="text-[16px] sm:text-[17px] text-[#525252] leading-[1.6] max-w-[480px] mx-auto lg:mx-0">
-                  {step.desc}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[480px] mx-auto lg:mx-0 pt-2">
-                  {step.perks.map((p) => (
-                    <div key={p} className="flex items-center gap-2.5 text-[14px] text-[#0A0A0A]">
-                      <span className="w-4 h-4 rounded-full bg-[#C6F24E] flex items-center justify-center text-[#0A0A0A] text-[10px] font-bold shrink-0">
-                        ✓
-                      </span>
-                      {p}
+      {/* ─── Timeline · design: center line + numbered circle, alternating sides ─── */}
+      <section className="px-6 sm:px-10 pb-24">
+        <div className="relative max-w-[1100px] mx-auto">
+          {/* Vertical center line — desktop only */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-0 bottom-0 w-[2px] bg-[#EDEDED] -translate-x-1/2 hidden lg:block"
+          />
+
+          <div className="space-y-16 lg:space-y-20">
+            {steps.map((step, i) => {
+              const sideLeft = i % 2 === 0; // even index: text left, illus right
+              return (
+                <div
+                  key={step.id}
+                  className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-8 lg:gap-10"
+                >
+                  {/* Content column (text side on desktop) */}
+                  <div
+                    className={`w-full lg:w-auto text-center space-y-4 ${
+                      sideLeft
+                        ? 'lg:order-1 lg:text-right lg:pr-4'
+                        : 'lg:order-3 lg:text-left lg:pl-4'
+                    }`}
+                  >
+                    <span className="pulse-eyebrow text-[#A8D62E]">
+                      {isTr ? 'ADIM' : 'STEP'} {step.id}
+                    </span>
+                    <h2
+                      className="text-[30px] sm:text-[36px] font-medium leading-[1.05] tracking-[-0.025em] text-[#0A0A0A]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      {step.title}
+                    </h2>
+                    <p
+                      className={`text-[15px] sm:text-[16px] text-[#525252] leading-[1.6] max-w-[420px] ${
+                        sideLeft ? 'mx-auto lg:ml-auto lg:mr-0' : 'mx-auto lg:mr-auto lg:ml-0'
+                      }`}
+                    >
+                      {step.desc}
+                    </p>
+                    <ul
+                      className={`flex flex-wrap gap-x-4 gap-y-1.5 max-w-[420px] ${
+                        sideLeft ? 'mx-auto lg:ml-auto lg:mr-0 lg:justify-end' : 'mx-auto lg:mr-auto lg:ml-0'
+                      }`}
+                    >
+                      {step.perks.map((p) => (
+                        <li key={p} className="flex items-center gap-1.5 text-[13px] text-[#525252]">
+                          <span className="h-3.5 w-3.5 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[9px] font-bold shrink-0">
+                            ✓
+                          </span>
+                          {p}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Center numbered circle (desktop) / inline pill (mobile) */}
+                  <div className="flex justify-center lg:order-2 relative">
+                    <div
+                      className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[16px] font-semibold"
+                      style={{
+                        fontFamily: 'var(--font-heading)',
+                        boxShadow: '0 0 0 4px #FFFFFF, 0 0 0 6px #0A0A0A',
+                      }}
+                    >
+                      {step.id}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-              <div className="w-full lg:flex-1 flex justify-center">
-                <div className="bg-[#FAFAFA] border border-[#EDEDED] rounded-3xl p-10 sm:p-14 flex items-center justify-center aspect-square max-w-[380px] w-full">
-                  <step.Ill size={240} className="w-full h-auto max-w-[260px]" />
+                  {/* Illus column (other side on desktop) */}
+                  <div
+                    className={`w-full lg:w-auto flex justify-center ${
+                      sideLeft ? 'lg:order-3' : 'lg:order-1'
+                    }`}
+                  >
+                    <div className="bg-[#FAFAFA] border border-[#EDEDED] rounded-2xl p-8 sm:p-10 flex items-center justify-center aspect-square max-w-[300px] w-full">
+                      <step.Ill size={200} className="w-full h-auto max-w-[220px]" />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── Final CTA ─── */}
-      <section className="bg-[#C6F24E] px-6 sm:px-10 py-20 sm:py-28">
-        <div className="max-w-[900px] mx-auto text-center">
-          <h2 className="text-[36px] sm:text-[56px] font-medium leading-[1.02] tracking-[-0.04em] text-[#0A0A0A]">
-            {isTr ? 'Başarı hikâyeni bugün başlat.' : 'Start writing your success story today.'}
-          </h2>
-          <p className="mt-5 text-[16px] sm:text-[17px] text-[#1A1A1A] max-w-[520px] mx-auto">
-            {isTr ? 'Kurulum 2 dakika. Kart bilgisi istemiyoruz. İlk 14 gün ücretsiz.' : '2-minute setup. No card required. First 14 days free.'}
-          </p>
-          <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
-            >
-              {isTr ? 'Hemen başla' : 'Get started'}
-              <span aria-hidden>→</span>
-            </Link>
-            <Link
-              href={`${base}/pricing`}
-              className="inline-flex items-center justify-center gap-2 border-2 border-[#0A0A0A] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
-            >
-              {isTr ? 'Planları incele' : 'Browse plans'}
-            </Link>
+              );
+            })}
           </div>
         </div>
       </section>
