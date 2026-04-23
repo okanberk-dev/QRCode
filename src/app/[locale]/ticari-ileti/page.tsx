@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
-import { ShieldCheck, Mail, Smartphone, Bell, Zap } from 'lucide-react';
+import { Mail, Smartphone, Bell, MessageCircle } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
+import LegalPageLayout from '@/components/marketing/LegalPageLayout';
 
 export async function generateMetadata({
   params,
@@ -13,16 +12,16 @@ export async function generateMetadata({
   const { locale } = await params;
   return {
     title: locale === 'tr' ? 'Ticari İleti Onayı — Buaze' : 'Marketing Consent — Buaze',
-    description: locale === 'tr' 
+    description: locale === 'tr'
       ? 'Ticari elektronik ileti gönderimine ilişkin bilgilendirme ve onay metni.'
       : 'Information and consent text for sending commercial electronic messages.',
     robots: { index: false, follow: false },
   };
 }
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-export default async function ConsentMarketingPage({
+export default async function TicariIletiPage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
@@ -31,84 +30,132 @@ export default async function ConsentMarketingPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
 
-  return (
-    <div className="min-h-screen flex flex-col font-sans bg-[#FFFFFF] selection:bg-[#C6F24E]/30">
-      <MarketingNavbar locale={locale} t={t} />
+  const intro = isTr
+    ? '6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun uyarınca, sizlere daha iyi hizmet verebilmek için iletişim kanalları üzerinden bilgilendirme yapılmaktadır.'
+    : 'In accordance with the Law No. 6563 on the Regulation of Electronic Commerce, info is provided via communication channels to provide you with better service.';
 
-      <main className="flex-1 max-w-[1000px] mx-auto w-full px-5 py-20 sm:py-32">
-        <div className="bg-white p-10 sm:p-20 rounded-[48px] border border-[#0A0A0A] shadow-md relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#C6F24E]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
-          
-          <div className="mb-16 relative">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#0A0A0A] text-white rounded-xl mb-6 shadow-md">
-               <ShieldCheck size={14} className="text-[#C6F24E]" />
-               <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'İLETİŞİM ONAYI' : 'COMMUNICATION CONSENT'}</span>
-            </div>
-            <h1 className="text-[32px] sm:text-[52px] font-extrabold text-[#0A0A0A] tracking-tight leading-[1.1] mb-4 whitespace-pre-line">
-              {isTr ? 'Ticari İleti ve Elektronik\nİletişim Beyanı' : 'Commercial Message and\nElectronic Communication'}
-            </h1>
-            <p className="text-[13px] text-[#6B7280] font-black uppercase tracking-widest">
-              {isTr ? 'Son güncelleme: 13 Nisan 2026' : 'Last updated: April 13, 2026'}
-            </p>
-          </div>
-          
-          <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-12 text-[16px] sm:text-[18px] leading-relaxed font-medium">
-             <div className="p-8 bg-[#FFFFFF] rounded-3xl border-2 border-[#0A0A0A] border-dashed">
-               <p className="font-black text-[#0A0A0A] m-0">
-                 {isTr 
-                   ? '6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun uyarınca, sizlere daha iyi hizmet verebilmek için iletişim kanalları üzerinden bilgilendirme yapılmaktadır.' 
-                   : 'In accordance with the Law No. 6563 on the Regulation of Electronic Commerce, info is provided via communication channels to provide you with better service.'}
-               </p>
-             </div>
+  const channels = isTr
+    ? [
+        { icon: <Mail size={18} />, label: 'E-posta' },
+        { icon: <Smartphone size={18} />, label: 'SMS ve arama' },
+        { icon: <Bell size={18} />, label: 'Push bildirimleri' },
+        { icon: <MessageCircle size={18} />, label: 'Anlık mesajlaşma' },
+      ]
+    : [
+        { icon: <Mail size={18} />, label: 'Email' },
+        { icon: <Smartphone size={18} />, label: 'SMS and calls' },
+        { icon: <Bell size={18} />, label: 'Push notifications' },
+        { icon: <MessageCircle size={18} />, label: 'Instant messaging' },
+      ];
 
-              <section className="space-y-8">
-                <p>
-                  {isTr
-                    ? 'Buaze tarafından sunulan ürün, hizmet, özel teklif, kampanya ve güncellemeler hakkında aşağıdaki kanallar aracılığıyla bilgilendirilmeyi kabul ediyorum:'
-                    : 'I agree to be informed about the products, services, special offers, campaigns, and updates offered by Buaze through the following channels:'}
+  const sections = isTr
+    ? [
+        {
+          heading: 'İletişim kanalları',
+          body: (
+            <>
+              <p>
+                Buaze tarafından sunulan ürün, hizmet, özel teklif, kampanya ve güncellemeler hakkında aşağıdaki kanallar aracılığıyla bilgilendirilmeyi kabul ediyorum:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 not-prose">
+                {channels.map((ch, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-4 p-4 bg-[#FAFAFA] border border-[#EDEDED] rounded-2xl"
+                  >
+                    <span className="shrink-0 w-10 h-10 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                      {ch.icon}
+                    </span>
+                    <span className="text-[14px] font-medium text-[#0A0A0A]">{ch.label}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ),
+        },
+        {
+          heading: 'Cayma hakkı (opt-out)',
+          body: (
+            <>
+              <p>
+                Dilediğiniz zaman, hiçbir gerekçe göstermeksizin bu onayı geri çekebilirsiniz. Her iletimizde size abonelikten çıkma seçeneği sunulmaktadır.
+              </p>
+              <div className="bg-[#0A0A0A] text-white rounded-2xl p-6 not-prose flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                <p className="text-[14px] text-white/80 max-w-[440px] leading-relaxed">
+                  Abonelikten çıkma talebiniz bize ulaştıktan sonra 3 iş günü içinde tüm gönderimler durdurulur.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                   {[
-                     { icon: <Mail size={20} />, label: isTr ? 'E-posta' : 'Email' },
-                     { icon: <Smartphone size={20} />, label: isTr ? 'SMS ve Arama' : 'SMS and Calls' },
-                     { icon: <Bell size={20} />, label: isTr ? 'Push Bildirimleri' : 'Push Notifications' },
-                     { icon: <Zap size={20} />, label: isTr ? 'Anlık Mesajlaşma' : 'Instant Messaging' }
-                   ].map((item, idx) => (
-                     <div key={idx} className="flex items-center gap-4 p-5 bg-white border-2 border-[#0A0A0A] rounded-2xl shadow-md">
-                        <div className="w-12 h-12 bg-[#FFFFFF] border-2 border-[#0A0A0A] rounded-xl flex items-center justify-center text-[#0A0A0A] shadow-md">
-                           {item.icon}
-                        </div>
-                        <span className="text-[15px] font-black text-[#0A0A0A] uppercase tracking-tight">{item.label}</span>
-                     </div>
-                   ))}
-                </div>
-              </section>
+                <a
+                  href="mailto:hello@buaze.com"
+                  className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-5 py-3 rounded-full text-[13px] font-medium hover:bg-[#A8D62E] transition-colors shrink-0"
+                >
+                  hello@buaze.com
+                </a>
+              </div>
+            </>
+          ),
+        },
+      ]
+    : [
+        {
+          heading: 'Communication channels',
+          body: (
+            <>
+              <p>
+                I agree to be informed about the products, services, special offers, campaigns, and updates offered by Buaze through the following channels:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 not-prose">
+                {channels.map((ch, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-4 p-4 bg-[#FAFAFA] border border-[#EDEDED] rounded-2xl"
+                  >
+                    <span className="shrink-0 w-10 h-10 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                      {ch.icon}
+                    </span>
+                    <span className="text-[14px] font-medium text-[#0A0A0A]">{ch.label}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ),
+        },
+        {
+          heading: 'Right of withdrawal (opt-out)',
+          body: (
+            <>
+              <p>
+                You can withdraw this consent at any time without giving any reason. Every message we send offers an unsubscribe option.
+              </p>
+              <div className="bg-[#0A0A0A] text-white rounded-2xl p-6 not-prose flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                <p className="text-[14px] text-white/80 max-w-[440px] leading-relaxed">
+                  All transmissions will be stopped within 3 business days after your unsubscribe request reaches us.
+                </p>
+                <a
+                  href="mailto:hello@buaze.com"
+                  className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-5 py-3 rounded-full text-[13px] font-medium hover:bg-[#A8D62E] transition-colors shrink-0"
+                >
+                  hello@buaze.com
+                </a>
+              </div>
+            </>
+          ),
+        },
+      ];
 
-              <section className="space-y-6">
-                 <h2 className="text-[#0A0A0A] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? 'Cayma Hakkı (Opt-out)' : 'Right of Withdrawal (Opt-out)'}</h2>
-                 <p>
-                   {isTr
-                     ? 'Dilediğiniz zaman, hiçbir gerekçe göstermeksizin bu onayı geri çekebilirsiniz. Her iletimizde size abonelikten çıkma seçeneği sunulmaktadır.'
-                     : 'You can withdraw this consent at any time without giving any reason. Every message we send offers you an unsubscribe option.'}
-                 </p>
-                 <div className="p-8 bg-[#0A0A0A] text-white/80 rounded-[32px] border-4 border-[#0A0A0A] shadow-md">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-                       <p className="text-[14px] font-bold text-white max-w-[400px]">
-                         {isTr 
-                           ? 'Abonelikten çıkma talebiniz bize ulaştıktan sonra 3 iş günü içinde tüm gönderimler durdurulur.' 
-                           : 'All transmissions will be stopped within 3 business days after your unsubscribe request reaches us.'}
-                       </p>
-                       <a href="mailto:hello@buaze.com" className="px-8 py-4 bg-white text-[#0A0A0A] rounded-xl text-[14px] font-black shadow-md hover:bg-[#C6F24E] transition-all active:translate-y-[4px] active:shadow-none whitespace-nowrap">
-                         hello@buaze.com
-                       </a>
-                    </div>
-                 </div>
-              </section>
-          </div>
-        </div>
-      </main>
-
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+  return (
+    <LegalPageLayout
+      locale={locale}
+      t={t}
+      eyebrow={isTr ? 'İLETİŞİM ONAYI' : 'COMMUNICATION CONSENT'}
+      title={
+        isTr
+          ? 'Ticari ileti ve elektronik iletişim beyanı'
+          : 'Commercial message and electronic communication'
+      }
+      lastUpdated={isTr ? 'SON GÜNCELLEME · 13 NİSAN 2026' : 'LAST UPDATED · APRIL 13, 2026'}
+      intro={intro}
+      sections={sections}
+      footerBlock={null}
+    />
   );
 }

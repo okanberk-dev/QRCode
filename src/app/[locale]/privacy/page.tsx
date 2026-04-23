@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
-import { ShieldCheck } from 'lucide-react';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
+import LegalPageLayout from '@/components/marketing/LegalPageLayout';
 
 export async function generateMetadata({
   params,
@@ -12,16 +10,15 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const isTr = locale === 'tr';
-  
   return {
     title: isTr ? 'Gizlilik Politikası - Buaze' : 'Privacy Policy - Buaze',
-    description: isTr 
+    description: isTr
       ? 'Kişisel verilerinizin korunması ve güvenliğine dair gizlilik politikamız.'
       : 'Our privacy policy regarding the protection and security of your personal data.',
   };
 }
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default async function PrivacyPage({
   params,
@@ -32,95 +29,124 @@ export default async function PrivacyPage({
   const isTr = locale === 'tr';
   const t = getTranslations(locale);
 
-  return (
-    <div className="min-h-screen flex flex-col font-sans bg-[#FFFFFF] selection:bg-[#C6F24E]/30">
-      <MarketingNavbar locale={locale} t={t} />
+  const intro = isTr
+    ? 'Buaze olarak kişisel verilerinizin gizliliğini ve güvenliğini en büyük önceliğimiz olarak görüyoruz. Bu politika, hangi verileri neden topladığımızı ve onları nasıl koruduğumuzu açıklar.'
+    : 'As Buaze, we consider the privacy and security of your personal data as our top priority. This policy explains what data we collect, why we collect it, and how we protect it.';
 
-      <main className="flex-1 max-w-[1000px] mx-auto w-full px-5 py-20 sm:py-32">
-        <div className="bg-white p-10 sm:p-20 rounded-[48px] border border-[#0A0A0A] shadow-md relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#C6F24E]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
-          
-          <div className="mb-16 relative">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#0A0A0A] text-white rounded-xl mb-6 shadow-md">
-               <ShieldCheck size={14} className="text-[#C6F24E]" />
-               <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'GİZLİLİK POLİTİKASI' : 'PRIVACY POLICY'}</span>
-            </div>
-            <h1 className="text-[36px] sm:text-[56px] font-extrabold text-[#0A0A0A] tracking-tight leading-none mb-4 whitespace-pre-line">
-              {isTr ? 'Veri ve Gizlilik\nPolitikamız' : 'Data and Privacy\nPolicy'}
-            </h1>
-            <p className="text-[13px] text-[#6B7280] font-black uppercase tracking-widest">
-              {isTr ? 'Son güncelleme: 13 Nisan 2026' : 'Last updated: April 13, 2026'}
+  const sections = isTr
+    ? [
+        {
+          heading: '1. Bilgi toplama',
+          body: (
+            <>
+              <p>
+                Hesap açılışı, hizmet kullanımı veya bizimle iletişime geçtiğinizde; kimlik bilgileri, iletişim detayları, ödeme geçmişi ve kullanım verileri gibi bilgileri toplarız.
+              </p>
+              <ul>
+                <li>Kayıt sırasında sağladığınız doğrudan bilgiler</li>
+                <li>Abonelik ve ödeme işlemleri verileri</li>
+                <li>Platform etkileşim ve kullanım metrikleri</li>
+              </ul>
+            </>
+          ),
+        },
+        {
+          heading: '2. Veri kullanımı ve paylaşımı',
+          body: (
+            <p>
+              Verileriniz yalnızca hizmet kalitemizi artırmak, yasal yükümlülüklerimizi yerine getirmek ve size özel bir kullanıcı deneyimi sunmak amacıyla kullanılır. Üçüncü şahıslara satış yapılmaz.
+            </p>
+          ),
+        },
+        {
+          heading: '3. Güvenlik önlemleri',
+          body: (
+            <p>
+              Tüm verileriniz endüstri standardı SSL/TLS şifreleme ile korunur. Sunucularımızda güvenlik duvarları, yetkisiz erişim tespit sistemleri ve periyodik sızma testleri uygulanmaktadır.
+            </p>
+          ),
+        },
+        {
+          heading: '4. Uluslararası veri aktarımı',
+          body: (
+            <p>
+              Veri barındırma hizmetlerimiz global altyapılar (Vercel, Supabase vb.) üzerinde tutulabilir. Bu durumlarda da en yüksek koruma standartlarını garanti ediyoruz.
+            </p>
+          ),
+        },
+      ]
+    : [
+        {
+          heading: '1. Collection of information',
+          body: (
+            <>
+              <p>
+                When you open an account, use our services, or contact us; we collect information such as identity information, contact details, payment history, and usage data.
+              </p>
+              <ul>
+                <li>Direct information provided during registration</li>
+                <li>Subscription and payment transaction data</li>
+                <li>Platform interaction and usage metrics</li>
+              </ul>
+            </>
+          ),
+        },
+        {
+          heading: '2. Data usage and sharing',
+          body: (
+            <p>
+              Your data is used only to improve our service quality, fulfill our legal obligations, and provide you with a personalized user experience. No sales are made to third parties.
+            </p>
+          ),
+        },
+        {
+          heading: '3. Security measures',
+          body: (
+            <p>
+              All your data is protected with industry-standard SSL/TLS encryption. Firewalls, unauthorized access detection systems, and periodic penetration tests are applied on our servers.
+            </p>
+          ),
+        },
+        {
+          heading: '4. International data transfer',
+          body: (
+            <p>
+              Our data hosting services may be held on global infrastructures (Vercel, Supabase, etc.). In these cases, we guarantee the highest protection standards.
+            </p>
+          ),
+        },
+      ];
+
+  return (
+    <LegalPageLayout
+      locale={locale}
+      t={t}
+      eyebrow={isTr ? 'GİZLİLİK POLİTİKASI' : 'PRIVACY POLICY'}
+      title={isTr ? 'Veri ve gizlilik politikamız' : 'Data and privacy policy'}
+      lastUpdated={isTr ? 'SON GÜNCELLEME · 13 NİSAN 2026' : 'LAST UPDATED · APRIL 13, 2026'}
+      intro={intro}
+      sections={sections}
+      footerBlock={
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+          <div>
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'DAHA FAZLA BİLGİ' : 'MORE INFORMATION'}
+            </span>
+            <p className="mt-2 text-[14px] text-[#525252]">
+              {isTr
+                ? 'privacy@buaze.com üzerinden sorabilirsiniz.'
+                : 'You can ask via privacy@buaze.com.'}
             </p>
           </div>
-          
-          <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-12 text-[16px] sm:text-[18px] leading-relaxed font-medium">
-             <div className="p-8 bg-[#FFFFFF] rounded-3xl border-2 border-[#0A0A0A] border-dashed">
-               <p className="font-black text-[#0A0A0A] m-0">
-                 {isTr 
-                   ? 'Buaze olarak kişisel verilerinizin gizliliğini ve güvenliğini en büyük önceliğimiz olarak görüyoruz. Bu politika, hangi verileri neden topladığımızı ve onları nasıl koruduğumuzu açıklar.' 
-                   : 'As Buaze, we consider the privacy and security of your personal data as our top priority. This policy explains what data we collect, why we collect it, and how we protect it.'}
-               </p>
-             </div>
-
-              <section className="space-y-6">
-                <h2 className="text-[#0A0A0A] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '1. Bilgi Toplama' : '1. Collection of Information'}</h2>
-                <p>
-                  {isTr 
-                    ? 'Hesap açılışı, hizmet kullanımı veya bizimle iletişime geçtiğinizde; kimlik bilgileri, iletişim detayları, ödeme geçmişi ve kullanım verileri gibi bilgileri toplarız.'
-                    : 'When you open an account, use our services, or contact us; we collect information such as identity information, contact details, payment history, and usage data.'}
-                </p>
-                <ul className="list-disc pl-6 space-y-3 marker:text-[#C6F24E]">
-                   <li>{isTr ? 'Kayıt sırasında sağladığınız doğrudan bilgiler' : 'Direct information provided during registration'}</li>
-                   <li>{isTr ? 'Abonelik ve ödeme işlemleri verileri' : 'Subscription and payment transaction data'}</li>
-                   <li>{isTr ? 'Platform etkileşim ve kullanım metrikleri' : 'Platform interaction and usage metrics'}</li>
-                </ul>
-              </section>
-
-              <section className="space-y-6">
-                <h2 className="text-[#0A0A0A] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '2. Veri Kullanımı ve Paylaşımı' : '2. Data Usage and Sharing'}</h2>
-                <p>
-                  {isTr
-                    ? 'Verileriniz yalnızca hizmet kalitemizi artırmak, yasal yükümlülüklerimizi yerine getirmek ve size özel bir kullanıcı deneyimi sunmak amacıyla kullanılır. Üçüncü şahıslara satış yapılmaz.'
-                    : 'Your data is used only to improve our service quality, fulfill our legal obligations, and provide you with a personalized user experience. No sales are made to third parties.'}
-                </p>
-              </section>
-
-              <section className="space-y-6">
-                <h2 className="text-[#0A0A0A] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '3. Güvenlik Önlemleri' : '3. Security Measures'}</h2>
-                <p>
-                  {isTr
-                    ? 'Tüm verileriniz endüstri standardı SSL/TLS şifreleme ile korunur. Sunucularımızda güvenlik duvarları, yetkisiz erişim tespit sistemleri ve periyodik sızma testleri uygulanmaktadır.'
-                    : 'All your data is protected with industry-standard SSL/TLS encryption. Firewalls, unauthorized access detection systems, and periodic penetration tests are applied on our servers.'}
-                </p>
-              </section>
-
-              <section className="space-y-6">
-                <h2 className="text-[#0A0A0A] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '4. Uluslararası Veri Aktarımı' : '4. International Data Transfer'}</h2>
-                <p>
-                  {isTr
-                    ? 'Veri barındırma hizmetlerimiz global altyapılar (Vercel, Supabase vb.) üzerinde tutulabilir. Bu durumlarda da en yüksek koruma standartlarını garanti ediyoruz.'
-                    : 'Our data hosting services may be held on global infrastructures (Vercel, Supabase, etc.). In these cases, we guarantee the highest protection standards.'}
-                </p>
-              </section>
-
-               <div className="pt-16 border-t-2 border-[#FFFFFF] flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
-                 <div className="space-y-1">
-                   <p className="text-[14px] font-black text-[#0A0A0A] uppercase tracking-widest leading-none">
-                     {isTr ? 'DAHA FAZLA BİLGİ' : 'MORE INFORMATION'}
-                   </p>
-                   <p className="text-[14px] text-[#6B7280] font-bold">
-                     {isTr ? 'privacy@buaze.com üzerinden sorabilirsiniz.' : 'You can ask via privacy@buaze.com'}
-                   </p>
-                 </div>
-                 <a href="mailto:privacy@buaze.com" className="px-10 py-5 bg-[#0A0A0A] text-white rounded-2xl text-[15px] font-black shadow-md hover:bg-[#0A0A0A] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-widest">
-                   privacy@buaze.com
-                 </a>
-               </div>
-          </div>
+          <a
+            href="mailto:privacy@buaze.com"
+            className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#1A1A1A] transition-colors"
+          >
+            privacy@buaze.com
+            <span aria-hidden>→</span>
+          </a>
         </div>
-      </main>
-
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+      }
+    />
   );
 }
