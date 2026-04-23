@@ -79,13 +79,13 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-[20px] text-[13px] font-black border-2 border-red-500/20 shadow-sm text-center">
+        <div className="bg-[#FEF2F2] text-[#B91C1C] p-4 rounded-xl text-[13px] font-medium border border-[#FECACA] text-center">
           {error}
         </div>
       )}
 
       <div className="space-y-2">
-        <label htmlFor="reg-name" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280] ml-1">
+        <label htmlFor="reg-name" className="pulse-eyebrow text-[#737373] ml-1 block">
           {t.auth_name}
         </label>
         <input
@@ -93,13 +93,13 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           type="text"
           value={form.name}
           onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-          className="w-full px-5 py-4 bg-[#FFFFFF] rounded-xl border-2 border-[#0A0A0A] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198, 242, 78,0.1)] outline-none transition-all font-bold text-sm"
+          className="w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
           placeholder="Can Demir"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="reg-restaurant-name" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280] ml-1">
+        <label htmlFor="reg-restaurant-name" className="pulse-eyebrow text-[#737373] ml-1 block">
           {locale === 'tr' ? 'RESTORAN ADI' : 'RESTAURANT NAME'}
         </label>
         <input
@@ -108,13 +108,13 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           required
           value={form.restaurantName}
           onChange={(e) => setForm(prev => ({ ...prev, restaurantName: e.target.value }))}
-          className="w-full px-5 py-4 bg-[#FFFFFF] rounded-xl border-2 border-[#0A0A0A] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198, 242, 78,0.1)] outline-none transition-all font-bold text-sm"
+          className="w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
           placeholder={locale === 'tr' ? 'Örn: Gourmet Eats' : 'e.g. Gourmet Eats'}
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="reg-email" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280] ml-1">
+        <label htmlFor="reg-email" className="pulse-eyebrow text-[#737373] ml-1 block">
           {t.auth_email}
         </label>
         <input
@@ -123,13 +123,13 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           required
           value={form.email}
           onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
-          className="w-full px-5 py-4 bg-[#FFFFFF] rounded-xl border-2 border-[#0A0A0A] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198, 242, 78,0.1)] outline-none transition-all font-bold text-sm"
+          className="w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
           placeholder="can@sirket.com"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="reg-password" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280] ml-1">
+        <label htmlFor="reg-password" className="pulse-eyebrow text-[#737373] ml-1 block">
           {t.auth_password}
         </label>
         <div className="relative">
@@ -140,21 +140,22 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             minLength={8}
             value={form.password}
             onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
-            className="w-full px-5 py-4 bg-[#FFFFFF] rounded-xl border-2 border-[#0A0A0A] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198, 242, 78,0.1)] outline-none transition-all font-bold text-sm pr-12"
+            className="w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
             placeholder="••••••••"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#1A1A1A] hover:text-[#0A0A0A]"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#737373] hover:text-[#0A0A0A] transition-colors"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
-            {showPassword ? <EyeOff size={20} strokeWidth={2} /> : <Eye size={20} strokeWidth={2} />}
+            {showPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
           </button>
         </div>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="reg-confirm-password" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280] ml-1">
+        <label htmlFor="reg-confirm-password" className="pulse-eyebrow text-[#737373] ml-1 block">
           {locale === 'tr' ? 'ŞİFRE TEKRAR' : 'CONFIRM PASSWORD'}
         </label>
         <div className="relative">
@@ -165,7 +166,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             minLength={8}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full px-5 py-4 bg-[#FFFFFF] rounded-xl border-2 border-[#0A0A0A] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198, 242, 78,0.1)] outline-none transition-all font-bold text-sm pr-12"
+            className="w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
             placeholder="••••••••"
           />
         </div>
@@ -185,33 +186,33 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
       </div>
 
       <div className="space-y-4 pt-2">
-        <div 
+        <div
           onClick={() => setKvkkConsent(!kvkkConsent)}
-          className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
-            kvkkConsent 
-              ? 'bg-[#C6F24E]/10 border-[#C6F24E]/20 shadow-sm' 
-              : 'bg-white border-[#0A0A0A]/5 hover:border-[#0A0A0A]/10'
+          className={`flex items-start gap-3 p-4 rounded-2xl border transition-colors cursor-pointer ${
+            kvkkConsent
+              ? 'bg-[#EAF9B8] border-[#C6F24E]'
+              : 'bg-white border-[#EDEDED] hover:border-[#D4D4D4]'
           }`}
         >
-          <div className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all border-2 ${
-            kvkkConsent ? 'bg-[#0A0A0A] border-[#0A0A0A]' : 'bg-white border-[#0A0A0A]'
+          <div className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+            kvkkConsent ? 'bg-[#0A0A0A]' : 'bg-white border border-[#D4D4D4]'
           }`}>
-            {kvkkConsent && <Check size={14} className="text-white" strokeWidth={4} />}
+            {kvkkConsent && <Check size={12} className="text-[#C6F24E]" strokeWidth={3.5} />}
           </div>
           <div className="flex-1">
-            <p className="text-[12px] font-bold text-[#1A1A1A] leading-relaxed select-none">
-              {locale === 'tr' ? 'Üye olarak' : 'By signing up,'} <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowKvkk(true); }} className="text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:bg-[#C6F24E]/10 transition-colors">KVKK metnini</button> {locale === 'tr' ? 'okudum ve kabul ediyorum.' : 'I have read and accept the data processing policy.'}
+            <p className="text-[12px] font-medium text-[#0A0A0A] leading-relaxed select-none">
+              {locale === 'tr' ? 'Üye olarak' : 'By signing up,'} <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowKvkk(true); }} className="text-[#0A0A0A] underline decoration-[#0A0A0A]/30 decoration-1 underline-offset-4 hover:decoration-[#0A0A0A] transition-colors">KVKK metnini</button> {locale === 'tr' ? 'okudum ve kabul ediyorum.' : 'I have read and accept the data processing policy.'}
             </p>
           </div>
         </div>
 
-        <p className="text-[11px] text-[#6B7280] font-bold leading-relaxed px-1">
+        <p className="text-[12px] text-[#737373] leading-relaxed px-1">
           {t.auth_terms_consent_1}{' '}
-          <Link href={`/${locale}/terms`} className="text-[#0A0A0A] font-black hover:text-[#C6F24E] underline decoration-2 underline-offset-2">
+          <Link href={`/${locale}/terms`} className="text-[#0A0A0A] font-medium hover:text-[#A8D62E] underline underline-offset-2 decoration-[#0A0A0A]/30 hover:decoration-[#A8D62E]">
             {t.auth_terms_consent_2}
           </Link>
           {' '}{t.auth_terms_consent_3}{' '}
-          <Link href={`/${locale}/privacy`} className="text-[#0A0A0A] font-black hover:text-[#C6F24E] underline decoration-2 underline-offset-2">
+          <Link href={`/${locale}/privacy`} className="text-[#0A0A0A] font-medium hover:text-[#A8D62E] underline underline-offset-2 decoration-[#0A0A0A]/30 hover:decoration-[#A8D62E]">
             {t.auth_terms_consent_4}
           </Link>
           {t.auth_terms_consent_5}
@@ -221,36 +222,37 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
       {/* KVKK Modal */}
       {showKvkk && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-6 bg-[#0A0A0A]/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#FFFFFF] rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl border-2 border-[#0A0A0A] animate-in zoom-in-95 duration-300">
-            <div className="p-7 border-b-2 border-[#0A0A0A] flex items-center justify-between bg-white">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-[0_20px_60px_rgba(10,10,10,0.25)] border border-[#EDEDED] animate-in zoom-in-95 duration-300">
+            <div className="p-6 border-b border-[#EDEDED] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                 <div className="p-2 bg-[#C6F24E]/10 rounded-xl text-[#0A0A0A]">
-                    <ShieldCheck size={20} />
+                 <div className="p-2 bg-[#EAF9B8] rounded-lg text-[#0A0A0A]">
+                    <ShieldCheck size={18} />
                  </div>
-                 <h3 className="font-extrabold text-[#0A0A0A] uppercase tracking-tighter">
+                 <h3 className="text-[16px] font-medium text-[#0A0A0A]">
                    KVKK Aydınlatma Metni
                  </h3>
               </div>
-              <button 
+              <button
                 onClick={() => setShowKvkk(false)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-[#EDEDED] text-[#6B7280] transition-colors"
+                className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[#FAFAFA] text-[#737373] hover:text-[#0A0A0A] transition-colors"
+                aria-label="Close"
               >
-                <X size={22} strokeWidth={2} />
+                <X size={20} strokeWidth={2} />
               </button>
             </div>
-            <div className="p-8 max-h-[50vh] overflow-y-auto no-scrollbar">
-              <p className="text-sm text-[#1A1A1A] leading-relaxed font-bold whitespace-pre-wrap">
-                {locale === 'tr' 
+            <div className="p-7 max-h-[50vh] overflow-y-auto no-scrollbar">
+              <p className="text-[13px] text-[#525252] leading-relaxed whitespace-pre-wrap">
+                {locale === 'tr'
                   ? '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kayıt sırasında paylaştığınız kişisel verileriniz, hizmetlerimizin sunulması, kullanici hesabınızın yönetilmesi ve yasal yükümlülüklerin yerine getirilmesi amacıyla işlenmektedir. Verileriniz, yasal zorunluluklar dışında üçüncü taraflarla paylaşılmayacaktır.'
                   : 'In accordance with the Personal Data Protection laws, your personal data shared during registration is processed for the purposes of providing our services, managing your user account, and fulfilling legal obligations. Your data will not be shared with third parties except for legal obligations.'}
               </p>
             </div>
-            <div className="p-7 bg-white border-t-2 border-[#0A0A0A] flex justify-end">
-              <button 
+            <div className="p-6 border-t border-[#EDEDED] flex justify-end">
+              <button
                 onClick={() => setShowKvkk(false)}
-                className="w-full py-4 bg-[#0A0A0A] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-[#1A1A1A] transition-all shadow-md active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                className="w-full py-3.5 bg-[#0A0A0A] text-white rounded-full font-medium text-[14px] hover:bg-[#1A1A1A] transition-colors"
               >
-                KAPAT
+                {locale === 'tr' ? 'Kapat' : 'Close'}
               </button>
             </div>
           </div>
@@ -261,15 +263,16 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         type="submit"
         id="register-submit-btn"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] font-black py-4 rounded-2xl border border-[#0A0A0A] shadow-sm hover:bg-[#C6F24E] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+        className="w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" strokeWidth={2} />}
-        {loading ? t.auth_register_loading.toUpperCase() : t.auth_register_btn.toUpperCase()}
+        {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}
+        {loading ? t.auth_register_loading : t.auth_register_btn}
+        {!loading && <ArrowRight size={18} strokeWidth={2} />}
       </button>
 
-      <p className="text-center text-sm font-bold text-[#1A1A1A]">
+      <p className="text-center text-[13px] text-[#525252]">
         {t.auth_has_account}{' '}
-        <Link href={`/${locale}/auth/login`} className="text-[#C6F24E] font-black hover:underline decoration-2 underline-offset-4">
+        <Link href={`/${locale}/auth/login`} className="text-[#0A0A0A] font-medium hover:text-[#A8D62E] transition-colors">
           {t.auth_login_link}
         </Link>
       </p>

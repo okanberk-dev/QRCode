@@ -68,14 +68,17 @@ export default async function LoginPage({
           <div className="relative z-10 max-w-[400px]">
             <Link href={`/${locale}`} className="inline-flex items-center gap-3 mb-10 group">
               <BuazeLogo size={48} variant="on-dark" imageUrl={logoUrl} />
-              <span className="text-[24px] font-extrabold tracking-[-0.02em] text-white">
+              <span
+                className="text-[22px] font-medium tracking-[-0.03em] text-white"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
                 buaze<span className="text-[#C6F24E]">.</span>
               </span>
             </Link>
-            <h2 className="text-[32px] font-extrabold leading-[1.15] tracking-[-0.03em] mb-4">
-              {locale === 'tr' ? 'İtibarınız sizi bekliyor' : 'Your reputation is waiting'}
+            <h2 className="text-[36px] leading-[1.05] tracking-[-0.03em] mb-5 text-white">
+              {locale === 'tr' ? 'İtibarınız sizi bekliyor.' : 'Your reputation is waiting.'}
             </h2>
-            <p className="text-[14px] text-[#EDEDED] leading-relaxed mb-10 font-medium">
+            <p className="text-[15px] text-white/70 leading-[1.6] mb-10">
               {locale === 'tr'
                 ? 'Geri bildirim operasyonlarınızı anlık takip edin, marka itibarınızı profesyonelce yönetin ve güvenle büyüyün.'
                 : 'Monitor your feedback operations in real-time, manage your brand reputation professionally, and grow with confidence.'}
@@ -84,20 +87,23 @@ export default async function LoginPage({
             {/* Stats grid */}
             <div className="grid grid-cols-2 gap-3 mb-10">
               {stats.map(stat => (
-                <div key={stat.label} className="bg-white/5 rounded-2xl p-5 border border-white/10 backdrop-blur-sm">
-                  <div className="text-[24px] font-black text-[#C6F24E] flex items-center gap-1.5">
+                <div key={stat.label} className="bg-white/5 rounded-2xl p-5 border border-white/10">
+                  <div
+                    className="text-[26px] font-medium text-[#C6F24E] flex items-center gap-1.5 tracking-[-0.02em]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
                     {stat.val}
                     {(stat.label.includes('Puan') || stat.label.includes('Rating') || stat.label.includes('Score') || stat.label.includes('Gücü')) ? (
                       <Star size={16} className="fill-[#C6F24E] text-[#C6F24E]" />
                     ) : null}
                   </div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.1em] text-white/70 mt-1">{stat.label}</div>
+                  <div className="pulse-eyebrow text-white/60 mt-1">{stat.label}</div>
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center gap-2.5 text-white/75 text-[12px] font-bold bg-white/5 py-4 px-5 rounded-2xl border border-white/5">
-              <Shield size={16} className="text-green-500 flex-shrink-0" />
+            <div className="flex items-center gap-2.5 text-white/70 text-[12px] font-medium bg-white/5 py-4 px-5 rounded-2xl border border-white/10">
+              <Shield size={16} className="text-[#C6F24E] flex-shrink-0" />
               {locale === 'tr' ? 'KVKK uyumlu · Endüstriyel şifreleme' : 'GDPR compliant · Industry-standard encryption'}
             </div>
           </div>
@@ -108,20 +114,25 @@ export default async function LoginPage({
 
         {/* Right Panel - Form */}
         <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 bg-[#FFFFFF]">
-          
+
           {/* Header/Logo for mobile */}
           <div className="flex lg:hidden justify-center mb-8">
             <Link href="/" className="flex items-center gap-3 group">
               <BuazeLogo size={36} variant="default" imageUrl={logoUrl} />
-              <span className="text-2xl font-black tracking-tighter text-[#0A0A0A]">buaze<span className="text-[#C6F24E]">.</span></span>
+              <span
+                className="text-[22px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                buaze<span className="text-[#C6F24E]">.</span>
+              </span>
             </Link>
           </div>
 
           <div className="w-full max-w-sm mx-auto">
-            <div className="bg-white rounded-[28px] border border-[#EDEDED] p-8 sm:p-10 mb-5 shadow-md">
+            <div className="bg-white rounded-3xl border border-[#EDEDED] p-8 sm:p-10 mb-5 shadow-[0_8px_24px_rgba(10,10,10,0.04)]">
               <div className="mb-8 text-center lg:text-left">
-                <h1 className="text-[28px] font-extrabold text-[#0A0A0A] tracking-tight leading-tight">{t.auth_login_title}</h1>
-                <p className="text-[13px] font-bold text-[#1A1A1A] mt-2">{t.auth_login_subtitle}</p>
+                <h1 className="text-[28px] text-[#0A0A0A] tracking-[-0.02em] leading-tight">{t.auth_login_title}</h1>
+                <p className="text-[14px] text-[#525252] mt-2">{t.auth_login_subtitle}</p>
               </div>
 
               <Suspense fallback={<div className="h-52 animate-pulse bg-[#FFFFFF] rounded-lg" />}>
@@ -130,14 +141,15 @@ export default async function LoginPage({
             </div>
 
             <div className="text-center mt-8">
-              <p className="text-[13px] font-black text-[#1A1A1A]">
+              <p className="text-[13px] text-[#525252]">
                 {locale === 'tr' ? 'Hesabınız yok mu?' : "Don't have an account?"}
               </p>
               <Link
                 href={`/${locale}/auth/register`}
-                 className="inline-flex items-center gap-2 text-[14px] font-black text-[#C6F24E] hover:text-[#0A0A0A] mt-2 transition-colors border-b-2 border-transparent hover:border-[#0A0A0A]/30 pb-1"
-               >
-                 {locale === 'tr' ? '14 gün ücretsiz dene →' : 'Try free for 14 days →'}
+                className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] mt-2 transition-colors"
+              >
+                {locale === 'tr' ? '14 gün ücretsiz dene' : 'Try free for 14 days'}
+                <span aria-hidden>→</span>
               </Link>
             </div>
           </div>

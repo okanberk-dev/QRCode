@@ -36,18 +36,18 @@ export default async function ForgotPasswordPage({
         <div className="w-full max-w-[440px]">
           <Link
             href={`/${locale}/auth/login`}
-            className="inline-flex items-center gap-2 text-[12px] font-black uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A] mb-5 transition-colors"
+            className="pulse-eyebrow inline-flex items-center gap-2 text-[#737373] hover:text-[#0A0A0A] mb-5 transition-colors"
           >
             <ArrowLeft size={14} strokeWidth={2} />
-            {locale === 'tr' ? 'Girişe Dön' : 'Back to Login'}
+            {locale === 'tr' ? 'GİRİŞE DÖN' : 'BACK TO LOGIN'}
           </Link>
 
-          <div className="bg-white rounded-2xl border border-[#EDEDED] p-8 sm:p-9 shadow-[0_2px_16px_-4px_rgba(0,0,0,0.06)]">
+          <div className="bg-white rounded-3xl border border-[#EDEDED] p-8 sm:p-9 shadow-[0_8px_24px_rgba(10,10,10,0.04)]">
             <div className="mb-7">
-              <h1 className="text-[24px] font-extrabold text-[#0A0A0A] tracking-[-0.01em]">
+              <h1 className="text-[26px] text-[#0A0A0A] tracking-[-0.02em] leading-tight">
                 {locale === 'tr' ? 'Şifremi Unuttum' : 'Forgot Password'}
               </h1>
-              <p className="text-[13px] text-[#1A1A1A] mt-1 leading-relaxed">
+              <p className="text-[14px] text-[#525252] mt-2 leading-relaxed">
                 {locale === 'tr'
                   ? 'E-posta adresinizi girin, size 6 haneli bir sıfırlama kodu gönderelim.'
                   : 'Enter your email and we will send you a 6-digit reset code.'}
@@ -57,11 +57,11 @@ export default async function ForgotPasswordPage({
             <ForgotPasswordForm locale={locale} />
           </div>
 
-          <p className="text-center text-[13px] text-[#1A1A1A] mt-5">
+          <p className="text-center text-[13px] text-[#525252] mt-5">
             {locale === 'tr' ? 'Şifrenizi hatırladınız mı?' : 'Remember your password?'}{' '}
             <Link
               href={`/${locale}/auth/login`}
-              className="font-semibold text-[#0A0A0A] hover:text-[#C6F24E] transition-colors underline underline-offset-4 decoration-dotted decoration-[#6B7280] hover:decoration-[#C6F24E]"
+              className="font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
             >
               {locale === 'tr' ? 'Giriş yapın' : 'Log in'}
             </Link>
