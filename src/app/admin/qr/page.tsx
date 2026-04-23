@@ -409,8 +409,16 @@ function QRPageContent() {
     <div className="p-3 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-6 sm:space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-5 sm:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-xl sm:text-3xl font-semibold text-[#0A0A0A] tracking-tight uppercase">QR Kod Oluşturucu</h1>
-          <p className="text-[#1A1A1A] text-[12px] sm:text-[15px] font-bold">İşletmenize özel, yüksek çözünürlüklü QR kodlar hazırlayın.</p>
+          <p className="pulse-eyebrow text-[#737373]">PANEL / QR KOD</p>
+          <h1
+            className="text-[24px] sm:text-[30px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            QR Kod Oluşturucu
+          </h1>
+          <p className="text-[#525252] text-[13px] sm:text-[14px] max-w-[520px]">
+            İşletmenize özel, yüksek çözünürlüklü QR kodlar hazırlayın ve platform bazında dağıtın.
+          </p>
         </div>
       </div>
 

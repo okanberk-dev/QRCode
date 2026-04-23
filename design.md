@@ -15,8 +15,8 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 | 2 | Auth + Onboarding (5 adım + confetti + 404) | `claude/design-phase-2-auth-onboarding` | #42 draft | ✅ Tamamlandı |
 | 3 | Marketing secondary (features, AI Co-Pilot, pricing, ROI, QR, integrations, compare, stories, case-study) | `claude/design-phase-3-marketing` | #43 draft | ✅ Tamamlandı |
 | 4 | Solutions (7 sektör) | `claude/design-phase-4-solutions` | #44 draft | ✅ Tamamlandı |
-| 5 | Content (blog, faq, help, about, careers, contact, 8 legal) | `claude/design-phase-5-content` | draft | 🔄 Devam |
-| 6 | Admin core (dashboard, reviews, QR wizard, analytics, restaurants, settings) | `claude/design-phase-6-admin-core` | — | ⏳ Bekliyor |
+| 5 | Content (blog, faq, help, about, careers, contact, 8 legal) | `claude/design-phase-5-content` | #45 draft | ✅ Tamamlandı |
+| 6 | Admin core (dashboard, reviews, QR wizard, analytics, restaurants, settings) | `claude/design-phase-6-admin-core` | draft | 🔄 Devam |
 | 7 | Admin advanced (campaigns, team, notifications, billing, API/webhook, tüm ikincil) | `claude/design-phase-7-admin-advanced` | — | ⏳ Bekliyor |
 | 8 | Public QR + Menu + Mobile/A11y polish | `claude/design-phase-8-public-polish` | — | ⏳ Bekliyor |
 
@@ -254,6 +254,40 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 - Faz 6 — Admin core: `/admin/dashboard` (KPI + trend + quick actions), `/admin/reviews` (3-col inbox, zaten AI wired), `/admin/qr` (4-step wizard), `/admin/analytics` (NPS + word cloud + konum performansı), `/admin/restaurants` (mini map + 4-col stats — zaten var), `/admin/settings` + `/admin/site-settings`.
 - Mevcut sayfalar PR #38'de `SuperadminBlock` ile gate'lendi — bu korunmalı.
 - Tüm chart verisi `/api/feedback/stats` üzerinden — endpoint dokunulmaz.
+
+---
+
+### Faz 6 — 2026-04-23
+
+**Kapsam:** Admin core sayfaları. Audit sonucu scope ciddi şekilde daraldı:
+
+**Audit sonucu (7 admin core sayfa):**
+- Hepsi **0 lingering Pulse pattern**. Toplam 3130 satır — tümü Pulse-clean
+- `/admin/dashboard` (487 satır): welcome banner (dark) + StatsCards + 4 quick-actions (QR Oluştur / Tüm Yorumlar / Düşük Puanlılar / CSV İndir) + AspectBreakdown + GoogleConversion + 2 recharts (TrendsChart + DayDistributionChart) + FeedbackTable + filters. Plan'ın istediği "KPI + trend + quick actions" zaten **tam kapsamlı** mevcut.
+- `/admin/reviews` (379 satır): 2-col inbox + AI Co-Pilot (PR #37'den OpenAI'a bağlı). `PANEL / YORUMLAR` eyebrow zaten mevcut.
+- `/admin/qr` (910 satır): Kapsamlı settings + batch generator + history. 4-step wizard yerine flat form ama fonksiyonel olarak superset. Backend tarafını (`/api/restaurants/[id]/qr`) bozmamak için wizard'a rewrite etmedim — scope riski yüksek.
+- `/admin/analytics` (221 satır): NPS + word cloud + location performance tam mevcut. `PANEL / ANALİZ` eyebrow var.
+- `/admin/restaurants` (514 satır): AdminLocations card format (mini map + 4-col stat + trend badge) PR önceden eklenmişti. Pulse-clean.
+- `/admin/settings` (246 satır): 8-tab yapı + `SuperadminBlock` wrapper. `PANEL / AYARLAR` eyebrow var.
+- `/admin/site-settings` (373 satır): SEO + logo/favicon/OG. Header eyebrow yoktu.
+
+**Değişen dosyalar (konsistans için minor pass):**
+- `src/app/admin/dashboard/page.tsx` — welcome banner zaten benzersiz (dark + lime), dokunulmadı (özel kart)
+- `src/app/admin/restaurants/page.tsx` — header'a `PANEL / İŞLETMELER` eyebrow + Pulse hero tipografisi eklendi (uppercase H1 → semantik h1 + font-heading; body text `font-bold` → `text-[#525252]`)
+- `src/app/admin/qr/page.tsx` — header'a `PANEL / QR KOD` eyebrow + aynı tipografi alignment
+- `src/app/admin/site-settings/page.tsx` — header `PANEL / SİTE AYARLARI` eyebrow + Pulse h1 + Superadmin rozet pulse-eyebrow'lu
+
+**Backend etkisi:** Yok. `SuperadminBlock` wrapper'ları (billing/notifications/campaigns/settings/team) korundu; AI Co-Pilot `suggest-reply` wiring, feedback stats endpoint, site-settings PUT endpoint — hiçbiri dokunulmadı.
+
+**Verification:**
+- `npx tsc --noEmit` yeni değişikliklerde 0 hata
+- 7 admin core sayfa `/admin/{dashboard,reviews,qr,analytics,restaurants,settings,site-settings}` 307 → login (auth intact)
+- Header eyebrow pattern `PANEL / {isim}` artık 5/7 sayfada tutarlı (dashboard = özel dark welcome, settings wrapper'ı içerdiği için body header değil gateway)
+
+**Sonraki faz için not:**
+- Faz 7 — Admin advanced: `/admin/campaigns` + `/admin/team` + `/admin/notifications` + `/admin/billing` + `/admin/leads` + `/admin/members` + `/admin/customers` + `/admin/users` + `/admin/announcements` + `/admin/blog` + `/admin/profile` + `/admin/trial-expired` + yeni `/admin/api` (veya `/admin/integrations`).
+- İlk 5'i (campaigns/team/notifications/billing/settings) `SuperadminBlock` ile zaten gate'li — bu korunmalı.
+- Stripe billing model'i (`BillingInvoice` + `BillingSubscription`) scaffolding.ts'de mevcut.
 
 ---
 
