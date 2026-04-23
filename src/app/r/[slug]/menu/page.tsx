@@ -112,9 +112,15 @@ export default function PublicMenuPage() {
         const res = await fetch(`/api/menu/${slug}`);
         if (res.ok) {
           const menuData = await res.json();
-          setData(menuData);
-          if (menuData.categories.length > 0) {
-            setActiveCategory(menuData.categories[0].id);
+          // Normalize: always coerce categories to an array so later .filter/
+          // .map calls are safe even if the API returns an unexpected shape.
+          const safe = {
+            ...menuData,
+            categories: Array.isArray(menuData?.categories) ? menuData.categories : [],
+          };
+          setData(safe);
+          if (safe.categories.length > 0) {
+            setActiveCategory(safe.categories[0].id);
           }
         } else {
           setData(null);

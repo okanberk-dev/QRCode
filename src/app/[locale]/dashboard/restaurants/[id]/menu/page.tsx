@@ -1517,16 +1517,18 @@ function MenuQrModal({
   return (
     <Modal title={copy.menuQr} onClose={onClose}>
       <div className="space-y-5">
-        <div className="flex items-center justify-center rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] p-6">
+        <div className="flex items-center justify-center rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] p-4 sm:p-6">
           {previewSvg ? (
             <div
-              className="h-60 w-60"
+              className="aspect-square w-full max-w-[240px] [&>svg]:h-full [&>svg]:w-full"
               dangerouslySetInnerHTML={{ __html: previewSvg }}
             />
           ) : err ? (
-            <p className="text-xs font-bold text-red-600">{err}</p>
+            <p className="py-20 text-xs font-bold text-red-600">{err}</p>
           ) : (
-            <Loader2 size={28} className="animate-spin text-[#6B7280]" />
+            <div className="flex aspect-square w-full max-w-[240px] items-center justify-center">
+              <Loader2 size={28} className="animate-spin text-[#6B7280]" />
+            </div>
           )}
         </div>
 

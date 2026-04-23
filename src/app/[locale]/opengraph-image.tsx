@@ -1,7 +1,8 @@
 import { ImageResponse } from 'next/og';
 import type { Locale } from '@/lib/translations';
+import { getSiteSettings } from '@/lib/site-settings';
 
-// export const runtime = 'edge';
+export const revalidate = 60;
 
 export const alt = 'Buaze — Google İtibar Yönetimi';
 export const size = {
@@ -10,6 +11,36 @@ export const size = {
 };
 export const contentType = 'image/png';
 
+// Serve the admin-uploaded OG image when present; otherwise fall through to
+// the locale-aware branded render. Same pattern as the root opengraph-image.
+async function serveCustomOgImage(url: string): Promise<Response | null> {
+  try {
+    if (url.startsWith('data:')) {
+      const match = url.match(/^data:(image\/[^;]+);base64,(.+)$/);
+      if (!match) return null;
+      const [, contentType, base64] = match;
+      const buf = Buffer.from(base64, 'base64');
+      return new Response(new Uint8Array(buf), {
+        headers: {
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=300',
+        },
+      });
+    }
+    const res = await fetch(url, { next: { revalidate: 60 } });
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    return new Response(buf, {
+      headers: {
+        'Content-Type': res.headers.get('content-type') || 'image/png',
+        'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
+  } catch {
+    return null;
+  }
+}
+
 export default async function Image({
   params,
 }: {
@@ -17,6 +48,12 @@ export default async function Image({
 }) {
   const { locale } = await params;
   const isTr = locale === 'tr';
+
+  const settings = await getSiteSettings().catch(() => null);
+  if (settings?.ogImageUrl) {
+    const custom = await serveCustomOgImage(settings.ogImageUrl);
+    if (custom) return custom;
+  }
 
   const headline = isTr ? 'Dijital İtibar' : 'Digital';
   const headline2 = isTr ? 'Operasyon Merkezi' : 'Reputation Hub';

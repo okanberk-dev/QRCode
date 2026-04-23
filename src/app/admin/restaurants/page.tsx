@@ -55,8 +55,13 @@ export default function RestaurantsPage() {
       const res = await fetch(`/api/restaurants?status=${currentFilter}`);
       if (res.ok) {
         const result = await res.json();
-        // Handle both older array response and newer { data, meta } shape
-        const list = Array.isArray(result) ? result : (result.data || []);
+        // Handle both older array response and newer { data, meta } shape.
+        // Never assign a non-array value — a later .filter() would crash.
+        const list = Array.isArray(result)
+          ? result
+          : Array.isArray(result?.data)
+          ? result.data
+          : [];
         setRestaurants(list);
       }
     } catch (e) {
