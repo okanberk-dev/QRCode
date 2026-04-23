@@ -95,6 +95,26 @@ export default async function DashboardPage({
     }
   });
 
+  // Per-restaurant avg rating for "Konum performansı" widget
+  const restaurantRatings = user.restaurants.length
+    ? await prisma.feedback.groupBy({
+        by: ['restaurantId'],
+        where: { restaurantId: { in: user.restaurants.map((r) => r.id) } },
+        _avg: { rating: true },
+        _count: { _all: true },
+      })
+    : [];
+  const ratingByRestaurant = new Map(
+    restaurantRatings.map((r) => [r.restaurantId, { avg: r._avg.rating ?? 0, count: r._count._all }]),
+  );
+  const locationPerf = user.restaurants
+    .map((r) => {
+      const stat = ratingByRestaurant.get(r.id);
+      return { id: r.id, name: r.name, avg: stat?.avg ?? 0, count: stat?.count ?? 0 };
+    })
+    .sort((a, b) => b.avg - a.avg || b.count - a.count)
+    .slice(0, 5);
+
   const trialDaysLeft = user.trialEndsAt
     ? Math.max(0, Math.ceil((user.trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
@@ -203,68 +223,115 @@ export default async function DashboardPage({
         }))}
       />
 
-      {/* Latest feedbacks */}
-      {latestFeedbacks.length > 0 && (
-        <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2
-                className="text-[18px] font-semibold tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                {isTr ? 'Son yorumlar' : 'Latest reviews'}
-              </h2>
-              <p className="pulse-eyebrow text-[#737373] mt-1">
-                {isTr ? 'Son 3 · tüm işletmeler' : 'Last 3 · all locations'}
-              </p>
-            </div>
-            <Link
-              href={`/${locale}/dashboard/feedbacks`}
-              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
-            >
-              {isTr ? 'Tümünü gör' : 'See all'}
-              <ArrowRight size={13} strokeWidth={2} />
-            </Link>
-          </div>
-
-          <ul className="mt-5 divide-y divide-[#EDEDED]">
-            {latestFeedbacks.map((fb) => {
-              const initials = (fb.restaurant?.name || 'B').charAt(0).toUpperCase();
-              const badgeBg = fb.rating >= 4 ? 'bg-[#C6F24E]' : fb.rating <= 2 ? 'bg-[#FEE2E2]' : 'bg-[#F5F5F5]';
-              const badgeFg = fb.rating <= 2 ? 'text-[#DC2626]' : 'text-[#0A0A0A]';
-              return (
-                <li key={fb.id} className="grid grid-cols-[36px_1fr_auto] items-start gap-3 py-4">
-                  <div
-                    className={`flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-semibold ${badgeBg} ${badgeFg}`}
+      {/* Latest feedbacks + Location performance (AdminDashboard row design) */}
+      {(latestFeedbacks.length > 0 || locationPerf.length > 0) && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
+          {latestFeedbacks.length > 0 && (
+            <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2
+                    className="text-[18px] font-semibold tracking-[-0.015em]"
                     style={{ fontFamily: 'var(--font-heading)' }}
                   >
-                    {initials}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[13px] font-semibold text-[#0A0A0A] truncate">
-                        {fb.restaurant?.name ?? (isTr ? 'İşletme' : 'Location')}
+                    {isTr ? 'Son yorumlar' : 'Latest reviews'}
+                  </h2>
+                  <p className="pulse-eyebrow text-[#737373] mt-1">
+                    {isTr ? 'Son 3 · tüm işletmeler' : 'Last 3 · all locations'}
+                  </p>
+                </div>
+                <Link
+                  href={`/${locale}/dashboard/feedbacks`}
+                  className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                >
+                  {isTr ? 'Tümünü gör' : 'See all'}
+                  <ArrowRight size={13} strokeWidth={2} />
+                </Link>
+              </div>
+
+              <ul className="mt-5 divide-y divide-[#EDEDED]">
+                {latestFeedbacks.map((fb) => {
+                  const initials = (fb.restaurant?.name || 'B').charAt(0).toUpperCase();
+                  const badgeBg = fb.rating >= 4 ? 'bg-[#C6F24E]' : fb.rating <= 2 ? 'bg-[#FEE2E2]' : 'bg-[#F5F5F5]';
+                  const badgeFg = fb.rating <= 2 ? 'text-[#DC2626]' : 'text-[#0A0A0A]';
+                  return (
+                    <li key={fb.id} className="grid grid-cols-[36px_1fr_auto] items-start gap-3 py-4">
+                      <div
+                        className={`flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-semibold ${badgeBg} ${badgeFg}`}
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                      >
+                        {initials}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[13px] font-semibold text-[#0A0A0A] truncate">
+                            {fb.restaurant?.name ?? (isTr ? 'İşletme' : 'Location')}
+                          </span>
+                          <span className="text-[#C6F24E] text-[11px] tracking-wide">
+                            {'★'.repeat(fb.rating)}
+                            <span className="text-[#D4D4D4]">{'★'.repeat(5 - fb.rating)}</span>
+                          </span>
+                        </div>
+                        <p className="mt-1 line-clamp-1 text-[13px] text-[#525252] leading-[1.55]">
+                          {fb.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
+                        </p>
+                      </div>
+                      <span className="pulse-eyebrow text-[#737373] whitespace-nowrap">
+                        {new Date(fb.createdAt).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
+                          day: '2-digit',
+                          month: 'short',
+                        })}
                       </span>
-                      <span className="text-[#C6F24E] text-[11px] tracking-wide">
-                        {'★'.repeat(fb.rating)}
-                        <span className="text-[#D4D4D4]">{'★'.repeat(5 - fb.rating)}</span>
-                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {/* Konum performansı — AdminDashboard right column */}
+          {locationPerf.length > 0 && (
+            <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+              <div>
+                <h2
+                  className="text-[18px] font-semibold tracking-[-0.015em]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {isTr ? 'Konum performansı' : 'Location performance'}
+                </h2>
+                <p className="pulse-eyebrow text-[#737373] mt-1">
+                  {isTr ? 'Bu ay · puana göre' : 'This month · by rating'}
+                </p>
+              </div>
+              <ul className="mt-5 divide-y divide-[#EDEDED]">
+                {locationPerf.map((loc) => (
+                  <li key={loc.id} className="flex items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <Link
+                        href={`/${locale}/dashboard/restaurants/${loc.id}`}
+                        className="block truncate text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                      >
+                        {loc.name}
+                      </Link>
+                      <div className="pulse-eyebrow text-[#737373] mt-0.5">
+                        {loc.count} {isTr ? 'yorum' : 'reviews'}
+                      </div>
                     </div>
-                    <p className="mt-1 line-clamp-1 text-[13px] text-[#525252] leading-[1.55]">
-                      {fb.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
-                    </p>
-                  </div>
-                  <span className="pulse-eyebrow text-[#737373] whitespace-nowrap">
-                    {new Date(fb.createdAt).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
-                      day: '2-digit',
-                      month: 'short',
-                    })}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span
+                        className="text-[18px] font-semibold tabular-nums text-[#0A0A0A]"
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                      >
+                        {loc.avg > 0 ? loc.avg.toFixed(1) : '—'}
+                      </span>
+                      <span className="text-[#C6F24E] text-[13px]">★</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
       )}
 
       {/* Restaurants */}

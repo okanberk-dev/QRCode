@@ -102,6 +102,15 @@ export default async function DashboardLayout({
       plan: true,
       trialEndsAt: true,
       isActive: true,
+      restaurants: {
+        select: {
+          id: true,
+          name: true,
+          _count: { select: { feedbacks: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 50,
+      },
     },
   });
 
@@ -116,6 +125,7 @@ export default async function DashboardLayout({
 
   const announcements = await fetchActiveAnnouncements(locale);
   const { logoUrl } = await getSiteSettings();
+  const totalFeedbacks = user.restaurants.reduce((sum, r) => sum + r._count.feedbacks, 0);
 
   return (
     <UserDashboardShell
@@ -127,6 +137,11 @@ export default async function DashboardLayout({
         email: user.email,
         plan: user.plan,
         trialEndsAt: user.trialEndsAt?.toISOString() || null,
+      }}
+      workspace={{
+        primaryName: user.restaurants[0]?.name ?? null,
+        locationCount: user.restaurants.length,
+        feedbackCount: totalFeedbacks,
       }}
     >
       {children}

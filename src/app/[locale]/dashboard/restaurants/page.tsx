@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store, ToggleLeft, ToggleRight, X } from 'lucide-react';
+import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store, X } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 
 interface Restaurant {
@@ -273,80 +273,106 @@ export default function DashboardRestaurantsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((restaurant) => (
-            <div
-              key={restaurant.id}
-              className={`overflow-hidden rounded-2xl border border-[#EDEDED] bg-white transition-colors ${!restaurant.isActive ? 'opacity-70' : 'hover:border-[#C6F24E]'}`}
-            >
-              <div className="h-1.5 w-full" style={{ backgroundColor: restaurant.primaryColor }} />
-
-              <div className="space-y-5 p-5 sm:p-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[16px] font-semibold text-white"
-                      style={{ backgroundColor: restaurant.primaryColor, fontFamily: 'var(--font-heading)' }}
-                    >
-                      {restaurant.name.charAt(0).toUpperCase()}
-                    </div>
+          {filtered.map((restaurant) => {
+            const trend: 'active' | 'new' | 'inactive' = !restaurant.isActive
+              ? 'inactive'
+              : restaurant._count.feedbacks >= 10
+                ? 'active'
+                : 'new';
+            const trendStyle = {
+              active: { bg: 'bg-[#EAF9B8]', fg: 'text-[#0A0A0A]', label: locale === 'tr' ? '↑ AKTİF' : '↑ ACTIVE' },
+              new: { bg: 'bg-[#F5F5F5]', fg: 'text-[#525252]', label: locale === 'tr' ? '→ YENİ' : '→ NEW' },
+              inactive: { bg: 'bg-[#FEE2E2]', fg: 'text-[#DC2626]', label: locale === 'tr' ? '· PASİF' : '· OFFLINE' },
+            }[trend];
+            return (
+              <div
+                key={restaurant.id}
+                className={`overflow-hidden rounded-2xl border border-[#EDEDED] bg-white transition-colors ${!restaurant.isActive ? 'opacity-70' : 'hover:border-[#C6F24E]'}`}
+              >
+                <div className="p-5 sm:p-6">
+                  {/* Header — name + address + trend badge (AdminLocations design) */}
+                  <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3
-                        className="truncate text-[16px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+                        className="truncate text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.02em] leading-tight"
                         style={{ fontFamily: 'var(--font-heading)' }}
                       >
                         {restaurant.name}
                       </h3>
-                      <div className="mt-0.5 flex items-center gap-1.5">
-                        <p className="pulse-eyebrow text-[#737373] truncate">/{restaurant.slug}</p>
-                        <CopyUrlButton
-                          url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurant.slug}`}
-                          className="h-5 w-5"
-                        />
-                      </div>
+                      <p className="mt-1 text-[12px] text-[#737373] truncate">{restaurant.category}</p>
                     </div>
+                    <span className={`${trendStyle.bg} ${trendStyle.fg} shrink-0 pulse-eyebrow rounded px-2 py-1`}>
+                      {trendStyle.label}
+                    </span>
                   </div>
 
+                  {/* Mini map graphic — decorative, lime accent pin (AdminLocations §716-724) */}
                   <button
+                    type="button"
                     onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
-                    className={restaurant.isActive ? 'text-[#16A34A]' : 'text-[#737373]'}
+                    className="mt-4 block w-full aspect-[2/1] rounded-lg bg-[#F5F5F5] relative overflow-hidden hover:bg-[#EDEDED] transition-colors group"
                     aria-label={restaurant.isActive ? 'deactivate' : 'activate'}
                   >
-                    {restaurant.isActive ? <ToggleRight size={32} strokeWidth={1.75} /> : <ToggleLeft size={32} strokeWidth={1.75} />}
+                    <svg viewBox="0 0 200 100" className="w-full h-full" aria-hidden>
+                      <path d="M0 50 Q30 40 60 48 Q90 55 120 42 Q150 30 200 38" stroke="#EDEDED" strokeWidth="1.5" fill="none" />
+                      <path d="M20 70 Q60 60 100 65 Q140 70 180 62" stroke="#EDEDED" strokeWidth="1.5" fill="none" />
+                      <path d="M0 20 Q40 25 80 18 Q120 12 160 22 Q190 30 200 22" stroke="#EDEDED" strokeWidth="1.5" fill="none" />
+                      <circle cx="100" cy="50" r="18" fill={restaurant.primaryColor} opacity="0.3" />
+                      <circle cx="100" cy="50" r="10" fill={restaurant.primaryColor} opacity="0.6" />
+                      <circle cx="100" cy="50" r="5" fill="#0A0A0A" />
+                    </svg>
+                    <span className="absolute bottom-2 right-2 flex items-center gap-1.5 pulse-eyebrow text-[#737373] bg-white/80 rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {restaurant.isActive
+                        ? locale === 'tr' ? 'DEVRE DIŞI BIRAK' : 'DEACTIVATE'
+                        : locale === 'tr' ? 'ETKİNLEŞTİR' : 'ACTIVATE'}
+                    </span>
                   </button>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-4">
-                  <div>
-                    <p className="pulse-eyebrow text-[#737373]">{copy.category}</p>
-                    <p
-                      className="mt-1.5 text-[14px] font-semibold text-[#0A0A0A] truncate"
-                      style={{ fontFamily: 'var(--font-heading)' }}
-                    >
-                      {restaurant.category}
-                    </p>
+                  {/* 4-col stat grid (AdminLocations §727-739) */}
+                  <div className="mt-4 grid grid-cols-4 gap-3">
+                    {[
+                      { l: locale === 'tr' ? 'PUAN' : 'RATING', v: '—', star: true },
+                      { l: locale === 'tr' ? 'YORUM' : 'REVIEWS', v: String(restaurant._count.feedbacks) },
+                      {
+                        l: locale === 'tr' ? 'DURUM' : 'STATUS',
+                        v: restaurant.isActive ? (locale === 'tr' ? 'Açık' : 'Live') : (locale === 'tr' ? 'Kapalı' : 'Off'),
+                      },
+                      { l: 'URL', v: `/${restaurant.slug}`, mono: true },
+                    ].map((x) => (
+                      <div key={x.l} className="min-w-0">
+                        <div className="pulse-eyebrow text-[#737373]">{x.l}</div>
+                        <div
+                          className={`mt-1.5 text-[16px] sm:text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] truncate ${x.mono ? 'font-mono text-[13px] sm:text-[13px]' : ''}`}
+                          style={{ fontFamily: x.mono ? 'var(--font-mono)' : 'var(--font-heading)' }}
+                        >
+                          {x.v}
+                          {x.star && <span className="text-[#C6F24E] ml-1 text-[12px]"> ★</span>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <p className="pulse-eyebrow text-[#737373]">{copy.reviews}</p>
-                    <p
-                      className="mt-1.5 text-[14px] font-semibold text-[#0A0A0A] tabular-nums"
-                      style={{ fontFamily: 'var(--font-heading)' }}
-                    >
-                      {restaurant._count.feedbacks}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
-                    className="flex-1 rounded-full bg-[#0A0A0A] px-4 py-2.5 text-center text-[12px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
-                  >
-                    {copy.manage}
-                  </Link>
-                  <Link
-                    href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
-                    className="flex-1 rounded-full border border-[#0A0A0A] px-4 py-2.5 text-center text-[12px] font-medium text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"
-                  >
+                  {/* URL row + copy */}
+                  <div className="mt-4 flex items-center gap-1.5">
+                    <CopyUrlButton
+                      url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurant.slug}`}
+                      className="h-5 w-5 shrink-0"
+                    />
+                    <p className="pulse-eyebrow text-[#737373] truncate">/r/{restaurant.slug}</p>
+                  </div>
+
+                  {/* Full-width "Detay aç" pill — matches AdminLocations §741 */}
+                  <div className="mt-4 grid grid-cols-[1fr_1fr_auto] gap-2">
+                    <Link
+                      href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
+                      className="rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-4 py-2.5 text-center text-[12px] font-medium text-[#525252] hover:bg-[#0A0A0A] hover:text-white hover:border-[#0A0A0A] transition-colors"
+                    >
+                      {locale === 'tr' ? 'Detay aç' : 'Open details'} →
+                    </Link>
+                    <Link
+                      href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
+                      className="rounded-full border border-[#0A0A0A] px-4 py-2.5 text-center text-[12px] font-medium text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"
+                    >
                     {copy.qr}
                   </Link>
                   <Link
@@ -360,7 +386,8 @@ export default function DashboardRestaurantsPage() {
                 </div>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
 

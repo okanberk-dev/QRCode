@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, QrCode, Store, User, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BookOpen, ChevronDown, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, QrCode, Search, Store, User, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -15,9 +15,16 @@ interface DashboardUser {
   trialEndsAt: string | null;
 }
 
+interface DashboardWorkspace {
+  primaryName: string | null;
+  locationCount: number;
+  feedbackCount: number;
+}
+
 interface UserDashboardShellProps {
   locale: Locale;
   user: DashboardUser;
+  workspace?: DashboardWorkspace;
   announcements?: DashboardAnnouncement[];
   logoUrl?: string | null;
   children: React.ReactNode;
@@ -30,11 +37,30 @@ function getDaysLeft(trialEndsAt: string | null) {
   return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-export default function UserDashboardShell({ locale, user, announcements = [], logoUrl, children }: UserDashboardShellProps) {
+const TOP_BAR_MAP: Record<string, { breadcrumb: string; title: string } | undefined> = undefined as never;
+
+function useTopBar(locale: Locale, pathname: string | null) {
+  const isTr = locale === 'tr';
+  if (!pathname) return null;
+  const rest = pathname.replace(`/${locale}/dashboard`, '') || '/';
+  if (rest === '/') return { breadcrumb: isTr ? 'PANEL / GENEL BAKIŞ' : 'PANEL / OVERVIEW', title: isTr ? 'Genel bakış' : 'Overview' };
+  if (rest.startsWith('/feedbacks')) return { breadcrumb: isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS', title: isTr ? 'Yorumlar' : 'Reviews' };
+  if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'PANEL / QR OLUŞTUR' : 'PANEL / CREATE QR', title: isTr ? 'QR oluştur' : 'Create QR' };
+  if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / KONUMLAR' : 'PANEL / LOCATIONS', title: isTr ? 'Konumlar' : 'Locations' };
+  if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
+  if (rest.startsWith('/leads')) return { breadcrumb: isTr ? 'PANEL / MÜŞTERİLER' : 'PANEL / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
+  if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
+  if (rest.startsWith('/profile')) return { breadcrumb: isTr ? 'HESAP / PROFİL' : 'ACCOUNT / PROFILE', title: isTr ? 'Profil' : 'Profile' };
+  return null;
+}
+
+export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, children }: UserDashboardShellProps) {
+  void TOP_BAR_MAP;
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const trialDaysLeft = getDaysLeft(user.trialEndsAt);
+  const topBar = useTopBar(locale, pathname);
 
   const copy = useMemo(() => {
     const isTr = locale === 'tr';
@@ -94,26 +120,61 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
     window.location.href = `/${locale}/auth/login`;
   };
 
+  const primaryName = workspace?.primaryName ?? (locale === 'tr' ? 'İşletmen' : 'Your workspace');
+  const locationCount = workspace?.locationCount ?? 0;
+  const primaryInitial = (workspace?.primaryName || displayName).charAt(0).toUpperCase();
+
+  const quotaLabel = locale === 'tr' ? 'Yorum kotan' : 'Review quota';
+  const quotaValue =
+    user.plan === 'trial' && trialDaysLeft !== null
+      ? `${trialDaysLeft} ${locale === 'tr' ? 'gün deneme' : 'day trial'}`
+      : `${workspace?.feedbackCount ?? 0} / ∞`;
+  const planLabel =
+    user.plan === 'trial'
+      ? locale === 'tr'
+        ? 'TRIAL'
+        : 'TRIAL'
+      : (user.plan || 'growth').toUpperCase() + (locale === 'tr' ? ' PLAN' : ' PLAN');
+  const upgradeLabel = user.plan === 'trial'
+    ? (locale === 'tr' ? 'Yükselt' : 'Upgrade')
+    : (locale === 'tr' ? 'Planı yönet' : 'Manage plan');
+
   const SidebarContent = () => (
     <div className="flex h-full flex-col bg-[#0A0A0A]">
       {/* Logo */}
-      <div className="border-b border-white/10 px-5 py-5">
-        <Link href={`/${locale}/dashboard`} className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center flex-shrink-0"><BuazeLogo size={40} variant="on-dark" imageUrl={logoUrl} /></div>
-          <div className="min-w-0">
-            <p
-              className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              buaze<span className="text-[#C6F24E]">.</span>
-            </p>
-            <p className="pulse-eyebrow text-white/50 mt-1.5">{copy.dashboard}</p>
-          </div>
+      <div className="px-4 pt-5 pb-3">
+        <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
+          <BuazeLogo size={32} variant="on-dark" imageUrl={logoUrl} />
+          <span
+            className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            buaze<span className="text-[#C6F24E]">.</span>
+          </span>
         </Link>
       </div>
 
+      {/* Workspace switcher */}
+      <div className="px-3 pb-3">
+        <div className="flex items-center gap-2.5 rounded-lg bg-[#1A1A1A] px-3 py-2.5">
+          <div
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {primaryInitial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold text-white leading-tight">{primaryName}</p>
+            <p className="pulse-eyebrow text-white/50 mt-0.5">
+              {locationCount} {locale === 'tr' ? 'KONUM' : 'LOCATIONS'}
+            </p>
+          </div>
+          <ChevronDown size={14} className="text-white/40 shrink-0" strokeWidth={2} />
+        </div>
+      </div>
+
       {/* Nav */}
-      <div className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+      <div className="flex-1 space-y-0.5 overflow-y-auto px-3">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
           const Icon = item.icon;
@@ -135,44 +196,48 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
         })}
       </div>
 
-      {/* Trial banner */}
-      {user.plan === 'trial' && trialDaysLeft !== null && (
-        <div className="mx-3 mb-3 rounded-xl bg-[#1A1A1A] p-4">
-          <div className="flex items-center gap-1.5 text-[#C6F24E]">
-            <Crown size={12} strokeWidth={2} />
-            <span className="pulse-eyebrow text-[#C6F24E]">{copy.plan}</span>
-          </div>
-          <p className="mt-2 text-[14px] font-medium text-white">
-            <span
-              style={{ fontFamily: 'var(--font-heading)' }}
-              className="text-[22px] tracking-[-0.02em] leading-none"
-            >
-              {trialDaysLeft}
-            </span>{' '}
-            <span className="text-white/60 text-[12px]">{copy.trialLeft}</span>
-          </p>
+      {/* Plan card */}
+      <div className="mx-3 my-3 rounded-lg bg-[#1A1A1A] p-3.5">
+        <div className="flex items-center gap-1.5">
+          {user.plan === 'trial' && <Crown size={11} strokeWidth={2} className="text-[#C6F24E]" />}
+          <span className="pulse-eyebrow text-[#C6F24E]">{planLabel}</span>
         </div>
-      )}
+        <p className="mt-2 text-[12px] text-white/70 leading-[1.45]">
+          {quotaLabel}:{' '}
+          <span
+            className="font-semibold text-white"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {quotaValue}
+          </span>
+        </p>
+        <Link
+          href={`/${locale}/pricing`}
+          className="mt-2.5 block rounded-full bg-[#C6F24E] px-3 py-1.5 text-center text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
+        >
+          {upgradeLabel}
+        </Link>
+      </div>
 
-      {/* User footer */}
+      {/* User row + logout */}
       <div className="border-t border-white/10 bg-black/20 p-3">
-        <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
+        <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-white/5 px-2.5 py-2">
           <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#C6F24E] text-[13px] font-semibold text-[#0A0A0A]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] border border-white/10"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {initial}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-[13px] font-medium text-white">{displayName}</p>
-            <p className="truncate text-[11px] text-white/50">{user.email}</p>
+            <p className="truncate text-[12px] font-medium text-white">{displayName}</p>
+            <p className="truncate text-[10px] text-white/50">{user.email}</p>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-medium text-white/60 transition-all hover:bg-white/5 hover:text-red-300"
+          className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/60 transition-all hover:bg-white/5 hover:text-red-300"
         >
-          <LogOut size={14} strokeWidth={2} />
+          <LogOut size={13} strokeWidth={2} />
           {copy.logout}
         </button>
       </div>
@@ -214,6 +279,45 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
             </button>
           </div>
         </div>
+
+        {/* Desktop top bar (breadcrumb + title + search pill + avatar) */}
+        {topBar && (
+          <div className="hidden lg:flex items-center justify-between gap-4 border-b border-[#EDEDED] bg-white px-7 py-3.5">
+            <div className="min-w-0">
+              <p className="pulse-eyebrow text-[#737373]">{topBar.breadcrumb}</p>
+              <h1
+                className="mt-1 text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-none truncate"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {topBar.title}
+              </h1>
+            </div>
+            <div className="flex items-center gap-2.5 shrink-0">
+              <div
+                className="hidden xl:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#737373] cursor-not-allowed select-none"
+                aria-hidden
+                title={locale === 'tr' ? 'Yakında: komut paleti' : 'Coming soon: command palette'}
+              >
+                <Search size={12} strokeWidth={2} />
+                <span>{locale === 'tr' ? 'Yorum, konum, ekip ara…' : 'Search reviews, locations, team…'}</span>
+                <span
+                  className="ml-1 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252]"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  ⌘K
+                </span>
+              </div>
+              <Link
+                href={`/${locale}/dashboard/profile`}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors"
+                style={{ fontFamily: 'var(--font-heading)' }}
+                aria-label={displayName}
+              >
+                {initial}
+              </Link>
+            </div>
+          </div>
+        )}
 
         <main className="min-w-0 flex-1 overflow-x-hidden pb-24 lg:pb-0">
           {announcements.length > 0 && (
