@@ -501,12 +501,12 @@ export default function RestaurantMenuBuilderPage() {
       <div className="min-h-full">
         <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#EDEDED] bg-[#0A0A0A] px-4 py-3 text-white">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#C6F24E]">{copy.preview}</p>
-            <p className="truncate text-sm font-black">{restaurant.name}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#C6F24E]">{copy.preview}</p>
+            <p className="truncate text-sm font-semibold">{restaurant.name}</p>
           </div>
           <button
             onClick={() => router.push(`/${locale}/dashboard/restaurants/${id}/menu`)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white hover:bg-white/20 active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-white hover:bg-white/20 active:scale-95"
           >
             <X size={14} strokeWidth={2} />
             {copy.exitPreview}
@@ -520,17 +520,17 @@ export default function RestaurantMenuBuilderPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-8">
+      <div className="flex flex-col gap-4 rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-1">
             <Link
               href={`/${locale}/dashboard/menu`}
-              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]"
+              className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]"
             >
               <ArrowLeft size={14} strokeWidth={2} />
               {copy.backToMenus}
             </Link>
-            <h1 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl">
+            <h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl">
               <UtensilsCrossed size={22} strokeWidth={2} />
               {restaurant.name}
             </h1>
@@ -544,21 +544,21 @@ export default function RestaurantMenuBuilderPage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/${locale}/dashboard/restaurants/${id}/menu?preview=1`}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
             >
               <Eye size={14} strokeWidth={2} />
               {copy.preview}
             </Link>
             <button
               onClick={() => setQrModal(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
             >
               <QrCode size={14} strokeWidth={2} />
               {copy.menuQr}
             </button>
             <Link
               href={`/${locale}/dashboard/restaurants/${id}/menu/analytics`}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
             >
               <BarChart3 size={14} strokeWidth={2} />
               {copy.analytics}
@@ -567,7 +567,7 @@ export default function RestaurantMenuBuilderPage() {
               <Link
                 href={`/menu/${restaurant.slug}`}
                 target="_blank"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
               >
                 <ChevronRight size={14} strokeWidth={2} />
                 {copy.viewPublic}
@@ -576,7 +576,7 @@ export default function RestaurantMenuBuilderPage() {
             <button
               onClick={togglePublish}
               disabled={publishBusy || !restaurant.menuEnabled}
-              className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 disabled:opacity-50 ${
+              className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold uppercase tracking-widest shadow-sm transition-all active:scale-95 disabled:opacity-50 ${
                 restaurant.menuPublished
                   ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
                   : 'bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]'
@@ -612,12 +612,12 @@ export default function RestaurantMenuBuilderPage() {
       {/* Two-pane builder */}
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         {/* Categories */}
-        <section className="rounded-[24px] border border-[#EDEDED] bg-white shadow-sm">
+        <section className="rounded-2xl border border-[#EDEDED] bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-[#EDEDED] p-4">
-            <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.categories}</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.categories}</h2>
             <button
               onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#C6F24E] px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#C6F24E] active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#C6F24E] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#C6F24E] active:scale-95"
             >
               <Plus size={12} strokeWidth={2} />
               {copy.addCategory}
@@ -653,10 +653,10 @@ export default function RestaurantMenuBuilderPage() {
         </section>
 
         {/* Items */}
-        <section className="rounded-[24px] border border-[#EDEDED] bg-white shadow-sm">
+        <section className="rounded-2xl border border-[#EDEDED] bg-white shadow-sm">
           <div className="flex items-center justify-between gap-2 border-b border-[#EDEDED] p-4">
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">
+              <h2 className="truncate text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">
                 {activeCategory ? activeCategory.name : copy.items}
               </h2>
               {activeCategory?.description && (
@@ -666,7 +666,7 @@ export default function RestaurantMenuBuilderPage() {
             {activeCategory && (
               <button
                 onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#0A0A0A] px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#0A0A0A] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95"
               >
                 <Plus size={12} strokeWidth={2} />
                 {copy.addItem}
@@ -935,7 +935,7 @@ function ItemModal({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-4 py-2 text-[11px] font-semibold uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
                 >
                   {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} strokeWidth={2} />}
                   {uploading ? copy.uploading : copy.uploadImage}
@@ -944,7 +944,7 @@ function ItemModal({
                   <button
                     type="button"
                     onClick={() => setImageUrl('')}
-                    className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
+                    className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
                   >
                     <X size={12} strokeWidth={2} />
                     {copy.removeImage}
@@ -981,7 +981,7 @@ function ItemModal({
                   key={b}
                   type="button"
                   onClick={() => toggleBadge(b)}
-                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-all ${
+                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-widest transition-all ${
                     active ? 'border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A]' : 'border-[#EDEDED] bg-white text-[#1A1A1A] hover:bg-[#FFFFFF]'
                   }`}
                 >
@@ -1014,9 +1014,9 @@ function ItemModal({
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-md sm:p-6">
-      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-[#EDEDED] bg-white shadow-2xl">
+      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-2xl">
         <div className="relative border-b border-[#EDEDED] bg-[#FFFFFF] p-5 sm:p-7">
-          <h2 className="pr-10 text-xl font-extrabold uppercase tracking-tight text-[#0A0A0A] sm:text-2xl">{title}</h2>
+          <h2 className="pr-10 text-xl font-semibold uppercase tracking-tight text-[#0A0A0A] sm:text-2xl">{title}</h2>
           <button
             onClick={onClose}
             className="absolute right-4 top-4 rounded-xl p-2 text-[#6B7280] transition-all hover:bg-[#EDEDED] hover:text-[#0A0A0A]"
@@ -1033,7 +1033,7 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{label}</label>
+      <label className="text-[11px] font-semibold uppercase tracking-widest text-[#6B7280]">{label}</label>
       {children}
     </div>
   );
@@ -1042,13 +1042,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function ModalActions({ busy, copy, onClose }: { busy: boolean; copy: Record<string, string>; onClose: () => void }) {
   return (
     <div className="flex justify-end gap-3 border-t-2 border-[#FFFFFF] pt-5">
-      <button type="button" onClick={onClose} className="px-5 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]">
+      <button type="button" onClick={onClose} className="px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]">
         {copy.cancel}
       </button>
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-6 py-2.5 text-xs font-semibold uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
       >
         {busy ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2} />}
         {copy.save}
@@ -1099,7 +1099,7 @@ function SortableCategoryRow({
       </button>
       <button onClick={onSelect} className="flex min-w-0 flex-1 items-center gap-2 text-left">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-black text-[#0A0A0A]">{category.name}</p>
+          <p className="truncate font-semibold text-[#0A0A0A]">{category.name}</p>
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
             {category.items.length} {isTr ? 'ürün' : 'items'}
             {!category.isVisible && <span className="ml-1 text-amber-600">· {copy.hidden}</span>}
@@ -1181,12 +1181,12 @@ function SortableItemRow({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-black text-[#0A0A0A]">{item.name}</p>
+          <p className="truncate text-sm font-semibold text-[#0A0A0A]">{item.name}</p>
           {!item.isAvailable && (
-            <span className="rounded-full bg-[#EDEDED] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#6B7280]">{copy.hidden}</span>
+            <span className="rounded-full bg-[#EDEDED] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-[#6B7280]">{copy.hidden}</span>
           )}
           {item.isOutOfStock && (
-            <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[9px] font-black uppercase text-red-600">{copy.outOfStock}</span>
+            <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-red-600">{copy.outOfStock}</span>
           )}
         </div>
         <p className="mt-0.5 text-[11px] font-bold text-[#1A1A1A]">
@@ -1254,15 +1254,15 @@ function ThemePanel({
   const logoFileRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <section className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.menuDesign}</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.menuDesign}</h2>
         {saving && <Loader2 size={14} className="animate-spin text-[#6B7280]" />}
       </div>
 
       <div className="mt-4 space-y-4">
         <div>
-          <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{copy.themeLabel}</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#6B7280]">{copy.themeLabel}</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {themes.map((t) => {
               const active = restaurant.menuTheme === t.id;
@@ -1276,7 +1276,7 @@ function ThemePanel({
                 >
                   <ThemeThumb theme={t.id} accent={currentAccent} />
                   <div className="flex items-center justify-between px-1">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-[#0A0A0A]">{t.label}</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#0A0A0A]">{t.label}</span>
                     {active && <Check size={12} strokeWidth={3} className="text-[#C6F24E]" />}
                   </div>
                 </button>
@@ -1286,7 +1286,7 @@ function ThemePanel({
         </div>
 
         <div>
-          <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{copy.accentColor}</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#6B7280]">{copy.accentColor}</p>
           <div className="flex flex-wrap items-center gap-2">
             {THEME_SWATCHES.map((c) => {
               const active = currentAccent.toLowerCase() === c.toLowerCase();
@@ -1307,12 +1307,12 @@ function ThemePanel({
                 onChange={(e) => onChange({ menuAccentColor: e.target.value })}
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               />
-              <span className="text-[9px] font-black uppercase text-[#1A1A1A]">+</span>
+              <span className="text-[9px] font-semibold uppercase text-[#1A1A1A]">+</span>
             </label>
             {restaurant.menuAccentColor && (
               <button
                 onClick={() => onChange({ menuAccentColor: null })}
-                className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#6B7280] hover:bg-[#FFFFFF]"
+                className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-[#6B7280] hover:bg-[#FFFFFF]"
               >
                 <X size={10} strokeWidth={2} />
                 reset
@@ -1322,7 +1322,7 @@ function ThemePanel({
         </div>
 
         <div>
-          <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{copy.logo}</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#6B7280]">{copy.logo}</p>
           <div className="flex items-center gap-3">
             <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#EDEDED] bg-[#FFFFFF]">
               {restaurant.menuLogoUrl ? (
@@ -1340,7 +1340,7 @@ function ThemePanel({
                   type="button"
                   onClick={() => logoFileRef.current?.click()}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-3 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
                 >
                   <ImageIcon size={12} strokeWidth={2} />
                   {copy.uploadImage}
@@ -1349,7 +1349,7 @@ function ThemePanel({
                   <button
                     type="button"
                     onClick={() => onChange({ menuLogoUrl: null })}
-                    className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
+                    className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
                   >
                     <X size={12} strokeWidth={2} />
                     {copy.removeImage}
@@ -1533,13 +1533,13 @@ function MenuQrModal({
         </div>
 
         <div>
-          <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{copy.qrFormat}</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#6B7280]">{copy.qrFormat}</p>
           <div className="flex gap-2">
             {(['png', 'svg'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFormat(f)}
-                className={`flex-1 rounded-xl border-2 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all ${
+                className={`flex-1 rounded-xl border-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest transition-all ${
                   format === f ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white' : 'border-[#EDEDED] bg-white text-[#0A0A0A] hover:bg-[#FFFFFF]'
                 }`}
               >
@@ -1553,14 +1553,14 @@ function MenuQrModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]"
+            className="px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]"
           >
             {copy.cancel}
           </button>
           <button
             onClick={download}
             disabled={downloading || !previewSvg}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#C6F24E] px-6 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#D7F98E] active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#C6F24E] px-6 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#D7F98E] active:scale-95 disabled:opacity-50"
           >
             {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
             {copy.downloadQr}

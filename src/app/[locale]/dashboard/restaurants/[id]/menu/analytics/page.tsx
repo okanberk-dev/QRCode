@@ -183,17 +183,17 @@ export default function MenuAnalyticsPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-8">
+      <div className="flex flex-col gap-4 rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-1">
             <Link
               href={`/${locale}/dashboard/restaurants/${id}/menu`}
-              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]"
+              className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]"
             >
               <ArrowLeft size={14} strokeWidth={2} />
               {copy.back}
             </Link>
-            <h1 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl">
+            <h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl">
               <BarChart3 size={22} strokeWidth={2} />
               {copy.title}
             </h1>
@@ -208,7 +208,7 @@ export default function MenuAnalyticsPage() {
             <button
               onClick={fetchAnalytics}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-50"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
               {copy.refresh}
@@ -218,7 +218,7 @@ export default function MenuAnalyticsPage() {
 
         {/* Filters */}
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <div className="inline-flex rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1 text-[11px] font-black uppercase tracking-widest">
+          <div className="inline-flex rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1 text-[11px] font-semibold uppercase tracking-widest">
             {([
               { key: '7d', label: copy.range7 },
               { key: '30d', label: copy.range30 },
@@ -259,7 +259,7 @@ export default function MenuAnalyticsPage() {
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-black uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-semibold uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
             >
               <X size={12} strokeWidth={2} />
               {copy.resetFilters}
@@ -275,15 +275,15 @@ export default function MenuAnalyticsPage() {
       )}
 
       {loading && !data ? (
-        <div className="flex items-center justify-center rounded-[24px] border border-[#EDEDED] bg-white p-20">
+        <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20">
           <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
         </div>
       ) : !data ? null : !hasAnyData ? (
-        <div className="rounded-[24px] border border-[#EDEDED] bg-white p-16 text-center shadow-sm">
+        <div className="rounded-2xl border border-[#EDEDED] bg-white p-16 text-center shadow-sm">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#FFFFFF]">
             <Sparkles size={26} strokeWidth={2} className="text-[#6B7280]" />
           </div>
-          <h2 className="text-lg font-extrabold tracking-tight text-[#0A0A0A]">{copy.emptyHeadline}</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-[#0A0A0A]">{copy.emptyHeadline}</h2>
           <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#6B7280]">{copy.emptyBody}</p>
         </div>
       ) : (
@@ -328,12 +328,12 @@ function OverviewCards({ overview, copy }: { overview: AnalyticsResponse['overvi
         const Icon = c.icon;
         const deltaPositive = c.delta !== null && c.delta !== undefined && c.delta >= 0;
         return (
-          <div key={c.label} className="rounded-[20px] border border-[#EDEDED] bg-white p-5 shadow-sm">
+          <div key={c.label} className="rounded-xl border border-[#EDEDED] bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{c.label}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#6B7280]">{c.label}</p>
               <Icon size={16} strokeWidth={2} className="text-[#1A1A1A]" />
             </div>
-            <p className="mt-2 text-3xl font-extrabold tracking-tight text-[#0A0A0A]">{c.fmt(c.value)}</p>
+            <p className="mt-2 text-3xl font-semibold tracking-tight text-[#0A0A0A]">{c.fmt(c.value)}</p>
             {c.delta !== null && c.delta !== undefined && (
               <div className={`mt-1 inline-flex items-center gap-1 text-[11px] font-bold ${deltaPositive ? 'text-emerald-600' : 'text-red-600'}`}>
                 {deltaPositive ? <TrendingUp size={11} strokeWidth={2.5} /> : <TrendingDown size={11} strokeWidth={2.5} />}
@@ -357,9 +357,9 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
   // ~7 labels on 7-day, ~6 labels on 30-day, ~6 labels on 90-day.
   const tickInterval = trend.length <= 7 ? 0 : trend.length <= 30 ? 5 : Math.floor(trend.length / 6);
   return (
-    <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-4">
-        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.trends}</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.trends}</h2>
       </div>
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -392,15 +392,15 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
 
 function TopProductsTable({ rows, copy, isTr }: { rows: ProductRow[]; copy: any; isTr: boolean }) {
   return (
-    <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="mb-4 text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.topProducts}</h2>
+    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.topProducts}</h2>
       {rows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="text-[10px] font-black uppercase tracking-widest text-[#6B7280]">
+              <tr className="text-[10px] font-semibold uppercase tracking-widest text-[#6B7280]">
                 <th className="pb-2 pr-2">{copy.columns.rank}</th>
                 <th className="pb-2 pr-2">{copy.columns.product}</th>
                 <th className="pb-2 pr-2">{copy.columns.category}</th>
@@ -412,8 +412,8 @@ function TopProductsTable({ rows, copy, isTr }: { rows: ProductRow[]; copy: any;
             <tbody className="divide-y divide-[#EDEDED]">
               {rows.slice(0, 10).map((r, i) => (
                 <tr key={r.productId}>
-                  <td className="py-3 pr-2 font-black text-[#6B7280]">{i + 1}</td>
-                  <td className="py-3 pr-2 font-extrabold text-[#0A0A0A]">{r.productName}</td>
+                  <td className="py-3 pr-2 font-semibold text-[#6B7280]">{i + 1}</td>
+                  <td className="py-3 pr-2 font-semibold text-[#0A0A0A]">{r.productName}</td>
                   <td className="py-3 pr-2 text-[#1A1A1A]">{r.categoryName ?? '—'}</td>
                   <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.views)}</td>
                   <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.clicks)}</td>
@@ -437,8 +437,8 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) 
     .slice(0, 8)
     .map((r) => ({ name: truncate(r.categoryName), fullName: r.categoryName, clicks: r.clicks, views: r.views }));
   return (
-    <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="mb-4 text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.topCategories}</h2>
+    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.topCategories}</h2>
       {dataRows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
       ) : (
@@ -464,9 +464,9 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) 
 
 function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any }) {
   return (
-    <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-4">
-        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.lowInterest}</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.lowInterest}</h2>
         <p className="mt-1 text-xs font-medium text-[#6B7280]">{copy.lowInterestSub}</p>
       </div>
       {rows.length === 0 ? (
@@ -475,7 +475,7 @@ function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any })
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="text-[10px] font-black uppercase tracking-widest text-[#6B7280]">
+              <tr className="text-[10px] font-semibold uppercase tracking-widest text-[#6B7280]">
                 <th className="pb-2 pr-2">{copy.columns.product}</th>
                 <th className="pb-2 pr-2">{copy.columns.category}</th>
                 <th className="pb-2 pr-2 text-right">{copy.columns.views}</th>
@@ -487,13 +487,13 @@ function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any })
             <tbody className="divide-y divide-[#EDEDED]">
               {rows.map((r) => (
                 <tr key={r.productId}>
-                  <td className="py-3 pr-2 font-extrabold text-[#0A0A0A]">{r.productName}</td>
+                  <td className="py-3 pr-2 font-semibold text-[#0A0A0A]">{r.productName}</td>
                   <td className="py-3 pr-2 text-[#1A1A1A]">{r.categoryName ?? '—'}</td>
                   <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.views)}</td>
                   <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.clicks)}</td>
                   <td className="py-3 pr-2 text-right font-bold tabular-nums text-red-600">{formatPct(r.ctr, 1)}</td>
                   <td className="py-3 pr-2">
-                    <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-700">
+                    <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-amber-700">
                       {copy.statusLabels[r.status]}
                     </span>
                   </td>
@@ -509,9 +509,9 @@ function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any })
 
 function UpsellInsights({ insights, copy }: { insights: Insight[]; copy: any }) {
   return (
-    <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-4">
-        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.upsell}</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.upsell}</h2>
         <p className="mt-1 text-xs font-medium text-[#6B7280]">{copy.upsellSub}</p>
       </div>
       {insights.length === 0 ? (
@@ -524,7 +524,7 @@ function UpsellInsights({ insights, copy }: { insights: Insight[]; copy: any }) 
                 <Lightbulb size={16} strokeWidth={2.2} />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-extrabold leading-tight text-[#0A0A0A]">{i.title}</p>
+                <p className="text-sm font-semibold leading-tight text-[#0A0A0A]">{i.title}</p>
                 <p className="mt-1 text-xs font-medium leading-relaxed text-[#1A1A1A]">{i.description}</p>
               </div>
             </div>

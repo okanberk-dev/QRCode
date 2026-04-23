@@ -4,15 +4,19 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   BarChart3,
+  Bell,
   BookOpen,
   ChevronDown,
+  CreditCard,
   Crown,
   Globe,
+  Inbox,
   LayoutDashboard,
   LogOut,
   Megaphone,
   QrCode,
   Settings,
+  Sparkles,
   Store,
   User,
   Users,
@@ -84,7 +88,14 @@ export default function AdminSidebar() {
     { href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
     { href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { href: '/admin/reviews', icon: Inbox, label: locale === 'en' ? 'Reviews' : 'Yorumlar', roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik', roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { href: '/admin/campaigns', icon: Sparkles, label: locale === 'en' ? 'Campaigns' : 'Kampanyalar', roles: ['superadmin', 'restaurant_owner'] },
+    { href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip', roles: ['superadmin', 'restaurant_owner'] },
     { href: '/admin/leads', icon: UsersRound, label: locale === 'en' ? 'Customer List' : 'Müşteri Listesi', roles: ['superadmin', 'restaurant_owner'] },
+    { href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma', roles: ['superadmin', 'restaurant_owner'] },
+    { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notifications' : 'Bildirimler', roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar', roles: ['superadmin', 'restaurant_owner'] },
   ];
 
   if (role === 'superadmin') {

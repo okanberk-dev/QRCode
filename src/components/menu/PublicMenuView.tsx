@@ -66,7 +66,7 @@ function BadgeChip({ badge, locale }: { badge: string; locale: 'tr' | 'en' }) {
   if (!meta) return null;
   const Icon = meta.icon;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${meta.cls}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${meta.cls}`}>
       <Icon size={10} strokeWidth={2} />
       {meta[locale]}
     </span>
@@ -79,7 +79,7 @@ function BadgeChipOnDark({ badge, locale, accent }: { badge: string; locale: 'tr
   const Icon = meta.icon;
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white/85"
+      className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/85"
       style={{ borderColor: `${accent}4D`, backgroundColor: `${accent}1A` }}
     >
       <Icon size={10} strokeWidth={2} />
@@ -268,7 +268,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         <div className="relative px-5 pt-10 pb-8 sm:px-8 sm:pt-14 sm:pb-10">
           <div className="mx-auto flex max-w-2xl items-start gap-4 sm:gap-5">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/95 text-3xl font-black shadow-lg sm:h-20 sm:w-20 sm:text-4xl" style={{ color: accent }}>
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/95 text-3xl font-semibold shadow-lg sm:h-20 sm:w-20 sm:text-4xl" style={{ color: accent }}>
               {restaurant.menuLogoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
@@ -277,8 +277,8 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
               )}
             </div>
             <div className="min-w-0 flex-1 text-white">
-              <p className="text-[11px] font-black uppercase tracking-[0.25em] opacity-80">{restaurant.category}</p>
-              <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">{restaurant.name}</h1>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.25em] opacity-80">{restaurant.category}</p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{restaurant.name}</h1>
               <p className="mt-1 text-[11px] font-bold uppercase tracking-widest opacity-75">{copy.menuOf}</p>
             </div>
           </div>
@@ -300,7 +300,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                       key={c.id}
                       href={`#cat-${c.id}`}
                       onClick={() => onCategoryClick(c.id)}
-                      className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all ${
+                      className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-widest transition-all ${
                         isActive ? 'text-white shadow-sm' : 'bg-white text-[#0A0A0A] hover:bg-[#FFFFFF]'
                       }`}
                       style={isActive ? { backgroundColor: accent } : undefined}
@@ -320,7 +320,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-5">
-                    <h2 className="text-xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-2xl">{category.name}</h2>
+                    <h2 className="text-xl font-semibold tracking-tight text-[#0A0A0A] sm:text-2xl">{category.name}</h2>
                     {category.description && (
                       <p className="mt-1 text-sm font-bold text-[#1A1A1A]">{category.description}</p>
                     )}
@@ -351,16 +351,16 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                             <Placeholder accent={accent} />
                           )}
                           {item.isOutOfStock && (
-                            <span className="absolute inset-x-0 bottom-0 bg-black/70 py-1 text-center text-[10px] font-black uppercase tracking-widest text-white">
+                            <span className="absolute inset-x-0 bottom-0 bg-black/70 py-1 text-center text-[10px] font-semibold uppercase tracking-widest text-white">
                               {copy.outOfStock}
                             </span>
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-[15px] font-extrabold leading-tight text-[#0A0A0A]">{item.name}</h3>
+                            <h3 className="text-[15px] font-semibold leading-tight text-[#0A0A0A]">{item.name}</h3>
                             <span
-                              className="shrink-0 text-sm font-black sm:text-base"
+                              className="shrink-0 text-sm font-semibold sm:text-base"
                               style={{ color: accent }}
                             >
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
@@ -401,7 +401,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
         <div className="mx-auto max-w-5xl px-5 py-7 sm:px-8">
           <div className="flex items-center gap-4">
             <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-black text-white shadow-md"
+              className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-semibold text-white shadow-md"
               style={{ backgroundColor: accent }}
             >
               {restaurant.menuLogoUrl ? (
@@ -412,8 +412,8 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">{restaurant.category}</p>
-              <h1 className="truncate text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl">{restaurant.name}</h1>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#6B7280]">{restaurant.category}</p>
+              <h1 className="truncate text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl">{restaurant.name}</h1>
             </div>
           </div>
           <RestaurantMeta restaurant={restaurant} variant="dark" />
@@ -434,7 +434,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                       key={c.id}
                       href={`#cat-${c.id}`}
                       onClick={() => onCategoryClick(c.id)}
-                      className="shrink-0 rounded-full border-2 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest transition-all"
+                      className="shrink-0 rounded-full border-2 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-all"
                       style={{
                         borderColor: isActive ? accent : '#EDEDED',
                         backgroundColor: isActive ? accent : 'white',
@@ -456,7 +456,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-5 flex items-baseline gap-3">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl">{category.name}</h2>
+                    <h2 className="text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl">{category.name}</h2>
                     <div className="h-1 flex-1 rounded-full bg-[#EDEDED]" />
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
@@ -478,19 +478,19 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                             <Placeholder accent={accent} />
                           )}
                           <span
-                            className="absolute bottom-2 right-2 rounded-lg px-2.5 py-1 text-[12px] font-black shadow-md backdrop-blur"
+                            className="absolute bottom-2 right-2 rounded-lg px-2.5 py-1 text-[12px] font-semibold shadow-md backdrop-blur"
                             style={{ backgroundColor: `${accent}f2`, color: '#fff' }}
                           >
                             {formatPrice(item.priceCents, item.currency, priceLocale)}
                           </span>
                           {item.isOutOfStock && (
-                            <span className="absolute inset-x-0 top-0 bg-black/70 py-1 text-center text-[10px] font-black uppercase tracking-widest text-white">
+                            <span className="absolute inset-x-0 top-0 bg-black/70 py-1 text-center text-[10px] font-semibold uppercase tracking-widest text-white">
                               {copy.outOfStock}
                             </span>
                           )}
                         </div>
                         <div className="space-y-1.5 p-3 sm:p-4">
-                          <h3 className="text-[13px] font-extrabold leading-tight text-[#0A0A0A] sm:text-sm">{item.name}</h3>
+                          <h3 className="text-[13px] font-semibold leading-tight text-[#0A0A0A] sm:text-sm">{item.name}</h3>
                           {item.description && (
                             <p className="line-clamp-2 text-[11px] font-medium text-[#6B7280]">{item.description}</p>
                           )}
@@ -531,7 +531,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
             </div>
           )}
           <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#6B7280]">{restaurant.category}</p>
-          <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-5xl" style={{ fontFamily: 'var(--font-heading)' }}>
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[#0A0A0A] sm:text-5xl" style={{ fontFamily: 'var(--font-heading)' }}>
             {restaurant.name}
           </h1>
           <div className="mx-auto mt-4 h-0.5 w-12 rounded" style={{ backgroundColor: accent }} />
@@ -577,7 +577,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-8 text-center">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl" style={{ fontFamily: 'var(--font-heading)' }}>
+                    <h2 className="text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl" style={{ fontFamily: 'var(--font-heading)' }}>
                       {category.name}
                     </h2>
                     {category.description && (
@@ -604,7 +604,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
                           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                             <h3 className="text-lg font-bold tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>{item.name}</h3>
                             <div className="flex-1 border-b border-dotted border-[#1A1A1A]/30" />
-                            <span className="shrink-0 text-base font-extrabold" style={{ color: accent }}>
+                            <span className="shrink-0 text-base font-semibold" style={{ color: accent }}>
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
                             </span>
                           </div>
@@ -654,7 +654,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
             </div>
           )}
           <p className="text-[10px] font-bold uppercase tracking-[0.4em]" style={{ color: accent }}>{restaurant.category}</p>
-          <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-6xl" style={{ fontFamily: 'var(--font-heading)' }}>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl" style={{ fontFamily: 'var(--font-heading)' }}>
             {restaurant.name}
           </h1>
           <div className="mx-auto mt-5 h-0.5 w-16 rounded" style={{ backgroundColor: accent }} />
@@ -679,7 +679,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                       key={c.id}
                       href={`#cat-${c.id}`}
                       onClick={() => onCategoryClick(c.id)}
-                      className="shrink-0 rounded-full border px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] transition-all"
+                      className="shrink-0 rounded-full border px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.25em] transition-all"
                       style={{
                         borderColor: isActive ? accent : 'rgba(255,255,255,0.2)',
                         backgroundColor: isActive ? accent : 'transparent',
@@ -702,7 +702,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-8 text-center">
                     <p className="text-[9px] font-bold uppercase tracking-[0.4em]" style={{ color: accent }}>— {copy.menuOf} —</p>
-                    <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl" style={{ fontFamily: 'var(--font-heading)' }}>
+                    <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl" style={{ fontFamily: 'var(--font-heading)' }}>
                       {category.name}
                     </h2>
                     {category.description && (
@@ -732,7 +732,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                             </div>
                           )}
                           {item.isOutOfStock && (
-                            <span className="absolute inset-x-0 bottom-0 bg-black/80 py-1 text-center text-[10px] font-black uppercase tracking-widest text-white">
+                            <span className="absolute inset-x-0 bottom-0 bg-black/80 py-1 text-center text-[10px] font-semibold uppercase tracking-widest text-white">
                               {copy.outOfStock}
                             </span>
                           )}
@@ -742,7 +742,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                             <h3 className="text-base font-bold tracking-tight text-white sm:text-lg" style={{ fontFamily: 'var(--font-heading)' }}>
                               {item.name}
                             </h3>
-                            <span className="shrink-0 text-base font-extrabold sm:text-lg" style={{ color: accent }}>
+                            <span className="shrink-0 text-base font-semibold sm:text-lg" style={{ color: accent }}>
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
                             </span>
                           </div>
@@ -789,7 +789,7 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
           )}
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#6B7280]">{restaurant.category}</p>
-            <h1 className="truncate text-xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-2xl">{restaurant.name}</h1>
+            <h1 className="truncate text-xl font-semibold tracking-tight text-[#0A0A0A] sm:text-2xl">{restaurant.name}</h1>
           </div>
           <p className="hidden text-[11px] font-bold uppercase tracking-widest text-[#6B7280] sm:block">{copy.menuOf}</p>
         </div>
@@ -829,7 +829,7 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
               if (items.length === 0) return null;
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-20">
-                  <h2 className="mb-1 text-xs font-black uppercase tracking-[0.3em]" style={{ color: accent }}>{category.name}</h2>
+                  <h2 className="mb-1 text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: accent }}>{category.name}</h2>
                   {category.description && (
                     <p className="mb-4 text-[13px] font-medium text-[#6B7280]">{category.description}</p>
                   )}
@@ -852,8 +852,8 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-baseline gap-2">
-                            <h3 className="flex-1 truncate text-[15px] font-extrabold text-[#0A0A0A]">{item.name}</h3>
-                            <span className="shrink-0 text-sm font-black tabular-nums text-[#0A0A0A]">
+                            <h3 className="flex-1 truncate text-[15px] font-semibold text-[#0A0A0A]">{item.name}</h3>
+                            <span className="shrink-0 text-sm font-semibold tabular-nums text-[#0A0A0A]">
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
                             </span>
                           </div>
@@ -899,7 +899,7 @@ function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale,
         />
         <div className="relative mx-auto flex max-w-3xl items-center gap-5 px-5 pt-10 pb-8 sm:px-8 sm:pt-14 sm:pb-10">
           <div
-            className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-white text-3xl font-black shadow-md sm:h-24 sm:w-24 sm:text-4xl"
+            className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-white text-3xl font-semibold shadow-md sm:h-24 sm:w-24 sm:text-4xl"
             style={{ color: accent }}
           >
             {restaurant.menuLogoUrl ? (
@@ -911,7 +911,7 @@ function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale,
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: accent }}>{restaurant.category}</p>
-            <h1 className="mt-1 truncate text-2xl font-extrabold tracking-tight text-[#2A1E15] sm:text-3xl" style={{ fontFamily: 'var(--font-heading)' }}>
+            <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight text-[#2A1E15] sm:text-3xl" style={{ fontFamily: 'var(--font-heading)' }}>
               {restaurant.name}
             </h1>
             <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-[#7A6758]">{copy.menuOf}</p>
@@ -936,7 +936,7 @@ function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale,
                       key={c.id}
                       href={`#cat-${c.id}`}
                       onClick={() => onCategoryClick(c.id)}
-                      className="shrink-0 rounded-full px-4 py-1.5 text-[11px] font-black uppercase tracking-widest transition-all"
+                      className="shrink-0 rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-all"
                       style={{
                         backgroundColor: isActive ? accent : 'white',
                         color: isActive ? '#fff' : '#2A1E15',
@@ -958,7 +958,7 @@ function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale,
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-4">
-                    <h2 className="text-xl font-extrabold tracking-tight text-[#2A1E15] sm:text-2xl" style={{ fontFamily: 'var(--font-heading)' }}>
+                    <h2 className="text-xl font-semibold tracking-tight text-[#2A1E15] sm:text-2xl" style={{ fontFamily: 'var(--font-heading)' }}>
                       {category.name}
                     </h2>
                     {category.description && (
@@ -984,18 +984,18 @@ function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale,
                             <Placeholder accent={accent} />
                           )}
                           {item.isOutOfStock && (
-                            <span className="absolute inset-x-0 top-0 bg-black/70 py-1 text-center text-[10px] font-black uppercase tracking-widest text-white">
+                            <span className="absolute inset-x-0 top-0 bg-black/70 py-1 text-center text-[10px] font-semibold uppercase tracking-widest text-white">
                               {copy.outOfStock}
                             </span>
                           )}
                         </div>
                         <div className="space-y-1 p-3 sm:p-4">
-                          <h3 className="line-clamp-2 text-[13px] font-extrabold leading-tight text-[#2A1E15] sm:text-sm">{item.name}</h3>
+                          <h3 className="line-clamp-2 text-[13px] font-semibold leading-tight text-[#2A1E15] sm:text-sm">{item.name}</h3>
                           {item.description && (
                             <p className="line-clamp-2 text-[11px] font-medium text-[#7A6758]">{item.description}</p>
                           )}
                           <div className="flex items-center justify-between pt-1.5">
-                            <span className="text-sm font-extrabold tabular-nums" style={{ color: accent }}>
+                            <span className="text-sm font-semibold tabular-nums" style={{ color: accent }}>
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
                             </span>
                             {item.badges.length > 0 && (
@@ -1071,7 +1071,7 @@ function EmptyState({ copy, dark }: { copy: LayoutProps['copy']; dark?: boolean 
       <div className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full ${dark ? 'bg-white/10' : 'bg-[#EDEDED]'}`}>
         <Sparkles size={28} className={dark ? 'text-white/50' : 'text-[#6B7280]'} strokeWidth={2} />
       </div>
-      <h2 className={`text-lg font-extrabold ${dark ? 'text-white' : 'text-[#0A0A0A]'}`}>{copy.emptyTitle}</h2>
+      <h2 className={`text-lg font-semibold ${dark ? 'text-white' : 'text-[#0A0A0A]'}`}>{copy.emptyTitle}</h2>
       <p className={`mt-1 text-sm font-bold ${dark ? 'text-white/60' : 'text-[#1A1A1A]'}`}>{copy.emptyBody}</p>
     </div>
   );

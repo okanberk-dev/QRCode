@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Store, QrCode, UsersRound, Crown } from 'lucide-react';
+import { LayoutDashboard, Store, QrCode, Inbox, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
 
@@ -20,9 +20,9 @@ export default function AdminMobileNav() {
   const navItems = [
     { href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
+    { href: '/admin/reviews', icon: Inbox, label: 'Yorumlar', roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/members', icon: Crown, label: 'Üyeler', roles: ['superadmin'] },
-    { href: '/admin/customers', icon: UsersRound, label: t('customers'), roles: ['superadmin'] },
+    { href: '/admin/analytics', icon: BarChart3, label: 'Analitik', roles: ['superadmin', 'manager', 'restaurant_owner'] },
   ];
 
   const filteredItems = navItems.filter(item => item.roles.includes(role));

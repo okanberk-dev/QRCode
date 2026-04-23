@@ -149,6 +149,44 @@
 //   @@index([userId, requestedAt])
 //   @@map("analytics_exports")
 // }
+//
+// model BillingSubscription {
+//   userId        String   @id @map("user_id")
+//   plan          String   // trial | monthly | yearly | enterprise
+//   status        String   @default("active") // active | past_due | canceled
+//   trialEndsAt   DateTime? @map("trial_ends_at")
+//   renewsAt      DateTime? @map("renews_at")
+//   providerRef   String?   @map("provider_ref") // Stripe/Iyzico subscription id
+//   paymentBrand  String?   @map("payment_brand")
+//   paymentLast4  String?   @map("payment_last4")
+//   updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+//   @@map("billing_subscriptions")
+// }
+//
+// model BillingInvoice {
+//   id          String   @id @default(cuid())
+//   userId      String   @map("user_id")
+//   amount      Decimal  @db.Decimal(10, 2)
+//   currency    String   @default("TRY")
+//   status      String   @default("paid") // paid | pending | failed | refunded
+//   providerRef String?  @map("provider_ref") // Stripe/Iyzico invoice id
+//   pdfUrl      String?  @map("pdf_url")
+//   issuedAt    DateTime @default(now()) @map("issued_at")
+//   @@index([userId, issuedAt])
+//   @@map("billing_invoices")
+// }
+//
+// model OnboardingProgress {
+//   userId      String   @id @map("user_id")
+//   step        Int      @default(1)
+//   profile     Boolean  @default(false)
+//   placement   Boolean  @default(false)
+//   platforms   Boolean  @default(false)
+//   team        Boolean  @default(false)
+//   completedAt DateTime? @map("completed_at")
+//   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+//   @@map("onboarding_progress")
+// }
 // ─────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server';
