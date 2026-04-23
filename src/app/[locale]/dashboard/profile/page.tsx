@@ -105,186 +105,213 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#FFFFFF]">
-        <Loader2 className="animate-spin text-[#0A0A0A] w-12 h-12" strokeWidth={2} />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="animate-spin text-[#0A0A0A] w-8 h-8" strokeWidth={2} />
       </div>
     );
   }
 
+  const isTr = locale === 'tr';
+  const inputCls =
+    'w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]';
+
   return (
-    <div className="min-h-screen bg-[#FFFFFF] font-sans selection:bg-[#C6F24E]/30 p-4 sm:p-6 md:p-10 lg:p-16">
-      <div className="max-w-4xl mx-auto space-y-8 sm:space-y-12">
-        {/* Back Link */}
-        <Link 
-          href={`/${locale}/dashboard`}
-          className="inline-flex items-center gap-2 text-xs font-black text-[#1A1A1A] hover:text-[#0A0A0A] transition-all uppercase tracking-widest group"
-        >
-          <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#0A0A0A] flex items-center justify-center shadow-md group-hover:translate-y-0.5 group-hover:shadow-none transition-all">
-            <ArrowLeft size={16} strokeWidth={2} />
-          </div>
-          {locale === 'tr' ? 'Dashboard\'a Dön' : 'Back to Dashboard'}
-        </Link>
+    <div
+      className="mx-auto max-w-[1100px] space-y-6 px-4 py-8 sm:px-8 lg:py-10"
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
+      <Link
+        href={`/${locale}/dashboard`}
+        className="inline-flex items-center gap-1.5 pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
+      >
+        <ArrowLeft size={12} strokeWidth={2} />
+        {isTr ? 'PANEL' : 'PANEL'}
+      </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
-          {/* Sidebar Info */}
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-2xl sm:text-3xl md:text-[40px] font-extrabold text-[#0A0A0A] leading-[1.1] sm:leading-[0.9] tracking-tighter uppercase italic break-words">
-                {t.profile_title}
-              </h1>
-              <p className="text-[15px] sm:text-[17px] text-[#1A1A1A] font-bold italic">
-                {t.profile_subtitle}
-              </p>
-            </div>
-
-            <div className="p-6 sm:p-8 bg-[#0A0A0A] rounded-[32px] sm:rounded-[40px] border-2 border-[#0A0A0A] shadow-md sm:shadow-md space-y-6">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[20px] bg-[#C6F24E] border-2 border-[#0A0A0A] flex items-center justify-center shadow-md">
-                <ShieldCheck size={28} className="text-[#0A0A0A]" strokeWidth={2} />
-              </div>
-              <div className="space-y-2">
-                <h4 className="text-white font-extrabold uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
-                <p className="text-[#6B7280] text-xs font-bold leading-relaxed">
-                  Şifrenizi düzenli aralıklarla değiştirmek hesabınızın güvenliğini artırır. Güçlü bir şifre en az 8 karakter, rakam ve sembol içermelidir.
-                </p>
-              </div>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8 lg:gap-10">
+        {/* Left: intro + security note */}
+        <aside className="space-y-6">
+          <div>
+            <p className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'HESAP / PROFİL' : 'ACCOUNT / PROFILE'}
+            </p>
+            <h1
+              className="mt-2 text-[28px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em] leading-[1.05]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              {t.profile_title}
+            </h1>
+            <p className="mt-3 text-[14px] text-[#525252] leading-[1.6]">
+              {t.profile_subtitle}
+            </p>
           </div>
 
-          {/* Form Area */}
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="bg-white rounded-[24px] sm:rounded-[40px] border-2 border-[#0A0A0A] shadow-md sm:shadow-md p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-10">
-              {error && (
-                <div className="flex items-center gap-4 p-5 bg-red-50 border-2 border-red-500/20 rounded-2xl text-red-600 text-[13px] font-black uppercase tracking-widest shadow-sm">
-                  <AlertCircle size={20} strokeWidth={2} />
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="flex items-center gap-4 p-5 bg-green-50 border-2 border-[#10b981]/20 rounded-2xl text-[#10b981] text-[13px] font-black uppercase tracking-widest shadow-sm">
-                  <Check size={20} strokeWidth={2} />
-                  {success}
-                </div>
-              )}
+          <div className="rounded-2xl bg-[#0A0A0A] p-6 text-white">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={14} strokeWidth={2} className="text-[#C6F24E]" />
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'GÜVENLİK' : 'SECURITY'}
+              </span>
+            </div>
+            <h4
+              className="mt-3 text-[16px] font-semibold tracking-[-0.015em]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              {isTr ? 'Hesabını güçlü tut.' : 'Keep your account strong.'}
+            </h4>
+            <p className="mt-2 text-[13px] text-white/60 leading-[1.6]">
+              {isTr
+                ? 'Şifrenizi düzenli değiştirmek hesap güvenliğinizi artırır. Güçlü bir şifre en az 8 karakter, rakam ve sembol içermelidir.'
+                : 'Changing your password regularly improves security. A strong password has at least 8 characters with digits and symbols.'}
+            </p>
+          </div>
+        </aside>
 
-              {/* Personal Info */}
-              <div className="space-y-6 sm:space-y-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#FFFFFF] border-2 border-[#0A0A0A] flex items-center justify-center shadow-md">
-                    <User size={16} strokeWidth={2} />
-                  </div>
-                  <h3 className="text-lg font-extrabold text-[#0A0A0A] uppercase tracking-tighter italic">Kişisel Bilgiler</h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">{t.profile_name}</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">{t.profile_email}</label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all"
-                    />
-                  </div>
-                </div>
+        {/* Right: form */}
+        <div>
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-8 space-y-8"
+          >
+            {error && (
+              <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-[13px] font-medium">
+                <AlertCircle size={16} strokeWidth={2} />
+                {error}
               </div>
-
-              {/* System language Settings */}
-              <div className="pt-6 sm:pt-10 border-t-4 border-[#FFFFFF] space-y-6 sm:space-y-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#FFFFFF] border-2 border-[#0A0A0A] flex items-center justify-center shadow-md">
-                    <Globe size={16} strokeWidth={2} />
-                  </div>
-                  <h3 className="text-lg font-extrabold text-[#0A0A0A] uppercase tracking-tighter italic">Sistem Dili</h3>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Panel Dili / Panel Language</label>
-                  <select
-                    value={locale}
-                    onChange={(e) => handleLocaleChange(e.target.value)}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all cursor-pointer appearance-none"
-                  >
-                    <option value="tr">Türkçe</option>
-                    <option value="en">English</option>
-                  </select>
-                </div>
+            )}
+            {success && (
+              <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-[13px] font-medium">
+                <Check size={16} strokeWidth={2} />
+                {success}
               </div>
+            )}
 
-              {/* Password Change */}
-              <div className="pt-6 sm:pt-10 border-t-4 border-[#FFFFFF] space-y-6 sm:space-y-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#FFFFFF] border-2 border-[#0A0A0A] flex items-center justify-center shadow-md">
-                    <Key size={16} strokeWidth={2} />
-                  </div>
-                  <h3 className="text-lg font-extrabold text-[#0A0A0A] uppercase tracking-tighter italic">Şifre Değiştir</h3>
-                </div>
+            {/* Personal info */}
+            <section className="space-y-5">
+              <div className="flex items-center gap-2">
+                <User size={14} strokeWidth={2} className="text-[#0A0A0A]" />
+                <h3
+                  className="text-[16px] font-semibold tracking-[-0.015em]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {isTr ? 'Kişisel bilgiler' : 'Personal info'}
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="space-y-1.5 block">
+                  <span className="pulse-eyebrow text-[#737373]">{t.profile_name}</span>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+                    className={inputCls}
+                  />
+                </label>
+                <label className="space-y-1.5 block">
+                  <span className="pulse-eyebrow text-[#737373]">{t.profile_email}</span>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
+                    className={inputCls}
+                  />
+                </label>
+              </div>
+            </section>
 
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">{t.profile_current_password}</label>
+            {/* Locale */}
+            <section className="space-y-5 pt-2 border-t border-[#EDEDED]">
+              <div className="flex items-center gap-2 pt-6">
+                <Globe size={14} strokeWidth={2} className="text-[#0A0A0A]" />
+                <h3
+                  className="text-[16px] font-semibold tracking-[-0.015em]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {isTr ? 'Sistem dili' : 'Interface language'}
+                </h3>
+              </div>
+              <label className="space-y-1.5 block">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'PANEL DİLİ' : 'PANEL LANGUAGE'}
+                </span>
+                <select
+                  value={locale}
+                  onChange={(e) => handleLocaleChange(e.target.value)}
+                  className={`${inputCls} cursor-pointer appearance-none`}
+                >
+                  <option value="tr">Türkçe</option>
+                  <option value="en">English</option>
+                </select>
+              </label>
+            </section>
+
+            {/* Password */}
+            <section className="space-y-5 pt-2 border-t border-[#EDEDED]">
+              <div className="flex items-center gap-2 pt-6">
+                <Key size={14} strokeWidth={2} className="text-[#0A0A0A]" />
+                <h3
+                  className="text-[16px] font-semibold tracking-[-0.015em]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {isTr ? 'Şifre değiştir' : 'Change password'}
+                </h3>
+              </div>
+              <div className="space-y-4">
+                <label className="space-y-1.5 block">
+                  <span className="pulse-eyebrow text-[#737373]">{t.profile_current_password}</span>
+                  <input
+                    type="password"
+                    value={formData.currentPassword}
+                    onChange={(e) => setFormData((p) => ({ ...p, currentPassword: e.target.value }))}
+                    placeholder="••••••••"
+                    className={inputCls}
+                  />
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="space-y-1.5 block">
+                    <span className="pulse-eyebrow text-[#737373]">{t.profile_new_password}</span>
                     <input
                       type="password"
-                      value={formData.currentPassword}
-                      onChange={(e) => setFormData(p => ({ ...p, currentPassword: e.target.value }))}
-                      placeholder="••••••••"
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all"
+                      value={formData.newPassword}
+                      onChange={(e) => setFormData((p) => ({ ...p, newPassword: e.target.value }))}
+                      placeholder={isTr ? 'En az 8 karakter' : 'At least 8 chars'}
+                      className={inputCls}
                     />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">{t.profile_new_password}</label>
-                      <input
-                        type="password"
-                        value={formData.newPassword}
-                        onChange={(e) => setFormData(p => ({ ...p, newPassword: e.target.value }))}
-                        placeholder="Min 8 karakter"
-                        className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">{t.profile_confirm_password}</label>
-                      <input
-                        type="password"
-                        value={formData.confirmPassword}
-                        onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
-                        placeholder="Şifreyi doğrula"
-                        className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all"
-                      />
-                    </div>
-                  </div>
+                  </label>
+                  <label className="space-y-1.5 block">
+                    <span className="pulse-eyebrow text-[#737373]">{t.profile_confirm_password}</span>
+                    <input
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData((p) => ({ ...p, confirmPassword: e.target.value }))}
+                      placeholder={isTr ? 'Şifreyi doğrula' : 'Confirm password'}
+                      className={inputCls}
+                    />
+                  </label>
                 </div>
               </div>
+            </section>
 
-              <button
-                type="submit"
-                disabled={saving}
-                className="w-full py-5 bg-[#0A0A0A] text-white font-black rounded-2xl border-2 border-[#0A0A0A] shadow-sm hover:bg-[#0A0A0A]/90 active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 text-[15px] tracking-widest uppercase"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="animate-spin" size={20} strokeWidth={2} />
-                    GÜNCELLENİYOR...
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck size={20} strokeWidth={2} />
-                    {t.profile_update_btn}
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-5 py-3 text-[14px] font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-60 transition-colors"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="animate-spin" size={14} strokeWidth={2} />
+                  {isTr ? 'Güncelleniyor' : 'Updating'}
+                </>
+              ) : (
+                <>
+                  <ShieldCheck size={14} strokeWidth={2} />
+                  {t.profile_update_btn}
+                </>
+              )}
+            </button>
+          </form>
         </div>
       </div>
     </div>

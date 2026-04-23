@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, Loader2, Star, Calendar, Filter, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Loader2, Calendar, Filter, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import FeedbackTable from '@/components/admin/FeedbackTable';
 import { getTranslations } from '@/lib/translations';
@@ -58,116 +58,130 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
   }, [page, filterRating, daysFilter]);
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] font-sans selection:bg-[#C6F24E]/30 p-4 sm:p-6 md:p-10 lg:p-14">
-      <div className="max-w-6xl mx-auto space-y-8 sm:space-y-12">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-          <div className="space-y-6">
-            <Link 
-              href={`/${locale}/dashboard`}
-              className="inline-flex items-center gap-2 text-xs font-black text-[#1A1A1A] hover:text-[#0A0A0A] transition-all uppercase tracking-widest group"
-            >
-              <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#0A0A0A] flex items-center justify-center shadow-md group-hover:translate-y-0.5 group-hover:shadow-none transition-all">
-                <ArrowLeft size={16} strokeWidth={2} />
-              </div>
-              {locale === 'tr' ? 'Dashboard\'a Dön' : 'Back to Dashboard'}
-            </Link>
-            
-            <div className="space-y-2">
-              <h1 className="text-2xl sm:text-[40px] md:text-[56px] font-extrabold text-[#0A0A0A] leading-[1.1] tracking-tighter uppercase italic break-words">
-                {t.feedbacks_title}
-              </h1>
-              <p className="text-[15px] sm:text-[17px] text-[#1A1A1A] font-bold max-w-md italic">
-                {t.feedbacks_subtitle}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 bg-white p-4 sm:p-5 rounded-[24px] sm:rounded-[32px] border-2 border-[#0A0A0A] shadow-md sm:shadow-md w-full sm:w-auto">
-            <div className="flex items-center gap-2 px-2 sm:px-4 border-b-2 sm:border-b-0 sm:border-r-2 border-[#FFFFFF] pb-3 sm:pb-0 w-full sm:w-auto">
-              <Filter size={18} className="text-[#6B7280]" />
-              <span className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest">Filtrele</span>
-            </div>
-            
-            <select
-              value={daysFilter}
-              onChange={(e) => { setDaysFilter(e.target.value); setPage(1); }}
-              className="bg-transparent text-[11px] font-black uppercase tracking-widest outline-none cursor-pointer hover:text-[#C6F24E] transition-colors"
-            >
-              <option value="all">{t.feedbacks_filter_all}</option>
-              <option value="1">{t.feedbacks_filter_today}</option>
-              <option value="7">Son 7 Gün</option>
-              <option value="30">Son 30 Gün</option>
-            </select>
-
-            <div className="hidden sm:block h-6 w-[2px] bg-[#FFFFFF]" />
-
-            <select
-              value={filterRating}
-              onChange={(e) => { setFilterRating(e.target.value); setPage(1); }}
-              className="bg-transparent text-[11px] font-black uppercase tracking-widest outline-none cursor-pointer hover:text-[#C6F24E] transition-colors"
-            >
-              <option value="all">Puan: Hepsi</option>
-              <option value="positive">{t.feedbacks_filter_positive}</option>
-              <option value="5">5 Yıldız</option>
-              <option value="4">4 Yıldız</option>
-              <option value="3">3 Yıldız</option>
-              <option value="2">2 Yıldız</option>
-              <option value="1">1 Yıldız</option>
-            </select>
-          </div>
+    <div
+      className="mx-auto max-w-[1200px] space-y-6 px-4 py-8 sm:px-8 lg:py-10"
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
+      {/* Header */}
+      <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <Link
+            href={`/${locale}/dashboard`}
+            className="inline-flex items-center gap-1.5 pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
+          >
+            <ArrowLeft size={12} strokeWidth={2} />
+            {locale === 'tr' ? 'PANEL' : 'PANEL'}
+          </Link>
+          <h1
+            className="mt-2 text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em] leading-[1.05]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {t.feedbacks_title}
+          </h1>
+          <p className="mt-2 max-w-[560px] text-[14px] text-[#525252] leading-[1.55]">
+            {t.feedbacks_subtitle}
+          </p>
         </div>
 
-        {/* Feedback List */}
-        <div className="relative">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-24 sm:py-40 bg-white rounded-[24px] sm:rounded-[40px] border-2 border-[#0A0A0A] shadow-md sm:shadow-md">
-              <Loader2 className="animate-spin text-[#0A0A0A] w-12 h-12 mb-4" strokeWidth={2} />
-              <span className="text-xs font-black text-[#6B7280] uppercase tracking-[0.3em]">Yükleniyor...</span>
-            </div>
-          ) : feedbacks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 sm:py-40 bg-white rounded-[24px] sm:rounded-[40px] border-2 border-dashed border-[#EDEDED] text-center italic p-4">
-              <Calendar size={64} className="text-[#EDEDED] mb-6 scale-75 sm:scale-100" />
-              <h3 className="text-xl sm:text-2xl font-extrabold text-[#0A0A0A] mb-2 uppercase">{t.feedbacks_empty}</h3>
-              <p className="text-sm sm:text-base text-[#1A1A1A] font-bold">Seçili kriterlere uygun değerlendirme bulunamadı.</p>
-            </div>
-          ) : (
-            <div className="space-y-10">
-              <FeedbackTable feedbacks={feedbacks} locale={locale} />
-              
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-5">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="w-14 h-14 rounded-2xl border-2 border-[#0A0A0A] bg-white text-[#0A0A0A] flex items-center justify-center shadow-sm hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all"
-                  >
-                    <ChevronRight className="rotate-180" size={24} strokeWidth={2} />
-                  </button>
-                  
-                  <div className="px-8 h-14 rounded-2xl bg-[#0A0A0A] text-white flex items-center justify-center font-black text-sm tracking-widest border-2 border-[#0A0A0A] shadow-sm">
-                    {page} <span className="opacity-30 mx-2">/</span> {totalPages}
-                  </div>
-                  
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                    className="w-14 h-14 rounded-2xl border-2 border-[#0A0A0A] bg-white text-[#0A0A0A] flex items-center justify-center shadow-sm hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none disabled:opacity-30 disabled:pointer-events-none transition-all"
-                  >
-                    <ChevronRight size={24} strokeWidth={2} />
-                  </button>
-                </div>
-              )}
+        {/* Filters */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center bg-white border border-[#EDEDED] rounded-2xl p-3">
+          <div className="flex items-center gap-1.5 px-2 pulse-eyebrow text-[#737373]">
+            <Filter size={12} strokeWidth={2} />
+            {locale === 'tr' ? 'FİLTRELE' : 'FILTER'}
+          </div>
+          <div className="hidden sm:block h-5 w-px bg-[#EDEDED]" />
+          <select
+            value={daysFilter}
+            onChange={(e) => {
+              setDaysFilter(e.target.value);
+              setPage(1);
+            }}
+            className="bg-transparent text-[13px] font-medium text-[#0A0A0A] outline-none cursor-pointer px-2"
+          >
+            <option value="all">{t.feedbacks_filter_all}</option>
+            <option value="1">{t.feedbacks_filter_today}</option>
+            <option value="7">{locale === 'tr' ? 'Son 7 gün' : 'Last 7 days'}</option>
+            <option value="30">{locale === 'tr' ? 'Son 30 gün' : 'Last 30 days'}</option>
+          </select>
+          <div className="hidden sm:block h-5 w-px bg-[#EDEDED]" />
+          <select
+            value={filterRating}
+            onChange={(e) => {
+              setFilterRating(e.target.value);
+              setPage(1);
+            }}
+            className="bg-transparent text-[13px] font-medium text-[#0A0A0A] outline-none cursor-pointer px-2"
+          >
+            <option value="all">{locale === 'tr' ? 'Puan: hepsi' : 'Rating: all'}</option>
+            <option value="positive">{t.feedbacks_filter_positive}</option>
+            <option value="5">5 ★</option>
+            <option value="4">4 ★</option>
+            <option value="3">3 ★</option>
+            <option value="2">2 ★</option>
+            <option value="1">1 ★</option>
+          </select>
+        </div>
+      </header>
+
+      {/* Body */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 rounded-2xl border border-[#EDEDED] bg-white">
+          <Loader2 className="animate-spin text-[#0A0A0A] w-8 h-8 mb-3" strokeWidth={2} />
+          <span className="pulse-eyebrow text-[#737373]">
+            {locale === 'tr' ? 'YÜKLENİYOR' : 'LOADING'}
+          </span>
+        </div>
+      ) : feedbacks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] text-center px-4">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-[#EDEDED]">
+            <Calendar size={22} className="text-[#737373]" strokeWidth={2} />
+          </div>
+          <h3
+            className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {t.feedbacks_empty}
+          </h3>
+          <p className="mt-2 text-[14px] text-[#525252] max-w-[400px]">
+            {locale === 'tr'
+              ? 'Seçili kriterlere uygun değerlendirme bulunamadı.'
+              : 'No reviews match the selected filters.'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          <FeedbackTable feedbacks={feedbacks} locale={locale} />
+
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-3">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="w-10 h-10 rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] flex items-center justify-center hover:border-[#0A0A0A] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                aria-label="previous"
+              >
+                <ChevronRight className="rotate-180" size={16} strokeWidth={2} />
+              </button>
+
+              <div
+                className="px-5 h-10 rounded-full bg-[#0A0A0A] text-white flex items-center justify-center text-[13px] font-medium tabular-nums"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {page} <span className="text-white/40 mx-2">/</span> {totalPages}
+              </div>
+
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="w-10 h-10 rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] flex items-center justify-center hover:border-[#0A0A0A] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                aria-label="next"
+              >
+                <ChevronRight size={16} strokeWidth={2} />
+              </button>
             </div>
           )}
         </div>
-        
-        {/* Decorative corner element */}
-        <div className="fixed bottom-10 right-10 pointer-events-none opacity-10 hidden xl:block">
-          <Star size={200} className="text-[#0A0A0A]" fill="currentColor" />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -175,12 +189,16 @@ function FeedbacksContent({ params }: { params: { locale: Locale } }) {
 export default async function FeedbacksPage({ params }: { params: Promise<{ locale: Locale }> }) {
   const resolvedParams = await params;
   return (
-    <Suspense fallback={
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#FFFFFF]">
-        <Loader2 className="animate-spin text-[#0A0A0A] w-12 h-12 mb-4" strokeWidth={2} />
-        <span className="text-xs font-black text-[#6B7280] uppercase tracking-[0.3em]">Yükleniyor...</span>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-[60vh] bg-white">
+          <Loader2 className="animate-spin text-[#0A0A0A] w-8 h-8 mb-3" strokeWidth={2} />
+          <span className="pulse-eyebrow text-[#737373]">
+            {resolvedParams.locale === 'tr' ? 'YÜKLENİYOR' : 'LOADING'}
+          </span>
+        </div>
+      }
+    >
       <FeedbacksContent params={resolvedParams} />
     </Suspense>
   );

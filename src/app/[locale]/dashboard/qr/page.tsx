@@ -316,29 +316,42 @@ export default function DashboardQrPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8 px-3 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-10">
-      <div className="rounded-[24px] sm:rounded-[28px] border border-[#EDEDED] bg-white p-4 sm:p-6 md:p-8 shadow-sm">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-[#0A0A0A]">{copy.title}</h1>
-        <p className="mt-2 max-w-2xl text-sm font-bold text-[#1A1A1A] sm:text-base">{copy.subtitle}</p>
-      </div>
+    <div
+      className="mx-auto max-w-[1200px] space-y-6 px-4 py-8 sm:px-8 lg:py-10"
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
+      <header>
+        <p className="pulse-eyebrow text-[#737373]">
+          {locale === 'tr' ? 'PANEL / QR OLUŞTUR' : 'PANEL / CREATE QR'}
+        </p>
+        <h1
+          className="mt-2 text-[26px] sm:text-[32px] font-medium tracking-[-0.025em] leading-[1.05] text-[#0A0A0A]"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >
+          {copy.title}
+        </h1>
+        <p className="mt-2 max-w-[620px] text-[14px] text-[#525252] leading-[1.55]">
+          {copy.subtitle}
+        </p>
+      </header>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="order-2 lg:order-1 space-y-4 sm:space-y-6">
-          <div className="rounded-[24px] sm:rounded-[28px] border border-[#EDEDED] bg-white p-4 sm:p-6 md:p-8 shadow-sm">
+          <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#A8D62E]">
                 <QrCode size={20} strokeWidth={2} />
               </div>
-              <h2 className="text-lg font-extrabold text-[#0A0A0A] sm:text-xl">{copy.qrPreview}</h2>
+              <h2 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.qrPreview}</h2>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2">
               <label className="space-y-2 block">
-                <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">{copy.business}</span>
+                <span className="pulse-eyebrow text-[#737373]">{copy.business}</span>
                 <select
                   value={selectedId}
                   onChange={(event) => setSelectedId(event.target.value)}
-                  className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
+                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
                 >
                   <option value="">{locale === 'tr' ? 'İşletme seçin' : 'Select a location'}</option>
                   {restaurants.map((restaurant) => (
@@ -350,7 +363,7 @@ export default function DashboardQrPage() {
               </label>
 
               <div className="space-y-2">
-                <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">{copy.table}</span>
+                <span className="pulse-eyebrow text-[#737373]">{copy.table}</span>
                 <div className="flex items-center gap-2 sm:gap-3">
                   <button
                     type="button"
@@ -378,11 +391,11 @@ export default function DashboardQrPage() {
             </div>
 
             <div className="mt-5 space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">{copy.platform}</span>
+              <span className="pulse-eyebrow text-[#737373]">{copy.platform}</span>
               <select
                 value={selectedPlatform}
                 onChange={(event) => setSelectedPlatform(event.target.value)}
-                className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
+                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
               >
                 <option value="">{copy.genel}</option>
                 <option value="google">GOOGLE</option>
@@ -394,7 +407,7 @@ export default function DashboardQrPage() {
 
             {/* ─── Color Picker ─── */}
             <div className="mt-5 space-y-2">
-              <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
+              <span className="pulse-eyebrow text-[#737373]">
                 <Palette size={12} className="inline -mt-0.5 mr-1" />{copy.colorLabel}
               </span>
               <div className="flex items-center gap-2 flex-wrap">
@@ -402,7 +415,7 @@ export default function DashboardQrPage() {
                   <button
                     type="button"
                     onClick={() => setUseBrandColor(true)}
-                    className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all ${
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 pulse-eyebrow transition-all ${
                       useBrandColor
                         ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white shadow-md'
                         : 'border-[#EDEDED] bg-white text-[#1A1A1A] hover:border-[#C9D0DB]'
@@ -418,7 +431,7 @@ export default function DashboardQrPage() {
                 <button
                   type="button"
                   onClick={() => setUseBrandColor(false)}
-                  className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all ${
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 pulse-eyebrow transition-all ${
                     !useBrandColor
                       ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white shadow-md'
                       : 'border-[#EDEDED] bg-white text-[#1A1A1A] hover:border-[#C9D0DB]'
@@ -441,49 +454,49 @@ export default function DashboardQrPage() {
               </div>
             </div>
 
-            <div className="mt-6 rounded-[24px] border border-[#0A0A0A]/10 bg-[#0A0A0A] p-5 text-white">
+            <div className="mt-6 rounded-xl bg-[#0A0A0A] p-5 text-white">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#C6F24E]">{copy.target}</span>
+                <span className="pulse-eyebrow text-[#C6F24E]">{copy.target}</span>
                 <button
                   type="button"
                   onClick={copyUrl}
-                  className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-white"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 py-1.5 pulse-eyebrow text-white transition-colors"
                 >
-                  {copied ? <Check size={14} strokeWidth={2} /> : <Copy size={14} strokeWidth={2} />}
+                  {copied ? <Check size={12} strokeWidth={2} /> : <Copy size={12} strokeWidth={2} />}
                   {copied ? copy.copied : copy.copy}
                 </button>
               </div>
-              <p className="truncate text-xs font-bold text-white/70">{qrTargetUrl || 'https://buaze.com/r/...'}</p>
+              <p className="truncate text-[12px] text-white/60 font-mono">{qrTargetUrl || 'https://buaze.com/r/...'}</p>
             </div>
 
-            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
               <button
                 type="button"
                 onClick={generateQr}
                 disabled={generating || !selectedId}
-                className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0A0A0A] px-4 sm:px-5 py-3 text-xs sm:text-sm font-black text-white transition-all disabled:opacity-50"
+                className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors disabled:opacity-50"
               >
-                {generating ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} strokeWidth={2} />}
+                {generating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
                 {copy.refresh}
               </button>
-              <button type="button" onClick={() => downloadQr('svg')} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#EDEDED] bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#0A0A0A] shadow-sm">
-                <Download size={18} strokeWidth={2} />
+              <button type="button" onClick={() => downloadQr('svg')} className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors">
+                <Download size={14} strokeWidth={2} />
                 SVG
               </button>
-              <button type="button" onClick={() => downloadQr('png')} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#EDEDED] bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#0A0A0A] shadow-sm">
-                <Download size={18} strokeWidth={2} />
+              <button type="button" onClick={() => downloadQr('png')} className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors">
+                <Download size={14} strokeWidth={2} />
                 PNG
               </button>
-              <button type="button" onClick={handlePrint} className="col-span-2 sm:col-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-[#EDEDED] bg-white px-3 sm:px-5 py-3 text-xs sm:text-sm font-black text-[#0A0A0A] shadow-sm">
-                <Printer size={18} strokeWidth={2} />
+              <button type="button" onClick={handlePrint} className="col-span-2 sm:col-auto inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors">
+                <Printer size={14} strokeWidth={2} />
                 {copy.print}
               </button>
             </div>
           </div>
 
-          <div className="rounded-[24px] sm:rounded-[28px] border border-[#EDEDED] bg-white p-4 sm:p-6 md:p-8 shadow-sm">
+          <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
             <div className="mb-5 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-extrabold text-[#0A0A0A] sm:text-xl">{copy.history}</h2>
+              <h2 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.history}</h2>
               {historyLoading && <Loader2 className="h-5 w-5 animate-spin text-[#0A0A0A]" />}
             </div>
 
@@ -494,26 +507,29 @@ export default function DashboardQrPage() {
                 </div>
               ) : (
                 history.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3">
-                    <div className="shrink-0 rounded-xl bg-white border border-[#EDEDED] px-2.5 py-2 text-center min-w-[64px]">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-[#6B7280]">
+                  <div key={item.id} className="flex items-start gap-3 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3">
+                    <div className="shrink-0 rounded-lg bg-white border border-[#EDEDED] px-2.5 py-1.5 text-center min-w-[60px]">
+                      <p className="pulse-eyebrow text-[#737373]">
                         {new Date(item.createdAt).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'short' })}
                       </p>
-                      <p className="text-xs font-black text-[#0A0A0A]">
+                      <p
+                        className="text-[12px] font-semibold text-[#0A0A0A] tabular-nums mt-0.5"
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                      >
                         {new Date(item.createdAt).toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-xs font-black text-[#0A0A0A]">{item.qrUrl}</p>
-                        <CopyUrlButton url={item.qrUrl} className="h-6 w-6 shrink-0" />
+                        <p className="truncate text-[12px] font-medium text-[#0A0A0A] font-mono">{item.qrUrl}</p>
+                        <CopyUrlButton url={item.qrUrl} className="h-5 w-5 shrink-0" />
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-[10px] font-bold text-[#1A1A1A]">
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-[11px] text-[#737373]">
                           {item.tableNumber ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}` : (locale === 'tr' ? 'Genel QR' : 'General QR')}
                         </p>
                         {item.platform && PLATFORM_BADGE[item.platform] && (
-                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase text-white ${PLATFORM_BADGE[item.platform].bg}`}>
+                          <span className={`px-1.5 py-0.5 rounded pulse-eyebrow text-white ${PLATFORM_BADGE[item.platform].bg}`}>
                             {PLATFORM_BADGE[item.platform].label}
                           </span>
                         )}
@@ -526,58 +542,63 @@ export default function DashboardQrPage() {
           </div>
         </div>
 
-        <div className="order-1 lg:order-2 rounded-[24px] sm:rounded-[28px] border border-[#EDEDED] bg-white p-4 sm:p-6 md:p-8 shadow-sm">
+        <div className="order-1 lg:order-2 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
           <div className="mb-4 sm:mb-5 flex items-center justify-between gap-3">
              <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
                    <QrCode size={20} strokeWidth={2} />
                 </div>
-                <h2 className="text-lg font-extrabold text-[#0A0A0A] sm:text-xl">{copy.qrPreview}</h2>
+                <h2 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.qrPreview}</h2>
                 {selectedPlatform && PLATFORM_BADGE[selectedPlatform] && (
-                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-white shadow-sm ${PLATFORM_BADGE[selectedPlatform].bg}`}>
+                  <span className={`px-2 py-1 rounded-full pulse-eyebrow text-white ${PLATFORM_BADGE[selectedPlatform].bg}`}>
                     {PLATFORM_BADGE[selectedPlatform].label}
                   </span>
                 )}
              </div>
              {duplicateWarning && (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
-                   <AlertCircle size={12} strokeWidth={2} />
-                   Zaten Mevcut
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 pulse-eyebrow">
+                   <AlertCircle size={11} strokeWidth={2} />
+                   {locale === 'tr' ? 'ZATEN MEVCUT' : 'ALREADY EXISTS'}
                 </div>
              )}
           </div>
 
-          <div className="flex min-h-[260px] sm:min-h-[360px] items-center justify-center rounded-[24px] sm:rounded-[28px] border border-dashed border-[#EDEDED] bg-[#FFFFFF] p-4 sm:p-6">
+          <div className="flex min-h-[260px] sm:min-h-[360px] items-center justify-center rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-5 sm:p-7">
             {generating ? (
-              <Loader2 className="h-10 w-10 animate-spin text-[#0A0A0A]" />
+              <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
             ) : qrSvg ? (
-              <div className="w-full space-y-4 sm:space-y-5 text-center">
+              <div className="w-full space-y-4 text-center">
                 <div className="mx-auto w-full max-w-[220px] overflow-hidden sm:max-w-[280px] [&>svg]:h-auto [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: qrSvg }} />
                 <div>
-                  <p className="text-lg font-black text-[#0A0A0A]">{selectedRestaurant?.name}</p>
+                  <p
+                    className="text-[17px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {selectedRestaurant?.name}
+                  </p>
                   {tableNumber && (
-                    <p className="mt-1 text-sm font-bold text-[#1A1A1A]">
-                      {locale === 'tr' ? 'Masa' : 'Table'} {tableNumber}
+                    <p className="mt-1 pulse-eyebrow text-[#737373]">
+                      {locale === 'tr' ? 'MASA' : 'TABLE'} {tableNumber}
                     </p>
                   )}
                 </div>
               </div>
             ) : qrError ? (
               <div className="flex flex-col items-center gap-3 text-center px-4">
-                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center">
-                  <QrCode size={24} strokeWidth={2} className="text-red-400" />
+                <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center">
+                  <QrCode size={20} strokeWidth={2} className="text-red-400" />
                 </div>
-                <p className="text-sm font-black text-red-500 uppercase tracking-wide">{qrError}</p>
+                <p className="pulse-eyebrow text-red-500">{qrError}</p>
                 <button
                   type="button"
                   onClick={generateQr}
-                  className="text-xs font-black text-[#0A0A0A] underline underline-offset-2 uppercase tracking-widest"
+                  className="pulse-eyebrow text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E] transition-colors"
                 >
-                  {locale === 'tr' ? 'Tekrar Dene' : 'Retry'}
+                  {locale === 'tr' ? 'TEKRAR DENE' : 'RETRY'}
                 </button>
               </div>
             ) : (
-              <p className="text-sm font-bold text-[#1A1A1A]">{locale === 'tr' ? 'QR oluşturmak için işletme seçin.' : 'Select a location to generate a QR code.'}</p>
+              <p className="text-[13px] text-[#525252]">{locale === 'tr' ? 'QR oluşturmak için işletme seçin.' : 'Select a location to generate a QR code.'}</p>
             )}
           </div>
         </div>

@@ -44,99 +44,111 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
     }
   ];
 
+  const isTr = locale === 'tr';
+
   return (
-    <div className="min-h-screen bg-[#FFFFFF] font-sans selection:bg-[#C6F24E]/30 p-4 sm:p-6 md:p-10 lg:p-16">
-      <div className="max-w-4xl mx-auto space-y-12">
-        {/* Header */}
-        <div className="space-y-6">
-          <Link 
-            href={`/${locale}/dashboard`}
-            className="inline-flex items-center gap-2 text-xs font-black text-[#1A1A1A] hover:text-[#0A0A0A] transition-all uppercase tracking-widest group"
+    <div
+      className="mx-auto max-w-[1100px] space-y-8 px-4 py-8 sm:px-8 lg:py-10"
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
+      <header>
+        <Link
+          href={`/${locale}/dashboard`}
+          className="inline-flex items-center gap-1.5 pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
+        >
+          <ArrowLeft size={12} strokeWidth={2} />
+          {isTr ? 'PANEL' : 'PANEL'}
+        </Link>
+
+        <div className="mt-4 flex items-center gap-2">
+          <BookOpen size={14} strokeWidth={2} className="text-[#0A0A0A]" />
+          <span className="pulse-eyebrow text-[#737373]">{isTr ? 'REHBER' : 'GUIDE'}</span>
+        </div>
+        <h1
+          className="mt-2 text-[28px] sm:text-[36px] font-medium tracking-[-0.025em] leading-[1.05] text-[#0A0A0A]"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >
+          {isTr ? 'Kullanım kılavuzu' : 'User guide'}
+        </h1>
+        <p className="mt-3 max-w-[620px] text-[14px] text-[#525252] leading-[1.6]">
+          {isTr
+            ? 'Buaze platformunu en verimli şekilde kullanmanız için hazırladığımız adım adım başlangıç rehberi.'
+            : 'A step-by-step startup guide to help you use the Buaze platform most efficiently.'}
+        </p>
+      </header>
+
+      {/* Steps grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {steps.map((step, idx) => (
+          <div
+            key={idx}
+            className="bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-7 space-y-4 hover:border-[#C6F24E] transition-colors"
           >
-            <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#0A0A0A] flex items-center justify-center shadow-md group-hover:translate-y-0.5 group-hover:shadow-none transition-all">
-              <ArrowLeft size={16} strokeWidth={2} />
+            <div className="w-11 h-11 rounded-xl bg-[#EAF9B8] flex items-center justify-center text-[#0A0A0A]">
+              {step.icon}
             </div>
-            {locale === 'tr' ? 'Dashboard\'a Dön' : 'Back to Dashboard'}
-          </Link>
-
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#C6F24E] text-[#0A0A0A] border-2 border-[#0A0A0A] rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
-                <BookOpen size={14} /> {locale === 'tr' ? 'REHBER' : 'GUIDE'}
-              </div>
-              <h1 className="text-[36px] sm:text-[48px] font-extrabold text-[#0A0A0A] leading-[1] tracking-tighter uppercase italic">
-                {locale === 'tr' ? 'Kullanım Kılavuzu' : 'User Guide'}
-              </h1>
-              <p className="text-[15px] sm:text-[17px] text-[#1A1A1A] font-bold max-w-xl italic">
-                {locale === 'tr' 
-                  ? 'Buaze platformunu en verimli şekilde kullanmanız için hazırladığımız adım adım başlangıç rehberi.' 
-                  : 'A step-by-step startup guide we prepared for you to use the Buaze platform most efficiently.'}
-              </p>
+            <div className="space-y-2">
+              <h3
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {step.title}
+              </h3>
+              <p className="text-[14px] text-[#525252] leading-[1.6]">{step.desc}</p>
             </div>
+            {step.link && (
+              <Link
+                href={step.link}
+                className="inline-flex items-center gap-1.5 pulse-eyebrow text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+              >
+                {step.linkText.toUpperCase()} <Zap size={11} strokeWidth={2} />
+              </Link>
+            )}
           </div>
-        </div>
-
-        {/* Steps Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {steps.map((step, idx) => (
-            <div 
-              key={idx}
-              className="group bg-white rounded-[32px] border-2 border-[#0A0A0A] shadow-md p-8 space-y-6 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-[#FFFFFF] border-2 border-[#0A0A0A] flex items-center justify-center shadow-md group-hover:bg-[#C6F24E] transition-colors">
-                {step.icon}
-              </div>
-              <div className="space-y-3">
-                <h3 className="text-xl font-extrabold text-[#0A0A0A] uppercase tracking-tight italic">{step.title}</h3>
-                <p className="text-sm font-bold text-[#1A1A1A] leading-relaxed">
-                  {step.desc}
-                </p>
-              </div>
-              {step.link && (
-                <Link 
-                  href={step.link}
-                  className="inline-flex items-center gap-2 text-xs font-black text-[#C6F24E] uppercase tracking-widest hover:gap-3 transition-all"
-                >
-                  {step.linkText} <Zap size={14} fill="currentColor" />
-                </Link>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* FAQ - Quick Tips */}
-        <div className="bg-[#0A0A0A] rounded-[40px] border-2 border-[#0A0A0A] p-8 sm:p-12 shadow-md space-y-10">
-          <div className="space-y-2">
-            <h2 className="text-2xl font-extrabold text-white uppercase italic">{locale === 'tr' ? 'Önemli İpuçları' : 'Pro Tips'}</h2>
-            <div className="h-1.5 w-20 bg-[#C6F24E] rounded-full" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-[#C6F24E]">
-                <Settings size={20} strokeWidth={2} />
-                <h4 className="font-extrabold uppercase text-sm tracking-wide">{locale === 'tr' ? 'Düzenli Takip' : 'Regular Monitoring'}</h4>
-              </div>
-              <p className="text-[#6B7280] text-sm font-bold leading-relaxed">
-                {locale === 'tr'
-                  ? 'Gelen geri bildirimlere 24 saat içinde yanıt vermek müşteri sadakatini %40 oranında artırır.'
-                  : 'Responding to feedback within 24 hours increases customer loyalty by 40%.'}
-              </p>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-[#C6F24E]">
-                <MessageSquare size={20} strokeWidth={2} />
-                <h4 className="font-extrabold uppercase text-sm tracking-wide">{locale === 'tr' ? 'Kişiselleştirme' : 'Personalization'}</h4>
-              </div>
-              <p className="text-[#6B7280] text-sm font-bold leading-relaxed">
-                {locale === 'tr'
-                  ? 'Müşterilere isimleriyle hitap etmek güven duygusunu perçinler.'
-                  : 'Addressing customers by their names reinforces the sense of trust.'}
-              </p>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
+
+      {/* Pro tips */}
+      <section className="bg-[#0A0A0A] rounded-2xl p-8 sm:p-10 space-y-8 text-white">
+        <div>
+          <span className="pulse-eyebrow text-[#C6F24E]">{isTr ? 'İPUÇLARI' : 'PRO TIPS'}</span>
+          <h2
+            className="mt-3 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {isTr ? 'Önemli ipuçları' : 'Key tactics'}
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-[#C6F24E]">
+              <Settings size={14} strokeWidth={2} />
+              <h4 className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'DÜZENLİ TAKİP' : 'REGULAR MONITORING'}
+              </h4>
+            </div>
+            <p className="text-[13px] text-white/70 leading-[1.6]">
+              {isTr
+                ? 'Gelen geri bildirimlere 24 saat içinde yanıt vermek müşteri sadakatini %40 oranında artırır.'
+                : 'Responding to feedback within 24 hours increases customer loyalty by 40%.'}
+            </p>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-[#C6F24E]">
+              <MessageSquare size={14} strokeWidth={2} />
+              <h4 className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'KİŞİSELLEŞTİRME' : 'PERSONALIZATION'}
+              </h4>
+            </div>
+            <p className="text-[13px] text-white/70 leading-[1.6]">
+              {isTr
+                ? 'Müşterilere isimleriyle hitap etmek güven duygusunu perçinler.'
+                : 'Addressing customers by their names reinforces the sense of trust.'}
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
