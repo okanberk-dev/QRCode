@@ -1,18 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Trash2, Loader2, User, Crown, BadgeCheck, AlertCircle, Search } from 'lucide-react';
-import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Download, Loader2, Mail, MapPin, Phone, RefreshCw, Search, Star, Store, Users, X } from 'lucide-react';
 
-interface Customer {
-  id: string;
-  email: string;
+type Range = '7d' | '30d' | '90d' | 'all';
+
+interface CustomerRow {
+  key: string;
   name: string | null;
-  plan: string;
-  isActive: boolean;
-  trialEndsAt: string | null;
-  createdAt: string;
-  restaurants: { id: string; name: string }[];
+  email: string | null;
+  phone: string | null;
+  restaurantId: string;
+  restaurantName: string | null;
+  branch: string | null;
+  platform: string | null;
+  lastRating: number | null;
+  feedbackCount: number;
+  lastAt: string;
+}
+
+interface CustomersResponse {
+  data: CustomerRow[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+  summary: { customers: number; feedbacks: number; avgRating: number | null };
 }
 
 interface RestaurantOption {
@@ -20,415 +30,424 @@ interface RestaurantOption {
   name: string;
 }
 
-export default function CustomersPage() {
-  const { t } = useAdminTranslation();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+const PAGE_SIZE = 25;
+
+const PLATFORM_LABEL: Record<string, string> = {
+  google: 'Google',
+  yemeksepeti: 'Yemeksepeti',
+  getir: 'Getir',
+  trendyol_go: 'Trendyol GO',
+};
+
+export default function AdminCustomersPage() {
   const [loading, setLoading] = useState(true);
-  
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    plan: 'trial',
-    isActive: true,
-    trialEndsAt: '',
-    restaurantIds: [] as string[],
-  });
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
+  const [data, setData] = useState<CustomersResponse | null>(null);
+
+  // Filters
+  const [range, setRange] = useState<Range>('30d');
+  const [restaurantId, setRestaurantId] = useState('');
+  const [search, setSearch] = useState('');
+  const [searchDebounced, setSearchDebounced] = useState('');
+  const [hasEmail, setHasEmail] = useState(false);
+  const [hasPhone, setHasPhone] = useState(false);
+  const [hasComment, setHasComment] = useState(false);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Reset to first page whenever a non-page filter changes.
+  useEffect(() => {
+    setPage(1);
+  }, [range, restaurantId, searchDebounced, hasEmail, hasPhone, hasComment]);
+
+  // Load restaurant options once (for the dropdown).
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/restaurants?status=all&limit=200');
+        if (!res.ok) return;
+        const body = await res.json();
+        const list = Array.isArray(body)
+          ? body
+          : Array.isArray(body?.data)
+          ? body.data
+          : [];
+        if (alive) {
+          setRestaurants(list.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name })));
+        }
+      } catch {
+        /* non-blocking */
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const buildQuery = useCallback((overrides: Partial<{ page: number }> = {}) => {
+    const q = new URLSearchParams();
+    q.set('range', range);
+    if (restaurantId) q.set('restaurantId', restaurantId);
+    if (searchDebounced) q.set('search', searchDebounced);
+    if (hasEmail) q.set('hasEmail', '1');
+    if (hasPhone) q.set('hasPhone', '1');
+    if (hasComment) q.set('hasComment', '1');
+    q.set('limit', String(PAGE_SIZE));
+    q.set('page', String(overrides.page ?? page));
+    return q;
+  }, [range, restaurantId, searchDebounced, hasEmail, hasPhone, hasComment, page]);
+
+  const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const [customersRes, restaurantsRes] = await Promise.all([
-        fetch('/api/admin/customers'),
-        fetch('/api/restaurants'),
-      ]);
-
-      if (customersRes.ok) {
-        setCustomers(await customersRes.json());
-      }
-
-      if (restaurantsRes.ok) {
-        const restaurantData = await restaurantsRes.json();
-        setRestaurants(Array.isArray(restaurantData) ? restaurantData : (restaurantData?.data || []));
-      }
+      const res = await fetch(`/api/admin/customers?${buildQuery().toString()}`);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Müşteriler yüklenemedi');
+      setData(body);
     } catch (e) {
-      console.error(e);
+      setError((e as Error).message);
     }
     setLoading(false);
-  };
+  }, [buildQuery]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
-  const handleEdit = (customer: Customer) => {
-    setEditingId(customer.id);
-    setFormData({
-      name: customer.name || '',
-      email: customer.email,
-      password: '', // Boş bırakıldığında şifre değişmez
-      plan: customer.plan,
-      isActive: customer.isActive,
-      trialEndsAt: customer.trialEndsAt ? new Date(customer.trialEndsAt).toISOString().split('T')[0] : '',
-      restaurantIds: customer.restaurants.map((restaurant) => restaurant.id),
-    });
-    setShowModal(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!formData.name || !formData.email) {
-      setError('Ad Soyad ve E-posta zorunludur.');
-      return;
-    }
-
-    setIsSubmitting(true);
+  const downloadCsv = async () => {
+    setExporting(true);
+    setError(null);
     try {
-      const payload: any = { ...formData };
-      if (!payload.trialEndsAt) {
-        payload.trialEndsAt = null;
-      }
-      
-      const url = `/api/admin/customers/${editingId}`;
-      const method = 'PUT'; // Currently only editing is allowed since users register themselves
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      
+      const q = buildQuery();
+      q.delete('page');
+      q.delete('limit');
+      const res = await fetch(`/api/admin/customers/export?${q.toString()}`);
       if (!res.ok) {
-        setError(data.error || `Müşteri güncellenemedi`);
-      } else {
-        setShowModal(false);
-        setEditingId(null);
-        fetchData();
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'CSV indirilemedi');
       }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `musteriler-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (e) {
-      setError('Bağlantı hatası oluştu, lütfen tekrar deneyin.');
+      setError((e as Error).message);
     }
-    setIsSubmitting(false);
+    setExporting(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bu müşteriyi tamamen silmek istediğinize emin misiniz? DİKKAT: Bu işleme bağlı olan tüm restoran ve geri bildirim kayıtları cascade edilecek (etkilenip silinecek) olabilir.')) return;
-    
-    try {
-      const res = await fetch(`/api/admin/customers/${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || 'Silme işlemi başarısız');
-      } else {
-        fetchData();
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  const hasActiveFilters = useMemo(
+    () => !!(restaurantId || searchDebounced || hasEmail || hasPhone || hasComment) || range !== '30d',
+    [restaurantId, searchDebounced, hasEmail, hasPhone, hasComment, range],
+  );
+  const resetFilters = () => {
+    setRange('30d');
+    setRestaurantId('');
+    setSearch('');
+    setHasEmail(false);
+    setHasPhone(false);
+    setHasComment(false);
   };
 
-  if (loading && customers.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#1A2332] w-10 h-10" />
-      </div>
-    );
-  }
+  const rows = data?.data ?? [];
+  const totalPages = data?.meta.totalPages ?? 1;
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm">
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase">{t('customers')}</h1>
-          <p className="text-[#2A3444] text-[13px] sm:text-[15px] font-bold">Tüm kayıtlı restoran sahiplerini, aboneliklerini ve ayarlarını yönetin.</p>
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-8">
+      {/* Header */}
+      <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-7">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight text-[#1A2332] sm:text-3xl">
+              <Users size={22} strokeWidth={2} />
+              Müşteriler
+            </h1>
+            <p className="mt-1 text-sm font-medium text-[#6B7280]">
+              QR üzerinden geri bildirim bırakmış restoran müşterilerinin birleşik listesi. KVKK onayı olanlar gösterilir.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <button
+              onClick={fetchData}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F8F6F1] active:scale-95 disabled:opacity-50"
+            >
+              {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
+              Yenile
+            </button>
+            <button
+              onClick={downloadCsv}
+              disabled={exporting || (data?.meta.total ?? 0) === 0}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#2A3444] active:scale-95 disabled:opacity-50"
+            >
+              {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
+              CSV İndir
+            </button>
+          </div>
+        </div>
+
+        {data && (
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <SummaryCard icon={<Users size={14} />} label="Tekil Müşteri" value={data.summary.customers.toLocaleString('tr-TR')} />
+            <SummaryCard icon={<Mail size={14} />} label="Toplam Feedback" value={data.summary.feedbacks.toLocaleString('tr-TR')} />
+            <SummaryCard
+              icon={<Star size={14} />}
+              label="Ortalama Puan"
+              value={data.summary.avgRating !== null ? data.summary.avgRating.toFixed(2) : '—'}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Filters */}
+      <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] p-1 text-[11px] font-black uppercase tracking-widest">
+            {([
+              { key: '7d', label: 'Son 7 gün' },
+              { key: '30d', label: 'Son 30 gün' },
+              { key: '90d', label: 'Son 90 gün' },
+              { key: 'all', label: 'Tümü' },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setRange(opt.key)}
+                className={`rounded-lg px-3 py-1.5 transition-all ${
+                  range === opt.key ? 'bg-[#1A2332] text-white shadow-sm' : 'text-[#2A3444] hover:text-[#1A2332]'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <select
+            value={restaurantId}
+            onChange={(e) => setRestaurantId(e.target.value)}
+            className="rounded-xl border border-[#E8ECF2] bg-white px-3 py-2 text-xs font-bold text-[#1A2332] outline-none focus:ring-2 focus:ring-[#F4B400]"
+          >
+            <option value="">Tüm restoranlar</option>
+            {restaurants.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+
+          <div className="relative min-w-[200px] flex-1">
+            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" strokeWidth={2} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="İsim, e-posta, telefon veya yorumda ara…"
+              className="w-full rounded-xl border border-[#E8ECF2] bg-white py-2 pl-9 pr-3 text-xs font-medium text-[#1A2332] outline-none focus:ring-2 focus:ring-[#F4B400]"
+            />
+          </div>
+
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="inline-flex items-center gap-1 rounded-xl border border-[#E8ECF2] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:bg-[#F8F6F1] active:scale-95"
+            >
+              <X size={12} strokeWidth={2} />
+              Filtreleri temizle
+            </button>
+          )}
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-widest">
+          <FilterToggle active={hasEmail} onClick={() => setHasEmail((v) => !v)}>E-posta var</FilterToggle>
+          <FilterToggle active={hasPhone} onClick={() => setHasPhone((v) => !v)}>Telefon var</FilterToggle>
+          <FilterToggle active={hasComment} onClick={() => setHasComment((v) => !v)}>Yorum var</FilterToggle>
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative group">
-        <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={20} strokeWidth={2} />
-        <input
-          type="text"
-          placeholder={t('search_placeholder')}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border border-[#E8ECF2] rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-4 sm:py-5 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#F4B400] transition-all"
-        />
-      </div>
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold uppercase tracking-widest text-red-700">
+          {error}
+        </div>
+      )}
 
-      <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse sm:min-w-[720px]">
-            <thead>
-              <tr className="bg-[#1A2332] text-[11px] font-bold uppercase tracking-[0.2em] text-[#6B7280]">
-                <th className="px-3 py-4 sm:px-6 md:px-10">{t('customers')}</th>
-                <th className="hidden md:table-cell px-3 py-4 sm:px-6 md:px-10">ÜYELİK DURUMU</th>
-                <th className="hidden lg:table-cell px-3 py-4 sm:px-6 md:px-10">{t('restaurants')}</th>
-                <th className="hidden md:table-cell px-3 py-4 sm:px-6 md:px-10">{t('status')}</th>
-                <th className="px-3 py-4 sm:px-6 md:px-10 text-right">{t('actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y-2 divide-[#F8F6F1] text-sm">
-              {customers.filter(c =>
-                (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                c.email.toLowerCase().includes(searchTerm.toLowerCase())
-              ).map(customer => (
-                <tr key={customer.id} className="hover:bg-[#F4B400]/5 transition-all group border-b border-[#F8F6F1]">
-                  <td className="px-3 py-4 sm:px-6 md:px-10">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="hidden sm:flex w-14 h-14 rounded-2xl bg-[#1A2332] text-[#F4B400] items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                        <User size={24} strokeWidth={2} />
-                      </div>
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <span className="font-black text-[#1A2332] text-[15px] sm:text-[16px] tracking-tight truncate">{customer.name || 'İsimsiz Müşteri'}</span>
-                        <span className="text-[11px] sm:text-xs font-bold text-[#6B7280] tracking-wide uppercase truncate">{customer.email}</span>
-                        {/* Mobile-only inline badges for plan + status */}
-                        <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
-                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
-                            customer.plan === 'yearly' ? 'bg-[#1A2332] text-[#F4B400]'
-                            : customer.plan === 'monthly' ? 'bg-[#F4B400] text-[#1A2332]'
-                            : customer.plan === 'external' ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-[#E8ECF2] text-[#6B7280]'
-                          }`}>
-                            {customer.plan === 'yearly' ? 'PLATINUM' : customer.plan === 'monthly' ? 'PRO' : customer.plan === 'external' ? 'MANUEL' : 'DENEME'}
-                          </span>
-                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
-                            customer.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                          }`}>
-                            {customer.isActive ? t('active') : t('passive')}
-                          </span>
-                          {customer.restaurants && customer.restaurants.length > 0 && (
-                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 lg:hidden">
-                              {customer.restaurants.length} İşletme
+      <div className="overflow-hidden rounded-[24px] border border-[#E8ECF2] bg-white shadow-sm">
+        {loading && !data ? (
+          <div className="flex items-center justify-center p-16">
+            <Loader2 size={22} className="animate-spin text-[#1A2332]" />
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#F8F6F1] text-[#6B7280]">
+              <Users size={22} strokeWidth={2} />
+            </div>
+            <p className="text-sm font-extrabold text-[#1A2332]">Kriterlere uyan müşteri yok</p>
+            <p className="mt-1 text-xs font-medium text-[#6B7280]">Filtreleri değiştirerek veya temizleyerek tekrar deneyin.</p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F8F6F1]">
+                  <tr className="text-[10px] font-black uppercase tracking-widest text-[#6B7280]">
+                    <th className="px-5 py-3">Müşteri</th>
+                    <th className="px-5 py-3">İletişim</th>
+                    <th className="px-5 py-3">Restoran</th>
+                    <th className="px-5 py-3 text-right">Son Puan</th>
+                    <th className="px-5 py-3 text-right">Feedback</th>
+                    <th className="px-5 py-3">Son Tarih</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E8ECF2]">
+                  {rows.map((r) => (
+                    <tr key={r.key} className="hover:bg-[#F8F6F1]/50">
+                      <td className="px-5 py-3 font-extrabold text-[#1A2332]">{r.name || 'İsimsiz'}</td>
+                      <td className="px-5 py-3 text-[#2A3444]">
+                        <div className="flex flex-col gap-0.5">
+                          {r.email && (
+                            <span className="inline-flex items-center gap-1.5 truncate">
+                              <Mail size={11} className="text-[#6B7280]" strokeWidth={2} />
+                              <a href={`mailto:${r.email}`} className="truncate hover:underline">{r.email}</a>
+                            </span>
+                          )}
+                          {r.phone && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <Phone size={11} className="text-[#6B7280]" strokeWidth={2} />
+                              <a href={`tel:${r.phone.replace(/\s/g, '')}`} className="hover:underline">{r.phone}</a>
                             </span>
                           )}
                         </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="hidden md:table-cell px-3 py-4 sm:px-6 md:px-10">
-                    <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border flex items-center gap-2 w-max shadow-sm transition-all group-hover:translate-x-1 ${
-                      customer.plan === 'yearly'
-                        ? 'bg-[#1A2332] text-[#F4B400] border-[#F4B400]/30 shadow-[0_4px_12px_rgba(244, 180, 0,0.2)]'
-                        : customer.plan === 'monthly'
-                        ? 'bg-[#F4B400] text-[#1A2332] border-transparent'
-                        : customer.plan === 'external'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : 'bg-white text-[#6B7280] border-[#F8F6F1]'
-                    }`}>
-                      {customer.plan === 'yearly' ? <Crown size={16} strokeWidth={2} /> : customer.plan === 'monthly' ? <BadgeCheck size={16} strokeWidth={2} /> : customer.plan === 'external' ? <BadgeCheck size={16} strokeWidth={2} /> : <AlertCircle size={16} strokeWidth={2} />}
-                      {customer.plan === 'yearly' ? 'PLATINUM' : customer.plan === 'monthly' ? 'PRO PLAN' : customer.plan === 'external' ? 'MANUEL' : 'DENEME'}
-                    </div>
-                  </td>
-                  <td className="hidden lg:table-cell px-4 py-4 sm:px-8 sm:py-6">
-                    <div className="flex flex-col gap-1 font-bold text-[#2A3444] text-[12px]">
-                      {customer.restaurants && customer.restaurants.length > 0 ? (
-                        customer.restaurants.map(r => (
-                           <span key={r.id} className="text-[#1A2332] font-black line-clamp-1">{r.name.toUpperCase()}</span>
-                        ))
-                      ) : (
-                        <span className="text-[#6B7280] italic">YOK</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="hidden md:table-cell px-4 py-4 sm:px-8 sm:py-6">
-                    {customer.isActive ? (
-                      <span className="text-green-600 bg-green-50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-200">{t('active')}</span>
-                    ) : (
-                      <span className="text-red-600 bg-red-50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200">{t('passive')}</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-4 sm:px-8 sm:py-6 text-right">
-                    <div className="flex items-center justify-end gap-2 sm:gap-3 hover:opacity-100">
-                      <button
-                        onClick={() => handleEdit(customer)}
-                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[#1A2332] bg-white border border-[#E8ECF2] shadow-sm rounded-xl hover:bg-[#F4B400] active:translate-y-1 transition-all"
-                        title={t('edit')}
-                      >
-                        <Plus className="rotate-45" size={18} strokeWidth={2} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(customer.id)}
-                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#ef4444] border hover:border-[#1A2332] shadow-sm rounded-xl hover:bg-red-600 active:translate-y-1 transition-all"
-                        title={t('delete')}
-                      >
-                        <Trash2 size={18} strokeWidth={2} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {customers.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="text-center py-12 text-[#2A3444] font-bold">Hiç müşteri bulunamadı.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6">
-          <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl border border-[#E8ECF2] w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
-            <div className="p-5 sm:p-8 md:p-10 border-b border-[#E8ECF2] bg-[#F8F6F1]">
-              <h2 className="text-xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase">
-                Müşteriyi Düzenle
-              </h2>
-              <p className="text-[#2A3444] text-[13px] sm:text-sm font-bold mt-2">
-                Şifre sıfırlama, plan değiştirme ve hesap durumları.
-              </p>
+                      </td>
+                      <td className="px-5 py-3 text-[#2A3444]">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="inline-flex items-center gap-1.5 font-bold text-[#1A2332]">
+                            <Store size={11} strokeWidth={2} />
+                            {r.restaurantName || '—'}
+                          </span>
+                          {r.branch && (
+                            <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
+                              <MapPin size={10} strokeWidth={2} />
+                              {r.branch}
+                            </span>
+                          )}
+                          {r.platform && (
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
+                              {PLATFORM_LABEL[r.platform] || r.platform}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        {r.lastRating !== null ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#F4B400]/15 px-2 py-0.5 font-black text-[#1A2332]">
+                            <Star size={11} fill="#F4B400" strokeWidth={0} />
+                            {r.lastRating}
+                          </span>
+                        ) : (
+                          <span className="text-[#6B7280]">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-right font-bold tabular-nums text-[#1A2332]">{r.feedbackCount}</td>
+                      <td className="px-5 py-3 text-[#2A3444]">{new Date(r.lastAt).toLocaleDateString('tr-TR')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-5 sm:p-8 md:p-10 space-y-5 sm:space-y-6 md:space-y-8 overflow-y-auto no-scrollbar">
-              {error && (
-                <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-xs font-bold border border-red-200 text-center uppercase tracking-widest">
-                  {error}
+            {/* Mobile cards */}
+            <div className="divide-y divide-[#E8ECF2] md:hidden">
+              {rows.map((r) => (
+                <div key={r.key} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold text-[#1A2332]">{r.name || 'İsimsiz'}</p>
+                      <p className="mt-0.5 inline-flex items-center gap-1 truncate text-[11px] font-bold text-[#2A3444]">
+                        <Store size={11} strokeWidth={2} />
+                        {r.restaurantName || '—'}
+                      </p>
+                    </div>
+                    {r.lastRating !== null && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#F4B400]/15 px-2 py-0.5 text-[11px] font-black text-[#1A2332]">
+                        <Star size={11} fill="#F4B400" strokeWidth={0} />
+                        {r.lastRating}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2 space-y-0.5 text-[11px] text-[#2A3444]">
+                    {r.email && <p className="truncate"><Mail size={10} className="mr-1 inline" strokeWidth={2} />{r.email}</p>}
+                    {r.phone && <p><Phone size={10} className="mr-1 inline" strokeWidth={2} />{r.phone}</p>}
+                    {r.branch && <p><MapPin size={10} className="mr-1 inline" strokeWidth={2} />{r.branch}</p>}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
+                    <span>{r.feedbackCount} feedback</span>
+                    <span>{new Date(r.lastAt).toLocaleDateString('tr-TR')}</span>
+                  </div>
                 </div>
-              )}
+              ))}
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Kişi Adı</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold transition-all shadow-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">E-posta</label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Yeni Şifre Belirle</label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    placeholder="Değişmeyecekse boş bırakın"
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all placeholder:text-[13px] placeholder:font-medium"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Kayıt Planı</label>
-                  <select
-                    value={formData.plan}
-                    onChange={(e) => setFormData({...formData, plan: e.target.value})}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between gap-3 border-t border-[#E8ECF2] bg-[#F8F6F1] px-5 py-3">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-[#6B7280]">
+                  Sayfa {data?.meta.page} / {totalPages} · Toplam {data?.meta.total}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1 || loading}
+                    className="rounded-lg border border-[#E8ECF2] bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#1A2332] hover:bg-[#F8F6F1] active:scale-95 disabled:opacity-40"
                   >
-                    <option value="trial">Trial (Deneme)</option>
-                    <option value="monthly">Monthly (Aylık)</option>
-                    <option value="yearly">Yearly (Yıllık)</option>
-                    <option value="external">External (Manuel)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Hesap Erişimi</label>
-                  <select
-                    value={formData.isActive ? '1' : '0'}
-                    onChange={(e) => setFormData({...formData, isActive: e.target.value === '1'})}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                    Önceki
+                  </button>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages || loading}
+                    className="rounded-lg border border-[#E8ECF2] bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#1A2332] hover:bg-[#F8F6F1] active:scale-95 disabled:opacity-40"
                   >
-                    <option value="1">Aktif</option>
-                    <option value="0">Askıya Alındı</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Deneme Bitiş Tarihi</label>
-                  <input
-                    type="date"
-                    value={formData.trialEndsAt}
-                    onChange={(e) => setFormData({...formData, trialEndsAt: e.target.value})}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all text-[#2A3444]"
-                  />
+                    Sonraki
+                  </button>
                 </div>
               </div>
-
-              <div className="space-y-4 pt-2 border-t border-[#E8ECF2]">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Bağlı İşletmeler / Mağazalar</label>
-                  <p className="text-xs text-[#2A3444] font-bold">Bu kullanıcıya ait işletmeleri seçin. Seçilmemiş mevcut bağlantılar kaldırılır.</p>
-                </div>
-
-                <div className="max-h-64 sm:max-h-80 overflow-y-auto rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] p-2 sm:p-3 space-y-2 sm:space-y-3">
-                  {restaurants.length === 0 ? (
-                    <div className="px-3 py-4 text-sm text-[#2A3444] font-bold">Bağlanabilir işletme bulunamadı.</div>
-                  ) : (
-                    restaurants.map((restaurant) => {
-                      const checked = formData.restaurantIds.includes(restaurant.id);
-                      return (
-                        <label
-                          key={restaurant.id}
-                          className={`flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-all ${
-                            checked
-                              ? 'border-[#1A2332] bg-white shadow-sm'
-                              : 'border-transparent bg-white/70 hover:border-[#E8ECF2]'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) => {
-                              setFormData((prev) => ({
-                                ...prev,
-                                restaurantIds: e.target.checked
-                                  ? [...prev.restaurantIds, restaurant.id]
-                                  : prev.restaurantIds.filter((id) => id !== restaurant.id),
-                              }));
-                            }}
-                            className="h-4 w-4 rounded border-[#C9D0DB] text-[#1A2332] focus:ring-[#F4B400]"
-                          />
-                          <span className="text-sm font-bold text-[#1A2332]">{restaurant.name}</span>
-                        </label>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-[#E8ECF2]">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="w-full py-4 bg-[#F8F6F1] text-[#1A2332] font-black rounded-xl text-xs uppercase tracking-widest hover:bg-[#E8ECF2] transition-colors border border-[#E8ECF2]"
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-4 bg-[#1A2332] text-white font-black rounded-xl text-xs uppercase tracking-widest hover:bg-[#1A2332]/90 transition-colors disabled:opacity-50"
-                  style={{ boxShadow: '0 4px 0 0 #000' }}
-                >
-                  {isSubmitting ? '...' : t('save')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </div>
     </div>
+  );
+}
+
+function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] p-4">
+      <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#6B7280]">
+        {icon}
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-extrabold tabular-nums text-[#1A2332]">{value}</p>
+    </div>
+  );
+}
+
+function FilterToggle({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1.5 transition-all active:scale-95 ${
+        active
+          ? 'border-[#1A2332] bg-[#1A2332] text-white'
+          : 'border-[#E8ECF2] bg-white text-[#2A3444] hover:bg-[#F8F6F1]'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
