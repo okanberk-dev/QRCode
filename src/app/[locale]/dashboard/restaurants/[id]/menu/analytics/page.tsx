@@ -183,17 +183,17 @@ export default function MenuAnalyticsPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-8">
+      <div className="flex flex-col gap-4 rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-1">
             <Link
               href={`/${locale}/dashboard/restaurants/${id}/menu`}
-              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332]"
+              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]"
             >
               <ArrowLeft size={14} strokeWidth={2} />
               {copy.back}
             </Link>
-            <h1 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight text-[#1A2332] sm:text-3xl">
+            <h1 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl">
               <BarChart3 size={22} strokeWidth={2} />
               {copy.title}
             </h1>
@@ -208,7 +208,7 @@ export default function MenuAnalyticsPage() {
             <button
               onClick={fetchAnalytics}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F8F6F1] active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-50"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
               {copy.refresh}
@@ -218,7 +218,7 @@ export default function MenuAnalyticsPage() {
 
         {/* Filters */}
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <div className="inline-flex rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] p-1 text-[11px] font-black uppercase tracking-widest">
+          <div className="inline-flex rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1 text-[11px] font-black uppercase tracking-widest">
             {([
               { key: '7d', label: copy.range7 },
               { key: '30d', label: copy.range30 },
@@ -229,7 +229,7 @@ export default function MenuAnalyticsPage() {
                 key={opt.key}
                 onClick={() => setRange(opt.key)}
                 className={`rounded-lg px-3 py-2 transition-all ${
-                  range === opt.key ? 'bg-[#1A2332] text-white shadow-sm' : 'text-[#2A3444] hover:text-[#1A2332]'
+                  range === opt.key ? 'bg-[#0A0A0A] text-white shadow-sm' : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
                 }`}
               >
                 {opt.label}
@@ -239,7 +239,7 @@ export default function MenuAnalyticsPage() {
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="rounded-xl border border-[#E8ECF2] bg-white px-3 py-2 text-xs font-bold text-[#1A2332] outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-bold text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
           >
             <option value="">{copy.allCategories}</option>
             {(data?.categories ?? []).map((c) => (
@@ -249,7 +249,7 @@ export default function MenuAnalyticsPage() {
           <select
             value={sourceType}
             onChange={(e) => setSourceType(e.target.value)}
-            className="rounded-xl border border-[#E8ECF2] bg-white px-3 py-2 text-xs font-bold text-[#1A2332] outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-bold text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
           >
             <option value="">{copy.allSources}</option>
             {Object.entries(copy.sourceLabels).map(([key, label]) => (
@@ -259,7 +259,7 @@ export default function MenuAnalyticsPage() {
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#E8ECF2] bg-white px-3 py-2 text-xs font-black uppercase tracking-widest text-[#2A3444] hover:bg-[#F8F6F1] active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-black uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
             >
               <X size={12} strokeWidth={2} />
               {copy.resetFilters}
@@ -275,15 +275,15 @@ export default function MenuAnalyticsPage() {
       )}
 
       {loading && !data ? (
-        <div className="flex items-center justify-center rounded-[24px] border border-[#E8ECF2] bg-white p-20">
-          <Loader2 className="h-8 w-8 animate-spin text-[#1A2332]" />
+        <div className="flex items-center justify-center rounded-[24px] border border-[#EDEDED] bg-white p-20">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
         </div>
       ) : !data ? null : !hasAnyData ? (
-        <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-16 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#F8F6F1]">
+        <div className="rounded-[24px] border border-[#EDEDED] bg-white p-16 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#FFFFFF]">
             <Sparkles size={26} strokeWidth={2} className="text-[#6B7280]" />
           </div>
-          <h2 className="text-lg font-extrabold tracking-tight text-[#1A2332]">{copy.emptyHeadline}</h2>
+          <h2 className="text-lg font-extrabold tracking-tight text-[#0A0A0A]">{copy.emptyHeadline}</h2>
           <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#6B7280]">{copy.emptyBody}</p>
         </div>
       ) : (
@@ -293,7 +293,7 @@ export default function MenuAnalyticsPage() {
           {data.trend.length > 0 ? (
             <TrendChart trend={data.trend} copy={copy} isTr={isTr} />
           ) : range === 'all' ? (
-            <div className="flex items-center gap-3 rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] p-4 text-xs font-medium text-[#6B7280]">
+            <div className="flex items-center gap-3 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] p-4 text-xs font-medium text-[#6B7280]">
               <Info size={14} className="shrink-0" strokeWidth={2} />
               <span>{copy.allTimeTrendNote}</span>
             </div>
@@ -328,12 +328,12 @@ function OverviewCards({ overview, copy }: { overview: AnalyticsResponse['overvi
         const Icon = c.icon;
         const deltaPositive = c.delta !== null && c.delta !== undefined && c.delta >= 0;
         return (
-          <div key={c.label} className="rounded-[20px] border border-[#E8ECF2] bg-white p-5 shadow-sm">
+          <div key={c.label} className="rounded-[20px] border border-[#EDEDED] bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{c.label}</p>
-              <Icon size={16} strokeWidth={2} className="text-[#2A3444]" />
+              <Icon size={16} strokeWidth={2} className="text-[#1A1A1A]" />
             </div>
-            <p className="mt-2 text-3xl font-extrabold tracking-tight text-[#1A2332]">{c.fmt(c.value)}</p>
+            <p className="mt-2 text-3xl font-extrabold tracking-tight text-[#0A0A0A]">{c.fmt(c.value)}</p>
             {c.delta !== null && c.delta !== undefined && (
               <div className={`mt-1 inline-flex items-center gap-1 text-[11px] font-bold ${deltaPositive ? 'text-emerald-600' : 'text-red-600'}`}>
                 {deltaPositive ? <TrendingUp size={11} strokeWidth={2.5} /> : <TrendingDown size={11} strokeWidth={2.5} />}
@@ -357,32 +357,32 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
   // ~7 labels on 7-day, ~6 labels on 30-day, ~6 labels on 90-day.
   const tickInterval = trend.length <= 7 ? 0 : trend.length <= 30 ? 5 : Math.floor(trend.length / 6);
   return (
-    <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
+    <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-4">
-        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">{copy.trends}</h2>
+        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.trends}</h2>
       </div>
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={trend} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradViews" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#F4B400" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="#F4B400" stopOpacity={0} />
+                <stop offset="0%" stopColor="#C6F24E" stopOpacity={0.6} />
+                <stop offset="100%" stopColor="#C6F24E" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="gradClicks" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1A2332" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="#1A2332" stopOpacity={0} />
+                <stop offset="0%" stopColor="#0A0A0A" stopOpacity={0.6} />
+                <stop offset="100%" stopColor="#0A0A0A" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E8ECF2" vertical={false} />
-            <XAxis dataKey="date" tickFormatter={dateFmt} interval={tickInterval} tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#E8ECF2" />
-            <YAxis width={36} tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#E8ECF2" allowDecimals={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#EDEDED" vertical={false} />
+            <XAxis dataKey="date" tickFormatter={dateFmt} interval={tickInterval} tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#EDEDED" />
+            <YAxis width={36} tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#EDEDED" allowDecimals={false} />
             <Tooltip
-              contentStyle={{ backgroundColor: '#fff', border: '1px solid #E8ECF2', borderRadius: 12, fontSize: 12 }}
+              contentStyle={{ backgroundColor: '#fff', border: '1px solid #EDEDED', borderRadius: 12, fontSize: 12 }}
               labelFormatter={(label) => dateFmt(label as string)}
             />
-            <Area type="monotone" dataKey="menuViews" stroke="#F4B400" strokeWidth={2} fill="url(#gradViews)" name={copy.kpiMenuViews} />
-            <Area type="monotone" dataKey="productClicks" stroke="#1A2332" strokeWidth={2} fill="url(#gradClicks)" name={isTr ? 'Ürün Tıklama' : 'Product Clicks'} />
+            <Area type="monotone" dataKey="menuViews" stroke="#C6F24E" strokeWidth={2} fill="url(#gradViews)" name={copy.kpiMenuViews} />
+            <Area type="monotone" dataKey="productClicks" stroke="#0A0A0A" strokeWidth={2} fill="url(#gradClicks)" name={isTr ? 'Ürün Tıklama' : 'Product Clicks'} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -392,8 +392,8 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
 
 function TopProductsTable({ rows, copy, isTr }: { rows: ProductRow[]; copy: any; isTr: boolean }) {
   return (
-    <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="mb-4 text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">{copy.topProducts}</h2>
+    <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="mb-4 text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.topProducts}</h2>
       {rows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
       ) : (
@@ -409,15 +409,15 @@ function TopProductsTable({ rows, copy, isTr }: { rows: ProductRow[]; copy: any;
                 <th className="pb-2 text-right">{copy.columns.ctr}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E8ECF2]">
+            <tbody className="divide-y divide-[#EDEDED]">
               {rows.slice(0, 10).map((r, i) => (
                 <tr key={r.productId}>
                   <td className="py-3 pr-2 font-black text-[#6B7280]">{i + 1}</td>
-                  <td className="py-3 pr-2 font-extrabold text-[#1A2332]">{r.productName}</td>
-                  <td className="py-3 pr-2 text-[#2A3444]">{r.categoryName ?? '—'}</td>
-                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#1A2332]">{fmtNum(r.views)}</td>
-                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#1A2332]">{fmtNum(r.clicks)}</td>
-                  <td className="py-3 text-right font-bold tabular-nums text-[#1A2332]">{formatPct(r.ctr, 1)}</td>
+                  <td className="py-3 pr-2 font-extrabold text-[#0A0A0A]">{r.productName}</td>
+                  <td className="py-3 pr-2 text-[#1A1A1A]">{r.categoryName ?? '—'}</td>
+                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.views)}</td>
+                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.clicks)}</td>
+                  <td className="py-3 text-right font-bold tabular-nums text-[#0A0A0A]">{formatPct(r.ctr, 1)}</td>
                 </tr>
               ))}
             </tbody>
@@ -437,23 +437,23 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) 
     .slice(0, 8)
     .map((r) => ({ name: truncate(r.categoryName), fullName: r.categoryName, clicks: r.clicks, views: r.views }));
   return (
-    <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="mb-4 text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">{copy.topCategories}</h2>
+    <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="mb-4 text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.topCategories}</h2>
       {dataRows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
       ) : (
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={dataRows} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E8ECF2" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#E8ECF2" allowDecimals={false} />
-              <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#1A2332' }} stroke="#E8ECF2" width={90} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#EDEDED" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#EDEDED" allowDecimals={false} />
+              <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#0A0A0A' }} stroke="#EDEDED" width={90} />
               <Tooltip
-                contentStyle={{ backgroundColor: '#fff', border: '1px solid #E8ECF2', borderRadius: 12, fontSize: 12 }}
+                contentStyle={{ backgroundColor: '#fff', border: '1px solid #EDEDED', borderRadius: 12, fontSize: 12 }}
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName ?? ''}
               />
-              <Bar dataKey="clicks" fill="#F4B400" radius={[0, 6, 6, 0]} name={copy.columns.clicks} />
-              <Bar dataKey="views" fill="#1A2332" radius={[0, 6, 6, 0]} name={copy.columns.views} />
+              <Bar dataKey="clicks" fill="#C6F24E" radius={[0, 6, 6, 0]} name={copy.columns.clicks} />
+              <Bar dataKey="views" fill="#0A0A0A" radius={[0, 6, 6, 0]} name={copy.columns.views} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -464,9 +464,9 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) 
 
 function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any }) {
   return (
-    <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
+    <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-4">
-        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">{copy.lowInterest}</h2>
+        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.lowInterest}</h2>
         <p className="mt-1 text-xs font-medium text-[#6B7280]">{copy.lowInterestSub}</p>
       </div>
       {rows.length === 0 ? (
@@ -484,13 +484,13 @@ function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any })
                 <th className="pb-2 pr-2">{copy.columns.status}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E8ECF2]">
+            <tbody className="divide-y divide-[#EDEDED]">
               {rows.map((r) => (
                 <tr key={r.productId}>
-                  <td className="py-3 pr-2 font-extrabold text-[#1A2332]">{r.productName}</td>
-                  <td className="py-3 pr-2 text-[#2A3444]">{r.categoryName ?? '—'}</td>
-                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#1A2332]">{fmtNum(r.views)}</td>
-                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#1A2332]">{fmtNum(r.clicks)}</td>
+                  <td className="py-3 pr-2 font-extrabold text-[#0A0A0A]">{r.productName}</td>
+                  <td className="py-3 pr-2 text-[#1A1A1A]">{r.categoryName ?? '—'}</td>
+                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.views)}</td>
+                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.clicks)}</td>
                   <td className="py-3 pr-2 text-right font-bold tabular-nums text-red-600">{formatPct(r.ctr, 1)}</td>
                   <td className="py-3 pr-2">
                     <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-700">
@@ -509,9 +509,9 @@ function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any })
 
 function UpsellInsights({ insights, copy }: { insights: Insight[]; copy: any }) {
   return (
-    <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
+    <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-4">
-        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">{copy.upsell}</h2>
+        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.upsell}</h2>
         <p className="mt-1 text-xs font-medium text-[#6B7280]">{copy.upsellSub}</p>
       </div>
       {insights.length === 0 ? (
@@ -519,13 +519,13 @@ function UpsellInsights({ insights, copy }: { insights: Insight[]; copy: any }) 
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {insights.map((i, idx) => (
-            <div key={idx} className="flex gap-3 rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] p-4">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F4B400]/15 text-[#F4B400]">
+            <div key={idx} className="flex gap-3 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] p-4">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E]/15 text-[#C6F24E]">
                 <Lightbulb size={16} strokeWidth={2.2} />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-extrabold leading-tight text-[#1A2332]">{i.title}</p>
-                <p className="mt-1 text-xs font-medium leading-relaxed text-[#2A3444]">{i.description}</p>
+                <p className="text-sm font-extrabold leading-tight text-[#0A0A0A]">{i.title}</p>
+                <p className="mt-1 text-xs font-medium leading-relaxed text-[#1A1A1A]">{i.description}</p>
               </div>
             </div>
           ))}

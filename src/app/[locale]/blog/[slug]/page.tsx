@@ -66,7 +66,7 @@ export default async function BlogPostPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] font-sans pt-[64px] selection:bg-[#C6F24E]/30">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -74,7 +74,7 @@ export default async function BlogPostPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Article Hero */}
-      <div className="w-full bg-[#1A2332] relative pt-16 pb-32 px-5 sm:px-8 overflow-hidden z-0">
+      <div className="w-full bg-[#0A0A0A] relative pt-16 pb-32 px-5 sm:px-8 overflow-hidden z-0">
         <div className="absolute inset-0 opacity-40">
           <img src={post.coverImage} alt="Background" className="w-full h-full object-cover blur-sm scale-105" />
           <div className="absolute inset-0 bg-black/60" />
@@ -89,41 +89,41 @@ export default async function BlogPostPage({
           </h1>
           
           <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-[14px] font-bold text-white/80">
-            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-md"><Calendar size={16} className="text-[#F4B400]"/> {post.date}</span>
+            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-md"><Calendar size={16} className="text-[#C6F24E]"/> {post.date}</span>
             <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-md"><Clock size={16} className="text-[#10b981]"/> {post.readTime}</span>
-            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-md"><User size={16} className="text-[#F4B400]"/> {post.author}</span>
+            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-md"><User size={16} className="text-[#C6F24E]"/> {post.author}</span>
           </div>
         </div>
       </div>
 
       <main className="px-5 sm:px-8 max-w-[800px] mx-auto -mt-16 relative z-10 pb-20">
-        <div className="bg-white p-8 sm:p-12 rounded-3xl border border-[#1A2332] shadow-md">
-          <div className="w-full h-[300px] sm:h-[400px] rounded-2xl overflow-hidden border border-[#1A2332] mb-12 shadow-md">
+        <div className="bg-white p-8 sm:p-12 rounded-3xl border border-[#0A0A0A] shadow-md">
+          <div className="w-full h-[300px] sm:h-[400px] rounded-2xl overflow-hidden border border-[#0A0A0A] mb-12 shadow-md">
             <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
           </div>
 
           <article
             className="prose prose-lg max-w-none 
-            prose-headings:font-black prose-headings:text-[#1A2332] prose-headings:tracking-[-0.02em]
+            prose-headings:font-black prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
             prose-h2:text-[28px] prose-h2:mt-12 prose-h2:mb-6
             prose-h3:text-[22px] prose-h3:mt-8 prose-h3:mb-4
-            prose-p:text-[#2A3444] prose-p:font-medium prose-p:leading-relaxed prose-p:mb-6 prose-p:text-[17px]
-            prose-strong:font-extrabold prose-strong:text-[#1A2332]
-            prose-a:text-[#F4B400] prose-a:font-bold hover:prose-a:text-[#E8870A]
-            prose-li:text-[#2A3444] prose-li:font-medium
-            prose-img:border prose-img:border-[#1A2332] prose-img:shadow-md
+            prose-p:text-[#1A1A1A] prose-p:font-medium prose-p:leading-relaxed prose-p:mb-6 prose-p:text-[17px]
+            prose-strong:font-extrabold prose-strong:text-[#0A0A0A]
+            prose-a:text-[#C6F24E] prose-a:font-bold hover:prose-a:text-[#E8870A]
+            prose-li:text-[#1A1A1A] prose-li:font-medium
+            prose-img:border prose-img:border-[#0A0A0A] prose-img:shadow-md
             break-words"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 
-          <div className="mt-16 pt-10 border-t-2 border-[#E8ECF2] flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#F8F6F1] p-8 rounded-2xl border border-[#1A2332] shadow-md">
+          <div className="mt-16 pt-10 border-t-2 border-[#EDEDED] flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#FFFFFF] p-8 rounded-2xl border border-[#0A0A0A] shadow-md">
             <div className="space-y-2 text-center sm:text-left">
               <h4 className="text-[22px] font-extrabold">{locale === 'tr' ? 'Dijitalde Rekabeti Geride Bırakın' : 'Leave the Competition Behind'}</h4>
-              <p className="text-[15px] text-[#2A3444] font-medium">{locale === 'tr' ? '14 günlük ücretsiz deneme ile dijital itibarınızı hemen güçlendirmeye başlayın.' : 'Start strengthening your digital reputation instantly with a 14-day free trial.'}</p>
+              <p className="text-[15px] text-[#1A1A1A] font-medium">{locale === 'tr' ? '14 günlük ücretsiz deneme ile dijital itibarınızı hemen güçlendirmeye başlayın.' : 'Start strengthening your digital reputation instantly with a 14-day free trial.'}</p>
             </div>
             <Link
               href={`${base}/auth/register`}
-              className="px-8 py-4 bg-[#F4B400] text-[#1A2332] text-[15px] font-extrabold rounded-xl shadow-sm hover:bg-[#D69E00] active:translate-y-1 active:shadow-none transition-all flex flex-shrink-0 gap-2 items-center"
+              className="px-8 py-4 bg-[#C6F24E] text-[#0A0A0A] text-[15px] font-extrabold rounded-xl shadow-sm hover:bg-[#A8D62E] active:translate-y-1 active:shadow-none transition-all flex flex-shrink-0 gap-2 items-center"
             >
               {locale === 'tr' ? 'Ücretsiz Başla' : 'Start for Free'} <ArrowRight size={18} />
             </Link>

@@ -48,7 +48,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
       key: 'food' as const,
       label: copy.food,
       icon: UtensilsCrossed,
-      color: '#F4B400',
+      color: '#C6F24E',
       bg: 'bg-amber-50',
       text: 'text-amber-600',
       ...aspects.food,
@@ -89,7 +89,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
 
   if (!anyData) {
     return (
-      <div className="rounded-2xl border border-dashed border-[#E8ECF2] bg-white/60 p-6 text-center text-sm font-bold text-[#2A3444]">
+      <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-white/60 p-6 text-center text-sm font-bold text-[#1A1A1A]">
         {copy.noData}
       </div>
     );
@@ -108,7 +108,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
           <div
             key={item.key}
             className={`relative overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition-all sm:p-5 ${
-              isWorst ? 'border-red-300 ring-2 ring-red-100' : 'border-[#E8ECF2]'
+              isWorst ? 'border-red-300 ring-2 ring-red-100' : 'border-[#EDEDED]'
             }`}
           >
             {isWorst && (
@@ -138,13 +138,13 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
             {hasData ? (
               <>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-black tabular-nums tracking-tight text-[#1A2332] sm:text-4xl">
+                  <span className="text-3xl font-black tabular-nums tracking-tight text-[#0A0A0A] sm:text-4xl">
                     {item.avg!.toFixed(1)}
                   </span>
-                  <span className="text-sm font-bold text-[#2A3444]">/ 5</span>
+                  <span className="text-sm font-bold text-[#1A1A1A]">/ 5</span>
                 </div>
 
-                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#E8ECF2]">
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#EDEDED]">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
@@ -154,7 +154,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
                   />
                 </div>
 
-                <p className="mt-3 text-[11px] font-bold text-[#2A3444]">
+                <p className="mt-3 text-[11px] font-bold text-[#1A1A1A]">
                   {item.count} {copy.respondents}
                 </p>
               </>

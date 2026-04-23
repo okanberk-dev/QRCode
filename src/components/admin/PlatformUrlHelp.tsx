@@ -65,18 +65,18 @@ export default function PlatformUrlHelp({ platform }: Props) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={`${guide.title} nasıl kopyalanır?`}
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#E8ECF2] bg-white text-[#6B7280] hover:text-[#1A2332] hover:border-[#C9D0DB] transition-colors"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#6B7280] hover:text-[#0A0A0A] hover:border-[#C9D0DB] transition-colors"
       >
         <Info size={12} strokeWidth={2} />
       </button>
       {open && (
-        <div className="absolute left-0 top-7 z-50 w-72 rounded-2xl border border-[#E8ECF2] bg-white p-4 text-[12px] font-medium text-[#1A2332] shadow-xl">
-          <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b border-[#E8ECF2]">
-            <p className="text-[12px] font-black uppercase tracking-wider text-[#1A2332]">{guide.title}</p>
+        <div className="absolute left-0 top-7 z-50 w-72 rounded-2xl border border-[#EDEDED] bg-white p-4 text-[12px] font-medium text-[#0A0A0A] shadow-xl">
+          <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b border-[#EDEDED]">
+            <p className="text-[12px] font-black uppercase tracking-wider text-[#0A0A0A]">{guide.title}</p>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-[#6B7280] hover:text-[#1A2332]"
+              className="text-[#6B7280] hover:text-[#0A0A0A]"
             >
               <X size={14} strokeWidth={2} />
             </button>

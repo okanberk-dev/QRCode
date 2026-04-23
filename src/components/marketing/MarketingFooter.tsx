@@ -25,7 +25,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
   const s = await getSiteSettings();
 
   return (
-    <footer className="bg-[#1A2332] pt-16 pb-8 px-5 sm:px-8 text-white border-t border-white/5">
+    <footer className="bg-[#0A0A0A] pt-16 pb-8 px-5 sm:px-8 text-white border-t border-white/5">
       <div className="max-w-[1200px] mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 mb-14">
           {/* Col 1: Brand */}
@@ -33,10 +33,10 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
             <Link href={base} className="flex items-center gap-2 mb-5 group inline-flex">
               <BuazeLogo size={28} variant="on-dark" imageUrl={s.logoUrl} className="opacity-90 group-hover:opacity-100 transition-opacity" />
               <span className="text-[17px] font-extrabold tracking-[-0.02em] text-white">
-                buaze<span className="text-[#F4B400]">.</span>
+                buaze<span className="text-[#C6F24E]">.</span>
               </span>
             </Link>
-            <p className="text-[#E8ECF2] text-[13px] leading-relaxed mb-5">
+            <p className="text-[#EDEDED] text-[13px] leading-relaxed mb-5">
               {t.siteDescription || 'Restoranınızın dijital itibarını profesyonelce yönetin.'}
             </p>
 
@@ -47,7 +47,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram — buazerating"
-                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-[#F4B400] hover:text-[#1A2332] hover:border-[#F4B400] transition-colors"
+                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-[#C6F24E] hover:text-[#0A0A0A] hover:border-[#C6F24E] transition-colors"
               >
                 <svg
                   width="18"
@@ -73,13 +73,13 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
             <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">
               {locale === 'tr' ? 'Ürün' : 'Product'}
             </h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-[#E8ECF2]">
-              <li><Link href={`${base}/how-it-works`} className="hover:text-[#F4B400] transition-colors">{locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}</Link></li>
-              <li><Link href={`${base}/pricing`} className="hover:text-[#F4B400] transition-colors">{locale === 'tr' ? 'Fiyatlandırma' : 'Pricing'}</Link></li>
-              <li><Link href={`${base}/compare`} className="hover:text-[#F4B400] transition-colors">{locale === 'tr' ? 'Karşılaştır' : 'Compare'}</Link></li>
-              <li><Link href={`${base}/faq`} className="hover:text-[#F4B400] transition-colors">{locale === 'tr' ? 'Sıkça Sorulan Sorular' : 'FAQ'}</Link></li>
-              <li><Link href={`${base}/about`} className="hover:text-[#F4B400] transition-colors">{t.footer_about}</Link></li>
-              <li><Link href={`${base}/contact`} className="hover:text-[#F4B400] transition-colors">{t.footer_contact}</Link></li>
+            <ul className="space-y-3.5 text-[13px] font-medium text-[#EDEDED]">
+              <li><Link href={`${base}/how-it-works`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}</Link></li>
+              <li><Link href={`${base}/pricing`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Fiyatlandırma' : 'Pricing'}</Link></li>
+              <li><Link href={`${base}/compare`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Karşılaştır' : 'Compare'}</Link></li>
+              <li><Link href={`${base}/faq`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Sıkça Sorulan Sorular' : 'FAQ'}</Link></li>
+              <li><Link href={`${base}/about`} className="hover:text-[#C6F24E] transition-colors">{t.footer_about}</Link></li>
+              <li><Link href={`${base}/contact`} className="hover:text-[#C6F24E] transition-colors">{t.footer_contact}</Link></li>
             </ul>
           </div>
 
@@ -88,13 +88,13 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
             <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">
               {locale === 'tr' ? 'Yasal' : 'Legal'}
             </h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-[#E8ECF2]">
-              <li><Link href={`${base}/terms`} className="hover:text-[#F4B400] transition-colors">{t.footer_terms}</Link></li>
-              <li><Link href={`${base}/privacy`} className="hover:text-[#F4B400] transition-colors">{t.footer_privacy}</Link></li>
-              <li><Link href={`${base}/google-compliance`} className="hover:text-[#F4B400] transition-colors">{t.footer_google_compliance}</Link></li>
-              <li><Link href={`${base}/cookie`} className="hover:text-[#F4B400] transition-colors">{t.footer_cookie}</Link></li>
+            <ul className="space-y-3.5 text-[13px] font-medium text-[#EDEDED]">
+              <li><Link href={`${base}/terms`} className="hover:text-[#C6F24E] transition-colors">{t.footer_terms}</Link></li>
+              <li><Link href={`${base}/privacy`} className="hover:text-[#C6F24E] transition-colors">{t.footer_privacy}</Link></li>
+              <li><Link href={`${base}/google-compliance`} className="hover:text-[#C6F24E] transition-colors">{t.footer_google_compliance}</Link></li>
+              <li><Link href={`${base}/cookie`} className="hover:text-[#C6F24E] transition-colors">{t.footer_cookie}</Link></li>
               {locale === 'tr' && (
-                <li><Link href={`${base}/kvkk`} className="hover:text-[#F4B400] transition-colors">{t.footer_kvkk}</Link></li>
+                <li><Link href={`${base}/kvkk`} className="hover:text-[#C6F24E] transition-colors">{t.footer_kvkk}</Link></li>
               )}
             </ul>
           </div>
@@ -102,9 +102,9 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
           {/* Col 4: Platform */}
           <div>
             <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">Platform</h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-[#E8ECF2]">
-              <li><Link href={`${base}/auth/login`} className="hover:text-[#F4B400] transition-colors font-bold">{locale === 'tr' ? 'Giriş Yap' : 'Log In'}</Link></li>
-              <li><Link href={`${base}/auth/register`} className="hover:text-[#F4B400] transition-colors font-bold text-[#F4B400]">{locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}</Link></li>
+            <ul className="space-y-3.5 text-[13px] font-medium text-[#EDEDED]">
+              <li><Link href={`${base}/auth/login`} className="hover:text-[#C6F24E] transition-colors font-bold">{locale === 'tr' ? 'Giriş Yap' : 'Log In'}</Link></li>
+              <li><Link href={`${base}/auth/register`} className="hover:text-[#C6F24E] transition-colors font-bold text-[#C6F24E]">{locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}</Link></li>
             </ul>
           </div>
         </div>

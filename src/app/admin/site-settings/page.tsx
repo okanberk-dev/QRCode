@@ -18,9 +18,9 @@ interface SiteSettings {
   logoUrl: string | null;
 }
 
-const CARD = 'bg-white rounded-[24px] border border-[#E8ECF2] shadow-md p-6 sm:p-8';
-const LABEL = 'block text-[12px] font-black text-[#2A3444] uppercase tracking-wider mb-2';
-const INPUT = 'w-full px-4 py-3 bg-[#F8F6F1] border border-[#E8ECF2] rounded-xl text-[14px] font-medium text-[#1A2332] focus:outline-none focus:border-[#F4B400] focus:bg-white transition-colors';
+const CARD = 'bg-white rounded-[24px] border border-[#EDEDED] shadow-md p-6 sm:p-8';
+const LABEL = 'block text-[12px] font-black text-[#1A1A1A] uppercase tracking-wider mb-2';
+const INPUT = 'w-full px-4 py-3 bg-[#FFFFFF] border border-[#EDEDED] rounded-xl text-[14px] font-medium text-[#0A0A0A] focus:outline-none focus:border-[#C6F24E] focus:bg-white transition-colors';
 const HINT = 'text-[11px] font-medium text-[#6B7280] mt-1';
 
 export default function SiteSettingsPage() {
@@ -98,7 +98,7 @@ export default function SiteSettingsPage() {
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center gap-3 text-[#2A3444]">
+      <div className="p-8 flex items-center gap-3 text-[#1A1A1A]">
         <Loader2 className="animate-spin" size={18} />
         <span className="font-bold">Yükleniyor…</span>
       </div>
@@ -121,14 +121,14 @@ export default function SiteSettingsPage() {
       {/* ─── Header ─── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-[28px] sm:text-[36px] font-extrabold text-[#1A2332] tracking-tight">Site Ayarları</h1>
-          <p className="text-[14px] text-[#2A3444] font-medium mt-1">
+          <h1 className="text-[28px] sm:text-[36px] font-extrabold text-[#0A0A0A] tracking-tight">Site Ayarları</h1>
+          <p className="text-[14px] text-[#1A1A1A] font-medium mt-1">
             SEO metadatası, Open Graph görseli, logo ve favicon — her değişiklik tüm site genelinde yansır.
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#F4B400]/10 border border-[#F4B400]/30 rounded-full">
-          <Sparkles size={14} className="text-[#F4B400]" />
-          <span className="text-[11px] font-black text-[#1A2332] uppercase tracking-widest">Superadmin</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#C6F24E]/10 border border-[#C6F24E]/30 rounded-full">
+          <Sparkles size={14} className="text-[#C6F24E]" />
+          <span className="text-[11px] font-black text-[#0A0A0A] uppercase tracking-widest">Superadmin</span>
         </div>
       </div>
 
@@ -150,16 +150,16 @@ export default function SiteSettingsPage() {
       <div className={CARD}>
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h2 className="text-[20px] font-extrabold text-[#1A2332] tracking-tight">SEO Metadata</h2>
+            <h2 className="text-[20px] font-extrabold text-[#0A0A0A] tracking-tight">SEO Metadata</h2>
             <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">Başlık, açıklama ve anahtar kelimeler — dil başına.</p>
           </div>
-          <div className="flex gap-1 bg-[#F8F6F1] p-1 rounded-xl border border-[#E8ECF2]">
+          <div className="flex gap-1 bg-[#FFFFFF] p-1 rounded-xl border border-[#EDEDED]">
             {(['tr', 'en'] as Lang[]).map((l) => (
               <button
                 key={l}
                 onClick={() => setActiveLang(l)}
                 className={`px-4 py-1.5 rounded-lg text-[12px] font-black uppercase tracking-wider transition-colors ${
-                  activeLang === l ? 'bg-[#1A2332] text-white' : 'text-[#2A3444] hover:bg-white'
+                  activeLang === l ? 'bg-[#0A0A0A] text-white' : 'text-[#1A1A1A] hover:bg-white'
                 }`}
               >
                 <Globe size={12} className="inline mr-1" />
@@ -196,7 +196,7 @@ export default function SiteSettingsPage() {
               placeholder="%s | Buaze"
             />
             <p className={HINT}>
-              <code className="bg-[#F8F6F1] px-1.5 py-0.5 rounded text-[11px]">%s</code> yerine sayfa başlığı gelir. Her iki dilde ortak.
+              <code className="bg-[#FFFFFF] px-1.5 py-0.5 rounded text-[11px]">%s</code> yerine sayfa başlığı gelir. Her iki dilde ortak.
             </p>
           </div>
 
@@ -237,7 +237,7 @@ export default function SiteSettingsPage() {
       {/* ─── Kart 2: Open Graph ─── */}
       <div className={CARD}>
         <div className="mb-6">
-          <h2 className="text-[20px] font-extrabold text-[#1A2332] tracking-tight">Open Graph Görseli</h2>
+          <h2 className="text-[20px] font-extrabold text-[#0A0A0A] tracking-tight">Open Graph Görseli</h2>
           <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
             Link paylaşımlarında (Twitter, Facebook, WhatsApp) görünen görsel. Önerilen: 1200×630 PNG/JPG.
           </p>
@@ -258,7 +258,7 @@ export default function SiteSettingsPage() {
       {/* ─── Kart 3: Branding ─── */}
       <div className={CARD}>
         <div className="mb-6">
-          <h2 className="text-[20px] font-extrabold text-[#1A2332] tracking-tight">Marka Kimliği</h2>
+          <h2 className="text-[20px] font-extrabold text-[#0A0A0A] tracking-tight">Marka Kimliği</h2>
           <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
             Site genelinde (navbar, footer, auth sayfaları) görünen logo ve tarayıcı favicon'u.
           </p>
@@ -273,7 +273,7 @@ export default function SiteSettingsPage() {
             onUpload={(f) => handleUpload(f, 'logo')}
             onRemove={() => handleRemove('logo')}
             uploading={uploading === 'logo'}
-            previewClass="aspect-square w-full max-w-[200px] bg-[#1A2332] rounded-xl p-4"
+            previewClass="aspect-square w-full max-w-[200px] bg-[#0A0A0A] rounded-xl p-4"
           />
           <AssetUploader
             url={settings.faviconUrl}
@@ -283,13 +283,13 @@ export default function SiteSettingsPage() {
             onUpload={(f) => handleUpload(f, 'favicon')}
             onRemove={() => handleRemove('favicon')}
             uploading={uploading === 'favicon'}
-            previewClass="aspect-square w-full max-w-[128px] bg-[#F8F6F1] rounded-xl p-3 border border-[#E8ECF2]"
+            previewClass="aspect-square w-full max-w-[128px] bg-[#FFFFFF] rounded-xl p-3 border border-[#EDEDED]"
           />
         </div>
       </div>
 
       {/* ─── Sticky Save Bar ─── */}
-      <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-[#E8ECF2] shadow-lg z-30 p-4">
+      <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-[#EDEDED] shadow-lg z-30 p-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
           <p className="text-[12px] text-[#6B7280] font-medium hidden sm:block">
             Değişiklikler tüm site genelinde yansır.
@@ -297,7 +297,7 @@ export default function SiteSettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="ml-auto flex items-center gap-2 bg-[#F4B400] text-[#1A2332] font-black text-[14px] px-6 py-3 rounded-xl border-2 border-[#1A2332] hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            className="ml-auto flex items-center gap-2 bg-[#C6F24E] text-[#0A0A0A] font-black text-[14px] px-6 py-3 rounded-xl border-2 border-[#0A0A0A] hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed transition-all"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
             {saving ? 'Kaydediliyor…' : 'Kaydet'}
@@ -332,7 +332,7 @@ const AssetUploader = ({ url, label, accept, aspect, onUpload, onRemove, uploadi
             <img src={url} alt={label} className="max-w-full max-h-full object-contain" />
           </div>
         ) : (
-          <div className={`${previewClass} bg-[#F8F6F1] border-2 border-dashed border-[#E8ECF2] flex items-center justify-center`}>
+          <div className={`${previewClass} bg-[#FFFFFF] border-2 border-dashed border-[#EDEDED] flex items-center justify-center`}>
             <ImageIcon size={32} className="text-[#6B7280]/40" />
           </div>
         )}
@@ -351,7 +351,7 @@ const AssetUploader = ({ url, label, accept, aspect, onUpload, onRemove, uploadi
           <button
             onClick={() => ref.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 bg-[#1A2332] text-white font-bold text-[12px] px-4 py-2 rounded-xl hover:bg-[#2A3444] disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 bg-[#0A0A0A] text-white font-bold text-[12px] px-4 py-2 rounded-xl hover:bg-[#1A1A1A] disabled:opacity-50 transition-colors"
           >
             {uploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
             {uploading ? 'Yükleniyor…' : url ? 'Değiştir' : 'Yükle'}

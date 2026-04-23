@@ -68,7 +68,7 @@ export default function SolutionPageLayout({
   h1Prefix,
   h1Suffix,
   description,
-  accentColor = '#F4B400',
+  accentColor = '#C6F24E',
   stats,
   steps,
   benefits,
@@ -112,7 +112,7 @@ export default function SolutionPageLayout({
     {
       title: locale === 'tr' ? 'Dijital İtibar Artışı' : 'Digital Reputation Growth',
       desc: locale === 'tr' ? 'Organik ve güvenli itibar artışı sağlayın.' : 'Achieve organic and secure reputation growth.',
-      icon: <Star size={20} className="text-[#F4B400]" />,
+      icon: <Star size={20} className="text-[#C6F24E]" />,
     },
     {
       title: locale === 'tr' ? 'Profesyonel Geri Bildirim Ops.' : 'Professional Feedback Ops.',
@@ -122,12 +122,12 @@ export default function SolutionPageLayout({
     {
       title: locale === 'tr' ? 'Müşteri Sadakati' : 'Customer Loyalty',
       desc: locale === 'tr' ? 'Geri bildirimlerle hizmet kalitenizi artırın.' : 'Improve service quality with feedback.',
-      icon: <TrendingUp size={20} className="text-[#F4B400]" />,
+      icon: <TrendingUp size={20} className="text-[#C6F24E]" />,
     },
     {
       title: locale === 'tr' ? 'Dijital Görünürlük' : 'Digital Visibility',
       desc: locale === 'tr' ? 'Sıralamalarda rakiplerinizin önüne geçin.' : 'Stand out from competitors in rankings.',
-      icon: <Zap size={20} className="text-[#F4B400]" />,
+      icon: <Zap size={20} className="text-[#C6F24E]" />,
     },
   ];
 
@@ -173,7 +173,7 @@ export default function SolutionPageLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] font-sans pt-[64px] selection:bg-[#C6F24E]/30">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchemas) }}
@@ -181,27 +181,27 @@ export default function SolutionPageLayout({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero */}
-      <section className="pt-20 sm:pt-32 pb-12 sm:pb-16 px-5 sm:px-8 bg-[#F8F6F1] relative overflow-hidden">
+      <section className="pt-20 sm:pt-32 pb-12 sm:pb-16 px-5 sm:px-8 bg-[#FFFFFF] relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-[150px] translate-x-1/3 -translate-y-1/3" style={{ backgroundColor: `${accentColor}0d` }} />
         <div className="max-w-[1200px] mx-auto relative content-left">
           {/* Breadcrumb */}
-          <nav aria-label={locale === 'tr' ? 'Site yolu' : 'Breadcrumb'} className="mb-8 text-[12px] sm:text-[13px] font-medium text-[#2A3444] flex items-center flex-wrap gap-1.5">
-            <Link href={base} className="hover:text-[#1A2332] transition-colors">{locale === 'tr' ? 'Ana Sayfa' : 'Home'}</Link>
+          <nav aria-label={locale === 'tr' ? 'Site yolu' : 'Breadcrumb'} className="mb-8 text-[12px] sm:text-[13px] font-medium text-[#1A1A1A] flex items-center flex-wrap gap-1.5">
+            <Link href={base} className="hover:text-[#0A0A0A] transition-colors">{locale === 'tr' ? 'Ana Sayfa' : 'Home'}</Link>
             <ChevronRight size={14} className="text-[#6B7280]" aria-hidden />
-            <span className="text-[#2A3444]">{locale === 'tr' ? 'Çözümler' : 'Solutions'}</span>
+            <span className="text-[#1A1A1A]">{locale === 'tr' ? 'Çözümler' : 'Solutions'}</span>
             <ChevronRight size={14} className="text-[#6B7280]" aria-hidden />
-            <span className="text-[#1A2332] font-bold">{industryBadge}</span>
+            <span className="text-[#0A0A0A] font-bold">{industryBadge}</span>
           </nav>
 
           <div className="max-w-[720px] space-y-6">
-            <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md">
+            <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#0A0A0A] rounded-full shadow-md">
               {icon}
               <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">{industryBadge}</span>
             </div>
-            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332]">
+            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight text-[#0A0A0A]">
               {h1Prefix} <span style={{ color: accentColor }}>{h1Suffix}</span>
             </h1>
-            <p className="text-[16px] sm:text-[20px] text-[#2A3444] font-bold leading-relaxed max-w-[600px]">
+            <p className="text-[16px] sm:text-[20px] text-[#1A1A1A] font-bold leading-relaxed max-w-[600px]">
               {description}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -218,35 +218,35 @@ export default function SolutionPageLayout({
 
       {/* Overview (optional intro paragraph) */}
       {overview && (
-        <section className="py-10 sm:py-14 px-5 sm:px-8 bg-white border-t border-[#E8ECF2]">
+        <section className="py-10 sm:py-14 px-5 sm:px-8 bg-white border-t border-[#EDEDED]">
           <div className="max-w-[800px] mx-auto">
-            <p className="text-[16px] sm:text-[18px] text-[#2A3444] leading-relaxed font-medium">{overview}</p>
+            <p className="text-[16px] sm:text-[18px] text-[#1A1A1A] leading-relaxed font-medium">{overview}</p>
           </div>
         </section>
       )}
 
       {/* Steps */}
-      <section className="py-16 sm:py-32 px-5 sm:px-8 bg-white border-y-[3px] border-[#1A2332]">
+      <section className="py-16 sm:py-32 px-5 sm:px-8 bg-white border-y-[3px] border-[#0A0A0A]">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-16 sm:mb-24">
-            <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#F4B400] mb-4">
+            <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#C6F24E] mb-4">
               {locale === 'tr' ? 'SÜREÇ' : 'PROCESS'}
             </p>
-            <h2 className="text-[32px] sm:text-[52px] font-extrabold text-[#1A2332] tracking-tight leading-tight">
+            <h2 className="text-[32px] sm:text-[52px] font-extrabold text-[#0A0A0A] tracking-tight leading-tight">
               {locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-14">
             {displaySteps.map((step, i) => (
-              <div key={i} className="group relative bg-[#F8F6F1] p-8 sm:p-10 rounded-[32px] border sm:border border-[#1A2332] shadow-md hover:-translate-y-2 transition-transform duration-300">
-                <div className="absolute -top-5 -right-5 sm:-top-6 sm:-right-6 w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400] rounded-[20px] border border-[#1A2332] shadow-md flex items-center justify-center text-[18px] sm:text-[22px] font-black text-[#1A2332] z-10 rotate-3">
+              <div key={i} className="group relative bg-[#FFFFFF] p-8 sm:p-10 rounded-[32px] border sm:border border-[#0A0A0A] shadow-md hover:-translate-y-2 transition-transform duration-300">
+                <div className="absolute -top-5 -right-5 sm:-top-6 sm:-right-6 w-14 h-14 sm:w-16 sm:h-16 bg-[#C6F24E] rounded-[20px] border border-[#0A0A0A] shadow-md flex items-center justify-center text-[18px] sm:text-[22px] font-black text-[#0A0A0A] z-10 rotate-3">
                   {`0${i + 1}`}
                 </div>
-                <div className="w-14 h-14 bg-white rounded-2xl border border-[#1A2332] flex items-center justify-center mb-8 text-[#1A2332] shadow-md">
+                <div className="w-14 h-14 bg-white rounded-2xl border border-[#0A0A0A] flex items-center justify-center mb-8 text-[#0A0A0A] shadow-md">
                   {step.icon}
                 </div>
-                <h3 className="text-[20px] sm:text-[22px] font-extrabold text-[#1A2332] mb-4 tracking-tight">{step.title}</h3>
-                <p className="text-[14px] sm:text-[15px] text-[#2A3444] leading-relaxed font-bold">{step.desc}</p>
+                <h3 className="text-[20px] sm:text-[22px] font-extrabold text-[#0A0A0A] mb-4 tracking-tight">{step.title}</h3>
+                <p className="text-[14px] sm:text-[15px] text-[#1A1A1A] leading-relaxed font-bold">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -254,11 +254,11 @@ export default function SolutionPageLayout({
       </section>
 
       {/* Benefits */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#1A2332] relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#F4B400]/5 rounded-full blur-[150px]" />
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#0A0A0A] relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#C6F24E]/5 rounded-full blur-[150px]" />
         <div className="max-w-[1200px] mx-auto relative z-10">
           <div className="mb-12 sm:mb-16 space-y-4 text-center">
-            <p className="text-[11px] sm:text-[12px] font-black text-[#F4B400] uppercase tracking-widest">
+            <p className="text-[11px] sm:text-[12px] font-black text-[#C6F24E] uppercase tracking-widest">
               {locale === 'tr' ? 'AVANTAJLAR' : 'BENEFITS'}
             </p>
             <h2 className="text-[32px] sm:text-[52px] font-extrabold text-white tracking-tight leading-tight">
@@ -282,13 +282,13 @@ export default function SolutionPageLayout({
       </section>
 
       {/* Stats Bar */}
-      <section className="py-16 sm:py-20 px-5 sm:px-8 bg-[#F4B400] border-y-[3px] sm:border-y-[4px] border-[#1A2332]">
+      <section className="py-16 sm:py-20 px-5 sm:px-8 bg-[#C6F24E] border-y-[3px] sm:border-y-[4px] border-[#0A0A0A]">
         <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
           {displayStats.map((stat: any, i) => (
             <div key={i} className="space-y-2">
-              <div className="text-[36px] sm:text-[60px] font-black text-[#1A2332] tracking-tighter leading-none">{stat.num}</div>
-              <div className="text-[10px] sm:text-[11px] font-black text-[#1A2332] uppercase tracking-[0.2em]">{stat.label}</div>
-              <div className="text-[9px] sm:text-[10px] font-black text-[#1A2332]/40 uppercase tracking-[0.1em]">{stat.context}</div>
+              <div className="text-[36px] sm:text-[60px] font-black text-[#0A0A0A] tracking-tighter leading-none">{stat.num}</div>
+              <div className="text-[10px] sm:text-[11px] font-black text-[#0A0A0A] uppercase tracking-[0.2em]">{stat.label}</div>
+              <div className="text-[9px] sm:text-[10px] font-black text-[#0A0A0A]/40 uppercase tracking-[0.1em]">{stat.context}</div>
             </div>
           ))}
         </div>
@@ -296,21 +296,21 @@ export default function SolutionPageLayout({
 
       {/* FAQ */}
       {faqs && faqs.length > 0 && (
-        <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1] border-t-[3px] border-[#1A2332]">
+        <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FFFFFF] border-t-[3px] border-[#0A0A0A]">
           <div className="max-w-[840px] mx-auto">
             <div className="text-center mb-12 sm:mb-20">
               <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: accentColor }}>
                 {locale === 'tr' ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
               </p>
-              <h2 className="text-[32px] sm:text-[52px] font-extrabold text-[#1A2332] tracking-tight leading-tight">
+              <h2 className="text-[32px] sm:text-[52px] font-extrabold text-[#0A0A0A] tracking-tight leading-tight">
                 {locale === 'tr' ? 'Merak Ettikleriniz' : 'Common Questions'}
               </h2>
             </div>
             <div className="space-y-6">
               {faqs.map((faq, i) => (
-                <div key={i} className="bg-white border border-[#1A2332] rounded-[24px] sm:rounded-[32px] p-7 sm:p-10 shadow-md transition-all hover:shadow-md hover:-translate-y-1">
-                  <h3 className="text-[16px] sm:text-[18px] font-extrabold text-[#1A2332] mb-4 tracking-tight leading-snug">{faq.q}</h3>
-                  <p className="text-[14px] sm:text-[15px] text-[#2A3444] leading-relaxed font-bold">{faq.a}</p>
+                <div key={i} className="bg-white border border-[#0A0A0A] rounded-[24px] sm:rounded-[32px] p-7 sm:p-10 shadow-md transition-all hover:shadow-md hover:-translate-y-1">
+                  <h3 className="text-[16px] sm:text-[18px] font-extrabold text-[#0A0A0A] mb-4 tracking-tight leading-snug">{faq.q}</h3>
+                  <p className="text-[14px] sm:text-[15px] text-[#1A1A1A] leading-relaxed font-bold">{faq.a}</p>
                 </div>
               ))}
             </div>
@@ -320,12 +320,12 @@ export default function SolutionPageLayout({
 
       {/* Related Solutions */}
       {relatedSolutions.length > 0 && (
-        <section className="py-16 sm:py-20 px-5 sm:px-8 bg-[#F8F6F1] border-t border-[#E8ECF2]">
+        <section className="py-16 sm:py-20 px-5 sm:px-8 bg-[#FFFFFF] border-t border-[#EDEDED]">
           <div className="max-w-[1200px] mx-auto">
-            <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#F4B400] mb-4 text-center">
+            <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#C6F24E] mb-4 text-center">
               {locale === 'tr' ? 'DİĞER SEKTÖRLER' : 'OTHER INDUSTRIES'}
             </p>
-            <h2 className="text-[22px] sm:text-[28px] font-extrabold text-[#1A2332] tracking-tight text-center mb-10">
+            <h2 className="text-[22px] sm:text-[28px] font-extrabold text-[#0A0A0A] tracking-tight text-center mb-10">
               {locale === 'tr' ? 'Farklı sektörler için de çözümlerimiz var' : 'We have solutions for other industries too'}
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -333,15 +333,15 @@ export default function SolutionPageLayout({
                 <Link
                   key={sol.slug}
                   href={`${base}/solutions/${sol.slug}`}
-                  className="group flex items-center gap-3 bg-white border border-[#1A2332] rounded-2xl p-4 sm:p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all"
+                  className="group flex items-center gap-3 bg-white border border-[#0A0A0A] rounded-2xl p-4 sm:p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all"
                 >
-                  <div className="flex-shrink-0 w-9 h-9 bg-[#F4B400]/10 border border-[#F4B400]/30 rounded-xl flex items-center justify-center text-[#1A2332] group-hover:bg-[#F4B400]/20 transition-colors">
+                  <div className="flex-shrink-0 w-9 h-9 bg-[#C6F24E]/10 border border-[#C6F24E]/30 rounded-xl flex items-center justify-center text-[#0A0A0A] group-hover:bg-[#C6F24E]/20 transition-colors">
                     {sol.icon}
                   </div>
-                  <span className="text-[13px] sm:text-[14px] font-bold text-[#1A2332] leading-tight">
+                  <span className="text-[13px] sm:text-[14px] font-bold text-[#0A0A0A] leading-tight">
                     {locale === 'tr' ? sol.tr : sol.en}
                   </span>
-                  <ChevronRight size={14} className="ml-auto text-[#6B7280] flex-shrink-0 group-hover:text-[#F4B400] transition-colors" />
+                  <ChevronRight size={14} className="ml-auto text-[#6B7280] flex-shrink-0 group-hover:text-[#C6F24E] transition-colors" />
                 </Link>
               ))}
             </div>
@@ -350,7 +350,7 @@ export default function SolutionPageLayout({
       )}
 
       {/* CTA */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#1A2332] relative overflow-hidden">
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#0A0A0A] relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
         <div className="relative z-10 max-w-[800px] mx-auto text-center space-y-8">
           <h2 className="text-[28px] sm:text-[48px] font-extrabold text-white tracking-tight leading-tight">

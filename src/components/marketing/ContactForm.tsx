@@ -84,23 +84,23 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
     }
   };
 
-  const inputClass = "w-full px-5 py-4 bg-[#F8F6F1] rounded-xl border-2 border-[#1A2332] focus:border-[#F4B400] focus:ring-4 focus:ring-[#F4B400]/10 focus:bg-white outline-none transition-all text-[15px] text-[#1A2332] font-bold placeholder-[#6B7280] shadow-sm focus:shadow-none focus:translate-y-[2px]";
-  const labelClass = "block text-[11px] font-black uppercase tracking-[0.18em] text-[#1A2332] mb-2 ml-1";
+  const inputClass = "w-full px-5 py-4 bg-[#FFFFFF] rounded-xl border-2 border-[#0A0A0A] focus:border-[#C6F24E] focus:ring-4 focus:ring-[#C6F24E]/10 focus:bg-white outline-none transition-all text-[15px] text-[#0A0A0A] font-bold placeholder-[#6B7280] shadow-sm focus:shadow-none focus:translate-y-[2px]";
+  const labelClass = "block text-[11px] font-black uppercase tracking-[0.18em] text-[#0A0A0A] mb-2 ml-1";
 
   return (
-    <div className="bg-white rounded-[32px] border border-[#1A2332] p-8 sm:p-12 shadow-md">
+    <div className="bg-white rounded-[32px] border border-[#0A0A0A] p-8 sm:p-12 shadow-md">
       {sent ? (
         <div className="py-16 text-center space-y-6">
-          <div className="w-20 h-20 bg-[#F4B400]/10 rounded-3xl border-2 border-[#F4B400]/30 flex items-center justify-center mx-auto shadow-md">
-            <CheckCircle2 size={40} className="text-[#F4B400]" />
+          <div className="w-20 h-20 bg-[#C6F24E]/10 rounded-3xl border-2 border-[#C6F24E]/30 flex items-center justify-center mx-auto shadow-md">
+            <CheckCircle2 size={40} className="text-[#C6F24E]" />
           </div>
           <div className="space-y-3">
-            <h3 className="text-[24px] font-extrabold text-[#1A2332] tracking-tighter">{t.contact_success_title}</h3>
-            <p className="text-[15px] font-bold text-[#2A3444] max-w-sm mx-auto">{t.contact_success_desc}</p>
+            <h3 className="text-[24px] font-extrabold text-[#0A0A0A] tracking-tighter">{t.contact_success_title}</h3>
+            <p className="text-[15px] font-bold text-[#1A1A1A] max-w-sm mx-auto">{t.contact_success_desc}</p>
           </div>
           <button
             onClick={() => setSent(false)}
-            className="text-[14px] font-black text-[#F4B400] hover:text-[#1A2332] underline decoration-2 underline-offset-8 transition-colors"
+            className="text-[14px] font-black text-[#C6F24E] hover:text-[#0A0A0A] underline decoration-2 underline-offset-8 transition-colors"
           >
             {t.contact_success_again}
           </button>
@@ -203,21 +203,21 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
               onClick={() => setKvkkChecked(!kvkkChecked)}
               className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                 kvkkChecked 
-                  ? 'bg-[#F4B400]/10 border-[#F4B400]/20 shadow-sm' 
-                  : 'bg-white border-[#1A2332]/5 hover:border-[#1A2332]/10'
+                  ? 'bg-[#C6F24E]/10 border-[#C6F24E]/20 shadow-sm' 
+                  : 'bg-white border-[#0A0A0A]/5 hover:border-[#0A0A0A]/10'
               }`}
             >
               <div className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all border-2 ${
-                kvkkChecked ? 'bg-[#1A2332] border-[#1A2332]' : 'bg-white border-[#1A2332]'
+                kvkkChecked ? 'bg-[#0A0A0A] border-[#0A0A0A]' : 'bg-white border-[#0A0A0A]'
               }`}>
                 {kvkkChecked && <CheckCircle2 size={14} className="text-white" strokeWidth={4} />}
               </div>
               <div className="flex-1">
-                <label htmlFor="contact-kvkk" className="text-[12px] font-bold text-[#2A3444] leading-tight cursor-pointer select-none">
+                <label htmlFor="contact-kvkk" className="text-[12px] font-bold text-[#1A1A1A] leading-tight cursor-pointer select-none">
                   {locale === 'en' ? (
-                    <>I have read and <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); setModal('kvkk'); }} className="text-[#1A2332] underline decoration-[#F4B400] decoration-2 underline-offset-4 hover:bg-[#F4B400]/10 transition-colors">accept</span> the processing of my personal data under the Privacy Policy.</>
+                    <>I have read and <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); setModal('kvkk'); }} className="text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:bg-[#C6F24E]/10 transition-colors">accept</span> the processing of my personal data under the Privacy Policy.</>
                   ) : (
-                    <><span onClick={(e) => { e.preventDefault(); e.stopPropagation(); setModal('kvkk'); }} className="text-[#1A2332] underline decoration-[#F4B400] decoration-2 underline-offset-4 hover:bg-[#F4B400]/10 transition-colors">KVKK ve Gizlilik Politikası</span> kapsamında kişisel verilerimin işlenmesini okudum ve kabul ediyorum.</>
+                    <><span onClick={(e) => { e.preventDefault(); e.stopPropagation(); setModal('kvkk'); }} className="text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:bg-[#C6F24E]/10 transition-colors">KVKK ve Gizlilik Politikası</span> kapsamında kişisel verilerimin işlenmesini okudum ve kabul ediyorum.</>
                   )}
                 </label>
               </div>
@@ -227,13 +227,13 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
                 type="checkbox"
                 name="marketing"
                 id="contact-marketing"
-                className="mt-1 w-5 h-5 rounded border-2 border-[#1A2332] text-[#1A2332] focus:ring-[#F4B400] accent-[#F4B400] cursor-pointer"
+                className="mt-1 w-5 h-5 rounded border-2 border-[#0A0A0A] text-[#0A0A0A] focus:ring-[#C6F24E] accent-[#C6F24E] cursor-pointer"
               />
               <label htmlFor="contact-marketing" className="text-[12px] font-bold text-[#6B7280] leading-tight cursor-pointer">
                 {locale === 'en' ? (
-                  <>I agree to receive <span onClick={(e) => { e.preventDefault(); setModal('marketing'); }} className="text-[#1A2332] underline decoration-2 underline-offset-4 hover:bg-[#F4B400]/10 transition-colors">commercial electronic messages</span> regarding campaigns, announcements, and updates.</>
+                  <>I agree to receive <span onClick={(e) => { e.preventDefault(); setModal('marketing'); }} className="text-[#0A0A0A] underline decoration-2 underline-offset-4 hover:bg-[#C6F24E]/10 transition-colors">commercial electronic messages</span> regarding campaigns, announcements, and updates.</>
                 ) : (
-                  <>Kampanya, duyuru ve yenilikler hakkında <span onClick={(e) => { e.preventDefault(); setModal('marketing'); }} className="text-[#1A2332] underline decoration-2 underline-offset-4 hover:bg-[#F4B400]/10 transition-colors">ticari elektronik ileti</span> almayı kabul ediyorum.</>
+                  <>Kampanya, duyuru ve yenilikler hakkında <span onClick={(e) => { e.preventDefault(); setModal('marketing'); }} className="text-[#0A0A0A] underline decoration-2 underline-offset-4 hover:bg-[#C6F24E]/10 transition-colors">ticari elektronik ileti</span> almayı kabul ediyorum.</>
                 )}
               </label>
             </div>
@@ -243,8 +243,8 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
             type="submit"
             id="contact-submit-btn"
             disabled={loading || !kvkkChecked}
-            className={`w-full py-5 bg-[#F4B400] text-[#1A2332] font-black text-[16px] uppercase tracking-[0.1em] rounded-2xl border border-[#1A2332] flex items-center justify-center gap-3 transition-all ${
-              !kvkkChecked ? 'opacity-40 cursor-not-allowed grayscale' : 'shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none'
+            className={`w-full py-5 bg-[#C6F24E] text-[#0A0A0A] font-black text-[16px] uppercase tracking-[0.1em] rounded-2xl border border-[#0A0A0A] flex items-center justify-center gap-3 transition-all ${
+              !kvkkChecked ? 'opacity-40 cursor-not-allowed grayscale' : 'shadow-sm hover:bg-[#C6F24E] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none'
             }`}
           >
             {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <Send size={20} strokeWidth={2} />}
@@ -255,14 +255,14 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
 
       {/* MODALS */}
       {modal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-6 bg-[#1A2332]/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#F8F6F1] rounded-[40px] w-full max-w-2xl overflow-hidden shadow-2xl border border-[#1A2332] animate-in zoom-in-95 duration-300">
-            <div className="p-8 border-b-3 border-[#1A2332] flex items-center justify-between bg-white border-b-[3px]">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-6 bg-[#0A0A0A]/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-[#FFFFFF] rounded-[40px] w-full max-w-2xl overflow-hidden shadow-2xl border border-[#0A0A0A] animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b-3 border-[#0A0A0A] flex items-center justify-between bg-white border-b-[3px]">
               <div className="flex items-center gap-4">
-                 <div className="p-3 bg-[#F4B400]/10 rounded-2xl text-[#1A2332]">
+                 <div className="p-3 bg-[#C6F24E]/10 rounded-2xl text-[#0A0A0A]">
                     <CheckCircle2 size={24} />
                  </div>
-                 <h3 className="text-xl font-extrabold text-[#1A2332] tracking-tighter uppercase">
+                 <h3 className="text-xl font-extrabold text-[#0A0A0A] tracking-tighter uppercase">
                    {modal === 'kvkk' 
                      ? (locale === 'en' ? 'Privacy Policy & Terms' : 'KVKK Aydınlatma Metni') 
                      : (locale === 'en' ? 'Commercial Electronic Message Consent' : 'Ticari Elektronik İleti Onayı')}
@@ -270,13 +270,13 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
               </div>
               <button 
                 onClick={() => setModal(null)}
-                className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#F8F6F1] border-2 border-[#1A2332] hover:bg-white text-[#1A2332] transition-all shadow-md active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#FFFFFF] border-2 border-[#0A0A0A] hover:bg-white text-[#0A0A0A] transition-all shadow-md active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
               >
                 <span className="text-2xl font-black">×</span>
               </button>
             </div>
             <div className="p-10 max-h-[60vh] overflow-y-auto no-scrollbar bg-white">
-              <div className="text-[15px] font-bold text-[#2A3444] space-y-6 leading-relaxed">
+              <div className="text-[15px] font-bold text-[#1A1A1A] space-y-6 leading-relaxed">
                 {modal === 'kvkk' && (
                   locale === 'en' ? (
                     <>
@@ -313,10 +313,10 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
                 )}
               </div>
             </div>
-            <div className="p-8 bg-[#F8F6F1] border-t-[3px] border-[#1A2332] flex justify-end">
+            <div className="p-8 bg-[#FFFFFF] border-t-[3px] border-[#0A0A0A] flex justify-end">
               <button 
                 onClick={() => setModal(null)}
-                className="w-full py-5 bg-[#1A2332] text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] hover:bg-black transition-all shadow-md active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                className="w-full py-5 bg-[#0A0A0A] text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] hover:bg-black transition-all shadow-md active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
               >
                 {locale === 'en' ? 'I UNDERSTAND' : 'ANLADIM'}
               </button>

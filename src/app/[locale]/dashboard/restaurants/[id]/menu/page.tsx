@@ -150,7 +150,7 @@ export default function RestaurantMenuBuilderPage() {
         address: r.address ?? null,
         phone: r.phone ?? null,
         workingHours: r.workingHours ?? null,
-        primaryColor: r.primaryColor ?? '#F4B400',
+        primaryColor: r.primaryColor ?? '#C6F24E',
         menuEnabled: r.menuEnabled ?? true,
         menuPublished: r.menuPublished ?? false,
         menuUpdatedAt: r.menuUpdatedAt ?? null,
@@ -480,7 +480,7 @@ export default function RestaurantMenuBuilderPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-[#1A2332]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
       </div>
     );
   }
@@ -491,7 +491,7 @@ export default function RestaurantMenuBuilderPage() {
   }
 
   const status = !restaurant.menuEnabled
-    ? { label: copy.disabled, cls: 'bg-[#E8ECF2] text-[#6B7280] border-[#E8ECF2]' }
+    ? { label: copy.disabled, cls: 'bg-[#EDEDED] text-[#6B7280] border-[#EDEDED]' }
     : restaurant.menuPublished
     ? { label: copy.published, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
     : { label: copy.draft, cls: 'bg-amber-50 text-amber-700 border-amber-200' };
@@ -499,9 +499,9 @@ export default function RestaurantMenuBuilderPage() {
   if (previewMode) {
     return (
       <div className="min-h-full">
-        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#E8ECF2] bg-[#1A2332] px-4 py-3 text-white">
+        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#EDEDED] bg-[#0A0A0A] px-4 py-3 text-white">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#F4B400]">{copy.preview}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#C6F24E]">{copy.preview}</p>
             <p className="truncate text-sm font-black">{restaurant.name}</p>
           </div>
           <button
@@ -520,21 +520,21 @@ export default function RestaurantMenuBuilderPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-8">
+      <div className="flex flex-col gap-4 rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-1">
             <Link
               href={`/${locale}/dashboard/menu`}
-              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332]"
+              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]"
             >
               <ArrowLeft size={14} strokeWidth={2} />
               {copy.backToMenus}
             </Link>
-            <h1 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight text-[#1A2332] sm:text-3xl">
+            <h1 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl">
               <UtensilsCrossed size={22} strokeWidth={2} />
               {restaurant.name}
             </h1>
-            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#2A3444]">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#1A1A1A]">
               <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 ${status.cls}`}>{status.label}</span>
               {restaurant.menuUpdatedAt && (
                 <span className="text-[#6B7280]">· {copy.lastUpdated}: {new Date(restaurant.menuUpdatedAt).toLocaleString(isTr ? 'tr-TR' : 'en-US')}</span>
@@ -544,21 +544,21 @@ export default function RestaurantMenuBuilderPage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/${locale}/dashboard/restaurants/${id}/menu?preview=1`}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F8F6F1] active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
             >
               <Eye size={14} strokeWidth={2} />
               {copy.preview}
             </Link>
             <button
               onClick={() => setQrModal(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F8F6F1] active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
             >
               <QrCode size={14} strokeWidth={2} />
               {copy.menuQr}
             </button>
             <Link
               href={`/${locale}/dashboard/restaurants/${id}/menu/analytics`}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F8F6F1] active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
             >
               <BarChart3 size={14} strokeWidth={2} />
               {copy.analytics}
@@ -567,7 +567,7 @@ export default function RestaurantMenuBuilderPage() {
               <Link
                 href={`/menu/${restaurant.slug}`}
                 target="_blank"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F8F6F1] active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
               >
                 <ChevronRight size={14} strokeWidth={2} />
                 {copy.viewPublic}
@@ -579,7 +579,7 @@ export default function RestaurantMenuBuilderPage() {
               className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 disabled:opacity-50 ${
                 restaurant.menuPublished
                   ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                  : 'bg-[#1A2332] text-white hover:bg-[#2A3444]'
+                  : 'bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]'
               }`}
             >
               {publishBusy ? <Loader2 size={14} className="animate-spin" /> : restaurant.menuPublished ? <EyeOff size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
@@ -612,23 +612,23 @@ export default function RestaurantMenuBuilderPage() {
       {/* Two-pane builder */}
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         {/* Categories */}
-        <section className="rounded-[24px] border border-[#E8ECF2] bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#E8ECF2] p-4">
-            <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">{copy.categories}</h2>
+        <section className="rounded-[24px] border border-[#EDEDED] bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-[#EDEDED] p-4">
+            <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.categories}</h2>
             <button
               onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#F4B400] px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F4B400] active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#C6F24E] px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#C6F24E] active:scale-95"
             >
               <Plus size={12} strokeWidth={2} />
               {copy.addCategory}
             </button>
           </div>
           {categories.length === 0 ? (
-            <div className="p-5 text-center text-xs font-bold text-[#2A3444]">{copy.noCategories}</div>
+            <div className="p-5 text-center text-xs font-bold text-[#1A1A1A]">{copy.noCategories}</div>
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onCategoryDragEnd}>
               <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                <ul className="divide-y divide-[#E8ECF2]">
+                <ul className="divide-y divide-[#EDEDED]">
                   {categories.map((c, idx) => (
                     <SortableCategoryRow
                       key={c.id}
@@ -653,20 +653,20 @@ export default function RestaurantMenuBuilderPage() {
         </section>
 
         {/* Items */}
-        <section className="rounded-[24px] border border-[#E8ECF2] bg-white shadow-sm">
-          <div className="flex items-center justify-between gap-2 border-b border-[#E8ECF2] p-4">
+        <section className="rounded-[24px] border border-[#EDEDED] bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-2 border-b border-[#EDEDED] p-4">
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">
+              <h2 className="truncate text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">
                 {activeCategory ? activeCategory.name : copy.items}
               </h2>
               {activeCategory?.description && (
-                <p className="mt-1 truncate text-[11px] font-bold text-[#2A3444]">{activeCategory.description}</p>
+                <p className="mt-1 truncate text-[11px] font-bold text-[#1A1A1A]">{activeCategory.description}</p>
               )}
             </div>
             {activeCategory && (
               <button
                 onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#1A2332] px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#2A3444] active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#0A0A0A] px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95"
               >
                 <Plus size={12} strokeWidth={2} />
                 {copy.addItem}
@@ -674,13 +674,13 @@ export default function RestaurantMenuBuilderPage() {
             )}
           </div>
           {!activeCategory ? (
-            <div className="p-10 text-center text-xs font-bold text-[#2A3444]">{copy.noCategorySelected}</div>
+            <div className="p-10 text-center text-xs font-bold text-[#1A1A1A]">{copy.noCategorySelected}</div>
           ) : activeCategory.items.length === 0 ? (
-            <div className="p-10 text-center text-xs font-bold text-[#2A3444]">{copy.noItems}</div>
+            <div className="p-10 text-center text-xs font-bold text-[#1A1A1A]">{copy.noItems}</div>
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onItemDragEnd}>
               <SortableContext items={activeCategory.items.map((it) => it.id)} strategy={verticalListSortingStrategy}>
-                <ul className="divide-y divide-[#E8ECF2]">
+                <ul className="divide-y divide-[#EDEDED]">
                   {activeCategory.items.map((item, idx) => (
                     <SortableItemRow
                       key={item.id}
@@ -777,7 +777,7 @@ function CategoryModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
           />
         </Field>
         <Field label={copy.description}>
@@ -785,12 +785,12 @@ function CategoryModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="w-full resize-none rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
           />
         </Field>
-        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3">
-          <input type="checkbox" checked={isVisible} onChange={(e) => setIsVisible(e.target.checked)} className="h-4 w-4 accent-[#F4B400]" />
-          <span className="text-sm font-bold text-[#1A2332]">{copy.visible}</span>
+        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3">
+          <input type="checkbox" checked={isVisible} onChange={(e) => setIsVisible(e.target.checked)} className="h-4 w-4 accent-[#C6F24E]" />
+          <span className="text-sm font-bold text-[#0A0A0A]">{copy.visible}</span>
         </label>
         <ModalActions busy={busy} copy={copy} onClose={onClose} />
       </form>
@@ -884,7 +884,7 @@ function ItemModal({
             required
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
           >
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -896,7 +896,7 @@ function ItemModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
           />
         </Field>
         <Field label={copy.description}>
@@ -904,7 +904,7 @@ function ItemModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="w-full resize-none rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
           />
         </Field>
         <Field label={copy.price}>
@@ -914,12 +914,12 @@ function ItemModal({
             value={priceInput}
             onChange={(e) => setPriceInput(e.target.value)}
             placeholder="0,00"
-            className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+            className="w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
           />
         </Field>
         <Field label={copy.imageUrl}>
           <div className="flex gap-3">
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[#E8ECF2] bg-[#F8F6F1]">
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[#EDEDED] bg-[#FFFFFF]">
               {imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={imageUrl} alt="preview" className="h-full w-full object-cover" />
@@ -935,7 +935,7 @@ function ItemModal({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#2A3444] active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
                 >
                   {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} strokeWidth={2} />}
                   {uploading ? copy.uploading : copy.uploadImage}
@@ -944,7 +944,7 @@ function ItemModal({
                   <button
                     type="button"
                     onClick={() => setImageUrl('')}
-                    className="inline-flex items-center gap-1 rounded-xl border border-[#E8ECF2] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:bg-[#F8F6F1] active:scale-95"
+                    className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
                   >
                     <X size={12} strokeWidth={2} />
                     {copy.removeImage}
@@ -967,7 +967,7 @@ function ItemModal({
                 value={imageUrl.startsWith('data:') ? '' : imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder={copy.orUrl + ' · https://...'}
-                className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-[#F4B400]"
+                className="w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-[#C6F24E]"
               />
             </div>
           </div>
@@ -982,7 +982,7 @@ function ItemModal({
                   type="button"
                   onClick={() => toggleBadge(b)}
                   className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-all ${
-                    active ? 'border-[#F4B400] bg-[#F4B400] text-[#1A2332]' : 'border-[#E8ECF2] bg-white text-[#2A3444] hover:bg-[#F8F6F1]'
+                    active ? 'border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A]' : 'border-[#EDEDED] bg-white text-[#1A1A1A] hover:bg-[#FFFFFF]'
                   }`}
                 >
                   {active && <Check size={10} strokeWidth={2} />}
@@ -993,13 +993,13 @@ function ItemModal({
           </div>
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3">
-            <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="h-4 w-4 accent-[#F4B400]" />
-            <span className="text-sm font-bold text-[#1A2332]">{copy.available}</span>
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3">
+            <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="h-4 w-4 accent-[#C6F24E]" />
+            <span className="text-sm font-bold text-[#0A0A0A]">{copy.available}</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3">
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3">
             <input type="checkbox" checked={isOutOfStock} onChange={(e) => setIsOutOfStock(e.target.checked)} className="h-4 w-4 accent-red-500" />
-            <span className="text-sm font-bold text-[#1A2332]">{copy.outOfStock}</span>
+            <span className="text-sm font-bold text-[#0A0A0A]">{copy.outOfStock}</span>
           </label>
         </div>
         {formError && (
@@ -1014,12 +1014,12 @@ function ItemModal({
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-md sm:p-6">
-      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-[#E8ECF2] bg-white shadow-2xl">
-        <div className="relative border-b border-[#E8ECF2] bg-[#F8F6F1] p-5 sm:p-7">
-          <h2 className="pr-10 text-xl font-extrabold uppercase tracking-tight text-[#1A2332] sm:text-2xl">{title}</h2>
+      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-[#EDEDED] bg-white shadow-2xl">
+        <div className="relative border-b border-[#EDEDED] bg-[#FFFFFF] p-5 sm:p-7">
+          <h2 className="pr-10 text-xl font-extrabold uppercase tracking-tight text-[#0A0A0A] sm:text-2xl">{title}</h2>
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 rounded-xl p-2 text-[#6B7280] transition-all hover:bg-[#E8ECF2] hover:text-[#1A2332]"
+            className="absolute right-4 top-4 rounded-xl p-2 text-[#6B7280] transition-all hover:bg-[#EDEDED] hover:text-[#0A0A0A]"
           >
             <X size={20} strokeWidth={2} />
           </button>
@@ -1041,14 +1041,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function ModalActions({ busy, copy, onClose }: { busy: boolean; copy: Record<string, string>; onClose: () => void }) {
   return (
-    <div className="flex justify-end gap-3 border-t-2 border-[#F8F6F1] pt-5">
-      <button type="button" onClick={onClose} className="px-5 py-2.5 text-xs font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332]">
+    <div className="flex justify-end gap-3 border-t-2 border-[#FFFFFF] pt-5">
+      <button type="button" onClick={onClose} className="px-5 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]">
         {copy.cancel}
       </button>
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#2A3444] active:scale-95 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
       >
         {busy ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2} />}
         {copy.save}
@@ -1087,19 +1087,19 @@ function SortableCategoryRow({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-1 p-3 text-sm transition-all ${isActive ? 'bg-[#F4B400]/15' : 'hover:bg-[#F8F6F1]'} ${isDragging ? 'z-10 shadow-lg' : ''}`}
+      className={`flex items-center gap-1 p-3 text-sm transition-all ${isActive ? 'bg-[#C6F24E]/15' : 'hover:bg-[#FFFFFF]'} ${isDragging ? 'z-10 shadow-lg' : ''}`}
     >
       <button
         {...attributes}
         {...listeners}
         aria-label={copy.dragToReorder}
-        className="cursor-grab touch-none rounded-lg p-1 text-[#6B7280] hover:bg-[#E8ECF2] active:cursor-grabbing"
+        className="cursor-grab touch-none rounded-lg p-1 text-[#6B7280] hover:bg-[#EDEDED] active:cursor-grabbing"
       >
         <GripVertical size={14} strokeWidth={2} />
       </button>
       <button onClick={onSelect} className="flex min-w-0 flex-1 items-center gap-2 text-left">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-black text-[#1A2332]">{category.name}</p>
+          <p className="truncate font-black text-[#0A0A0A]">{category.name}</p>
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
             {category.items.length} {isTr ? 'ürün' : 'items'}
             {!category.isVisible && <span className="ml-1 text-amber-600">· {copy.hidden}</span>}
@@ -1107,20 +1107,20 @@ function SortableCategoryRow({
         </div>
       </button>
       <div className="flex shrink-0 items-center">
-        <button onClick={onMoveUp} disabled={isFirst} className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30" title="Up">
+        <button onClick={onMoveUp} disabled={isFirst} className="rounded-lg p-1 text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30" title="Up">
           <ArrowUp size={14} strokeWidth={2} />
         </button>
-        <button onClick={onMoveDown} disabled={isLast} className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30" title="Down">
+        <button onClick={onMoveDown} disabled={isLast} className="rounded-lg p-1 text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30" title="Down">
           <ArrowDown size={14} strokeWidth={2} />
         </button>
         <button
           onClick={onToggleVisible}
-          className={`rounded-lg p-1 hover:bg-[#E8ECF2] ${category.isVisible ? 'text-[#2A3444]' : 'text-amber-600'}`}
+          className={`rounded-lg p-1 hover:bg-[#EDEDED] ${category.isVisible ? 'text-[#1A1A1A]' : 'text-amber-600'}`}
           title={copy.toggleVisible}
         >
           {category.isVisible ? <Eye size={14} strokeWidth={2} /> : <EyeOff size={14} strokeWidth={2} />}
         </button>
-        <button onClick={onEdit} className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2]" title={copy.editCategory}>
+        <button onClick={onEdit} className="rounded-lg p-1 text-[#1A1A1A] hover:bg-[#EDEDED]" title={copy.editCategory}>
           <Edit2 size={14} strokeWidth={2} />
         </button>
         <button onClick={onDelete} className="rounded-lg p-1 text-red-500 hover:bg-red-50" title={copy.delete}>
@@ -1165,11 +1165,11 @@ function SortableItemRow({
         {...attributes}
         {...listeners}
         aria-label={copy.dragToReorder}
-        className="cursor-grab touch-none rounded-lg p-1 text-[#6B7280] hover:bg-[#E8ECF2] active:cursor-grabbing"
+        className="cursor-grab touch-none rounded-lg p-1 text-[#6B7280] hover:bg-[#EDEDED] active:cursor-grabbing"
       >
         <GripVertical size={14} strokeWidth={2} />
       </button>
-      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#E8ECF2]">
+      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#EDEDED]">
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={item.imageUrl} alt={item.name} loading="lazy" className="h-full w-full object-cover" />
@@ -1181,15 +1181,15 @@ function SortableItemRow({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-black text-[#1A2332]">{item.name}</p>
+          <p className="truncate text-sm font-black text-[#0A0A0A]">{item.name}</p>
           {!item.isAvailable && (
-            <span className="rounded-full bg-[#E8ECF2] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#6B7280]">{copy.hidden}</span>
+            <span className="rounded-full bg-[#EDEDED] px-1.5 py-0.5 text-[9px] font-black uppercase text-[#6B7280]">{copy.hidden}</span>
           )}
           {item.isOutOfStock && (
             <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[9px] font-black uppercase text-red-600">{copy.outOfStock}</span>
           )}
         </div>
-        <p className="mt-0.5 text-[11px] font-bold text-[#2A3444]">
+        <p className="mt-0.5 text-[11px] font-bold text-[#1A1A1A]">
           {formatPrice(item.priceCents, item.currency, isTr ? 'tr-TR' : 'en-US')}
           {item.badges.length > 0 && (
             <span className="ml-2 text-[#6B7280]">· {item.badges.map((b) => BADGE_LABELS[b as MenuBadge]?.[locale] || b).join(', ')}</span>
@@ -1197,27 +1197,27 @@ function SortableItemRow({
         </p>
       </div>
       <div className="flex shrink-0 items-center">
-        <button onClick={onMoveUp} disabled={isFirst} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30">
+        <button onClick={onMoveUp} disabled={isFirst} className="rounded-lg p-1.5 text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30">
           <ArrowUp size={14} strokeWidth={2} />
         </button>
-        <button onClick={onMoveDown} disabled={isLast} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30">
+        <button onClick={onMoveDown} disabled={isLast} className="rounded-lg p-1.5 text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30">
           <ArrowDown size={14} strokeWidth={2} />
         </button>
         <button
           onClick={onToggleAvailable}
-          className={`rounded-lg p-1.5 hover:bg-[#E8ECF2] ${item.isAvailable ? 'text-[#2A3444]' : 'text-amber-600'}`}
+          className={`rounded-lg p-1.5 hover:bg-[#EDEDED] ${item.isAvailable ? 'text-[#1A1A1A]' : 'text-amber-600'}`}
           title={copy.toggleVisible}
         >
           {item.isAvailable ? <Eye size={14} strokeWidth={2} /> : <EyeOff size={14} strokeWidth={2} />}
         </button>
         <button
           onClick={onToggleOutOfStock}
-          className={`rounded-lg p-1.5 hover:bg-[#E8ECF2] ${item.isOutOfStock ? 'text-red-500' : 'text-[#2A3444]'}`}
+          className={`rounded-lg p-1.5 hover:bg-[#EDEDED] ${item.isOutOfStock ? 'text-red-500' : 'text-[#1A1A1A]'}`}
           title={copy.toggleOutOfStock}
         >
           <AlertTriangle size={14} strokeWidth={2} />
         </button>
-        <button onClick={onEdit} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2]">
+        <button onClick={onEdit} className="rounded-lg p-1.5 text-[#1A1A1A] hover:bg-[#EDEDED]">
           <Edit2 size={14} strokeWidth={2} />
         </button>
         <button onClick={onDelete} className="rounded-lg p-1.5 text-red-500 hover:bg-red-50">
@@ -1231,7 +1231,7 @@ function SortableItemRow({
 // ──────────────────────────────────────────────────────────────────────────
 // Theme panel
 
-const THEME_SWATCHES = ['#F4B400', '#E85A4F', '#1A2332', '#0E7C66', '#8B5CF6', '#EC4899', '#0EA5E9', '#F97316'];
+const THEME_SWATCHES = ['#C6F24E', '#E85A4F', '#0A0A0A', '#0E7C66', '#8B5CF6', '#EC4899', '#0EA5E9', '#8CB81E'];
 
 function ThemePanel({
   restaurant, copy, saving, onChange, onUploadLogo,
@@ -1250,13 +1250,13 @@ function ThemePanel({
     { id: 'minimal', label: copy.themeMinimal },
     { id: 'bistro', label: copy.themeBistro },
   ];
-  const currentAccent = restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#F4B400';
+  const currentAccent = restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#C6F24E';
   const logoFileRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <section className="rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
+    <section className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">{copy.menuDesign}</h2>
+        <h2 className="text-sm font-extrabold uppercase tracking-widest text-[#0A0A0A]">{copy.menuDesign}</h2>
         {saving && <Loader2 size={14} className="animate-spin text-[#6B7280]" />}
       </div>
 
@@ -1271,13 +1271,13 @@ function ThemePanel({
                   key={t.id}
                   onClick={() => onChange({ menuTheme: t.id })}
                   className={`group flex flex-col items-stretch gap-2 rounded-2xl border-2 p-2 text-left transition-all ${
-                    active ? 'border-[#F4B400] bg-[#F4B400]/5 shadow-sm' : 'border-[#E8ECF2] hover:border-[#2A3444]'
+                    active ? 'border-[#C6F24E] bg-[#C6F24E]/5 shadow-sm' : 'border-[#EDEDED] hover:border-[#1A1A1A]'
                   }`}
                 >
                   <ThemeThumb theme={t.id} accent={currentAccent} />
                   <div className="flex items-center justify-between px-1">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-[#1A2332]">{t.label}</span>
-                    {active && <Check size={12} strokeWidth={3} className="text-[#F4B400]" />}
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#0A0A0A]">{t.label}</span>
+                    {active && <Check size={12} strokeWidth={3} className="text-[#C6F24E]" />}
                   </div>
                 </button>
               );
@@ -1295,24 +1295,24 @@ function ThemePanel({
                   key={c}
                   onClick={() => onChange({ menuAccentColor: c })}
                   style={{ backgroundColor: c }}
-                  className={`h-9 w-9 rounded-full border-2 transition-all active:scale-90 ${active ? 'border-[#1A2332] ring-2 ring-[#F4B400] ring-offset-2' : 'border-white shadow-sm hover:scale-110'}`}
+                  className={`h-9 w-9 rounded-full border-2 transition-all active:scale-90 ${active ? 'border-[#0A0A0A] ring-2 ring-[#C6F24E] ring-offset-2' : 'border-white shadow-sm hover:scale-110'}`}
                   title={c}
                 />
               );
             })}
-            <label className="relative inline-flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[#2A3444] hover:bg-[#F8F6F1]">
+            <label className="relative inline-flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[#1A1A1A] hover:bg-[#FFFFFF]">
               <input
                 type="color"
                 value={currentAccent}
                 onChange={(e) => onChange({ menuAccentColor: e.target.value })}
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               />
-              <span className="text-[9px] font-black uppercase text-[#2A3444]">+</span>
+              <span className="text-[9px] font-black uppercase text-[#1A1A1A]">+</span>
             </label>
             {restaurant.menuAccentColor && (
               <button
                 onClick={() => onChange({ menuAccentColor: null })}
-                className="inline-flex items-center gap-1 rounded-full border border-[#E8ECF2] px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#6B7280] hover:bg-[#F8F6F1]"
+                className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#6B7280] hover:bg-[#FFFFFF]"
               >
                 <X size={10} strokeWidth={2} />
                 reset
@@ -1324,7 +1324,7 @@ function ThemePanel({
         <div>
           <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{copy.logo}</p>
           <div className="flex items-center gap-3">
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1]">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#EDEDED] bg-[#FFFFFF]">
               {restaurant.menuLogoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={restaurant.menuLogoUrl} alt="logo" className="h-full w-full object-cover" />
@@ -1340,7 +1340,7 @@ function ThemePanel({
                   type="button"
                   onClick={() => logoFileRef.current?.click()}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-3 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#2A3444] active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-3 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
                 >
                   <ImageIcon size={12} strokeWidth={2} />
                   {copy.uploadImage}
@@ -1349,7 +1349,7 @@ function ThemePanel({
                   <button
                     type="button"
                     onClick={() => onChange({ menuLogoUrl: null })}
-                    className="inline-flex items-center gap-1 rounded-xl border border-[#E8ECF2] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:bg-[#F8F6F1] active:scale-95"
+                    className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
                   >
                     <X size={12} strokeWidth={2} />
                     {copy.removeImage}
@@ -1379,10 +1379,10 @@ function ThemePanel({
 function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
   if (theme === 'classic') {
     return (
-      <div className="relative h-20 overflow-hidden rounded-xl border border-[#E8ECF2] bg-[#F8F6F1]">
+      <div className="relative h-20 overflow-hidden rounded-xl border border-[#EDEDED] bg-[#FFFFFF]">
         <div className="h-6 w-full" style={{ backgroundColor: accent }} />
         <div className="space-y-1.5 p-2">
-          <div className="h-1.5 w-2/3 rounded bg-[#1A2332]/80" />
+          <div className="h-1.5 w-2/3 rounded bg-[#0A0A0A]/80" />
           <div className="h-1 w-full rounded bg-[#6B7280]/30" />
           <div className="h-1 w-4/5 rounded bg-[#6B7280]/30" />
         </div>
@@ -1391,7 +1391,7 @@ function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
   }
   if (theme === 'modern') {
     return (
-      <div className="relative grid h-20 grid-cols-3 gap-1 overflow-hidden rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] p-1.5">
+      <div className="relative grid h-20 grid-cols-3 gap-1 overflow-hidden rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1.5">
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="rounded bg-white shadow-sm" style={{ borderBottom: `2px solid ${accent}` }} />
         ))}
@@ -1400,10 +1400,10 @@ function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
   }
   if (theme === 'elegant') {
     return (
-      <div className="relative flex h-20 flex-col gap-1.5 overflow-hidden rounded-xl border border-[#E8ECF2] bg-white p-2">
+      <div className="relative flex h-20 flex-col gap-1.5 overflow-hidden rounded-xl border border-[#EDEDED] bg-white p-2">
         <div className="mx-auto h-0.5 w-8 rounded" style={{ backgroundColor: accent }} />
-        <div className="mx-auto h-1.5 w-1/2 rounded bg-[#1A2332]" />
-        <div className="mt-1 h-px w-full bg-[#E8ECF2]" />
+        <div className="mx-auto h-1.5 w-1/2 rounded bg-[#0A0A0A]" />
+        <div className="mt-1 h-px w-full bg-[#EDEDED]" />
         <div className="mt-1 space-y-1">
           <div className="h-1 w-full rounded bg-[#6B7280]/30" />
           <div className="h-1 w-4/5 rounded bg-[#6B7280]/30" />
@@ -1413,9 +1413,9 @@ function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
   }
   if (theme === 'minimal') {
     return (
-      <div className="relative h-20 overflow-hidden rounded-xl border border-[#E8ECF2] bg-white p-2">
+      <div className="relative h-20 overflow-hidden rounded-xl border border-[#EDEDED] bg-white p-2">
         <div className="flex items-center gap-1">
-          <div className="h-1 flex-1 rounded bg-[#1A2332]" />
+          <div className="h-1 flex-1 rounded bg-[#0A0A0A]" />
           <div className="h-1 w-6 rounded" style={{ backgroundColor: accent }} />
         </div>
         <div className="mt-2 space-y-1.5">
@@ -1444,7 +1444,7 @@ function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
   }
   // gastronomy
   return (
-    <div className="relative h-20 overflow-hidden rounded-xl border border-[#0E1525] bg-[#0E1525] p-2">
+    <div className="relative h-20 overflow-hidden rounded-xl border border-[#000000] bg-[#000000] p-2">
       <div className="h-1.5 w-1/3 rounded" style={{ backgroundColor: accent }} />
       <div className="mt-2 h-1 w-2/3 rounded bg-white/80" />
       <div className="mt-1 h-1 w-full rounded bg-white/30" />
@@ -1517,7 +1517,7 @@ function MenuQrModal({
   return (
     <Modal title={copy.menuQr} onClose={onClose}>
       <div className="space-y-5">
-        <div className="flex items-center justify-center rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] p-4 sm:p-6">
+        <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] p-4 sm:p-6">
           {previewSvg ? (
             <div
               className="aspect-square w-full max-w-[240px] [&>svg]:h-full [&>svg]:w-full"
@@ -1540,7 +1540,7 @@ function MenuQrModal({
                 key={f}
                 onClick={() => setFormat(f)}
                 className={`flex-1 rounded-xl border-2 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all ${
-                  format === f ? 'border-[#1A2332] bg-[#1A2332] text-white' : 'border-[#E8ECF2] bg-white text-[#1A2332] hover:bg-[#F8F6F1]'
+                  format === f ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white' : 'border-[#EDEDED] bg-white text-[#0A0A0A] hover:bg-[#FFFFFF]'
                 }`}
               >
                 {f.toUpperCase()}
@@ -1549,18 +1549,18 @@ function MenuQrModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t-2 border-[#F8F6F1] pt-5">
+        <div className="flex justify-end gap-3 border-t-2 border-[#FFFFFF] pt-5">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 text-xs font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332]"
+            className="px-5 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]"
           >
             {copy.cancel}
           </button>
           <button
             onClick={download}
             disabled={downloading || !previewSvg}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#F4B400] px-6 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#FFD666] active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#C6F24E] px-6 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#D7F98E] active:scale-95 disabled:opacity-50"
           >
             {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
             {copy.downloadQr}

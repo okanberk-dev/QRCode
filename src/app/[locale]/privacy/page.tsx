@@ -33,19 +33,19 @@ export default async function PrivacyPage({
   const t = getTranslations(locale);
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-[#F8F6F1] selection:bg-[#F4B400]/30">
+    <div className="min-h-screen flex flex-col font-sans bg-[#FFFFFF] selection:bg-[#C6F24E]/30">
       <MarketingNavbar locale={locale} t={t} />
 
       <main className="flex-1 max-w-[1000px] mx-auto w-full px-5 py-20 sm:py-32">
-        <div className="bg-white p-10 sm:p-20 rounded-[48px] border border-[#1A2332] shadow-md relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#F4B400]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
+        <div className="bg-white p-10 sm:p-20 rounded-[48px] border border-[#0A0A0A] shadow-md relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#C6F24E]/5 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
           
           <div className="mb-16 relative">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#1A2332] text-white rounded-xl mb-6 shadow-md">
-               <ShieldCheck size={14} className="text-[#F4B400]" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#0A0A0A] text-white rounded-xl mb-6 shadow-md">
+               <ShieldCheck size={14} className="text-[#C6F24E]" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isTr ? 'GİZLİLİK POLİTİKASI' : 'PRIVACY POLICY'}</span>
             </div>
-            <h1 className="text-[36px] sm:text-[56px] font-extrabold text-[#1A2332] tracking-tight leading-none mb-4 whitespace-pre-line">
+            <h1 className="text-[36px] sm:text-[56px] font-extrabold text-[#0A0A0A] tracking-tight leading-none mb-4 whitespace-pre-line">
               {isTr ? 'Veri ve Gizlilik\nPolitikamız' : 'Data and Privacy\nPolicy'}
             </h1>
             <p className="text-[13px] text-[#6B7280] font-black uppercase tracking-widest">
@@ -54,8 +54,8 @@ export default async function PrivacyPage({
           </div>
           
           <div className="prose prose-neutral max-w-none text-[#4a4742] space-y-12 text-[16px] sm:text-[18px] leading-relaxed font-medium">
-             <div className="p-8 bg-[#F8F6F1] rounded-3xl border-2 border-[#1A2332] border-dashed">
-               <p className="font-black text-[#1A2332] m-0">
+             <div className="p-8 bg-[#FFFFFF] rounded-3xl border-2 border-[#0A0A0A] border-dashed">
+               <p className="font-black text-[#0A0A0A] m-0">
                  {isTr 
                    ? 'Buaze olarak kişisel verilerinizin gizliliğini ve güvenliğini en büyük önceliğimiz olarak görüyoruz. Bu politika, hangi verileri neden topladığımızı ve onları nasıl koruduğumuzu açıklar.' 
                    : 'As Buaze, we consider the privacy and security of your personal data as our top priority. This policy explains what data we collect, why we collect it, and how we protect it.'}
@@ -63,13 +63,13 @@ export default async function PrivacyPage({
              </div>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '1. Bilgi Toplama' : '1. Collection of Information'}</h2>
+                <h2 className="text-[#0A0A0A] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '1. Bilgi Toplama' : '1. Collection of Information'}</h2>
                 <p>
                   {isTr 
                     ? 'Hesap açılışı, hizmet kullanımı veya bizimle iletişime geçtiğinizde; kimlik bilgileri, iletişim detayları, ödeme geçmişi ve kullanım verileri gibi bilgileri toplarız.'
                     : 'When you open an account, use our services, or contact us; we collect information such as identity information, contact details, payment history, and usage data.'}
                 </p>
-                <ul className="list-disc pl-6 space-y-3 marker:text-[#F4B400]">
+                <ul className="list-disc pl-6 space-y-3 marker:text-[#C6F24E]">
                    <li>{isTr ? 'Kayıt sırasında sağladığınız doğrudan bilgiler' : 'Direct information provided during registration'}</li>
                    <li>{isTr ? 'Abonelik ve ödeme işlemleri verileri' : 'Subscription and payment transaction data'}</li>
                    <li>{isTr ? 'Platform etkileşim ve kullanım metrikleri' : 'Platform interaction and usage metrics'}</li>
@@ -77,7 +77,7 @@ export default async function PrivacyPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '2. Veri Kullanımı ve Paylaşımı' : '2. Data Usage and Sharing'}</h2>
+                <h2 className="text-[#0A0A0A] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '2. Veri Kullanımı ve Paylaşımı' : '2. Data Usage and Sharing'}</h2>
                 <p>
                   {isTr
                     ? 'Verileriniz yalnızca hizmet kalitemizi artırmak, yasal yükümlülüklerimizi yerine getirmek ve size özel bir kullanıcı deneyimi sunmak amacıyla kullanılır. Üçüncü şahıslara satış yapılmaz.'
@@ -86,7 +86,7 @@ export default async function PrivacyPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '3. Güvenlik Önlemleri' : '3. Security Measures'}</h2>
+                <h2 className="text-[#0A0A0A] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '3. Güvenlik Önlemleri' : '3. Security Measures'}</h2>
                 <p>
                   {isTr
                     ? 'Tüm verileriniz endüstri standardı SSL/TLS şifreleme ile korunur. Sunucularımızda güvenlik duvarları, yetkisiz erişim tespit sistemleri ve periyodik sızma testleri uygulanmaktadır.'
@@ -95,7 +95,7 @@ export default async function PrivacyPage({
               </section>
 
               <section className="space-y-6">
-                <h2 className="text-[#1A2332] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '4. Uluslararası Veri Aktarımı' : '4. International Data Transfer'}</h2>
+                <h2 className="text-[#0A0A0A] text-[24px] sm:text-[28px] font-extrabold tracking-tight">{isTr ? '4. Uluslararası Veri Aktarımı' : '4. International Data Transfer'}</h2>
                 <p>
                   {isTr
                     ? 'Veri barındırma hizmetlerimiz global altyapılar (Vercel, Supabase vb.) üzerinde tutulabilir. Bu durumlarda da en yüksek koruma standartlarını garanti ediyoruz.'
@@ -103,16 +103,16 @@ export default async function PrivacyPage({
                 </p>
               </section>
 
-               <div className="pt-16 border-t-2 border-[#F8F6F1] flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
+               <div className="pt-16 border-t-2 border-[#FFFFFF] flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
                  <div className="space-y-1">
-                   <p className="text-[14px] font-black text-[#1A2332] uppercase tracking-widest leading-none">
+                   <p className="text-[14px] font-black text-[#0A0A0A] uppercase tracking-widest leading-none">
                      {isTr ? 'DAHA FAZLA BİLGİ' : 'MORE INFORMATION'}
                    </p>
                    <p className="text-[14px] text-[#6B7280] font-bold">
                      {isTr ? 'privacy@buaze.com üzerinden sorabilirsiniz.' : 'You can ask via privacy@buaze.com'}
                    </p>
                  </div>
-                 <a href="mailto:privacy@buaze.com" className="px-10 py-5 bg-[#1A2332] text-white rounded-2xl text-[15px] font-black shadow-md hover:bg-[#1A2332] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-widest">
+                 <a href="mailto:privacy@buaze.com" className="px-10 py-5 bg-[#0A0A0A] text-white rounded-2xl text-[15px] font-black shadow-md hover:bg-[#0A0A0A] transition-all active:translate-y-[6px] active:shadow-none uppercase tracking-widest">
                    privacy@buaze.com
                  </a>
                </div>

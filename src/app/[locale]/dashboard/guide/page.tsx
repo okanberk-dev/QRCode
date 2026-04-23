@@ -11,7 +11,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
 
   const steps = [
     {
-      icon: <QrCode size={32} className="text-[#F4B400]" />,
+      icon: <QrCode size={32} className="text-[#C6F24E]" />,
       title: locale === 'tr' ? '1. QR Kodunuzu Oluşturun' : '1. Create Your QR Code',
       desc: locale === 'tr' 
         ? 'Dashboard üzerinden "Restoranlarım" sekmesine gidin ve bir restoran ekleyin. Ardından "QR Yönetimi" kısmından size özel QR kodunuzu oluşturun.'
@@ -27,7 +27,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
         : 'Download the generated QR code in high resolution. Place it on tables, menus, or near the checkout where customers can easily see it.',
     },
     {
-      icon: <Star size={32} className="text-[#F4B400]" />,
+      icon: <Star size={32} className="text-[#C6F24E]" />,
       title: locale === 'tr' ? '3. Geri Bildirim Toplayın' : '3. Collect Feedback',
       desc: locale === 'tr'
         ? 'Müşterileriniz QR kodu taradığında saniyeler içinde geri bildirim ekranına ulaşır. Organik etkileşimle dijital itibarınızı güçlendirin.'
@@ -45,15 +45,15 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] font-sans selection:bg-[#F4B400]/30 p-4 sm:p-6 md:p-10 lg:p-16">
+    <div className="min-h-screen bg-[#FFFFFF] font-sans selection:bg-[#C6F24E]/30 p-4 sm:p-6 md:p-10 lg:p-16">
       <div className="max-w-4xl mx-auto space-y-12">
         {/* Header */}
         <div className="space-y-6">
           <Link 
             href={`/${locale}/dashboard`}
-            className="inline-flex items-center gap-2 text-xs font-black text-[#2A3444] hover:text-[#1A2332] transition-all uppercase tracking-widest group"
+            className="inline-flex items-center gap-2 text-xs font-black text-[#1A1A1A] hover:text-[#0A0A0A] transition-all uppercase tracking-widest group"
           >
-            <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#1A2332] flex items-center justify-center shadow-md group-hover:translate-y-0.5 group-hover:shadow-none transition-all">
+            <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#0A0A0A] flex items-center justify-center shadow-md group-hover:translate-y-0.5 group-hover:shadow-none transition-all">
               <ArrowLeft size={16} strokeWidth={2} />
             </div>
             {locale === 'tr' ? 'Dashboard\'a Dön' : 'Back to Dashboard'}
@@ -61,13 +61,13 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
 
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F4B400] text-[#1A2332] border-2 border-[#1A2332] rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#C6F24E] text-[#0A0A0A] border-2 border-[#0A0A0A] rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
                 <BookOpen size={14} /> {locale === 'tr' ? 'REHBER' : 'GUIDE'}
               </div>
-              <h1 className="text-[36px] sm:text-[48px] font-extrabold text-[#1A2332] leading-[1] tracking-tighter uppercase italic">
+              <h1 className="text-[36px] sm:text-[48px] font-extrabold text-[#0A0A0A] leading-[1] tracking-tighter uppercase italic">
                 {locale === 'tr' ? 'Kullanım Kılavuzu' : 'User Guide'}
               </h1>
-              <p className="text-[15px] sm:text-[17px] text-[#2A3444] font-bold max-w-xl italic">
+              <p className="text-[15px] sm:text-[17px] text-[#1A1A1A] font-bold max-w-xl italic">
                 {locale === 'tr' 
                   ? 'Buaze platformunu en verimli şekilde kullanmanız için hazırladığımız adım adım başlangıç rehberi.' 
                   : 'A step-by-step startup guide we prepared for you to use the Buaze platform most efficiently.'}
@@ -81,21 +81,21 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
           {steps.map((step, idx) => (
             <div 
               key={idx}
-              className="group bg-white rounded-[32px] border-2 border-[#1A2332] shadow-md p-8 space-y-6 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+              className="group bg-white rounded-[32px] border-2 border-[#0A0A0A] shadow-md p-8 space-y-6 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
             >
-              <div className="w-16 h-16 rounded-2xl bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md group-hover:bg-[#F4B400] transition-colors">
+              <div className="w-16 h-16 rounded-2xl bg-[#FFFFFF] border-2 border-[#0A0A0A] flex items-center justify-center shadow-md group-hover:bg-[#C6F24E] transition-colors">
                 {step.icon}
               </div>
               <div className="space-y-3">
-                <h3 className="text-xl font-extrabold text-[#1A2332] uppercase tracking-tight italic">{step.title}</h3>
-                <p className="text-sm font-bold text-[#2A3444] leading-relaxed">
+                <h3 className="text-xl font-extrabold text-[#0A0A0A] uppercase tracking-tight italic">{step.title}</h3>
+                <p className="text-sm font-bold text-[#1A1A1A] leading-relaxed">
                   {step.desc}
                 </p>
               </div>
               {step.link && (
                 <Link 
                   href={step.link}
-                  className="inline-flex items-center gap-2 text-xs font-black text-[#F4B400] uppercase tracking-widest hover:gap-3 transition-all"
+                  className="inline-flex items-center gap-2 text-xs font-black text-[#C6F24E] uppercase tracking-widest hover:gap-3 transition-all"
                 >
                   {step.linkText} <Zap size={14} fill="currentColor" />
                 </Link>
@@ -105,15 +105,15 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
         </div>
 
         {/* FAQ - Quick Tips */}
-        <div className="bg-[#1A2332] rounded-[40px] border-2 border-[#1A2332] p-8 sm:p-12 shadow-md space-y-10">
+        <div className="bg-[#0A0A0A] rounded-[40px] border-2 border-[#0A0A0A] p-8 sm:p-12 shadow-md space-y-10">
           <div className="space-y-2">
             <h2 className="text-2xl font-extrabold text-white uppercase italic">{locale === 'tr' ? 'Önemli İpuçları' : 'Pro Tips'}</h2>
-            <div className="h-1.5 w-20 bg-[#F4B400] rounded-full" />
+            <div className="h-1.5 w-20 bg-[#C6F24E] rounded-full" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <div className="flex items-center gap-3 text-[#F4B400]">
+              <div className="flex items-center gap-3 text-[#C6F24E]">
                 <Settings size={20} strokeWidth={2} />
                 <h4 className="font-extrabold uppercase text-sm tracking-wide">{locale === 'tr' ? 'Düzenli Takip' : 'Regular Monitoring'}</h4>
               </div>
@@ -124,7 +124,7 @@ export default function GuidePage({ params }: { params: { locale: Locale } }) {
               </p>
             </div>
             <div className="space-y-3">
-              <div className="flex items-center gap-3 text-[#F4B400]">
+              <div className="flex items-center gap-3 text-[#C6F24E]">
                 <MessageSquare size={20} strokeWidth={2} />
                 <h4 className="font-extrabold uppercase text-sm tracking-wide">{locale === 'tr' ? 'Kişiselleştirme' : 'Personalization'}</h4>
               </div>

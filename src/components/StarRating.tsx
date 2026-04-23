@@ -55,15 +55,15 @@ export default function StarRating({ rating, onRatingChange, t, platform }: Star
                 size={48}
                 className={`transition-all duration-300 ${
                   isActive
-                    ? 'fill-[#F4B400] text-[#F4B400] scale-110 shadow-sm'
-                    : 'text-[#E8ECF2] fill-transparent'
-                } ${isSelected && !hoverRating ? 'fill-[#F4B400] text-[#F4B400]' : ''}`}
+                    ? 'fill-[#C6F24E] text-[#C6F24E] scale-110 shadow-sm'
+                    : 'text-[#EDEDED] fill-transparent'
+                } ${isSelected && !hoverRating ? 'fill-[#C6F24E] text-[#C6F24E]' : ''}`}
                 strokeWidth={isActive ? 1.5 : 1}
               />
               
               {/* Subtle glow effect for active stars */}
               {isActive && (
-                <div className="absolute inset-0 bg-[#F4B400] opacity-5 blur-xl rounded-full scale-150 pointer-events-none transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-[#C6F24E] opacity-5 blur-xl rounded-full scale-150 pointer-events-none transition-opacity duration-500" />
               )}
             </button>
           );
@@ -73,7 +73,7 @@ export default function StarRating({ rating, onRatingChange, t, platform }: Star
       {/* Dynamic Label */}
       <div className="h-6 flex items-center justify-center transition-all duration-300">
         {active > 0 && labels[active] ? (
-          <span className="text-[15px] font-bold text-[#1A2332] animate-in fade-in zoom-in-95 duration-300">
+          <span className="text-[15px] font-bold text-[#0A0A0A] animate-in fade-in zoom-in-95 duration-300">
             {labels[active]}
           </span>
         ) : (
