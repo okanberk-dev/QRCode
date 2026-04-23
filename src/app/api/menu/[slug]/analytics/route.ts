@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ANALYTICS_SOURCE_TYPES, ANALYTICS_THRESHOLDS, isValidEventType } from '@/lib/analytics-heuristics';
+import { ANALYTICS_SOURCE_TYPES, ANALYTICS_THRESHOLDS, isValidEventType, type AnalyticsEventType } from '@/lib/analytics-heuristics';
 import { isValidSessionId } from '@/lib/analytics-session';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 
@@ -13,7 +13,18 @@ interface IncomingEvent {
   sourceType?: string | null;
   relatedProductId?: string | null;
   sourceProductId?: string | null;
-  // Client-supplied timestamp is intentionally ignored; server uses createdAt default.
+}
+
+// Per-event dedupe window (ms). Returning a smaller number keeps the
+// server-side recent-events query tight; the hook uses the same constants.
+function dedupeWindowFor(eventType: AnalyticsEventType): number {
+  switch (eventType) {
+    case 'menu_view': return ANALYTICS_THRESHOLDS.dedupeMenuViewMs;
+    case 'menu_category_click': return ANALYTICS_THRESHOLDS.dedupeCategoryClickMs;
+    case 'menu_product_view': return ANALYTICS_THRESHOLDS.dedupeProductViewMs;
+    case 'menu_product_click': return ANALYTICS_THRESHOLDS.dedupeProductClickMs;
+    case 'menu_upsell_click': return ANALYTICS_THRESHOLDS.dedupeProductClickMs;
+  }
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
@@ -41,7 +52,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     return NextResponse.json({ error: 'Geçersiz olay listesi' }, { status: 400 });
   }
 
-  // Rate limit per session: 300 events / min is generous but catches bots.
   const rl = rateLimit(`menu:analytics:${sessionId}`, 300, 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json(
@@ -54,25 +64,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     where: { slug },
     select: { id: true, isActive: true, menuEnabled: true },
   });
+  // Silent accept for inactive/disabled so probing can't fingerprint valid slugs.
   if (!restaurant || !restaurant.isActive || !restaurant.menuEnabled) {
-    // Silently accept so probing can't fingerprint active slugs.
     return NextResponse.json({ ok: true });
   }
 
   const restaurantId = restaurant.id;
   const now = Date.now();
 
-  // Validate + dedupe. Per-request in-memory dedupe is enough — cross-request
-  // dedupe happens naturally because clients filter client-side via the hook.
+  // First pass: shape validation + per-request dedupe.
   const seen = new Set<string>();
-  const rows: {
-    restaurantId: string;
+  const staged: {
+    eventType: AnalyticsEventType;
     categoryId: string | null;
     productId: string | null;
-    eventType: string;
-    sessionId: string;
     sourceType: string | null;
-    metadata: any;
+    metadata: Record<string, unknown> | null;
   }[] = [];
 
   for (const raw of events as IncomingEvent[]) {
@@ -90,7 +97,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     if (seen.has(dedupeKey)) continue;
     seen.add(dedupeKey);
 
-    let metadata: any = null;
+    let metadata: Record<string, unknown> | null = null;
     if (raw.eventType === 'menu_upsell_click') {
       metadata = {
         sourceProductId: typeof raw.sourceProductId === 'string' ? raw.sourceProductId.slice(0, 64) : null,
@@ -98,60 +105,71 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       };
     }
 
-    rows.push({
-      restaurantId,
-      categoryId,
-      productId,
-      eventType: raw.eventType,
-      sessionId,
-      sourceType,
-      metadata,
-    });
+    staged.push({ eventType: raw.eventType, categoryId, productId, sourceType, metadata });
   }
 
-  if (rows.length === 0) {
+  if (staged.length === 0) {
     return NextResponse.json({ ok: true, inserted: 0 });
   }
 
-  // Server-side dedupe within recent window to prevent refresh-spam.
-  const windowMs = Math.max(
-    ANALYTICS_THRESHOLDS.dedupeMenuViewMs,
-    ANALYTICS_THRESHOLDS.dedupeProductViewMs,
-    ANALYTICS_THRESHOLDS.dedupeCategoryClickMs,
-    ANALYTICS_THRESHOLDS.dedupeProductClickMs,
-  );
+  // ID verification pass — ensure categoryId/productId actually belong to this
+  // restaurant's menu. Unknown IDs are stripped (event kept with null). Prevents
+  // external clients from polluting aggregates with phantom IDs.
+  const incomingCategoryIds = new Set<string>();
+  const incomingProductIds = new Set<string>();
+  for (const row of staged) {
+    if (row.categoryId) incomingCategoryIds.add(row.categoryId);
+    if (row.productId) incomingProductIds.add(row.productId);
+  }
+  const [validCategories, validProducts] = await Promise.all([
+    incomingCategoryIds.size > 0
+      ? prisma.menuCategory.findMany({
+          where: { restaurantId, id: { in: [...incomingCategoryIds] } },
+          select: { id: true },
+        })
+      : Promise.resolve([] as { id: string }[]),
+    incomingProductIds.size > 0
+      ? prisma.menuItem.findMany({
+          where: { restaurantId, deletedAt: null, id: { in: [...incomingProductIds] } },
+          select: { id: true },
+        })
+      : Promise.resolve([] as { id: string }[]),
+  ]);
+  const validCategoryIds = new Set(validCategories.map((c) => c.id));
+  const validProductIds = new Set(validProducts.map((p) => p.id));
+
+  const rows = staged.map((row) => ({
+    restaurantId,
+    categoryId: row.categoryId && validCategoryIds.has(row.categoryId) ? row.categoryId : null,
+    productId: row.productId && validProductIds.has(row.productId) ? row.productId : null,
+    eventType: row.eventType,
+    sessionId: sessionId as string,
+    sourceType: row.sourceType,
+    metadata: row.metadata ?? undefined,
+  }));
+
+  // Cross-request dedupe: look up recent events for this session inside the
+  // largest applicable window, then skip rows that are still within their own
+  // dedupe window.
+  const windowMs = Math.max(...rows.map((r) => dedupeWindowFor(r.eventType as AnalyticsEventType)));
   const recentCutoff = new Date(now - windowMs);
   const recent = await prisma.menuAnalyticsEvent.findMany({
-    where: {
-      restaurantId,
-      sessionId,
-      createdAt: { gte: recentCutoff },
-    },
+    where: { restaurantId, sessionId: sessionId as string, createdAt: { gte: recentCutoff } },
     select: { eventType: true, categoryId: true, productId: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
   });
 
   const recentByKey = new Map<string, Date>();
   for (const r of recent) {
     const key = `${r.eventType}|${r.categoryId ?? ''}|${r.productId ?? ''}`;
-    const prev = recentByKey.get(key);
-    if (!prev || r.createdAt > prev) recentByKey.set(key, r.createdAt);
+    if (!recentByKey.has(key)) recentByKey.set(key, r.createdAt);
   }
 
   const filtered = rows.filter((row) => {
     const key = `${row.eventType}|${row.categoryId ?? ''}|${row.productId ?? ''}`;
     const lastAt = recentByKey.get(key);
     if (!lastAt) return true;
-    const windowFor =
-      row.eventType === 'menu_view'
-        ? ANALYTICS_THRESHOLDS.dedupeMenuViewMs
-        : row.eventType === 'menu_category_click'
-        ? ANALYTICS_THRESHOLDS.dedupeCategoryClickMs
-        : row.eventType === 'menu_product_view'
-        ? ANALYTICS_THRESHOLDS.dedupeProductViewMs
-        : row.eventType === 'menu_product_click'
-        ? ANALYTICS_THRESHOLDS.dedupeProductClickMs
-        : ANALYTICS_THRESHOLDS.dedupeProductClickMs;
-    return now - lastAt.getTime() > windowFor;
+    return now - lastAt.getTime() > dedupeWindowFor(row.eventType as AnalyticsEventType);
   });
 
   if (filtered.length === 0) {

@@ -73,7 +73,8 @@ export async function GET(
       ? normalizedEnvUrl
       : 'https://buaze.com';
 
-    const qrUrl = `${appUrl}/menu/${restaurant.slug}`;
+    // Attribution: analytics pipeline reads `source=qr` from the landing URL.
+    const qrUrl = `${appUrl}/menu/${restaurant.slug}?source=qr`;
 
     const darkRaw = searchParams.get('dark');
     const defaultDark = restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#000000';

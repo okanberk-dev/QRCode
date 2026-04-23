@@ -212,6 +212,7 @@ model MenuAnalyticsEvent {
   @@index([restaurantId, categoryId, eventType, createdAt])
   @@index([restaurantId, productId, eventType, createdAt])
   @@index([restaurantId, sessionId, createdAt])
+  @@index([restaurantId, sourceType, createdAt])
   @@map("menu_analytics_events")
 }
 

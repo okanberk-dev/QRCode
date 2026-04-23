@@ -54,6 +54,7 @@ interface AnalyticsResponse {
     totalProductViews: number;
     totalCategoryClicks: number;
     totalProductClicks: number;
+    totalUpsellClicks: number;
     productClickRate: number;
     compare: {
       menuViews: number | null;

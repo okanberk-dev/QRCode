@@ -257,5 +257,153 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 
 ---
 
-_Son güncelleme: 2026-04 v2 — Brand refresh: Gold/Ink/Navy palette (eski Trust Orange + Deep Navy), Manrope+Inter font (eski DM Sans), yeni sade BuazeLogo (checkmark kaldırıldı), neo-brutalist offset shadow'lar soft shadow'larla değiştirildi. ~120 dosya, ~1800 inline hex migrate edildi. Platform brand hex'leri korundu._
+## 12. Menü Sistemi (2026-04 redesign)
+
+Menü yapısı tek tip modern builder etrafında toplandı. Legacy `MenuEditor.tsx` + `MenuCategoryForm.tsx` + `MenuItemForm.tsx` **silindi**; eski admin rotası ve `/dashboard/menu` modern builder'a redirect yapıyor.
+
+### 12.1 Builder — DnD + Tema Paneli + Menü QR
+
+**Dosya:** `src/app/[locale]/dashboard/restaurants/[id]/menu/page.tsx`
+
+- **DnD:** `@dnd-kit/core` + `@dnd-kit/sortable`. `PointerSensor` (distance 8) + `TouchSensor` (150 ms delay) → iOS Safari dokunsal destek. Mevcut ok butonları erişilebilirlik fallback'i olarak kalır.
+- **Tema:** 4 preset — `classic` (default) / `modern` / `elegant` / `gastronomy`. `Restaurant.menuTheme` kolonu.
+- **Accent renk:** 8 hazır swatch + native `<input type="color">`. `Restaurant.menuAccentColor` (null → `primaryColor` fallback).
+- **Menü QR:** `/api/restaurants/[id]/menu/qr?format=png|svg` → PNG/SVG indir. URL'de `?source=qr` attribution parametresi olmalı (analytics için).
+
+### 12.2 Public men̈u & PublicMenuView
+
+**Dosya:** `src/components/menu/PublicMenuView.tsx`
+
+Tek giriş noktası: `restaurant.menuTheme` üzerinden `switch` ile 4 layout component'i (`ClassicLayout` / `ModernLayout` / `ElegantLayout` / `GastronomyLayout`). Paylaşılan helper'lar: `BadgeChip`, `BadgeChipOnDark`, `Placeholder`, `RestaurantMeta`, `EmptyState`, `Footer`.
+
+`accent = restaurant.menuAccentColor || restaurant.primaryColor` — accent her tema JSX'ine prop olarak geçer.
+
+Admin preview modu `disableAnalytics` prop'u ile tracking'i kapatır — builder'daki önizleme üretim verilerini kirletmez.
+
+### 12.3 Eski `/r/[slug]/menu` sayfası
+
+**Dosya:** `src/app/r/[slug]/menu/page.tsx`
+
+Magazin stilindeki client-side sayfa. PublicMenuView'den ayrı yaşıyor (kendi search + item detail modal'ı var). Tema desteği **yok** (yalnızca `menuAccentColor` kullanılıyor); tam tema entegrasyonu scope dışı bırakıldı. Analytics eklendi.
+
+**TDZ notu:** `filteredCategories` useMemo'su ilgili useEffect'lerden **önce** tanımlanmalı — aksi halde minify sonrası `Cannot access 'k' before initialization` hatası oluşur.
+
+---
+
+## 13. Menu Analytics (2026-04)
+
+Restoran paneline özel analitik sistemi. **Müşteriye görünmez** — tüm UI admin/owner paneli içindedir. KVKK/GDPR uyumlu (PII toplanmaz).
+
+### 13.1 Data modeli
+
+**Tablo:** `menu_analytics_events` (Prisma: `MenuAnalyticsEvent`)
+
+Kolonlar: `id`, `restaurantId`, `categoryId?`, `productId?`, `eventType`, `sessionId`, `sourceType?`, `metadata?`, `createdAt`.
+
+Index'ler (tümü `restaurantId` prefix'li):
+- `[restaurantId, eventType, createdAt]` — genel groupBy
+- `[restaurantId, categoryId, eventType, createdAt]` — kategori aggregates
+- `[restaurantId, productId, eventType, createdAt]` — ürün aggregates
+- `[restaurantId, sessionId, createdAt]` — dedupe lookup
+- `[restaurantId, sourceType, createdAt]` — source filtresi
+
+Daily rollup tabloları **yok** — ham event'ler + composite index yeterli. ~10K event/gün'e kadar raw query'ler hızlı.
+
+### 13.2 Event türleri
+
+| Tip | Ne zaman | Zorunlu alanlar |
+|---|---|---|
+| `menu_view` | Menü sayfası açıldığında | — (categoryId/productId null) |
+| `menu_category_click` | Kategori nav'a tıklandığında | `categoryId` |
+| `menu_product_view` | Ürün kartı viewport'a girdiğinde (IntersectionObserver, threshold 0.5) | `productId`, `categoryId` |
+| `menu_product_click` | Ürün kartına tıklama / detay açılışı | `productId`, `categoryId` |
+| `menu_upsell_click` | Upsell öğesine tıklama (ileride) | `metadata.relatedProductId`, `metadata.sourceProductId` |
+
+### 13.3 Session & dedupe
+
+- **Session ID:** `src/lib/analytics-session.ts` → `localStorage['buaze.menu.sid']` (UUID, 30 dk idle sonrası rotate). localStorage yoksa in-memory fallback (sayfa yenilenince yeni session — bu kabul edilir).
+- **Client dedupe:** `useMenuAnalytics` hook `lastSentRef` Map'i + per-event window (`menu_view`: 2 dk, `category_click`: 30 sn, `product_view`: 5 dk, `product_click`: 1 dk).
+- **Server dedupe:** Aynı `(restaurantId, sessionId, eventType, categoryId, productId)` tuple'ı window içinde yeniden gelirse skip edilir. Refresh abuse'a karşı.
+- **Batch:** 25 event veya 4 sn delay. `pagehide`/`beforeunload`/`visibilitychange` olaylarında `sendBeacon` ile flush.
+
+### 13.4 Attribution (sourceType)
+
+`qr` | `direct` | `table` | `link` | `delivery`. Client tarafında `detectSourceType()` URL param önceliği ile set eder:
+- `?source=qr` → `qr` (menü QR endpoint'i URL'ye ekler — `12.1` notuna bkz)
+- `?table=X` → `table`
+- Cross-origin referrer → `link`
+- Yoksa → `direct`
+
+### 13.5 API'ler
+
+**Public ingestion:** `POST /api/menu/[slug]/analytics`
+- Body: `{ sessionId, events[] }` — max 40 event/istek
+- Rate limit: 300 event/dk/session
+- **Geçersiz categoryId/productId sessizce null'a düşürülür** (phantom ID ile aggregate kirletme engeli)
+- Inactive/disabled restoran → sessiz 200 (slug fingerprinting engeli)
+
+**Admin aggregate:** `GET /api/restaurants/[id]/analytics/menu`
+- IDOR: `requireRestaurantAccess` (CLAUDE.md §4)
+- Query params: `range=7d|30d|90d|all`, `categoryId`, `sourceType`, `locale`
+- **Category filter sadece scoped event'lere uygulanır** — `menu_view` her zaman global sayılır (aksi halde filtre aktifken 0 görünür).
+- **Trend raw SQL de filtreleri respect eder** (önceki implementasyonda bug'dı, fix edildi).
+- Previous-period karşılaştırması aynı filtrelerle.
+
+### 13.6 Heuristikler
+
+**Dosya:** `src/lib/analytics-heuristics.ts` — tüm eşikler bir yerde.
+
+- **Low-interest:** ≥15 view + CTR ≤ %8 → status: `needs_review` (0 click), `check_description` (<%4), `low_interest` (<%8)
+- **Upsell kuralları (deterministik):**
+  - Beverage views / main views < %35 → "İçecekleri öne al"
+  - Dessert views / main views < %35 → "Görsel/açıklama iyileştir"
+  - Top 5 ürünün CTR'si düşükse → "Ürün sunumunu gözden geçir"
+  - Lider ürün + zayıf beverage → "Ürüne içecek eşleştir"
+- **Kategori sınıflandırma:** İsim içinde TR/EN keyword match (`içecek`, `beverage`, `tatlı`, `dessert`, `meze`…).
+
+### 13.7 Entegrasyon noktaları
+
+- `PublicMenuView.tsx` → 4 tema layout'u da tracking'e bağlı. `disableAnalytics` prop'u admin preview'ı dışarda tutar.
+- `/r/[slug]/menu` (legacy magazine) → tracking eklenmiş durumda.
+- `/menu/[slug]` (SSR) → PublicMenuView üzerinden.
+
+### 13.8 Retention (TODO)
+
+Event tablosu **temizlenmiyor**. 10 restorana + günde 1K event varsayımı ile 1 yıl ~3.6M satır — partition yerine şimdilik kabul ediliyor. İleride:
+- 180 gün sonrası event'leri daily rollup tablosuna aggregate et
+- Raw event'leri 90 gün sonra sil
+- Cron: `/api/cron/analytics-compact` (örnek path, henüz yok)
+
+### 13.9 Eklememe kuralları (scope disiplini)
+
+- **Customer UI'da sayaç, badge, debug bilgisi ekleme.** Analytics tamamen görünmezdir.
+- **Heuristic eşiklerini component içine hardcode etme** — `ANALYTICS_THRESHOLDS` objesi kullan.
+- **AI/ML insights ekleme** — kurallı heuristics proje tercihidir.
+
+---
+
+## 14. Vercel Deploy (2026-04 update)
+
+### 14.1 Build script
+
+`package.json`:
+```json
+"build": "prisma db push --accept-data-loss && next build"
+```
+
+Her deploy'da schema sync edilir → `P2022 column does not exist` hatası oluşmaz (daha önce `/api/restaurants` 500 bug'ına sebep olmuştu).
+
+**Zorunlu Vercel env var'ları:**
+- `DATABASE_URL` — Supabase pooler (port 6543)
+- `DIRECT_URL` — Supabase direct connection (port 5432) — `prisma db push` bunu kullanır. **Yoksa build fail eder.**
+- `JWT_SECRET` — auth token signing
+- `NEXT_PUBLIC_APP_URL` — QR URL'lerinde kullanılır
+
+### 14.2 Rate limit notu
+
+`src/lib/rate-limit.ts` in-memory. Vercel serverless'ta her instance farklı Map tutar — hard limit değil, yumuşak bir koruma. Ciddi abuse'a karşı Upstash Redis veya Vercel Edge Config gerekir (şimdilik opex gereksiz).
+
+---
+
+_Son güncelleme: 2026-04 (menü yenileme + analytics) — Bölümler 11-14 eklendi: Marka kimliği, menü sistemi (DnD + tema + QR), menu analytics, Vercel deploy (build'de `prisma db push` + `DIRECT_URL` zorunluluğu)._
 

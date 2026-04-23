@@ -121,14 +121,20 @@ export function useMenuAnalytics({ slug, enabled = true }: UseMenuAnalyticsOptio
     const onHide = () => {
       void flush({ beacon: true });
     };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') void flush({ beacon: true });
+    };
     window.addEventListener('pagehide', onHide);
     window.addEventListener('beforeunload', onHide);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') void flush({ beacon: true });
-    });
+    document.addEventListener('visibilitychange', onVisibility);
     return () => {
       window.removeEventListener('pagehide', onHide);
       window.removeEventListener('beforeunload', onHide);
+      document.removeEventListener('visibilitychange', onVisibility);
+      if (flushTimerRef.current) {
+        clearTimeout(flushTimerRef.current);
+        flushTimerRef.current = null;
+      }
     };
   }, [enabled, flush]);
 
