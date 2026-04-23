@@ -75,7 +75,11 @@ export default function DashboardRestaurantsPage() {
     setLoading(true);
     setFetchError('');
     try {
-      const response = await fetch('/api/restaurants');
+      // Owner panel: pull every restaurant the actor owns (active + passive)
+      // so deactivated ones don't silently disappear from "my locations".
+      // Without this override, /api/restaurants defaults to status=active
+      // and a passive restaurant vanishes from the UI with no way back.
+      const response = await fetch('/api/restaurants?status=all&limit=100');
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         setFetchError(errData.error || `Sunucu hatası (${response.status})`);
@@ -171,7 +175,20 @@ export default function DashboardRestaurantsPage() {
     }
   };
 
-  const toggleActive = async (id: string, currentStatus: boolean) => {
+  const toggleActive = async (id: string, currentStatus: boolean, name: string) => {
+    // Confirm before toggling — accidental deactivation is the most
+    // reported bug on this page (users would click the decorative mini
+    // map and lose their restaurant from the list).
+    const isTr = locale === 'tr';
+    const willDeactivate = currentStatus;
+    const msg = willDeactivate
+      ? isTr
+        ? `"${name}" devre dışı bırakılsın mı? QR'ları çalışmayı durdurur.`
+        : `Deactivate "${name}"? Its QR codes will stop accepting feedback.`
+      : isTr
+        ? `"${name}" tekrar etkinleştirilsin mi?`
+        : `Reactivate "${name}"?`;
+    if (typeof window !== 'undefined' && !window.confirm(msg)) return;
     try {
       await fetch(`/api/restaurants/${id}`, {
         method: 'PUT',
@@ -306,12 +323,14 @@ export default function DashboardRestaurantsPage() {
                     </span>
                   </div>
 
-                  {/* Mini map graphic — decorative, lime accent pin (AdminLocations §716-724) */}
-                  <button
-                    type="button"
-                    onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
-                    className="mt-4 block w-full aspect-[2/1] rounded-lg bg-[#F5F5F5] relative overflow-hidden hover:bg-[#EDEDED] transition-colors group"
-                    aria-label={restaurant.isActive ? 'deactivate' : 'activate'}
+                  {/* Mini map graphic — decorative only. Previously had a
+                      silent `toggleActive` onClick, which made users who
+                      clicked the map (expecting a detail view) accidentally
+                      deactivate the restaurant. Moved the toggle into an
+                      explicit pill below. */}
+                  <div
+                    className="mt-4 block w-full aspect-[2/1] rounded-lg bg-[#F5F5F5] relative overflow-hidden"
+                    aria-hidden
                   >
                     <svg viewBox="0 0 200 100" className="w-full h-full" aria-hidden>
                       <path d="M0 50 Q30 40 60 48 Q90 55 120 42 Q150 30 200 38" stroke="#EDEDED" strokeWidth="1.5" fill="none" />
@@ -321,12 +340,7 @@ export default function DashboardRestaurantsPage() {
                       <circle cx="100" cy="50" r="10" fill={restaurant.primaryColor} opacity="0.6" />
                       <circle cx="100" cy="50" r="5" fill="#0A0A0A" />
                     </svg>
-                    <span className="absolute bottom-2 right-2 flex items-center gap-1.5 pulse-eyebrow text-[#737373] bg-white/80 rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {restaurant.isActive
-                        ? locale === 'tr' ? 'DEVRE DIŞI BIRAK' : 'DEACTIVATE'
-                        : locale === 'tr' ? 'ETKİNLEŞTİR' : 'ACTIVATE'}
-                    </span>
-                  </button>
+                  </div>
 
                   {/* 4-col stat grid (AdminLocations §727-739) */}
                   <div className="mt-4 grid grid-cols-4 gap-3">
@@ -361,7 +375,8 @@ export default function DashboardRestaurantsPage() {
                     <p className="pulse-eyebrow text-[#737373] truncate">/r/{restaurant.slug}</p>
                   </div>
 
-                  {/* Full-width "Detay aç" pill — matches AdminLocations §741 */}
+                  {/* Action row — detail / QR / public link + explicit
+                      active toggle (replaces the old silent map click) */}
                   <div className="mt-4 grid grid-cols-[1fr_1fr_auto] gap-2">
                     <Link
                       href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
@@ -384,6 +399,20 @@ export default function DashboardRestaurantsPage() {
                     <ExternalLink size={14} strokeWidth={2} />
                   </Link>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => toggleActive(restaurant.id, restaurant.isActive, restaurant.name)}
+                  className={`mt-3 w-full rounded-full px-4 py-2 text-[11px] font-semibold tracking-wide uppercase transition-colors ${
+                    restaurant.isActive
+                      ? 'border border-[#EDEDED] bg-white text-[#737373] hover:border-[#DC2626] hover:text-[#DC2626]'
+                      : 'border border-[#C6F24E] bg-[#EAF9B8] text-[#0A0A0A] hover:bg-[#C6F24E]'
+                  }`}
+                >
+                  {restaurant.isActive
+                    ? (locale === 'tr' ? 'Devre dışı bırak' : 'Deactivate')
+                    : (locale === 'tr' ? '· Etkinleştir' : '· Activate')}
+                </button>
               </div>
             </div>
           );
