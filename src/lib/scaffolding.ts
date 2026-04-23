@@ -235,6 +235,40 @@
 //   @@index([email, createdAt])
 //   @@map("roi_requests")
 // }
+//
+// model HelpArticle {
+//   id         String   @id @default(cuid())
+//   slug       String   @unique
+//   locale     String   @default("tr")  // tr | en
+//   category   String   // getting-started | qr | billing | admin | ...
+//   title      String
+//   excerpt    String?  @db.Text
+//   body       String   @db.Text        // markdown or rendered HTML
+//   searchTags String[] @map("search_tags")
+//   isPublished Boolean @default(true) @map("is_published")
+//   order      Int      @default(0)
+//   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+//   @@index([locale, category, order])
+//   @@index([isPublished, updatedAt])
+//   @@map("help_articles")
+// }
+//
+// model CareerApplication {
+//   id         String   @id @default(cuid())
+//   name       String
+//   email      String
+//   roleSlug   String?  @map("role_slug")     // 'frontend' | 'growth' | ...
+//   message    String?  @db.Text
+//   portfolio  String?                        // URL
+//   attachment String?                        // supabase storage path / data URL
+//   locale     String   @default("tr")
+//   ip         String?
+//   createdAt  DateTime @default(now())       @map("created_at")
+//   status     String   @default("new")       // new | reviewed | shortlisted | rejected
+//   @@index([roleSlug, createdAt])
+//   @@index([status, createdAt])
+//   @@map("career_applications")
+// }
 // ─────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server';

@@ -14,8 +14,8 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 | 1 | Chrome + Homepage v3 (animated counter, bento, marquee, sticky CTA, toast, video modal) | `claude/design-phase-1-home` | #40 draft | ✅ Tamamlandı |
 | 2 | Auth + Onboarding (5 adım + confetti + 404) | `claude/design-phase-2-auth-onboarding` | #42 draft | ✅ Tamamlandı |
 | 3 | Marketing secondary (features, AI Co-Pilot, pricing, ROI, QR, integrations, compare, stories, case-study) | `claude/design-phase-3-marketing` | #43 draft | ✅ Tamamlandı |
-| 4 | Solutions (7 sektör) | `claude/design-phase-4-solutions` | draft | 🔄 Devam |
-| 5 | Content (blog, faq, help, about, careers, contact, 8 legal) | `claude/design-phase-5-content` | — | ⏳ Bekliyor |
+| 4 | Solutions (7 sektör) | `claude/design-phase-4-solutions` | #44 draft | ✅ Tamamlandı |
+| 5 | Content (blog, faq, help, about, careers, contact, 8 legal) | `claude/design-phase-5-content` | draft | 🔄 Devam |
 | 6 | Admin core (dashboard, reviews, QR wizard, analytics, restaurants, settings) | `claude/design-phase-6-admin-core` | — | ⏳ Bekliyor |
 | 7 | Admin advanced (campaigns, team, notifications, billing, API/webhook, tüm ikincil) | `claude/design-phase-7-admin-advanced` | — | ⏳ Bekliyor |
 | 8 | Public QR + Menu + Mobile/A11y polish | `claude/design-phase-8-public-polish` | — | ⏳ Bekliyor |
@@ -219,6 +219,41 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 **Sonraki faz için not:**
 - Faz 5 — Content: `/blog` + `/blog/[slug]` (BlogPost Prisma sorgusu dokunulmaz), `/faq`, `/help` (mock articles), `/about`, `/careers`, `/contact` + 8 yasal sayfa (privacy, kvkk, terms, cookie, açık-rıza, ticari-ileti, google-compliance, gizlilik).
 - Yasal sayfaların şablon olmadığı yerler var — önce inventory, sonra sed-sweep.
+
+---
+
+### Faz 5 — 2026-04-23
+
+**Kapsam:** Content sayfaları. Sub-agent audit'i ilginç bir sonuç verdi:
+
+**Audit sonucu (Phase 0-4 tam + Phase 5 content durumu):**
+- 15 content sayfası hâlihazırda mevcut: `/blog`, `/blog/[slug]`, `/faq`, `/help`, `/about`, `/careers`, `/contact`, `/privacy`, `/kvkk`, `/terms`, `/cookie`, `/acik-riza`, `/ticari-ileti`, `/google-compliance`, `/gizlilik`
+- Hepsi **0 lingering Pulse pattern** (font-black / border-2 / rounded-[20/24/28/32px] sıfır)
+- `/blog` + `/blog/[slug]` zaten `prisma.blogPost.findMany` + `findUnique` kullanıyor — CLAUDE.md §7 dokunulmaz kuralı korundu
+- Forms: hiçbiri canlı form submit yapmıyor (careers statik ilan listesi, help statik article listesi) — bu yüzden mevcut UI'lara dokunmadım
+- **GERÇEK BOŞLUK:** `/api/help/articles` + `/api/careers/apply` 501 scaffold'ları planda vardı ama yazılmamıştı
+
+**Yeni dosyalar:**
+- `src/app/api/help/articles/route.ts` — 501 scaffold, GET endpoint; query params `locale` + `category`. CMS (Notion sync / Contentful / HelpArticle Prisma modeli) bağlanana kadar `{ categories: [] }` döner. `/help` sayfası mock içerik gösterirken bu endpoint'ten beslenebilir.
+- `src/app/api/careers/apply/route.ts` — 501 scaffold, POST endpoint + per-IP rate limit (5 / 30dk). Form eklendiğinde direkt bu endpoint'e post edilecek.
+
+**Değişen dosyalar:**
+- `src/lib/scaffolding.ts` — 2 yeni Prisma model yorumu: `HelpArticle` (slug/locale/category/title/body/tags/published/order + dual-index) ve `CareerApplication` (name/email/roleSlug/message/portfolio/attachment/locale/status + roleSlug+status indexleri).
+
+**Audit özeti (Phase 0-4):** Tüm deliverables yerinde. 14 mevcut sektör sayfası + yeni retail + 8 slug alias + 5 conversion helper + ECG footer + AnimatedCounter hero + onboarding 5-step + confetti + AI Co-Pilot feature page + dynamic case studies — hiçbir gap yok. Audit çıktısı `design.md` Phase 5 sonrasına eklenmesin (transient sub-agent).
+
+**Backend etkisi:** Yalnız 2 yeni 501 scaffold API. Mevcut hiçbir route, Prisma sorgusu, auth helper, form submit handler değişmedi. `BlogPost` Prisma sorgusu + ContactForm submit handler dokunulmadı.
+
+**Verification:**
+- `npx tsc --noEmit` yeni dosyalarda 0 hata
+- `GET /api/help/articles?locale=tr` → `{ error: 'not_implemented', requested: {locale:'tr', category: undefined}, categories: [] }` (status 501)
+- `POST /api/careers/apply` → structured 501 + rate-limit koruması
+- 15 content sayfası zaten Pulse'a uygun, görsel regresyon yok
+
+**Sonraki faz için not:**
+- Faz 6 — Admin core: `/admin/dashboard` (KPI + trend + quick actions), `/admin/reviews` (3-col inbox, zaten AI wired), `/admin/qr` (4-step wizard), `/admin/analytics` (NPS + word cloud + konum performansı), `/admin/restaurants` (mini map + 4-col stats — zaten var), `/admin/settings` + `/admin/site-settings`.
+- Mevcut sayfalar PR #38'de `SuperadminBlock` ile gate'lendi — bu korunmalı.
+- Tüm chart verisi `/api/feedback/stats` üzerinden — endpoint dokunulmaz.
 
 ---
 
