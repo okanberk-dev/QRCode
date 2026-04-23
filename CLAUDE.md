@@ -37,18 +37,32 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 
 ---
 
-## 3. Depolama Mimarisi (Vercel Geçişi Sonrası ÖNEMLİ)
-
-**UYARI:** Vercel, salt-okunur ve geçici (ephemeral) bir dosya sistemi kullanır. Mevcut yerel disk (`public/uploads`) tabanlı görsel yükleme sistemi Vercel'de **çalışmayacaktır**.
+## 3. Depolama Mimarisi (2026-04 güncellendi)
 
 | Veri | Nerede | Not |
 |---|---|---|
-| Veritabanı | Supabase PostgreSQL | Kalıcı |
-| Menü/ürün görselleri | Yerel Disk (public/uploads) | **Vercel'de geçicidir, silinir.** |
+| Veritabanı | Supabase PostgreSQL | Kalıcı (tüm ana veri) |
+| Menü ürün görselleri | **Postgres TEXT kolonu** (`menu_items.image_url`) | Base64 data URL (`data:image/webp;base64,...`) — Vercel ephemeral FS riskini atlatır |
+| Menü logosu | **Postgres TEXT kolonu** (`restaurants.menu_logo_url`) | Aynı şekilde base64 data URL |
+| Site ayarları görselleri | Supabase Storage (ayrı yol) | `src/app/api/admin/site-settings/upload` |
 
-### Çözüm Önerisi (Storage Migration)
-Vercel'e geçiş sonrası görsellerin kalıcı olması için **Supabase Storage** veya **Vercel Blob** entegrasyonu yapılmalıdır.
-- Mevcut `src/app/api/menu/upload/route.ts` dosyası Supabase SDK kullanacak şekilde güncellenmelidir.
+### Görsel işleme akışı (menü)
+- Endpoint: `POST /api/restaurants/[id]/menu/upload` (scoped, IDOR-safe, `requireRestaurantAccess` ile korunur)
+- `sharp` ile resize + WebP dönüşüm: ürün görseli 1200px max, logo 512x512 cover
+- Quality 80 → boyut aşarsa otomatik 60'a düşürür → hala aşarsa 413 döner
+- Response: `{ url: 'data:image/webp;base64,...', bytes, kind }`
+- İstemci bu data URL'i `imageUrl` / `menuLogoUrl` alanına doğrudan kaydeder
+
+### Validation
+- `src/lib/validations.ts` — `imageUrl` hem `http(s)://` URL'i hem `data:image/` prefix'li data URL kabul eder
+- `data:image/` için max 300 KB (base64), diğer URL'ler max 1000 karakter
+- `/api/restaurants/[id]/theme` — `menuLogoUrl` aynı kuralları uygular
+
+### Niçin base64-in-DB?
+- Vercel serverless FS yok → diske yazamıyoruz
+- Supabase Storage geçişi ayrı scope (önerilir ama şimdilik prematüre)
+- Base64 bloat: 1200px WebP ≈ 100 KB binary → ~135 KB base64 → satır başına ~140 KB. 1000 ürün = ~140 MB TEXT — kabul edilir
+- CDN ve cache yoksa page load daha ağır; gelecekte Storage/Blob geçişi yapılırsa data URL'ler yeniden URL'e migrate edilebilir (küçük script)
 
 ---
 
@@ -261,14 +275,18 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 
 Menü yapısı tek tip modern builder etrafında toplandı. Legacy `MenuEditor.tsx` + `MenuCategoryForm.tsx` + `MenuItemForm.tsx` **silindi**; eski admin rotası ve `/dashboard/menu` modern builder'a redirect yapıyor.
 
-### 12.1 Builder — DnD + Tema Paneli + Menü QR
+### 12.1 Builder — DnD + Tema Paneli + Menü QR + Upload + Quick Toggle'lar
 
 **Dosya:** `src/app/[locale]/dashboard/restaurants/[id]/menu/page.tsx`
 
 - **DnD:** `@dnd-kit/core` + `@dnd-kit/sortable`. `PointerSensor` (distance 8) + `TouchSensor` (150 ms delay) → iOS Safari dokunsal destek. Mevcut ok butonları erişilebilirlik fallback'i olarak kalır.
 - **Tema:** 4 preset — `classic` (default) / `modern` / `elegant` / `gastronomy`. `Restaurant.menuTheme` kolonu.
 - **Accent renk:** 8 hazır swatch + native `<input type="color">`. `Restaurant.menuAccentColor` (null → `primaryColor` fallback).
-- **Menü QR:** `/api/restaurants/[id]/menu/qr?format=png|svg` → PNG/SVG indir. URL'de `?source=qr` attribution parametresi olmalı (analytics için).
+- **Logo:** `Restaurant.menuLogoUrl`. ThemePanel'de upload + preview + remove. `POST /api/restaurants/[id]/menu/upload` (kind=`logo`, 512x512 cover).
+- **Ürün görseli:** ItemModal'da dosya yükleme butonu + URL input (hybrid). Dosya seçildiğinde `kind=item` (1200px max, inside fit) endpoint'ine gider → data URL → form state'e yazılır → kaydetme anında item satırına gömülür.
+- **Quick toggle'lar:** Kategori satırında `isVisible` eye, ürün satırında `isAvailable` eye + `isOutOfStock` AlertTriangle. Modal açmadan tek tıkla değiştir — optimistic state + revert on failure.
+- **Menü QR:** `/api/restaurants/[id]/menu/qr?format=png|svg` → PNG/SVG indir. URL'de `?source=qr` attribution parametresi taşır (analytics attribution için kritik).
+- **Reorder perf:** `reorderCategories` / `reorderItems` sadece **error** durumunda `fetchAll()` çağırır (önceden her reorder'da yapıyordu — 2x network). Optimistic state zaten doğru.
 
 ### 12.2 Public men̈u & PublicMenuView
 
@@ -287,6 +305,12 @@ Admin preview modu `disableAnalytics` prop'u ile tracking'i kapatır — builder
 Magazin stilindeki client-side sayfa. PublicMenuView'den ayrı yaşıyor (kendi search + item detail modal'ı var). Tema desteği **yok** (yalnızca `menuAccentColor` kullanılıyor); tam tema entegrasyonu scope dışı bırakıldı. Analytics eklendi.
 
 **TDZ notu:** `filteredCategories` useMemo'su ilgili useEffect'lerden **önce** tanımlanmalı — aksi halde minify sonrası `Cannot access 'k' before initialization` hatası oluşur.
+
+### 12.4 Backend dikkat edilecek davranışlar
+
+- **Item PATCH + kategori değişikliği:** Item farklı bir kategoriye taşındığında server tarafı otomatik olarak hedef kategorinin sonuna yerleştirir (`sortOrder = MAX + 1`). Aksi halde sortOrder eski değerinde kalır ve listede yanlış pozisyonda görünür. Bkz. `/api/restaurants/[id]/menu/items/[itemId]` PATCH.
+- **sortOrder default:** Yeni item/kategori POST'unda `sortOrder = last + 10` kullanılır (10'luk boşluk manuel ince ayar için ama reorder sonrası `0,1,2...`'e sıkıştırılır). Small quirk, functional.
+- **`parsePriceInput`:** TR (`1.234,56`), EN (`1,234.56`) ve basit formatları (`1,50` / `1.50` / `1000`) destekler. Comma varsa decimal, dotlar thousand separator; tersi de geçerli. Tek dot belirsizlik durumunda decimal kabul edilir. Bkz. `src/lib/format.ts`.
 
 ---
 
@@ -367,14 +391,26 @@ Daily rollup tabloları **yok** — ham event'ler + composite index yeterli. ~10
 - `/r/[slug]/menu` (legacy magazine) → tracking eklenmiş durumda.
 - `/menu/[slug]` (SSR) → PublicMenuView üzerinden.
 
-### 13.8 Retention (TODO)
+### 13.8 Admin UI davranışları
+
+**Dosya:** `src/app/[locale]/dashboard/restaurants/[id]/menu/analytics/page.tsx`
+
+- **Window date display:** Header altında `window.start → window.end` tarih aralığı görünür (ISO → locale formatla).
+- **Refresh butonu:** `fetchAnalytics()` tekrar çağırır — manuel yenileme isteyen kullanıcılar için.
+- **Reset filters:** Kategori veya kaynak filtresi aktifken "Filtreleri temizle" butonu çıkar, tek tıkla ikisini de sıfırlar.
+- **All-time trend:** `range=all` seçildiğinde trend chart yerine bilgilendirme kartı gösterilir (sonsuz aralık için gün bazlı seri bucket'lamak pahalı olduğundan server zaten `trend=[]` döner).
+- **Mobile chart:**
+  - AreaChart x-axis tick interval trend uzunluğuna göre (`≤7 gün: 0`, `≤30 gün: 5`, `>30: length/6`) — 375px ekranda etiketler çakışmaz.
+  - BarChart Y-axis kategori etiketleri 14 karakterden uzunsa truncate edilir, tam ad tooltip'te görünür.
+
+### 13.9 Retention (TODO)
 
 Event tablosu **temizlenmiyor**. 10 restorana + günde 1K event varsayımı ile 1 yıl ~3.6M satır — partition yerine şimdilik kabul ediliyor. İleride:
 - 180 gün sonrası event'leri daily rollup tablosuna aggregate et
 - Raw event'leri 90 gün sonra sil
 - Cron: `/api/cron/analytics-compact` (örnek path, henüz yok)
 
-### 13.9 Eklememe kuralları (scope disiplini)
+### 13.10 Eklememe kuralları (scope disiplini)
 
 - **Customer UI'da sayaç, badge, debug bilgisi ekleme.** Analytics tamamen görünmezdir.
 - **Heuristic eşiklerini component içine hardcode etme** — `ANALYTICS_THRESHOLDS` objesi kullan.
@@ -405,5 +441,5 @@ Her deploy'da schema sync edilir → `P2022 column does not exist` hatası oluş
 
 ---
 
-_Son güncelleme: 2026-04 (menü yenileme + analytics) — Bölümler 11-14 eklendi: Marka kimliği, menü sistemi (DnD + tema + QR), menu analytics, Vercel deploy (build'de `prisma db push` + `DIRECT_URL` zorunluluğu)._
+_Son güncelleme: 2026-04 (ikinci dalga) — §3 depolama mimarisi güncellendi (base64-in-DB), §12 builder'a görsel/logo upload + visibility toggle + reorder perf notları eklendi, §12.4 backend davranışları (cross-category sortOrder + TR price parser), §13.8 analytics admin UI davranışları (refresh, reset, window date, all-time note, mobile chart responsive)._
 

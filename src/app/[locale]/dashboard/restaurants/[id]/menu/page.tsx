@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft, ArrowDown, ArrowUp, BarChart3, Check, ChevronRight, Download, Edit2, Eye, EyeOff,
-  GripVertical, Image as ImageIcon, Loader2, Plus, QrCode, Save, Trash2, UtensilsCrossed, X,
+  AlertTriangle, ArrowLeft, ArrowDown, ArrowUp, BarChart3, Check, ChevronRight, Download, Edit2,
+  Eye, EyeOff, GripVertical, Image as ImageIcon, Loader2, Plus, QrCode, Save, Trash2, UtensilsCrossed, X,
 } from 'lucide-react';
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
@@ -24,6 +24,7 @@ interface RestaurantShape extends RestaurantView {
   menuUpdatedAt: string | null;
   menuTheme: MenuTheme;
   menuAccentColor: string | null;
+  menuLogoUrl: string | null;
 }
 
 interface CategoryShape extends MenuCategoryView {}
@@ -114,6 +115,14 @@ export default function RestaurantMenuBuilderPage() {
       qrFormat: isTr ? 'Format' : 'Format',
       dragToReorder: isTr ? 'Sırala' : 'Reorder',
       analytics: isTr ? 'Analitik' : 'Analytics',
+      logo: isTr ? 'Menü Logosu' : 'Menu Logo',
+      logoHint: isTr ? 'Kare görsel önerilir. PNG veya WebP, 5 MB altı.' : 'Square image recommended. PNG or WebP, under 5 MB.',
+      uploadImage: isTr ? 'Görsel Yükle' : 'Upload Image',
+      uploading: isTr ? 'Yükleniyor…' : 'Uploading…',
+      removeImage: isTr ? 'Kaldır' : 'Remove',
+      orUrl: isTr ? 'veya URL' : 'or URL',
+      toggleVisible: isTr ? 'Görünürlüğü değiştir' : 'Toggle visibility',
+      toggleOutOfStock: isTr ? 'Stok durumunu değiştir' : 'Toggle out of stock',
     }),
     [isTr],
   );
@@ -144,6 +153,7 @@ export default function RestaurantMenuBuilderPage() {
         menuUpdatedAt: r.menuUpdatedAt ?? null,
         menuTheme: (MENU_THEMES as readonly string[]).includes(r.menuTheme) ? r.menuTheme : 'classic',
         menuAccentColor: r.menuAccentColor ?? null,
+        menuLogoUrl: r.menuLogoUrl ?? null,
       });
       const cats: CategoryShape[] = (c.categories ?? []).map((cat: CategoryShape) => ({
         ...cat,
@@ -170,7 +180,7 @@ export default function RestaurantMenuBuilderPage() {
   );
 
   // ── Theme ops ──
-  const saveTheme = async (patch: { menuTheme?: MenuTheme; menuAccentColor?: string | null }) => {
+  const saveTheme = async (patch: { menuTheme?: MenuTheme; menuAccentColor?: string | null; menuLogoUrl?: string | null }) => {
     if (!restaurant) return;
     setThemeSaving(true);
     setError(null);
@@ -187,6 +197,85 @@ export default function RestaurantMenuBuilderPage() {
       setError((e as Error).message);
     }
     setThemeSaving(false);
+  };
+
+  const uploadLogo = async (file: File) => {
+    setThemeSaving(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('kind', 'logo');
+      const res = await fetch(`/api/restaurants/${id}/menu/upload`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Logo yüklenemedi');
+      await saveTheme({ menuLogoUrl: data.url });
+    } catch (e) {
+      setError((e as Error).message);
+      setThemeSaving(false);
+    }
+  };
+
+  // ── Quick toggles ──
+  const toggleCategoryVisibility = async (category: CategoryShape) => {
+    const next = !category.isVisible;
+    setCategories((prev) => prev.map((c) => (c.id === category.id ? { ...c, isVisible: next } : c)));
+    try {
+      const res = await fetch(`/api/restaurants/${id}/menu/categories/${category.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isVisible: next }),
+      });
+      if (!res.ok) throw new Error('Değişiklik kaydedilemedi');
+    } catch (e) {
+      // Revert on failure
+      setCategories((prev) => prev.map((c) => (c.id === category.id ? { ...c, isVisible: !next } : c)));
+      setError((e as Error).message);
+    }
+  };
+
+  const toggleItemAvailability = async (item: MenuItemView) => {
+    const next = !item.isAvailable;
+    setCategories((prev) => prev.map((c) => ({
+      ...c,
+      items: c.items.map((i) => (i.id === item.id ? { ...i, isAvailable: next } : i)),
+    })));
+    try {
+      const res = await fetch(`/api/restaurants/${id}/menu/items/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isAvailable: next }),
+      });
+      if (!res.ok) throw new Error('Değişiklik kaydedilemedi');
+    } catch (e) {
+      setCategories((prev) => prev.map((c) => ({
+        ...c,
+        items: c.items.map((i) => (i.id === item.id ? { ...i, isAvailable: !next } : i)),
+      })));
+      setError((e as Error).message);
+    }
+  };
+
+  const toggleItemOutOfStock = async (item: MenuItemView) => {
+    const next = !item.isOutOfStock;
+    setCategories((prev) => prev.map((c) => ({
+      ...c,
+      items: c.items.map((i) => (i.id === item.id ? { ...i, isOutOfStock: next } : i)),
+    })));
+    try {
+      const res = await fetch(`/api/restaurants/${id}/menu/items/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isOutOfStock: next }),
+      });
+      if (!res.ok) throw new Error('Değişiklik kaydedilemedi');
+    } catch (e) {
+      setCategories((prev) => prev.map((c) => ({
+        ...c,
+        items: c.items.map((i) => (i.id === item.id ? { ...i, isOutOfStock: !next } : i)),
+      })));
+      setError((e as Error).message);
+    }
   };
 
   // ── Category ops ──
@@ -233,17 +322,19 @@ export default function RestaurantMenuBuilderPage() {
   };
 
   const reorderCategories = async (newOrder: CategoryShape[]) => {
+    // Optimistic state update; server returns 200 without a body so no refetch
+    // needed on success. Only refetch on failure to revert to canonical order.
     setCategories(newOrder);
     const payload = {
       categories: newOrder.map((c, i) => ({ id: c.id, sortOrder: i })),
     };
     try {
-      await fetch(`/api/restaurants/${id}/menu/reorder`, {
+      const res = await fetch(`/api/restaurants/${id}/menu/reorder`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      await fetchAll();
+      if (!res.ok) throw new Error('Sıralama kaydedilemedi');
     } catch (e) {
       setError((e as Error).message);
       await fetchAll();
@@ -325,12 +416,12 @@ export default function RestaurantMenuBuilderPage() {
       items: newOrder.map((item, i) => ({ id: item.id, sortOrder: i })),
     };
     try {
-      await fetch(`/api/restaurants/${id}/menu/reorder`, {
+      const res = await fetch(`/api/restaurants/${id}/menu/reorder`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      await fetchAll();
+      if (!res.ok) throw new Error('Sıralama kaydedilemedi');
     } catch (e) {
       setError((e as Error).message);
       await fetchAll();
@@ -503,12 +594,13 @@ export default function RestaurantMenuBuilderPage() {
         </div>
       )}
 
-      {/* Menu Design (theme + accent color) */}
+      {/* Menu Design (theme + accent color + logo) */}
       <ThemePanel
         restaurant={restaurant}
         copy={copy}
         saving={themeSaving}
         onChange={saveTheme}
+        onUploadLogo={uploadLogo}
       />
 
       {/* Two-pane builder */}
@@ -543,6 +635,7 @@ export default function RestaurantMenuBuilderPage() {
                       onSelect={() => setActiveCategoryId(c.id)}
                       onMoveUp={() => moveCategory(idx, -1)}
                       onMoveDown={() => moveCategory(idx, 1)}
+                      onToggleVisible={() => toggleCategoryVisibility(c)}
                       onEdit={() => setCategoryModal({ mode: 'edit', data: c })}
                       onDelete={() => deleteCategory(c.id)}
                     />
@@ -594,6 +687,8 @@ export default function RestaurantMenuBuilderPage() {
                       copy={copy}
                       onMoveUp={() => moveItem(idx, -1)}
                       onMoveDown={() => moveItem(idx, 1)}
+                      onToggleAvailable={() => toggleItemAvailability(item)}
+                      onToggleOutOfStock={() => toggleItemOutOfStock(item)}
                       onEdit={() => setItemModal({ mode: 'edit', data: { ...item, categoryId: activeCategory.id } })}
                       onDelete={() => deleteItem(item.id)}
                     />
@@ -626,6 +721,7 @@ export default function RestaurantMenuBuilderPage() {
           copy={copy}
           busy={busy}
           locale={locale}
+          restaurantId={id}
           onClose={() => setItemModal(null)}
           onSave={saveItem}
         />
@@ -697,7 +793,7 @@ function CategoryModal({
 }
 
 function ItemModal({
-  mode, data, categories, copy, busy, locale, onClose, onSave,
+  mode, data, categories, copy, busy, locale, restaurantId, onClose, onSave,
 }: {
   mode: 'create' | 'edit';
   data: Partial<MenuItemView> & { categoryId?: string };
@@ -705,6 +801,7 @@ function ItemModal({
   copy: Record<string, string>;
   busy: boolean;
   locale: Locale;
+  restaurantId: string;
   onClose: () => void;
   onSave: (payload: Partial<MenuItemView> & { categoryId?: string }) => void;
 }) {
@@ -717,9 +814,36 @@ function ItemModal({
   const [isAvailable, setIsAvailable] = useState(data.isAvailable ?? true);
   const [isOutOfStock, setIsOutOfStock] = useState(data.isOutOfStock ?? false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const toggleBadge = (b: string) => {
     setBadges((prev) => (prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]));
+  };
+
+  const handleFilePick = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setFormError(locale === 'tr' ? 'Sadece görsel dosyası yükleyebilirsiniz.' : 'Only image files allowed.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError(locale === 'tr' ? 'Görsel 5 MB\'dan büyük olamaz.' : 'Image must be under 5 MB.');
+      return;
+    }
+    setUploading(true);
+    setFormError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('kind', 'item');
+      const res = await fetch(`/api/restaurants/${restaurantId}/menu/upload`, { method: 'POST', body: fd });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Görsel yüklenemedi');
+      setImageUrl(body.url);
+    } catch (e) {
+      setFormError((e as Error).message);
+    }
+    setUploading(false);
   };
 
   return (
@@ -775,27 +899,71 @@ function ItemModal({
             className="w-full resize-none rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
           />
         </Field>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label={copy.price}>
-            <input
-              required
-              inputMode="decimal"
-              value={priceInput}
-              onChange={(e) => setPriceInput(e.target.value)}
-              placeholder="0,00"
-              className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
-            />
-          </Field>
-          <Field label={copy.imageUrl}>
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
-            />
-          </Field>
-        </div>
+        <Field label={copy.price}>
+          <input
+            required
+            inputMode="decimal"
+            value={priceInput}
+            onChange={(e) => setPriceInput(e.target.value)}
+            placeholder="0,00"
+            className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#F4B400]"
+          />
+        </Field>
+        <Field label={copy.imageUrl}>
+          <div className="flex gap-3">
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[#E8ECF2] bg-[#F8F6F1]">
+              {imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={imageUrl} alt="preview" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[#6B7280]">
+                  <ImageIcon size={22} strokeWidth={2} />
+                </div>
+              )}
+            </div>
+            <div className="flex flex-1 flex-col gap-2">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#2A3444] active:scale-95 disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} strokeWidth={2} />}
+                  {uploading ? copy.uploading : copy.uploadImage}
+                </button>
+                {imageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl('')}
+                    className="inline-flex items-center gap-1 rounded-xl border border-[#E8ECF2] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:bg-[#F8F6F1] active:scale-95"
+                  >
+                    <X size={12} strokeWidth={2} />
+                    {copy.removeImage}
+                  </button>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void handleFilePick(f);
+                  e.target.value = '';
+                }}
+              />
+              <input
+                type="url"
+                value={imageUrl.startsWith('data:') ? '' : imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder={copy.orUrl + ' · https://...'}
+                className="w-full rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-[#F4B400]"
+              />
+            </div>
+          </div>
+        </Field>
         <Field label={copy.badges}>
           <div className="flex flex-wrap gap-2">
             {MENU_BADGES.map((b) => {
@@ -886,7 +1054,7 @@ function ModalActions({ busy, copy, onClose }: { busy: boolean; copy: Record<str
 
 function SortableCategoryRow({
   category, isActive, isFirst, isLast, isTr, copy,
-  onSelect, onMoveUp, onMoveDown, onEdit, onDelete,
+  onSelect, onMoveUp, onMoveDown, onToggleVisible, onEdit, onDelete,
 }: {
   category: CategoryShape;
   isActive: boolean;
@@ -897,6 +1065,7 @@ function SortableCategoryRow({
   onSelect: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onToggleVisible: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -936,6 +1105,13 @@ function SortableCategoryRow({
         <button onClick={onMoveDown} disabled={isLast} className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30" title="Down">
           <ArrowDown size={14} strokeWidth={2} />
         </button>
+        <button
+          onClick={onToggleVisible}
+          className={`rounded-lg p-1 hover:bg-[#E8ECF2] ${category.isVisible ? 'text-[#2A3444]' : 'text-amber-600'}`}
+          title={copy.toggleVisible}
+        >
+          {category.isVisible ? <Eye size={14} strokeWidth={2} /> : <EyeOff size={14} strokeWidth={2} />}
+        </button>
         <button onClick={onEdit} className="rounded-lg p-1 text-[#2A3444] hover:bg-[#E8ECF2]" title={copy.editCategory}>
           <Edit2 size={14} strokeWidth={2} />
         </button>
@@ -949,7 +1125,7 @@ function SortableCategoryRow({
 
 function SortableItemRow({
   item, isFirst, isLast, isTr, locale, copy,
-  onMoveUp, onMoveDown, onEdit, onDelete,
+  onMoveUp, onMoveDown, onToggleAvailable, onToggleOutOfStock, onEdit, onDelete,
 }: {
   item: MenuItemView;
   idx: number;
@@ -960,6 +1136,8 @@ function SortableItemRow({
   copy: Record<string, string>;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onToggleAvailable: () => void;
+  onToggleOutOfStock: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -1017,6 +1195,20 @@ function SortableItemRow({
         <button onClick={onMoveDown} disabled={isLast} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2] disabled:opacity-30">
           <ArrowDown size={14} strokeWidth={2} />
         </button>
+        <button
+          onClick={onToggleAvailable}
+          className={`rounded-lg p-1.5 hover:bg-[#E8ECF2] ${item.isAvailable ? 'text-[#2A3444]' : 'text-amber-600'}`}
+          title={copy.toggleVisible}
+        >
+          {item.isAvailable ? <Eye size={14} strokeWidth={2} /> : <EyeOff size={14} strokeWidth={2} />}
+        </button>
+        <button
+          onClick={onToggleOutOfStock}
+          className={`rounded-lg p-1.5 hover:bg-[#E8ECF2] ${item.isOutOfStock ? 'text-red-500' : 'text-[#2A3444]'}`}
+          title={copy.toggleOutOfStock}
+        >
+          <AlertTriangle size={14} strokeWidth={2} />
+        </button>
         <button onClick={onEdit} className="rounded-lg p-1.5 text-[#2A3444] hover:bg-[#E8ECF2]">
           <Edit2 size={14} strokeWidth={2} />
         </button>
@@ -1034,12 +1226,13 @@ function SortableItemRow({
 const THEME_SWATCHES = ['#F4B400', '#E85A4F', '#1A2332', '#0E7C66', '#8B5CF6', '#EC4899', '#0EA5E9', '#F97316'];
 
 function ThemePanel({
-  restaurant, copy, saving, onChange,
+  restaurant, copy, saving, onChange, onUploadLogo,
 }: {
   restaurant: RestaurantShape;
   copy: Record<string, string>;
   saving: boolean;
-  onChange: (patch: { menuTheme?: MenuTheme; menuAccentColor?: string | null }) => void;
+  onChange: (patch: { menuTheme?: MenuTheme; menuAccentColor?: string | null; menuLogoUrl?: string | null }) => void;
+  onUploadLogo: (file: File) => void;
 }) {
   const themes: { id: MenuTheme; label: string }[] = [
     { id: 'classic', label: copy.themeClassic },
@@ -1048,6 +1241,7 @@ function ThemePanel({
     { id: 'gastronomy', label: copy.themeGastronomy },
   ];
   const currentAccent = restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#F4B400';
+  const logoFileRef = useRef<HTMLInputElement | null>(null);
 
   return (
     <section className="rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
@@ -1114,6 +1308,57 @@ function ThemePanel({
                 reset
               </button>
             )}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{copy.logo}</p>
+          <div className="flex items-center gap-3">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1]">
+              {restaurant.menuLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={restaurant.menuLogoUrl} alt="logo" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[#6B7280]" style={{ color: currentAccent }}>
+                  <UtensilsCrossed size={22} strokeWidth={2} />
+                </div>
+              )}
+            </div>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => logoFileRef.current?.click()}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#1A2332] px-3 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#2A3444] active:scale-95 disabled:opacity-50"
+                >
+                  <ImageIcon size={12} strokeWidth={2} />
+                  {copy.uploadImage}
+                </button>
+                {restaurant.menuLogoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => onChange({ menuLogoUrl: null })}
+                    className="inline-flex items-center gap-1 rounded-xl border border-[#E8ECF2] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:bg-[#F8F6F1] active:scale-95"
+                  >
+                    <X size={12} strokeWidth={2} />
+                    {copy.removeImage}
+                  </button>
+                )}
+              </div>
+              <p className="text-[10px] font-medium text-[#6B7280]">{copy.logoHint}</p>
+              <input
+                ref={logoFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onUploadLogo(f);
+                  e.target.value = '';
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

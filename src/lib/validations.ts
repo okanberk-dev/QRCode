@@ -245,9 +245,19 @@ export function validateMenuItem(body: unknown, opts: { partial?: boolean } = {}
     out.currency = c;
   }
   if ('imageUrl' in b) {
-    const raw = sanitizeText(typeof b.imageUrl === 'string' ? b.imageUrl : null, 1000);
-    if (raw && !isValidUrl(raw)) return { ok: false, error: 'Görsel bağlantısı geçersiz' };
-    out.imageUrl = raw;
+    // Images are stored either as an http(s) URL or as an inline base64
+    // data URL (produced by the upload endpoint). Max length ~300KB keeps
+    // base64 headroom for ~220KB binary images (≈1200px WebP@80).
+    const raw = typeof b.imageUrl === 'string' ? b.imageUrl.trim() : null;
+    if (!raw) {
+      out.imageUrl = null;
+    } else {
+      const isDataUrl = raw.startsWith('data:image/');
+      const maxLen = isDataUrl ? 300_000 : 1000;
+      if (raw.length > maxLen) return { ok: false, error: 'Görsel çok büyük' };
+      if (!isDataUrl && !isValidUrl(raw)) return { ok: false, error: 'Görsel bağlantısı geçersiz' };
+      out.imageUrl = raw;
+    }
   }
   if ('badges' in b) {
     if (!Array.isArray(b.badges)) return { ok: false, error: 'Etiketler liste olmalı' };

@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft, ArrowDown, ArrowUp, BarChart3, Eye, Loader2, Lightbulb,
-  MousePointerClick, Sparkles, TrendingDown, TrendingUp, UtensilsCrossed,
+  ArrowLeft, ArrowDown, ArrowUp, BarChart3, Eye, Info, Loader2, Lightbulb,
+  MousePointerClick, RefreshCw, Sparkles, TrendingDown, TrendingUp, UtensilsCrossed, X,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell,
@@ -97,6 +97,11 @@ export default function MenuAnalyticsPage() {
       rangeAll: isTr ? 'Tüm zamanlar' : 'All time',
       allCategories: isTr ? 'Tüm kategoriler' : 'All categories',
       allSources: isTr ? 'Tüm kaynaklar' : 'All sources',
+      refresh: isTr ? 'Yenile' : 'Refresh',
+      resetFilters: isTr ? 'Filtreleri temizle' : 'Reset filters',
+      allTimeTrendNote: isTr
+        ? 'Zaman içi grafik "Son 7/30/90 gün" seçildiğinde görüntülenir.'
+        : 'Trend chart appears when a 7/30/90-day range is selected.',
       kpiMenuViews: isTr ? 'Menü Görüntülenme' : 'Menu Views',
       kpiProductViews: isTr ? 'Ürün Görüntülenme' : 'Product Views',
       kpiCategoryClicks: isTr ? 'Kategori Tıklamaları' : 'Category Interactions',
@@ -162,6 +167,19 @@ export default function MenuAnalyticsPage() {
     data &&
     (data.overview.totalMenuViews + data.overview.totalProductViews + data.overview.totalProductClicks + data.overview.totalCategoryClicks) > 0;
 
+  const dateFmt = (iso: string | null | undefined) => {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+  const windowLabel = data?.window?.start
+    ? `${dateFmt(data.window.start)} → ${dateFmt(data.window.end)}`
+    : null;
+  const hasActiveFilters = !!(categoryId || sourceType);
+  const resetFilters = () => {
+    setCategoryId('');
+    setSourceType('');
+  };
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
       {/* Header */}
@@ -180,6 +198,21 @@ export default function MenuAnalyticsPage() {
               {copy.title}
             </h1>
             <p className="text-sm font-medium text-[#6B7280]">{copy.subtitle}</p>
+            {windowLabel && (
+              <p className="pt-1 text-[11px] font-bold uppercase tracking-widest text-[#6B7280]">
+                {windowLabel}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={fetchAnalytics}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-xl border border-[#E8ECF2] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#1A2332] shadow-sm hover:bg-[#F8F6F1] active:scale-95 disabled:opacity-50"
+            >
+              {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
+              {copy.refresh}
+            </button>
           </div>
         </div>
 
@@ -223,6 +256,15 @@ export default function MenuAnalyticsPage() {
               <option key={key} value={key}>{label}</option>
             ))}
           </select>
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#E8ECF2] bg-white px-3 py-2 text-xs font-black uppercase tracking-widest text-[#2A3444] hover:bg-[#F8F6F1] active:scale-95"
+            >
+              <X size={12} strokeWidth={2} />
+              {copy.resetFilters}
+            </button>
+          )}
         </div>
       </div>
 
@@ -248,7 +290,14 @@ export default function MenuAnalyticsPage() {
         <>
           <OverviewCards overview={data.overview} copy={copy} />
 
-          {data.trend.length > 0 && <TrendChart trend={data.trend} copy={copy} isTr={isTr} />}
+          {data.trend.length > 0 ? (
+            <TrendChart trend={data.trend} copy={copy} isTr={isTr} />
+          ) : range === 'all' ? (
+            <div className="flex items-center gap-3 rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] p-4 text-xs font-medium text-[#6B7280]">
+              <Info size={14} className="shrink-0" strokeWidth={2} />
+              <span>{copy.allTimeTrendNote}</span>
+            </div>
+          ) : null}
 
           <div className="grid gap-5 lg:grid-cols-2">
             <TopProductsTable rows={data.topProducts} copy={copy} isTr={isTr} />
@@ -304,6 +353,9 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
     const d = new Date(iso);
     return d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { month: 'short', day: 'numeric' });
   };
+  // Thin x-axis ticks for wider series so labels don't overlap on mobile:
+  // ~7 labels on 7-day, ~6 labels on 30-day, ~6 labels on 90-day.
+  const tickInterval = trend.length <= 7 ? 0 : trend.length <= 30 ? 5 : Math.floor(trend.length / 6);
   return (
     <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-4">
@@ -323,8 +375,8 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#E8ECF2" vertical={false} />
-            <XAxis dataKey="date" tickFormatter={dateFmt} tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#E8ECF2" />
-            <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#E8ECF2" allowDecimals={false} />
+            <XAxis dataKey="date" tickFormatter={dateFmt} interval={tickInterval} tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#E8ECF2" />
+            <YAxis width={36} tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#E8ECF2" allowDecimals={false} />
             <Tooltip
               contentStyle={{ backgroundColor: '#fff', border: '1px solid #E8ECF2', borderRadius: 12, fontSize: 12 }}
               labelFormatter={(label) => dateFmt(label as string)}
@@ -377,7 +429,13 @@ function TopProductsTable({ rows, copy, isTr }: { rows: ProductRow[]; copy: any;
 }
 
 function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) {
-  const dataRows = rows.filter((r) => r.views + r.clicks > 0).slice(0, 8).map((r) => ({ name: r.categoryName, clicks: r.clicks, views: r.views }));
+  // Truncate long category names so the YAxis label column doesn't push the
+  // bars off the right edge on narrow screens.
+  const truncate = (name: string) => (name.length > 14 ? `${name.slice(0, 13)}…` : name);
+  const dataRows = rows
+    .filter((r) => r.views + r.clicks > 0)
+    .slice(0, 8)
+    .map((r) => ({ name: truncate(r.categoryName), fullName: r.categoryName, clicks: r.clicks, views: r.views }));
   return (
     <div className="rounded-[24px] border border-[#E8ECF2] bg-white p-5 shadow-sm sm:p-6">
       <h2 className="mb-4 text-sm font-extrabold uppercase tracking-widest text-[#1A2332]">{copy.topCategories}</h2>
@@ -389,8 +447,11 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) 
             <BarChart data={dataRows} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E8ECF2" horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#E8ECF2" allowDecimals={false} />
-              <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: '#1A2332' }} stroke="#E8ECF2" width={110} />
-              <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #E8ECF2', borderRadius: 12, fontSize: 12 }} />
+              <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#1A2332' }} stroke="#E8ECF2" width={90} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#fff', border: '1px solid #E8ECF2', borderRadius: 12, fontSize: 12 }}
+                labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName ?? ''}
+              />
               <Bar dataKey="clicks" fill="#F4B400" radius={[0, 6, 6, 0]} name={copy.columns.clicks} />
               <Bar dataKey="views" fill="#1A2332" radius={[0, 6, 6, 0]} name={copy.columns.views} />
             </BarChart>

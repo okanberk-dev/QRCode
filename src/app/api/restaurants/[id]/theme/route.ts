@@ -40,6 +40,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  if ('menuLogoUrl' in b) {
+    // Logo accepts http(s) URL, data:image/ URL, or null to clear.
+    if (b.menuLogoUrl === null || b.menuLogoUrl === '') {
+      data.menuLogoUrl = null;
+    } else if (typeof b.menuLogoUrl === 'string') {
+      const trimmed = b.menuLogoUrl.trim();
+      const isDataUrl = trimmed.startsWith('data:image/');
+      const maxLen = isDataUrl ? 300_000 : 1000;
+      if (trimmed.length > maxLen) {
+        return NextResponse.json({ error: 'Logo çok büyük' }, { status: 400 });
+      }
+      if (!isDataUrl) {
+        try {
+          const u = new URL(trimmed);
+          if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error();
+        } catch {
+          return NextResponse.json({ error: 'Logo bağlantısı geçersiz' }, { status: 400 });
+        }
+      }
+      data.menuLogoUrl = trimmed;
+    } else {
+      return NextResponse.json({ error: 'Geçersiz logo değeri' }, { status: 400 });
+    }
+  }
+
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: 'Güncellenecek alan bulunamadı' }, { status: 400 });
   }
@@ -47,7 +72,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const restaurant = await prisma.restaurant.update({
     where: { id },
     data,
-    select: { id: true, menuTheme: true, menuAccentColor: true },
+    select: { id: true, menuTheme: true, menuAccentColor: true, menuLogoUrl: true },
   });
 
   await touchMenuUpdated(id);
