@@ -117,7 +117,10 @@ type LayoutProps = {
 
 export default function PublicMenuView({ restaurant, categories, locale = 'tr', disableAnalytics }: PublicMenuViewProps) {
   const visibleCategories = useMemo(
-    () => categories.filter((c) => c.isVisible && c.items.some((i) => i.isAvailable)),
+    () =>
+      (Array.isArray(categories) ? categories : []).filter(
+        (c) => c?.isVisible && Array.isArray(c.items) && c.items.some((i) => i?.isAvailable),
+      ),
     [categories],
   );
   const [activeId, setActiveId] = useState<string | null>(visibleCategories[0]?.id ?? null);

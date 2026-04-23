@@ -1,7 +1,9 @@
 import { ImageResponse } from 'next/og';
+import { getSiteSettings } from '@/lib/site-settings';
 
-// Route segment config
-// export const runtime = 'edge';
+// Revalidate once a minute so a newly uploaded OG image propagates quickly
+// without hammering the DB on every crawler hit.
+export const revalidate = 60;
 
 // Image metadata
 export const alt = 'Buaze - Google İtibar Yönetimi';
@@ -12,7 +14,47 @@ export const size = {
 
 export const contentType = 'image/png';
 
+/**
+ * If the admin uploaded a custom OG image (stored as a data URL or remote URL
+ * in `Settings`), serve that. Otherwise render the branded default. This is
+ * the single source of truth — file-convention OG wins over metadata, so the
+ * uploaded URL must be served here or it won't reach social crawlers.
+ */
+async function serveCustomOgImage(url: string): Promise<Response | null> {
+  try {
+    if (url.startsWith('data:')) {
+      const match = url.match(/^data:(image\/[^;]+);base64,(.+)$/);
+      if (!match) return null;
+      const [, contentType, base64] = match;
+      const buf = Buffer.from(base64, 'base64');
+      return new Response(new Uint8Array(buf), {
+        headers: {
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=300',
+        },
+      });
+    }
+    const res = await fetch(url, { next: { revalidate: 60 } });
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    return new Response(buf, {
+      headers: {
+        'Content-Type': res.headers.get('content-type') || 'image/png',
+        'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
+  } catch {
+    return null;
+  }
+}
+
 export default async function Image() {
+  const settings = await getSiteSettings().catch(() => null);
+  if (settings?.ogImageUrl) {
+    const custom = await serveCustomOgImage(settings.ogImageUrl);
+    if (custom) return custom;
+  }
+
   return new ImageResponse(
     (
       <div

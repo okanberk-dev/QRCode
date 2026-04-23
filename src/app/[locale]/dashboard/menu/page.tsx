@@ -48,7 +48,12 @@ export default function DashboardMenuSelectPage() {
           return;
         }
         const data = await res.json();
-        const list: Restaurant[] = Array.isArray(data) ? data : data?.data || [];
+        // Never trust a non-array shape — later .map/.filter would crash.
+        const list: Restaurant[] = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+          ? data.data
+          : [];
         if (cancelled) return;
         setRestaurants(list);
         if (list.length === 1) {

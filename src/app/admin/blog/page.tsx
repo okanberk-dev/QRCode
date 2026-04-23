@@ -49,7 +49,7 @@ export default function AdminBlogPage() {
     try {
       const res = await fetch('/api/admin/blog');
       const data = await res.json();
-      setPosts(data.posts || []);
+      setPosts(Array.isArray(data?.posts) ? data.posts : []);
     } catch {
       setError('Blog yazıları yüklenemedi.');
     } finally {

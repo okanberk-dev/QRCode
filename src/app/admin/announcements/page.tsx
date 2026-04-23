@@ -84,7 +84,7 @@ export default function AdminAnnouncementsPage() {
     try {
       const res = await fetch('/api/admin/announcements');
       const data = await res.json();
-      setAnnouncements(data.announcements || []);
+      setAnnouncements(Array.isArray(data?.announcements) ? data.announcements : []);
     } catch {
       setError('Duyurular yüklenemedi.');
     } finally {

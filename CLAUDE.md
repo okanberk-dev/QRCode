@@ -89,6 +89,26 @@ where.restaurantId = { in: scopedIds };
 
 ---
 
+## 4.5 Admin "Müşteriler" vs "İşletmeciler" ayrımı (2026-04)
+
+İki benzer isimli sayfa var, **farklı veri kaynakları:**
+
+| Sayfa | Kaynak | Amaç |
+|---|---|---|
+| `/admin/members` ("İşletmeciler") | `User` tablosu (`role='restaurant_owner'`) | SaaS hesap yönetimi — plan, trial, aktiflik |
+| `/admin/customers` ("Müşteriler") | `Feedback` tablosu (groupBy email/phone) | Restoran son-müşterileri — QR ile feedback bırakanlar |
+
+**API'ler:**
+- `GET /api/admin/members` → User listesi (dokunulmadı, SaaS tarafı)
+- `GET /api/admin/customers` → Feedback-derived customer list (2026-04'te yeniden yazıldı). Query: `restaurantId`, `range`, `search`, `hasEmail`, `hasPhone`, `hasComment`, `page`, `limit`. Response: `{ data, meta, summary }`. **Sadece KVKK onaylı satırlar**, IDOR `getScopedRestaurantIds` ile.
+- `GET /api/admin/customers/export` → aynı filtrelerle tüm set CSV (UTF-8 BOM).
+
+**Dedupe mantığı:** `(restaurant_id, COALESCE(lower(email), phone))` → aynı müşteri aynı restorana birden fazla feedback bıraksa bile tek satır; email+phone ikisi de boş olan anonim feedback listede yer almaz.
+
+**Sidebar label'ları:** "Üyeler" → "İşletmeciler" olarak değiştirildi; "Müşteriler" label'ı aynı ama anlamı farklılaştı.
+
+---
+
 ## 5. Platform Sistemi (Yorumları Ayrıştırma)
 
 Müşteri QR'dan gelirken URL'de `platform` parametresi taşıyor: `google | yemeksepeti | getir | trendyol_go`. Bu değer:

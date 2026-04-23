@@ -50,13 +50,27 @@ export default function UsersPage() {
     try {
       const usersRes = await fetch('/api/admin/users');
       if (usersRes.ok) {
-        setUsers(await usersRes.json());
+        // /api/admin/users returns { data, meta } — never assign the raw
+        // response or .filter() downstream will crash.
+        const usersData = await usersRes.json();
+        const list = Array.isArray(usersData)
+          ? usersData
+          : Array.isArray(usersData?.data)
+          ? usersData.data
+          : [];
+        setUsers(list);
       }
-      
+
       const restRes = await fetch('/api/restaurants');
       if (restRes.ok) {
         const restData = await restRes.json();
-        setRestaurants(Array.isArray(restData) ? restData : (restData?.data || []));
+        setRestaurants(
+          Array.isArray(restData)
+            ? restData
+            : Array.isArray(restData?.data)
+            ? restData.data
+            : [],
+        );
       }
     } catch (e) {
       console.error(e);
