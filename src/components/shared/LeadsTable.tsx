@@ -79,104 +79,144 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
   };
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-8 rounded-[32px] border-2 border-[#EDEDED] shadow-sm">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-extrabold text-[#0A0A0A] tracking-tight uppercase">{title}</h1>
-          <p className="text-[#1A1A1A] text-[15px] font-bold">{subtitle}</p>
+    <div
+      className="mx-auto max-w-[1200px] space-y-6 px-4 py-8 sm:px-8 lg:py-10"
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
+      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p className="pulse-eyebrow text-[#737373]">
+            {isSuperAdmin ? 'ADMİN / MÜŞTERİLER' : 'PANEL / MÜŞTERİLER'}
+          </p>
+          <h1
+            className="mt-2 text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em] leading-[1.05]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {title}
+          </h1>
+          <p className="mt-2 max-w-[560px] text-[14px] text-[#525252] leading-[1.55]">{subtitle}</p>
         </div>
-        <button 
+        <button
           onClick={exportToCSV}
-          className="flex items-center gap-2 px-6 py-3 bg-[#0A0A0A] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#1A1A1A] transition-all shadow-lg active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
         >
-          <Download size={16} strokeWidth={2} />
-          CSV İNDİR
+          <Download size={14} strokeWidth={2} />
+          CSV indir
         </button>
-      </div>
+      </header>
 
-      {/* Search Bar */}
-      <div className="relative group">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#0A0A0A] transition-colors" size={20} strokeWidth={2} />
+      {/* Search pill */}
+      <div className="relative">
+        <Search
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-[#737373]"
+          size={14}
+          strokeWidth={2}
+        />
         <input
           type="text"
           placeholder="İsim, e-posta, telefon veya işletme ara..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border-2 border-[#EDEDED] rounded-[24px] pl-16 pr-8 py-5 text-sm font-bold shadow-sm outline-none focus:border-[#C6F24E] transition-all"
+          className="w-full rounded-full border border-[#EDEDED] bg-white py-3 pl-11 pr-5 text-[14px] text-[#0A0A0A] placeholder:text-[#737373] outline-none transition-all focus:border-[#C6F24E]"
         />
       </div>
 
-      <div className="bg-white rounded-[32px] border-2 border-[#EDEDED] shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-[#EDEDED] bg-white overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <table className="w-full text-left border-collapse min-w-[720px]">
             <thead>
-              <tr className="bg-[#0A0A0A] text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">
-                <th className="px-10 py-5">MÜŞTERİ BİLGİLERİ</th>
-                {isSuperAdmin && <th className="px-10 py-5">İŞLETME</th>}
-                <th className="px-10 py-5">İLETİŞİM</th>
-                <th className="px-10 py-5">SON ETKİLEŞİM</th>
+              <tr className="bg-[#FAFAFA] border-b border-[#EDEDED]">
+                <th className="pulse-eyebrow text-[#737373] px-6 py-3 font-medium">
+                  MÜŞTERİ
+                </th>
+                {isSuperAdmin && (
+                  <th className="pulse-eyebrow text-[#737373] px-6 py-3 font-medium">
+                    İŞLETME
+                  </th>
+                )}
+                <th className="pulse-eyebrow text-[#737373] px-6 py-3 font-medium">
+                  İLETİŞİM
+                </th>
+                <th className="pulse-eyebrow text-[#737373] px-6 py-3 font-medium">
+                  SON ETKİLEŞİM
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y-2 divide-[#FFFFFF] text-sm">
+            <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={isSuperAdmin ? 4 : 3} className="py-20 text-center">
-                    <Loader2 className="animate-spin text-[#0A0A0A] w-10 h-10 mx-auto" />
+                  <td colSpan={isSuperAdmin ? 4 : 3} className="py-16 text-center">
+                    <Loader2 className="animate-spin text-[#0A0A0A] w-8 h-8 mx-auto" />
                   </td>
                 </tr>
               ) : filteredLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={isSuperAdmin ? 4 : 3} className="py-20 text-center text-[#1A1A1A] font-bold italic">
+                  <td
+                    colSpan={isSuperAdmin ? 4 : 3}
+                    className="py-16 text-center text-[14px] text-[#525252]"
+                  >
                     Henüz iletişim bilgisi bırakan müşteri bulunamadı.
                   </td>
                 </tr>
               ) : (
                 filteredLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-[#FFFFFF]/50 transition-all group">
-                    <td className="px-10 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-[#C6F24E] flex items-center justify-center text-[#0A0A0A] shadow-sm group-hover:scale-105 transition-transform">
-                          <User size={20} strokeWidth={2} />
+                  <tr
+                    key={lead.id}
+                    className="border-t border-[#F5F5F5] hover:bg-[#FAFAFA] transition-colors"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]"
+                        >
+                          <User size={14} strokeWidth={2} />
                         </div>
-                        <div>
-                          <p className="font-black text-[#0A0A0A] text-base tracking-tight">{lead.name || 'İsimsiz'}</p>
-                          <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">MÜŞTERİ</p>
+                        <div className="min-w-0">
+                          <p
+                            className="text-[14px] font-semibold text-[#0A0A0A] tracking-[-0.015em] truncate"
+                            style={{ fontFamily: 'var(--font-heading)' }}
+                          >
+                            {lead.name || 'İsimsiz'}
+                          </p>
+                          <p className="pulse-eyebrow text-[#737373] mt-0.5">MÜŞTERİ</p>
                         </div>
                       </div>
                     </td>
                     {isSuperAdmin && (
-                      <td className="px-10 py-6">
-                        <div className="flex items-center gap-2 text-[#0A0A0A] font-black">
-                          <Store size={16} className="text-[#6B7280]" />
-                          <span>{lead.restaurant?.name || '-'}</span>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-[13px] text-[#0A0A0A]">
+                          <Store size={13} className="text-[#737373] shrink-0" strokeWidth={2} />
+                          <span className="truncate">{lead.restaurant?.name || '—'}</span>
                         </div>
                       </td>
                     )}
-                    <td className="px-10 py-6">
-                      <div className="space-y-1.5">
+                    <td className="px-6 py-4">
+                      <div className="space-y-1">
                         {lead.phone && (
-                          <div className="flex items-center gap-2 text-[13px] font-bold text-[#0A0A0A]">
-                            <Phone size={14} className="text-blue-500" />
-                            {lead.phone}
+                          <div className="flex items-center gap-2 text-[13px] text-[#0A0A0A]">
+                            <Phone size={12} className="text-[#2563EB]" strokeWidth={2} />
+                            <span className="font-mono">{lead.phone}</span>
                           </div>
                         )}
                         {lead.email && (
-                          <div className="flex items-center gap-2 text-[13px] font-bold text-[#0A0A0A]">
-                            <Mail size={14} className="text-emerald-500" />
-                            {lead.email}
+                          <div className="flex items-center gap-2 text-[13px] text-[#0A0A0A]">
+                            <Mail size={12} className="text-[#16A34A]" strokeWidth={2} />
+                            <span className="font-mono truncate max-w-[220px]">{lead.email}</span>
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-10 py-6">
+                    <td className="px-6 py-4">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-[13px] font-bold text-[#0A0A0A]">
-                          <Calendar size={14} className="text-[#6B7280]" />
-                          {new Date(lead.createdAt).toLocaleDateString('tr-TR')}
+                        <div className="flex items-center gap-1.5 text-[13px] text-[#525252]">
+                          <Calendar size={12} className="text-[#737373]" strokeWidth={2} />
+                          <span className="font-mono">
+                            {new Date(lead.createdAt).toLocaleDateString('tr-TR')}
+                          </span>
                         </div>
                         {lead.branch && (
-                          <div className="flex items-center gap-2 text-[11px] font-black text-[#6B7280] uppercase tracking-widest">
-                            <MapPin size={12} />
+                          <div className="flex items-center gap-1.5 pulse-eyebrow text-[#737373]">
+                            <MapPin size={10} strokeWidth={2} />
                             {lead.branch}
                           </div>
                         )}

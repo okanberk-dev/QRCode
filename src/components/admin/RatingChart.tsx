@@ -13,40 +13,39 @@ export default function RatingChart({ distribution, totalCount }: RatingChartPro
   const maxCount = Math.max(...Object.values(distribution));
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="space-y-3 w-full">
       {[5, 4, 3, 2, 1].map((star) => {
         const count = distribution[star as keyof typeof distribution] || 0;
         const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
         const displayPercentage = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
-        
+        const barColor = star >= 4 ? '#C6F24E' : star === 3 ? '#F59E0B' : '#DC2626';
+
         return (
-          <div key={star} className="flex items-center gap-4">
-            <div className="flex items-center gap-1 w-12 text-sm text-[#6B7280] font-black whitespace-nowrap uppercase tracking-tighter">
-              {star} <StarIcon />
+          <div key={star} className="grid grid-cols-[38px_1fr_72px] items-center gap-3">
+            <div className="flex items-center gap-0.5 text-[12px] font-semibold text-[#0A0A0A] tabular-nums">
+              {star}
+              <span className="text-[#C6F24E]">★</span>
             </div>
-            
-            <div className="flex-1 h-3 bg-[#FFFFFF] rounded-full overflow-hidden border border-[#EDEDED]">
-              <div 
-                className="h-full rounded-full bg-[#C6F24E] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] transition-all duration-500"
-                style={{ width: `${percentage}%` }}
+
+            <div className="h-2 bg-[#F5F5F5] rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${percentage}%`, background: barColor }}
               />
             </div>
-            
-            <div className="w-20 text-right text-sm">
-              <span className="font-black text-[#0A0A0A]">{count}</span>
-              <span className="text-[#6B7280] text-[10px] font-bold ml-1">({displayPercentage}%)</span>
+
+            <div className="text-right">
+              <span
+                className="text-[13px] font-semibold text-[#0A0A0A] tabular-nums"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {count}
+              </span>
+              <span className="pulse-eyebrow text-[#737373] ml-1.5">({displayPercentage}%)</span>
             </div>
           </div>
         );
       })}
     </div>
-  );
-}
-
-function StarIcon() {
-  return (
-    <svg className="w-4 h-4 text-[#6B7280]" fill="currentColor" viewBox="0 0 20 20">
-      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-    </svg>
   );
 }
