@@ -10,66 +10,87 @@ interface StatsProps {
 }
 
 const CARD =
-  'bg-white p-5 sm:p-6 rounded-2xl border border-[#E8ECF2] shadow-sm flex flex-col justify-between transition-all hover:-translate-y-0.5 hover:shadow-md group';
+  'bg-white p-5 sm:p-6 rounded-2xl border border-[#EDEDED] flex flex-col justify-between transition-colors hover:border-[#C6F24E]';
+
+const VALUE_STYLE: React.CSSProperties = { fontFamily: 'var(--font-heading)' };
 
 export default function StatsCards({ stats }: StatsProps) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
       {/* Toplam Yorum */}
       <div className={CARD}>
-        <div className="flex items-center justify-between mb-4 sm:mb-5">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-[#F8F6F1] text-[#2A3444] rounded-xl flex items-center justify-center group-hover:bg-[#1A2332] group-hover:text-white transition-colors">
-            <Hash size={18} strokeWidth={2} />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F5F5F5] text-[#525252]">
+            <Hash size={14} strokeWidth={2} />
           </div>
-          <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-[#6B7280]">GENEL</span>
+          <span className="pulse-eyebrow text-[#737373]">GENEL</span>
         </div>
         <div>
-          <p className="text-[11px] sm:text-[13px] font-medium text-[#2A3444] mb-1">Toplam Yorum</p>
-          <h3 className="text-2xl sm:text-3xl font-bold text-[#1A2332] tabular-nums">{stats.totalCount}</h3>
+          <p className="pulse-eyebrow text-[#737373] mb-2">Toplam Yorum</p>
+          <h3
+            className="text-[26px] sm:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
+            style={VALUE_STYLE}
+          >
+            {stats.totalCount}
+          </h3>
         </div>
       </div>
 
       {/* Ortalama Puan */}
       <div className={CARD}>
-        <div className="flex items-center justify-between mb-4 sm:mb-5">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-[#FFF8D6] text-[#D69E00] rounded-xl flex items-center justify-center group-hover:bg-[#F4B400] group-hover:text-[#1A2332] transition-colors">
-            <Star size={18} fill="currentColor" strokeWidth={2} />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]">
+            <Star size={14} fill="currentColor" strokeWidth={2} />
           </div>
-          <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-[#F4B400]">RATING</span>
+          <span className="pulse-eyebrow text-[#A8D62E]">RATING</span>
         </div>
         <div>
-          <p className="text-[11px] sm:text-[13px] font-medium text-[#2A3444] mb-1">Ortalama Puan</p>
-          <h3 className="text-2xl sm:text-3xl font-bold text-[#1A2332] tabular-nums">
-            {stats.avgRating} <span className="text-xs sm:text-sm font-semibold text-[#6B7280]">/ 5</span>
+          <p className="pulse-eyebrow text-[#737373] mb-2">Ortalama Puan</p>
+          <h3
+            className="text-[26px] sm:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
+            style={VALUE_STYLE}
+          >
+            {stats.avgRating}
+            <span className="text-[14px] text-[#737373] ml-1">/ 5</span>
           </h3>
         </div>
       </div>
 
       {/* Düşük Puanlar */}
       <div className={CARD}>
-        <div className="flex items-center justify-between mb-4 sm:mb-5">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-red-50 text-red-500 rounded-xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
-            <AlertTriangle size={18} strokeWidth={2} />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-500">
+            <AlertTriangle size={14} strokeWidth={2} />
           </div>
-          <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-red-500">KRİTİK</span>
+          <span className="pulse-eyebrow text-red-500">KRİTİK</span>
         </div>
         <div>
-          <p className="text-[11px] sm:text-[13px] font-medium text-[#2A3444] mb-1">Düşük Puanlı</p>
-          <h3 className="text-2xl sm:text-3xl font-bold text-[#1A2332] tabular-nums">{stats.lowRatingCount}</h3>
+          <p className="pulse-eyebrow text-[#737373] mb-2">Düşük Puanlı</p>
+          <h3
+            className="text-[26px] sm:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
+            style={VALUE_STYLE}
+          >
+            {stats.lowRatingCount}
+          </h3>
         </div>
       </div>
 
       {/* Pozitif Yönlendirme */}
       <div className={CARD}>
-        <div className="flex items-center justify-between mb-4 sm:mb-5">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-green-50 text-green-600 rounded-xl flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-colors">
-            <Heart size={18} strokeWidth={2} />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+            <Heart size={14} strokeWidth={2} />
           </div>
-          <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest text-green-600">MUTLU</span>
+          <span className="pulse-eyebrow text-emerald-600">MUTLU</span>
         </div>
         <div>
-          <p className="text-[11px] sm:text-[13px] font-medium text-[#2A3444] mb-1">Pozitif Yönlendirme</p>
-          <h3 className="text-2xl sm:text-3xl font-bold text-[#1A2332] tabular-nums">{stats.googleRedirectsCount || 0}</h3>
+          <p className="pulse-eyebrow text-[#737373] mb-2">Pozitif Yönlendirme</p>
+          <h3
+            className="text-[26px] sm:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
+            style={VALUE_STYLE}
+          >
+            {stats.googleRedirectsCount || 0}
+          </h3>
         </div>
       </div>
     </div>

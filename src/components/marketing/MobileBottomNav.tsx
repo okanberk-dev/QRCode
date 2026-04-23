@@ -54,7 +54,7 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
       Icon: isLoggedIn ? LayoutDashboard : Sparkles,
     },
     {
-      href: `${base}/#qr-generator`,
+      href: `${base}/solutions/qr-generator`,
       label: locale === 'tr' ? 'QR Kod' : 'QR Code',
       Icon: QrCode,
     },
@@ -76,7 +76,7 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
 
       <nav
         aria-label={locale === 'tr' ? 'Mobil alt menü' : 'Mobile bottom navigation'}
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#1A2332] shadow-md"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#EDEDED]"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <ul className="flex items-stretch justify-around h-[68px] max-w-[520px] mx-auto px-2">
@@ -84,15 +84,15 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
             const active = isActive(item.href);
 
             if ('center' in item && item.center) {
-              // Prominent raised center CTA
+              // Prominent center CTA — flat Pulse circle with lime glow
               return (
                 <li key={item.href} className="flex-1 flex items-start justify-center -mt-5">
                   <Link
                     href={item.href}
-                    className="flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-full bg-[#F4B400] border border-[#1A2332] shadow-sm active:translate-y-[3px] active:shadow-none transition-all"
+                    className="flex items-center justify-center w-12 h-12 rounded-full bg-[#C6F24E] shadow-[0_4px_12px_rgba(198,242,78,0.45)] hover:bg-[#A8D62E] transition-colors"
                     aria-label={item.label}
                   >
-                    <item.Icon size={22} className="text-[#1A2332]" strokeWidth={2} />
+                    <item.Icon size={22} className="text-[#0A0A0A]" strokeWidth={2} />
                   </Link>
                 </li>
               );
@@ -103,18 +103,18 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
                 <Link
                   href={item.href}
                   className={`relative h-full flex flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${
-                    active ? 'text-[#1A2332]' : 'text-[#2A3444]'
+                    active ? 'text-[#0A0A0A]' : 'text-[#737373]'
                   }`}
                   aria-current={active ? 'page' : undefined}
                 >
                   <item.Icon
                     size={20}
-                    strokeWidth={active ? 2.5 : 2}
-                    className={active ? 'text-[#F4B400]' : 'text-[#2A3444]'}
+                    strokeWidth={active ? 2.25 : 2}
+                    className={active ? 'text-[#0A0A0A]' : 'text-[#737373]'}
                   />
                   <span
                     className={`text-[10px] leading-none tracking-tight ${
-                      active ? 'font-extrabold text-[#1A2332]' : 'font-semibold text-[#2A3444]'
+                      active ? 'font-medium text-[#0A0A0A]' : 'font-medium text-[#737373]'
                     }`}
                   >
                     {item.label}
@@ -122,7 +122,7 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
                   {active && (
                     <span
                       aria-hidden="true"
-                      className="absolute top-0 w-8 h-[3px] bg-[#F4B400] rounded-b-full"
+                      className="absolute top-0 w-8 h-[2px] bg-[#0A0A0A] rounded-b-full"
                     />
                   )}
                 </Link>

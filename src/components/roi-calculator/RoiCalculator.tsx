@@ -233,26 +233,26 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
     <section
       id="roi-calculator"
       aria-labelledby="roi-calc-title"
-      className="w-full bg-white rounded-[24px] sm:rounded-[32px] border sm:border border-[#1A2332] shadow-md sm:shadow-md overflow-hidden scroll-mt-20"
+      className="w-full bg-white rounded-[24px] sm:rounded-[32px] border sm:border border-[#0A0A0A] shadow-md sm:shadow-md overflow-hidden scroll-mt-20"
     >
       {/* Section header */}
-      <div className="px-5 sm:px-10 pt-8 sm:pt-10 pb-6 sm:pb-8 border-b-[2.5px] border-[#1A2332] bg-[#F4B400]/10">
+      <div className="px-5 sm:px-10 pt-8 sm:pt-10 pb-6 sm:pb-8 border-b-[2.5px] border-[#0A0A0A] bg-[#C6F24E]/10">
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1A2332] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#F4B400]">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#C6F24E]">
             <span aria-hidden="true" className="text-[8px]">◈</span>
             {t.sectionTag}
           </span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#2A3444]">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#1A1A1A]">
             {t.planInfo(planPrice)}
           </span>
         </div>
         <h2
           id="roi-calc-title"
-          className="text-[22px] sm:text-[30px] font-black text-[#1A2332] tracking-tight leading-tight"
+          className="text-[22px] sm:text-[30px] font-black text-[#0A0A0A] tracking-tight leading-tight"
         >
           {t.title}
         </h2>
-        <p className="mt-3 text-[13px] sm:text-[14px] text-[#2A3444] font-bold max-w-xl leading-relaxed">
+        <p className="mt-3 text-[13px] sm:text-[14px] text-[#1A1A1A] font-bold max-w-xl leading-relaxed">
           {t.description}
         </p>
       </div>
@@ -261,8 +261,8 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
       <div className="grid grid-cols-1 lg:grid-cols-[5fr_7fr]">
 
         {/* LEFT: Inputs */}
-        <div className="px-5 sm:px-10 py-8 border-b-[2.5px] border-[#1A2332] lg:border-b-0 lg:border-r-[2.5px]">
-          <p className="mb-6 text-[10px] font-black uppercase tracking-[0.2em] text-[#1A2332]">
+        <div className="px-5 sm:px-10 py-8 border-b-[2.5px] border-[#0A0A0A] lg:border-b-0 lg:border-r-[2.5px]">
+          <p className="mb-6 text-[10px] font-black uppercase tracking-[0.2em] text-[#0A0A0A]">
             {t.inputsSectionLabel}
           </p>
 
@@ -333,7 +333,7 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
             <div>
               <label
                 htmlFor="businessType"
-                className="block text-sm font-bold text-[#1A2332] mb-1.5"
+                className="block text-sm font-bold text-[#0A0A0A] mb-1.5"
               >
                 {t.fields.businessType.label}
               </label>
@@ -342,9 +342,9 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
                 value={form.businessType}
                 onChange={e => handleChange('businessType', e.target.value as BusinessType)}
                 aria-label={t.fields.businessType.label}
-                className="w-full rounded-xl border border-[#1A2332] bg-white px-4 py-3
-                           text-sm text-[#1A2332] font-bold focus:outline-none
-                           focus:ring-4 focus:ring-[#F4B400]/30 transition-all cursor-pointer appearance-none"
+                className="w-full rounded-xl border border-[#0A0A0A] bg-white px-4 py-3
+                           text-sm text-[#0A0A0A] font-bold focus:outline-none
+                           focus:ring-4 focus:ring-[#C6F24E]/30 transition-all cursor-pointer appearance-none"
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%231f1e1d'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                   backgroundRepeat: 'no-repeat',
@@ -363,8 +363,8 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
         </div>
 
         {/* RIGHT: Results */}
-        <div className="px-5 sm:px-10 py-8 bg-[#F8F6F1] flex flex-col gap-4">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1A2332] mb-1">
+        <div className="px-5 sm:px-10 py-8 bg-[#FFFFFF] flex flex-col gap-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0A0A0A] mb-1">
             {t.resultsSectionLabel}
           </p>
 
@@ -380,11 +380,11 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
               <div className="flex flex-col gap-1">
                 <p className="text-[26px] sm:text-[34px] font-black text-[#10b981] tracking-tighter leading-none">
                   {formatCurrencyRange(results.revenuePotential.min, results.revenuePotential.max, activeLocale)}
-                  <span className="ml-2 text-[12px] sm:text-[14px] font-black text-[#2A3444] uppercase tracking-widest">
+                  <span className="ml-2 text-[12px] sm:text-[14px] font-black text-[#1A1A1A] uppercase tracking-widest">
                     {t.results.revenueUnit}
                   </span>
                 </p>
-                <p className="text-[12px] text-[#2A3444] font-medium leading-relaxed">
+                <p className="text-[12px] text-[#1A1A1A] font-medium leading-relaxed">
                   {t.results.revenueBody(
                     formatCurrencyRange(results.revenuePotential.min, results.revenuePotential.max, activeLocale),
                   )}
@@ -395,7 +395,7 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
 
           {/* Payback days */}
           <SolidCard
-            accent="#F4B400"
+            accent="#C6F24E"
             label={t.results.paybackLabel}
             icon="⏱"
             isEmpty={!results}
@@ -403,15 +403,15 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
           >
             {results && (
               <div className="flex flex-col gap-1">
-                <p className="text-[26px] sm:text-[34px] font-black text-[#F4B400] tracking-tighter leading-none">
+                <p className="text-[26px] sm:text-[34px] font-black text-[#C6F24E] tracking-tighter leading-none">
                   {results.paybackDays.min === results.paybackDays.max
                     ? results.paybackDays.min.toString()
                     : formatRange(results.paybackDays.min, results.paybackDays.max)}
-                  <span className="ml-2 text-[12px] sm:text-[14px] font-black text-[#2A3444] uppercase tracking-widest">
+                  <span className="ml-2 text-[12px] sm:text-[14px] font-black text-[#1A1A1A] uppercase tracking-widest">
                     {t.results.paybackUnit}
                   </span>
                 </p>
-                <p className="text-[12px] text-[#2A3444] font-medium leading-relaxed">
+                <p className="text-[12px] text-[#1A1A1A] font-medium leading-relaxed">
                   {t.results.paybackBody(
                     results.paybackDays.min === results.paybackDays.max
                       ? results.paybackDays.min.toString()
@@ -425,7 +425,7 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* New leads */}
             <SolidCard
-              accent="#F4B400"
+              accent="#C6F24E"
               label={t.results.leadLabel}
               icon="◆"
               isEmpty={!results}
@@ -434,10 +434,10 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
             >
               {results && (
                 <div className="flex flex-col gap-1">
-                  <p className="text-[22px] sm:text-[28px] font-black text-[#1A2332] tracking-tighter leading-none">
+                  <p className="text-[22px] sm:text-[28px] font-black text-[#0A0A0A] tracking-tighter leading-none">
                     {formatRange(results.leadPotential.min, results.leadPotential.max)}
                   </p>
-                  <p className="text-[10px] font-black text-[#2A3444] uppercase tracking-widest">
+                  <p className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-widest">
                     {t.results.leadUnit}
                   </p>
                 </div>
@@ -446,7 +446,7 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
 
             {/* Reviews needed */}
             <SolidCard
-              accent="#1A2332"
+              accent="#0A0A0A"
               label={t.results.reviewsLabel}
               icon="★"
               isEmpty={!results}
@@ -460,10 +460,10 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
                   </p>
                 ) : (
                   <div className="flex flex-col gap-1">
-                    <p className="text-[22px] sm:text-[28px] font-black text-[#1A2332] tracking-tighter leading-none">
+                    <p className="text-[22px] sm:text-[28px] font-black text-[#0A0A0A] tracking-tighter leading-none">
                       {formatRange(results.reviewsNeeded.min, results.reviewsNeeded.max)}
                     </p>
-                    <p className="text-[10px] font-black text-[#2A3444] uppercase tracking-widest">
+                    <p className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-widest">
                       {t.results.reviewsUnit}
                     </p>
                   </div>
@@ -482,7 +482,7 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
             emptyMessage={t.results.emptyMessage}
           >
             {results && (
-              <p className="text-[12px] text-[#2A3444] font-medium leading-relaxed">
+              <p className="text-[12px] text-[#1A1A1A] font-medium leading-relaxed">
                 {t.results.visibilityBody[results.visibilityLevel]}
               </p>
             )}
@@ -492,8 +492,8 @@ export function RoiCalculator({ locale = 'tr' }: { locale?: string }) {
           <div className="pt-2">
             <a
               href={`/${activeLocale}/auth/register`}
-              className="group block w-full rounded-xl bg-[#1A2332] border border-[#1A2332] px-6 py-4 text-center
-                         text-[13px] sm:text-[14px] font-black text-[#F4B400] uppercase tracking-[0.15em]
+              className="group block w-full rounded-xl bg-[#0A0A0A] border border-[#0A0A0A] px-6 py-4 text-center
+                         text-[13px] sm:text-[14px] font-black text-[#C6F24E] uppercase tracking-[0.15em]
                          shadow-sm active:translate-y-[5px] active:shadow-none transition-all"
             >
               {t.cta} <span className="inline-block ml-1 transition-transform group-hover:translate-x-1">→</span>
@@ -527,7 +527,7 @@ function SolidCard({
 }: SolidCardProps) {
   return (
     <div
-      className={`rounded-2xl border border-[#1A2332] bg-white ${compact ? 'p-4' : 'p-5 sm:p-6'} shadow-sm`}
+      className={`rounded-2xl border border-[#0A0A0A] bg-white ${compact ? 'p-4' : 'p-5 sm:p-6'} shadow-sm`}
       role="region"
       aria-label={label}
       aria-live="polite"
@@ -543,7 +543,7 @@ function SolidCard({
           >
             {icon}
           </span>
-          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-[#1A2332]">
+          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-[#0A0A0A]">
             {label}
           </span>
         </div>

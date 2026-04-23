@@ -1,8 +1,7 @@
-import { Check, X, Shield, Zap, BarChart3, ArrowRight, Table, MousePointer2, AlertCircle } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import type { Locale, Translations } from '@/lib/translations';
-import { CtaButton } from '@/components/ui/CtaButton';
+import Link from 'next/link';
 import { ReactNode } from 'react';
 
 interface ComparisonRow {
@@ -15,7 +14,7 @@ interface ComparisonRow {
 interface ComparisonLayoutProps {
   locale: Locale;
   t: Translations;
-  vsName: string; // e.g., 'Spreadsheet' or 'Individual QR'
+  vsName: string;
   heroTitle: string;
   heroDesc: string;
   rows: ComparisonRow[];
@@ -34,59 +33,79 @@ export default function ComparisonLayout({
   argumentDesc,
 }: ComparisonLayoutProps) {
   const base = `/${locale}`;
+  const isTr = locale === 'tr';
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* Hero */}
-      <section className="pt-20 sm:pt-32 pb-16 sm:pb-24 px-5 sm:px-8 bg-[#F8F6F1] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#F4B400]/5 rounded-full blur-[150px] translate-x-1/3 -translate-y-1/3" />
-        <div className="max-w-[1200px] mx-auto relative text-center space-y-6 sm:space-y-8">
-          <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md">
-            <Shield size={16} className="text-[#F4B400]" />
-            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">
-              {locale === 'tr' ? `BUAZE VS ${vsName.toUpperCase()}` : `BUAZE VS ${vsName.toUpperCase()}`}
-            </span>
-          </div>
-          <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332] max-w-[900px] mx-auto">
+      {/* ─── Hero ─── */}
+      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-24 pb-14 sm:pb-20">
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
+          width="100%"
+          height="100%"
+        >
+          <defs>
+            <pattern id="cmpGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#cmpGrid)" />
+        </svg>
+        <div className="relative max-w-[900px] mx-auto text-center">
+          <span className="pulse-eyebrow text-[#737373]">
+            BUAZE {isTr ? 'KARŞILAŞTIRMA' : 'VS'} {vsName.toUpperCase()}
+          </span>
+          <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[68px] font-medium leading-[1] tracking-[-0.035em] text-[#0A0A0A]">
             {heroTitle}
           </h1>
-          <p className="text-[17px] sm:text-[22px] text-[#2A3444] font-bold leading-relaxed max-w-[700px] mx-auto">
+          <p className="mt-6 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[640px] mx-auto">
             {heroDesc}
           </p>
         </div>
       </section>
 
-      {/* Comparison Table */}
-      <section className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-y border-[#E8ECF2]">
+      {/* ─── Comparison Table ─── */}
+      <section className="px-6 sm:px-10 pb-20 sm:pb-28">
         <div className="max-w-[1100px] mx-auto">
-          <div className="mb-12 sm:mb-16 text-center space-y-4">
-               <h2 className="text-[28px] sm:text-[48px] font-extrabold tracking-tight">{t.compare_title}</h2>
-               <p className="text-[15px] sm:text-[16px] text-[#2A3444] font-bold max-w-2xl mx-auto">{t.compare_subtitle}</p>
+          <div className="mb-10 sm:mb-12 text-center">
+            <h2 className="text-[28px] sm:text-[40px] font-medium tracking-[-0.03em] text-[#0A0A0A] leading-[1.05]">
+              {t.compare_title}
+            </h2>
+            <p className="mt-4 text-[16px] text-[#525252] max-w-[620px] mx-auto leading-relaxed">
+              {t.compare_subtitle}
+            </p>
           </div>
 
-          <div className="overflow-x-auto touch-pan-x rounded-[24px] sm:rounded-[32px] border sm:border border-[#1A2332] shadow-md sm:shadow-md">
-            <table className="w-full border-collapse bg-white min-w-[600px] sm:min-w-0">
+          <div className="overflow-x-auto rounded-3xl border border-[#EDEDED] bg-white">
+            <table className="w-full border-collapse min-w-[600px]">
               <thead>
-                <tr className="bg-[#1A2332] text-white">
-                  <th className="p-4 sm:p-6 text-left text-[11px] sm:text-[14px] font-black uppercase tracking-widest border-r border-white/10">{t.compare_feat_name}</th>
-                  <th className="p-4 sm:p-6 text-center text-[12px] sm:text-[16px] font-black uppercase tracking-widest border-r border-white/10 bg-[#F4B400] text-[#1A2332]">{t.compare_buaze}</th>
-                  <th className="p-4 sm:p-6 text-center text-[11px] sm:text-[14px] font-black uppercase tracking-widest">{vsName}</th>
+                <tr className="bg-[#FAFAFA] border-b border-[#EDEDED]">
+                  <th className="p-5 pulse-eyebrow text-left text-[#737373]">{t.compare_feat_name}</th>
+                  <th className="p-5 pulse-eyebrow text-center text-[#0A0A0A] bg-[#EAF9B8]">
+                    {t.compare_buaze}
+                  </th>
+                  <th className="p-5 pulse-eyebrow text-center text-[#737373]">{vsName}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y-2 divide-[#1A2332]/5">
+              <tbody className="divide-y divide-[#EDEDED]">
                 {rows.map((row, i) => (
-                  <tr key={i} className={row.isHeader ? 'bg-[#F8F6F1]' : 'hover:bg-[#F8F6F1]/50 transition-colors'}>
-                    <td className={`p-4 sm:p-6 border-r-2 border-[#1A2332]/5 ${row.isHeader ? 'font-black text-[#2A3444] text-[11px] sm:text-[12px] uppercase' : 'font-bold text-[#1A2332] text-[14px] sm:text-[16px]'}`}>
+                  <tr key={i} className={row.isHeader ? 'bg-[#FAFAFA]' : ''}>
+                    <td
+                      className={`p-5 ${
+                        row.isHeader
+                          ? 'pulse-eyebrow text-[#737373]'
+                          : 'text-[14px] font-medium text-[#0A0A0A]'
+                      }`}
+                    >
                       {row.label}
                     </td>
-                    <td className="p-4 sm:p-6 text-center border-r-2 border-[#1A2332]/5 bg-[#F4B400]/5 font-black text-[#1A2332]">
+                    <td className="p-5 text-center bg-[#EAF9B8]/30 text-[#0A0A0A] font-medium text-[14px]">
                       {row.buaze}
                     </td>
-                    <td className="p-4 sm:p-6 text-center font-bold text-[#2A3444] text-[14px] sm:text-[16px]">
-                      {row.competitor}
-                    </td>
+                    <td className="p-5 text-center text-[#525252] text-[14px]">{row.competitor}</td>
                   </tr>
                 ))}
               </tbody>
@@ -95,95 +114,119 @@ export default function ComparisonLayout({
         </div>
       </section>
 
-      {/* Deep Argument Section */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1]">
-         <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16 items-center">
-            <div className="space-y-6 sm:space-y-8">
-               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400]/10 rounded-2xl border-2 border-[#F4B400]/20 flex items-center justify-center">
-                  <AlertCircle size={28} className="sm:size-8 text-[#F4B400]" />
-               </div>
-               <h2 className="text-[30px] sm:text-[54px] font-extrabold leading-[1.1] tracking-tight text-[#1A2332]">
-                  {argumentTitle}
-               </h2>
-               <div className="text-[16px] sm:text-[18px] text-[#4a4742] leading-relaxed font-medium space-y-4 sm:space-y-6">
-                  {argumentDesc.split('\n').map((p, i) => <p key={i}>{p}</p>)}
-               </div>
-               <div className="pt-4">
-                  <CtaButton variant="primary" href={`${base}/auth/register`} className="w-full sm:w-auto">
-                     {locale === 'tr' ? 'Profesyonel İtibara Geçin' : 'Switch to Professional Reputation'}
-                  </CtaButton>
-               </div>
+      {/* ─── Argument ─── */}
+      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div>
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Kritik fark' : 'The critical difference'}
+            </span>
+            <h2 className="mt-4 text-[32px] sm:text-[44px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
+              {argumentTitle}
+            </h2>
+            <div className="mt-5 text-[16px] text-[#525252] leading-[1.65] space-y-4">
+              {argumentDesc.split('\n').map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
             </div>
-            <div className="relative group">
-               <div className="absolute inset-0 bg-[#F4B400] rounded-[32px] sm:rounded-[40px] rotate-2 scale-105 opacity-20 group-hover:rotate-1 transition-transform" />
-               <div className="relative bg-white p-8 sm:p-10 rounded-[32px] sm:rounded-[40px] border border-[#1A2332] shadow-md sm:shadow-md space-y-6 sm:space-y-8">
-                  <div className="flex items-center gap-4 border-b-2 border-[#E8ECF2] pb-6">
-                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#10b981] rounded-xl flex items-center justify-center text-white">
-                        <BarChart3 size={20} className="sm:size-6" />
-                     </div>
-                     <div>
-                        <div className="text-[13px] sm:text-[14px] font-black">{locale === 'tr' ? 'BUAZE ETKİSİ' : 'BUAZE IMPACT'}</div>
-                        <div className="text-[10px] sm:text-[11px] font-bold text-[#2A3444] uppercase tracking-widest">{locale === 'tr' ? 'Gerçek Zamanlı Veri' : 'Real-time Data'}</div>
-                     </div>
-                  </div>
-                  <div className="space-y-4 sm:space-y-6">
-                     {[
-                        { label: locale === 'tr' ? 'Geri Bildirim Hızı' : 'Feedback Speed', value: '4dk' },
-                        { label: locale === 'tr' ? 'Yorum Dönüşümü' : 'Review Conversion', value: '%68' },
-                        { label: locale === 'tr' ? 'Müşteri Kaybı' : 'Churn Rate', value: '-%90' },
-                     ].map((item, i) => (
-                        <div key={i} className="flex justify-between items-center bg-[#F8F6F1] p-4 rounded-xl border border-[#1A2332]/5">
-                           <span className="font-bold text-[#2A3444] text-[14px] sm:text-[16px]">{item.label}</span>
-                           <span className="font-black text-[#1A2332] text-[16px] sm:text-[18px]">{item.value}</span>
-                        </div>
-                     ))}
-                  </div>
-               </div>
+            <Link
+              href={`${base}/auth/register`}
+              className="inline-flex items-center justify-center gap-2 mt-7 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#1A1A1A] transition-colors"
+            >
+              {isTr ? 'Profesyonele geç' : 'Switch to professional'}
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-[#EDEDED] p-7 sm:p-8">
+            <div className="flex items-center gap-3 pb-5 border-b border-[#EDEDED] mb-5">
+              <div className="w-10 h-10 rounded-full bg-[#C6F24E] flex items-center justify-center">
+                <span className="text-[18px] text-[#0A0A0A]">✦</span>
+              </div>
+              <div>
+                <div className="pulse-eyebrow text-[#A8D62E]">BUAZE {isTr ? 'ETKİSİ' : 'IMPACT'}</div>
+                <div className="text-[13px] font-medium text-[#0A0A0A] mt-0.5">
+                  {isTr ? 'Gerçek zamanlı veri' : 'Real-time data'}
+                </div>
+              </div>
             </div>
-         </div>
+            <div className="space-y-3">
+              {[
+                { label: isTr ? 'Geri bildirim hızı' : 'Feedback speed', value: '4dk' },
+                { label: isTr ? 'Yorum dönüşümü' : 'Review conversion', value: '%68' },
+                { label: isTr ? 'Müşteri kaybı' : 'Churn rate', value: '-%90' },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  className="flex justify-between items-center bg-[#FAFAFA] px-4 py-3 rounded-xl border border-[#EDEDED]"
+                >
+                  <span className="text-[14px] text-[#525252]">{item.label}</span>
+                  <span
+                    className="text-[18px] font-medium text-[#0A0A0A] tracking-[-0.02em]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {item.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </section>
 
-      {/* NEW: SEO Deep Content (Pain Points & Verdict) */}
-      <section className="py-20 sm:py-24 px-5 sm:px-8 bg-white border-t border-[#E8ECF2]">
-         <div className="max-w-[1000px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16">
-            <div className="space-y-4 sm:space-y-6">
-               <h3 className="text-[22px] sm:text-[24px] font-extrabold flex items-center gap-2">
-                  <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-[14px] sm:text-[16px]">!</span>
-                  {t.compare_pain_title}
-               </h3>
-               <p className="text-[15px] sm:text-[16px] text-[#2A3444] font-medium leading-relaxed">
-                  {vsName === 'Spreadsheet' ? t.compare_pain_spreadsheet : t.compare_pain_static}
-               </p>
-            </div>
-            <div className="space-y-4 sm:space-y-6 p-6 sm:p-8 bg-[#F8F6F1] rounded-[24px] sm:rounded-[32px] border-2 border-[#1A2332] shadow-md sm:shadow-md">
-               <h3 className="text-[22px] sm:text-[24px] font-extrabold flex items-center gap-2">
-                  <Zap size={22} className="sm:size-6 text-[#F4B400]" />
-                  {t.compare_verdict_title}
-               </h3>
-               <p className="text-[14px] sm:text-[15px] text-[#1A2332] font-bold leading-relaxed">
-                  {t.compare_verdict_desc}
-               </p>
-            </div>
-         </div>
+      {/* ─── Pain + Verdict ─── */}
+      <section className="px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[1000px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          <div className="bg-white border border-[#EDEDED] rounded-3xl p-7 sm:p-8">
+            <span className="pulse-eyebrow text-[#B91C1C]">
+              {isTr ? 'Acı noktası' : 'The pain'}
+            </span>
+            <h3 className="mt-3 text-[22px] sm:text-[24px] font-medium text-[#0A0A0A] leading-tight tracking-[-0.02em]">
+              {t.compare_pain_title}
+            </h3>
+            <p className="mt-4 text-[15px] text-[#525252] leading-[1.65]">
+              {vsName === 'Spreadsheet' ? t.compare_pain_spreadsheet : t.compare_pain_static}
+            </p>
+          </div>
+          <div className="bg-[#EAF9B8] border border-[#C6F24E] rounded-3xl p-7 sm:p-8">
+            <span className="pulse-eyebrow text-[#0A0A0A]">
+              {isTr ? 'Sonuç' : 'The verdict'}
+            </span>
+            <h3 className="mt-3 text-[22px] sm:text-[24px] font-medium text-[#0A0A0A] leading-tight tracking-[-0.02em]">
+              {t.compare_verdict_title}
+            </h3>
+            <p className="mt-4 text-[15px] text-[#0A0A0A] leading-[1.65]">
+              {t.compare_verdict_desc}
+            </p>
+          </div>
+        </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 sm:py-32 px-5 sm:px-8 bg-[#1A2332] text-white relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#F4B400]/5 rounded-full blur-[150px]" />
-        <div className="max-w-[800px] mx-auto text-center space-y-8 sm:space-y-10 relative z-10">
-          <h2 className="text-[32px] sm:text-[64px] font-extrabold leading-[1.1] sm:leading-[1] tracking-tight">
-            {locale === 'tr' ? 'Daha Fazla Beklemeyin' : 'Don\'t Wait Any Longer'}
+      {/* ─── CTA ─── */}
+      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[800px] mx-auto text-center">
+          <h2 className="text-[36px] sm:text-[56px] font-medium leading-[1.02] tracking-[-0.04em] text-white">
+            {isTr ? 'Daha fazla beklemeyin.' : "Don't wait any longer."}
           </h2>
-          <p className="text-[17px] sm:text-[20px] text-white/80 font-medium max-w-[600px] mx-auto">
-             {locale === 'tr' ? 'Onlarca işletme gibi siz de manuel süreçleri geride bırakın.' : 'Join dozens of businesses leaving manual processes behind.'}
+          <p className="mt-5 text-[16px] sm:text-[17px] text-white/70 max-w-[560px] mx-auto">
+            {isTr
+              ? 'Onlarca işletme gibi siz de manuel süreçleri geride bırakın.'
+              : 'Join dozens of businesses leaving manual processes behind.'}
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-4">
-            <CtaButton variant="primary" href={`${base}/auth/register`} className="w-full sm:w-auto px-10">
-               {locale === 'tr' ? '14 Gün Ücretsiz Deneyin' : 'Start 14-Day Free Trial'}
-            </CtaButton>
-            <CtaButton variant="secondary" href={`${base}/contact`} className="w-full sm:w-auto px-10">
-               {locale === 'tr' ? 'Satış Ekibiyle Görüş' : 'Talk to Sales Team'}
-            </CtaButton>
+          <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+            <Link
+              href={`${base}/auth/register`}
+              className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors"
+            >
+              {isTr ? '14 gün ücretsiz dene' : 'Start 14-day free trial'}
+              <span aria-hidden>→</span>
+            </Link>
+            <Link
+              href={`${base}/contact`}
+              className="inline-flex items-center justify-center gap-2 border border-white/20 text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-white/10 transition-colors"
+            >
+              {isTr ? 'Satışla görüş' : 'Talk to sales'}
+            </Link>
           </div>
         </div>
       </section>

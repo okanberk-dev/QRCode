@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, QrCode, Store, User, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -15,9 +15,16 @@ interface DashboardUser {
   trialEndsAt: string | null;
 }
 
+interface DashboardWorkspace {
+  primaryName: string | null;
+  locationCount: number;
+  feedbackCount: number;
+}
+
 interface UserDashboardShellProps {
   locale: Locale;
   user: DashboardUser;
+  workspace?: DashboardWorkspace;
   announcements?: DashboardAnnouncement[];
   logoUrl?: string | null;
   children: React.ReactNode;
@@ -30,22 +37,43 @@ function getDaysLeft(trialEndsAt: string | null) {
   return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-export default function UserDashboardShell({ locale, user, announcements = [], logoUrl, children }: UserDashboardShellProps) {
+const TOP_BAR_MAP: Record<string, { breadcrumb: string; title: string } | undefined> = undefined as never;
+
+function useTopBar(locale: Locale, pathname: string | null) {
+  const isTr = locale === 'tr';
+  if (!pathname) return null;
+  const rest = pathname.replace(`/${locale}/dashboard`, '') || '/';
+  if (rest === '/') return { breadcrumb: isTr ? 'PANEL / GENEL BAKIŞ' : 'PANEL / OVERVIEW', title: isTr ? 'Genel bakış' : 'Overview' };
+  if (rest.startsWith('/feedbacks')) return { breadcrumb: isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS', title: isTr ? 'Yorum gelen kutusu' : 'Review inbox' };
+  if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'QR OLUŞTUR / YENİ KAMPANYA' : 'QR / NEW CAMPAIGN', title: isTr ? 'QR kodu oluştur' : 'Create QR code' };
+  if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
+  if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / KONUMLAR' : 'PANEL / LOCATIONS', title: isTr ? 'Konumlar' : 'Locations' };
+  if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
+  if (rest.startsWith('/leads')) return { breadcrumb: isTr ? 'PANEL / MÜŞTERİLER' : 'PANEL / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
+  if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
+  if (rest.startsWith('/profile')) return { breadcrumb: isTr ? 'AYARLAR / HESAP' : 'SETTINGS / ACCOUNT', title: isTr ? 'Ayarlar' : 'Settings' };
+  return null;
+}
+
+export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, children }: UserDashboardShellProps) {
+  void TOP_BAR_MAP;
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const trialDaysLeft = getDaysLeft(user.trialEndsAt);
+  const topBar = useTopBar(locale, pathname);
 
   const copy = useMemo(() => {
     const isTr = locale === 'tr';
     return {
       dashboard: isTr ? 'Panel' : 'Dashboard',
       feedbacks: isTr ? 'Yorumlar' : 'Feedbacks',
+      analytics: isTr ? 'Analitik' : 'Analytics',
       restaurants: isTr ? 'İşletmeler' : 'Locations',
       qr: 'QR',
       menu: isTr ? 'Menü' : 'Menu',
       guide: isTr ? 'Kılavuz' : 'Guide',
-      profile: isTr ? 'Profil' : 'Profile',
+      profile: isTr ? 'Ayarlar' : 'Settings',
       logout: isTr ? 'Çıkış' : 'Logout',
       plan: isTr ? 'Plan' : 'Plan',
       trialLeft: isTr ? 'gün kaldı' : 'days left',
@@ -57,12 +85,12 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
   const navItems = [
     { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
     { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
+    { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
+    { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
-    { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
-    { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
-    { href: `/${locale}/dashboard/profile`, icon: User, label: copy.profile },
+    { href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
 
   // Mobile bottom nav: 4 primary tabs + "More" sheet for the rest.
@@ -73,10 +101,11 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
     { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
   ];
   const moreSheetItems = [
+    { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
     { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
-    { href: `/${locale}/dashboard/profile`, icon: User, label: copy.profile },
+    { href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
   const moreActive = moreSheetItems.some(
     (i) => pathname === i.href || pathname?.startsWith(`${i.href}/`),
@@ -94,21 +123,61 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
     window.location.href = `/${locale}/auth/login`;
   };
 
+  const primaryName = workspace?.primaryName ?? (locale === 'tr' ? 'İşletmen' : 'Your workspace');
+  const locationCount = workspace?.locationCount ?? 0;
+  const primaryInitial = (workspace?.primaryName || displayName).charAt(0).toUpperCase();
+
+  const quotaLabel = locale === 'tr' ? 'Yorum kotan' : 'Review quota';
+  const quotaValue =
+    user.plan === 'trial' && trialDaysLeft !== null
+      ? `${trialDaysLeft} ${locale === 'tr' ? 'gün deneme' : 'day trial'}`
+      : `${workspace?.feedbackCount ?? 0} / ∞`;
+  const planLabel =
+    user.plan === 'trial'
+      ? locale === 'tr'
+        ? 'TRIAL'
+        : 'TRIAL'
+      : (user.plan || 'growth').toUpperCase() + (locale === 'tr' ? ' PLAN' : ' PLAN');
+  const upgradeLabel = user.plan === 'trial'
+    ? (locale === 'tr' ? 'Yükselt' : 'Upgrade')
+    : (locale === 'tr' ? 'Planı yönet' : 'Manage plan');
+
   const SidebarContent = () => (
-    <div className="flex h-full flex-col bg-[#1A2332]">
+    <div className="flex h-full flex-col bg-[#0A0A0A]">
       {/* Logo */}
-      <div className="border-b border-white/10 px-5 py-5">
-        <Link href={`/${locale}/dashboard`} className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center flex-shrink-0"><BuazeLogo size={44} variant="on-dark" imageUrl={logoUrl} /></div>
-          <div className="min-w-0">
-            <p className="text-lg font-black tracking-tight text-white">Buaze</p>
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">{copy.dashboard}</p>
-          </div>
+      <div className="px-4 pt-5 pb-3">
+        <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
+          <BuazeLogo size={32} variant="on-dark" imageUrl={logoUrl} />
+          <span
+            className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            buaze<span className="text-[#C6F24E]">.</span>
+          </span>
         </Link>
       </div>
 
+      {/* Workspace switcher */}
+      <div className="px-3 pb-3">
+        <div className="flex items-center gap-2.5 rounded-lg bg-[#1A1A1A] px-3 py-2.5">
+          <div
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {primaryInitial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold text-white leading-tight">{primaryName}</p>
+            <p className="pulse-eyebrow text-white/50 mt-0.5">
+              {locationCount} {locale === 'tr' ? 'KONUM' : 'LOCATIONS'}
+            </p>
+          </div>
+          <ChevronDown size={14} className="text-white/40 shrink-0" strokeWidth={2} />
+        </div>
+      </div>
+
       {/* Nav */}
-      <div className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <div className="flex-1 space-y-0.5 overflow-y-auto px-3">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
           const Icon = item.icon;
@@ -117,44 +186,61 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
               key={item.href}
               href={item.href}
               onClick={() => setDrawerOpen(false)}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition-all ${
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
                 isActive
-                  ? 'bg-[#F4B400] text-[#1A2332]'
-                  : 'text-white/60 hover:bg-white/5 hover:text-white'
+                  ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
+                  : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
               }`}
             >
-              <Icon size={18} strokeWidth={2} />
+              <Icon size={16} strokeWidth={2} />
               <span>{item.label}</span>
             </Link>
           );
         })}
       </div>
 
-      {/* Trial banner */}
-      {user.plan === 'trial' && trialDaysLeft !== null && (
-        <div className="mx-3 mb-3 rounded-2xl border border-[#F4B400]/30 bg-[#F4B400]/10 p-4">
-          <div className="mb-1.5 flex items-center gap-2 text-[#F4B400]">
-            <Crown size={13} strokeWidth={2} />
-            <span className="text-[10px] font-black uppercase tracking-[0.25em]">{copy.plan}</span>
-          </div>
-          <p className="text-sm font-black text-white">{trialDaysLeft} {copy.trialLeft}</p>
+      {/* Plan card */}
+      <div className="mx-3 my-3 rounded-lg bg-[#1A1A1A] p-3.5">
+        <div className="flex items-center gap-1.5">
+          {user.plan === 'trial' && <Crown size={11} strokeWidth={2} className="text-[#C6F24E]" />}
+          <span className="pulse-eyebrow text-[#C6F24E]">{planLabel}</span>
         </div>
-      )}
+        <p className="mt-2 text-[12px] text-white/70 leading-[1.45]">
+          {quotaLabel}:{' '}
+          <span
+            className="font-semibold text-white"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {quotaValue}
+          </span>
+        </p>
+        <Link
+          href={`/${locale}/pricing`}
+          className="mt-2.5 block rounded-full bg-[#C6F24E] px-3 py-1.5 text-center text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
+        >
+          {upgradeLabel}
+        </Link>
+      </div>
 
-      {/* User footer */}
+      {/* User row + logout */}
       <div className="border-t border-white/10 bg-black/20 p-3">
-        <div className="mb-2 flex items-center gap-3 rounded-2xl border border-white/5 bg-white/5 px-3 py-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F4B400] text-sm font-black text-[#1A2332]">{initial}</div>
+        <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-white/5 px-2.5 py-2">
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] border border-white/10"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {initial}
+          </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-black text-white">{displayName}</p>
-            <p className="truncate text-[11px] font-bold text-white/45">{user.email}</p>
+            <p className="truncate text-[12px] font-medium text-white">{displayName}</p>
+            <p className="truncate text-[10px] text-white/50">{user.email}</p>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black text-red-400 transition-all hover:bg-red-500/10 hover:text-red-300 active:scale-95"
+          className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/60 transition-all hover:bg-white/5 hover:text-red-300"
         >
-          <LogOut size={16} strokeWidth={2} />
+          <LogOut size={13} strokeWidth={2} />
           {copy.logout}
         </button>
       </div>
@@ -162,7 +248,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
   );
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] lg:flex lg:h-screen lg:overflow-hidden">
+    <div className="min-h-screen bg-[#FFFFFF] lg:flex lg:h-screen lg:overflow-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden h-full w-64 shrink-0 border-r border-white/5 lg:flex">
         <SidebarContent />
@@ -170,26 +256,71 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
 
       <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto">
         {/* Mobile top bar */}
-        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#E8ECF2]/60 bg-white/95 px-4 py-3 backdrop-blur lg:hidden shadow-sm">
-          <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center"><BuazeLogo size={36} variant="default" imageUrl={logoUrl} /></div>
-            <span className="text-base font-black tracking-tight text-[#1A2332]">Buaze</span>
+        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#EDEDED] bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+          <Link href={`/${locale}/dashboard`} className="flex items-center gap-2">
+            <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
+            <span
+              className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              buaze<span className="text-[#C6F24E]">.</span>
+            </span>
           </Link>
 
           <div className="flex items-center gap-2">
             {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 5 && (
-              <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-[#FFF8D6] border border-[#FFD666]/50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#D69E00]">
+              <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-[#EAF9B8] px-3 py-1 pulse-eyebrow text-[#0A0A0A]">
                 <Crown size={10} /> {trialDaysLeft}g
               </span>
             )}
             <button
               onClick={() => setDrawerOpen((v) => !v)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1A2332] text-sm font-black text-[#F4B400]"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]"
+              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {drawerOpen ? <X size={18} strokeWidth={2} /> : <span>{initial}</span>}
             </button>
           </div>
         </div>
+
+        {/* Desktop top bar (breadcrumb + title + search pill + avatar) */}
+        {topBar && (
+          <div className="hidden lg:flex items-center justify-between gap-4 border-b border-[#EDEDED] bg-white px-7 py-3.5">
+            <div className="min-w-0">
+              <p className="pulse-eyebrow text-[#737373]">{topBar.breadcrumb}</p>
+              <h1
+                className="mt-1 text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-none truncate"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {topBar.title}
+              </h1>
+            </div>
+            <div className="flex items-center gap-2.5 shrink-0">
+              <div
+                className="hidden xl:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#737373] cursor-not-allowed select-none"
+                aria-hidden
+                title={locale === 'tr' ? 'Yakında: komut paleti' : 'Coming soon: command palette'}
+              >
+                <Search size={12} strokeWidth={2} />
+                <span>{locale === 'tr' ? 'Yorum, konum, ekip ara…' : 'Search reviews, locations, team…'}</span>
+                <span
+                  className="ml-1 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252]"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  ⌘K
+                </span>
+              </div>
+              <Link
+                href={`/${locale}/dashboard/profile`}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors"
+                style={{ fontFamily: 'var(--font-heading)' }}
+                aria-label={displayName}
+              >
+                {initial}
+              </Link>
+            </div>
+          </div>
+        )}
 
         <main className="min-w-0 flex-1 overflow-x-hidden pb-24 lg:pb-0">
           {announcements.length > 0 && (
@@ -215,7 +346,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
       {/* Mobile bottom nav — 4 primary tabs + More */}
       <nav
         aria-label={copy.dashboard}
-        className="fixed bottom-0 left-0 right-0 z-40 bg-[#1A2332]/95 border-t border-white/10 backdrop-blur-md shadow-[0_-4px_20px_0_rgba(0,0,0,0.35)] lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 bg-[#0A0A0A]/95 border-t border-white/10 backdrop-blur-md shadow-[0_-4px_20px_0_rgba(0,0,0,0.35)] lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <ul className="flex items-stretch px-2 pt-2 pb-1.5">
@@ -228,22 +359,20 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
                   href={item.href}
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`relative flex flex-col items-center gap-1 px-1 py-1.5 rounded-xl transition-colors ${
-                    isActive ? 'text-[#F4B400]' : 'text-[#E8ECF2]/70 hover:text-white'
+                  className={`relative flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-colors ${
+                    isActive ? 'text-[#C6F24E]' : 'text-white/60 hover:text-white'
                   }`}
                 >
                   {isActive && (
                     <span
                       aria-hidden="true"
-                      className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#F4B400] rounded-b-full"
+                      className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#C6F24E] rounded-b-full"
                     />
                   )}
-                  <span className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-[#F4B400]/15' : ''}`}>
-                    <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                  <span className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-[#C6F24E]/15' : ''}`}>
+                    <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full leading-none">
-                    {item.label}
-                  </span>
+                  <span className="pulse-eyebrow truncate max-w-full">{item.label}</span>
                 </Link>
               </li>
             );
@@ -255,22 +384,20 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
               aria-label={copy.more}
               aria-expanded={moreOpen}
               aria-haspopup="dialog"
-              className={`relative flex w-full flex-col items-center gap-1 px-1 py-1.5 rounded-xl transition-colors ${
-                moreActive ? 'text-[#F4B400]' : 'text-[#E8ECF2]/70 hover:text-white'
+              className={`relative flex w-full flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-colors ${
+                moreActive ? 'text-[#C6F24E]' : 'text-white/60 hover:text-white'
               }`}
             >
               {moreActive && (
                 <span
                   aria-hidden="true"
-                  className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#F4B400] rounded-b-full"
+                  className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#C6F24E] rounded-b-full"
                 />
               )}
-              <span className={`p-2 rounded-xl transition-colors ${moreActive ? 'bg-[#F4B400]/15' : ''}`}>
-                <MoreHorizontal size={20} strokeWidth={moreActive ? 2.5 : 2} />
+              <span className={`p-2 rounded-lg transition-colors ${moreActive ? 'bg-[#C6F24E]/15' : ''}`}>
+                <MoreHorizontal size={18} strokeWidth={moreActive ? 2.5 : 2} />
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full leading-none">
-                {copy.more}
-              </span>
+              <span className="pulse-eyebrow truncate max-w-full">{copy.more}</span>
             </button>
           </li>
         </ul>
@@ -282,25 +409,25 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
           <button
             type="button"
             aria-label="close"
-            className="absolute inset-0 bg-[#0E1525]/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#000000]/60 backdrop-blur-sm"
             onClick={() => setMoreOpen(false)}
           />
           <div
-            className="absolute bottom-0 left-0 right-0 bg-[#1A2332] rounded-t-3xl border-t border-white/10 shadow-2xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            className="absolute bottom-0 left-0 right-0 bg-[#0A0A0A] rounded-t-3xl border-t border-white/10 shadow-2xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <div className="mb-3 flex items-center justify-between px-2">
-              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/60">{copy.more}</p>
+              <p className="pulse-eyebrow text-white/60">{copy.more}</p>
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}
                 aria-label="close"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/60 hover:bg-white/5 hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-white/60 hover:bg-white/5 hover:text-white"
               >
                 <X size={18} strokeWidth={2} />
               </button>
             </div>
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               {moreSheetItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
@@ -310,13 +437,13 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
                       href={item.href}
                       onClick={() => setMoreOpen(false)}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${
+                      className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] transition-colors ${
                         isActive
-                          ? 'bg-[#F4B400] text-[#1A2332]'
-                          : 'text-white/80 hover:bg-white/5 hover:text-white'
+                          ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
+                          : 'text-white/80 hover:bg-white/5 hover:text-white font-medium'
                       }`}
                     >
-                      <Icon size={18} strokeWidth={2} />
+                      <Icon size={16} strokeWidth={2} />
                       <span>{item.label}</span>
                     </Link>
                   </li>
@@ -329,9 +456,9 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
                     setMoreOpen(false);
                     handleLogout();
                   }}
-                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-medium text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
                 >
-                  <LogOut size={18} strokeWidth={2} />
+                  <LogOut size={16} strokeWidth={2} />
                   <span>{copy.logout}</span>
                 </button>
               </li>

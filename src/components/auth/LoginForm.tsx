@@ -64,15 +64,15 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-[20px] text-[13px] font-black border-2 border-red-500/20 shadow-sm text-center">
+        <div className="bg-[#FEF2F2] text-[#B91C1C] p-4 rounded-xl text-[13px] font-medium border border-[#FECACA] text-center">
           {error}
         </div>
       )}
 
       <div className="space-y-2">
-        <label htmlFor="login-email" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280] ml-1">
+        <label htmlFor="login-email" className="pulse-eyebrow text-[#737373] ml-1 block">
           {t.auth_email}
         </label>
         <input
@@ -82,19 +82,19 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
           autoComplete="email"
           value={form.email}
           onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
-          className="w-full px-5 py-4 bg-[#F8F6F1] rounded-xl border-2 border-[#1A2332] focus:border-[#F4B400] focus:shadow-[0_0_0_4px_rgba(244, 180, 0,0.1)] outline-none transition-all font-bold text-sm"
+          className="w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
           placeholder="can@sirket.com"
         />
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <label htmlFor="login-password" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280]">
+          <label htmlFor="login-password" className="pulse-eyebrow text-[#737373] block">
             {t.auth_password}
           </label>
           <Link
             href={`/${locale}/auth/forgot-password`}
-            className="text-[11px] font-black text-[#2A3444] hover:text-[#F4B400] transition-colors uppercase tracking-widest"
+            className="pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
           >
             {t.auth_forgot}
           </Link>
@@ -107,15 +107,16 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
             autoComplete="current-password"
             value={form.password}
             onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
-            className="w-full px-5 py-4 bg-[#F8F6F1] rounded-xl border-2 border-[#1A2332] focus:border-[#F4B400] focus:shadow-[0_0_0_4px_rgba(244, 180, 0,0.1)] outline-none transition-all font-bold text-sm pr-12"
+            className="w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
             placeholder="••••••••"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#2A3444] hover:text-[#1A2332]"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#737373] hover:text-[#0A0A0A] transition-colors"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
-            {showPassword ? <EyeOff size={20} strokeWidth={2} /> : <Eye size={20} strokeWidth={2} />}
+            {showPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
           </button>
         </div>
       </div>
@@ -126,9 +127,9 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
           id="rememberMe"
           checked={form.rememberMe}
           onChange={(e) => setForm(prev => ({ ...prev, rememberMe: e.target.checked }))}
-          className="w-4 h-4 rounded border-2 border-[#1A2332] text-[#1A2332] focus:ring-[#F4B400] accent-[#F4B400]"
+          className="w-4 h-4 rounded border border-[#D4D4D4] focus:ring-2 focus:ring-[#C6F24E] accent-[#0A0A0A]"
         />
-        <label htmlFor="rememberMe" className="text-xs font-bold text-[#2A3444] cursor-pointer">
+        <label htmlFor="rememberMe" className="text-[13px] font-medium text-[#525252] cursor-pointer">
           {locale === 'tr' ? 'Beni hatırla' : 'Remember me'}
         </label>
       </div>
@@ -137,15 +138,16 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         type="submit"
         id="login-submit-btn"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+        className="w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" strokeWidth={2} />}
-        {loading ? t.auth_login_loading.toUpperCase() : t.auth_login_btn.toUpperCase()}
+        {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}
+        {loading ? t.auth_login_loading : t.auth_login_btn}
+        {!loading && <ArrowRight size={18} strokeWidth={2} />}
       </button>
 
-      <p className="text-center text-sm font-bold text-[#2A3444]">
+      <p className="text-center text-[13px] text-[#525252]">
         {t.auth_no_account}{' '}
-        <Link href={`/${locale}/auth/register`} className="text-[#F4B400] font-black hover:underline decoration-2 underline-offset-4">
+        <Link href={`/${locale}/auth/register`} className="text-[#0A0A0A] font-medium hover:text-[#A8D62E] transition-colors">
           {t.auth_register_link}
         </Link>
       </p>

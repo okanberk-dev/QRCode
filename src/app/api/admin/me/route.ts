@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
       if (user) {
         const restaurants = await prisma.restaurant.findMany({
           where: { userId: user.id },
-          select: { id: true },
+          select: { id: true, name: true },
           orderBy: { createdAt: 'asc' },
         });
         const restaurantIds = restaurants.map(r => r.id);
@@ -59,6 +59,8 @@ export async function GET(req: NextRequest) {
           trialEndsAt: user.trialEndsAt,
           restaurantId: restaurantIds[0] || null,
           restaurantIds,
+          workspaceName: restaurants[0]?.name || user.name || user.email.split('@')[0],
+          locationCount: restaurants.length,
           logoUrl,
           faviconUrl,
         });

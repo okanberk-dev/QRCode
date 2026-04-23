@@ -1,8 +1,9 @@
 'use client';
 
-import { 
-  Menu, X, Globe, ChevronDown, Utensils, BedDouble, HeartPulse, BookOpen, 
-  Stethoscope, Sparkles, PawPrint, Home, Car, Scissors, Dumbbell, Scale, GraduationCap, Bed, Layers 
+import {
+  Menu, X, Globe, ChevronDown, Utensils, BedDouble, HeartPulse, BookOpen,
+  Stethoscope, Sparkles, PawPrint, Home, Car, Scissors, Dumbbell, Scale, GraduationCap, Bed, Layers,
+  Zap, TrendingUp, QrCode
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useTransition, useRef, useEffect } from 'react';
@@ -81,22 +82,22 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
           href: `${base}/solutions/restaurants`,
           icon: <Utensils size={16} />,
           label: t.nav_sol_restaurants,
-          color: 'text-[#F4B400]',
-          bgColor: 'bg-[#F4B400]/10',
+          color: 'text-[#C6F24E]',
+          bgColor: 'bg-[#C6F24E]/10',
         },
         {
           href: `${base}/solutions/hotels`,
           icon: <BedDouble size={16} />,
           label: t.nav_sol_hotels,
-          color: 'text-[#F4B400]',
-          bgColor: 'bg-[#F4B400]/10',
+          color: 'text-[#C6F24E]',
+          bgColor: 'bg-[#C6F24E]/10',
         },
         {
           href: `${base}/solutions/boutique-hotels`,
           icon: <Bed size={16} />,
           label: t.sol_bou_title,
-          color: 'text-[#F4B400]',
-          bgColor: 'bg-[#F4B400]/10',
+          color: 'text-[#C6F24E]',
+          bgColor: 'bg-[#C6F24E]/10',
         },
       ]
     },
@@ -128,8 +129,8 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
           href: `${base}/solutions/veterinary`,
           icon: <PawPrint size={16} />,
           label: t.sol_vet_title,
-          color: 'text-[#F4B400]',
-          bgColor: 'bg-[#F4B400]/10',
+          color: 'text-[#C6F24E]',
+          bgColor: 'bg-[#C6F24E]/10',
         },
       ]
     },
@@ -226,13 +227,16 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
   return (
     <>
     <MobileBottomNav locale={locale} isLoggedIn={isLoggedIn} />
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-lg border-b border-[#E8ECF2]/60 h-[64px]">
+    <nav className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-lg border-b border-[#EDEDED]/60 h-[64px]">
       <div className="max-w-[1200px] mx-auto px-5 sm:px-8 h-full flex items-center justify-between">
         {/* Logo */}
         <Link href={`${base}`} className="flex items-center gap-2 group">
           <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
-          <span className="text-[17px] font-extrabold tracking-[-0.02em] text-[#1A2332]">
-            buaze<span className="text-[#F4B400]">.</span>
+          <span
+            className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            buaze<span className="text-[#C6F24E]">.</span>
           </span>
         </Link>
 
@@ -247,7 +251,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             onMouseLeave={handleLearnLeave}
           >
             <button
-              className="flex items-center gap-1 text-[13px] font-medium text-[#2A3444] hover:text-[#1A2332] transition-colors"
+              className="flex items-center gap-1 text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
               onClick={() => setLearnOpen(!learnOpen)}
             >
               {t.nav_howItWorks}
@@ -259,7 +263,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
 
             {/* Dropdown Panel */}
             <div
-              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[260px] bg-white border border-[#1A2332] rounded-2xl shadow-md overflow-hidden transition-all duration-200 origin-top ${
+              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[260px] bg-white border border-[#EDEDED] rounded-2xl shadow-[0_8px_24px_rgba(10,10,10,0.08)] overflow-hidden transition-all duration-200 origin-top ${
                 learnOpen
                   ? 'opacity-100 scale-100 pointer-events-auto'
                   : 'opacity-0 scale-95 pointer-events-none'
@@ -267,42 +271,90 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             >
               <div className="p-2 space-y-1">
                 <Link
-                  href={`${base}/#how-it-works`}
+                  href={`${base}/features`}
                   onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F8F6F1] transition-colors group"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#F4B400]/10 rounded-lg flex items-center justify-center text-[#F4B400] group-hover:scale-110 transition-transform">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <Zap size={15} />
+                  </div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Özellikler' : 'Features'}</div>
+                </Link>
+
+                <Link
+                  href={`${base}/how-it-works`}
+                  onClick={() => setLearnOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <Utensils size={15} />
                   </div>
-                  <div className="text-[14px] font-bold text-[#1A2332]">{t.nav_learn_features}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_features}</div>
                 </Link>
-                
+
+                <Link
+                  href={`${base}/solutions/qr-generator`}
+                  onClick={() => setLearnOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <QrCode size={15} />
+                  </div>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-[14px] font-medium text-[#0A0A0A]">
+                      {locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}
+                    </span>
+                    <span className="pulse-eyebrow bg-[#C6F24E] text-[#0A0A0A] px-1.5 py-0.5 rounded">
+                      {locale === 'tr' ? 'YENİ' : 'NEW'}
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  href={`${base}/customer-stories`}
+                  onClick={() => setLearnOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <TrendingUp size={15} />
+                  </div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Başarı Hikayeleri' : 'Customer Stories'}</div>
+                </Link>
+
                 <Link
                   href={`${base}/blog`}
                   onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F8F6F1] transition-colors group"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#10b981]/10 rounded-lg flex items-center justify-center text-[#10b981] group-hover:scale-110 transition-transform">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <BookOpen size={15} />
                   </div>
-                  <div className="text-[14px] font-bold text-[#1A2332]">{t.nav_learn_blog}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_blog}</div>
                 </Link>
 
                 <Link
                   href={`${base}/compare`}
                   onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F8F6F1] transition-colors group"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#6366f1]/10 rounded-lg flex items-center justify-center text-[#6366f1] group-hover:scale-110 transition-transform">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <Layers size={15} />
                   </div>
-                  <div className="text-[14px] font-bold text-[#1A2332]">{t.nav_compare}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_compare}</div>
                 </Link>
               </div>
             </div>
           </div>
           
-          {/* Solutions Dropdown */}
+          {/* Çözümler — solutions overview link */}
+          <Link
+            href={`${base}/solutions`}
+            className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
+          >
+            {t.nav_solutions}
+          </Link>
+
+          {/* Sektörler — industry sectors dropdown */}
           <div
             ref={solutionsRef}
             className="relative"
@@ -310,10 +362,10 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             onMouseLeave={handleSolutionsLeave}
           >
             <button
-              className="flex items-center gap-1 text-[13px] font-medium text-[#2A3444] hover:text-[#1A2332] transition-colors"
+              className="flex items-center gap-1 text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
               onClick={() => setSolutionsOpen(!solutionsOpen)}
             >
-              {t.nav_solutions}
+              {locale === 'tr' ? 'Sektörler' : 'Industries'}
               <ChevronDown
                 size={14}
                 className={`transition-transform duration-200 ${solutionsOpen ? 'rotate-180' : ''}`}
@@ -322,7 +374,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
 
             {/* Dropdown Panel (Mega Menu) */}
             <div
-              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[720px] bg-white border border-[#1A2332] rounded-2xl shadow-md overflow-hidden transition-all duration-200 origin-top ${
+              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[720px] bg-white border border-[#EDEDED] rounded-2xl shadow-[0_8px_24px_rgba(10,10,10,0.08)] overflow-hidden transition-all duration-200 origin-top ${
                 solutionsOpen
                   ? 'opacity-100 scale-100 pointer-events-auto'
                   : 'opacity-0 scale-95 pointer-events-none'
@@ -331,7 +383,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
               <div className="p-6 grid grid-cols-3 gap-8">
                 {solutionCategories.map((category, idx) => (
                   <div key={idx} className="space-y-4">
-                    <h5 className="text-[10px] font-extrabold uppercase tracking-widest text-[#6B7280] px-2">
+                    <h5 className="pulse-eyebrow text-[#737373] px-2">
                       {category.title}
                     </h5>
                     <div className="space-y-1">
@@ -340,12 +392,12 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
                           key={i}
                           href={item.href}
                           onClick={() => setSolutionsOpen(false)}
-                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#F8F6F1] transition-colors group"
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#EAF9B8] transition-colors"
                         >
-                          <div className={`flex-shrink-0 w-8 h-8 ${item.bgColor} rounded-lg flex items-center justify-center ${item.color} group-hover:scale-110 transition-transform`}>
+                          <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                             {item.icon}
                           </div>
-                          <div className="text-[13px] font-bold text-[#1A2332] leading-tight group-hover:text-[#F4B400] transition-colors">
+                          <div className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
                             {item.label}
                           </div>
                         </Link>
@@ -354,11 +406,11 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
                   </div>
                 ))}
               </div>
-              <div className="border-t border-[#E8ECF2] px-6 py-4 bg-[#F8F6F1] flex items-center justify-between">
+              <div className="border-t border-[#EDEDED] px-6 py-4 bg-[#FAFAFA] flex items-center justify-between">
                 <Link
                   href={`${base}/pricing`}
                   onClick={() => setSolutionsOpen(false)}
-                  className="text-[11px] font-bold text-[#6B7280] hover:text-[#1A2332] transition-colors uppercase tracking-widest"
+                  className="pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
                 >
                   {locale === 'tr' ? 'TÜM PLANLARI GÖRÜNTÜLE →' : 'VIEW ALL PLANS →'}
                 </Link>
@@ -366,9 +418,9 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             </div>
           </div>
 
-          <Link href={`${base}/about`} className="text-[13px] font-medium text-[#2A3444] hover:text-[#1A2332] transition-colors">{t.nav_about}</Link>
-          <Link href={`${base}/pricing`} className="text-[13px] font-medium text-[#2A3444] hover:text-[#1A2332] transition-colors">{t.nav_pricing}</Link>
-          <Link href={`${base}/contact`} className="text-[13px] font-medium text-[#2A3444] hover:text-[#1A2332] transition-colors">{t.nav_contact}</Link>
+          <Link href={`${base}/pricing`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_pricing}</Link>
+          <Link href={`${base}/about`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_about}</Link>
+          <Link href={`${base}/contact`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_contact}</Link>
         </div>
 
         {/* Right side actions */}
@@ -377,7 +429,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
           <div className="relative">
             <button
               onClick={() => setLangMenuOpen(!langMenuOpen)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[12px] font-medium text-[#6B7280] hover:text-[#1A2332] hover:bg-[#F8F6F1] transition-all"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[12px] font-medium text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#FFFFFF] transition-all"
               aria-label="Switch language"
             >
               <Globe size={13} />
@@ -386,13 +438,12 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             {langMenuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setLangMenuOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 bg-white border border-[#E8ECF2] rounded-lg shadow-lg p-1 min-w-[110px] z-50">
+                <div className="absolute right-0 top-full mt-2 bg-white border border-[#EDEDED] rounded-lg shadow-[0_8px_24px_rgba(10,10,10,0.08)] p-1 min-w-[110px] z-50">
                   <button
                     onClick={switchLocale}
-                    className="w-full text-left px-3.5 py-2.5 rounded-md text-[13px] font-medium hover:bg-[#F8F6F1] transition-colors flex items-center gap-2"
+                    className="w-full text-left px-3.5 py-2.5 rounded-md text-[13px] font-medium hover:bg-[#EAF9B8] transition-colors"
                   >
-                    <span>{otherLocale === 'tr' ? '🇹🇷' : '🇬🇧'}</span>
-                    <span>{otherLocale === 'tr' ? 'Türkçe' : 'English'}</span>
+                    {otherLocale === 'tr' ? 'Türkçe' : 'English'}
                   </button>
                 </div>
               </>
@@ -402,28 +453,28 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
           {isLoggedIn ? (
             <Link
               href={`${base}/dashboard`}
-              className="px-5 py-2 text-[14px] font-extrabold bg-[#1A2332] text-white rounded-lg border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:text-[#1A2332] active:translate-y-[3px] active:shadow-none transition-all"
+              className="px-5 py-2 text-[14px] font-medium bg-[#0A0A0A] text-white rounded-full hover:bg-[#1A1A1A] transition-colors"
             >
-              {t.nav_dashboard || (locale === 'tr' ? 'PANELE GİT' : 'DASHBOARD')}
+              {t.nav_dashboard || (locale === 'tr' ? 'Panele git' : 'Dashboard')}
             </Link>
           ) : (
             <>
               <Link
                 href={`${base}/auth/login`}
-                className="hidden sm:inline-flex px-4 py-2 text-[14px] font-bold text-[#2A3444] hover:text-[#1A2332] transition-colors"
+                className="hidden sm:inline-flex px-4 py-2 text-[14px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
               >
                 {t.nav_login}
               </Link>
               <Link
                 href={`${base}/auth/register`}
-                className="px-5 py-2 text-[14px] font-extrabold bg-[#F4B400] text-[#1A2332] rounded-lg shadow-sm hover:bg-[#D69E00] active:translate-y-[3px] active:shadow-none transition-all"
+                className="px-5 py-2 text-[14px] font-medium bg-[#C6F24E] text-[#0A0A0A] rounded-full hover:bg-[#A8D62E] transition-colors"
               >
                 {t.nav_register}
               </Link>
             </>
           )}
           <button
-            className="md:hidden p-2 text-[#1A2332] hover:bg-[#F8F6F1] rounded-md transition-colors ml-2"
+            className="md:hidden p-2 text-[#0A0A0A] hover:bg-[#FFFFFF] rounded-md transition-colors ml-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -435,12 +486,12 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
       {mobileMenuOpen && (
         <>
           <div className="fixed inset-0 bg-black/10 z-50" onClick={() => setMobileMenuOpen(false)} />
-          <div className="md:hidden absolute top-[64px] left-0 right-0 bg-white border-b border-[#E8ECF2] p-5 flex flex-col gap-0.5 z-50 shadow-lg max-h-[calc(100vh-64px)] overflow-y-auto">
+          <div className="md:hidden absolute top-[64px] left-0 right-0 bg-white border-b border-[#EDEDED] p-5 flex flex-col gap-0.5 z-50 shadow-lg max-h-[calc(100vh-64px)] overflow-y-auto">
             
             {/* Mobile Learn Accordion */}
             <button
               onClick={() => setMobileLearnOpen(!mobileLearnOpen)}
-              className="flex items-center justify-between text-[15px] font-medium text-[#1A2332] py-3 px-3 rounded-lg hover:bg-[#F8F6F1] transition-colors w-full text-left"
+              className="flex items-center justify-between text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors w-full text-left"
             >
               {t.nav_howItWorks}
               <ChevronDown
@@ -451,44 +502,90 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             {mobileLearnOpen && (
               <div className="pl-3 space-y-0.5 pb-1">
                 <Link
-                  href={`${base}/#how-it-works`}
+                  href={`${base}/features`}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#F8F6F1] transition-colors"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="w-8 h-8 bg-[#F4B400]/10 rounded-lg flex items-center justify-center text-[#F4B400]">
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <Zap size={15} />
+                  </div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Özellikler' : 'Features'}</div>
+                </Link>
+                <Link
+                  href={`${base}/how-it-works`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <Utensils size={15} />
                   </div>
-                  <div className="text-[14px] font-semibold text-[#1A2332]">{t.nav_learn_features}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_features}</div>
+                </Link>
+                <Link
+                  href={`${base}/solutions/qr-generator`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <QrCode size={15} />
+                  </div>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-[14px] font-medium text-[#0A0A0A]">
+                      {locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}
+                    </span>
+                    <span className="pulse-eyebrow bg-[#C6F24E] text-[#0A0A0A] px-1.5 py-0.5 rounded">
+                      {locale === 'tr' ? 'YENİ' : 'NEW'}
+                    </span>
+                  </div>
+                </Link>
+                <Link
+                  href={`${base}/customer-stories`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <TrendingUp size={15} />
+                  </div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Başarı Hikayeleri' : 'Customer Stories'}</div>
                 </Link>
                 <Link
                   href={`${base}/blog`}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#F8F6F1] transition-colors"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="w-8 h-8 bg-[#10b981]/10 rounded-lg flex items-center justify-center text-[#10b981]">
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <BookOpen size={15} />
                   </div>
-                  <div className="text-[14px] font-semibold text-[#1A2332]">{t.nav_learn_blog}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_blog}</div>
                 </Link>
                 <Link
                   href={`${base}/compare`}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#F8F6F1] transition-colors"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="w-8 h-8 bg-[#6366f1]/10 rounded-lg flex items-center justify-center text-[#6366f1]">
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <Layers size={15} />
                   </div>
-                  <div className="text-[14px] font-semibold text-[#1A2332]">{t.nav_compare}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_compare}</div>
                 </Link>
               </div>
             )}
             
-            {/* Mobile Solutions Accordion */}
-            <button
-              onClick={() => setMobileSolutionsOpen(!mobileSolutionsOpen)}
-              className="flex items-center justify-between text-[15px] font-medium text-[#1A2332] py-3 px-3 rounded-lg hover:bg-[#F8F6F1] transition-colors w-full text-left"
+            {/* Mobile Çözümler link */}
+            <Link
+              href={`${base}/solutions`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
             >
               {t.nav_solutions}
+            </Link>
+
+            {/* Mobile Sektörler accordion */}
+            <button
+              onClick={() => setMobileSolutionsOpen(!mobileSolutionsOpen)}
+              className="flex items-center justify-between text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors w-full text-left"
+            >
+              {locale === 'tr' ? 'Sektörler' : 'Industries'}
               <ChevronDown
                 size={16}
                 className={`transition-transform duration-200 text-[#6B7280] ${mobileSolutionsOpen ? 'rotate-180' : ''}`}
@@ -498,7 +595,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
               <div className="pl-3 space-y-4 pb-4">
                 {solutionCategories.map((category, idx) => (
                   <div key={idx} className="space-y-2">
-                    <h5 className="text-[9px] font-extrabold uppercase tracking-widest text-[#6B7280] px-3 mt-2">
+                    <h5 className="pulse-eyebrow text-[#737373] px-3 mt-2">
                       {category.title}
                     </h5>
                     <div className="space-y-0.5">
@@ -507,12 +604,12 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
                           key={i}
                           href={item.href}
                           onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#F8F6F1] transition-colors"
+                          className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
                         >
-                          <div className={`w-8 h-8 ${item.bgColor} rounded-lg flex items-center justify-center ${item.color}`}>
+                          <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                             {item.icon}
                           </div>
-                          <div className="text-[14px] font-semibold text-[#1A2332]">{item.label}</div>
+                          <div className="text-[14px] font-medium text-[#0A0A0A]">{item.label}</div>
                         </Link>
                       ))}
                     </div>
@@ -521,24 +618,24 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
               </div>
             )}
 
-            <Link href={`${base}/about`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1A2332] py-3 px-3 rounded-lg hover:bg-[#F8F6F1] transition-colors">{t.nav_about}</Link>
-            <Link href={`${base}/pricing`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1A2332] py-3 px-3 rounded-lg hover:bg-[#F8F6F1] transition-colors">{t.nav_pricing}</Link>
-            <Link href={`${base}/contact`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#1A2332] py-3 px-3 rounded-lg hover:bg-[#F8F6F1] transition-colors">{t.nav_contact}</Link>
-            <div className="pt-3 mt-2 border-t border-[#E8ECF2] space-y-0.5">
+            <Link href={`${base}/about`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_about}</Link>
+            <Link href={`${base}/pricing`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_pricing}</Link>
+            <Link href={`${base}/contact`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_contact}</Link>
+            <div className="pt-3 mt-2 border-t border-[#EDEDED] space-y-0.5">
               {isLoggedIn ? (
-                <Link href={`${base}/dashboard`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-black text-[#F4B400] py-3 px-3 rounded-lg hover:bg-[#F8F6F1] uppercase tracking-tight">
-                  {t.nav_dashboard || (locale === 'tr' ? '👤 Panele Git' : '👤 Dashboard')}
+                <Link href={`${base}/dashboard`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors">
+                  {t.nav_dashboard || (locale === 'tr' ? 'Panele git' : 'Dashboard')}
                 </Link>
               ) : (
-                <Link href={`${base}/auth/login`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-medium text-[#1A2332] py-3 px-3 rounded-lg hover:bg-[#F8F6F1]">{t.nav_login}</Link>
+                <Link href={`${base}/auth/login`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors">{t.nav_login}</Link>
               )}
             </div>
             <button
               onClick={() => { switchLocale(); setMobileMenuOpen(false); }}
-              className="flex items-center gap-2 text-[13px] font-medium text-[#6B7280] hover:text-[#1A2332] py-3 px-3 mt-1"
+              className="flex items-center gap-2 text-[13px] font-medium text-[#737373] hover:text-[#0A0A0A] py-3 px-3 mt-1"
             >
               <Globe size={14} />
-              {otherLocale === 'tr' ? '🇹🇷 Türkçe' : '🇬🇧 English'}
+              {otherLocale === 'tr' ? 'Türkçe' : 'English'}
             </button>
           </div>
         </>

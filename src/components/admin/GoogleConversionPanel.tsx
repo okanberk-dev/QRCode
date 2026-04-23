@@ -84,7 +84,7 @@ export default function GoogleConversionPanel({
 
   if (totalResponses === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-[#E8ECF2] bg-white/60 p-6 text-center text-sm font-bold text-[#2A3444]">
+      <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-white/60 p-6 text-center text-sm font-bold text-[#1A1A1A]">
         {copy.noData}
       </div>
     );
@@ -115,7 +115,7 @@ export default function GoogleConversionPanel({
             label={copy.highRating}
             value={highRatings}
             pct={highPct}
-            color="#F4B400"
+            color="#C6F24E"
             bg="bg-amber-50"
             text="text-amber-600"
             icon={<Star size={16} strokeWidth={2} fill="currentColor" />}
@@ -134,36 +134,45 @@ export default function GoogleConversionPanel({
         {/* Right: Big conversion rate + missed opps callout */}
         <div className="flex flex-col gap-3">
           <div className="flex-1 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 sm:p-6">
-            <p className="text-[11px] font-black uppercase tracking-widest text-emerald-700">
-              {copy.rate}
-            </p>
-            <div className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-4xl font-black tabular-nums tracking-tight text-[#1A2332] sm:text-5xl">
+            <p className="pulse-eyebrow text-emerald-700">{copy.rate}</p>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span
+                className="text-[38px] sm:text-[44px] font-medium tabular-nums tracking-[-0.025em] text-[#0A0A0A] leading-none"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
                 {conversionRate === null ? '—' : conversionRate.toFixed(1)}
               </span>
               {conversionRate !== null && (
-                <span className="text-xl font-black text-[#2A3444] sm:text-2xl">%</span>
+                <span
+                  className="text-[22px] font-medium text-[#525252]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  %
+                </span>
               )}
             </div>
-            <p className="mt-2 text-[11px] font-bold text-[#2A3444]">
+            <p className="mt-2 text-[12px] text-[#525252]">
               {sentToGoogle} / {highRatings} {copy.highRatingsLabel} → {copy.sentLabel}
             </p>
           </div>
 
           {hasMissed && (
-            <div className="flex-1 rounded-2xl border-2 border-red-200 bg-red-50 p-4 sm:p-5">
+            <div className="flex-1 rounded-2xl border border-red-200 bg-red-50 p-4 sm:p-5">
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-red-500 text-white">
-                  <AlertTriangle size={16} strokeWidth={2} />
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white">
+                  <AlertTriangle size={14} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <p className="flex items-baseline gap-2 text-[13px] font-black text-red-700">
-                    <span className="text-2xl tabular-nums">{missedOpportunities}</span>
+                  <p className="flex items-baseline gap-2 text-[13px] font-medium text-red-700">
+                    <span
+                      className="text-[22px] tabular-nums font-semibold"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      {missedOpportunities}
+                    </span>
                     {copy.missed}
                   </p>
-                  <p className="mt-1 text-[11px] font-bold text-red-600/90 leading-snug">
-                    {copy.missedSub}
-                  </p>
+                  <p className="mt-1 text-[12px] text-red-600/80 leading-snug">{copy.missedSub}</p>
                 </div>
               </div>
             </div>
@@ -173,18 +182,23 @@ export default function GoogleConversionPanel({
 
       {/* ─── Leaderboard ─── */}
       {showLeaderboard && (
-        <div className="rounded-2xl border border-[#E8ECF2] bg-white">
-          <div className="flex items-start gap-3 border-b border-[#E8ECF2] px-4 py-4 sm:px-5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFF8D6] text-[#D69E00]">
+        <div className="rounded-2xl border border-[#EDEDED] bg-white">
+          <div className="flex items-start gap-3 border-b border-[#EDEDED] px-4 py-4 sm:px-5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EAF9B8] text-[#A8D62E]">
               <Trophy size={18} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <h4 className="text-[13px] font-extrabold text-[#1A2332]">{copy.leaderboardTitle}</h4>
-              <p className="mt-0.5 text-[11px] font-bold text-[#2A3444]">{copy.leaderboardSub}</p>
+              <h4
+                className="text-[14px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {copy.leaderboardTitle}
+              </h4>
+              <p className="mt-0.5 text-[12px] text-[#525252]">{copy.leaderboardSub}</p>
             </div>
           </div>
 
-          <div className="divide-y divide-[#F8F6F1]">
+          <div className="divide-y divide-[#FFFFFF]">
             {byRestaurant.map((rest) => (
               <RestaurantRow
                 key={rest.id}
@@ -219,21 +233,22 @@ function FunnelRow({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-[#E8ECF2] bg-white p-3 sm:p-4">
+    <div className="rounded-2xl border border-[#EDEDED] bg-white p-3 sm:p-4">
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${bg} ${text}`}>
             {icon ?? <ArrowDownRight size={14} strokeWidth={2} />}
           </div>
-          <span className="truncate text-[11px] font-black uppercase tracking-widest text-[#2A3444]">
-            {label}
-          </span>
+          <span className="truncate pulse-eyebrow text-[#525252]">{label}</span>
         </div>
-        <span className="shrink-0 text-lg font-black tabular-nums text-[#1A2332] sm:text-xl">
+        <span
+          className="shrink-0 text-[18px] font-medium tabular-nums text-[#0A0A0A] tracking-[-0.02em] sm:text-[20px]"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >
           {value}
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-[#E8ECF2]">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-[#EDEDED]">
         <div
           className="h-full rounded-full transition-all"
           style={{
@@ -276,29 +291,37 @@ function RestaurantRow({
     <Wrapper
       onClick={onClick}
       className={`w-full px-4 py-3.5 text-left transition-colors sm:px-5 ${
-        onClick ? 'hover:bg-[#F8F6F1] cursor-pointer' : 'cursor-default'
+        onClick ? 'hover:bg-[#FFFFFF] cursor-pointer' : 'cursor-default'
       }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-black text-[#1A2332]">{rest.name}</p>
+          <p
+            className="truncate text-[13px] font-semibold text-[#0A0A0A] tracking-[-0.01em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {rest.name}
+          </p>
           {!rest.hasGoogleLink ? (
-            <p className="mt-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-600">
-              <Link2Off size={11} strokeWidth={2} />
+            <p className="mt-1 flex items-center gap-1.5 pulse-eyebrow text-red-600">
+              <Link2Off size={10} strokeWidth={2} />
               {copy.noGoogleLink} · {copy.setLink} →
             </p>
           ) : (
-            <p className="mt-1 text-[10px] font-bold text-[#2A3444]">
+            <p className="mt-1 text-[11px] text-[#525252]">
               {rest.sentToGoogle} / {rest.highRatings} {copy.highRatingsLabel} → {copy.sentLabel}
             </p>
           )}
         </div>
 
         <div className="shrink-0 text-right">
-          <div className={`text-lg font-black tabular-nums sm:text-xl ${rateColor}`}>
+          <div
+            className={`text-[18px] font-medium tabular-nums tracking-[-0.02em] sm:text-[20px] ${rateColor}`}
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
             {rest.conversionRate === null ? '—' : `${rest.conversionRate.toFixed(0)}%`}
           </div>
-          <div className="mt-1 h-1.5 w-20 overflow-hidden rounded-full bg-[#E8ECF2]">
+          <div className="mt-1 h-1.5 w-20 overflow-hidden rounded-full bg-[#EDEDED]">
             <div
               className={`h-full rounded-full ${
                 rest.conversionRate === null || rest.conversionRate === 0

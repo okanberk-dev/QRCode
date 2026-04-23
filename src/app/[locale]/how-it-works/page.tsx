@@ -3,8 +3,12 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import { Zap, Users, Trophy, ArrowRight, MessageSquare, BarChart3, QrCode } from 'lucide-react';
-import Link from 'next/link';
+import {
+  IllusCompass,
+  IllusInbox,
+  IllusChart,
+  IllusShield,
+} from '@/components/marketing/PulseIllustrations';
 
 export async function generateMetadata({
   params,
@@ -25,7 +29,7 @@ export async function generateMetadata({
       : ['QR reputation management how it works', 'customer feedback system setup', 'Google review collection system', 'digital reputation steps'],
     alternates: {
       canonical: `https://buaze.com/${locale}/how-it-works`,
-      languages: { 'tr': 'https://buaze.com/tr/how-it-works', 'en': 'https://buaze.com/en/how-it-works', 'x-default': 'https://buaze.com/en/how-it-works' },
+      languages: { tr: 'https://buaze.com/tr/how-it-works', en: 'https://buaze.com/en/how-it-works', 'x-default': 'https://buaze.com/en/how-it-works' },
     },
     openGraph: {
       title,
@@ -44,38 +48,53 @@ export default async function HowItWorksPage({
 }) {
   const { locale } = await params;
   const t = getTranslations(locale);
-  const base = `/${locale}`;
-
   const isTr = locale === 'tr';
 
   const steps = [
     {
       id: '01',
-      title: isTr ? 'Profesyonel QR Kodunuzu Oluşturun' : 'Create Your Professional QR Code',
+      title: isTr ? 'QR kodunu yerleştir' : 'Place the QR code',
       desc: isTr
-        ? 'İşletmenize özel, estetik ve dikkat çekici QR kodları saniyeler içinde panelimizden tasarlayın.'
-        : 'Design aesthetic and remarkable QR codes specific to your business from our panel in seconds.',
-      icon: <QrCode size={32} />,
-      color: '#F4B400'
+        ? 'Sihirbazla 3 dakikada özel markan ile QR kart tasarla. Masaya, faturaya ya da kapıya yapıştır. Her konum ve personel için farklı kod oluştur.'
+        : 'Design a branded QR card with the wizard in 3 minutes. Stick it on the table, receipt or door. Create a distinct code per location and staff member.',
+      Ill: IllusCompass,
+      perks: isTr
+        ? ['2 dakikada hazır', 'Özel tasarım', 'Toplu indir', 'Sayfa başı analiz']
+        : ['Ready in 2 minutes', 'Custom design', 'Bulk download', 'Per-page analytics'],
     },
     {
       id: '02',
-      title: isTr ? 'Müşteri Deneyimini Basitleştirin' : 'Simplify Customer Experience',
+      title: isTr ? 'Müşteri yorum bırakır' : 'Customer leaves a review',
       desc: isTr
-        ? 'Müşterileriniz tek bir tarama ile doğrudan sizin belirlediğiniz akıllı akışa yönlendirilsin.'
-        : 'Your customers are directed directly to the smart flow you specify with a single scan.',
-      icon: <Users size={32} />,
-      color: '#F4B400'
+        ? 'Müşteri kodu tarar, bir formda 1-5 puan ve kısa bir not bırakır. Memnunsa Google\'a yönlenir, değilse ekibine iletilir — kriz büyümeden çözülür.'
+        : 'The customer scans the code and leaves a 1-5 rating and a short note. Happy ones go to Google; unhappy ones reach your team — a crisis solved before it grows.',
+      Ill: IllusInbox,
+      perks: isTr
+        ? ['Anlık bildirim', 'Akıllı yönlendirme', 'Google uyumlu akış', 'Özel feedback formu']
+        : ['Live notifications', 'Smart routing', 'Google-compliant flow', 'Private feedback form'],
     },
     {
       id: '03',
-      title: isTr ? 'Operasyonları Yönetin' : 'Manage Operations',
+      title: isTr ? 'Panelden yönet' : 'Manage from the panel',
       desc: isTr
-        ? 'Geri bildirim akışını anlık takip edin ve krizleri operasyonel olarak profesyonelce yönetin.'
-        : 'Monitor feedback flow in real-time and manage crises operationally and professionally.',
-      icon: <Trophy size={32} />,
-      color: '#F4B400'
-    }
+        ? 'Tüm yorumları tek panelde topla. AI etiketleme, olumsuzları otomatik atar. Yanıt şablonları ile saniyeler içinde cevap ver.'
+        : 'Collect every review in one panel. AI tags route negatives automatically. Reply in seconds with response templates.',
+      Ill: IllusShield,
+      perks: isTr
+        ? ['Otomatik etiketleme', 'Ekip atama', 'AI yanıt şablonu', 'Mobil yönetim']
+        : ['Auto-tagging', 'Team assignment', 'AI reply templates', 'Mobile admin'],
+    },
+    {
+      id: '04',
+      title: isTr ? 'Canlı analizle izle' : 'Track with live analytics',
+      desc: isTr
+        ? 'NPS skorun, Google puan değişimin, personel performansın — hepsi canlı dashboard\'da. Haftalık rapor e-postana düşer.'
+        : 'Your NPS, Google score shift, staff performance — all in a live dashboard. The weekly digest lands in your inbox.',
+      Ill: IllusChart,
+      perks: isTr
+        ? ['Gerçek zamanlı grafik', 'CSV dışa aktar', 'Şube karşılaştırma', 'SLA takibi']
+        : ['Real-time charts', 'CSV export', 'Branch benchmarks', 'SLA tracking'],
+    },
   ];
 
   const jsonLd = {
@@ -106,125 +125,139 @@ export default async function HowItWorksPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* ─── Hero Section (3D Enriched) ─── */}
-      <section className="pt-20 sm:pt-32 pb-12 sm:pb-20 px-5 sm:px-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#F4B400]/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
-        <div className="max-w-[1200px] mx-auto text-center space-y-8 relative">
-          <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md sm:shadow-md">
-             <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em]">{locale === 'tr' ? 'SİSTEM NASIL ÇALIŞIR?' : 'HOW THE SYSTEM WORKS'}</span>
-          </div>
-          <h1 className="text-[34px] sm:text-[84px] font-extrabold leading-[1.1] sm:leading-[0.9] tracking-tight sm:tracking-[-0.05em] text-[#1A2332]">
-             {locale === 'tr' ? 'İtibar Yönetiminin' : 'The Future of'}<br/>
-             <span className="text-[#F4B400]">{locale === 'tr' ? 'Dijital Geleceği' : 'Digital Reputation'}</span>
+      {/* ─── Hero ─── */}
+      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-24 pb-16 sm:pb-20">
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
+          width="100%"
+          height="100%"
+        >
+          <defs>
+            <pattern id="hiwGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#hiwGrid)" />
+        </svg>
+        <div className="relative max-w-[900px] mx-auto text-center">
+          <span className="pulse-eyebrow text-[#737373]">
+            {isTr ? 'Nasıl çalışır' : 'How it works'}
+          </span>
+          <h1 className="mt-5 text-[40px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+            {isTr ? (
+              <>
+                5 dakikada kurulum.
+                <br />
+                Ömür boyu <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">ritim</span>.
+              </>
+            ) : (
+              <>
+                5-minute setup.
+                <br />
+                Lifetime <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">rhythm</span>.
+              </>
+            )}
           </h1>
-          <p className="text-[16px] sm:text-[22px] text-[#2A3444] max-w-[640px] mx-auto leading-relaxed font-bold">
-             {locale === 'tr' 
-               ? 'Karmaşık algoritmaları ve müşteri psikolojisini birleştirdik. İşletmenizi büyütmek için gereken her şeyi 3 basit adıma indirdik.' 
-               : 'We combined complex algorithms with customer psychology. We reduced everything you need to grow your business into 3 simple steps.'}
+          <p className="mt-6 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[560px] mx-auto">
+            {isTr
+              ? 'Karmaşık yazılımı ve müşteri psikolojisini sade bir akışa indirdik. Kurulum beş dakika, sonuç ömür boyu.'
+              : 'We reduced complex software and customer psychology into a simple flow. Five-minute setup, lifetime return.'}
           </p>
         </div>
       </section>
 
-      {/* ─── Detailed Steps (Tactile 3D) ─── */}
-      <section className="py-16 sm:py-40 px-5 sm:px-8 bg-white border-y-[3px] sm:border-y-[4px] border-[#1A2332]">
-        <div className="max-w-[1100px] mx-auto space-y-24 sm:space-y-48">
-          {steps.map((step, i) => (
-            <div key={i} className={`flex flex-col ${i % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-12 sm:gap-16 lg:gap-24 relative`}>
-              {/* Step indicator line */}
-              {i < steps.length - 1 && (
-                <div className="absolute left-1/2 bottom-[-160px] hidden lg:block w-[4px] h-[120px] bg-[#F8F6F1] -translate-x-1/2" />
-              )}
-              
-              <div className="w-full lg:flex-1 space-y-6 sm:space-y-8 text-center lg:text-left">
-                <div className="text-[60px] sm:text-[120px] font-black text-[#F4B400]/15 leading-none absolute -top-8 left-0 lg:-top-10 lg:-left-10 pointer-events-none select-none w-full lg:w-auto">
-                   {step.id}
-                </div>
-                <div className="relative z-10 space-y-4 sm:space-y-6">
-                  <h2 className="text-[28px] sm:text-[52px] font-extrabold leading-[1.1] tracking-tight sm:tracking-[-0.03em] text-[#1A2332]">
-                     {step.title}
-                  </h2>
-                  <p className="text-[15px] sm:text-[19px] text-[#2A3444] leading-relaxed font-bold">
-                     {step.desc}
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-[400px] mx-auto lg:mx-0">
-                     {[
-                       locale === 'tr' ? 'Anlık Bildirimler' : 'Instant Alerts',
-                       locale === 'tr' ? 'Tam Özelleştirme' : 'Full Customization',
-                       locale === 'tr' ? 'Mobil Yönetim' : 'Mobile Admin',
-                       locale === 'tr' ? 'Google Entegrasyonu' : 'Google Integration'
-                     ].map((item, idx) => (
-                       <div key={idx} className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-lg bg-[#1A2332] flex items-center justify-center text-white border-2 border-[#1A2332] shadow-md">
-                             <Zap size={12} strokeWidth={2} className="text-[#F4B400]" />
-                          </div>
-                          <span className="text-[12px] sm:text-[13px] font-black text-[#1A2332] uppercase tracking-widest">{item}</span>
-                       </div>
-                     ))}
+      {/* ─── Timeline · design: center line + numbered circle, alternating sides ─── */}
+      <section className="px-6 sm:px-10 pb-24">
+        <div className="relative max-w-[1100px] mx-auto">
+          {/* Vertical center line — desktop only */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-0 bottom-0 w-[2px] bg-[#EDEDED] -translate-x-1/2 hidden lg:block"
+          />
+
+          <div className="space-y-16 lg:space-y-20">
+            {steps.map((step, i) => {
+              const sideLeft = i % 2 === 0; // even index: text left, illus right
+              return (
+                <div
+                  key={step.id}
+                  className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-8 lg:gap-10"
+                >
+                  {/* Content column (text side on desktop) */}
+                  <div
+                    className={`w-full lg:w-auto text-center space-y-4 ${
+                      sideLeft
+                        ? 'lg:order-1 lg:text-right lg:pr-4'
+                        : 'lg:order-3 lg:text-left lg:pl-4'
+                    }`}
+                  >
+                    <span className="pulse-eyebrow text-[#A8D62E]">
+                      {isTr ? 'ADIM' : 'STEP'} {step.id}
+                    </span>
+                    <h2
+                      className="text-[30px] sm:text-[36px] font-medium leading-[1.05] tracking-[-0.025em] text-[#0A0A0A]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      {step.title}
+                    </h2>
+                    <p
+                      className={`text-[15px] sm:text-[16px] text-[#525252] leading-[1.6] max-w-[420px] ${
+                        sideLeft ? 'mx-auto lg:ml-auto lg:mr-0' : 'mx-auto lg:mr-auto lg:ml-0'
+                      }`}
+                    >
+                      {step.desc}
+                    </p>
+                    <ul
+                      className={`flex flex-wrap gap-x-4 gap-y-1.5 max-w-[420px] ${
+                        sideLeft ? 'mx-auto lg:ml-auto lg:mr-0 lg:justify-end' : 'mx-auto lg:mr-auto lg:ml-0'
+                      }`}
+                    >
+                      {step.perks.map((p) => (
+                        <li key={p} className="flex items-center gap-1.5 text-[13px] text-[#525252]">
+                          <span className="h-3.5 w-3.5 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[9px] font-bold shrink-0">
+                            ✓
+                          </span>
+                          {p}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Center numbered circle (desktop) / inline pill (mobile) */}
+                  <div className="flex justify-center lg:order-2 relative">
+                    <div
+                      className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[16px] font-semibold"
+                      style={{
+                        fontFamily: 'var(--font-heading)',
+                        boxShadow: '0 0 0 4px #FFFFFF, 0 0 0 6px #0A0A0A',
+                      }}
+                    >
+                      {step.id}
+                    </div>
+                  </div>
+
+                  {/* Illus column (other side on desktop) */}
+                  <div
+                    className={`w-full lg:w-auto flex justify-center ${
+                      sideLeft ? 'lg:order-3' : 'lg:order-1'
+                    }`}
+                  >
+                    <div className="bg-[#FAFAFA] border border-[#EDEDED] rounded-2xl p-8 sm:p-10 flex items-center justify-center aspect-square max-w-[300px] w-full">
+                      <step.Ill size={200} className="w-full h-auto max-w-[220px]" />
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="w-full lg:flex-1 relative">
-                <div className="relative group max-w-[320px] sm:max-w-none mx-auto">
-                  <div className="absolute inset-0 bg-[#F4B400] rounded-[32px] sm:rounded-[48px] translate-x-4 translate-y-4 sm:translate-x-6 sm:translate-y-6 group-hover:translate-x-6 group-hover:translate-y-6 sm:group-hover:translate-x-8 sm:group-hover:translate-y-8 transition-transform -z-10 border sm:border border-[#1A2332]" />
-                  <div className="bg-[#1A2332] rounded-[32px] sm:rounded-[48px] border sm:border border-[#1A2332] p-10 sm:p-20 flex items-center justify-center aspect-square shadow-[0_20px_50px_-10px_rgba(0,0,0,0.3)] sm:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] transition-all group-hover:-translate-y-2 overflow-hidden">
-                     <div className="text-[#F4B400] drop-shadow-[0_10px_10px_rgba(244, 180, 0,0.3)] scale-[2] sm:scale-[3.5]">
-                        {step.icon}
-                     </div>
-                     <div className="absolute inset-0 bg-gradient-to-tr from-[#F4B400]/10 to-transparent pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── Features Grid (Premium 3D) ─── */}
-      <section className="py-20 sm:py-40 px-5 sm:px-8 bg-[#1A2332] text-white relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_120%,rgba(244, 180, 0,0.15),transparent)] pointer-events-none" />
-        <div className="max-w-[1200px] mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
-            {[
-              { icon: <MessageSquare className="text-[#F4B400] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2} />, t: locale === 'tr' ? 'Geri Bildirim Yönetimi' : 'Feedback Management', d: locale === 'tr' ? 'Müşteri deneyimini anlık olarak yapılandırılmış veriye dönüştürerek marka itibarınızı profesyonelce korur.' : 'Protects your brand reputation by converting customer experience into real-time structured data.' },
-              { icon: <BarChart3 className="text-[#F4B400] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2} />, t: locale === 'tr' ? 'Gerçek Zamanlı Analiz' : 'Real-time Analytics', d: locale === 'tr' ? 'Müşteri memnuniyet eğilimlerini anlık grafiklerle izleyin ve aksiyon alın.' : 'Monitor satisfaction trends with live charts and take immediate action.' },
-              { icon: <Zap className="text-[#F4B400] w-8 h-8 sm:w-9 sm:h-9" strokeWidth={2} />, t: locale === 'tr' ? 'Işık Hızında Kurulum' : 'Lightning Setup', d: locale === 'tr' ? 'Karmaşık entegrasyonlar yok. Sisteminiz 5 dakikada geri bildirim toplamaya hazır.' : 'No complex integrations. Your system is ready to collect feedback in 5 minutes.' }
-            ].map((f, i) => (
-              <div key={i} className="p-8 sm:p-10 bg-white/5 rounded-[32px] sm:rounded-[40px] border sm:border border-white/10 hover:border-[#F4B400]/50 hover:bg-white/10 transition-all group">
-                 <div className="mb-6 w-14 h-14 sm:w-16 sm:h-16 bg-white/5 rounded-2xl flex items-center justify-center border-2 border-white/10 group-hover:scale-110 transition-transform">{f.icon}</div>
-                 <h4 className="text-[20px] sm:text-[22px] font-extrabold mb-4 uppercase tracking-tighter">{f.t}</h4>
-                 <p className="text-[14px] sm:text-[15px] text-[#6B7280] font-bold leading-relaxed">{f.d}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </div>
-      </section>
-
-      {/* ─── Final CTA Section ─── */}
-      <section className="py-20 sm:py-40 px-5 sm:px-8 bg-[#F8F6F1]">
-        <div className="max-w-[1000px] mx-auto text-center space-y-10 sm:space-y-12">
-          <h2 className="text-[32px] sm:text-[72px] font-extrabold mb-4 sm:mb-8 leading-[1.1] sm:leading-[0.9] tracking-tight sm:tracking-[-0.05em] text-[#1A2332]">
-             {locale === 'tr' ? 'Başarı Hikayenizi Yazmaya' : 'Ready to Start Writing'}<br/>
-             <span className="text-[#F4B400]">{locale === 'tr' ? 'Şimdi Başlayın' : 'Your Success Story?'}</span>
-          </h2>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <Link
-              href={`${base}/auth/register`}
-              className="w-full sm:w-auto group inline-flex items-center justify-center gap-3 px-10 sm:px-12 py-5 sm:py-6 bg-[#1A2332] text-white text-[17px] sm:text-[18px] font-black rounded-[20px] sm:rounded-[24px] border sm:border border-[#1A2332] shadow-sm sm:shadow-sm hover:bg-[#1A2332] transition-all active:translate-y-[6px] sm:active:translate-y-[10px] active:shadow-none uppercase tracking-widest"
-            >
-              {locale === 'tr' ? 'HEMEN BAŞLA' : 'GET STARTED'} <ArrowRight className="group-hover:translate-x-2 transition-transform" strokeWidth={2} />
-            </Link>
-          </div>
-          <p className="text-[11px] sm:text-[12px] font-black text-[#6B7280] uppercase tracking-[0.2em] leading-relaxed">
-            {locale === 'tr' ? 'KREDİ KARTI GEREKMEZ • 14 GÜN ÜCRETSİZ ERİŞİM' : 'NO CREDIT CARD REQUIRED • 14 DAYS FREE ACCESS'}
-          </p>
         </div>
       </section>
 

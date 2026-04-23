@@ -35,9 +35,9 @@ export default async function RestaurantSolutionPage({ params }: { params: Promi
   const isTr = locale === 'tr';
 
   const stats = [
-    { num: '%340', label: isTr ? 'DAHA FAZLA YORUM' : 'MORE REVIEWS', context: isTr ? '90 günde' : 'In 90 days' },
-    { num: '4.8+', label: isTr ? 'ORT. GOOGLE SKORU' : 'AVG. GOOGLE SCORE', context: isTr ? 'Ağ ortalaması' : 'Network avg.' },
-    { num: '%68', label: isTr ? 'MÜŞTERİ DÖNER' : 'CUSTOMER RETURN', context: isTr ? 'Takip sonrası' : 'After follow-up' },
+    { num: '+184%', label: isTr ? 'ORGANİK YORUM' : 'ORGANIC REVIEWS', context: isTr ? 'İlk 90 gün ort.' : 'First 90 days avg.' },
+    { num: '4.8/5', label: isTr ? 'ORT. GOOGLE PUANI' : 'AVG. GOOGLE SCORE', context: isTr ? 'Buaze kullanıcıları' : 'Buaze users' },
+    { num: '12dk', label: isTr ? 'ORT. YANIT SÜRESİ' : 'AVG. REPLY TIME', context: isTr ? 'Takım atama sonrası' : 'After team assignment' },
     { num: '<3dk', label: isTr ? 'QR KURULUM' : 'QR SETUP', context: isTr ? 'Masaya yerleştir' : 'Place on table' },
   ];
 
@@ -69,7 +69,7 @@ export default async function RestaurantSolutionPage({ params }: { params: Promi
     {
       title: isTr ? 'Google Sıralamada Yükselin' : 'Rise in Google Rankings',
       desc: isTr ? 'Yorum hacmi arttıkça Google Haritalar sıralamanız yükselir, yeni müşteri keşfi artar.' : 'As review volume grows, your Google Maps ranking rises and new customer discovery increases.',
-      icon: <TrendingUp size={20} className="text-[#F4B400]" />,
+      icon: <TrendingUp size={20} className="text-[#C6F24E]" />,
     },
     {
       title: isTr ? 'Kriz Yönetimi' : 'Crisis Management',
@@ -79,12 +79,12 @@ export default async function RestaurantSolutionPage({ params }: { params: Promi
     {
       title: isTr ? 'Müşteri Sadakati' : 'Customer Loyalty',
       desc: isTr ? 'Geri bildirim alan müşteri kendini özel hisseder. Tekrar ziyaret oranı %68\'e kadar çıkar.' : 'Customers who receive feedback feel valued. Return visit rate increases up to 68%.',
-      icon: <Star size={20} className="text-[#F4B400]" />,
+      icon: <Star size={20} className="text-[#C6F24E]" />,
     },
     {
       title: isTr ? 'Rakiplerden Öne Geçin' : 'Outperform Competitors',
       desc: isTr ? 'Daha fazla ve daha güncel yorum, Google algoritmalarında sizi öne çıkarır.' : 'More and more recent reviews put you ahead in Google algorithms.',
-      icon: <Zap size={20} className="text-[#F4B400]" />,
+      icon: <Zap size={20} className="text-[#C6F24E]" />,
     },
   ];
 
@@ -113,7 +113,7 @@ export default async function RestaurantSolutionPage({ params }: { params: Promi
       h1Prefix={t.sol_res_h1.split(' ').slice(0, -1).join(' ')}
       h1Suffix={t.sol_res_h1.split(' ').slice(-1)[0]}
       description={t.sol_res_p}
-      accentColor="#F4B400"
+      accentColor="#C6F24E"
       stats={stats}
       steps={steps}
       benefits={benefits}

@@ -66,14 +66,14 @@ export default function ResetPasswordForm({ locale }: Props) {
 
   if (done) {
     return (
-      <div className="rounded-2xl border-2 border-green-500/20 bg-green-50 p-6 text-center">
-        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500 text-white">
-          <Check size={26} strokeWidth={2} />
+      <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8] p-6 text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+          <Check size={22} strokeWidth={2.5} />
         </div>
-        <p className="text-[15px] font-black text-green-700">
-          {locale === 'tr' ? 'Şifreniz güncellendi!' : 'Password updated!'}
+        <p className="text-[15px] font-medium text-[#0A0A0A]">
+          {locale === 'tr' ? 'Şifreniz güncellendi.' : 'Password updated.'}
         </p>
-        <p className="mt-2 text-[12px] font-bold text-green-600">
+        <p className="mt-2 text-[12px] text-[#525252]">
           {locale === 'tr' ? 'Giriş sayfasına yönlendiriliyorsunuz…' : 'Redirecting to login…'}
         </p>
       </div>
@@ -83,14 +83,14 @@ export default function ResetPasswordForm({ locale }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-[16px] text-[13px] font-black border-2 border-red-500/20 text-center">
+        <div className="bg-[#FEF2F2] text-[#B91C1C] p-4 rounded-xl text-[13px] font-medium border border-[#FECACA] text-center">
           {error}
         </div>
       )}
 
       {!urlToken && (
         <div className="space-y-2">
-          <label htmlFor="reset-token" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280] ml-1">
+          <label htmlFor="reset-token" className="pulse-eyebrow text-[#737373] ml-1 block">
             {locale === 'tr' ? 'Sıfırlama Bağlantısı' : 'Reset Link'}
           </label>
           <input
@@ -100,9 +100,9 @@ export default function ResetPasswordForm({ locale }: Props) {
             value={token}
             onChange={(e) => setToken(e.target.value.trim())}
             placeholder={locale === 'tr' ? 'E-postanızdaki bağlantıyı kullanın' : 'Use the link from your email'}
-            className="w-full px-5 py-3 bg-[#F8F6F1] rounded-xl border-2 border-[#1A2332] focus:border-[#F4B400] focus:shadow-[0_0_0_4px_rgba(244, 180, 0,0.1)] outline-none transition-all font-mono text-[11px] truncate"
+            className="w-full px-4 py-3 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all font-mono text-[11px] text-[#0A0A0A] placeholder:text-[#A3A3A3] truncate"
           />
-          <p className="text-[11px] font-bold text-[#6B7280] ml-1">
+          <p className="text-[12px] text-[#737373] ml-1">
             {locale === 'tr'
               ? 'E-postanızdaki "Şifreyi Sıfırla" butonuna tıklayarak bu alanın otomatik dolmasını sağlayabilirsiniz.'
               : 'Click "Reset Password" in your email to auto-fill this field.'}
@@ -111,7 +111,7 @@ export default function ResetPasswordForm({ locale }: Props) {
       )}
 
       <div className="space-y-2">
-        <label htmlFor="reset-code" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280] ml-1">
+        <label htmlFor="reset-code" className="pulse-eyebrow text-[#737373] ml-1 block">
           {locale === 'tr' ? '6 Haneli Kod' : '6-Digit Code'}
         </label>
         <input
@@ -125,12 +125,12 @@ export default function ResetPasswordForm({ locale }: Props) {
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
           placeholder="••••••"
-          className="w-full px-5 py-4 bg-[#F8F6F1] rounded-xl border-2 border-[#1A2332] focus:border-[#F4B400] focus:shadow-[0_0_0_4px_rgba(244, 180, 0,0.1)] outline-none transition-all font-black text-2xl text-center tracking-[0.5em] font-mono"
+          className="w-full px-4 py-4 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all font-medium text-2xl text-center tracking-[0.5em] font-mono text-[#0A0A0A] placeholder:text-[#A3A3A3]"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="reset-password" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280] ml-1">
+        <label htmlFor="reset-password" className="pulse-eyebrow text-[#737373] ml-1 block">
           {locale === 'tr' ? 'Yeni Şifre' : 'New Password'}
         </label>
         <div className="relative">
@@ -143,14 +143,15 @@ export default function ResetPasswordForm({ locale }: Props) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={locale === 'tr' ? 'En az 8 karakter' : 'At least 8 characters'}
-            className="w-full px-5 py-4 bg-[#F8F6F1] rounded-xl border-2 border-[#1A2332] focus:border-[#F4B400] focus:shadow-[0_0_0_4px_rgba(244, 180, 0,0.1)] outline-none transition-all font-bold text-sm pr-12"
+            className="w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#2A3444] hover:text-[#1A2332]"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#737373] hover:text-[#0A0A0A] transition-colors"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
-            {showPassword ? <EyeOff size={20} strokeWidth={2} /> : <Eye size={20} strokeWidth={2} />}
+            {showPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
           </button>
         </div>
       </div>
@@ -158,19 +159,20 @@ export default function ResetPasswordForm({ locale }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+        className="w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <ArrowRight size={20} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />}
+        {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}
         {loading
-          ? (locale === 'tr' ? 'GÜNCELLENİYOR...' : 'UPDATING...')
-          : (locale === 'tr' ? 'ŞİFREYİ GÜNCELLE' : 'UPDATE PASSWORD')}
+          ? (locale === 'tr' ? 'Güncelleniyor…' : 'Updating…')
+          : (locale === 'tr' ? 'Şifreyi güncelle' : 'Update password')}
+        {!loading && <ArrowRight size={18} strokeWidth={2} />}
       </button>
 
-      <p className="text-center text-[12px] font-bold text-[#2A3444]">
+      <p className="text-center text-[12px] text-[#525252]">
         {locale === 'tr' ? 'Kod süresi doldu mu?' : 'Code expired?'}{' '}
         <Link
           href={`/${locale}/auth/forgot-password`}
-          className="font-black text-[#F4B400] underline underline-offset-4"
+          className="font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
         >
           {locale === 'tr' ? 'Yeni kod iste' : 'Request a new code'}
         </Link>

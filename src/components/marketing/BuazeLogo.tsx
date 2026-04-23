@@ -1,4 +1,8 @@
-type LogoVariant = 'default' | 'on-dark' | 'on-gold';
+'use client';
+
+import { useState } from 'react';
+
+type LogoVariant = 'default' | 'on-dark' | 'on-lime';
 
 interface BuazeLogoProps {
   size?: number;
@@ -7,70 +11,68 @@ interface BuazeLogoProps {
   imageUrl?: string | null;
 }
 
+// Pulse brand symbol — speech bubble with ECG pulse line + lime accent spark.
+// Graphite on pure surfaces, pure on graphite, graphite on lime.
+// Falls back to SVG when imageUrl is missing, empty, not an absolute URL, or fails to load.
 export default function BuazeLogo({ size = 40, className = '', variant = 'default', imageUrl }: BuazeLogoProps) {
-  if (imageUrl) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  const isUsableUrl =
+    typeof imageUrl === 'string' &&
+    imageUrl.trim().length > 0 &&
+    (imageUrl.startsWith('http://') ||
+      imageUrl.startsWith('https://') ||
+      imageUrl.startsWith('data:'));
+
+  if (isUsableUrl && !imgFailed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={imageUrl}
+        src={imageUrl as string}
         width={size}
         height={size}
         className={className}
         alt="Buaze"
         style={{ objectFit: 'contain' }}
+        onError={() => setImgFailed(true)}
       />
     );
   }
 
-  // Unique gradient id per variant so multiple instances on the same page don't clash
-  const gradientId = `buazeLogoGrad-${variant}`;
-
-  // On gold backgrounds, flip to a dark monochrome "b" with a gold checkmark;
-  // on every other surface the signature orange gradient is used for the bowl
-  // and the checkmark stays white.
-  const useGradient = variant !== 'on-gold';
-  const solidBody = '#1A2332';
-  const checkColor = variant === 'on-gold' ? '#F4B400' : '#FFFFFF';
+  const fg = variant === 'on-dark' ? '#FFFFFF' : '#0A0A0A';
+  const accent = variant === 'on-lime' ? '#0A0A0A' : '#C6F24E';
+  const stroke = 3.2;
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 120 120"
+      viewBox="0 0 64 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-label="Buaze Logo"
       role="img"
     >
-      <defs>
-        <linearGradient id={gradientId} x1="15%" y1="10%" x2="85%" y2="90%">
-          <stop offset="0%" stopColor="#FFB347" />
-          <stop offset="55%" stopColor="#FB923C" />
-          <stop offset="100%" stopColor="#F97316" />
-        </linearGradient>
-      </defs>
-
-      <g fill={useGradient ? `url(#${gradientId})` : solidBody}>
-        {/* Ascender — the tall stroke of the lowercase "b" */}
-        <rect x="22" y="8" width="16" height="58" rx="8" />
-
-        {/* Speech-bubble bowl */}
-        <circle cx="62" cy="74" r="34" />
-
-        {/* Speech-bubble tail at the 7-o'clock position */}
-        <path d="M 34 96 Q 28 108 30 118 Q 42 110 48 102 Z" />
-      </g>
-
-      {/* Checkmark nested inside the bowl */}
+      {/* Comment bubble — asymmetric, tail at lower-left */}
       <path
-        d="M 46 74 L 57 85 L 80 62"
-        stroke={checkColor}
-        strokeWidth="9"
+        d="M10 14 Q10 8 16 8 L48 8 Q54 8 54 14 L54 36 Q54 42 48 42 L30 42 L22 52 L22 42 L16 42 Q10 42 10 36 Z"
+        fill="none"
+        stroke={fg}
+        strokeWidth={stroke}
+        strokeLinejoin="round"
+      />
+      {/* ECG pulse line inside bubble */}
+      <path
+        d="M15 26 L22 26 L25 18 L30 34 L34 22 L38 28 L49 28"
+        fill="none"
+        stroke={fg}
+        strokeWidth={stroke}
         strokeLinecap="round"
         strokeLinejoin="round"
-        fill="none"
       />
+      {/* Accent spark — top-right */}
+      <circle cx="54" cy="10" r="5" fill={accent} />
     </svg>
   );
 }

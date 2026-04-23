@@ -59,7 +59,7 @@ export default async function Image() {
     (
       <div
         style={{
-          background: 'linear-gradient(135deg, #1A2332 0%, #111111 100%)',
+          background: 'linear-gradient(135deg, #0A0A0A 0%, #111111 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -79,7 +79,7 @@ export default async function Image() {
             right: '-10%',
             width: '600px',
             height: '600px',
-            background: 'radial-gradient(circle, rgba(244, 180, 0,0.15) 0%, rgba(244, 180, 0,0) 70%)',
+            background: 'radial-gradient(circle, rgba(198, 242, 78,0.15) 0%, rgba(198, 242, 78,0) 70%)',
             borderRadius: '50%',
           }}
         />
@@ -90,7 +90,7 @@ export default async function Image() {
             left: '-10%',
             width: '800px',
             height: '800px',
-            background: 'radial-gradient(circle, rgba(244, 180, 0,0.15) 0%, rgba(244, 180, 0,0) 70%)',
+            background: 'radial-gradient(circle, rgba(198, 242, 78,0.15) 0%, rgba(198, 242, 78,0) 70%)',
             borderRadius: '50%',
           }}
         />
@@ -116,7 +116,7 @@ export default async function Image() {
               lineHeight: 1,
             }}
           >
-            buaze<span style={{ color: '#F4B400' }}>.</span>
+            buaze<span style={{ color: '#C6F24E' }}>.</span>
           </div>
 
           {/* Subtitle */}
@@ -135,7 +135,7 @@ export default async function Image() {
               gap: '12px'
             }}
           >
-            <span style={{ color: '#F4B400' }}>Google Puanınızı</span>
+            <span style={{ color: '#C6F24E' }}>Google Puanınızı</span>
             <span>Otomatik Olarak Yükseltin</span>
           </div>
 
@@ -155,13 +155,13 @@ export default async function Image() {
                 width="48"
                 height="48"
                 viewBox="0 0 24 24"
-                fill="#F4B400"
-                stroke="#F4B400"
+                fill="#C6F24E"
+                stroke="#C6F24E"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 style={{
-                  filter: 'drop-shadow(0px 4px 12px rgba(244, 180, 0, 0.4))'
+                  filter: 'drop-shadow(0px 4px 12px rgba(198, 242, 78, 0.4))'
                 }}
               >
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -178,7 +178,7 @@ export default async function Image() {
               alignItems: 'center',
               fontSize: '24px',
               fontWeight: 600,
-              color: '#2A3444',
+              color: '#1A1A1A',
               letterSpacing: '0.05em',
             }}
           >

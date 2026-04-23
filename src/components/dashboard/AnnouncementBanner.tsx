@@ -114,8 +114,13 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
           <Icon size={18} strokeWidth={2} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-black leading-tight">{a.title}</p>
-          <p className="text-[13px] font-medium leading-snug opacity-80 mt-0.5">{a.message}</p>
+          <p
+            className="text-[14px] font-semibold tracking-[-0.01em] leading-tight"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {a.title}
+          </p>
+          <p className="text-[13px] leading-snug opacity-80 mt-0.5">{a.message}</p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-center">
           {a.ctaText && a.ctaLink && (
@@ -123,7 +128,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
               href={a.ctaLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3.5 py-2 rounded-xl bg-[#1A2332] text-white text-[11px] font-black uppercase tracking-widest hover:bg-[#2A3444] transition-all whitespace-nowrap"
+              className="px-4 py-2 rounded-full bg-[#0A0A0A] text-white text-[12px] font-medium hover:bg-[#1A1A1A] transition-colors whitespace-nowrap"
             >
               {a.ctaText}
             </a>
@@ -155,7 +160,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-[#6B7280] hover:text-[#1A2332] transition-colors"
+          className="inline-flex items-center gap-1.5 pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
         >
           <ChevronDown size={14} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} strokeWidth={2} />
           {expanded ? copy.less : copy.more(rest.length)}

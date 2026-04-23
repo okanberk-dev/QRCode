@@ -165,7 +165,7 @@ function SlugContent() {
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-6">
           <div className="relative">
-            <div className="w-16 h-16 rounded-full border-4 border-[#F8F6F1] border-t-blue-500 animate-spin" />
+            <div className="w-16 h-16 rounded-full border-4 border-[#FFFFFF] border-t-blue-500 animate-spin" />
             <div className="absolute inset-0 m-auto w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
                 <Star className="text-blue-500 w-4 h-4 fill-blue-500" />
             </div>
@@ -182,7 +182,7 @@ function SlugContent() {
   }
 
   return (
-    <main className="flex flex-col min-h-[100dvh] bg-white text-[#1A2332] selection:bg-blue-100 selection:text-blue-900">
+    <main className="flex flex-col min-h-[100dvh] bg-white text-[#0A0A0A] selection:bg-blue-100 selection:text-blue-900">
       
       {/* ═══════ High Rating Redirect Overlay ═══════ */}
       {isRedirecting && (
@@ -198,12 +198,12 @@ function SlugContent() {
               <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-20" />
             </div>
             <div className="flex flex-col gap-3">
-              <h2 className="text-2xl font-bold text-[#1A2332]">{t('feedback_redirecting')}</h2>
+              <h2 className="text-2xl font-bold text-[#0A0A0A]">{t('feedback_redirecting')}</h2>
               <p className="text-sm text-[#6B7280] font-medium px-4">{t('feedback_redirect_sub')}</p>
             </div>
           </div>
           
-          <div className="w-[min(100%,16rem)] h-1.5 bg-[#E8ECF2] rounded-full overflow-hidden mb-4">
+          <div className="w-[min(100%,16rem)] h-1.5 bg-[#EDEDED] rounded-full overflow-hidden mb-4">
             <div className="h-full bg-blue-500 rounded-full animate-[progressBar_2s_linear_forwards]" />
           </div>
           
@@ -217,24 +217,24 @@ function SlugContent() {
       )}
 
       {/* ═══════ Google-Style Sticky Header ═══════ */}
-      <div className="sticky top-0 bg-white border-b border-[#E8ECF2] z-50">
+      <div className="sticky top-0 bg-white border-b border-[#EDEDED] z-50">
         <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
               onClick={() => rating > 0 ? (formSubmitted ? window.location.reload() : setRating(0)) : window.history.back()}
               aria-label="Kapat"
-              className="inline-flex items-center justify-center h-11 w-11 -ml-2 text-[#6B7280] hover:bg-[#E8ECF2] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1A2332]/25 transition-all"
+              className="inline-flex items-center justify-center h-11 w-11 -ml-2 text-[#6B7280] hover:bg-[#EDEDED] rounded-full focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/25 transition-all"
             >
               <X size={22} strokeWidth={2} />
             </button>
             <div className="flex flex-col">
-               <h1 className="text-[14px] font-bold text-[#1A2332] tracking-tight leading-tight">{t('feedback_post_title') || 'Yorum Yaz'}</h1>
+               <h1 className="text-[14px] font-bold text-[#0A0A0A] tracking-tight leading-tight">{t('feedback_post_title') || 'Yorum Yaz'}</h1>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
             {!showForm && !showThankYou && (
-               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-sm ring-1 ring-[#E8ECF2]">
+               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-sm ring-1 ring-[#EDEDED]">
                   {restaurant.name.charAt(0).toUpperCase()}
                </div>
             )}
@@ -276,11 +276,11 @@ function SlugContent() {
       </div>
 
       {/* ═══════ Footer ═══════ */}
-      <footer className="py-10 px-6 mt-auto bg-[#F8F6F1]/30">
+      <footer className="py-10 px-6 mt-auto bg-[#FFFFFF]/30">
         <div className="max-w-xl mx-auto flex flex-col items-center gap-6">
           <div className="flex gap-6">
-            <a href="/tr/privacy" className="text-[10px] font-bold text-[#C9D0DB] hover:text-[#1A2332] transition-colors tracking-widest uppercase">GİZLİLİK</a>
-            <a href="/tr/terms" className="text-[10px] font-bold text-[#C9D0DB] hover:text-[#1A2332] transition-colors tracking-widest uppercase">KULLANIM</a>
+            <a href="/tr/privacy" className="text-[10px] font-bold text-[#C9D0DB] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">GİZLİLİK</a>
+            <a href="/tr/terms" className="text-[10px] font-bold text-[#C9D0DB] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">KULLANIM</a>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[9px] font-bold text-[#C9D0DB] tracking-[0.2em]">POWERED BY</span>
@@ -297,7 +297,7 @@ export default function SlugPage() {
     <Suspense fallback={
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-6">
-          <div className="w-16 h-16 rounded-full border-4 border-[#F8F6F1] border-t-blue-500 animate-spin" />
+          <div className="w-16 h-16 rounded-full border-4 border-[#FFFFFF] border-t-blue-500 animate-spin" />
         </div>
       </div>
     }>

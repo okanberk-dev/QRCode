@@ -68,12 +68,12 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
           </div>
           {/* Decorative particles for success feel */}
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-100 rounded-full animate-ping" />
-          <div className="absolute -bottom-2 -left-2 w-2 h-2 bg-[#FFF8D6] rounded-full animate-bounce" />
+          <div className="absolute -bottom-2 -left-2 w-2 h-2 bg-[#EAF9B8] rounded-full animate-bounce" />
         </div>
       </div>
 
       {/* Title & Message */}
-      <h2 className="text-2xl font-bold text-[#1A2332] mb-3 tracking-tight">
+      <h2 className="text-2xl font-bold text-[#0A0A0A] mb-3 tracking-tight">
         {title}
       </h2>
 
@@ -83,10 +83,10 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
 
       {/* Rating-specific note card */}
       {lowRatingVariant && (
-        <div className="mx-4 mb-8 flex items-start gap-3 text-left bg-[#F8F6F1]/60 border border-[#E8ECF2] rounded-2xl px-4 py-3">
+        <div className="mx-4 mb-8 flex items-start gap-3 text-left bg-[#FFFFFF]/60 border border-[#EDEDED] rounded-2xl px-4 py-3">
           <div className={`mt-0.5 w-1.5 h-1.5 rounded-full ${lowRatingVariant.accent} flex-shrink-0 animate-pulse`} />
           <Info size={14} className="text-[#6B7280] flex-shrink-0 mt-0.5" />
-          <p className="text-[11.5px] font-semibold text-[#2A3444] leading-snug">
+          <p className="text-[11.5px] font-semibold text-[#1A1A1A] leading-snug">
             {t(lowRatingVariant.noteKey)}
           </p>
         </div>
@@ -97,7 +97,7 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
         <div className="mt-8 space-y-4">
           <div className="relative py-4">
              <div className="absolute inset-0 flex items-center" aria-hidden="true">
-               <div className="w-full border-t border-[#E8ECF2]"></div>
+               <div className="w-full border-t border-[#EDEDED]"></div>
              </div>
              <div className="relative flex justify-center text-xs uppercase">
                <span className="bg-white px-3 text-[#6B7280] font-bold tracking-widest">{t('feedback_share_google')}</span>
@@ -108,7 +108,7 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
             href={googleReviewUrl!}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-center gap-3 bg-white border border-[#E8ECF2] text-[#1A2332] font-bold px-8 py-4 rounded-2xl shadow-sm hover:shadow-md hover:border-[#C9D0DB] transition-all active:scale-[0.98] w-full"
+            className="group flex items-center justify-center gap-3 bg-white border border-[#EDEDED] text-[#0A0A0A] font-bold px-8 py-4 rounded-2xl shadow-sm hover:shadow-md hover:border-[#C9D0DB] transition-all active:scale-[0.98] w-full"
           >
             {/* Google G Logo */}
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -125,7 +125,7 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
 
       <button
         onClick={() => window.location.reload()}
-        className="mt-12 text-sm font-bold text-[#6B7280] hover:text-[#F4B400] transition-colors"
+        className="mt-12 text-sm font-bold text-[#6B7280] hover:text-[#C6F24E] transition-colors"
       >
         {t('feedback_close')}
       </button>

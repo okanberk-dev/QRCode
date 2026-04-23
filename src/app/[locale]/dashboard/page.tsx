@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
 import Link from 'next/link';
-import { Building2, QrCode, Star, AlertTriangle, ArrowRight, ShieldCheck, Calendar } from 'lucide-react';
+import { Building2, QrCode, ArrowRight, Star, Calendar, ShieldCheck, TrendingUp } from 'lucide-react';
 import RestaurantAnalyticsPanel from '@/components/dashboard/RestaurantAnalyticsPanel';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 
@@ -95,205 +95,382 @@ export default async function DashboardPage({
     }
   });
 
+  // Per-restaurant avg rating for "Konum performansı" widget
+  const restaurantRatings = user.restaurants.length
+    ? await prisma.feedback.groupBy({
+        by: ['restaurantId'],
+        where: { restaurantId: { in: user.restaurants.map((r) => r.id) } },
+        _avg: { rating: true },
+        _count: { _all: true },
+      })
+    : [];
+  const ratingByRestaurant = new Map(
+    restaurantRatings.map((r) => [r.restaurantId, { avg: r._avg.rating ?? 0, count: r._count._all }]),
+  );
+  const locationPerf = user.restaurants
+    .map((r) => {
+      const stat = ratingByRestaurant.get(r.id);
+      return { id: r.id, name: r.name, avg: stat?.avg ?? 0, count: stat?.count ?? 0 };
+    })
+    .sort((a, b) => b.avg - a.avg || b.count - a.count)
+    .slice(0, 5);
+
   const trialDaysLeft = user.trialEndsAt
     ? Math.max(0, Math.ceil((user.trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
 
-  const isTrialExpiring = user.plan === 'trial' && trialDaysLeft <= 3;
+  const isTr = locale === 'tr';
+  const displayName = user.name?.trim() || (isTr ? 'İşletmeci' : 'there');
+  const activeQr = user.restaurants.filter((r) => r.isActive).length;
+
+  type Kpi = { label: string; value: number; sub: string; icon: React.ReactNode; href?: string };
+  const kpis: Kpi[] = [
+    {
+      label: isTr ? 'Toplam yorum' : 'Total reviews',
+      value: totalReviews,
+      sub: isTr ? 'Tüm işletmeler' : 'All locations',
+      icon: <Star size={14} strokeWidth={2} />,
+      href: `/${locale}/dashboard/feedbacks`,
+    },
+    {
+      label: isTr ? 'Bugün' : 'Today',
+      value: todayReviews,
+      sub: isTr ? 'Son 24 saat' : 'Last 24 hours',
+      icon: <Calendar size={14} strokeWidth={2} />,
+      href: `/${locale}/dashboard/feedbacks?days=1`,
+    },
+    {
+      label: isTr ? 'Pozitif yorum' : 'Positive reviews',
+      value: positiveReviews,
+      sub: isTr ? '4+ yıldız' : '4+ stars',
+      icon: <ShieldCheck size={14} strokeWidth={2} />,
+      href: `/${locale}/dashboard/feedbacks?rating=positive`,
+    },
+    {
+      label: isTr ? 'Aktif QR' : 'Active QR',
+      value: activeQr,
+      sub: isTr ? `${user.restaurants.length} konum` : `${user.restaurants.length} locations`,
+      icon: <QrCode size={14} strokeWidth={2} />,
+    },
+  ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-3 py-6 font-sans selection:bg-[#F4B400]/30 sm:px-6 sm:py-10 lg:py-12">
-        {/* Welcome */}
-        <div className="space-y-2 sm:space-y-3">
-          <div className="inline-block px-3 py-1 bg-[#F4B400] text-[#1A2332] border-2 border-[#1A2332] rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-widest mb-1 shadow-md">
-            {t.dash_welcome}
-          </div>
-          <h1 className="text-2xl sm:text-[42px] font-extrabold text-[#1A2332] tracking-[-0.03em] leading-tight">
-             {user.name ? `${user.name}` : 'İşletmeci'}! 👋
-          </h1>
-          <p className="text-sm sm:text-[17px] text-[#2A3444] font-bold max-w-[500px]">
-            {locale === 'tr' ? 'Dijital itibarınızı ve müşteri geri bildirimlerini tek bir yerden yönetin.' : 'Manage your digital reputation and customer feedback in one place.'}
+    <div
+      className="mx-auto max-w-[1200px] space-y-8 px-4 py-8 sm:px-8 lg:py-10"
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
+      {/* Header */}
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="pulse-eyebrow text-[#737373]">
+            {isTr ? 'ANA SAYFA / GENEL BAKIŞ' : 'HOME / OVERVIEW'}
           </p>
+          <h1
+            className="mt-2 text-[26px] sm:text-[34px] font-medium tracking-[-0.025em] leading-[1.05] text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {isTr
+              ? `Merhaba ${displayName} — bugün nabız güçlü.`
+              : `Hi ${displayName} — the pulse is strong today.`}
+          </h1>
         </div>
+      </header>
 
-        {/* Trial Banner (Mobile) */}
-        {user.plan === 'trial' && (
-          <div className={`sm:hidden p-5 rounded-[20px] border-2 flex flex-col gap-3 shadow-md ${isTrialExpiring ? 'bg-red-50 border-red-600' : 'bg-[#FFF8D6] border-[#F4B400]'}`}>
-            <div className="flex items-center gap-3">
-              <AlertTriangle size={20} className={isTrialExpiring ? 'text-red-600' : 'text-[#F4B400]'} strokeWidth={2} />
-              <span className={`text-base font-black ${isTrialExpiring ? 'text-red-700' : 'text-[#F4B400]'}`}>
-                {trialDaysLeft} {t.dash_trial_days} kaldı
-              </span>
-            </div>
-            <Link href={`/${locale}/pricing`} className="w-full text-center py-3 bg-[#1A2332] text-white font-black rounded-xl border-2 border-[#1A2332] shadow-sm active:translate-y-[2px] active:shadow-none transition-all text-sm">
-              {t.dash_upgrade}
-            </Link>
-          </div>
-        )}
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {[
-            { label: locale === 'tr' ? 'Toplam Yorum' : 'Total Reviews', val: totalReviews, icon: <Star size={20} />, shadow: '#F4B400', link: `/${locale}/dashboard/feedbacks` },
-            { label: locale === 'tr' ? 'Bugün Gelen' : 'Today\'s Feedbacks', val: todayReviews, icon: <Calendar size={20} />, shadow: '#3b82f6', link: `/${locale}/dashboard/feedbacks?days=1` },
-            { label: locale === 'tr' ? 'Pozitif Yorum' : 'Positive Reviews', val: positiveReviews, icon: <ShieldCheck size={20} />, shadow: '#10b981', link: `/${locale}/dashboard/feedbacks?rating=positive` },
-            { label: locale === 'tr' ? 'QR Aktif' : 'Active QR', val: user.restaurants.filter(r => r.isActive).length, icon: <QrCode size={20} />, shadow: '#a855f7' },
-          ].map(stat => (
-            stat.link ? (
-              <Link key={stat.label} href={stat.link} className="bg-white rounded-[20px] p-5 sm:p-7 border-2 border-[#1A2332] shadow-md group hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 border-[#1A2332] mb-3 sm:mb-5 bg-[#F8F6F1] group-hover:bg-[#F4B400] transition-colors`}>
-                  {stat.icon}
-                </div>
-                <div className="text-2xl sm:text-3xl font-black text-[#1A2332] tracking-tighter tabular-nums">{stat.val}</div>
-                <div className="text-[10px] sm:text-[12px] font-black text-[#6B7280] uppercase tracking-widest mt-1">{stat.label}</div>
-              </Link>
-            ) : (
-              <div key={stat.label} className="bg-white rounded-[20px] p-5 sm:p-7 border-2 border-[#1A2332] shadow-md">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 border-[#1A2332] mb-3 sm:mb-5 bg-[#F8F6F1]`}>
-                  {stat.icon}
-                </div>
-                <div className="text-2xl sm:text-3xl font-black text-[#1A2332] tracking-tighter tabular-nums">{stat.val}</div>
-                <div className="text-[10px] sm:text-[12px] font-black text-[#6B7280] uppercase tracking-widest mt-1">{stat.label}</div>
+      {/* KPI row */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+        {kpis.map((k) => {
+          const inner = (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="pulse-eyebrow text-[#737373]">{k.label}</span>
+                <span className="w-7 h-7 rounded-lg bg-[#EAF9B8] text-[#0A0A0A] flex items-center justify-center">
+                  {k.icon}
+                </span>
               </div>
-            )
-          ))}
-        </div>
-
-        <RestaurantAnalyticsPanel
-          locale={locale}
-          restaurants={user.restaurants.map((restaurant) => ({
-            id: restaurant.id,
-            name: restaurant.name,
-          }))}
-        />
-
-        {/* Latest Feedbacks Brief Widget */}
-        {latestFeedbacks.length > 0 && (
-          <div className="bg-white rounded-[24px] border-2 border-[#1A2332] shadow-md overflow-hidden">
-            <div className="bg-[#F8F6F1] border-b-2 border-[#1A2332] px-5 sm:px-8 py-4 sm:py-5 flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Star className="text-[#F4B400]" size={18} strokeWidth={2} fill="currentColor" />
-                <h3 className="text-base sm:text-lg font-extrabold text-[#1A2332] uppercase tracking-tighter italic">{t.dash_latest_feedbacks}</h3>
-              </div>
-              <Link href={`/${locale}/dashboard/feedbacks`} className="text-[10px] font-black text-[#2A3444] hover:text-[#1A2332] uppercase tracking-widest flex items-center gap-1.5">
-                {t.dash_see_all} <ArrowRight size={14} strokeWidth={2} />
-              </Link>
-            </div>
-            <div className="divide-y-2 divide-[#F8F6F1]">
-              {latestFeedbacks.map((fb) => (
-                <div key={fb.id} className="p-5 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex text-[#F4B400]">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={12} fill={i < fb.rating ? "currentColor" : "none"} strokeWidth={2} />
-                        ))}
-                      </div>
-                      <span className="text-[9px] font-black text-[#6B7280] uppercase tracking-widest">{fb.restaurant?.name}</span>
-                    </div>
-                    <p className="text-[13px] font-bold text-[#1A2332] line-clamp-1 italic">{fb.comment || (locale === 'tr' ? 'Yorum bırakılmadı.' : 'No comment provided.')}</p>
-                  </div>
-                  <div className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest whitespace-nowrap">
-                    {new Date(fb.createdAt).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'short' })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Restaurants */}
-        <div className="space-y-6 sm:space-y-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-extrabold text-[#1A2332] tracking-tight">{t.dash_restaurants}</h2>
-            <Link
-              href={`/${locale}/dashboard/restaurants`}
-              className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#1A2332] text-white font-black rounded-xl border-2 border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:text-[#1A2332] active:translate-y-[2px] active:shadow-sm transition-all text-xs sm:text-sm uppercase tracking-wider"
-            >
-              {t.dash_add_restaurant} <ArrowRight size={18} strokeWidth={2} />
-            </Link>
-          </div>
-
-          {user.restaurants.length === 0 ? (
-            <div className="bg-white rounded-[24px] border-2 border-dashed border-[#E8ECF2] p-12 sm:p-24 text-center space-y-4 sm:space-y-6">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#F8F6F1] rounded-2xl flex items-center justify-center mx-auto border-2 border-[#E8ECF2]">
-                <Building2 size={40} className="text-[#6B7280]" />
-              </div>
-              <div className="space-y-1 sm:space-y-2">
-                <p className="text-base sm:text-[18px] font-black text-[#1A2332]">{t.dash_no_restaurant}</p>
-                <p className="text-xs sm:text-sm text-[#2A3444] font-bold">İlk restoranınızı ekleyerek itibarınızı yönetmeye başlayın.</p>
-              </div>
-              <Link
-                href={`/${locale}/dashboard/restaurants`}
-                className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-[#F4B400] text-[#1A2332] font-black rounded-xl sm:rounded-2xl border-2 border-[#1A2332] shadow-sm hover:bg-[#F4B400] transition-all active:translate-y-[3px] active:shadow-none text-sm"
+              <div
+                className="mt-4 text-[30px] sm:text-[38px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A] tabular-nums"
+                style={{ fontFamily: 'var(--font-heading)' }}
               >
-                {t.dash_add_restaurant} <ArrowRight size={18} />
-              </Link>
-            </div>
+                {k.value}
+              </div>
+              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-[#737373]">
+                <TrendingUp size={11} strokeWidth={2} className="text-[#16A34A]" />
+                <span>{k.sub}</span>
+              </div>
+            </>
+          );
+          return k.href ? (
+            <Link
+              key={k.label}
+              href={k.href}
+              className="block rounded-2xl border border-[#EDEDED] bg-white p-5 transition-colors hover:border-[#C6F24E]"
+            >
+              {inner}
+            </Link>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {user.restaurants.map(restaurant => (
-                <div key={restaurant.id} className="bg-white rounded-[20px] border-2 border-[#1A2332] shadow-md p-6 sm:p-8 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all group">
-                  <div className="flex items-start justify-between gap-3 mb-4 sm:mb-6">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-lg sm:text-xl font-extrabold text-[#1A2332] group-hover:text-[#F4B400] transition-colors truncate">{restaurant.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-[11px] sm:text-[13px] font-bold text-[#6B7280] truncate">/{restaurant.slug}</p>
-                        <CopyUrlButton 
-                          url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/r/${restaurant.slug}`} 
-                          className="h-7 w-7"
-                        />
+            <div key={k.label} className="rounded-2xl border border-[#EDEDED] bg-white p-5">
+              {inner}
+            </div>
+          );
+        })}
+      </div>
+
+      <RestaurantAnalyticsPanel
+        locale={locale}
+        restaurants={user.restaurants.map((restaurant) => ({
+          id: restaurant.id,
+          name: restaurant.name,
+        }))}
+      />
+
+      {/* Latest feedbacks + Location performance (AdminDashboard row design) */}
+      {(latestFeedbacks.length > 0 || locationPerf.length > 0) && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
+          {latestFeedbacks.length > 0 && (
+            <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2
+                    className="text-[18px] font-semibold tracking-[-0.015em]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {isTr ? 'Son yorumlar' : 'Latest reviews'}
+                  </h2>
+                  <p className="pulse-eyebrow text-[#737373] mt-1">
+                    {isTr ? 'Son 3 · tüm işletmeler' : 'Last 3 · all locations'}
+                  </p>
+                </div>
+                <Link
+                  href={`/${locale}/dashboard/feedbacks`}
+                  className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                >
+                  {isTr ? 'Tümünü gör' : 'See all'}
+                  <ArrowRight size={13} strokeWidth={2} />
+                </Link>
+              </div>
+
+              <ul className="mt-5 divide-y divide-[#EDEDED]">
+                {latestFeedbacks.map((fb) => {
+                  const initials = (fb.restaurant?.name || 'B').charAt(0).toUpperCase();
+                  const badgeBg = fb.rating >= 4 ? 'bg-[#C6F24E]' : fb.rating <= 2 ? 'bg-[#FEE2E2]' : 'bg-[#F5F5F5]';
+                  const badgeFg = fb.rating <= 2 ? 'text-[#DC2626]' : 'text-[#0A0A0A]';
+                  return (
+                    <li key={fb.id} className="grid grid-cols-[36px_1fr_auto] items-start gap-3 py-4">
+                      <div
+                        className={`flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-semibold ${badgeBg} ${badgeFg}`}
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                      >
+                        {initials}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[13px] font-semibold text-[#0A0A0A] truncate">
+                            {fb.restaurant?.name ?? (isTr ? 'İşletme' : 'Location')}
+                          </span>
+                          <span className="text-[#C6F24E] text-[11px] tracking-wide">
+                            {'★'.repeat(fb.rating)}
+                            <span className="text-[#D4D4D4]">{'★'.repeat(5 - fb.rating)}</span>
+                          </span>
+                        </div>
+                        <p className="mt-1 line-clamp-1 text-[13px] text-[#525252] leading-[1.55]">
+                          {fb.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
+                        </p>
+                      </div>
+                      <span className="pulse-eyebrow text-[#737373] whitespace-nowrap">
+                        {new Date(fb.createdAt).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
+                          day: '2-digit',
+                          month: 'short',
+                        })}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {/* Konum performansı — AdminDashboard right column */}
+          {locationPerf.length > 0 && (
+            <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+              <div>
+                <h2
+                  className="text-[18px] font-semibold tracking-[-0.015em]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {isTr ? 'Konum performansı' : 'Location performance'}
+                </h2>
+                <p className="pulse-eyebrow text-[#737373] mt-1">
+                  {isTr ? 'Bu ay · puana göre' : 'This month · by rating'}
+                </p>
+              </div>
+              <ul className="mt-5 divide-y divide-[#EDEDED]">
+                {locationPerf.map((loc) => (
+                  <li key={loc.id} className="flex items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <Link
+                        href={`/${locale}/dashboard/restaurants/${loc.id}`}
+                        className="block truncate text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                      >
+                        {loc.name}
+                      </Link>
+                      <div className="pulse-eyebrow text-[#737373] mt-0.5">
+                        {loc.count} {isTr ? 'yorum' : 'reviews'}
                       </div>
                     </div>
-                    <span className={`shrink-0 whitespace-nowrap text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border-2 ${restaurant.isActive ? 'bg-green-50 text-green-600 border-green-200' : 'bg-[#F8F6F1] text-[#6B7280] border-[#E8ECF2]'}`}>
-                      {restaurant.isActive ? (locale === 'tr' ? 'AKTİF' : 'ACTIVE') : (locale === 'tr' ? 'PASİF' : 'INACTIVE')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs sm:text-sm font-black text-[#2A3444] mb-6 sm:mb-8 py-2.5 border-y border-[#F8F6F1]">
-                    <Star size={16} className="text-[#F4B400]" fill="currentColor" />
-                    {restaurant._count.feedbacks} {locale === 'tr' ? 'yorum toplandı' : 'reviews collected'}
-                  </div>
-                  <div className="flex gap-3 sm:gap-4">
-                    <Link
-                      href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
-                      className="flex-1 text-center py-3 text-[12px] font-black bg-[#1A2332] text-white rounded-xl border-2 border-[#1A2332] shadow-sm hover:bg-[#1A2332] active:translate-y-1 active:shadow-none transition-all uppercase tracking-wider"
-                    >
-                      {t.dash_manage}
-                    </Link>
-                    <Link
-                      href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
-                      className="flex-1 text-center py-3 text-[12px] font-black bg-[#F4B400] text-[#1A2332] rounded-xl border-2 border-[#1A2332] shadow-sm hover:bg-[#F4B400] active:translate-y-1 active:shadow-none transition-all uppercase tracking-wider"
-                    >
-                      {t.dash_qr}
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span
+                        className="text-[18px] font-semibold tabular-nums text-[#0A0A0A]"
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                      >
+                        {loc.avg > 0 ? loc.avg.toFixed(1) : '—'}
+                      </span>
+                      <span className="text-[#C6F24E] text-[13px]">★</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
         </div>
+      )}
 
-        {/* Upgrade CTA */}
-        {user.plan === 'trial' && (
-          <div className="bg-[#1A2332] text-white rounded-[24px] border-2 border-[#1A2332] p-6 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-10 shadow-md">
-            <div className="space-y-3 sm:space-y-4 text-center sm:text-left">
-              <h3 className="text-xl sm:text-[32px] font-extrabold leading-tight tracking-[-0.03em]">
-                {locale === 'tr' ? 'Kesintisiz İtibar Yönetimi' : 'Uninterrupted Reputation Mgmt'}
+      {/* Restaurants */}
+      <section className="space-y-5">
+        <div className="flex items-center justify-between">
+          <h2
+            className="text-[20px] sm:text-[22px] font-semibold tracking-[-0.015em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {t.dash_restaurants}
+          </h2>
+          <Link
+            href={`/${locale}/dashboard/restaurants`}
+            className="inline-flex items-center gap-1.5 bg-[#0A0A0A] text-white px-4 py-2.5 rounded-full text-[13px] font-medium hover:bg-[#1A1A1A] transition-colors"
+          >
+            {t.dash_add_restaurant}
+            <ArrowRight size={14} strokeWidth={2} />
+          </Link>
+        </div>
+
+        {user.restaurants.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-10 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-[#EDEDED]">
+              <Building2 size={22} className="text-[#737373]" />
+            </div>
+            <p
+              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              {t.dash_no_restaurant}
+            </p>
+            <p className="mt-2 text-[14px] text-[#525252] leading-[1.55] max-w-[400px] mx-auto">
+              {isTr
+                ? 'İlk restoranınızı ekleyerek itibarınızı yönetmeye başlayın.'
+                : 'Add your first restaurant to start managing your reputation.'}
+            </p>
+            <Link
+              href={`/${locale}/dashboard/restaurants`}
+              className="mt-5 inline-flex items-center gap-1.5 bg-[#C6F24E] text-[#0A0A0A] px-5 py-2.5 rounded-full text-[13px] font-medium hover:bg-[#A8D62E] transition-colors"
+            >
+              {t.dash_add_restaurant}
+              <ArrowRight size={14} strokeWidth={2} />
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {user.restaurants.map((restaurant) => (
+              <div
+                key={restaurant.id}
+                className="rounded-2xl border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#C6F24E]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h3
+                      className="truncate text-[17px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      {restaurant.name}
+                    </h3>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <p className="pulse-eyebrow text-[#737373] truncate">/{restaurant.slug}</p>
+                      <CopyUrlButton
+                        url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/r/${restaurant.slug}`}
+                        className="h-5 w-5"
+                      />
+                    </div>
+                  </div>
+                  <span
+                    className={`pulse-eyebrow shrink-0 rounded-full px-2 py-1 ${
+                      restaurant.isActive
+                        ? 'bg-[#EAF9B8] text-[#0A0A0A]'
+                        : 'bg-[#F5F5F5] text-[#737373]'
+                    }`}
+                  >
+                    {restaurant.isActive ? (isTr ? 'AKTİF' : 'ACTIVE') : isTr ? 'PASİF' : 'INACTIVE'}
+                  </span>
+                </div>
+                <div className="mt-5 flex items-center gap-2 border-y border-[#EDEDED] py-3">
+                  <Star size={14} className="text-[#C6F24E]" fill="currentColor" />
+                  <span className="text-[13px] text-[#525252]">
+                    <span
+                      className="font-semibold text-[#0A0A0A]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      {restaurant._count.feedbacks}
+                    </span>{' '}
+                    {isTr ? 'yorum toplandı' : 'reviews collected'}
+                  </span>
+                </div>
+                <div className="mt-5 flex gap-2">
+                  <Link
+                    href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
+                    className="flex-1 rounded-full bg-[#0A0A0A] px-4 py-2.5 text-center text-[12px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
+                  >
+                    {t.dash_manage}
+                  </Link>
+                  <Link
+                    href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
+                    className="flex-1 rounded-full border border-[#0A0A0A] px-4 py-2.5 text-center text-[12px] font-medium text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"
+                  >
+                    {t.dash_qr}
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Upgrade CTA */}
+      {user.plan === 'trial' && (
+        <section className="rounded-2xl bg-[#0A0A0A] p-8 sm:p-10 text-white">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-[560px]">
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'GROWTH' : 'GROWTH'}
+              </span>
+              <h3
+                className="mt-3 text-[24px] sm:text-[30px] font-medium tracking-[-0.02em] leading-[1.15]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {isTr ? 'Kesintisiz itibar yönetimi.' : 'Uninterrupted reputation management.'}
               </h3>
-              <p className="text-sm sm:text-[17px] text-[#6B7280] font-bold max-w-[550px]">
-                {locale === 'tr'
+              <p className="mt-3 text-[14px] text-white/70 leading-[1.6]">
+                {isTr
                   ? `Deneme sürenizin bitmesine ${trialDaysLeft} gün kaldı. Tüm özellikleri sınırsız kullanmak için şimdi yükseltin.`
-                  : `Only ${trialDaysLeft} days left in your trial. Upgrade now for unlimited access to all features.`}
+                  : `Only ${trialDaysLeft} days left in your trial. Upgrade now for unlimited access.`}
               </p>
             </div>
             <Link
               href={`/${locale}/pricing`}
-              className="whitespace-nowrap flex items-center gap-3 px-8 sm:px-10 py-4 sm:py-5 bg-[#F4B400] text-[#1A2332] font-black text-base sm:text-lg rounded-xl sm:rounded-2xl border-2 border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none transition-all"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap bg-[#C6F24E] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#A8D62E] transition-colors"
             >
-              {t.dash_upgrade} <ArrowRight size={20} strokeWidth={2} />
+              {t.dash_upgrade}
+              <ArrowRight size={14} strokeWidth={2} />
             </Link>
           </div>
-        )}
+        </section>
+      )}
     </div>
   );
 }

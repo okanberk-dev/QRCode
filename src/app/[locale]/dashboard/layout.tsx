@@ -62,8 +62,8 @@ export default async function DashboardLayout({
     const adminPayload = await verifyJwt(adminToken);
     if (adminPayload && isAdminRole(adminPayload.role)) {
       return (
-        <div className="min-h-screen bg-[#F8F6F1]">
-          <div className="border-b border-[#E8ECF2] bg-[#1A2332] text-white">
+        <div className="min-h-screen bg-[#FFFFFF]">
+          <div className="border-b border-[#EDEDED] bg-[#0A0A0A] text-white">
             <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
               <p className="text-[11px] font-black uppercase tracking-widest">
                 Admin görünümü — {typeof adminPayload.username === 'string' ? adminPayload.username : 'superadmin'}
@@ -102,6 +102,15 @@ export default async function DashboardLayout({
       plan: true,
       trialEndsAt: true,
       isActive: true,
+      restaurants: {
+        select: {
+          id: true,
+          name: true,
+          _count: { select: { feedbacks: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 50,
+      },
     },
   });
 
@@ -116,6 +125,7 @@ export default async function DashboardLayout({
 
   const announcements = await fetchActiveAnnouncements(locale);
   const { logoUrl } = await getSiteSettings();
+  const totalFeedbacks = user.restaurants.reduce((sum, r) => sum + r._count.feedbacks, 0);
 
   return (
     <UserDashboardShell
@@ -127,6 +137,11 @@ export default async function DashboardLayout({
         email: user.email,
         plan: user.plan,
         trialEndsAt: user.trialEndsAt?.toISOString() || null,
+      }}
+      workspace={{
+        primaryName: user.restaurants[0]?.name ?? null,
+        locationCount: user.restaurants.length,
+        feedbackCount: totalFeedbacks,
       }}
     >
       {children}

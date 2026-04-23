@@ -18,8 +18,8 @@ export default function TrendsChart({ data }: TrendsChartProps) {
           <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#1A2332" stopOpacity={0.1}/>
-                <stop offset="95%" stopColor="#1A2332" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#0A0A0A" stopOpacity={0.1}/>
+                <stop offset="95%" stopColor="#0A0A0A" stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
@@ -51,14 +51,14 @@ export default function TrendsChart({ data }: TrendsChartProps) {
                 boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                 padding: '12px'
               }}
-              labelStyle={{ fontWeight: 800, color: '#1A2332', marginBottom: '4px' }}
+              labelStyle={{ fontWeight: 800, color: '#0A0A0A', marginBottom: '4px' }}
             />
             <Area 
               yAxisId="left"
               type="monotone" 
               dataKey="count" 
               name="Taramalar"
-              stroke="#1A2332" 
+              stroke="#0A0A0A" 
               strokeWidth={2}
               fillOpacity={1} 
               fill="url(#colorCount)" 
@@ -68,9 +68,9 @@ export default function TrendsChart({ data }: TrendsChartProps) {
               type="monotone" 
               dataKey="avgRating" 
               name="Ort. Puan"
-              stroke="#F4B400" 
+              stroke="#C6F24E" 
               strokeWidth={2}
-              dot={{ r: 4, fill: '#F4B400', strokeWidth: 2, stroke: '#fff' }}
+              dot={{ r: 4, fill: '#C6F24E', strokeWidth: 2, stroke: '#fff' }}
             />
           </AreaChart>
         </ResponsiveContainer>

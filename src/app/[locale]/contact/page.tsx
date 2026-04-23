@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import ContactForm from '@/components/marketing/ContactForm';
-import { Mail, MapPin, ShieldCheck } from 'lucide-react';
+import { Mail, MapPin, Briefcase, Megaphone } from 'lucide-react';
 
 export async function generateMetadata({
   params,
@@ -21,12 +21,10 @@ export async function generateMetadata({
       : 'Get in touch with the Buaze team. Send your questions, demo requests, or support inquiries.',
     alternates: {
       canonical: `https://buaze.com/${locale}/contact`,
-      languages: { 'tr': 'https://buaze.com/tr/contact', 'en': 'https://buaze.com/en/contact' },
+      languages: { tr: 'https://buaze.com/tr/contact', en: 'https://buaze.com/en/contact' },
     },
   };
 }
-
-// Fully dynamic page
 
 export default async function ContactPage({
   params,
@@ -35,6 +33,7 @@ export default async function ContactPage({
 }) {
   const { locale } = await params;
   const t = getTranslations(locale);
+  const isTr = locale === 'tr';
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -45,93 +44,130 @@ export default async function ContactPage({
     address: { '@type': 'PostalAddress', addressLocality: 'Ataşehir, İstanbul', addressCountry: 'TR' },
   };
 
-  const contactItems = [
-    { icon: <Mail size={19} />, label: t.contact_email_label, value: t.contact_email },
-    { icon: <MapPin size={19} />, label: t.contact_address_label, value: t.contact_address },
-  ];
+  const contactItems = isTr
+    ? [
+        { icon: <Briefcase size={18} />, label: 'SATIŞ', value: 'satis@buaze.com', sub: 'Demo ve fiyatlandırma' },
+        { icon: <Mail size={18} />, label: 'DESTEK', value: 'destek@buaze.com', sub: '7/24 yanıt' },
+        { icon: <Megaphone size={18} />, label: 'BASIN', value: 'basin@buaze.com', sub: 'Medya ve işbirliği' },
+        { icon: <MapPin size={18} />, label: 'ADRES', value: 'Maslak, İstanbul', sub: 'Workinton Maslak, Kat 4' },
+      ]
+    : [
+        { icon: <Briefcase size={18} />, label: 'SALES', value: 'sales@buaze.com', sub: 'Demo and pricing' },
+        { icon: <Mail size={18} />, label: 'SUPPORT', value: 'support@buaze.com', sub: '24/7 reply' },
+        { icon: <Megaphone size={18} />, label: 'PRESS', value: 'press@buaze.com', sub: 'Media and partnerships' },
+        { icon: <MapPin size={18} />, label: 'ADDRESS', value: 'Maslak, Istanbul', sub: 'Workinton Maslak, Floor 4' },
+      ];
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* ─── Header ─── */}
-      <section className="pt-20 sm:pt-32 pb-10 sm:pb-14 px-5 sm:px-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#F4B400]/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
-        <div className="max-w-[1200px] mx-auto relative">
-          <div className="max-w-[720px] space-y-6">
-            <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md sm:shadow-md">
-               <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em]">{locale === 'tr' ? 'BİZE ULAŞIN' : 'GET IN TOUCH'}</span>
-            </div>
-            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1.1] sm:leading-[0.95] tracking-tight sm:tracking-[-0.04em] text-[#1A2332]">
-              {t.contact_title}
+      {/* ─── Hero ─── */}
+      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-24 pb-10 sm:pb-14">
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
+          width="100%"
+          height="100%"
+        >
+          <defs>
+            <pattern id="contactGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#contactGrid)" />
+        </svg>
+        <div className="relative max-w-[1200px] mx-auto">
+          <div className="max-w-[720px]">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'İletişim' : 'Contact'}
+            </span>
+            <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[68px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+              {isTr ? 'Konuşalım.' : "Let's talk."}
             </h1>
-            <p className="text-[17px] sm:text-[22px] text-[#2A3444] font-bold leading-relaxed max-w-[600px]">
-              {t.contact_subtitle}
+            <p className="mt-5 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[560px]">
+              {isTr
+                ? 'Sorularınız, demo istekleri, ortaklık — hangisi olursa olsun, ortalama 2 saat içinde yanıt veriyoruz.'
+                : 'Questions, demo requests, partnerships — whatever it is, we reply within 2 hours on average.'}
             </p>
           </div>
         </div>
       </section>
 
-      {/* ─── Main Content (3D Tactile) ─── */}
-      <section className="pb-20 sm:pb-40 px-5 sm:px-8">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
+      {/* ─── Main ─── */}
+      <section className="px-6 sm:px-10 pb-20 sm:pb-28">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+          {/* Left: contact info + support */}
+          <div className="space-y-5">
+            {contactItems.map((item, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-5 p-6 bg-white rounded-2xl border border-[#EDEDED]"
+              >
+                <div className="w-11 h-11 bg-[#EAF9B8] rounded-lg flex items-center justify-center shrink-0 text-[#0A0A0A]">
+                  {item.icon}
+                </div>
+                <div className="min-w-0">
+                  <p className="pulse-eyebrow text-[#737373] mb-1">{item.label}</p>
+                  <p className="text-[16px] sm:text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.01em] truncate">
+                    {item.value}
+                  </p>
+                  <p className="text-[12px] text-[#737373] mt-0.5">{item.sub}</p>
+                </div>
+              </div>
+            ))}
 
-          {/* Contact Info (3D Cards) */}
-          <div className="space-y-6 sm:space-y-8">
-            <div className="grid grid-cols-1 gap-6 sm:gap-8">
-              {contactItems.map((item, i) => (
-                <div key={i} className="flex items-center gap-5 sm:gap-6 p-6 sm:p-8 bg-white rounded-[24px] sm:rounded-[32px] border sm:border border-[#1A2332] shadow-md sm:shadow-md hover:shadow-md transition-all group">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#F8F6F1] border-2 border-[#1A2332] rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 transition-all text-[#1A2332] shadow-md sm:shadow-md group-hover:bg-[#F4B400]">
-                    <div className="scale-90 sm:scale-100">{item.icon}</div>
+            {/* Support promise */}
+            <div className="bg-[#0A0A0A] rounded-3xl p-8 sm:p-10 text-white relative overflow-hidden">
+              <div className="absolute -top-20 -right-20 w-60 h-60 bg-[#C6F24E]/10 rounded-full blur-[80px] pointer-events-none" />
+              <div className="relative">
+                <span className="pulse-eyebrow text-[#C6F24E]">
+                  {isTr ? 'Destek sözü' : 'Support promise'}
+                </span>
+                <h3 className="mt-4 text-[24px] sm:text-[30px] font-medium text-white tracking-[-0.02em] leading-tight">
+                  {isTr ? 'Hızlı yanıt, odaklı çözüm.' : 'Fast reply, focused resolution.'}
+                </h3>
+                <p className="mt-4 text-[14px] sm:text-[15px] text-white/70 leading-[1.6]">
+                  {isTr
+                    ? 'İşletmenizin dijital itibarını her saniye koruyoruz. Destek ekibimiz taleplere ortalama 2 saat içinde dönüyor.'
+                    : 'We protect your digital reputation every second. Our support team replies within 2 hours on average.'}
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 mt-7">
+                  <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
+                    <p className="pulse-eyebrow text-white/60 mb-2">
+                      {isTr ? 'ORT. YANIT' : 'AVG REPLY'}
+                    </p>
+                    <p
+                      className="text-[26px] font-medium text-[#C6F24E] leading-none tracking-[-0.02em]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      ~120 dk
+                    </p>
                   </div>
-                  <div>
-                    <p className="text-[10px] sm:text-[12px] font-black uppercase tracking-widest text-[#6B7280] mb-1">{item.label}</p>
-                    <p className="text-[16px] sm:text-[22px] font-black text-[#1A2332] tracking-tight leading-tight">{item.value}</p>
+                  <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
+                    <p className="pulse-eyebrow text-white/60 mb-2">
+                      {isTr ? 'BAŞARI' : 'SUCCESS'}
+                    </p>
+                    <p
+                      className="text-[26px] font-medium text-[#C6F24E] leading-none tracking-[-0.02em]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      %99.4
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Premium Support Promise (3D) */}
-            <div className="p-8 sm:p-14 bg-[#1A2332] rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md text-white relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-[#F4B400]/10 rounded-full blur-[60px] translate-x-1/2 -translate-y-1/2" />
-              
-              <div className="flex items-center gap-4 mb-6 sm:mb-8 relative z-10">
-                 <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#F4B400] border-2 border-[#1A2332] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-md sm:shadow-md">
-                    <ShieldCheck className="text-white w-6 h-6 sm:w-8 sm:h-8" strokeWidth={2} />
-                 </div>
-                 <h4 className="text-[22px] sm:text-[32px] font-extrabold tracking-tight">{locale === 'tr' ? 'Hızlı Destek Sözü' : 'Support Promise'}</h4>
-              </div>
-              
-              <p className="text-[15px] sm:text-[18px] text-[#6B7280] leading-relaxed font-bold mb-8 sm:mb-10 relative z-10">
-                {locale === 'tr'
-                  ? 'İşletmenizin dijital itibarını her saniye koruyoruz. Destek ekibimiz tüm taleplere ortalama 2 saat içerisinde çözüm odaklı dönüş yapmaktadır.'
-                  : 'We protect your digital reputation every second. Our support team provides solution-oriented responses within 2 hours on average.'}
-              </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 relative z-10">
-                 <div className="p-5 sm:p-6 bg-white/5 rounded-2xl sm:rounded-3xl border-2 border-white/10 hover:border-[#F4B400]/50 transition-colors">
-                    <p className="text-[10px] sm:text-[11px] font-black text-[#2A3444] uppercase tracking-[0.2em] mb-1 sm:mb-2">{locale === 'tr' ? 'ORTALAMA YANIT' : 'AVG RESPONSE'}</p>
-                    <p className="text-[24px] sm:text-[28px] font-black text-[#F4B400] leading-none">~120 DK</p>
-                 </div>
-                 <div className="p-5 sm:p-6 bg-white/5 rounded-2xl sm:rounded-3xl border-2 border-white/10 hover:border-[#F4B400]/50 transition-colors">
-                    <p className="text-[10px] sm:text-[11px] font-black text-[#2A3444] uppercase tracking-[0.2em] mb-1 sm:mb-2">{locale === 'tr' ? 'BAŞARI ORANI' : 'SUCCESS RATE'}</p>
-                    <p className="text-[24px] sm:text-[28px] font-black text-[#F4B400] leading-none">%99.4</p>
-                 </div>
               </div>
             </div>
           </div>
 
-          {/* Form (Wrapped in 3D Container) */}
-          <div className="relative group lg:mt-0 order-first lg:order-last">
-             <div className="absolute inset-0 bg-[#F4B400] rounded-[32px] sm:rounded-[48px] translate-x-3 translate-y-3 sm:translate-x-4 sm:translate-y-4 -z-10 border sm:border border-[#1A2332]" />
-             <div className="bg-white p-1 rounded-[32px] sm:rounded-[48px] border sm:border border-[#1A2332] overflow-hidden shadow-[8px_10px_30px_-15px_rgba(0,0,0,0.1)]">
-                <ContactForm t={t} locale={locale} />
-             </div>
+          {/* Right: form */}
+          <div className="bg-white rounded-3xl border border-[#EDEDED] shadow-[0_8px_24px_rgba(10,10,10,0.04)] p-2 overflow-hidden">
+            <ContactForm t={t} locale={locale} />
           </div>
         </div>
       </section>

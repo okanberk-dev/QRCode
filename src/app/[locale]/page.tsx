@@ -1,19 +1,18 @@
 import type { Metadata } from 'next';
-import { ArrowRight, QrCode, ShieldCheck, CheckCircle2, Star, Shield, MessageSquare, BarChart3, Zap, Users, Trophy } from 'lucide-react';
-import Image from 'next/image';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import PricingFaq from '@/components/marketing/PricingFaq';
 import Link from 'next/link';
-import FeatureTabsUI from '@/components/marketing/FeatureTabsUI';
-import CtaBanner from '@/components/marketing/CtaBanner';
-import CustomerTestimonials from '@/components/marketing/CustomerTestimonials';
-import CaseStudies from '@/components/marketing/CaseStudies';
-import ProductShowcase from '@/components/marketing/ProductShowcase';
+import {
+  IllusLighthouse,
+  IllusMountain,
+  IllusCompass,
+  IllusInbox,
+  IllusChart,
+  IllusShield,
+} from '@/components/marketing/PulseIllustrations';
+import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import { CtaButton } from '@/components/ui/CtaButton';
-import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
@@ -70,7 +69,6 @@ export async function generateMetadata({
   };
 }
 
-
 export default async function LandingPage({
   params,
 }: {
@@ -84,6 +82,7 @@ export default async function LandingPage({
 
   const t = getTranslations(locale);
   const base = `/${locale}`;
+  const isTr = locale === 'tr';
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -96,8 +95,8 @@ export default async function LandingPage({
         description: t.siteDescription,
         offers: {
           '@type': 'Offer',
-          price: locale === 'tr' ? '500' : '10',
-          priceCurrency: locale === 'tr' ? 'TRY' : 'USD',
+          price: isTr ? '500' : '10',
+          priceCurrency: isTr ? 'TRY' : 'USD',
         },
         operatingSystem: 'Web',
       },
@@ -109,37 +108,145 @@ export default async function LandingPage({
         contactPoint: {
           '@type': 'ContactPoint',
           contactType: 'customer service',
-        }
-      },
-      {
-        '@type': 'FAQPage',
-        mainEntity: [
-          {
-            '@type': 'Question',
-            name: t.faq_q1,
-            acceptedAnswer: { '@type': 'Answer', text: t.faq_a1 }
-          },
-          {
-            '@type': 'Question',
-            name: t.faq_q3,
-            acceptedAnswer: { '@type': 'Answer', text: t.faq_a3 }
-          }
-        ]
+        },
       },
       {
         '@type': 'Service',
-        name: locale === 'tr' ? 'Dijital İtibar Yönetimi Hizmeti' : 'Digital Reputation Management Service',
-        provider: {
-          '@type': 'Organization',
-          name: 'Buaze'
-        },
-        description: locale === 'tr' ? 'İşletmeler için geri bildirim operasyonlarını profesyonelleştirme ve dijital itibar yönetimi platformu.' : 'Platform for professionalizing feedback operations and digital reputation management for businesses.',
-      }
-    ]
+        name: isTr ? 'Dijital İtibar Yönetimi Hizmeti' : 'Digital Reputation Management Service',
+        provider: { '@type': 'Organization', name: 'Buaze' },
+        description: isTr
+          ? 'İşletmeler için geri bildirim operasyonlarını profesyonelleştirme ve dijital itibar yönetimi platformu.'
+          : 'Platform for professionalizing feedback operations and digital reputation management for businesses.',
+      },
+    ],
   };
 
+  // ── Section content (inline locale, keeps translations.ts untouched) ──
+  const heroHeadline = isTr ? (
+    <>
+      İtibarınızı bir{' '}
+      <span className="inline-block bg-[#C6F24E] rounded-lg px-3 py-0.5 -skew-y-1">nabız</span>{' '}
+      gibi izleyin.
+    </>
+  ) : (
+    <>
+      Track your reputation like a{' '}
+      <span className="inline-block bg-[#C6F24E] rounded-lg px-3 py-0.5 -skew-y-1">pulse</span>.
+    </>
+  );
+
+  const heroSub = isTr
+    ? 'QR ile gerçek müşterilerden geri bildirim toplayın, yorumları tek panelden yönetin, Google politikalarına uyumlu şekilde itibarınızı büyütün.'
+    : 'Collect feedback from real customers via QR, manage every review from one panel, grow your reputation in a way that stays compliant with Google policies.';
+
+  const trustTicks = isTr
+    ? ['Kredi kartı gerekmez', '5 dakikada kurulum', 'Türkçe destek']
+    : ['No credit card required', '5-minute setup', 'Turkish support'];
+
+  const brandWordmarks = ['ARK BISTRO', 'HOTEL NORA', 'DERMA+', 'LAW&CO', 'KAHVE DUKKAN', 'SPA REN'];
+
+  const steps = [
+    {
+      num: '01',
+      title: isTr ? 'Topla' : 'Collect',
+      body: isTr
+        ? 'Masanızdaki QR kodu tarayan müşteri, 20 saniyede yorum bırakır. Zahmet sıfır.'
+        : 'A customer scans the QR on your table and leaves a review in 20 seconds. Zero friction.',
+      Ill: IllusCompass,
+    },
+    {
+      num: '02',
+      title: isTr ? 'Yönet' : 'Manage',
+      body: isTr
+        ? 'Tüm yorumları tek panelden yanıtla. Olumsuzu ekibine ata, olumluyu Google\'da yayına taşı.'
+        : 'Reply to every review from one panel. Route negatives to your team, push positives to Google.',
+      Ill: IllusInbox,
+    },
+    {
+      num: '03',
+      title: isTr ? 'Büyü' : 'Grow',
+      body: isTr
+        ? 'Canlı analitik ile puanını izle, Google sıralamanı yükselt, organik büyümeyi yakala.'
+        : 'Track your score with live analytics, lift your Google ranking, capture organic growth.',
+      Ill: IllusChart,
+    },
+  ];
+
+  const darkFeatures = isTr
+    ? [
+        { t: 'Otomatik etiketleme', d: 'Anahtar kelime ve duyguya göre.' },
+        { t: 'Duygu analizi (AI)', d: 'AI ile pozitif / nötr / negatif.' },
+        { t: 'Takım atama', d: 'Yorum doğru kişiye düşer.' },
+        { t: 'SLA takibi', d: 'Yanıt süresi hedefleri tutulsun.' },
+      ]
+    : [
+        { t: 'Auto-tagging', d: 'By keyword and sentiment.' },
+        { t: 'Sentiment analysis (AI)', d: 'AI: positive / neutral / negative.' },
+        { t: 'Team assignment', d: 'Reviews land on the right person.' },
+        { t: 'SLA tracking', d: 'Hit your response-time targets.' },
+      ];
+
+  const livePoints = [4, 12, 8, 16, 10, 20, 14, 24, 22];
+  const liveReviews = isTr
+    ? [
+        { n: 'Ayşe K.', c: 'Servis çok hızlıydı, tatlılar harika.', r: 5 },
+        { n: 'Mert D.', c: 'Mekan güzel, sadece ses biraz yüksekti.', r: 4 },
+        { n: 'Zeynep A.', c: 'Kahve tam istediğim gibi geldi.', r: 5 },
+      ]
+    : [
+        { n: 'Alice K.', c: 'Service was fast, desserts were great.', r: 5 },
+        { n: 'Mark D.', c: 'Nice place, just a bit loud.', r: 4 },
+        { n: 'Jenny A.', c: 'Coffee came exactly how I ordered.', r: 5 },
+      ];
+
+  const policyBlocks = isTr
+    ? [
+        { n: '01', t: 'Tercih gönderimi', d: 'QR müşteriyi önce gerçek geri bildirime yönlendirir.' },
+        { n: '02', t: 'Şeffaf akış', d: 'Negatif yorumları süzmez; içeride çözüme aktarır.' },
+        { n: '03', t: 'Kural motoru', d: 'Her kampanya Google politikasına göre otomatik denetlenir.' },
+      ]
+    : [
+        { n: '01', t: 'Preference-first', d: 'The QR routes the customer to real feedback first.' },
+        { n: '02', t: 'Transparent flow', d: 'Negative reviews aren\'t filtered; they reach your team for resolution.' },
+        { n: '03', t: 'Rule engine', d: 'Every campaign is auto-audited against Google policy.' },
+      ];
+
+  const sectors = isTr
+    ? [
+        { t: 'Restoran & Kafe', c: '1.200+', s: 'mekan' },
+        { t: 'Otel', c: '340+', s: 'konaklama' },
+        { t: 'Klinik & Muayenehane', c: '520+', s: 'sağlık' },
+        { t: 'Hukuk Ofisi', c: '180+', s: 'ofis' },
+        { t: 'Güzellik & Spa', c: '410+', s: 'salon' },
+        { t: 'Perakende', c: '260+', s: 'mağaza' },
+        { t: 'Spor & Fitness', c: '140+', s: 'tesis' },
+        { t: 'Eğitim', c: '90+', s: 'kurum' },
+      ]
+    : [
+        { t: 'Restaurant & Café', c: '1,200+', s: 'venues' },
+        { t: 'Hotel', c: '340+', s: 'properties' },
+        { t: 'Clinic & Practice', c: '520+', s: 'providers' },
+        { t: 'Legal', c: '180+', s: 'offices' },
+        { t: 'Beauty & Spa', c: '410+', s: 'salons' },
+        { t: 'Retail', c: '260+', s: 'stores' },
+        { t: 'Sports & Fitness', c: '140+', s: 'facilities' },
+        { t: 'Education', c: '90+', s: 'institutions' },
+      ];
+
+  const caseStats = isTr
+    ? [
+        { v: '4.2 → 4.8', l: 'Google ort.' },
+        { v: '+184%', l: 'Yorum/ay' },
+        { v: '12 dk', l: 'Yanıt' },
+      ]
+    : [
+        { v: '4.2 → 4.8', l: 'Google avg.' },
+        { v: '+184%', l: 'Reviews/mo' },
+        { v: '12 min', l: 'Reply' },
+      ];
+
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#F8F6F1] text-[#1A2332] font-sans selection:bg-[#F4B400]/30 selection:text-[#1A2332] pt-[64px]">
+    <div className="min-h-screen overflow-x-clip bg-[#FFFFFF] text-[#0A0A0A] selection:bg-[#C6F24E]/40 selection:text-[#0A0A0A] pt-[64px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -148,671 +255,612 @@ export default async function LandingPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ═══════════════════════════════════════════════════════════
-          HERO SECTION
+          1. HERO — grid bg + lighthouse + lime-highlighted word
       ═══════════════════════════════════════════════════════════ */}
-      <section className="pt-8 sm:pt-16 lg:pt-20 pb-8 sm:pb-12 px-5 sm:px-8">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center mt-4 sm:mt-8">
-            {/* Left: Content */}
-            <div className="text-left space-y-5 sm:space-y-6">
-              <h1 className="text-[30px] sm:text-[42px] lg:text-[56px] font-extrabold leading-[1.1] tracking-[-0.04em] text-[#1A2332] text-balance">
-                {t.hero_title_1} <br />
-                <span className="text-[#F4B400]">{t.hero_title_2}</span>
-              </h1>
-              <p className="text-[16px] sm:text-[17px] text-[#2A3444] font-medium leading-relaxed max-w-[500px] text-pretty">
-                {t.hero_subtitle}
-              </p>
+      <section className="relative overflow-hidden px-6 sm:px-10 pt-10 sm:pt-16 lg:pt-20 pb-14 sm:pb-20">
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
+          width="100%"
+          height="100%"
+        >
+          <defs>
+            <pattern id="pulseGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#pulseGrid)" />
+        </svg>
 
-              <div className="space-y-1.5 pt-1">
-                <p className="text-[14px] sm:text-[15px] text-[#2A3444] font-normal flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-[#16A34A] flex-shrink-0" />
-                  {locale === 'tr' ? 'Dakikalar içinde kurulun ve başlayın' : 'Get up and running in minutes'}
-                </p>
-                <p className="text-[14px] sm:text-[15px] text-[#2A3444] font-normal flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-[#16A34A] flex-shrink-0" />
-                  {locale === 'tr' ? 'Hazır olduğunuzda yükseltin' : 'Upgrade when you\'re ready'}
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-5 pt-3 sm:pt-4">
-                <CtaButton variant="primary" href={`${base}/auth/register`} className="w-full sm:w-auto">
-                  {t.hero_cta}
-                </CtaButton>
-                <CtaButton variant="secondary" href={`${base}/pricing`} className="w-full sm:w-auto">
-                  {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
-                </CtaButton>
-              </div>
-
-              <p className="text-[11px] sm:text-[12px] text-[#6B7280] font-bold tracking-wide">
-                {locale === 'tr' ? '14 Gün Ücretsiz Deneme • Kredi Kartı Gerekmez' : '14 Day Free Trial • No Credit Card Required'}
-              </p>
+        <div className="relative max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-10 lg:gap-14 items-center">
+          <div className="space-y-7 sm:space-y-8">
+            <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] rounded-full pl-2 pr-4 py-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#16A34A] pulse-heartbeat" />
+              <span className="pulse-eyebrow text-[#0A0A0A]">
+                {isTr ? '2.400+ işletme kullanıyor' : '2,400+ businesses using it'}
+              </span>
             </div>
 
-            {/* Right: Visual Column */}
-            <div className="relative w-full mt-6 lg:mt-0">
+            <h1 className="text-[40px] sm:text-[56px] lg:text-[80px] font-medium leading-[0.95] tracking-[-0.04em] text-[#0A0A0A] text-balance">
+              {heroHeadline}
+            </h1>
 
-              {/* ─── MOBILE-ONLY visual (hidden on lg+) ─── */}
-              <div className="lg:hidden relative mx-auto max-w-[420px] px-2">
-                {/* Dot pattern bg */}
-                <div
-                  className="absolute inset-0 opacity-[0.1] pointer-events-none"
-                  style={{
-                    backgroundImage: 'radial-gradient(circle, #6B7280 1px, transparent 1px)',
-                    backgroundSize: '16px 16px',
-                  }}
-                />
+            <p className="text-[17px] sm:text-[18px] text-[#525252] font-normal leading-[1.55] max-w-[540px]">
+              {heroSub}
+            </p>
 
-                {/* Neobrutalist "review card" mockup — styled visual */}
-                <div className="relative bg-white rounded-2xl border border-[#1A2332] shadow-md p-5 space-y-4">
-                  {/* Browser dots */}
-                  <div className="flex items-center justify-between pb-3 border-b border-[#E8ECF2]">
-                    <div className="flex gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#F4B400]" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#F4B400]" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]" />
-                    </div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-[#6B7280]">
-                      buaze.com
-                    </div>
-                  </div>
-
-                  {/* Stars + rating */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-0.5">
-                      {[1,2,3,4,5].map(i => (
-                        <Star key={i} size={20} fill="#F4B400" strokeWidth={0} />
-                      ))}
-                    </div>
-                    <div className="text-[13px] font-black text-[#1A2332]">4.9 / 5.0</div>
-                  </div>
-
-                  {/* Metric chips */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#F8F6F1] border border-[#1A2332] rounded-lg p-3 shadow-md">
-                      <div className="text-[9px] font-black uppercase tracking-wider text-[#2A3444] mb-1">
-                        {locale === 'tr' ? 'YORUMLAR' : 'REVIEWS'}
-                      </div>
-                      <div className="text-[20px] font-black text-[#1A2332] flex items-center gap-1">
-                        +142
-                        <span className="text-[11px] text-[#16A34A]">↑</span>
-                      </div>
-                    </div>
-                    <div className="bg-[#F4B400] border border-[#1A2332] rounded-lg p-3 shadow-md">
-                      <div className="text-[9px] font-black uppercase tracking-wider text-[#1A2332] mb-1">
-                        {locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION'}
-                      </div>
-                      <div className="text-[20px] font-black text-[#1A2332]">99%</div>
-                    </div>
-                  </div>
-
-                  {/* Progress bar block */}
-                  <div className="bg-[#F8F6F1] border border-[#1A2332] rounded-lg p-3 shadow-md">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-[10px] font-black uppercase tracking-wider text-[#2A3444]">
-                        {locale === 'tr' ? 'BU HAFTA' : 'THIS WEEK'}
-                      </div>
-                      <div className="flex items-center gap-1 text-[10px] font-black text-[#16A34A]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse" />
-                        {locale === 'tr' ? 'CANLI' : 'LIVE'}
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="h-1.5 bg-[#E8ECF2] rounded-full overflow-hidden">
-                        <div className="h-full w-[88%] bg-[#F4B400] rounded-full" />
-                      </div>
-                      <div className="h-1.5 bg-[#E8ECF2] rounded-full overflow-hidden">
-                        <div className="h-full w-[64%] bg-[#F4B400] rounded-full" />
-                      </div>
-                      <div className="h-1.5 bg-[#E8ECF2] rounded-full overflow-hidden">
-                        <div className="h-full w-[42%] bg-[#1A2332] rounded-full" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Floating QR chip */}
-                <div className="absolute -top-4 -right-1 bg-[#1A2332] text-white p-3 rounded-xl border border-[#1A2332] shadow-md rotate-[6deg] z-10">
-                  <QrCode size={28} className="text-[#F4B400]" />
-                </div>
-
-                {/* Floating testimonial bubble (single) */}
-                <div className="relative bg-white rounded-xl border border-[#1A2332] p-4 shadow-md mt-5 mx-auto max-w-[320px]">
-                  <div className="flex gap-[2px] mb-2">
-                    {[1,2,3,4,5].map(i => (
-                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#F4B400"></path>
-                      </svg>
-                    ))}
-                  </div>
-                  <div className="text-[13px] text-[#1A2332] font-semibold leading-[1.5]">
-                    {locale === 'tr'
-                      ? '"Buaze\'yi kullanmak gerçekten çok kolay. Müthiş zaman kazandırıyor."'
-                      : '"Really love how easy Buaze is to use. It saves so much time."'}
-                  </div>
-                </div>
-              </div>
-
-              {/* ─── DESKTOP-ONLY: absolute-positioned testimonials (unchanged) ─── */}
-              <div className="hidden lg:block relative w-full h-[460px]">
-                {/* Dot pattern */}
-                <div
-                  className="absolute inset-0 w-full h-full opacity-[0.08]"
-                  style={{
-                    backgroundImage: 'radial-gradient(circle, #6B7280 1px, transparent 1px)',
-                    backgroundSize: '18px 18px',
-                  }}
-                />
-
-                {/* Box 1: Super easy (Top) */}
-                <div className="absolute top-2 left-0 w-[260px] bg-white rounded-xl border border-[#1A2332] p-5 shadow-md z-10 transform hover:-translate-y-2 transition-transform">
-                  <div className="flex gap-[2px] mb-3">
-                    {[1,2,3,4,5].map(i => (
-                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#F4B400"></path>
-                      </svg>
-                    ))}
-                  </div>
-                  <div className="text-[14px] text-[#1A2332] font-semibold leading-[1.6]">
-                    {locale === 'tr'
-                      ? '"Kullanımı süper kolay ve kusursuz çalışıyor"'
-                      : '"Super easy to use and worked perfectly"'}
-                  </div>
-                </div>
-
-                {/* Box 2: Really love (Middle) */}
-                <div className="absolute top-[120px] right-2 w-[290px] bg-white rounded-xl border border-[#1A2332] p-5 shadow-md z-30 transform hover:-translate-y-2 transition-transform">
-                  <div className="flex gap-[2px] mb-3">
-                    {[1,2,3,4,5].map(i => (
-                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#F4B400"></path>
-                      </svg>
-                    ))}
-                  </div>
-                  <div className="text-[14px] text-[#1A2332] font-semibold leading-[1.6]">
-                    {locale === 'tr'
-                      ? '"Buaze\'yi kullanmak gerçekten çok kolay. Yorum toplamak konusunda müthiş zaman kazandırıyor"'
-                      : '"Really love how easy Buaze is to use. It saves so much time collecting reviews"'}
-                  </div>
-                </div>
-
-                {/* Box 3: Buaze makes (Bottom) */}
-                <div className="absolute top-[250px] left-6 w-[260px] bg-white rounded-xl border border-[#1A2332] p-5 shadow-md z-20 transform hover:-translate-y-2 transition-transform">
-                  <div className="flex gap-[2px] mb-3">
-                    {[1,2,3,4,5].map(i => (
-                      <svg key={i} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M11.999 15.8196L7.50882 18.562L8.72951 13.4439L4.73438 10.0217L9.97847 9.60156L11.999 4.74323L14.0194 9.60156L19.2643 10.0217L15.2684 13.4439L16.4891 18.562L11.999 15.8196Z" fill="#F4B400"></path>
-                      </svg>
-                    ))}
-                  </div>
-                  <div className="text-[14px] text-[#1A2332] font-semibold leading-[1.6]">
-                    {locale === 'tr'
-                      ? '"Buaze ile yorumları takip etmek ve yanıtlamak artık çok zahmetsiz"'
-                      : '"Buaze makes tracking and replying to reviews effortless."'}
-                  </div>
-                </div>
-              </div>
-
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+              <Link
+                href={`${base}/auth/register`}
+                className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
+              >
+                {isTr ? '14 gün ücretsiz başla' : 'Start 14-day free trial'}
+                <span aria-hidden>→</span>
+              </Link>
+              <Link
+                href={`${base}/how-it-works`}
+                className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
+              >
+                <span aria-hidden>▶</span>
+                {isTr ? 'Demo izle (2 dk)' : 'Watch demo (2 min)'}
+              </Link>
             </div>
+
+            <ul className="flex flex-wrap gap-x-6 gap-y-2 pt-2">
+              {trustTicks.map((tick) => (
+                <li key={tick} className="flex items-center gap-2 text-[14px] text-[#525252]">
+                  <span className="w-4 h-4 rounded-full bg-[#C6F24E] flex items-center justify-center text-[#0A0A0A] text-[10px] font-bold">
+                    ✓
+                  </span>
+                  {tick}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="flex justify-center md:justify-end">
+            <IllusLighthouse size={340} className="w-full max-w-[340px] h-auto" />
           </div>
         </div>
       </section>
 
-      {/* ═══════ Logo Carousel ═══════ */}
-      <section className="py-12 sm:py-16 px-5 sm:px-8">
-        <div className="max-w-[1000px] mx-auto">
-          <div className="flex flex-wrap justify-center gap-x-10 sm:gap-x-14 gap-y-5 items-center opacity-30 hover:opacity-50 transition-opacity duration-500">
-            {['Google', 'TripAdvisor', 'Yelp', 'Foursquare', 'Zomato'].map(site => (
-              <span key={site} className="text-lg sm:text-xl font-bold text-[#1A2332] tracking-tight cursor-default select-none">
-                {site}
+      {/* ═══════════════════════════════════════════════════════════
+          2. LOGO STRIP — trusted brands
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="border-y border-[#EDEDED] py-8 px-6 sm:px-10">
+        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10">
+          <span className="pulse-eyebrow text-[#737373] whitespace-nowrap">
+            {isTr ? 'Güvenen markalar' : 'Trusted by'}
+          </span>
+          <div className="flex-1 flex flex-wrap items-center justify-start md:justify-between gap-x-8 gap-y-3">
+            {brandWordmarks.map((name) => (
+              <span
+                key={name}
+                className="text-[16px] sm:text-[18px] font-semibold tracking-[0.08em] text-[#A3A3A3]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {name}
               </span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════ Feature Tabs Layout ═══════ */}
-      <section className="pb-16 sm:pb-24 px-5 sm:px-8">
-        <FeatureTabsUI locale={locale} />
-      </section>
-
-      {/* ═══════ Desktop-only Product Showcase (hidden on mobile) ═══════ */}
-      <ProductShowcase locale={locale} />
-
-      {/* ═══════ Free QR Generator CTA — links to dedicated solution page ═══════ */}
-      <section
-        id="qr-generator"
-        aria-labelledby="qr-generator-cta-title"
-        className="py-16 sm:py-24 px-5 sm:px-8"
-      >
-        <div className="max-w-[1040px] mx-auto">
-          <div className="relative bg-white border border-[#1A2332] rounded-[24px] sm:rounded-[32px] shadow-md p-6 sm:p-10 lg:p-14 overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 items-center">
-              <div className="md:col-span-2 space-y-4 text-left">
-                <div className="inline-flex items-center gap-2 bg-[#F4B400] text-[#1A2332] px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em] border border-[#1A2332] shadow-md">
-                  <QrCode size={14} />
-                  {locale === 'tr' ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
-                </div>
-                <h2
-                  id="qr-generator-cta-title"
-                  className="text-[26px] sm:text-[36px] lg:text-[42px] font-extrabold text-[#1A2332] leading-[1.1] tracking-[-0.02em] text-balance"
-                >
-                  {locale === 'tr'
-                    ? 'Kendi QR Kodunuzu Saniyeler İçinde Oluşturun'
-                    : 'Build Your Own QR Code in Seconds'}
-                </h2>
-                <p className="text-[15px] sm:text-[16px] text-[#2A3444] font-medium leading-relaxed max-w-[560px]">
-                  {locale === 'tr'
-                    ? 'Menü, rezervasyon veya web sitenizin bağlantısını girin — biz de size özel, yüksek çözünürlüklü bir QR kodu üretelim.'
-                    : 'Paste your menu, reservation page, or website URL — and we\'ll generate a high-resolution QR code tailored to it.'}
-                </p>
-                <div className="pt-2">
-                  <Link
-                    href={`${base}/solutions/qr-generator`}
-                    className="inline-flex items-center gap-2 bg-[#1A2332] text-white font-extrabold text-[14px] sm:text-[15px] px-6 sm:px-7 py-3.5 sm:py-4 rounded-xl border border-[#1A2332] shadow-md hover:-translate-y-0.5 hover:shadow-md active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
-                  >
-                    {locale === 'tr' ? 'QR Kod Oluştur' : 'Generate a QR Code'}
-                    <ArrowRight size={16} />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Decorative QR glyph — pure CSS, no runtime */}
-              <div className="hidden md:flex justify-center">
-                <div
-                  aria-hidden
-                  className="relative w-[180px] h-[180px] bg-[#F8F6F1] border border-[#1A2332] rounded-2xl shadow-md rotate-[4deg] flex items-center justify-center"
-                >
-                  <QrCode size={112} className="text-[#1A2332]" strokeWidth={1.5} />
-                  <span className="absolute -top-2 -right-2 bg-[#F4B400] text-[#1A2332] text-[10px] font-black uppercase tracking-widest border border-[#1A2332] rounded-full px-2.5 py-1 shadow-md">
-                    {locale === 'tr' ? 'YENİ' : 'NEW'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════ How It Works (3D Cards) ═══════ */}
-      <section id="how-it-works" className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-y border-[#E8ECF2]">
+      {/* ═══════════════════════════════════════════════════════════
+          3. THREE STEPS
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="px-6 sm:px-10 py-20 sm:py-28">
         <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-[12px] font-black uppercase tracking-widest text-[#F4B400] mb-4">{locale === 'tr' ? 'BASİT VE ETKİLİ' : 'SIMPLE & EFFECTIVE'}</p>
-            <h2 className="text-[32px] sm:text-[42px] font-extrabold text-[#1A2332] tracking-[-0.03em] leading-tight">
-              {locale === 'tr' ? 'Süreç Nasıl İlerler?' : 'How It Works'}
+          <div className="mb-12 sm:mb-16 max-w-[720px]">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Nasıl çalışır' : 'How it works'}
+            </span>
+            <h2 className="mt-4 text-[36px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+              {isTr ? 'Üç adım, üç saniye.' : 'Three steps, three seconds.'}
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-            {[
-              {
-                step: '01',
-                title: locale === 'tr' ? 'QR Kodunuzu Hazırlayın' : 'Prepare Your QR Code',
-                desc: locale === 'tr' ? 'Panelimizden size özel şık QR kod tasarımları oluşturun, basın ve işletmenizin en stratejik noktalarına yerleştirin.' : 'Create custom, sleek QR code designs from our dashboard, print them, and place them at strategic spots in your business.',
-                icon: <Zap size={24} />
-              },
-              {
-                step: '02',
-                title: locale === 'tr' ? 'Müşteriye Kolaylık Sağlayın' : 'Make It Easy for Customers',
-                desc: locale === 'tr' ? 'Müşterileriniz bir uygulama indirmeden saniyeler içinde QR kodu tarasın ve doğrudan puanlama sayfasına ulaşsın.' : 'Your customers scan the QR code in seconds without downloading an app and go straight to the rating page.',
-                icon: <Users size={24} />
-              },
-              {
-                step: '03',
-                title: locale === 'tr' ? 'Operasyonlarınızı Yönetin' : 'Manage Your Operations',
-                desc: locale === 'tr' ? 'Geri bildirimleri anlık takip edin, operasyonel akışlarla deneyimi iyileştirin ve krizleri büyümeden profesyonelce yönetin.' : 'Monitor feedback in real-time, improve experience via operational flows, and manage crises professionally before they escalate.',
-                icon: <Trophy size={24} />
-              }
-            ].map((item, i) => (
-              <div key={i} className="group relative bg-[#F8F6F1] p-8 rounded-2xl border border-[#1A2332] shadow-md hover:-translate-y-2 transition-transform duration-300">
-                <div className="absolute -top-5 -right-5 w-14 h-14 bg-[#F4B400] rounded-full border border-[#1A2332] shadow-md flex items-center justify-center text-[18px] font-black text-[#1A2332] z-10">
-                  {item.step}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {steps.map(({ num, title, body, Ill }) => (
+              <div
+                key={num}
+                className="bg-[#FAFAFA] border border-[#EDEDED] rounded-[18px] p-7 flex flex-col"
+              >
+                <div className="flex justify-center mb-4">
+                  <Ill size={180} />
                 </div>
-                <div className="w-12 h-12 bg-white rounded-xl border border-[#1A2332] flex items-center justify-center mb-6 text-[#1A2332]">
-                  {item.icon}
-                </div>
-                <h3 className="text-[20px] font-extrabold text-[#1A2332] mb-4">{item.title}</h3>
-                <p className="text-[14px] text-[#2A3444] leading-relaxed font-medium">
-                  {item.desc}
-                </p>
+                <span className="pulse-eyebrow text-[#A8D62E]">
+                  {isTr ? 'ADIM' : 'STEP'} {num}
+                </span>
+                <h3 className="mt-3 text-[26px] sm:text-[30px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A]">
+                  {title}
+                </h3>
+                <p className="mt-3 text-[14px] text-[#525252] leading-[1.55]">{body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════ Google Compliance Trust Section ═══════ */}
-      <section className="py-12 sm:py-16 px-5 sm:px-8">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="bg-white border border-[#1A2332] rounded-[24px] p-6 sm:p-10 shadow-md flex flex-col md:flex-row items-center gap-8 justify-between">
-            <div className="space-y-4 max-w-[650px]">
-              <div className="inline-flex items-center gap-2 bg-[#F4B400] text-[#1A2332] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border-2 border-[#1A2332]">
-                <ShieldCheck size={14} />
-                {t.google_compliance_badge}
-              </div>
-              <h2 className="text-[24px] sm:text-[32px] font-extrabold text-[#1A2332] leading-tight">
-                {t.google_compliance_home_title}
-              </h2>
-              <p className="text-[14px] sm:text-[15px] text-[#2A3444] font-medium leading-relaxed">
-                {t.google_compliance_home_desc}
-              </p>
+      {/* ═══════════════════════════════════════════════════════════
+          4. DARK FEATURE — live stream mock
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Live stream card */}
+          <div className="bg-[#1A1A1A] border border-[#333333] rounded-2xl p-6 sm:p-7">
+            <div className="flex items-center gap-2 mb-5">
+              <span className="w-2 h-2 rounded-full bg-[#C6F24E] pulse-heartbeat" />
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'CANLI AKIŞ' : 'LIVE STREAM'}
+              </span>
             </div>
-            <div>
-              <CtaButton variant="secondary" href={`${base}/google-compliance`}>
-                {locale === 'tr' ? 'Detayları Gör' : 'View Details'}
-                <ArrowRight size={16} className="ml-2" />
-              </CtaButton>
+
+            <svg viewBox="0 0 320 100" className="w-full h-auto mb-5" aria-hidden>
+              <defs>
+                <linearGradient id="liveGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#C6F24E" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#C6F24E" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {(() => {
+                const pts = livePoints.map((v, i) => {
+                  const x = (i / (livePoints.length - 1)) * 320;
+                  const y = 90 - (v / 24) * 70;
+                  return `${x},${y}`;
+                });
+                const line = pts.join(' ');
+                const area = `0,100 ${line} 320,100`;
+                return (
+                  <>
+                    <polygon points={area} fill="url(#liveGrad)" />
+                    <polyline points={line} fill="none" stroke="#C6F24E" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+                    {livePoints.map((v, i) => {
+                      const x = (i / (livePoints.length - 1)) * 320;
+                      const y = 90 - (v / 24) * 70;
+                      return <circle key={i} cx={x} cy={y} r="3" fill="#C6F24E" />;
+                    })}
+                  </>
+                );
+              })()}
+            </svg>
+
+            <div className="space-y-3">
+              {liveReviews.map((r, i) => (
+                <div key={i} className="flex items-start gap-3 py-2 border-t border-[#333333] first:border-t-0">
+                  <div className="w-9 h-9 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[13px] font-semibold shrink-0">
+                    {r.n.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[13px] font-medium text-white truncate">{r.n}</span>
+                      <span className="text-[#C6F24E] text-[12px] tracking-wide shrink-0">
+                        {'★'.repeat(r.r)}
+                        <span className="text-[#525252]">{'★'.repeat(5 - r.r)}</span>
+                      </span>
+                    </div>
+                    <p className="text-[13px] text-[#A3A3A3] mt-0.5 truncate">{r.c}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Copy + feature grid */}
+          <div>
+            <span className="pulse-eyebrow text-[#C6F24E]">
+              {isTr ? 'Merkezi yönetim' : 'Central control'}
+            </span>
+            <h2 className="mt-4 text-[36px] sm:text-[48px] lg:text-[52px] font-medium leading-[1.02] tracking-[-0.035em] text-white">
+              {isTr ? (
+                <>
+                  Her yorum, tek bir{' '}
+                  <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
+                    panelde
+                  </span>
+                  .
+                </>
+              ) : (
+                <>
+                  Every review in a single{' '}
+                  <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
+                    panel
+                  </span>
+                  .
+                </>
+              )}
+            </h2>
+            <p className="mt-5 text-[16px] text-[#A3A3A3] leading-[1.6] max-w-[480px]">
+              {isTr
+                ? 'Google, Tripadvisor, Yemeksepeti, Getir — tüm platformlardaki yorumlar Buaze\'de buluşur. Olumsuzu önce sen gör, kriz büyümeden çöz.'
+                : 'Google, Tripadvisor, Yemeksepeti, Getir — reviews from every platform meet inside Buaze. Spot the negative first and resolve it before it grows.'}
+            </p>
+
+            {/* Platform logos row — review + delivery platforms that Buaze pulls into the inbox */}
+            <div className="mt-6">
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'DESTEKLENEN PLATFORMLAR' : 'SUPPORTED PLATFORMS'}
+              </span>
+              <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                {(['google', 'tripadvisor', 'yemeksepeti', 'getir-yemek', 'trendyol-go', 'migros-hemen'] as const).map(
+                  (id) => (
+                    <div
+                      key={id}
+                      className="rounded-xl bg-white/5 border border-white/10 p-1.5 backdrop-blur"
+                    >
+                      <PlatformLogo id={id} size={32} rounded={8} />
+                    </div>
+                  ),
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {darkFeatures.map((f) => (
+                <div key={f.t} className="flex items-start gap-3">
+                  <span className="mt-0.5 w-6 h-6 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[12px] font-bold shrink-0">
+                    ✓
+                  </span>
+                  <div>
+                    <div className="text-[15px] font-medium text-white">{f.t}</div>
+                    <div className="text-[13px] text-[#A3A3A3] mt-0.5">{f.d}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════ CTA Banner ═══════ */}
-      <section className="px-5 sm:px-8">
-        <CtaBanner locale={locale} />
+      {/* ═══════════════════════════════════════════════════════════
+          5. GOOGLE SAFE + SHIELD
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div>
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Google güvenli' : 'Google safe'}
+            </span>
+            <h2 className="mt-4 text-[36px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+              {isTr ? 'Politikalara uyumlu. Organik büyüme.' : 'Policy compliant. Organic growth.'}
+            </h2>
+
+            <div className="mt-10 divide-y divide-[#EDEDED] border-y border-[#EDEDED]">
+              {policyBlocks.map((b) => (
+                <div key={b.n} className="py-5 grid grid-cols-[auto_1fr] gap-5 items-start">
+                  <span className="pulse-eyebrow text-[#A8D62E] pt-1">{b.n}</span>
+                  <div>
+                    <h3 className="text-[18px] font-medium text-[#0A0A0A] leading-snug">{b.t}</h3>
+                    <p className="mt-1 text-[13px] text-[#525252] leading-[1.55]">{b.d}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-center lg:justify-end">
+            <IllusShield size={300} className="w-full max-w-[300px] h-auto" />
+          </div>
+        </div>
       </section>
 
-      <CaseStudies locale={locale} t={t} />
+      {/* ═══════════════════════════════════════════════════════════
+          6. SOLUTIONS GRID
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-14 max-w-[720px] mx-auto">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Sektörler' : 'Industries'}
+            </span>
+            <h2 className="mt-4 text-[36px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+              {isTr ? 'Her sektör için, tam oturur.' : 'Fits every industry, perfectly.'}
+            </h2>
+          </div>
 
-      <CustomerTestimonials locale={locale} />
-
-      {/* ═══════ Trust / Why Buaze Section (3D Redesign) ═══════ */}
-      <section
-        aria-labelledby="command-center-title"
-        className="py-16 sm:py-24 lg:py-32 px-4 sm:px-8 bg-[#F8F6F1]"
-      >
-        <div className="max-w-[1240px] mx-auto">
-          <div className="relative bg-[#1A2332] rounded-[24px] sm:rounded-[32px] lg:rounded-[48px] p-6 sm:p-10 lg:p-20 border sm:border border-[#1A2332] shadow-md sm:shadow-md lg:shadow-md overflow-hidden">
-            {/* Background Accent */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#F4B400]/10 blur-[120px] rounded-full -mr-32 -mt-32 pointer-events-none" />
-
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20 items-center">
-              {/* Left Content Column */}
-              <div className="lg:col-span-6 space-y-8 sm:space-y-10">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 bg-[#F4B400] text-[#1A2332] px-3.5 py-1.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-[0.1em] border-2 border-[#1A2332] shadow-md">
-                    <ShieldCheck size={14} />
-                    {locale === 'tr' ? 'RAKİPSİZ KORUMA' : 'UNRIVALED PROTECTION'}
-                  </div>
-                  <h2
-                    id="command-center-title"
-                    className="text-[28px] sm:text-[40px] lg:text-[56px] font-extrabold text-white leading-[1.05] tracking-[-0.03em] text-balance"
-                  >
-                    {locale === 'tr' ? 'Dijital İtibarınızın' : 'Your Digital Reputation\'s'}
-                    <br />
-                    <span className="bg-gradient-to-r from-[#F4B400] to-[#FFD666] bg-clip-text text-transparent">
-                      {locale === 'tr' ? 'Komuta Merkezi' : 'Command Center'}
-                    </span>
-                  </h2>
-                  <p className="text-[15px] sm:text-[17px] lg:text-[18px] text-white/90 font-medium leading-relaxed max-w-[520px] text-pretty">
-                    {locale === 'tr'
-                      ? 'Buaze sadece veri toplamaz; itibarınızı proaktif bir zırh gibi korur ve her etkileşimi kalıcı bir güvene dönüştürür.'
-                      : 'Buaze doesn\'t just collect data; it protects your reputation like a proactive shield and turns every interaction into lasting trust.'}
-                  </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {sectors.map((s) => (
+              <div
+                key={s.t}
+                className="bg-white border border-[#EDEDED] rounded-2xl p-5 flex flex-col gap-3"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#EAF9B8] flex items-center justify-center">
+                  <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden>
+                    <path d="M4 16 L9 16 L11 10 L15 22 L17 14 L20 18 L28 18" stroke="#0A0A0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </div>
+                <div className="text-[15px] font-medium text-[#0A0A0A] leading-tight">{s.t}</div>
+                <div className="pulse-eyebrow text-[#737373] mt-auto">
+                  {s.c} {s.s}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-                <div className="grid grid-cols-1 gap-4 sm:gap-5">
-                  {[
-                    {
-                      title: locale === 'tr' ? 'Anlık Deneyim Takibi' : 'Real-Time Experience Tracking',
-                      desc: locale === 'tr' ? 'Müşteri deneyimini anlık olarak yapılandırılmış veriye dönüştüren akıllı sistem.' : 'An intelligent system that converts customer experience into structured data in real-time.',
-                      icon: <Zap size={20} className="text-[#F4B400]" />,
-                    },
-                    {
-                      title: locale === 'tr' ? 'İtibarınızı Zirveye Taşıyın' : 'Elevate Your Reputation',
-                      desc: locale === 'tr' ? 'Google, TripAdvisor ve Yelp üzerinde organik ve güvenli bir itibar artışı sağlayın.' : 'Achieve organic and secure reputation growth on Google, TripAdvisor, and Yelp.',
-                      icon: <Trophy size={20} className="text-[#F4B400]" />,
-                    },
-                  ].map((item, i) => (
-                    <div
-                      key={i}
-                      className="group flex gap-4 sm:gap-5 bg-white/[0.08] border border-white/15 p-5 sm:p-6 rounded-2xl hover:bg-white/[0.12] hover:border-[#F4B400]/40 transition-all hover:translate-x-2"
-                    >
-                      <div className="flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 bg-[#F4B400]/15 rounded-xl border border-[#F4B400]/30 flex items-center justify-center group-hover:bg-[#F4B400]/25 transition-colors">
-                        {item.icon}
-                      </div>
-                      <div className="space-y-1.5 min-w-0">
-                        <h3 className="text-[16px] sm:text-[18px] font-extrabold text-white leading-tight">
-                          {item.title}
-                        </h3>
-                        <p className="text-[13px] sm:text-[14px] text-white/90 font-medium leading-relaxed">
-                          {item.desc}
-                        </p>
+      {/* ═══════════════════════════════════════════════════════════
+          6.4 PLATFORM COVERAGE — EN ONLY (international home)
+      ═══════════════════════════════════════════════════════════ */}
+      {!isTr && (
+        <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-6 sm:px-10 py-20 sm:py-24">
+          <div className="max-w-[1200px] mx-auto">
+            <div className="max-w-[720px]">
+              <span className="pulse-eyebrow text-[#737373]">
+                One dashboard · Every platform
+              </span>
+              <h2 className="mt-4 text-[36px] sm:text-[48px] lg:text-[56px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]">
+                From Yelp to Tripadvisor to DoorDash.
+              </h2>
+            </div>
+            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="bg-white border border-[#EDEDED] rounded-2xl p-7 sm:p-8">
+                <span className="pulse-eyebrow text-[#737373]">Review platforms</span>
+                <h3 className="mt-2 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em]">
+                  Your brand&apos;s trust signals
+                </h3>
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {GLOBAL_REVIEW.map((p) => (
+                    <div key={p.id} className="flex items-center gap-3">
+                      <PlatformLogo id={p.id} size={36} rounded={8} />
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-semibold truncate">{p.name}</div>
+                        <div className="pulse-eyebrow text-[#737373] mt-0.5 truncate">{p.tag}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
+              <div className="bg-white border border-[#EDEDED] rounded-2xl p-7 sm:p-8">
+                <span className="pulse-eyebrow text-[#737373]">Delivery &amp; booking</span>
+                <h3 className="mt-2 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em]">
+                  Where orders happen
+                </h3>
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {GLOBAL_DELIVERY.map((p) => (
+                    <div key={p.id} className="flex items-center gap-3">
+                      <PlatformLogo id={p.id} size={36} rounded={8} />
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-semibold truncate">{p.name}</div>
+                        <div className="pulse-eyebrow text-[#737373] mt-0.5 truncate">{p.tag}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
-              {/* Right Visual Column (3D Dash) */}
-              <div className="lg:col-span-6 relative flex justify-center lg:justify-end mt-4 lg:mt-0">
-                {/* Floating Metric Chips — constrained to parent on mobile via left-0 instead of -left-X */}
-                <div className="absolute -top-6 sm:-top-8 lg:-top-16 left-0 sm:left-2 lg:-left-6 z-20 transform hover:-translate-y-1 transition-transform cursor-default">
-                  <div className="bg-white px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl border border-[#1A2332] shadow-md sm:shadow-md">
-                    <div className="text-[9px] sm:text-[10px] font-black text-[#2A3444] uppercase mb-0.5 sm:mb-1 tracking-wider">
-                      {locale === 'tr' ? 'CANLI ANALİZ' : 'LIVE ANALYTICS'}
-                    </div>
-                    <div className="text-[18px] sm:text-[22px] lg:text-[24px] font-black text-[#1A2332] flex items-center gap-1.5 sm:gap-2">
-                      <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-[#16A34A] rounded-full animate-pulse" />
-                      98.5%
-                    </div>
+      {/* ═══════════════════════════════════════════════════════════
+          6.5 QR GENERATOR TOOL TEASER
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="px-6 sm:px-10 py-16 sm:py-20">
+        <div className="max-w-[1100px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-8 sm:p-12 relative overflow-hidden">
+          <div className="absolute -top-32 -right-32 w-[400px] h-[400px] bg-[#C6F24E]/15 rounded-full blur-[100px] pointer-events-none" />
+          <div className="relative grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-10 items-center">
+            <div>
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'ÜCRETSİZ ARAÇ · YENİ' : 'FREE TOOL · NEW'}
+              </span>
+              <h2 className="mt-4 text-[28px] sm:text-[40px] lg:text-[48px] font-medium text-white tracking-[-0.03em] leading-[1.05]">
+                {isTr ? (
+                  <>
+                    Saniyede{' '}
+                    <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
+                      QR kodu
+                    </span>{' '}
+                    oluştur.
+                  </>
+                ) : (
+                  <>
+                    Generate a{' '}
+                    <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
+                      QR code
+                    </span>{' '}
+                    in seconds.
+                  </>
+                )}
+              </h2>
+              <p className="mt-5 text-[15px] sm:text-[16px] text-white/70 leading-[1.65] max-w-[520px]">
+                {isTr
+                  ? 'Web sitenizin, menünüzün veya herhangi bir linkinizin yüksek çözünürlüklü QR kodunu hemen indirin. Kayıt gerekmez — Buaze deneyimine ısınırken kullanabileceğiniz bir araç.'
+                  : "Instantly download a high-resolution QR code for your website, menu or any link. No signup needed — a tool you can use while warming up to the Buaze experience."}
+              </p>
+              <div className="mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <Link
+                  href={`${base}/solutions/qr-generator`}
+                  className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#A8D62E] transition-colors"
+                >
+                  {isTr ? 'QR oluşturucuya git' : 'Open the generator'}
+                  <span aria-hidden>→</span>
+                </Link>
+                <Link
+                  href={`${base}/solutions`}
+                  className="inline-flex items-center justify-center gap-2 border border-white/20 text-white px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-white/10 transition-colors"
+                >
+                  {isTr ? 'Tüm çözümleri gör' : 'See all solutions'}
+                </Link>
+              </div>
+            </div>
+
+            {/* Decorative QR preview */}
+            <div className="flex justify-center lg:justify-end">
+              <div className="bg-white rounded-3xl p-6 w-[240px] aspect-square flex items-center justify-center shadow-[0_20px_60px_rgba(198,242,78,0.25)]">
+                <svg viewBox="0 0 64 64" width="180" height="180" aria-hidden>
+                  <rect width="64" height="64" rx="6" fill="#FFFFFF" />
+                  {/* three finder patterns */}
+                  {[
+                    [6, 6],
+                    [42, 6],
+                    [6, 42],
+                  ].map(([x, y], i) => (
+                    <g key={i}>
+                      <rect x={x} y={y} width="16" height="16" fill="#0A0A0A" />
+                      <rect x={x + 3} y={y + 3} width="10" height="10" fill="#FFFFFF" />
+                      <rect x={x + 5} y={y + 5} width="6" height="6" fill="#0A0A0A" />
+                    </g>
+                  ))}
+                  {/* data cells */}
+                  {[
+                    [26, 8],
+                    [30, 8],
+                    [34, 8],
+                    [38, 10],
+                    [26, 14],
+                    [34, 14],
+                    [8, 26],
+                    [14, 26],
+                    [24, 26],
+                    [30, 28],
+                    [36, 26],
+                    [42, 30],
+                    [48, 26],
+                    [54, 28],
+                    [8, 34],
+                    [14, 30],
+                    [22, 34],
+                    [30, 36],
+                    [38, 34],
+                    [46, 38],
+                    [54, 34],
+                    [26, 42],
+                    [34, 46],
+                    [42, 44],
+                    [50, 46],
+                    [28, 50],
+                    [36, 52],
+                    [44, 50],
+                    [52, 54],
+                    [30, 58],
+                    [42, 58],
+                  ].map(([x, y], i) => (
+                    <rect key={`d-${i}`} x={x} y={y} width="4" height="4" fill="#0A0A0A" />
+                  ))}
+                  {/* lime accent dot */}
+                  <rect x="48" y="48" width="4" height="4" fill="#C6F24E" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          7. CASE STUDY + MOUNTAIN
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 lg:gap-16 items-center">
+          <div className="flex justify-center lg:justify-start order-2 lg:order-1">
+            <IllusMountain size={340} className="w-full max-w-[340px] h-auto" />
+          </div>
+
+          <div className="order-1 lg:order-2">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Vaka · Kadıköy Bistro' : 'Case · Kadıköy Bistro'}
+            </span>
+            <h2 className="mt-4 text-[36px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+              {isTr ? (
+                <>
+                  90 günde{' '}
+                  <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">+184%</span>{' '}
+                  organik yorum.
+                </>
+              ) : (
+                <>
+                  <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">+184%</span>{' '}
+                  organic reviews in 90 days.
+                </>
+              )}
+            </h2>
+            <p className="mt-6 text-[17px] text-[#525252] leading-[1.6] max-w-[520px]">
+              {isTr
+                ? '"Masalara QR koyduk. İlk ay içinde Google ortalamamız 4.2\'den 4.8\'e çıktı. Artık müşteri yorumunu bekleyecek vakit harcamıyoruz — sistem kendi kendine çalışıyor."'
+                : '"We put QRs on the tables. Within the first month our Google average went from 4.2 to 4.8. We don\'t spend time waiting for reviews anymore — the system runs itself."'}
+            </p>
+
+            <div className="mt-7 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#0A0A0A] text-[#C6F24E] flex items-center justify-center text-[14px] font-semibold">
+                EK
+              </div>
+              <div>
+                <div className="text-[14px] font-medium text-[#0A0A0A]">Emre Kaya</div>
+                <div className="text-[12px] text-[#737373]">
+                  {isTr ? 'Kadıköy Bistro · Kurucu' : 'Kadıköy Bistro · Founder'}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-10 grid grid-cols-3 gap-6">
+              {caseStats.map((s) => (
+                <div key={s.l} className="border-t-2 border-[#0A0A0A] pt-3">
+                  <div className="text-[22px] sm:text-[26px] font-medium leading-none text-[#0A0A0A] tracking-[-0.02em]">
+                    {s.v}
                   </div>
+                  <div className="pulse-eyebrow text-[#737373] mt-2">{s.l}</div>
                 </div>
-
-                {/* Mockup wrapper — allows the floating badge to escape the clipped inner */}
-                <div className="relative w-full max-w-[500px] transform lg:rotate-[-2deg]">
-                {/* Main 3D Browser Mockup — admin panel visual language */}
-                <div className="relative w-full h-[380px] sm:h-[440px] lg:h-[460px] bg-[#0E1525] rounded-[24px] sm:rounded-[32px] border border-white/10 shadow-2xl shadow-[#F4B400]/10 flex flex-col overflow-hidden">
-                   {/* Browser Bar */}
-                   <div className="bg-[#1A2332] border-b border-white/10 px-4 py-3 flex items-center gap-3 flex-shrink-0">
-                      <div className="flex gap-1.5">
-                         <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
-                         <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
-                         <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
-                      </div>
-                      <div className="flex-1 bg-white/10 border border-white/15 rounded-md px-3 py-1 text-[9px] sm:text-[10px] text-white/75 font-mono truncate">
-                        buaze.com/admin/dashboard
-                      </div>
-                   </div>
-
-                   {/* Mock Dashboard Content */}
-                   <div className="p-3 sm:p-4 space-y-3 flex-1 overflow-hidden text-left">
-                      {/* Stat Cards */}
-                      <div className="grid grid-cols-2 gap-2">
-                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
-                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'TOPLAM YORUM' : 'TOTAL REVIEWS'}</div>
-                            <div className="text-[17px] sm:text-[20px] font-black text-white flex items-baseline gap-1">
-                              142
-                              <span className="text-[9px] font-bold text-[#4ade80]">↑ 23%</span>
-                            </div>
-                         </div>
-                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
-                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'ORT. PUAN' : 'AVG. SCORE'}</div>
-                            <div className="text-[17px] sm:text-[20px] font-black text-[#F4B400] flex items-baseline gap-1">
-                              4.8
-                              <span className="text-[9px] font-bold text-white/60">/ 5.0</span>
-                            </div>
-                         </div>
-                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
-                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'QR TARAMA' : 'QR SCANS'}</div>
-                            <div className="text-[17px] sm:text-[20px] font-black text-white flex items-baseline gap-1">
-                              891
-                              <span className="text-[9px] font-bold text-[#4ade80]">↑ 41%</span>
-                            </div>
-                         </div>
-                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
-                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'OLUMLU YÖN.' : 'POS. REDIRECT'}</div>
-                            <div className="text-[17px] sm:text-[20px] font-black text-[#4ade80] flex items-baseline gap-1">
-                              %82
-                              <span className="text-[9px] font-bold text-white/60">{locale === 'tr' ? 'oran' : 'rate'}</span>
-                            </div>
-                         </div>
-                      </div>
-
-                      {/* Platform Distribution */}
-                      <div className="bg-white/5 p-3 rounded-xl border border-white/10 space-y-2">
-                         <div className="text-[8px] sm:text-[9px] text-white/70 font-black uppercase tracking-wider mb-1">{locale === 'tr' ? 'PLATFORM DAĞILIMI' : 'PLATFORM BREAKDOWN'}</div>
-                         {[
-                           { label: 'Google', pct: 72, color: '#4285F4' },
-                           { label: 'Yemeksepeti', pct: 18, color: '#FA0050' },
-                           { label: 'Getir', pct: 10, color: '#5D3EBC' },
-                         ].map(p => (
-                           <div key={p.label} className="flex items-center gap-2">
-                             <span className="text-[7px] sm:text-[8px] font-bold text-white/70 w-16 sm:w-20 shrink-0">{p.label}</span>
-                             <div className="flex-1 h-1.5 bg-white/8 rounded-full overflow-hidden">
-                               <div className="h-full rounded-full" style={{ width: `${p.pct}%`, backgroundColor: p.color }} />
-                             </div>
-                             <span className="text-[7px] sm:text-[8px] font-bold text-white/60 w-6 text-right">{p.pct}%</span>
-                           </div>
-                         ))}
-                      </div>
-
-                      {/* Mini Review Row */}
-                      <div className="bg-white/5 px-3 py-2.5 rounded-xl border border-white/10 flex items-center gap-3">
-                         <div className="flex gap-0.5 flex-shrink-0">
-                            {[1,2,3,4,5].map(i => <Star key={i} size={9} fill="#F4B400" strokeWidth={0} />)}
-                         </div>
-                         <span className="text-[9px] sm:text-[10px] text-white/80 font-medium truncate">
-                           {locale === 'tr' ? '"Harika bir deneyim, kesinlikle tavsiye ederim."' : '"Great experience, highly recommend!"'}
-                         </span>
-                         <span className="text-[8px] text-white/60 font-medium flex-shrink-0">2dk</span>
-                      </div>
-                   </div>
-                </div>
-
-                {/* Floating Bottom Badge — positioned relative to wrapper, escapes clip */}
-                <div className="absolute -bottom-3 right-3 sm:-bottom-4 sm:right-4 lg:-bottom-5 lg:-right-5 z-20">
-                   <div className="bg-[#F4B400] text-[#1A2332] px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl border border-[#1A2332] shadow-lg flex items-center gap-2 group cursor-default">
-                      <Zap size={16} fill="#1A2332" className="sm:w-[18px] sm:h-[18px] group-hover:scale-110 transition-transform" />
-                      <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.1em] whitespace-nowrap">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
-                   </div>
-                </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════ Pricing Section ═══════ */}
-      <section id="pricing" className="py-16 sm:py-24 px-5 sm:px-8 bg-[#F8F6F1]">
-        <div className="max-w-[900px] mx-auto">
-          <div className="text-center mb-12 sm:mb-16 space-y-3">
-            <h2 className="text-[28px] sm:text-[42px] font-extrabold text-[#1A2332] tracking-[-0.02em] text-balance">{t.pricing_title}</h2>
-            <p className="text-[14px] sm:text-[15px] text-[#F4B400] font-semibold">{t.pricing_subtitle}</p>
-          </div>
-
-          {/* Single, responsive grid — renders plans exactly once on all sizes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 md:pt-4">
-            {/* Monthly Plan */}
-            <div className="bg-white p-6 sm:p-8 md:p-10 rounded-2xl border border-[#1A2332] shadow-md hover:-translate-y-1 transition-transform flex flex-col">
-              <h3 className="text-[20px] font-extrabold mb-1.5 text-[#1A2332]">{t.pricing_monthly_title}</h3>
-              <p className="text-[#2A3444] text-[13px] mb-6">{t.pricing_monthly_desc}</p>
-              <div className="mb-6 sm:mb-8">
-                <span className="text-[40px] sm:text-[48px] font-extrabold tracking-tighter text-[#1A2332]">{t.pricing_monthly_price}</span>
-                <span className="text-[#6B7280] font-medium ml-1 text-[14px]">{t.pricing_monthly_period}</span>
-              </div>
-              <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-1">
-                {[t.pricing_feature_unlimited_qr, t.pricing_feature_feedback, t.pricing_feature_panel, t.pricing_feature_mobile].map(feat => (
-                  <li key={feat} className="flex items-start gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#1A2332]">
-                    <CheckCircle2 size={16} className="text-[#6B7280] flex-shrink-0 mt-0.5" />
-                    <span>{feat}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-white text-[#1A2332] font-extrabold text-[14px] sm:text-[15px] rounded-lg border border-[#1A2332] shadow-sm hover:bg-[#F8F6F1] transition-all active:translate-y-[4px] active:shadow-none"
+      {/* ═══════════════════════════════════════════════════════════
+          7.5 INTERNATIONAL TESTIMONIAL — EN ONLY
+      ═══════════════════════════════════════════════════════════ */}
+      {!isTr && (
+        <section className="px-6 sm:px-10 pb-20 sm:pb-24">
+          <div className="max-w-[1100px] mx-auto border-t border-[#EDEDED] pt-16 sm:pt-20">
+            <blockquote
+              className="text-[28px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] max-w-[900px]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              &ldquo;We went from 3.9 on Yelp to 4.7 in six months. The Tripadvisor sync alone paid for Buaze.&rdquo;
+            </blockquote>
+            <div className="mt-7 flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-full bg-[#0A0A0A] text-[#C6F24E] flex items-center justify-center text-[15px] font-semibold"
+                style={{ fontFamily: 'var(--font-heading)' }}
               >
-                {t.pricing_monthly_cta}
-              </Link>
-            </div>
-
-            {/* Yearly Plan */}
-            <div className="bg-[#1A2332] p-6 sm:p-8 md:p-10 pt-10 sm:pt-10 md:pt-10 rounded-2xl border border-[#1A2332] relative flex flex-col text-white shadow-md hover:-translate-y-1 transition-transform">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#F4B400] text-[#1A2332] px-4 py-1.5 rounded-full font-black text-[10px] sm:text-[11px] uppercase tracking-widest border border-[#1A2332] whitespace-nowrap">
-                {t.pricing_yearly_badge}
+                JM
               </div>
-              <h3 className="text-[20px] font-extrabold mb-1.5">{t.pricing_yearly_title}</h3>
-              <p className="text-white/70 text-[13px] mb-6">{t.pricing_yearly_desc}</p>
-              <div className="mb-6 sm:mb-8">
-                <span className="text-[40px] sm:text-[48px] font-extrabold tracking-tighter">{t.pricing_yearly_price}</span>
-                <span className="text-white/60 font-medium ml-1 text-[14px]">{t.pricing_yearly_period}</span>
+              <div>
+                <div className="text-[15px] font-medium text-[#0A0A0A]">Julia Martens</div>
+                <div className="pulse-eyebrow text-[#737373] mt-1">Hotel Nora · Amsterdam</div>
               </div>
-              <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-1">
-                {[t.pricing_feature_all, t.pricing_feature_free_months, t.pricing_feature_priority, t.pricing_feature_google].map(feat => (
-                  <li key={feat} className="flex items-start gap-2.5 text-[13px] sm:text-[14px] font-medium text-white/80">
-                    <CheckCircle2 size={16} className="text-[#F4B400] flex-shrink-0 mt-0.5" />
-                    <span>{feat}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-[#F4B400] text-[#1A2332] font-extrabold text-[14px] sm:text-[15px] rounded-lg border border-[#1A2332] shadow-sm hover:bg-[#F4B400] transition-all active:translate-y-[4px] active:shadow-none"
-              >
-                {t.pricing_yearly_cta}
-              </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* ═══════ Final CTA ═══════ */}
-      <section className="py-20 sm:py-28 lg:py-32 px-5 sm:px-8 text-center bg-[#1A2332] relative overflow-hidden">
-        {/* Subtle dotted pattern */}
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-        {/* Gold glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#F4B400]/8 blur-[140px] rounded-full pointer-events-none" />
-
-        <div className="relative z-10 max-w-[760px] mx-auto space-y-7 sm:space-y-8">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 border border-[#F4B400]/25 rounded-full px-4 py-1.5">
-            <Zap size={14} className="text-[#F4B400]" fill="#F4B400" />
-            <span className="text-[10px] sm:text-[11px] font-black text-[#F4B400] uppercase tracking-[0.15em]">
-              {locale === 'tr' ? '14 GÜN ÜCRETSİZ' : '14-DAY FREE TRIAL'}
-            </span>
-          </div>
-
-          {/* Headline */}
-          <h2 className="text-[30px] sm:text-[44px] lg:text-[56px] font-extrabold text-white leading-[1.08] tracking-[-0.025em] text-balance px-2">
-            {t.cta_title_1}{' '}
-            <span className="text-white">
-              {t.cta_title_2}
-            </span>
+      {/* ═══════════════════════════════════════════════════════════
+          8. LIME CTA BANNER
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="bg-[#C6F24E] px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[900px] mx-auto text-center">
+          <h2 className="text-[36px] sm:text-[56px] font-medium leading-[1.02] tracking-[-0.04em] text-[#0A0A0A] text-balance">
+            {isTr ? 'Bugün başla, ilk yorumunu yarın al.' : 'Start today, get your first review tomorrow.'}
           </h2>
-
-          {/* Supporting description */}
-          <p className="text-[15px] sm:text-[17px] lg:text-[18px] text-white/80 font-medium max-w-[560px] mx-auto leading-relaxed text-pretty">
-            {locale === 'tr'
-              ? 'Kredi kartı gerekmez. 5 dakikada kurulum, anında kullanım. 500+ işletmenin tercihi.'
-              : 'No credit card required. 5-minute setup, instant access. Trusted by 500+ businesses.'}
+          <p className="mt-5 text-[16px] sm:text-[17px] text-[#1A1A1A] max-w-[560px] mx-auto">
+            {isTr
+              ? '14 gün ücretsiz deneme · Kredi kartı gerekmez · İstediğinde vazgeç'
+              : '14-day free trial · No credit card required · Cancel anytime'}
           </p>
-
-          {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-2">
-            <CtaButton variant="primary" href={`${base}/auth/register`} className="w-full sm:w-auto">
-              {t.cta_button} <ArrowRight size={18} className="ml-2" />
-            </CtaButton>
-            <CtaButton variant="secondary" href={`${base}/pricing`} className="w-full sm:w-auto">
-              {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
-            </CtaButton>
-          </div>
-
-          {/* Trust indicators */}
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pt-4 text-[12px] sm:text-[13px] text-white/70 font-semibold">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={15} className="text-[#4ade80]" />
-              {locale === 'tr' ? '500+ aktif işletme' : '500+ active businesses'}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={15} className="text-[#4ade80]" />
-              {locale === 'tr' ? '%92 itibar artışı' : '92% reputation growth'}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={15} className="text-[#4ade80]" />
-              {locale === 'tr' ? '5dk kurulum' : '5-min setup'}
-            </span>
+          <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+            <Link
+              href={`${base}/auth/register`}
+              className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
+            >
+              {isTr ? 'Ücretsiz başla' : 'Start free'}
+              <span aria-hidden>→</span>
+            </Link>
+            <Link
+              href={`${base}/pricing`}
+              className="inline-flex items-center justify-center gap-2 border-2 border-[#0A0A0A] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
+            >
+              {isTr ? 'Fiyatlara bak' : 'See pricing'}
+            </Link>
           </div>
         </div>
       </section>

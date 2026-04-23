@@ -5,7 +5,6 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { ArrowRight, Calendar, Clock, BookOpen } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,17 +14,16 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   return {
     title: {
       absolute: locale === 'tr' ? 'Blog & Rehberler | Buaze' : 'Blog & Guides | Buaze',
     },
-    description: locale === 'tr' 
+    description: locale === 'tr'
       ? 'Dijital itibar yönetimi ve müşteri deneyimi üzerine güncel içerikler.'
       : 'Latest articles on digital reputation management and customer experience.',
     openGraph: {
       title: locale === 'tr' ? 'Blog & Rehberler | Buaze' : 'Blog & Guides | Buaze',
-      description: locale === 'tr' ? 'İtibar yönetimi rehberleri...' : 'Reputation management guides...',
+      description: locale === 'tr' ? 'İtibar yönetimi rehberleri.' : 'Reputation management guides.',
     },
     alternates: {
       canonical: `https://buaze.com/${locale}/blog`,
@@ -37,7 +35,6 @@ export async function generateMetadata({
   };
 }
 
-
 export default async function BlogIndexPage({
   params,
 }: {
@@ -46,79 +43,152 @@ export default async function BlogIndexPage({
   const { locale } = await params;
   const t = getTranslations(locale);
   const base = `/${locale}`;
+  const isTr = locale === 'tr';
 
   const posts = await prisma.blogPost.findMany({
     where: { locale, isActive: true },
     orderBy: { createdAt: 'desc' },
   });
 
+  const featured = posts[0];
+  const rest = posts.slice(1);
+
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* Hero Header */}
-      <section className="pt-24 pb-16 px-5 sm:px-8 bg-[#F8F6F1] relative overflow-hidden border-b border-[#E8ECF2]">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#F4B400]/5 rounded-full blur-[120px] translate-x-1/3 -translate-y-1/3" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#F4B400]/5 rounded-full blur-[100px] -translate-x-1/3 translate-y-1/3" />
-        
-        <div className="max-w-[1000px] mx-auto text-center space-y-6 relative z-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl border border-[#1A2332] shadow-md mb-4">
-            <BookOpen size={28} className="text-[#F4B400]" />
-          </div>
-          <h1 className="text-[48px] sm:text-[72px] font-extrabold tracking-[-0.04em] text-[#1A2332] leading-[0.95]">
-            {t.blog_title}<span className="text-[#F4B400]">.</span>
+      {/* ─── Hero ─── */}
+      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-20 pb-12 border-b border-[#EDEDED]">
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
+          width="100%"
+          height="100%"
+        >
+          <defs>
+            <pattern id="blogGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#blogGrid)" />
+        </svg>
+        <div className="relative max-w-[1000px] mx-auto">
+          <span className="pulse-eyebrow text-[#737373]">
+            {isTr ? 'Blog & rehberler' : 'Blog & guides'}
+          </span>
+          <h1 className="mt-4 text-[40px] sm:text-[56px] lg:text-[64px] font-medium tracking-[-0.035em] text-[#0A0A0A] leading-[1]">
+            {t.blog_title}
+            <span className="text-[#C6F24E]">.</span>
           </h1>
-          <p className="text-[18px] sm:text-[22px] text-[#2A3444] font-medium max-w-[650px] mx-auto leading-relaxed">
+          <p className="mt-5 text-[17px] sm:text-[18px] text-[#525252] font-normal max-w-[620px] leading-relaxed">
             {t.blog_desc}
           </p>
+          {/* Filter chips (visual) */}
+          <div className="mt-8 flex gap-2 flex-wrap">
+            {(isTr
+              ? ['Tümü', 'Strateji', 'Vaka', 'Rehber', 'Ürün', 'Sektör']
+              : ['All', 'Strategy', 'Case', 'Guide', 'Product', 'Industry']
+            ).map((c, i) => (
+              <span
+                key={c}
+                className={`px-4 py-2 rounded-full text-[13px] font-medium border transition-colors ${
+                  i === 0
+                    ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+                    : 'bg-white text-[#0A0A0A] border-[#EDEDED] hover:border-[#C6F24E]'
+                }`}
+              >
+                {c}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Blog Grid */}
-      <section className="py-20 px-5 sm:px-8">
+      {/* ─── Blog Grid ─── */}
+      <section className="px-6 sm:px-10 py-16 sm:py-20">
         {posts.length === 0 ? (
-          <div className="text-center py-20 text-[#6B7280] text-lg font-medium">
-            {locale === 'tr' ? 'Henüz blog yazısı yok.' : 'No blog posts yet.'}
+          <div className="text-center py-20 text-[#737373] text-[15px]">
+            {isTr ? 'Henüz blog yazısı yok.' : 'No blog posts yet.'}
           </div>
         ) : (
-          <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {posts.map((post) => (
+          <div className="max-w-[1200px] mx-auto space-y-16">
+            {featured && (
               <Link
-                key={post.id}
-                href={`${base}/blog/${post.slug}`}
-                className="group bg-white rounded-3xl border border-[#1A2332] shadow-md hover:-translate-y-2 transition-transform duration-300 flex flex-col overflow-hidden"
+                href={`${base}/blog/${featured.slug}`}
+                className="group block bg-white rounded-3xl border border-[#EDEDED] overflow-hidden md:grid md:grid-cols-[1.1fr_1fr] hover:border-[#C6F24E] transition-colors"
               >
-                <div className="relative w-full h-[220px] border-b-[2.5px] border-[#1A2332] overflow-hidden">
+                <div className="relative aspect-[16/9] md:aspect-auto md:min-h-[340px] overflow-hidden border-b md:border-b-0 md:border-r border-[#EDEDED]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={post.coverImage}
-                    alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    src={featured.coverImage}
+                    alt={featured.title}
+                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
                   />
                 </div>
-
-                <div className="p-8 space-y-5 flex-grow flex flex-col">
-                  <div className="flex items-center gap-4 text-[12px] font-bold text-[#F4B400] uppercase tracking-widest">
-                    <span className="flex items-center gap-1.5"><Calendar size={14} /> {post.date}</span>
-                    <span className="flex items-center gap-1.5 text-[#6B7280]"><Clock size={14} /> {post.readTime}</span>
-                  </div>
-                  
-                  <h2 className="text-[24px] font-extrabold leading-[1.2] text-[#1A2332] group-hover:text-[#F4B400] transition-colors">
-                    {post.title}
+                <div className="p-8 lg:p-12 flex flex-col justify-center">
+                  <span className="pulse-eyebrow text-[#A8D62E]">
+                    {isTr ? 'ÖNE ÇIKAN' : 'FEATURED'}
+                  </span>
+                  <h2 className="mt-4 text-[28px] lg:text-[36px] font-medium text-[#0A0A0A] tracking-[-0.025em] leading-[1.1]">
+                    {featured.title}
                   </h2>
-                  
-                  <p className="text-[15px] text-[#2A3444] font-medium line-clamp-3 leading-relaxed flex-grow">
-                    {post.description}
+                  <p className="mt-4 text-[15px] text-[#525252] leading-[1.65] line-clamp-3">
+                    {featured.description}
                   </p>
-                  
-                  <div className="mt-4 pt-5 border-t border-[#E8ECF2] flex flex-row items-center justify-between text-[14px] font-bold text-[#1A2332]">
-                    <span className="uppercase tracking-wider">{t.blog_readMore}</span>
-                    <div className="w-10 h-10 rounded-full bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center group-hover:bg-[#F4B400] group-hover:-rotate-45 transition-all">
-                      <ArrowRight size={18} />
-                    </div>
+                  <div className="mt-6 flex items-center gap-4 text-[12px] text-[#737373]">
+                    <span>{featured.date}</span>
+                    <span>·</span>
+                    <span>{featured.readTime}</span>
+                  </div>
+                  <div className="mt-6 inline-flex items-center gap-1.5 text-[14px] font-medium text-[#0A0A0A] group-hover:text-[#A8D62E] transition-colors">
+                    {t.blog_readMore}
+                    <span aria-hidden className="group-hover:translate-x-0.5 transition-transform">
+                      →
+                    </span>
                   </div>
                 </div>
               </Link>
-            ))}
+            )}
+
+            {rest.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {rest.map((post) => (
+                  <Link
+                    key={post.id}
+                    href={`${base}/blog/${post.slug}`}
+                    className="group bg-white rounded-3xl border border-[#EDEDED] hover:border-[#C6F24E] transition-colors flex flex-col overflow-hidden"
+                  >
+                    <div className="relative aspect-[16/10] overflow-hidden border-b border-[#EDEDED]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={post.coverImage}
+                        alt={post.title}
+                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="p-7 flex flex-col flex-1">
+                      <div className="pulse-eyebrow text-[#737373] flex items-center gap-3">
+                        <span>{post.date}</span>
+                        <span>·</span>
+                        <span>{post.readTime}</span>
+                      </div>
+                      <h2 className="mt-4 text-[20px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-[1.2]">
+                        {post.title}
+                      </h2>
+                      <p className="mt-3 text-[14px] text-[#525252] leading-[1.6] line-clamp-3 flex-1">
+                        {post.description}
+                      </p>
+                      <div className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] group-hover:text-[#A8D62E] transition-colors">
+                        {t.blog_readMore}
+                        <span aria-hidden className="group-hover:translate-x-0.5 transition-transform">
+                          →
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </section>

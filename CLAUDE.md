@@ -238,56 +238,70 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 
 ---
 
-## 11. Marka Kimliği & Tasarım Sistemi (2026-04 v2 güncellendi)
+## 11. Marka Kimliği & Tasarım Sistemi (2026-04 Pulse)
+
+> **Özet:** 2026-04 Pulse redesign'ı ile v2 Gold/Navy/Ivory paleti **pure white + graphite + lime** sistemine geçti. Tasarım kaynağı: Claude Design'den gelen "Pulse" yönü (her yorum bir nabız).
 
 ### Renk Paleti
 
 | Token | Hex | Kullanım |
 |---|---|---|
-| Ink | `#0E1525` | En koyu ton, logo ascender, selective text |
-| Navy | `#1A2332` | Sidebar, text-main, buton dark variant |
-| Slate | `#2A3444` | Secondary UI, muted text |
-| Gold | `#F4B400` | Primary accent, buttons, aktif nav, logo curl |
-| Amber | `#FFD666` | Soft accent (hover highlight, gradient stops) |
-| Ivory | `#F8F6F1` | Sayfa arka planı |
-| Cloud | `#E8ECF2` | Border, neutral support |
+| Pure | `#FFFFFF` | Ana yüzey (sayfa bg, kartlar) |
+| Graphite | `#0A0A0A` | Ana mürekkep, text-main, sidebar, koyu butonlar |
+| Lime | `#C6F24E` | Primary accent, butonlar, aktif nav, pulse vurgusu |
+| Lime Deep | `#A8D62E` | Hover / pressed state |
+| Lime Soft | `#EAF9B8` | Soft tint (badge bg, highlight) |
+| N200 | `#EDEDED` | Border, neutral support |
+| N500 | `#737373` | Muted body text |
+| N800 | `#1A1A1A` | Dark secondary UI / navy replacement |
 
-**CSS token'ları:** `globals.css` → `@theme {}` bloğunda tanımlı (`--color-brand-ink`, `--color-brand-navy`, `--color-brand-gold`, vb.).
-**Tailwind:** Inline `bg-[#F4B400]`, `text-[#1A2332]` gibi arbitrary value'lar kullanılıyor — shared PLATFORM_CONFIG modülü gibi abstraction yapılmadı (üç yerden fazla tekrar olunca değerlendirilir).
+**CSS token'ları:** `globals.css` → `@theme {}` bloğunda tanımlı (`--color-brand-pure`, `--color-brand-graphite`, `--color-brand-lime`, vb.). Legacy alias'lar (`--color-brand-gold`, `--color-brand-navy`, ...) yeni palet değerlerine remap edildi — geriye dönük uyumluluk için var ama yeni kod **Pulse token'larını** kullanmalı.
+
+**Tailwind:** Inline `bg-[#C6F24E]`, `text-[#0A0A0A]` gibi arbitrary value'lar kullanılıyor — shared PLATFORM_CONFIG modülü gibi abstraction yapılmadı (üç yerden fazla tekrar olunca değerlendirilir).
 
 ### Logo
-- `src/components/marketing/BuazeLogo.tsx` — SVG bileşeni (API: `size`, `className`).
-- Şekil: Küçük harfli `b` → sade ascender + outer ring + **signature Gold curl** (bowl'un sağ-alt çeyreğinde). Checkmark ve speech-bubble kuyruğu **kaldırıldı** (v2).
-- Renk: Ink `#0E1525` gövde + Gold `#F4B400` kavis (gradient yok, düz renk).
-- **Kullanım alanları (11 import):** admin sidebar, user dashboard shell, marketing navbar & footer, auth (login/register), trial-expired. İmport'lara dokunma, sadece SVG içeriği değiştirildi.
-- `public/favicon.svg` — aynı logonun Navy kartla portresi.
+- `src/components/marketing/BuazeLogo.tsx` — SVG bileşeni (API: `size`, `className`, `variant`: `'default' | 'on-dark' | 'on-lime'`).
+- Şekil: **Yorum baloncuğu** (asimetrik, sol-alt kuyruk) + içinde **ECG nabız çizgisi** + sağ-üst köşede **lime accent kıvılcımı**. Eski lowercase `b` + checkmark tamamen değişti.
+- Renk: Graphite `#0A0A0A` gövde + Lime `#C6F24E` kıvılcım (`on-dark` variant: beyaz gövde + lime; `on-lime` variant: tamamen graphite).
+- **Kullanım alanları:** admin sidebar, user dashboard shell, marketing navbar & footer, auth (login/register), trial-expired. İmport'lara dokunma, sadece SVG içeriği ve variant değerleri değişti.
+- `public/favicon.svg` — graphite kart içinde beyaz ECG + lime nokta.
 
 ### Font
-- **Manrope** (heading) + **Inter** (body) — `next/font/google` ile yüklü (`src/app/layout.tsx`).
-- `globals.css` içinde `h1..h6` için CSS seçiciyle Manrope otomatik uygulanır, body default Inter'dir.
-- Manrope weights: 500, 600, 700, 800. Inter weights: 400, 500, 600, 700.
-- CSS variable'ları: `--font-heading` ve `--font-body` (token-based fallback chain).
+- **Space Grotesk** (display/heading) + **Inter** (body) + **JetBrains Mono** (eyebrow / sayı / kod) — `next/font/google` ile yüklü (`src/app/layout.tsx`).
+- `globals.css` içinde `h1..h6` için CSS seçiciyle Space Grotesk + `font-weight: 500` + sıkı `letter-spacing: -0.025em` otomatik uygulanır, body default Inter'dir.
+- Space Grotesk weights: 400, 500, 600, 700. Inter weights: 400, 500, 600, 700, 800, 900. JetBrains Mono weights: 400, 500, 600.
+- CSS variable'ları: `--font-heading` (Space Grotesk), `--font-body` (Inter), `--font-mono` (JetBrains Mono).
+- **Pulse eyebrow pattern**: `.pulse-eyebrow` utility class — JetBrains Mono, 11px, tracking 0.18em, uppercase. Küçük kategori/label chip'leri için.
 
 ### UI Stili
-- **Neo-brutalist offset shadow'lar (`shadow-[4px_5px_0_0_#...]`) tamamen kaldırıldı** (2026-04 v2) — yerine `shadow-sm/md/lg` geldi.
-- Kart border'ları Cloud (`#E8ECF2`) olmalı; Navy/Ink border'lar sadece buton ve high-contrast elemanlarda.
-- Typography weight kademeleri: heading `font-semibold`/`font-bold`, body `font-medium`/`font-semibold`. Aşırı `font-black` kullanımından kaçının.
+- **Neo-brutalist offset shadow'lar** kaldırıldı, yerine `shadow-sm/md/lg` + soft 20px offset koyu shadow'lar kullanılıyor.
+- Kart border'ları `#EDEDED` (n200) olmalı; Graphite border'lar sadece buton ve high-contrast elemanlarda.
+- Typography weight kademeleri: heading `font-medium` (500) veya `font-semibold` — Space Grotesk kendisi ince, bold aşırı kalın durur. Body `font-medium`/`font-semibold`. Aşırı `font-black` kullanımından kaçının.
+- **Motion**: `.pulse-heartbeat` utility — 1.6s ease infinite scale(1→1.2→1). Logo accent dot, live status indicator vb. için.
+- **Signature buton**: `bg-[#C6F24E] text-[#0A0A0A]` (lime CTA) veya `bg-[#0A0A0A] text-white` (koyu CTA); hover'da `bg-[#A8D62E]` / `bg-[#1A1A1A]`.
 
-### Eski renkler → Yeni karşılıklar (v1 → v2)
-| v1 (Eski) | v2 (Yeni) |
+### Eski renkler → Pulse karşılıkları (v2 → Pulse)
+| v2 (Eski) | Pulse (Yeni) |
 |---|---|
-| `#FF9A14` Trust Orange | `#F4B400` Gold |
-| `#FFB347` gradient top | `#FFD666` Amber |
-| `#0F2348` Deep Navy | `#1A2332` Navy |
-| `#243554` Slate Navy | `#2A3444` Slate |
-| `#F5F4F1` Soft Mist | `#F8F6F1` Ivory |
-| `#C9D0DB` Cool Gray | `#E8ECF2` Cloud |
-| `#FDBF1D` / `#EA580C` | `#F4B400` Gold |
-| `#1F1E1D` / `#111827` | `#1A2332` Navy |
-| `#F7F4F0` / `#FCFBF7` | `#F8F6F1` Ivory |
+| `#F4B400` Gold | `#C6F24E` Lime |
+| `#D69E00` Gold Deep | `#A8D62E` Lime Deep |
+| `#B88800` Dark Gold (text on soft bg) | `#0A0A0A` Graphite |
+| `#FFD666` Amber | `#D7F98E` Mid Lime |
+| `#FFF8D6` Soft Gold bg | `#EAF9B8` Lime Soft |
+| `#1A2332` Navy | `#0A0A0A` Graphite |
+| `#0E1525` Ink | `#000000` Pure Black |
+| `#2A3444` Slate | `#1A1A1A` N800 |
+| `#F8F6F1` Ivory | `#FFFFFF` Pure |
+| `#E8ECF2` Cloud | `#EDEDED` N200 |
+| `#FFB347`/`#FB923C`/`#F97316` (v1 gradient) | `#C6F24E`/`#A8D62E`/`#8CB81E` |
 
 ### Dokunulmayan platform brand hex'leri
 `#4285F4` (Google), `#FA0050` (Yemeksepeti), `#5D3EBC` (Getir), `#F27A1A` (Trendyol GO) — `FeedbackTable.tsx`, `PlatformDistribution.tsx`, `admin/qr/page.tsx` içinde resmi marka renkleri olarak korunur.
+
+### Ses & Ton (Pulse Voice)
+**Yap:** Net · Ölçülü · Güvenli · Doğrudan · Profesyonel Türkçe
+**Yapma:** Havalı slogan · Korkutucu · Aşırı teknik · Emoji yığını
+Örnek: *"Her yorum bir işarettir."* (❌ *"🚀 Yorumlarınızı devrimci şekilde yönetin!"*)
 
 ---
 
@@ -489,11 +503,46 @@ Her deploy'da schema sync edilir → `P2022 column does not exist` hatası oluş
 - `JWT_SECRET` — auth token signing
 - `NEXT_PUBLIC_APP_URL` — QR URL'lerinde kullanılır
 
+**Opsiyonel:**
+- `OPENAI_API_KEY` — AI Co-Pilot yanıt önerileri için (§15). Yoksa endpoint deterministik şablona düşer, UI çalışmaya devam eder.
+- `OPENAI_MODEL` — Varsayılan `gpt-4o-mini`.
+
 ### 14.2 Rate limit notu
 
 `src/lib/rate-limit.ts` in-memory. Vercel serverless'ta her instance farklı Map tutar — hard limit değil, yumuşak bir koruma. Ciddi abuse'a karşı Upstash Redis veya Vercel Edge Config gerekir (şimdilik opex gereksiz).
 
 ---
 
-_Son güncelleme: 2026-04 (ikinci dalga) — §3 depolama mimarisi güncellendi (base64-in-DB), §12 builder'a görsel/logo upload + visibility toggle + reorder perf notları eklendi, §12.4 backend davranışları (cross-category sortOrder + TR price parser), §13.8 analytics admin UI davranışları (refresh, reset, window date, all-time note, mobile chart responsive)._
+## 15. AI Co-Pilot (OpenAI) — 2026-04
+
+Restoran panelindeki yorum gelen kutularında (`/[locale]/dashboard/feedbacks` + `/admin/reviews`) "Taslak oluştur" butonu OpenAI'a yanıt taslağı yazdırır.
+
+**Helper:** `src/lib/openai.ts` — `hasOpenAIKey()` + `chatCompletion(messages, opts)`. Doğrudan `fetch` kullanır, `openai` SDK dep yok (CLAUDE.md §7).
+
+**Endpoint:** `POST /api/feedback/[id]/suggest-reply`
+- Auth: `getPanelActorFromRequest` + `canAccessRestaurant` (IDOR)
+- Rate limit: 30 istek / dk / actor (in-memory)
+- Body: `{ locale?: 'tr' | 'en' }` — diğer her şey Prisma'dan çekilir (rating, comment, customerName, platform, restaurant.name/category)
+- Response: `{ feedbackId, suggestion, source: 'openai' | 'template' | 'template-fallback' }`
+- Fallback: `OPENAI_API_KEY` yoksa veya API hatası olursa `buildReplyTemplate()` deterministik şablonu döner — UI her zaman bir şey alır.
+
+**Prompt:**
+- System: Restoran itibar uzmanı rolü; 2-4 cümle, maks. 80 kelime; olumluya teşekkür + yeniden davet, olumsuza özür + somut düzeltme (ücretsiz ikram ÖNERME), emoji yok, müşteri adı ilk adıyla.
+- User: İşletme adı + kategori + müşteri + puan + platform + yorum — yapılandırılmış format.
+- Model: `gpt-4o-mini` default (hızlı + ucuz). `OPENAI_MODEL` env'iyle override.
+- `temperature=0.7`, `max_tokens=300`.
+
+**UI davranışı:**
+- Admin reviews sayfası (`src/app/admin/reviews/page.tsx`): butonda loader + `AI` / `ŞABLON` rozeti response source'una göre. Optimistik olarak önce local template doldurur, sonra endpoint cevabını kullanır.
+- Owner feedbacks sayfası (`src/app/[locale]/dashboard/feedbacks/page.tsx`): zaten endpoint'i çağırıyordu, OpenAI cevabını otomatik alır.
+
+**Maliyet notu:** 1 öneri ≈ 400 token ≈ $0.0001 (gpt-4o-mini). 10.000 öneri/ay = $1. Kotayı OpenAI dashboard'dan takip et.
+
+**Güvenlik:**
+- Anahtar yalnız server-side (`process.env`). Client bundle'a sızmaz (NEXT_PUBLIC_ prefix yok).
+- Rate limit + IDOR koruması var. Anahtarı yanlışlıkla commit etmemek için `.env.local` git-ignored; `.env.example`'da boş bırakılmış.
+
+---
+
+_Son güncelleme: 2026-04 (üçüncü dalga) — §15 AI Co-Pilot eklendi, §3 depolama mimarisi güncellendi (base64-in-DB), §12 builder'a görsel/logo upload + visibility toggle + reorder perf notları eklendi, §12.4 backend davranışları (cross-category sortOrder + TR price parser), §13.8 analytics admin UI davranışları (refresh, reset, window date, all-time note, mobile chart responsive)._
 

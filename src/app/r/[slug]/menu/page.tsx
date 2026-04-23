@@ -138,7 +138,7 @@ export default function PublicMenuPage() {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-6">
-          <div className="w-16 h-16 rounded-full border-4 border-[#F8F6F1] border-t-blue-500 animate-spin" />
+          <div className="w-16 h-16 rounded-full border-4 border-[#FFFFFF] border-t-blue-500 animate-spin" />
           <p className="text-sm font-black text-[#C9D0DB] tracking-[0.2em] uppercase">BUAZE</p>
         </div>
       </div>
@@ -147,22 +147,22 @@ export default function PublicMenuPage() {
 
   if (!data) return notFound();
 
-  const themeColor = data.menuAccentColor || data.primaryColor || '#1A2332';
+  const themeColor = data.menuAccentColor || data.primaryColor || '#0A0A0A';
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8F6F1] selection:bg-[#E8ECF2]">
+    <div className="flex flex-col min-h-screen bg-[#FFFFFF] selection:bg-[#EDEDED]">
       
       {/* ── Fixed Header ── */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#E8ECF2]">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#EDEDED]">
         <div className="max-w-xl mx-auto px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
              <button 
                onClick={() => window.history.back()}
-               className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#F8F6F1] text-[#1A2332] transition-colors"
+               className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#FFFFFF] text-[#0A0A0A] transition-colors"
              >
                <ArrowLeft size={22} strokeWidth={2} />
              </button>
-             <h1 className="font-extrabold text-lg tracking-tight text-[#1A2332] truncate max-w-[180px]">{data.name}</h1>
+             <h1 className="font-extrabold text-lg tracking-tight text-[#0A0A0A] truncate max-w-[180px]">{data.name}</h1>
           </div>
           <div 
             className="w-10 h-10 rounded-2xl flex items-center justify-center text-white text-base font-black shadow-lg overflow-hidden shrink-0"
@@ -179,13 +179,13 @@ export default function PublicMenuPage() {
         {/* ── Search Bar ── */}
         <div className="max-w-xl mx-auto px-5 pb-3">
            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#0A0A0A] transition-colors" size={18} />
               <input 
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={locale === 'tr' ? 'Ürün veya kategori ara...' : 'Search for dishes...'}
-                className="w-full h-12 bg-[#F8F6F1] border border-[#E8ECF2] rounded-2xl pl-12 pr-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#E8ECF2] focus:bg-white transition-all shadow-sm"
+                className="w-full h-12 bg-[#FFFFFF] border border-[#EDEDED] rounded-2xl pl-12 pr-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#EDEDED] focus:bg-white transition-all shadow-sm"
               />
            </div>
         </div>
@@ -215,8 +215,8 @@ export default function PublicMenuPage() {
                 }}
                 className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
                   activeCategory === cat.id 
-                    ? 'bg-[#1A2332] text-white border-[#1A2332] shadow-xl shadow-[#E8ECF2]' 
-                    : 'bg-white text-[#6B7280] border-[#E8ECF2] hover:border-[#E8ECF2]'
+                    ? 'bg-[#0A0A0A] text-white border-[#0A0A0A] shadow-xl shadow-[#EDEDED]' 
+                    : 'bg-white text-[#6B7280] border-[#EDEDED] hover:border-[#EDEDED]'
                 }`}
               >
                 {cat.name}
@@ -231,7 +231,7 @@ export default function PublicMenuPage() {
          {filteredCategories.length === 0 ? (
            <div className="py-20 text-center space-y-4">
               <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center mx-auto shadow-sm">
-                 <Search className="text-[#E8ECF2]" size={32} />
+                 <Search className="text-[#EDEDED]" size={32} />
               </div>
               <p className="text-sm font-bold text-[#6B7280]">{locale === 'tr' ? 'Aradığınız kritere uygun ürün bulunamadı.' : 'No items found matching your search.'}</p>
            </div>
@@ -241,7 +241,7 @@ export default function PublicMenuPage() {
                 <div className="flex items-center gap-4">
                    <div className="h-8 w-1.5 rounded-full" style={{ backgroundColor: themeColor }} />
                    <div>
-                     <h2 className="text-2xl font-extrabold text-[#1A2332] tracking-tight">{cat.name}</h2>
+                     <h2 className="text-2xl font-extrabold text-[#0A0A0A] tracking-tight">{cat.name}</h2>
                      {cat.description && <p className="text-xs font-bold text-[#6B7280] mt-0.5">{cat.description}</p>}
                    </div>
                 </div>
@@ -253,16 +253,16 @@ export default function PublicMenuPage() {
                        data-pid={item.id}
                        ref={(el) => setProductRef(item.id, el)}
                        onClick={() => { setSelectedItem(item); analytics.trackProductClick(item.id, cat.id); }}
-                       className="relative bg-white rounded-[28px] p-4 flex gap-4 border border-[#F8F6F1] shadow-sm active:scale-[0.98] transition-all group cursor-pointer"
+                       className="relative bg-white rounded-[28px] p-4 flex gap-4 border border-[#FFFFFF] shadow-sm active:scale-[0.98] transition-all group cursor-pointer"
                      >
                         <div className="flex-1 space-y-1.5">
                            <div className="flex items-start justify-between gap-2">
                              <div className="flex flex-col gap-1">
-                               <h3 className="font-extrabold text-[#1A2332] leading-tight group-hover:text-[#2A3444] transition-colors uppercase tracking-tight">{item.name}</h3>
+                               <h3 className="font-extrabold text-[#0A0A0A] leading-tight group-hover:text-[#1A1A1A] transition-colors uppercase tracking-tight">{item.name}</h3>
                                {item.badges && item.badges.length > 0 && (
                                  <div className="flex flex-wrap gap-1">
                                     {item.badges.map((badge, idx) => (
-                                      <span key={idx} className="bg-[#F4B400] text-[#1A2332] text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
+                                      <span key={idx} className="bg-[#C6F24E] text-[#0A0A0A] text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
                                          {badge}
                                       </span>
                                     ))}
@@ -274,14 +274,14 @@ export default function PublicMenuPage() {
                              <p className="text-[12px] font-medium text-[#6B7280] line-clamp-2 leading-relaxed">{item.description}</p>
                            )}
                            <div className="pt-1">
-                             <span className="text-[15px] font-black text-[#1A2332]">
+                             <span className="text-[15px] font-black text-[#0A0A0A]">
                                {(item.priceCents / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {item.currency === 'TRY' ? '₺' : item.currency}
                              </span>
                            </div>
                         </div>
 
                         {item.imageUrl && (
-                          <div className="relative w-24 h-24 shrink-0 rounded-[20px] overflow-hidden border border-[#F8F6F1]">
+                          <div className="relative w-24 h-24 shrink-0 rounded-[20px] overflow-hidden border border-[#FFFFFF]">
                              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                              {item.isOutOfStock && (
                                <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
@@ -309,7 +309,7 @@ export default function PublicMenuPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="mt-auto py-10 px-6 bg-[#F8F6F1]/50 border-t border-[#E8ECF2]">
+      <footer className="mt-auto py-10 px-6 bg-[#FFFFFF]/50 border-t border-[#EDEDED]">
         <div className="max-w-xl mx-auto flex flex-col items-center gap-6">
           <div className="flex items-center gap-2">
             <span className="text-[9px] font-bold text-[#C9D0DB] tracking-[0.2em] uppercase">POWERED BY</span>
@@ -329,7 +329,7 @@ export default function PublicMenuPage() {
                  {selectedItem.imageUrl ? (
                    <img src={selectedItem.imageUrl} alt={selectedItem.name} className="w-full h-full object-cover" />
                  ) : (
-                   <div className="w-full h-full bg-[#F8F6F1] flex items-center justify-center text-[#E8ECF2]">
+                   <div className="w-full h-full bg-[#FFFFFF] flex items-center justify-center text-[#EDEDED]">
                       <Utensils size={64} />
                    </div>
                  )}
@@ -344,7 +344,7 @@ export default function PublicMenuPage() {
               <div className="p-8 space-y-6">
                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-3xl font-extrabold text-[#1A2332] leading-tight uppercase tracking-tight">{selectedItem.name}</h2>
+                      <h2 className="text-3xl font-extrabold text-[#0A0A0A] leading-tight uppercase tracking-tight">{selectedItem.name}</h2>
                       {selectedItem.isOutOfStock && (
                         <span className="px-2 py-1 rounded-lg bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-tighter border border-red-100">
                           {locale === 'tr' ? 'STOKTA YOK' : 'OUT OF STOCK'}
@@ -354,7 +354,7 @@ export default function PublicMenuPage() {
                     {selectedItem.badges && selectedItem.badges.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                          {selectedItem.badges.map((badge, idx) => (
-                           <span key={idx} className="bg-[#F4B400] text-[#1A2332] text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider shadow-sm">
+                           <span key={idx} className="bg-[#C6F24E] text-[#0A0A0A] text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider shadow-sm">
                              {badge}
                            </span>
                          ))}
@@ -363,22 +363,22 @@ export default function PublicMenuPage() {
                  </div>
 
                  {selectedItem.description && (
-                   <div className="space-y-2 pt-2 border-t border-[#F8F6F1]">
+                   <div className="space-y-2 pt-2 border-t border-[#FFFFFF]">
                       <p className="text-[11px] font-black uppercase text-[#6B7280] tracking-[0.2em]">{locale === 'tr' ? 'AÇIKLAMA' : 'DESCRIPTION'}</p>
                       <p className="text-[#6B7280] text-sm font-bold leading-relaxed">{selectedItem.description}</p>
                    </div>
                  )}
 
-                 <div className="flex items-center justify-between pt-6 border-t border-[#F8F6F1]">
+                 <div className="flex items-center justify-between pt-6 border-t border-[#FFFFFF]">
                     <div className="space-y-1">
                        <p className="text-[11px] font-black uppercase text-[#6B7280] tracking-[0.2em]">{locale === 'tr' ? 'FİYAT' : 'PRICE'}</p>
-                       <p className="text-2xl font-black text-[#1A2332]">
+                       <p className="text-2xl font-black text-[#0A0A0A]">
                          {(selectedItem.priceCents / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {selectedItem.currency === 'TRY' ? '₺' : selectedItem.currency}
                        </p>
                     </div>
                     <button 
                       onClick={() => setSelectedItem(null)}
-                      className="px-10 py-4 bg-[#1A2332] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#2A3444] transition-all active:scale-95 shadow-xl"
+                      className="px-10 py-4 bg-[#0A0A0A] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#1A1A1A] transition-all active:scale-95 shadow-xl"
                     >
                       {locale === 'tr' ? 'GERİ DÖN' : 'GO BACK'}
                     </button>

@@ -48,7 +48,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
       key: 'food' as const,
       label: copy.food,
       icon: UtensilsCrossed,
-      color: '#F4B400',
+      color: '#C6F24E',
       bg: 'bg-amber-50',
       text: 'text-amber-600',
       ...aspects.food,
@@ -89,7 +89,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
 
   if (!anyData) {
     return (
-      <div className="rounded-2xl border border-dashed border-[#E8ECF2] bg-white/60 p-6 text-center text-sm font-bold text-[#2A3444]">
+      <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-white/60 p-6 text-center text-sm font-bold text-[#1A1A1A]">
         {copy.noData}
       </div>
     );
@@ -108,17 +108,17 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
           <div
             key={item.key}
             className={`relative overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition-all sm:p-5 ${
-              isWorst ? 'border-red-300 ring-2 ring-red-100' : 'border-[#E8ECF2]'
+              isWorst ? 'border-red-300 ring-2 ring-red-100' : 'border-[#EDEDED]'
             }`}
           >
             {isWorst && (
-              <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-red-600 ring-1 ring-red-200">
+              <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 pulse-eyebrow text-red-600 ring-1 ring-red-200">
                 <TrendingDown size={10} strokeWidth={2} />
                 {copy.worst}
               </span>
             )}
             {isBest && (
-              <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-600 ring-1 ring-emerald-200">
+              <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 pulse-eyebrow text-emerald-600 ring-1 ring-emerald-200">
                 <TrendingUp size={10} strokeWidth={2} />
                 {copy.best}
               </span>
@@ -129,7 +129,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
                 <Icon size={18} strokeWidth={2} />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-[11px] font-black uppercase tracking-widest text-[#6B7280]">
+                <p className="truncate pulse-eyebrow text-[#737373]">
                   {item.label}
                 </p>
               </div>
@@ -138,13 +138,16 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
             {hasData ? (
               <>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-black tabular-nums tracking-tight text-[#1A2332] sm:text-4xl">
+                  <span
+                    className="text-[28px] sm:text-[32px] font-medium tabular-nums tracking-[-0.025em] text-[#0A0A0A] leading-none"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
                     {item.avg!.toFixed(1)}
                   </span>
-                  <span className="text-sm font-bold text-[#2A3444]">/ 5</span>
+                  <span className="text-[13px] text-[#525252]">/ 5</span>
                 </div>
 
-                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#E8ECF2]">
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#EDEDED]">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
@@ -154,7 +157,7 @@ export default function AspectBreakdown({ aspects, locale = 'tr' }: AspectBreakd
                   />
                 </div>
 
-                <p className="mt-3 text-[11px] font-bold text-[#2A3444]">
+                <p className="mt-3 pulse-eyebrow text-[#737373]">
                   {item.count} {copy.respondents}
                 </p>
               </>

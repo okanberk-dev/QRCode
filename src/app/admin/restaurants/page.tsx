@@ -21,7 +21,7 @@ interface Restaurant {
 }
 
 function menuStatus(r: Pick<Restaurant, 'menuEnabled' | 'menuPublished'>) {
-  if (!r.menuEnabled) return { label: 'KAPALI', cls: 'bg-[#E8ECF2] text-[#6B7280] border-[#E8ECF2]' };
+  if (!r.menuEnabled) return { label: 'KAPALI', cls: 'bg-[#EDEDED] text-[#6B7280] border-[#EDEDED]' };
   if (!r.menuPublished) return { label: 'TASLAK', cls: 'bg-amber-50 text-amber-700 border-amber-200' };
   return { label: 'YAYINDA', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
 }
@@ -43,7 +43,7 @@ export default function RestaurantsPage() {
     googlePlaceId: '',
     address: '',
     phone: '',
-    primaryColor: '#F4B400',
+    primaryColor: '#C6F24E',
   });
   const [isManualSlug, setIsManualSlug] = useState(false);
   const [showGoogleInfo, setShowGoogleInfo] = useState(false);
@@ -118,7 +118,7 @@ export default function RestaurantsPage() {
       }
 
       setShowCreateModal(false);
-      setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googlePlaceId: '', address: '', phone: '', primaryColor: '#F4B400' });
+      setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googlePlaceId: '', address: '', phone: '', primaryColor: '#C6F24E' });
       setIsManualSlug(false);
       fetchRestaurants();
     } catch (err) {
@@ -143,21 +143,21 @@ export default function RestaurantsPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#1A2332] w-8 h-8" />
+        <Loader2 className="animate-spin text-[#0A0A0A] w-8 h-8" />
       </div>
     );
   }
 
   return (
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase">İşletmeler</h1>
-          <p className="text-[#2A3444] text-[13px] sm:text-[15px] font-bold">Platformdaki tüm restoranları ve şubeleri yönetin.</p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#0A0A0A] tracking-tight uppercase">İşletmeler</h1>
+          <p className="text-[#1A1A1A] text-[13px] sm:text-[15px] font-bold">Platformdaki tüm restoranları ve şubeleri yönetin.</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 sm:gap-3 bg-[#F4B400] text-[#1A2332] px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#F4B400] transition-all active:scale-95 group"
+          className="flex items-center justify-center gap-2 sm:gap-3 bg-[#C6F24E] text-[#0A0A0A] px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-xs sm:text-sm font-semibold hover:bg-[#C6F24E] transition-all active:scale-95 group"
         >
           <Plus size={20} strokeWidth={2} className="group-hover:rotate-90 transition-transform" />
           Yeni İşletme
@@ -167,33 +167,33 @@ export default function RestaurantsPage() {
       {/* Filters and Search */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         {/* Status Filter */}
-        <div className="flex bg-[#E8ECF2]/50 p-1 rounded-xl shrink-0 border border-[#E8ECF2]">
+        <div className="flex bg-[#EDEDED]/50 p-1 rounded-xl shrink-0 border border-[#EDEDED]">
           <button
             onClick={() => setStatusFilter('active')}
-            className={`px-4 sm:px-6 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
+            className={`px-4 sm:px-6 py-2 text-[10px] sm:pulse-eyebrow rounded-lg transition-all ${
               statusFilter === 'active' 
-                ? 'bg-white text-[#1A2332] shadow-sm' 
-                : 'text-[#2A3444] hover:text-[#1A2332]'
+                ? 'bg-white text-[#0A0A0A] shadow-sm' 
+                : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
             }`}
           >
             Aktif
           </button>
           <button
             onClick={() => setStatusFilter('passive')}
-            className={`px-4 sm:px-6 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
+            className={`px-4 sm:px-6 py-2 text-[10px] sm:pulse-eyebrow rounded-lg transition-all ${
               statusFilter === 'passive' 
-                ? 'bg-white text-[#1A2332] shadow-sm' 
-                : 'text-[#2A3444] hover:text-[#1A2332]'
+                ? 'bg-white text-[#0A0A0A] shadow-sm' 
+                : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
             }`}
           >
             Pasif
           </button>
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-4 sm:px-6 py-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest rounded-lg transition-all ${
+            className={`px-4 sm:px-6 py-2 text-[10px] sm:pulse-eyebrow rounded-lg transition-all ${
               statusFilter === 'all' 
-                ? 'bg-white text-[#1A2332] shadow-sm' 
-                : 'text-[#2A3444] hover:text-[#1A2332]'
+                ? 'bg-white text-[#0A0A0A] shadow-sm' 
+                : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
             }`}
           >
             Tümü
@@ -202,30 +202,30 @@ export default function RestaurantsPage() {
 
         {/* Search Bar */}
         <div className="relative group w-full max-w-md">
-          <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#1A2332] transition-colors" size={20} strokeWidth={2} />
+          <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#0A0A0A] transition-colors" size={20} strokeWidth={2} />
           <input
             type="text"
             placeholder={t('search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white border border-[#E8ECF2] rounded-[20px] pl-12 sm:pl-16 pr-4 sm:pr-8 py-3 sm:py-4 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#F4B400] transition-all"
+            className="w-full bg-white border border-[#EDEDED] rounded-xl pl-12 sm:pl-16 pr-4 sm:pr-8 py-3 sm:py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E] transition-all"
           />
         </div>
       </div>
 
       {/* Restaurant Cards Grid */}
       {restaurants.length === 0 ? (
-        <div className="bg-white rounded-[24px] border border-[#E8ECF2] p-8 sm:p-16 md:p-24 text-center space-y-6 shadow-sm">
-          <div className="w-24 h-24 bg-[#F8F6F1] rounded-3xl flex items-center justify-center mx-auto border border-[#E8ECF2]">
+        <div className="bg-white rounded-2xl border border-[#EDEDED] p-8 sm:p-16 md:p-24 text-center space-y-6 shadow-sm">
+          <div className="w-24 h-24 bg-[#FFFFFF] rounded-3xl flex items-center justify-center mx-auto border border-[#EDEDED]">
             <Store size={48} className="text-[#6B7280]" strokeWidth={2} />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-extrabold text-[#1A2332]">Henüz işletme kaydı yok</h3>
-            <p className="text-[#2A3444] font-bold">İlk restoranınızı ekleyerek dijital itibarınızı yönetmeye başlayın.</p>
+            <h3 className="text-xl font-semibold text-[#0A0A0A]">Henüz işletme kaydı yok</h3>
+            <p className="text-[#1A1A1A] font-bold">İlk restoranınızı ekleyerek dijital itibarınızı yönetmeye başlayın.</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-3 bg-[#F4B400] text-[#1A2332] px-10 py-4 rounded-2xl text-sm font-bold uppercase tracking-widest shadow-sm hover:bg-[#F4B400] transition-all active:scale-95"
+            className="inline-flex items-center gap-3 bg-[#C6F24E] text-[#0A0A0A] px-10 py-4 rounded-2xl text-sm font-semibold hover:bg-[#C6F24E] transition-all active:scale-95"
           >
             <Plus size={20} strokeWidth={2} />
             İşletme Ekle
@@ -237,7 +237,7 @@ export default function RestaurantsPage() {
             r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             r.category.toLowerCase().includes(searchTerm.toLowerCase())
           ).map((r) => (
-            <div key={r.id} className={`bg-white rounded-[24px] border border-[#E8ECF2] shadow-sm overflow-hidden transition-all hover:translate-y-[-2px] hover:shadow-md ${!r.isActive && 'opacity-70 grayscale-[0.5]'}`}>
+            <div key={r.id} className={`bg-white rounded-2xl border border-[#EDEDED] overflow-hidden transition-all hover:translate-y-[-2px] hover:shadow-md ${!r.isActive && 'opacity-70 grayscale-[0.5]'}`}>
               {/* Color strip */}
               <div className="h-2 w-full" style={{ backgroundColor: r.primaryColor }} />
               
@@ -245,13 +245,13 @@ export default function RestaurantsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-4 min-w-0 flex-1">
                     <div
-                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl sm:text-2xl shadow-sm shrink-0"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-white font-semibold text-xl sm:text-2xl shrink-0"
                       style={{ backgroundColor: r.primaryColor }}
                     >
                       {r.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-extrabold text-[#1A2332] text-xl tracking-tight leading-none mb-2 truncate" title={r.name}>{r.name}</h3>
+                      <h3 className="font-semibold text-[#0A0A0A] text-xl tracking-tight leading-none mb-2 truncate" title={r.name}>{r.name}</h3>
                       <div className="flex items-center gap-2">
                         <p className="text-[13px] font-bold text-[#6B7280] truncate">/{r.slug}</p>
                         <CopyUrlButton 
@@ -274,24 +274,24 @@ export default function RestaurantsPage() {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-6 py-4 border-y-2 border-[#F8F6F1] flex-wrap">
+                <div className="flex items-center gap-3 sm:gap-6 py-4 border-y-2 border-[#FFFFFF] flex-wrap">
                   <div className="space-y-1 min-w-0">
-                    <p className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest leading-none">KATEGORİ</p>
-                    <p className="text-[12px] sm:text-[13px] font-black text-[#1A2332] truncate">{r.category.toUpperCase()}</p>
+                    <p className="text-[10px] font-semibold text-[#6B7280]  leading-none">KATEGORİ</p>
+                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#0A0A0A] truncate">{r.category.toUpperCase()}</p>
                   </div>
-                  <div className="w-px h-8 bg-[#E8ECF2]" />
+                  <div className="w-px h-8 bg-[#EDEDED]" />
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest leading-none">YORUM</p>
-                    <p className="text-[12px] sm:text-[13px] font-black text-[#F4B400]">{r._count.feedbacks}</p>
+                    <p className="text-[10px] font-semibold text-[#6B7280]  leading-none">YORUM</p>
+                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#C6F24E]">{r._count.feedbacks}</p>
                   </div>
-                  <div className="w-px h-8 bg-[#E8ECF2]" />
+                  <div className="w-px h-8 bg-[#EDEDED]" />
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[#6B7280] uppercase tracking-widest leading-none">MENÜ</p>
+                    <p className="text-[10px] font-semibold text-[#6B7280]  leading-none">MENÜ</p>
                     <div className="flex items-center gap-1.5 sm:gap-2">
-                      <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest border ${menuStatus(r).cls}`}>
+                      <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:pulse-eyebrow border ${menuStatus(r).cls}`}>
                         {menuStatus(r).label}
                       </span>
-                      <span className="text-[12px] sm:text-[13px] font-black text-[#1A2332]">{r._count.menuItems}</span>
+                      <span className="text-[12px] sm:text-[13px] font-semibold text-[#0A0A0A]">{r._count.menuItems}</span>
                     </div>
                   </div>
                 </div>
@@ -299,20 +299,20 @@ export default function RestaurantsPage() {
                 <div className="flex items-center gap-3">
                   <Link
                     href={`/admin/restaurants/${r.id}`}
-                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-[#1A2332] text-white rounded-xl shadow-sm hover:bg-[#2A3444] transition-all uppercase tracking-widest active:scale-95"
+                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-[#0A0A0A] text-white rounded-xl hover:bg-[#1A1A1A] transition-all  active:scale-95"
                   >
                     YÖNET
                   </Link>
                   <Link
                     href={`/admin/restaurants/${r.id}/menu`}
-                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-[#2A3444] border border-[#E8ECF2] rounded-xl shadow-sm hover:bg-[#F8F6F1] transition-all uppercase tracking-widest active:scale-95 flex items-center justify-center gap-2"
+                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-[#1A1A1A] border border-[#EDEDED] rounded-xl hover:bg-[#FFFFFF] transition-all  active:scale-95 flex items-center justify-center gap-2"
                   >
                     <UtensilsCrossed size={14} strokeWidth={2} />
                     MENÜ
                   </Link>
                   <Link
                     href={`/admin/qr?restaurant=${r.id}`}
-                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-[#6B7280] bg-white hover:text-[#1A2332] border border-[#E8ECF2] rounded-xl shadow-sm hover:bg-[#F8F6F1] transition-all active:scale-95 shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-[#6B7280] bg-white hover:text-[#0A0A0A] border border-[#EDEDED] rounded-xl hover:bg-[#FFFFFF] transition-all active:scale-95 shrink-0"
                     title="QR KOD"
                   >
                     <ExternalLink size={18} strokeWidth={2} />
@@ -327,14 +327,14 @@ export default function RestaurantsPage() {
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6">
-          <div className="bg-white rounded-[20px] sm:rounded-[24px] shadow-2xl border border-[#E8ECF2] w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
-            <div className="p-5 sm:p-8 md:p-10 border-b border-[#E8ECF2] bg-[#F8F6F1] relative">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase pr-10">Yeni İşletme</h2>
-              <p className="text-[#2A3444] text-xs sm:text-sm font-bold mt-2">Sisteme yeni bir restoran veya şube tanımlayın.</p>
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
+            <div className="p-5 sm:p-8 md:p-10 border-b border-[#EDEDED] bg-[#FFFFFF] relative">
+              <h2 className="text-2xl sm:text-3xl font-semibold text-[#0A0A0A] tracking-tight uppercase pr-10">Yeni İşletme</h2>
+              <p className="text-[#1A1A1A] text-xs sm:text-sm font-bold mt-2">Sisteme yeni bir restoran veya şube tanımlayın.</p>
 
               <button
                 onClick={() => { setShowCreateModal(false); setError(''); }}
-                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-[#6B7280] hover:text-[#1A2332] hover:bg-[#E8ECF2] rounded-xl transition-all"
+                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#EDEDED] rounded-xl transition-all"
               >
                 <X size={24} strokeWidth={2} />
               </button>
@@ -342,27 +342,27 @@ export default function RestaurantsPage() {
 
             <form onSubmit={handleCreate} className="p-5 sm:p-8 md:p-10 space-y-5 sm:space-y-6 md:space-y-8 overflow-y-auto no-scrollbar">
               {error && (
-                <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-xs font-bold border border-red-200 text-center uppercase tracking-widest">
+                <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-xs font-bold border border-red-200 text-center ">
                   {error}
                 </div>
               )}
 
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">İşletme Adı *</label>
+                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">İşletme Adı *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Örn: Gourmet Eats Ankara"
-                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[15px] font-bold shadow-sm transition-all"
+                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-[15px] font-bold transition-all"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">URL Slug (Otomatik) *</label>
+                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">URL Slug (Otomatik) *</label>
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-                  <span className="text-[11px] sm:text-[13px] font-black text-[#2A3444] opacity-40 whitespace-nowrap">buaze.com/r/</span>
+                  <span className="text-[11px] sm:text-[13px] font-semibold text-[#1A1A1A] opacity-40 whitespace-nowrap">buaze.com/r/</span>
                   <input
                     type="text"
                     required
@@ -372,24 +372,24 @@ export default function RestaurantsPage() {
                       setIsManualSlug(true);
                     }}
                     placeholder="gourmet-eats"
-                    className="flex-1 min-w-0 px-3 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-[13px] sm:text-[15px] font-bold tracking-tight shadow-sm transition-all"
+                    className="flex-1 min-w-0 px-3 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-[13px] sm:text-[15px] font-bold tracking-tight transition-all"
                   />
                 </div>
               </div>
 
               {/* ── Google Review Link — emphasized ── */}
-              <div className="rounded-2xl border-2 border-[#F4B400]/50 bg-gradient-to-br from-[#F4B400]/15 via-[#F4B400]/8 to-white p-4 sm:p-5 shadow-sm">
+              <div className="rounded-2xl border-2 border-[#C6F24E]/50 bg-gradient-to-br from-[#C6F24E]/15 via-[#C6F24E]/8 to-white p-4 sm:p-5 shadow-sm">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F4B400] shadow-sm">
-                      <MapPin size={15} strokeWidth={2} className="text-[#1A2332]" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] shadow-sm">
+                      <MapPin size={15} strokeWidth={2} className="text-[#0A0A0A]" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[12px] sm:text-[13px] font-black uppercase tracking-wide text-[#1A2332] leading-tight">
+                      <p className="text-[12px] sm:text-[13px] font-semibold uppercase tracking-wide text-[#0A0A0A] leading-tight">
                         Google Yorum Bağlantısı
-                        <span className="ml-1 text-[#F4B400]">*</span>
+                        <span className="ml-1 text-[#C6F24E]">*</span>
                       </p>
-                      <p className="mt-0.5 text-[10px] font-bold text-[#2A3444] leading-tight">
+                      <p className="mt-0.5 text-[10px] font-bold text-[#1A1A1A] leading-tight">
                         Olumlu yorumlar bu bağlantıya yönlendirilir
                       </p>
                     </div>
@@ -397,7 +397,7 @@ export default function RestaurantsPage() {
                   <button
                     type="button"
                     onClick={() => setShowGoogleInfo((v) => !v)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#E8ECF2] bg-white text-[#1A2332] transition-all hover:bg-[#F4B400]/20 active:scale-95"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#EDEDED] bg-white text-[#0A0A0A] transition-all hover:bg-[#C6F24E]/20 active:scale-95"
                     aria-label="Info"
                   >
                     <Info size={15} strokeWidth={2} />
@@ -405,8 +405,8 @@ export default function RestaurantsPage() {
                 </div>
 
                 {showGoogleInfo && (
-                  <div className="mb-3 rounded-xl border border-[#E8ECF2] bg-white p-3.5 text-xs font-bold text-[#2A3444] leading-relaxed">
-                    <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#1A2332]">Nasıl alınır?</p>
+                  <div className="mb-3 rounded-xl border border-[#EDEDED] bg-white p-3.5 text-xs font-bold text-[#1A1A1A] leading-relaxed">
+                    <p className="mb-2 pulse-eyebrow text-[#0A0A0A]">Nasıl alınır?</p>
                     <ol className="ml-4 list-decimal space-y-1">
                       <li>Google Haritalar&apos;ı açın ve işletmenizi aratın.</li>
                       <li>İşletmeye tıklayın, &quot;Paylaş&quot; butonuna basın.</li>
@@ -416,7 +416,7 @@ export default function RestaurantsPage() {
                       href="https://www.google.com/maps"
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-3 inline-flex items-center gap-1.5 text-[#F4B400] font-black text-[11px] uppercase tracking-widest underline underline-offset-2"
+                      className="mt-3 inline-flex items-center gap-1.5 text-[#C6F24E] font-semibold text-[11px]  underline underline-offset-2"
                     >
                       <ExternalLink size={12} strokeWidth={2} />
                       Google Haritalar&apos;ı Aç
@@ -429,17 +429,17 @@ export default function RestaurantsPage() {
                   value={formData.googlePlaceId}
                   onChange={(e) => setFormData((prev) => ({ ...prev, googlePlaceId: e.target.value }))}
                   placeholder="https://maps.google.com/... veya Place ID"
-                  className="w-full rounded-xl border border-[#E8ECF2] bg-white px-4 py-3.5 text-sm font-bold text-[#1A2332] outline-none transition-all placeholder:text-[#6B7280] focus:ring-2 focus:ring-[#F4B400]"
+                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3.5 text-sm font-bold text-[#0A0A0A] outline-none transition-all placeholder:text-[#6B7280] focus:ring-2 focus:ring-[#C6F24E]"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Kategori</label>
+                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Kategori</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-semibold appearance-none cursor-pointer shadow-sm"
                   >
                     <option>Restoran</option>
                     <option>Kafe</option>
@@ -452,54 +452,54 @@ export default function RestaurantsPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Tema Rengi</label>
+                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Tema Rengi</label>
                   <div className="flex items-center gap-3 sm:gap-4">
                     <input
                       type="color"
                       value={formData.primaryColor}
                       onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
-                      className="w-14 h-12 sm:w-16 rounded-xl border border-[#E8ECF2] cursor-pointer p-1 bg-white shadow-sm shrink-0"
+                      className="w-14 h-12 sm:w-16 rounded-xl border border-[#EDEDED] cursor-pointer p-1 bg-white shrink-0"
                     />
-                    <span className="text-xs sm:text-sm font-black text-[#1A2332] font-mono">{formData.primaryColor.toUpperCase()}</span>
+                    <span className="text-xs sm:text-sm font-semibold text-[#0A0A0A] font-mono">{formData.primaryColor.toUpperCase()}</span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Bildirim E-postası</label>
+                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Bildirim E-postası</label>
                   <input
                     type="email"
                     value={formData.notificationEmail}
                     onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
                     placeholder="yonetim@email.com"
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold shadow-sm transition-all"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-bold transition-all"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Telefon Numarası</label>
+                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Telefon Numarası</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="05..."
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold shadow-sm transition-all"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-bold transition-all"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-5 pt-6 sm:pt-10 border-t-2 border-[#F8F6F1]">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-5 pt-6 sm:pt-10 border-t-2 border-[#FFFFFF]">
                 <button
                   type="button"
                   onClick={() => { setShowCreateModal(false); setError(''); }}
-                  className="px-6 sm:px-8 py-3 sm:py-4 text-xs font-black text-[#2A3444] hover:text-[#1A2332] uppercase tracking-widest transition-colors"
+                  className="px-6 sm:px-8 py-3 sm:py-4 text-xs font-semibold text-[#1A1A1A] hover:text-[#0A0A0A]  transition-colors"
                 >
                   İPTAL
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-[#1A2332] text-white px-6 sm:px-10 py-3 sm:py-4 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-sm hover:scale-95 transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 sm:gap-3 bg-[#0A0A0A] text-white px-6 sm:px-10 py-3 sm:py-4 rounded-2xl text-xs font-semibold hover:scale-95 transition-all disabled:opacity-50"
                 >
                   {creating ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <Plus size={20} strokeWidth={2} />}
                   İŞLETMEYİ KAYDET

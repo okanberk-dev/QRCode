@@ -21,7 +21,7 @@ function daysLeft(trialEndsAt: string | null): number | null {
 }
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
-  trial:   { label: 'DENEME',  color: 'bg-[#F4B400]/15 text-[#F4B400] border-[#F4B400]/30' },
+  trial:   { label: 'DENEME',  color: 'bg-[#C6F24E]/15 text-[#C6F24E] border-[#C6F24E]/30' },
   monthly: { label: 'AYLIK',   color: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
   yearly:  { label: 'YILLIK',  color: 'bg-green-500/15 text-green-400 border-green-500/20' },
   free:    { label: 'ÜCRETSİZ', color: 'bg-[#6B7280]/15 text-[#6B7280] border-[#6B7280]/20' },
@@ -97,7 +97,7 @@ export default function MembersPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#1A2332] w-10 h-10" />
+        <Loader2 className="animate-spin text-[#0A0A0A] w-10 h-10" />
       </div>
     );
   }
@@ -105,14 +105,14 @@ export default function MembersPage() {
   return (
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1A2332] tracking-tight uppercase">Üye Yönetimi</h1>
-          <p className="text-[#2A3444] text-[13px] sm:text-[15px] font-bold">Kayıtlı işletme sahiplerinin planlarını ve erişimlerini yönetin.</p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#0A0A0A] tracking-tight uppercase">Üye Yönetimi</h1>
+          <p className="text-[#1A1A1A] text-[13px] sm:text-[15px] font-bold">Kayıtlı işletme sahiplerinin planlarını ve erişimlerini yönetin.</p>
         </div>
         <button
           onClick={fetchMembers}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#F8F6F1] border border-[#E8ECF2] text-sm font-black text-[#1A2332] hover:bg-[#E8ECF2] transition-all active:scale-95"
+          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#FFFFFF] border border-[#EDEDED] text-sm font-semibold text-[#0A0A0A] hover:bg-[#EDEDED] transition-all active:scale-95"
         >
           <RefreshCw size={16} strokeWidth={2} />
           YENİLE
@@ -120,17 +120,17 @@ export default function MembersPage() {
       </div>
 
       {success && (
-        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-2xl text-green-700 text-sm font-black">
+        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-2xl text-green-700 text-sm font-semibold">
           <Check size={18} strokeWidth={2} /> {success}
         </div>
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-[#E8ECF2] shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-[#EDEDED] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse sm:min-w-[600px]">
             <thead>
-              <tr className="bg-[#1f2937] text-[11px] font-bold uppercase tracking-[0.2em] text-[#9ca3af]">
+              <tr className="bg-[#1f2937] pulse-eyebrow text-[#9ca3af]">
                 <th className="px-3 py-4 sm:px-5">KULLANICI</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-5">PLAN</th>
                 <th className="hidden lg:table-cell px-3 py-4 sm:px-5">DENEME / BİTİŞ</th>
@@ -139,7 +139,7 @@ export default function MembersPage() {
                 <th className="px-3 py-4 sm:px-5 text-right">EYLEM</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F8F6F1]">
+            <tbody className="divide-y divide-[#FFFFFF]">
               {members.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-sm font-bold text-[#6B7280]">
@@ -150,30 +150,30 @@ export default function MembersPage() {
                 const dl = daysLeft(m.trialEndsAt);
                 const trialExpired = m.plan === 'trial' && dl !== null && dl <= 0;
                 const trialSoon = m.plan === 'trial' && dl !== null && dl > 0 && dl <= 3;
-                const planMeta = PLAN_LABELS[m.plan] || { label: m.plan.toUpperCase(), color: 'bg-[#E8ECF2] text-[#2A3444] border-[#E8ECF2]' };
+                const planMeta = PLAN_LABELS[m.plan] || { label: m.plan.toUpperCase(), color: 'bg-[#EDEDED] text-[#1A1A1A] border-[#EDEDED]' };
 
                 return (
-                  <tr key={m.id} className="hover:bg-[#F8F6F1]/50 transition-all">
+                  <tr key={m.id} className="hover:bg-[#FFFFFF]/50 transition-all">
                     <td className="px-3 py-4 sm:px-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#F8F6F1] border border-[#E8ECF2] flex items-center justify-center text-sm font-black text-[#1A2332] flex-shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-[#FFFFFF] border border-[#EDEDED] flex items-center justify-center text-sm font-semibold text-[#0A0A0A] flex-shrink-0">
                           {(m.name || m.email).charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-black text-[#1A2332] text-sm truncate">{m.name || '—'}</p>
-                          <p className="text-xs text-[#2A3444] font-bold truncate">{m.email}</p>
+                          <p className="font-semibold text-[#0A0A0A] text-sm truncate">{m.name || '—'}</p>
+                          <p className="text-xs text-[#1A1A1A] font-bold truncate">{m.email}</p>
                           {/* Mobile-only badges: plan + status + trial countdown */}
                           <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
-                            <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${planMeta.color}`}>
+                            <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wider border ${planMeta.color}`}>
                               {planMeta.label}
                             </span>
                             {m.isActive ? (
-                              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-green-100 text-green-700">AKTİF</span>
+                              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wider bg-green-100 text-green-700">AKTİF</span>
                             ) : (
-                              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-red-100 text-red-700">PASİF</span>
+                              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wider bg-red-100 text-red-700">PASİF</span>
                             )}
                             {m.plan === 'trial' && m.trialEndsAt && (
-                              <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${trialExpired ? 'bg-red-100 text-red-700' : trialSoon ? 'bg-[#FFF8D6] text-[#B88800]' : 'bg-[#E8ECF2] text-[#2A3444]'}`}>
+                              <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wider ${trialExpired ? 'bg-red-100 text-red-700' : trialSoon ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'bg-[#EDEDED] text-[#1A1A1A]'}`}>
                                 {trialExpired ? 'SÜRESİ DOLDU' : `${dl}G KALDI`}
                               </span>
                             )}
@@ -182,14 +182,14 @@ export default function MembersPage() {
                       </div>
                     </td>
                     <td className="hidden md:table-cell px-3 py-4 sm:px-5">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${planMeta.color}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg pulse-eyebrow border ${planMeta.color}`}>
                         <Crown size={10} />
                         {planMeta.label}
                       </span>
                     </td>
                     <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
                       {m.plan === 'trial' && m.trialEndsAt ? (
-                        <span className={`text-xs font-black flex items-center gap-1.5 ${trialExpired ? 'text-red-500' : trialSoon ? 'text-[#F4B400]' : 'text-[#2A3444]'}`}>
+                        <span className={`text-xs font-semibold flex items-center gap-1.5 ${trialExpired ? 'text-red-500' : trialSoon ? 'text-[#C6F24E]' : 'text-[#1A1A1A]'}`}>
                           {trialExpired ? <AlertTriangle size={14} strokeWidth={2} /> : null}
                           {trialExpired
                             ? `Süresi doldu (${Math.abs(dl!)} gün önce)`
@@ -200,18 +200,18 @@ export default function MembersPage() {
                       )}
                     </td>
                     <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#2A3444]">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#1A1A1A]">
                         <Store size={14} strokeWidth={2} />
                         {m._count.restaurants}
                       </div>
                     </td>
                     <td className="hidden md:table-cell px-3 py-4 sm:px-5">
                       {m.isActive ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-50 text-green-600 border border-green-200 text-[10px] font-black uppercase tracking-widest">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-50 text-green-600 border border-green-200 pulse-eyebrow">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />AKTİF
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-500 border border-red-200 text-[10px] font-black uppercase tracking-widest">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-500 border border-red-200 pulse-eyebrow">
                           <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />PASİF
                         </span>
                       )}
@@ -219,7 +219,7 @@ export default function MembersPage() {
                     <td className="px-2 py-4 sm:px-5 text-right">
                       <button
                         onClick={() => openEdit(m)}
-                        className="px-3 sm:px-4 py-2 rounded-xl bg-[#1A2332] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-[#2A3444] active:scale-95 transition-all"
+                        className="px-3 sm:px-4 py-2 rounded-xl bg-[#0A0A0A] text-white text-[10px] sm:pulse-eyebrow hover:bg-[#1A1A1A] active:scale-95 transition-all"
                       >
                         DÜZENLE
                       </button>
@@ -235,15 +235,15 @@ export default function MembersPage() {
       {/* Edit Modal */}
       {editingMember && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[24px] shadow-2xl border border-[#E8ECF2] w-full max-w-md max-h-[92dvh] overflow-y-auto">
-            <div className="p-6 border-b border-[#E8ECF2] flex items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-md max-h-[92dvh] overflow-y-auto">
+            <div className="p-6 border-b border-[#EDEDED] flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-extrabold text-[#1A2332] uppercase tracking-tight">Üye Düzenle</h2>
-                <p className="text-xs text-[#2A3444] font-bold mt-1">{editingMember.email}</p>
+                <h2 className="text-xl font-semibold text-[#0A0A0A] uppercase tracking-tight">Üye Düzenle</h2>
+                <p className="text-xs text-[#1A1A1A] font-bold mt-1">{editingMember.email}</p>
               </div>
               <button
                 onClick={() => setEditingMember(null)}
-                className="p-2 text-[#6B7280] hover:text-[#1A2332] hover:bg-[#E8ECF2] rounded-xl transition-all"
+                className="p-2 text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#EDEDED] rounded-xl transition-all"
               >
                 <X size={20} strokeWidth={2} />
               </button>
@@ -251,24 +251,24 @@ export default function MembersPage() {
 
             <div className="p-6 space-y-6">
               {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-xs font-black uppercase tracking-widest text-center">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-xs font-semibold text-center">
                   {error}
                 </div>
               )}
 
               {/* Plan */}
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Plan</label>
+                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Plan</label>
                 <div className="grid grid-cols-2 gap-2">
                   {(['trial', 'monthly', 'yearly', 'free'] as const).map((p) => (
                     <button
                       key={p}
                       type="button"
                       onClick={() => setEditPlan(p)}
-                      className={`py-3 rounded-xl border-2 text-[11px] font-black uppercase tracking-widest transition-all ${
+                      className={`py-3 rounded-xl border-2 pulse-eyebrow transition-all ${
                         editPlan === p
-                          ? 'bg-[#1A2332] text-white border-[#1A2332]'
-                          : 'bg-white text-[#2A3444] border-[#E8ECF2] hover:border-[#6B7280]'
+                          ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+                          : 'bg-white text-[#1A1A1A] border-[#EDEDED] hover:border-[#6B7280]'
                       }`}
                     >
                       {PLAN_LABELS[p]?.label || p.toUpperCase()}
@@ -280,21 +280,21 @@ export default function MembersPage() {
               {/* Trial End Date */}
               {editPlan === 'trial' && (
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black text-[#6B7280] uppercase tracking-widest ml-1">Deneme Bitiş Tarihi</label>
+                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Deneme Bitiş Tarihi</label>
                   <input
                     type="date"
                     value={editTrialEndsAt}
                     onChange={(e) => setEditTrialEndsAt(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E8ECF2] bg-[#F8F6F1] focus:ring-2 focus:ring-[#F4B400] outline-none text-sm font-bold"
+                    className="w-full px-4 py-3 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-bold"
                   />
                 </div>
               )}
 
               {/* Active toggle */}
-              <div className="flex items-center justify-between p-4 bg-[#F8F6F1] rounded-2xl border border-[#E8ECF2]">
+              <div className="flex items-center justify-between p-4 bg-[#FFFFFF] rounded-2xl border border-[#EDEDED]">
                 <div>
-                  <p className="text-sm font-black text-[#1A2332]">Hesap Durumu</p>
-                  <p className="text-xs font-bold text-[#2A3444] mt-0.5">{editIsActive ? 'Kullanıcı sisteme girebilir.' : 'Kullanıcı erişimi engellendi.'}</p>
+                  <p className="text-sm font-semibold text-[#0A0A0A]">Hesap Durumu</p>
+                  <p className="text-xs font-bold text-[#1A1A1A] mt-0.5">{editIsActive ? 'Kullanıcı sisteme girebilir.' : 'Kullanıcı erişimi engellendi.'}</p>
                 </div>
                 <button
                   type="button"
@@ -312,7 +312,7 @@ export default function MembersPage() {
                 <button
                   type="button"
                   onClick={() => setEditingMember(null)}
-                  className="flex-1 py-3 rounded-xl border border-[#E8ECF2] text-sm font-black text-[#2A3444] hover:text-[#1A2332] transition-colors"
+                  className="flex-1 py-3 rounded-xl border border-[#EDEDED] text-sm font-semibold text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
                 >
                   İPTAL
                 </button>
@@ -320,7 +320,7 @@ export default function MembersPage() {
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 py-3 rounded-xl bg-[#1A2332] text-white text-sm font-black uppercase tracking-widest hover:bg-[#2A3444] disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-[#0A0A0A] text-white text-sm font-semibold hover:bg-[#1A1A1A] disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2} />}
                   KAYDET

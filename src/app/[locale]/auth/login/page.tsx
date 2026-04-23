@@ -4,7 +4,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import LoginForm from '@/components/auth/LoginForm';
 import Link from 'next/link';
-import { Shield, Star } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -50,94 +50,136 @@ export default async function LoginPage({
 
   const t = getTranslations(locale);
   const { logoUrl } = await getSiteSettings();
+  const isTr = locale === 'tr';
 
-  const stats = [
-    { val: '1,284', label: locale === 'tr' ? 'İşlenen Geri Bildirim' : 'Processed Feedback' },
-    { val: '4.8', label: locale === 'tr' ? 'İtibar Gücü' : 'Reputation Score' },
-    { val: '847', label: locale === 'tr' ? 'Digital Yayılım' : 'Digital Reach' },
-    { val: '14', label: locale === 'tr' ? 'Aktif Portföy' : 'Active Portfolio' },
+  const bottomStats = [
+    { k: '2.400+', l: isTr ? 'işletme' : 'businesses' },
+    { k: '4.9/5', l: isTr ? 'müşteri puanı' : 'customer score' },
+    { k: '28', l: isTr ? 'ülke' : 'countries' },
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#FFFFFF] flex flex-col font-sans">
       <MarketingNavbar locale={locale} t={t} />
 
       <main className="flex-1 flex pt-[64px]">
         {/* Left Panel */}
-        <div className="hidden lg:flex w-[44%] bg-[#1A2332] text-white flex-col justify-center px-12 xl:px-16 py-16 relative overflow-hidden">
-          <div className="relative z-10 max-w-[400px]">
-            <Link href={`/${locale}`} className="inline-flex items-center gap-3 mb-10 group">
-              <BuazeLogo size={48} variant="on-dark" imageUrl={logoUrl} />
-              <span className="text-[24px] font-extrabold tracking-[-0.02em] text-white">
-                buaze<span className="text-[#F4B400]">.</span>
+        <div className="hidden lg:flex w-[44%] bg-[#0A0A0A] text-white flex-col justify-between px-12 xl:px-16 py-16 relative overflow-hidden">
+          {/* Grid overlay */}
+          <svg aria-hidden className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.08]">
+            <defs>
+              <pattern id="loginGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#FFFFFF" strokeWidth="0.5" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#loginGrid)" />
+          </svg>
+
+          <div className="relative z-10 flex items-start justify-between">
+            <Link href={`/${locale}`} className="inline-flex items-center gap-3 group">
+              <BuazeLogo size={36} variant="on-dark" imageUrl={logoUrl} />
+              <span
+                className="text-[20px] font-medium tracking-[-0.03em] text-white"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                buaze<span className="text-[#C6F24E]">.</span>
               </span>
             </Link>
-            <h2 className="text-[32px] font-extrabold leading-[1.15] tracking-[-0.03em] mb-4">
-              {locale === 'tr' ? 'İtibarınız sizi bekliyor' : 'Your reputation is waiting'}
-            </h2>
-            <p className="text-[14px] text-[#E8ECF2] leading-relaxed mb-10 font-medium">
-              {locale === 'tr'
-                ? 'Geri bildirim operasyonlarınızı anlık takip edin, marka itibarınızı profesyonelce yönetin ve güvenle büyüyün.'
-                : 'Monitor your feedback operations in real-time, manage your brand reputation professionally, and grow with confidence.'}
-            </p>
-
-            {/* Stats grid */}
-            <div className="grid grid-cols-2 gap-3 mb-10">
-              {stats.map(stat => (
-                <div key={stat.label} className="bg-white/5 rounded-2xl p-5 border border-white/10 backdrop-blur-sm">
-                  <div className="text-[24px] font-black text-[#F4B400] flex items-center gap-1.5">
-                    {stat.val}
-                    {(stat.label.includes('Puan') || stat.label.includes('Rating') || stat.label.includes('Score') || stat.label.includes('Gücü')) ? (
-                      <Star size={16} className="fill-[#F4B400] text-[#F4B400]" />
-                    ) : null}
-                  </div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.1em] text-white/70 mt-1">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-2.5 text-white/75 text-[12px] font-bold bg-white/5 py-4 px-5 rounded-2xl border border-white/5">
-              <Shield size={16} className="text-green-500 flex-shrink-0" />
-              {locale === 'tr' ? 'KVKK uyumlu · Endüstriyel şifreleme' : 'GDPR compliant · Industry-standard encryption'}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#C6F24E]/15 border border-[#C6F24E]/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat" />
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'CANLI · 340K+ YORUM' : 'LIVE · 340K+ REVIEWS'}
+              </span>
             </div>
           </div>
 
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#F4B400]/10 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[#F4B400]/5 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2 pointer-events-none" />
+          <div className="relative z-10 max-w-[460px]">
+            <blockquote
+              className="text-[36px] xl:text-[44px] font-medium leading-[1.05] tracking-[-0.03em] text-white"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              {isTr
+                ? '"İlk ay içinde Google ortalamamız 4.2\'den 4.8\'e çıktı."'
+                : '"Within the first month, our Google average climbed from 4.2 to 4.8."'}
+            </blockquote>
+            <div className="mt-6 flex items-center gap-3">
+              <div
+                className="w-11 h-11 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[14px] font-semibold"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                EK
+              </div>
+              <div>
+                <div className="text-[14px] font-medium text-white">Emre Kaya</div>
+                <div className="pulse-eyebrow text-white/60 mt-0.5">
+                  {isTr ? 'Kadıköy Bistro · Kurucu' : 'Kadıköy Bistro · Founder'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative z-10 space-y-5">
+            <div className="flex items-center gap-8">
+              {bottomStats.map((s) => (
+                <div key={s.l}>
+                  <div
+                    className="text-[26px] font-medium text-white leading-none tracking-[-0.02em]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {s.k}
+                  </div>
+                  <div className="pulse-eyebrow text-white/60 mt-2">{s.l}</div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2.5 text-white/70 text-[12px] font-medium">
+              <Shield size={14} className="text-[#C6F24E] flex-shrink-0" />
+              {isTr ? 'KVKK uyumlu · Endüstriyel şifreleme' : 'GDPR compliant · Industry-standard encryption'}
+            </div>
+          </div>
+
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#C6F24E]/10 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[#C6F24E]/5 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2 pointer-events-none" />
         </div>
 
         {/* Right Panel - Form */}
-        <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 bg-[#F8F6F1]">
-          
+        <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 bg-[#FFFFFF]">
+
           {/* Header/Logo for mobile */}
           <div className="flex lg:hidden justify-center mb-8">
             <Link href="/" className="flex items-center gap-3 group">
               <BuazeLogo size={36} variant="default" imageUrl={logoUrl} />
-              <span className="text-2xl font-black tracking-tighter text-[#1A2332]">buaze<span className="text-[#F4B400]">.</span></span>
+              <span
+                className="text-[22px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                buaze<span className="text-[#C6F24E]">.</span>
+              </span>
             </Link>
           </div>
 
           <div className="w-full max-w-sm mx-auto">
-            <div className="bg-white rounded-[28px] border border-[#E8ECF2] p-8 sm:p-10 mb-5 shadow-md">
+            <div className="bg-white rounded-3xl border border-[#EDEDED] p-8 sm:p-10 mb-5 shadow-[0_8px_24px_rgba(10,10,10,0.04)]">
               <div className="mb-8 text-center lg:text-left">
-                <h1 className="text-[28px] font-extrabold text-[#1A2332] tracking-tight leading-tight">{t.auth_login_title}</h1>
-                <p className="text-[13px] font-bold text-[#2A3444] mt-2">{t.auth_login_subtitle}</p>
+                <h1 className="text-[28px] text-[#0A0A0A] tracking-[-0.02em] leading-tight">{t.auth_login_title}</h1>
+                <p className="text-[14px] text-[#525252] mt-2">{t.auth_login_subtitle}</p>
               </div>
 
-              <Suspense fallback={<div className="h-52 animate-pulse bg-[#F8F6F1] rounded-lg" />}>
+              <Suspense fallback={<div className="h-52 animate-pulse bg-[#FFFFFF] rounded-lg" />}>
                 <LoginForm locale={locale} t={t} />
               </Suspense>
             </div>
 
             <div className="text-center mt-8">
-              <p className="text-[13px] font-black text-[#2A3444]">
+              <p className="text-[13px] text-[#525252]">
                 {locale === 'tr' ? 'Hesabınız yok mu?' : "Don't have an account?"}
               </p>
               <Link
                 href={`/${locale}/auth/register`}
-                 className="inline-flex items-center gap-2 text-[14px] font-black text-[#F4B400] hover:text-[#1A2332] mt-2 transition-colors border-b-2 border-transparent hover:border-[#1A2332]/30 pb-1"
-               >
-                 {locale === 'tr' ? '14 gün ücretsiz dene →' : 'Try free for 14 days →'}
+                className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] mt-2 transition-colors"
+              >
+                {locale === 'tr' ? '14 gün ücretsiz dene' : 'Try free for 14 days'}
+                <span aria-hidden>→</span>
               </Link>
             </div>
           </div>

@@ -50,14 +50,14 @@ export default function ForgotPasswordForm({ locale }: Props) {
   if (sent) {
     return (
       <div className="space-y-5">
-        <div className="rounded-2xl border-2 border-green-500/20 bg-green-50 p-5 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-green-500 text-white">
-            <Check size={22} strokeWidth={2} />
+        <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8] p-5 text-center">
+          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+            <Check size={20} strokeWidth={2.5} />
           </div>
-          <p className="text-[14px] font-black text-green-700">
-            {locale === 'tr' ? 'Kod gönderildi!' : 'Code sent!'}
+          <p className="text-[14px] font-medium text-[#0A0A0A]">
+            {locale === 'tr' ? 'Kod gönderildi.' : 'Code sent.'}
           </p>
-          <p className="mt-2 text-[12px] font-bold text-green-600 leading-relaxed">
+          <p className="mt-2 text-[12px] text-[#525252] leading-relaxed">
             {locale === 'tr'
               ? 'E-postanıza 6 haneli bir kod gönderdik. Spam klasörünüzü de kontrol edin. Kod 30 dakika geçerlidir.'
               : 'We sent a 6-digit code to your email. Check your spam folder too. The code is valid for 30 minutes.'}
@@ -73,10 +73,10 @@ export default function ForgotPasswordForm({ locale }: Props) {
               router.push(`/${locale}/auth/reset-password`);
             }
           }}
-          className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all group"
+          className="w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors"
         >
-          {locale === 'tr' ? 'KODU GİR' : 'ENTER CODE'}
-          <ArrowRight size={18} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />
+          {locale === 'tr' ? 'Kodu gir' : 'Enter code'}
+          <ArrowRight size={18} strokeWidth={2} />
         </button>
 
         <button
@@ -86,9 +86,9 @@ export default function ForgotPasswordForm({ locale }: Props) {
             setToken('');
             setEmail('');
           }}
-          className="w-full text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332] transition-colors"
+          className="pulse-eyebrow w-full text-[#737373] hover:text-[#0A0A0A] transition-colors"
         >
-          {locale === 'tr' ? 'Farklı bir e-posta dene' : 'Try a different email'}
+          {locale === 'tr' ? 'FARKLI BİR E-POSTA DENE' : 'TRY A DIFFERENT EMAIL'}
         </button>
       </div>
     );
@@ -97,17 +97,17 @@ export default function ForgotPasswordForm({ locale }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-[16px] text-[13px] font-black border-2 border-red-500/20 text-center">
+        <div className="bg-[#FEF2F2] text-[#B91C1C] p-4 rounded-xl text-[13px] font-medium border border-[#FECACA] text-center">
           {error}
         </div>
       )}
 
       <div className="space-y-2">
-        <label htmlFor="forgot-email" className="block text-[11px] font-black uppercase tracking-widest text-[#6B7280] ml-1">
+        <label htmlFor="forgot-email" className="pulse-eyebrow text-[#737373] ml-1 block">
           {locale === 'tr' ? 'E-posta Adresiniz' : 'Your Email'}
         </label>
         <div className="relative">
-          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280]" size={18} strokeWidth={2} />
+          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#737373]" size={16} strokeWidth={2} />
           <input
             id="forgot-email"
             type="email"
@@ -116,7 +116,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="can@sirket.com"
-            className="w-full pl-11 pr-5 py-4 bg-[#F8F6F1] rounded-xl border-2 border-[#1A2332] focus:border-[#F4B400] focus:shadow-[0_0_0_4px_rgba(244, 180, 0,0.1)] outline-none transition-all font-bold text-sm"
+            className="w-full pl-11 pr-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
           />
         </div>
       </div>
@@ -124,12 +124,13 @@ export default function ForgotPasswordForm({ locale }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+        className="w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <ArrowRight size={20} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />}
+        {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}
         {loading
-          ? (locale === 'tr' ? 'GÖNDERİLİYOR...' : 'SENDING...')
-          : (locale === 'tr' ? 'SIFIRLAMA KODU GÖNDER' : 'SEND RESET CODE')}
+          ? (locale === 'tr' ? 'Gönderiliyor…' : 'Sending…')
+          : (locale === 'tr' ? 'Sıfırlama kodu gönder' : 'Send reset code')}
+        {!loading && <ArrowRight size={18} strokeWidth={2} />}
       </button>
     </form>
   );

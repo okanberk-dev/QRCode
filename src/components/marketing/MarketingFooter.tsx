@@ -25,18 +25,21 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
   const s = await getSiteSettings();
 
   return (
-    <footer className="bg-[#1A2332] pt-16 pb-8 px-5 sm:px-8 text-white border-t border-white/5">
+    <footer className="bg-[#0A0A0A] pt-16 pb-8 px-5 sm:px-8 text-white border-t border-white/5">
       <div className="max-w-[1200px] mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 mb-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10 mb-14">
           {/* Col 1: Brand */}
           <div className="sm:col-span-2 md:col-span-1 min-w-0">
             <Link href={base} className="flex items-center gap-2 mb-5 group inline-flex">
               <BuazeLogo size={28} variant="on-dark" imageUrl={s.logoUrl} className="opacity-90 group-hover:opacity-100 transition-opacity" />
-              <span className="text-[17px] font-extrabold tracking-[-0.02em] text-white">
-                buaze<span className="text-[#F4B400]">.</span>
+              <span
+                className="text-[18px] font-medium tracking-[-0.03em] text-white"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                buaze<span className="text-[#C6F24E]">.</span>
               </span>
             </Link>
-            <p className="text-[#E8ECF2] text-[13px] leading-relaxed mb-5">
+            <p className="text-white/70 text-[13px] leading-relaxed mb-5">
               {t.siteDescription || 'Restoranınızın dijital itibarını profesyonelce yönetin.'}
             </p>
 
@@ -47,7 +50,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram — buazerating"
-                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-[#F4B400] hover:text-[#1A2332] hover:border-[#F4B400] transition-colors"
+                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-[#C6F24E] hover:text-[#0A0A0A] hover:border-[#C6F24E] transition-colors"
               >
                 <svg
                   width="18"
@@ -70,55 +73,74 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
 
           {/* Col 2: Product */}
           <div>
-            <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">
+            <h4 className="pulse-eyebrow text-white/60 mb-6">
               {locale === 'tr' ? 'Ürün' : 'Product'}
             </h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-[#E8ECF2]">
-              <li><Link href={`${base}/how-it-works`} className="hover:text-[#F4B400] transition-colors">{locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}</Link></li>
-              <li><Link href={`${base}/pricing`} className="hover:text-[#F4B400] transition-colors">{locale === 'tr' ? 'Fiyatlandırma' : 'Pricing'}</Link></li>
-              <li><Link href={`${base}/compare`} className="hover:text-[#F4B400] transition-colors">{locale === 'tr' ? 'Karşılaştır' : 'Compare'}</Link></li>
-              <li><Link href={`${base}/faq`} className="hover:text-[#F4B400] transition-colors">{locale === 'tr' ? 'Sıkça Sorulan Sorular' : 'FAQ'}</Link></li>
-              <li><Link href={`${base}/about`} className="hover:text-[#F4B400] transition-colors">{t.footer_about}</Link></li>
-              <li><Link href={`${base}/contact`} className="hover:text-[#F4B400] transition-colors">{t.footer_contact}</Link></li>
+            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
+              <li><Link href={`${base}/features`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Özellikler' : 'Features'}</Link></li>
+              <li><Link href={`${base}/solutions`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Çözümler' : 'Solutions'}</Link></li>
+              <li><Link href={`${base}/solutions/delivery`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Paket Servis' : 'Delivery'}</Link></li>
+              <li><Link href={`${base}/solutions/qr-generator`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}</Link></li>
+              <li><Link href={`${base}/integrations`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Entegrasyonlar' : 'Integrations'}</Link></li>
+              <li><Link href={`${base}/how-it-works`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}</Link></li>
+              <li><Link href={`${base}/pricing`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Fiyatlandırma' : 'Pricing'}</Link></li>
+              <li><Link href={`${base}/compare`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Karşılaştır' : 'Compare'}</Link></li>
+            </ul>
+          </div>
+
+          {/* Col 3: Discover */}
+          <div>
+            <h4 className="pulse-eyebrow text-white/60 mb-6">
+              {locale === 'tr' ? 'Keşfet' : 'Discover'}
+            </h4>
+            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
+              <li><Link href={`${base}/customer-stories`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Başarı Hikayeleri' : 'Customer Stories'}</Link></li>
+              <li><Link href={`${base}/roi`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'ROI Hesaplayıcı' : 'ROI Calculator'}</Link></li>
+              <li><Link href={`${base}/blog`} className="hover:text-[#C6F24E] transition-colors">Blog</Link></li>
+              <li><Link href={`${base}/help`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Yardım Merkezi' : 'Help Center'}</Link></li>
+              <li><Link href={`${base}/faq`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'SSS' : 'FAQ'}</Link></li>
+              <li><Link href={`${base}/about`} className="hover:text-[#C6F24E] transition-colors">{t.footer_about}</Link></li>
+              <li><Link href={`${base}/careers`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Kariyer' : 'Careers'}</Link></li>
+              <li><Link href={`${base}/contact`} className="hover:text-[#C6F24E] transition-colors">{t.footer_contact}</Link></li>
             </ul>
           </div>
 
           {/* Col 3: Legal */}
           <div>
-            <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">
+            <h4 className="pulse-eyebrow text-white/60 mb-6">
               {locale === 'tr' ? 'Yasal' : 'Legal'}
             </h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-[#E8ECF2]">
-              <li><Link href={`${base}/terms`} className="hover:text-[#F4B400] transition-colors">{t.footer_terms}</Link></li>
-              <li><Link href={`${base}/privacy`} className="hover:text-[#F4B400] transition-colors">{t.footer_privacy}</Link></li>
-              <li><Link href={`${base}/google-compliance`} className="hover:text-[#F4B400] transition-colors">{t.footer_google_compliance}</Link></li>
-              <li><Link href={`${base}/cookie`} className="hover:text-[#F4B400] transition-colors">{t.footer_cookie}</Link></li>
+            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
+              <li><Link href={`${base}/terms`} className="hover:text-[#C6F24E] transition-colors">{t.footer_terms}</Link></li>
+              <li><Link href={`${base}/privacy`} className="hover:text-[#C6F24E] transition-colors">{t.footer_privacy}</Link></li>
+              <li><Link href={`${base}/google-compliance`} className="hover:text-[#C6F24E] transition-colors">{t.footer_google_compliance}</Link></li>
+              <li><Link href={`${base}/cookie`} className="hover:text-[#C6F24E] transition-colors">{t.footer_cookie}</Link></li>
               {locale === 'tr' && (
-                <li><Link href={`${base}/kvkk`} className="hover:text-[#F4B400] transition-colors">{t.footer_kvkk}</Link></li>
+                <li><Link href={`${base}/kvkk`} className="hover:text-[#C6F24E] transition-colors">{t.footer_kvkk}</Link></li>
               )}
             </ul>
           </div>
 
           {/* Col 4: Platform */}
           <div>
-            <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">Platform</h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-[#E8ECF2]">
-              <li><Link href={`${base}/auth/login`} className="hover:text-[#F4B400] transition-colors font-bold">{locale === 'tr' ? 'Giriş Yap' : 'Log In'}</Link></li>
-              <li><Link href={`${base}/auth/register`} className="hover:text-[#F4B400] transition-colors font-bold text-[#F4B400]">{locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}</Link></li>
+            <h4 className="pulse-eyebrow text-white/60 mb-6">Platform</h4>
+            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
+              <li><Link href={`${base}/auth/login`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Giriş Yap' : 'Log In'}</Link></li>
+              <li><Link href={`${base}/auth/register`} className="text-[#C6F24E] hover:text-white transition-colors">{locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}</Link></li>
             </ul>
           </div>
         </div>
 
         {/* Bottom */}
         <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <p className="text-white/60 text-[11px] font-medium">
+          <p className="text-white/60 text-[12px]">
             © {new Date().getFullYear()} Buaze. {t.footer_copyright}
           </p>
           <div className="flex items-center gap-6">
-             <Link href={`${base}/terms`} className="text-white/60 text-[10px] font-bold hover:text-white transition-colors uppercase tracking-widest">
+             <Link href={`${base}/terms`} className="pulse-eyebrow text-white/60 hover:text-white transition-colors">
                {locale === 'tr' ? 'Şartlar' : 'Terms'}
              </Link>
-             <Link href={`${base}/privacy`} className="text-white/60 text-[10px] font-bold hover:text-white transition-colors uppercase tracking-widest">
+             <Link href={`${base}/privacy`} className="pulse-eyebrow text-white/60 hover:text-white transition-colors">
                {locale === 'tr' ? 'Gizlilik' : 'Privacy'}
              </Link>
           </div>

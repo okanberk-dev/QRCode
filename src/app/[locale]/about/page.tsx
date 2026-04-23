@@ -1,13 +1,11 @@
 import type { Metadata } from 'next';
-import { Target, Eye, ShieldCheck, Heart, Users, Zap, TrendingUp, MessageSquare, ArrowRight } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import { cookies } from 'next/headers';
+import { IllusLighthouse } from '@/components/marketing/PulseIllustrations';
 
 export const dynamic = 'force-dynamic';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import Link from 'next/link';
 
 export async function generateMetadata({
   params,
@@ -18,27 +16,26 @@ export async function generateMetadata({
   const isTr = locale === 'tr';
   const title = isTr ? 'Hakkımızda | Buaze — Dijital İtibar Yönetimi Platformu' : 'About Us | Buaze — Digital Reputation Management Platform';
   const description = isTr
-    ? 'Buaze, restoranlar, oteller, klinikler ve daha fazlası için QR tabanlı müşteri geri bildirimi ve itibar yönetimi sunan Türkiye\'nin öncü SaaS platformudur. Misyonumuzu, vizyonumuzu ve değerlerimizi keşfedin.'
-    : 'Buaze is Turkey\'s leading SaaS platform offering QR-based customer feedback and reputation management for restaurants, hotels, clinics, and more. Discover our mission, vision, and values.';
+    ? 'Buaze, restoranlar, oteller, klinikler ve daha fazlası için QR tabanlı müşteri geri bildirimi ve itibar yönetimi sunan Türkiye\'nin öncü SaaS platformudur.'
+    : 'Buaze is Turkey\'s leading SaaS platform offering QR-based customer feedback and reputation management for restaurants, hotels, clinics, and more.';
   return {
     title: { absolute: title },
     description,
     keywords: isTr
-      ? ['buaze hakkında', 'dijital itibar yönetimi şirketi', 'restoran itibar platformu', 'müşteri geri bildirim sistemi', 'QR yorum yönetimi', 'Türkiye SaaS itibar', 'google yorum artırma platform']
-      : ['about buaze', 'digital reputation management company', 'restaurant reputation platform', 'customer feedback system Turkey', 'QR review management', 'reputation SaaS Turkey'],
+      ? ['buaze hakkında', 'dijital itibar yönetimi şirketi', 'restoran itibar platformu', 'müşteri geri bildirim sistemi', 'QR yorum yönetimi']
+      : ['about buaze', 'digital reputation management company', 'restaurant reputation platform', 'customer feedback system Turkey'],
     openGraph: {
       title,
       description,
       url: `https://buaze.com/${locale}/about`,
-      images: [{ url: 'https://buaze.com/og-image.png', width: 1200, height: 630, alt: 'Buaze — Dijital İtibar Yönetimi' }],
+      images: [{ url: 'https://buaze.com/og-image.png', width: 1200, height: 630, alt: 'Buaze' }],
     },
     alternates: {
       canonical: `https://buaze.com/${locale}/about`,
-      languages: { 'tr': 'https://buaze.com/tr/about', 'en': 'https://buaze.com/en/about', 'x-default': 'https://buaze.com/en/about' },
+      languages: { tr: 'https://buaze.com/tr/about', en: 'https://buaze.com/en/about', 'x-default': 'https://buaze.com/en/about' },
     },
   };
 }
-
 
 export default async function AboutPage({
   params,
@@ -47,7 +44,6 @@ export default async function AboutPage({
 }) {
   const { locale } = await params;
   const t = getTranslations(locale);
-  const base = `/${locale}`;
   const isTr = locale === 'tr';
 
   const jsonLd = {
@@ -63,218 +59,166 @@ export default async function AboutPage({
       name: 'Buaze',
       url: 'https://buaze.com',
       logo: 'https://buaze.com/favicon.svg',
-      sameAs: ['https://twitter.com/buaze', 'https://www.linkedin.com/company/buaze'],
     },
   };
 
-  const values = [
-    { icon: <ShieldCheck size={22} />, title: t.about_val1_title, desc: t.about_val1_desc },
-    { icon: <Zap size={22} />, title: t.about_val2_title, desc: t.about_val2_desc },
-    { icon: <Heart size={22} />, title: t.about_val3_title, desc: t.about_val3_desc },
-    { icon: <Users size={22} />, title: t.about_val4_title, desc: t.about_val4_desc },
-  ];
+  // Values aligned with site-more.jsx §136-148 — exactly three items
+  const values = isTr
+    ? [
+        { n: '01', title: 'Şeffaflık', desc: 'Yorum sahte olduğunda biz de söyleriz. Müşterinin sesi, müşterinin kalır.' },
+        { n: '02', title: 'Hız', desc: 'Kurulum 5 dakika, ilk yorum aynı gün. Büyüme hızlı geri bildirime bağlı.' },
+        { n: '03', title: 'Yerlilik', desc: 'Türkçe destek, Türk işletmesinin gerçek problemleri. Biz de buradayız.' },
+      ]
+    : [
+        { n: '01', title: 'Transparency', desc: "When a review is fake, we'll tell you. The customer's voice stays the customer's." },
+        { n: '02', title: 'Speed', desc: '5-minute setup, first review the same day. Growth depends on fast feedback.' },
+        { n: '03', title: 'Locality', desc: 'Turkish support, Turkish business realities. We are here too.' },
+      ];
 
-  const numbers = [
-    { num: '500+', label: isTr ? 'Aktif İşletme' : 'Active Businesses' },
-    { num: '%92', label: isTr ? 'İtibar Artışı' : 'Reputation Growth' },
-    { num: '4.8', label: isTr ? 'Ort. Google Skoru' : 'Avg. Google Score' },
-    { num: '<5dk', label: isTr ? 'Kurulum Süresi' : 'Setup Time' },
-  ];
+  // Numbers aligned with site-more.jsx §117-128
+  const numbers = isTr
+    ? [
+        { num: '2.400+', label: 'İŞLETME' },
+        { num: '340K+', label: 'AYLIK YORUM' },
+        { num: '28', label: 'ÜLKE' },
+        { num: '4.9/5', label: 'MÜŞTERİ PUANI' },
+      ]
+    : [
+        { num: '2,400+', label: 'BUSINESSES' },
+        { num: '340K+', label: 'REVIEWS/MO' },
+        { num: '28', label: 'COUNTRIES' },
+        { num: '4.9/5', label: 'CUSTOMER SCORE' },
+      ];
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* ─── Page Header ─── */}
-      <section className="pt-20 sm:pt-32 pb-12 sm:pb-14 px-5 sm:px-8 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#F4B400]/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
-        <div className="max-w-[1200px] mx-auto relative">
-          <div className="max-w-[720px] space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md">
-               <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-               <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">{isTr ? 'BİZ KİMİZ?' : 'WHO ARE WE?'}</span>
-            </div>
-            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332]">
-              {t.about_hero_title_1}{' '}
-              <span className="text-[#F4B400] block sm:inline">{t.about_hero_title_2}</span>
+      {/* ─── Hero · design: 1.3fr / 1fr with lighthouse right ─── */}
+      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-16">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-10 lg:gap-12 items-center">
+          <div>
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Biz kimiz' : 'Who we are'}
+            </span>
+            <h1 className="mt-3 text-[40px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
+              {isTr ? (
+                <>
+                  Her işletmenin
+                  <br />
+                  bir{' '}
+                  <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">
+                    nabzı
+                  </span>{' '}
+                  vardır.
+                </>
+              ) : (
+                <>
+                  Every business
+                  <br />
+                  has a{' '}
+                  <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">
+                    pulse
+                  </span>
+                  .
+                </>
+              )}
             </h1>
-            <p className="text-[16px] sm:text-[20px] text-[#2A3444] font-bold leading-relaxed max-w-[600px]">
-              {t.about_hero_subtitle}
+            <p className="mt-5 text-[17px] text-[#525252] leading-[1.6] max-w-[560px]">
+              {isTr
+                ? "2023'te İstanbul'da kurulduk. Küçük bir kafeyi büyütmeye çalışırken gördük: işletmelerin en değerli geri bildirimi hiçbir zaman duyulmuyor. Buaze bu sessizliği nabza çeviriyor."
+                : 'Founded in Istanbul in 2023. While helping a small café grow, we noticed that the most valuable customer feedback never reaches the business. Buaze turns that silence into a pulse.'}
             </p>
+          </div>
+          <div className="flex justify-center lg:justify-end">
+            <IllusLighthouse size={320} className="w-full max-w-[320px] h-auto" />
           </div>
         </div>
       </section>
 
-      {/* ─── Numbers / Social Proof ─── */}
-      <section className="py-10 sm:py-14 px-5 sm:px-8 bg-[#F4B400] border-y-[3px] sm:border-y-[4px] border-[#1A2332]">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      {/* ─── Numbers · design: #FAFAFA bg + top-2 rule per stat ─── */}
+      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-14 sm:py-16">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
           {numbers.map((item, i) => (
-            <div key={i} className="space-y-1.5">
-              <div className="text-[32px] sm:text-[52px] font-black text-[#1A2332] tracking-tighter leading-none">{item.num}</div>
-              <div className="text-[10px] sm:text-[11px] font-black text-[#1A2332]/70 uppercase tracking-[0.15em]">{item.label}</div>
+            <div key={i} className="border-t-2 border-[#0A0A0A] pt-4">
+              <div
+                className="text-[36px] sm:text-[48px] font-medium text-[#0A0A0A] leading-none tracking-[-0.03em]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {item.num}
+              </div>
+              <div className="pulse-eyebrow text-[#737373] mt-3">{item.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ─── Mission & Vision (3D Cards) ─── */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1] border-t border-[#E8ECF2]">
-        <div className="max-w-[1200px] mx-auto text-center mb-16 sm:mb-20">
-           <p className="text-[12px] font-black uppercase tracking-widest text-[#F4B400] mb-4">{isTr ? 'GELECEĞİ ŞEKİLLENDİRİYORUZ' : 'SHAPING THE FUTURE'}</p>
-           <h2 className="text-[34px] sm:text-[56px] font-extrabold text-[#1A2332] tracking-tight leading-[1.1] sm:leading-none">
-              {isTr ? 'Amacımız ve Vizyonumuz' : 'Our Purpose & Vision'}
-           </h2>
-        </div>
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
-          {/* Mission */}
-          <div className="bg-white p-8 sm:p-14 rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md space-y-6 flex flex-col items-start transition-transform hover:-translate-y-2">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400] border sm:border border-[#1A2332] text-[#1A2332] rounded-2xl flex items-center justify-center shadow-md">
-              <Target size={28} className="sm:size-8" strokeWidth={2} />
-            </div>
-            <h2 className="text-[26px] sm:text-[34px] font-extrabold text-[#1A2332] tracking-tight leading-tight">{t.about_mission_title}</h2>
-            <p className="text-[15px] sm:text-[17px] text-[#2A3444] leading-relaxed font-medium">{t.about_mission_desc}</p>
-          </div>
-
-          {/* Vision */}
-          <div className="bg-[#1A2332] p-8 sm:p-14 rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md space-y-6 flex flex-col items-start transition-transform hover:-translate-y-2">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400] text-[#1A2332] rounded-2xl flex items-center justify-center shadow-md">
-               <Eye size={28} className="sm:size-8" strokeWidth={2} />
-            </div>
-            <h2 className="text-[26px] sm:text-[34px] font-extrabold text-white tracking-tight leading-tight">{t.about_vision_title}</h2>
-            <p className="text-[15px] sm:text-[17px] text-white/85 leading-relaxed font-medium">{t.about_vision_desc}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Values (Enriched 3D Grid) ─── */}
-      <section className="py-20 sm:py-40 px-5 sm:px-8 bg-[#1A2332] overflow-hidden relative">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#F4B400]/5 rounded-full blur-[150px] -z-0" />
-
-        <div className="max-w-[1200px] mx-auto relative z-10">
-          <div className="mb-12 sm:mb-24 space-y-4 text-center sm:text-left">
-            <p className="text-[11px] sm:text-[13px] font-black text-[#F4B400] uppercase tracking-widest">{isTr ? 'TEMEL DEĞERLERİMİZ' : 'OUR CORE VALUES'}</p>
-            <h2 className="text-[34px] sm:text-[56px] font-extrabold text-white tracking-tight leading-[1.1] sm:leading-none">{t.about_values_title}</h2>
-            <p className="text-[15px] sm:text-[16px] font-medium text-white/75 max-w-[500px] mx-auto sm:mx-0">{t.about_values_subtitle}</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {values.map((value, i) => (
-              <div key={i} className="bg-white/5 border sm:border border-[#3d3a36] rounded-[24px] sm:rounded-[32px] p-7 sm:p-10 hover:bg-white/10 hover:border-[#F4B400]/50 transition-all group space-y-5 sm:space-y-6">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#F4B400] text-[#1A2332] rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md sm:shadow-md">
-                  {value.icon}
-                </div>
-                <div className="space-y-2 sm:space-y-3">
-                  <h3 className="text-[18px] sm:text-[20px] font-extrabold text-white uppercase tracking-tighter leading-tight">{value.title}</h3>
-                  <p className="text-[13px] sm:text-[14px] text-white/75 leading-relaxed font-medium">{value.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Story / Why We Built This ─── */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1] border-t border-[#E8ECF2]">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
-          {/* Left: text */}
-          <div className="space-y-6">
-            <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#F4B400]">
-              {isTr ? 'NEDEN BULDUK?' : 'WHY WE BUILT THIS'}
-            </p>
-            <h2 className="text-[28px] sm:text-[42px] font-extrabold text-[#1A2332] tracking-tight leading-tight">
-              {isTr
-                ? 'Bir restoranın kaybettiği itibar bizi harekete geçirdi'
-                : 'A restaurant\'s lost reputation set us in motion'}
-            </h2>
-            <div className="space-y-4 text-[15px] sm:text-[16px] text-[#2A3444] leading-relaxed font-medium">
-              <p>
-                {isTr
-                  ? 'İşletme sahipleriyle konuşurken fark ettik: müşteri memnuniyetsizliği çoğu zaman işletmeye değil, doğrudan Google\'a gidiyordu. Bir yıldızlık yorum, aylar içinde kasıp kavurabiliyordu. Buna bir çözüm olmalıydı.'
-                  : 'Talking with business owners, we noticed a pattern: customer dissatisfaction was going straight to Google instead of to the business. A one-star review could do months of damage. There had to be a better way.'}
-              </p>
-              <p>
-                {isTr
-                  ? 'QR tabanlı akıllı yönlendirme fikri burada doğdu. Memnun müşteriler Google\'a, memnun olmayanlar doğrudan işletme paneline yönlendirilsin. Basit, etkili, adil.'
-                  : 'That\'s where the idea of QR-based smart routing was born. Happy customers go to Google; unhappy ones go straight to the business dashboard. Simple, effective, fair.'}
-              </p>
-              <p>
-                {isTr
-                  ? 'Bugün 500\'den fazla işletme Buaze ile itibarını yönetiyor. Her yeni müşteri, platformumuzu daha iyi hale getirmemize katkıda bulunuyor.'
-                  : 'Today, over 500 businesses manage their reputation with Buaze. Every new customer helps make our platform better.'}
-              </p>
-            </div>
-          </div>
-
-          {/* Right: feature highlights */}
-          <div className="space-y-4">
-            {[
-              {
-                icon: <MessageSquare size={20} className="text-[#F4B400]" />,
-                title: isTr ? 'Akıllı Yönlendirme' : 'Smart Routing',
-                desc: isTr ? 'Yüksek puanlar Google\'a, düşük puanlar panele.' : 'High ratings go to Google, low ones go to your dashboard.',
-              },
-              {
-                icon: <TrendingUp size={20} className="text-[#F4B400]" />,
-                title: isTr ? 'Organik İtibar Artışı' : 'Organic Reputation Growth',
-                desc: isTr ? 'Yorum hacmi artar, Google sıralamanız yükselir.' : 'Review volume grows, your Google ranking climbs.',
-              },
-              {
-                icon: <ShieldCheck size={20} className="text-[#F4B400]" />,
-                title: isTr ? 'Kriz Öncesi Müdahale' : 'Pre-Crisis Intervention',
-                desc: isTr ? 'Sorun büyümeden fark edin ve çözün.' : 'Spot and resolve problems before they escalate.',
-              },
-              {
-                icon: <Zap size={20} className="text-[#F4B400]" />,
-                title: isTr ? '5 Dakikada Kurulum' : '5-Minute Setup',
-                desc: isTr ? 'QR kodunuzu yazdırın, masaya koyun, başlayın.' : 'Print your QR code, place it, and you\'re live.',
-              },
-            ].map((item, i) => (
-              <div key={i} className="flex gap-4 bg-white border border-[#E8ECF2] rounded-2xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all">
-                <div className="flex-shrink-0 w-10 h-10 bg-[#F4B400]/10 rounded-xl border border-[#F4B400]/20 flex items-center justify-center">
-                  {item.icon}
-                </div>
-                <div className="space-y-0.5 min-w-0">
-                  <h3 className="text-[15px] font-extrabold text-[#1A2332]">{item.title}</h3>
-                  <p className="text-[13px] text-[#2A3444] font-medium leading-relaxed">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Final CTA ─── */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1]">
+      {/* ─── Values · design: 3-card grid with 01/02/03 ─── */}
+      <section className="px-6 sm:px-10 py-20 sm:py-24">
         <div className="max-w-[1200px] mx-auto">
-          <div className="bg-[#1A2332] rounded-[32px] sm:rounded-[50px] p-8 sm:p-20 shadow-md flex flex-col md:flex-row items-center justify-between gap-8 sm:gap-12 text-center md:text-left relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#F4B400]/8 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
-            <div className="space-y-4 sm:space-y-5 relative">
-              <h3 className="text-[28px] sm:text-[44px] font-extrabold text-white tracking-tight leading-[1.1]">
-                {isTr ? 'Hemen başlayın, ilk 14 gün bizden.' : 'Start today, first 14 days on us.'}
-              </h3>
-              <p className="text-[16px] sm:text-[18px] text-white/80 font-medium">
-                {isTr ? 'Kredi kartı gerekmez, 5 dakikada kurulum.' : 'No credit card required, 5-minute setup.'}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0 relative w-full sm:w-auto">
-              <Link
-                href={`${base}/auth/register`}
-                className="flex items-center justify-center gap-2 px-8 py-5 bg-[#F4B400] text-[#1A2332] text-[16px] sm:text-[17px] font-black rounded-[20px] border border-[#F4B400] shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all uppercase tracking-wide"
-              >
-                {isTr ? 'Ücretsiz Dene' : 'Start Free Trial'}
-                <ArrowRight size={18} />
-              </Link>
-              <Link
-                href={`${base}/how-it-works`}
-                className="flex items-center justify-center gap-2 px-8 py-5 bg-white/10 text-white text-[16px] sm:text-[17px] font-bold rounded-[20px] border border-white/20 hover:bg-white/15 transition-all"
-              >
-                {isTr ? 'Nasıl Çalışır?' : 'How It Works'}
-              </Link>
-            </div>
+          <h2 className="text-[32px] sm:text-[44px] lg:text-[48px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A] mb-10">
+            {isTr ? 'Değerlerimiz' : 'Our values'}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {values.map((value) => (
+              <div key={value.n} className="bg-white border border-[#EDEDED] rounded-2xl p-7">
+                <span className="pulse-eyebrow text-[#A8D62E]">{value.n}</span>
+                <h3
+                  className="mt-3 text-[24px] sm:text-[26px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-tight"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {value.title}
+                </h3>
+                <p className="mt-3 text-[14px] text-[#525252] leading-[1.6]">{value.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Team · design: 4 lime-soft square avatar cards ─── */}
+      <section className="px-6 sm:px-10 pb-24">
+        <div className="max-w-[1200px] mx-auto">
+          <h2 className="text-[32px] sm:text-[44px] lg:text-[48px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A] mb-10">
+            {isTr ? 'Takım' : 'Team'}
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+            {(isTr
+              ? [
+                  { i: 'EK', n: 'Emre Kaya', r: 'Kurucu · CEO' },
+                  { i: 'ZA', n: 'Zeynep Aydın', r: 'Kurucu · CTO' },
+                  { i: 'MY', n: 'Mert Yılmaz', r: 'Ürün' },
+                  { i: 'SD', n: 'Selin Demir', r: 'Büyüme' },
+                ]
+              : [
+                  { i: 'EK', n: 'Emre Kaya', r: 'Founder · CEO' },
+                  { i: 'ZA', n: 'Zeynep Aydın', r: 'Founder · CTO' },
+                  { i: 'MY', n: 'Mert Yılmaz', r: 'Product' },
+                  { i: 'SD', n: 'Selin Demir', r: 'Growth' },
+                ]
+            ).map((p) => (
+              <div key={p.i} className="flex flex-col gap-3">
+                <div
+                  className="aspect-square bg-[#EAF9B8] rounded-2xl flex items-center justify-center text-[#0A0A0A] text-[56px] sm:text-[64px] font-medium leading-none tracking-[-0.04em]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {p.i}
+                </div>
+                <div>
+                  <div
+                    className="text-[17px] sm:text-[18px] font-semibold tracking-[-0.015em]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {p.n}
+                  </div>
+                  <div className="pulse-eyebrow text-[#737373] mt-1">{p.r}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
