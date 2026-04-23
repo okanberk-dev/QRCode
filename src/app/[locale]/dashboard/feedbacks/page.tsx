@@ -158,28 +158,31 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // a deterministic template via buildReplyTemplate).
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [aiRegenerating, setAiRegenerating] = useState(false);
+  const [aiSource, setAiSource] = useState<'openai' | 'template' | 'template-fallback' | null>(null);
 
   useEffect(() => {
-    if (!active) return setAiSuggestion('');
-    // Optimistic local draft
+    if (!active) {
+      setAiSuggestion('');
+      setAiSource(null);
+      return;
+    }
+    // Optimistic local draft — instant, will be replaced by the server
+    // response below (OpenAI when OPENAI_API_KEY is set, template otherwise).
     setAiSuggestion(
       buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }),
     );
-    // Ask the (scaffolded) server for a richer reply — falls back silently
+    setAiSource('template');
     (async () => {
       try {
         const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            locale,
-            rating: active.rating,
-            name: active.customerName,
-          }),
+          body: JSON.stringify({ locale }),
         });
         if (res.ok) {
           const data = await res.json();
           if (typeof data?.suggestion === 'string') setAiSuggestion(data.suggestion);
+          if (typeof data?.source === 'string') setAiSource(data.source);
         }
       } catch {
         /* keep local template */
@@ -194,16 +197,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          locale,
-          rating: active.rating,
-          name: active.customerName,
-          variant: Math.random().toString(36).slice(2, 8),
-        }),
+        body: JSON.stringify({ locale }),
       });
       if (res.ok) {
         const data = await res.json();
         if (typeof data?.suggestion === 'string') setAiSuggestion(data.suggestion);
+        if (typeof data?.source === 'string') setAiSource(data.source);
       }
     } catch {
       /* ignore */
@@ -466,7 +465,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               </div>
             )}
 
-            {/* AI Co-Pilot suggestion — static, backend to be wired later */}
+            {/* AI Co-Pilot suggestion — wired to /api/feedback/[id]/suggest-reply.
+                Uses OpenAI when OPENAI_API_KEY is set; falls back to the
+                deterministic template otherwise. The badge reflects which
+                source produced the current draft. */}
             <div className="mt-6 rounded-xl bg-[#0A0A0A] p-5 text-white">
               <div className="flex items-center gap-2">
                 <span
@@ -478,6 +480,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 <span className="pulse-eyebrow text-[#C6F24E]">
                   {isTr ? 'BUAZE CO-PILOT ÖNERİSİ' : 'BUAZE CO-PILOT SUGGESTION'}
                 </span>
+                {aiSource === 'openai' && (
+                  <span className="pulse-eyebrow rounded-full bg-[#C6F24E] px-2 py-0.5 text-[#0A0A0A]">
+                    {isTr ? 'CANLI' : 'LIVE'}
+                  </span>
+                )}
+                {(aiSource === 'template' || aiSource === 'template-fallback') && (
+                  <span className="pulse-eyebrow rounded-full bg-white/10 px-2 py-0.5 text-white/70">
+                    {isTr ? 'ŞABLON' : 'TEMPLATE'}
+                  </span>
+                )}
               </div>
               <p className="mt-3 text-[13px] leading-[1.65] text-white/80">{`"${aiSuggestion}"`}</p>
               <div className="mt-4 flex flex-wrap gap-2">
