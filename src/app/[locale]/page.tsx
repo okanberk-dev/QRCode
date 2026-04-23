@@ -10,6 +10,7 @@ import {
   IllusChart,
   IllusShield,
 } from '@/components/marketing/PulseIllustrations';
+import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
@@ -560,6 +561,60 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
+          6.4 PLATFORM COVERAGE — EN ONLY (international home)
+      ═══════════════════════════════════════════════════════════ */}
+      {!isTr && (
+        <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-6 sm:px-10 py-20 sm:py-24">
+          <div className="max-w-[1200px] mx-auto">
+            <div className="max-w-[720px]">
+              <span className="pulse-eyebrow text-[#737373]">
+                One dashboard · Every platform
+              </span>
+              <h2 className="mt-4 text-[36px] sm:text-[48px] lg:text-[56px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]">
+                From Yelp to Tripadvisor to DoorDash.
+              </h2>
+            </div>
+            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="bg-white border border-[#EDEDED] rounded-2xl p-7 sm:p-8">
+                <span className="pulse-eyebrow text-[#737373]">Review platforms</span>
+                <h3 className="mt-2 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em]">
+                  Your brand&apos;s trust signals
+                </h3>
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {GLOBAL_REVIEW.map((p) => (
+                    <div key={p.id} className="flex items-center gap-3">
+                      <PlatformLogo id={p.id} size={36} rounded={8} />
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-semibold truncate">{p.name}</div>
+                        <div className="pulse-eyebrow text-[#737373] mt-0.5 truncate">{p.tag}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white border border-[#EDEDED] rounded-2xl p-7 sm:p-8">
+                <span className="pulse-eyebrow text-[#737373]">Delivery &amp; booking</span>
+                <h3 className="mt-2 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em]">
+                  Where orders happen
+                </h3>
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {GLOBAL_DELIVERY.map((p) => (
+                    <div key={p.id} className="flex items-center gap-3">
+                      <PlatformLogo id={p.id} size={36} rounded={8} />
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-semibold truncate">{p.name}</div>
+                        <div className="pulse-eyebrow text-[#737373] mt-0.5 truncate">{p.tag}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
           6.5 QR GENERATOR TOOL TEASER
       ═══════════════════════════════════════════════════════════ */}
       <section className="px-6 sm:px-10 py-16 sm:py-20">
@@ -731,6 +786,34 @@ export default async function LandingPage({
           </div>
         </div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          7.5 INTERNATIONAL TESTIMONIAL — EN ONLY
+      ═══════════════════════════════════════════════════════════ */}
+      {!isTr && (
+        <section className="px-6 sm:px-10 pb-20 sm:pb-24">
+          <div className="max-w-[1100px] mx-auto border-t border-[#EDEDED] pt-16 sm:pt-20">
+            <blockquote
+              className="text-[28px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] max-w-[900px]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              &ldquo;We went from 3.9 on Yelp to 4.7 in six months. The Tripadvisor sync alone paid for Buaze.&rdquo;
+            </blockquote>
+            <div className="mt-7 flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-full bg-[#0A0A0A] text-[#C6F24E] flex items-center justify-center text-[15px] font-semibold"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                JM
+              </div>
+              <div>
+                <div className="text-[15px] font-medium text-[#0A0A0A]">Julia Martens</div>
+                <div className="pulse-eyebrow text-[#737373] mt-1">Hotel Nora · Amsterdam</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════
           8. LIME CTA BANNER

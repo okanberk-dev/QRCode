@@ -35,9 +35,9 @@ export default async function RestaurantSolutionPage({ params }: { params: Promi
   const isTr = locale === 'tr';
 
   const stats = [
-    { num: '%340', label: isTr ? 'DAHA FAZLA YORUM' : 'MORE REVIEWS', context: isTr ? '90 günde' : 'In 90 days' },
-    { num: '4.8+', label: isTr ? 'ORT. GOOGLE SKORU' : 'AVG. GOOGLE SCORE', context: isTr ? 'Ağ ortalaması' : 'Network avg.' },
-    { num: '%68', label: isTr ? 'MÜŞTERİ DÖNER' : 'CUSTOMER RETURN', context: isTr ? 'Takip sonrası' : 'After follow-up' },
+    { num: '+184%', label: isTr ? 'ORGANİK YORUM' : 'ORGANIC REVIEWS', context: isTr ? 'İlk 90 gün ort.' : 'First 90 days avg.' },
+    { num: '4.8/5', label: isTr ? 'ORT. GOOGLE PUANI' : 'AVG. GOOGLE SCORE', context: isTr ? 'Buaze kullanıcıları' : 'Buaze users' },
+    { num: '12dk', label: isTr ? 'ORT. YANIT SÜRESİ' : 'AVG. REPLY TIME', context: isTr ? 'Takım atama sonrası' : 'After team assignment' },
     { num: '<3dk', label: isTr ? 'QR KURULUM' : 'QR SETUP', context: isTr ? 'Masaya yerleştir' : 'Place on table' },
   ];
 

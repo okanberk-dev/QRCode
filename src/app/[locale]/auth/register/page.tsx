@@ -52,8 +52,8 @@ export default async function RegisterPage({
   const { logoUrl } = await getSiteSettings();
 
   const trialFeatures = locale === 'tr'
-    ? ['Sınırsız QR Tarama', 'Dahili Geri Bildirim Sistemi', 'Yönetici Paneli', 'Kredi kartı gerekmez']
-    : ['Unlimited QR Scans', 'Internal Feedback System', 'Admin Dashboard', 'No credit card required'];
+    ? ['5 dakikada kurulum', 'Kredi kartı gerekmez', 'İstediğin zaman iptal et', 'Türkçe destek']
+    : ['5-minute setup', 'No credit card required', 'Cancel anytime', 'Turkish support'];
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] flex flex-col font-sans">
@@ -77,10 +77,24 @@ export default async function RegisterPage({
               <span className="pulse-eyebrow text-[#0A0A0A]">{t.auth_trial_badge}</span>
             </div>
 
-            <h2 className="text-[40px] leading-[1.02] mb-6 tracking-[-0.035em] text-white">
-              {locale === 'tr'
-                ? 'İtibarınızı büyütmeye bugün başlayın.'
-                : 'Start growing your reputation today.'}
+            <h2 className="text-[48px] xl:text-[60px] leading-[0.95] mb-6 tracking-[-0.035em] text-white">
+              {locale === 'tr' ? (
+                <>
+                  Nabzını
+                  <br />
+                  duymaya
+                  <br />
+                  <span className="text-[#C6F24E]">başla.</span>
+                </>
+              ) : (
+                <>
+                  Start listening
+                  <br />
+                  to your
+                  <br />
+                  <span className="text-[#C6F24E]">pulse.</span>
+                </>
+              )}
             </h2>
             <p className="text-white/70 text-[16px] leading-[1.6] mb-10">
               {locale === 'tr'

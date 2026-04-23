@@ -83,6 +83,24 @@ export default async function BlogIndexPage({
           <p className="mt-5 text-[17px] sm:text-[18px] text-[#525252] font-normal max-w-[620px] leading-relaxed">
             {t.blog_desc}
           </p>
+          {/* Filter chips (visual) */}
+          <div className="mt-8 flex gap-2 flex-wrap">
+            {(isTr
+              ? ['Tümü', 'Strateji', 'Vaka', 'Rehber', 'Ürün', 'Sektör']
+              : ['All', 'Strategy', 'Case', 'Guide', 'Product', 'Industry']
+            ).map((c, i) => (
+              <span
+                key={c}
+                className={`px-4 py-2 rounded-full text-[13px] font-medium border transition-colors ${
+                  i === 0
+                    ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+                    : 'bg-white text-[#0A0A0A] border-[#EDEDED] hover:border-[#C6F24E]'
+                }`}
+              >
+                {c}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -54,6 +54,8 @@ export default async function PricingPage({
     { q: t.faq_q2, a: t.faq_a2 },
     { q: t.faq_q3, a: t.faq_a3 },
     { q: t.faq_q4, a: t.faq_a4 },
+    { q: t.faq_q5, a: t.faq_a5 },
+    { q: t.faq_q6, a: t.faq_a6 },
   ];
 
   const jsonLd = {
@@ -137,13 +139,27 @@ export default async function PricingPage({
         </svg>
         <div className="relative max-w-[900px] mx-auto text-center">
           <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'Şeffaf fiyatlandırma' : 'Transparent pricing'}
+            {isTr ? 'Fiyatlar' : 'Pricing'}
           </span>
           <h1 className="mt-5 text-[40px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
-            {t.pricing_title}
+            {isTr ? (
+              <>
+                Basit. Şeffaf.
+                <br />
+                Gizli ücret yok.
+              </>
+            ) : (
+              <>
+                Simple. Transparent.
+                <br />
+                No hidden fees.
+              </>
+            )}
           </h1>
           <p className="mt-6 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[560px] mx-auto">
-            {t.pricing_subtitle}
+            {isTr
+              ? 'Her plan 14 gün ücretsiz. Kredi kartı istenmez. İstediğin zaman yükselt, düşür ya da iptal et.'
+              : 'Every plan is free for 14 days. No credit card required. Upgrade, downgrade or cancel anytime.'}
           </p>
           <ul className="mt-9 flex flex-wrap justify-center gap-x-6 gap-y-2">
             {trustTicks.map((tick) => (

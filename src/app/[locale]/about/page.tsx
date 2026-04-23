@@ -148,46 +148,6 @@ export default async function AboutPage({
         </div>
       </section>
 
-      {/* ─── Mission & Vision ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="mb-12 max-w-[720px]">
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Amacımız ve vizyonumuz' : 'Purpose & vision'}
-            </span>
-            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
-              {isTr ? 'Neyi, neden yapıyoruz?' : 'What we do — and why.'}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-[#FAFAFA] border border-[#EDEDED] rounded-3xl p-8 sm:p-12 flex flex-col">
-              <span className="pulse-eyebrow text-[#A8D62E] mb-4">
-                {isTr ? 'MİSYON' : 'MISSION'}
-              </span>
-              <h3 className="text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-tight">
-                {t.about_mission_title}
-              </h3>
-              <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] leading-[1.6]">
-                {t.about_mission_desc}
-              </p>
-            </div>
-
-            <div className="bg-[#0A0A0A] text-white rounded-3xl p-8 sm:p-12 flex flex-col">
-              <span className="pulse-eyebrow text-[#C6F24E] mb-4">
-                {isTr ? 'VİZYON' : 'VISION'}
-              </span>
-              <h3 className="text-[26px] sm:text-[32px] font-medium text-white tracking-[-0.02em] leading-tight">
-                {t.about_vision_title}
-              </h3>
-              <p className="mt-5 text-[15px] sm:text-[16px] text-white/70 leading-[1.6]">
-                {t.about_vision_desc}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ─── Values ─── */}
       <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-20 sm:py-28">
         <div className="max-w-[1200px] mx-auto">
@@ -218,6 +178,51 @@ export default async function AboutPage({
                   {value.title}
                 </h3>
                 <p className="text-[13px] text-[#525252] leading-[1.6]">{value.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Team ─── */}
+      <section className="px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="mb-12 max-w-[720px]">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Ekibimiz' : 'Our team'}
+            </span>
+            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+              {isTr ? 'Takım' : 'Team'}
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+            {(isTr
+              ? [
+                  { i: 'EK', n: 'Emre Kaya', r: 'Kurucu · CEO' },
+                  { i: 'ZA', n: 'Zeynep Aydın', r: 'Kurucu · CTO' },
+                  { i: 'MY', n: 'Mert Yılmaz', r: 'Ürün' },
+                  { i: 'SD', n: 'Selin Demir', r: 'Büyüme' },
+                ]
+              : [
+                  { i: 'EK', n: 'Emre Kaya', r: 'Founder · CEO' },
+                  { i: 'ZA', n: 'Zeynep Aydın', r: 'Founder · CTO' },
+                  { i: 'MY', n: 'Mert Yılmaz', r: 'Product' },
+                  { i: 'SD', n: 'Selin Demir', r: 'Growth' },
+                ]
+            ).map((p) => (
+              <div key={p.i} className="flex flex-col gap-3">
+                <div
+                  className="aspect-square bg-[#EAF9B8] rounded-2xl flex items-center justify-center text-[#0A0A0A] text-[56px] sm:text-[64px] font-medium leading-none tracking-[-0.04em]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {p.i}
+                </div>
+                <div>
+                  <div className="text-[17px] sm:text-[18px] font-semibold tracking-[-0.015em]">
+                    {p.n}
+                  </div>
+                  <div className="pulse-eyebrow text-[#737373] mt-1">{p.r}</div>
+                </div>
               </div>
             ))}
           </div>

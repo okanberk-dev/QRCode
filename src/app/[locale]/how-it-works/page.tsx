@@ -7,6 +7,7 @@ import {
   IllusCompass,
   IllusInbox,
   IllusChart,
+  IllusShield,
 } from '@/components/marketing/PulseIllustrations';
 import Link from 'next/link';
 
@@ -54,10 +55,10 @@ export default async function HowItWorksPage({
   const steps = [
     {
       id: '01',
-      title: isTr ? 'QR ile yakala' : 'Capture via QR',
+      title: isTr ? 'QR kodunu yerleştir' : 'Place the QR code',
       desc: isTr
-        ? 'İşletmene özel QR\'ı masaya, yapışkana, menüye yapıştır. Müşteri tek tarama ile doğrudan akıllı akışa düşer.'
-        : 'Stick your branded QR on tables, stickers, menus. One scan routes the customer into your smart flow.',
+        ? 'Sihirbazla 3 dakikada özel markan ile QR kart tasarla. Masaya, faturaya ya da kapıya yapıştır. Her konum ve personel için farklı kod oluştur.'
+        : 'Design a branded QR card with the wizard in 3 minutes. Stick it on the table, receipt or door. Create a distinct code per location and staff member.',
       Ill: IllusCompass,
       perks: isTr
         ? ['2 dakikada hazır', 'Özel tasarım', 'Toplu indir', 'Sayfa başı analiz']
@@ -65,39 +66,38 @@ export default async function HowItWorksPage({
     },
     {
       id: '02',
-      title: isTr ? 'Tek panelde topla' : 'Collect in one panel',
+      title: isTr ? 'Müşteri yorum bırakır' : 'Customer leaves a review',
       desc: isTr
-        ? 'Google, Yemeksepeti, Getir, Trendyol ve dahili kanaldan gelen yorumlar aynı akışta birleşir. Düşük puanlar dahili forma, yüksek puanlar platforma gider.'
-        : 'Google, Yemeksepeti, Getir, Trendyol and internal channel reviews merge into one feed. Low ratings route to your internal form; high ratings go public.',
+        ? 'Müşteri kodu tarar, bir formda 1-5 puan ve kısa bir not bırakır. Memnunsa Google\'a yönlenir, değilse ekibine iletilir — kriz büyümeden çözülür.'
+        : 'The customer scans the code and leaves a 1-5 rating and a short note. Happy ones go to Google; unhappy ones reach your team — a crisis solved before it grows.',
       Ill: IllusInbox,
       perks: isTr
-        ? ['Anlık bildirim', 'Otomatik etiketleme', 'Ekip atama', 'Mobil yönetim']
-        : ['Live notifications', 'Auto-tagging', 'Team assignment', 'Mobile admin'],
+        ? ['Anlık bildirim', 'Akıllı yönlendirme', 'Google uyumlu akış', 'Özel feedback formu']
+        : ['Live notifications', 'Smart routing', 'Google-compliant flow', 'Private feedback form'],
     },
     {
       id: '03',
-      title: isTr ? 'Büyümeyi ölç' : 'Measure growth',
+      title: isTr ? 'Panelden yönet' : 'Manage from the panel',
       desc: isTr
-        ? 'Puan, kanal, şube ve saat bazında trendleri oku. Hangi aksiyonun neyi değiştirdiğini net gör; ekibi veriyle yönet.'
-        : 'Read trends by rating, channel, branch and hour. See exactly which action moved what; manage the team with data.',
+        ? 'Tüm yorumları tek panelde topla. AI etiketleme, olumsuzları otomatik atar. Yanıt şablonları ile saniyeler içinde cevap ver.'
+        : 'Collect every review in one panel. AI tags route negatives automatically. Reply in seconds with response templates.',
+      Ill: IllusShield,
+      perks: isTr
+        ? ['Otomatik etiketleme', 'Ekip atama', 'AI yanıt şablonu', 'Mobil yönetim']
+        : ['Auto-tagging', 'Team assignment', 'AI reply templates', 'Mobile admin'],
+    },
+    {
+      id: '04',
+      title: isTr ? 'Canlı analizle izle' : 'Track with live analytics',
+      desc: isTr
+        ? 'NPS skorun, Google puan değişimin, personel performansın — hepsi canlı dashboard\'da. Haftalık rapor e-postana düşer.'
+        : 'Your NPS, Google score shift, staff performance — all in a live dashboard. The weekly digest lands in your inbox.',
       Ill: IllusChart,
       perks: isTr
         ? ['Gerçek zamanlı grafik', 'CSV dışa aktar', 'Şube karşılaştırma', 'SLA takibi']
         : ['Real-time charts', 'CSV export', 'Branch benchmarks', 'SLA tracking'],
     },
   ];
-
-  const features = isTr
-    ? [
-        { t: 'Geri bildirim yönetimi', d: 'Müşteri deneyimini yapılandırılmış veriye çevirir, itibarınızı korur.' },
-        { t: 'Gerçek zamanlı analiz', d: 'Eğilimleri canlı grafiklerle izleyin, zamanında aksiyon alın.' },
-        { t: 'Işık hızında kurulum', d: 'Karmaşık entegrasyon yok. 5 dakikada yorum toplamaya başlarsınız.' },
-      ]
-    : [
-        { t: 'Feedback management', d: 'Turns customer experience into structured data, keeps your reputation intact.' },
-        { t: 'Real-time analytics', d: 'Monitor trends with live charts, act while it still matters.' },
-        { t: 'Lightning setup', d: 'No complex integrations. You start collecting reviews in 5 minutes.' },
-      ];
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -151,18 +151,20 @@ export default async function HowItWorksPage({
         </svg>
         <div className="relative max-w-[900px] mx-auto text-center">
           <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'Sistem nasıl çalışır' : 'How the system works'}
+            {isTr ? 'Nasıl çalışır' : 'How it works'}
           </span>
           <h1 className="mt-5 text-[40px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
             {isTr ? (
               <>
-                Üç adım,{' '}
-                <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">üç saniye</span>.
+                5 dakikada kurulum.
+                <br />
+                Ömür boyu <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">ritim</span>.
               </>
             ) : (
               <>
-                Three steps,{' '}
-                <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">three seconds</span>.
+                5-minute setup.
+                <br />
+                Lifetime <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">rhythm</span>.
               </>
             )}
           </h1>
@@ -211,34 +213,6 @@ export default async function HowItWorksPage({
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* ─── Features ─── */}
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="mb-12 max-w-[720px]">
-            <span className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'Motor içeride' : 'The engine inside'}
-            </span>
-            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-white">
-              {isTr ? 'Sade görünüyor. Arkasında yazılım.' : 'Looks simple. Backed by software.'}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {features.map((f) => (
-              <div
-                key={f.t}
-                className="p-7 bg-white/5 rounded-2xl border border-white/10"
-              >
-                <div className="mb-5 w-10 h-10 rounded-full bg-[#C6F24E] flex items-center justify-center">
-                  <span className="text-[#0A0A0A] text-[18px]">✦</span>
-                </div>
-                <h3 className="text-[20px] font-medium mb-3 text-white">{f.t}</h3>
-                <p className="text-[14px] text-white/70 leading-[1.6]">{f.d}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 

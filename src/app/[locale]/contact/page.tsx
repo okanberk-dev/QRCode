@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import ContactForm from '@/components/marketing/ContactForm';
-import { Mail, MapPin } from 'lucide-react';
+import { Mail, MapPin, Briefcase, Megaphone } from 'lucide-react';
 
 export async function generateMetadata({
   params,
@@ -44,10 +44,19 @@ export default async function ContactPage({
     address: { '@type': 'PostalAddress', addressLocality: 'Ataşehir, İstanbul', addressCountry: 'TR' },
   };
 
-  const contactItems = [
-    { icon: <Mail size={18} />, label: t.contact_email_label, value: t.contact_email },
-    { icon: <MapPin size={18} />, label: t.contact_address_label, value: t.contact_address },
-  ];
+  const contactItems = isTr
+    ? [
+        { icon: <Briefcase size={18} />, label: 'SATIŞ', value: 'satis@buaze.com', sub: 'Demo ve fiyatlandırma' },
+        { icon: <Mail size={18} />, label: 'DESTEK', value: 'destek@buaze.com', sub: '7/24 yanıt' },
+        { icon: <Megaphone size={18} />, label: 'BASIN', value: 'basin@buaze.com', sub: 'Medya ve işbirliği' },
+        { icon: <MapPin size={18} />, label: 'ADRES', value: 'Maslak, İstanbul', sub: 'Workinton Maslak, Kat 4' },
+      ]
+    : [
+        { icon: <Briefcase size={18} />, label: 'SALES', value: 'sales@buaze.com', sub: 'Demo and pricing' },
+        { icon: <Mail size={18} />, label: 'SUPPORT', value: 'support@buaze.com', sub: '24/7 reply' },
+        { icon: <Megaphone size={18} />, label: 'PRESS', value: 'press@buaze.com', sub: 'Media and partnerships' },
+        { icon: <MapPin size={18} />, label: 'ADDRESS', value: 'Maslak, Istanbul', sub: 'Workinton Maslak, Floor 4' },
+      ];
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
@@ -75,13 +84,15 @@ export default async function ContactPage({
         <div className="relative max-w-[1200px] mx-auto">
           <div className="max-w-[720px]">
             <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Bize ulaşın' : 'Get in touch'}
+              {isTr ? 'İletişim' : 'Contact'}
             </span>
             <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[68px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
-              {t.contact_title}
+              {isTr ? 'Konuşalım.' : "Let's talk."}
             </h1>
             <p className="mt-5 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[560px]">
-              {t.contact_subtitle}
+              {isTr
+                ? 'Sorularınız, demo istekleri, ortaklık — hangisi olursa olsun, ortalama 2 saat içinde yanıt veriyoruz.'
+                : 'Questions, demo requests, partnerships — whatever it is, we reply within 2 hours on average.'}
             </p>
           </div>
         </div>
@@ -100,11 +111,12 @@ export default async function ContactPage({
                 <div className="w-11 h-11 bg-[#EAF9B8] rounded-lg flex items-center justify-center shrink-0 text-[#0A0A0A]">
                   {item.icon}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="pulse-eyebrow text-[#737373] mb-1">{item.label}</p>
-                  <p className="text-[16px] sm:text-[18px] font-medium text-[#0A0A0A] tracking-[-0.01em]">
+                  <p className="text-[16px] sm:text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.01em] truncate">
                     {item.value}
                   </p>
+                  <p className="text-[12px] text-[#737373] mt-0.5">{item.sub}</p>
                 </div>
               </div>
             ))}

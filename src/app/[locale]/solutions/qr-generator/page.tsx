@@ -166,27 +166,13 @@ export default async function QRGeneratorPage({
                   {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
                 </span>
               </div>
-              <h1 className="text-[36px] sm:text-[52px] lg:text-[60px] font-medium leading-[0.98] tracking-[-0.035em] text-balance">
-                {isTr ? (
-                  <>
-                    Her web sitesi için{' '}
-                    <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">
-                      anında QR kodu
-                    </span>
-                    .
-                  </>
-                ) : (
-                  <>
-                    Instant{' '}
-                    <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">QR code</span>{' '}
-                    for any website.
-                  </>
-                )}
+              <h1 className="text-[40px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.98] tracking-[-0.035em] text-balance">
+                {isTr ? 'QR kod oluşturucu.' : 'QR code generator.'}
               </h1>
               <p className="text-[16px] sm:text-[18px] text-[#525252] leading-[1.6] max-w-[560px]">
                 {isTr
-                  ? 'İşletmenizin web sitesini, menüsünü veya rezervasyon sayfasını girin; biz size özel, yüksek çözünürlüklü bir QR kodu oluşturalım.'
-                  : "Enter your business website, menu, or reservation page — and we'll generate a high-resolution QR code tailored just to that URL."}
+                  ? 'Hesap açmadan, ücretsiz, sınırsız QR kod üret. Markana göre özelleştir, PDF olarak indir.'
+                  : 'Generate unlimited QR codes for free — no account required. Customize to your brand, download as PDF.'}
               </p>
             </div>
           </div>
