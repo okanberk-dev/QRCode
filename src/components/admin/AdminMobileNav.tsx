@@ -54,12 +54,10 @@ export default function AdminMobileNav() {
                     className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#C6F24E] rounded-b-full"
                   />
                 )}
-                <span className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-[#C6F24E]/15' : ''}`}>
-                  <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                <span className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-[#C6F24E]/15' : ''}`}>
+                  <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full leading-none">
-                  {item.label}
-                </span>
+                <span className="pulse-eyebrow truncate max-w-full">{item.label}</span>
               </Link>
             </li>
           );

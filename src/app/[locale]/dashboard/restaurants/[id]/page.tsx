@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Loader2, Save, Trash2 } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
+import PlatformLogo from '@/components/marketing/PlatformLogo';
 
 export default function DashboardRestaurantDetailPage() {
   const params = useParams();
@@ -281,6 +282,7 @@ export default function DashboardRestaurantDetailPage() {
 
             <label className="space-y-2">
               <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                <PlatformLogo id="google" size={16} rounded={4} />
                 Google Place ID / Link
                 <PlatformUrlHelp platform="google" />
               </span>
@@ -294,6 +296,7 @@ export default function DashboardRestaurantDetailPage() {
 
             <label className="space-y-2 sm:col-span-2">
               <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                <PlatformLogo id="getir-yemek" size={16} rounded={4} />
                 Getir Yemek URL
                 <PlatformUrlHelp platform="getir" />
               </span>
@@ -308,6 +311,7 @@ export default function DashboardRestaurantDetailPage() {
 
             <label className="space-y-2">
               <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                <PlatformLogo id="yemeksepeti" size={16} rounded={4} />
                 Yemek Sepeti URL
                 <PlatformUrlHelp platform="yemeksepeti" />
               </span>
@@ -322,6 +326,7 @@ export default function DashboardRestaurantDetailPage() {
 
             <label className="space-y-2">
               <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                <PlatformLogo id="trendyol-go" size={16} rounded={4} />
                 Trendyol Yemek URL
                 <PlatformUrlHelp platform="trendyol" />
               </span>

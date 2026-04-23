@@ -5,6 +5,14 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
 import { copyToClipboard } from '@/lib/clipboard';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
+import PlatformLogo, { type PlatformId } from '@/components/marketing/PlatformLogo';
+
+const PLATFORM_LOGO_ID: Record<string, PlatformId> = {
+  google: 'google',
+  yemeksepeti: 'yemeksepeti',
+  getir: 'getir-yemek',
+  trendyol_go: 'trendyol-go',
+};
 
 interface Restaurant {
   id: string;
@@ -373,17 +381,26 @@ export default function DashboardQrPage() {
 
               <label className="space-y-2 block">
                 <span className="pulse-eyebrow text-[#737373]">{copy.platform}</span>
-                <select
-                  value={selectedPlatform}
-                  onChange={(event) => setSelectedPlatform(event.target.value)}
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
-                >
-                  <option value="">{copy.genel}</option>
-                  <option value="google">Google</option>
-                  <option value="yemeksepeti">Yemeksepeti</option>
-                  <option value="getir">Getir</option>
-                  <option value="trendyol_go">Trendyol GO</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={selectedPlatform}
+                    onChange={(event) => setSelectedPlatform(event.target.value)}
+                    className={`w-full rounded-xl border border-[#EDEDED] bg-white py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E] ${
+                      selectedPlatform && PLATFORM_LOGO_ID[selectedPlatform] ? 'pl-11' : 'pl-4'
+                    } pr-4`}
+                  >
+                    <option value="">{copy.genel}</option>
+                    <option value="google">Google</option>
+                    <option value="yemeksepeti">Yemeksepeti</option>
+                    <option value="getir">Getir</option>
+                    <option value="trendyol_go">Trendyol GO</option>
+                  </select>
+                  {selectedPlatform && PLATFORM_LOGO_ID[selectedPlatform] && (
+                    <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2">
+                      <PlatformLogo id={PLATFORM_LOGO_ID[selectedPlatform]} size={20} rounded={5} />
+                    </span>
+                  )}
+                </div>
               </label>
 
               {/* Yerleşim pills — frontend only, backend to be wired later */}
@@ -808,10 +825,24 @@ export default function DashboardQrPage() {
             </div>
           </div>
 
-          {/* QR URL */}
+          {/* QR URL + active platform logo */}
           <div className="rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-3.5">
-            <span className="pulse-eyebrow text-[#737373]">QR URL</span>
-            <p className="mt-1 text-[11px] font-mono text-[#0A0A0A] break-all leading-[1.4]">
+            <div className="flex items-center justify-between gap-2">
+              <span className="pulse-eyebrow text-[#737373]">QR URL</span>
+              {selectedPlatform && PLATFORM_LOGO_ID[selectedPlatform] && (
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#EDEDED] pl-1 pr-2.5 py-0.5">
+                  <PlatformLogo
+                    id={PLATFORM_LOGO_ID[selectedPlatform]}
+                    size={18}
+                    rounded={4}
+                  />
+                  <span className="pulse-eyebrow text-[#525252]">
+                    {PLATFORM_BADGE[selectedPlatform]?.label || selectedPlatform}
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="mt-1.5 text-[11px] font-mono text-[#0A0A0A] break-all leading-[1.4]">
               {qrTargetUrl ? qrTargetUrl.replace(/^https?:\/\//, '') : 'buaze.com/r/...'}
             </p>
           </div>

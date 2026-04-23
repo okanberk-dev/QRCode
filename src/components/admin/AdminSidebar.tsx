@@ -2,7 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, LogOut, Store, QrCode, Users, Clock, Crown, UsersRound, Globe, User, BookOpen, Megaphone, Settings } from 'lucide-react';
+import {
+  BarChart3,
+  BookOpen,
+  ChevronDown,
+  Crown,
+  Globe,
+  LayoutDashboard,
+  LogOut,
+  Megaphone,
+  QrCode,
+  Settings,
+  Store,
+  User,
+  Users,
+  UsersRound,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -17,6 +32,8 @@ interface AdminProfile {
   plan?: string | null;
   trialEndsAt?: string | null;
   logoUrl?: string | null;
+  workspaceName?: string | null;
+  locationCount?: number | null;
 }
 
 function getTrialInfo(trialEndsAt: string | null | undefined): { daysLeft: number; isExpired: boolean } | null {
@@ -37,8 +54,8 @@ export default function AdminSidebar() {
 
   useEffect(() => {
     fetch('/api/admin/me')
-      .then(res => res.ok ? res.json() : { role: 'manager' })
-      .then(data => {
+      .then((res) => (res.ok ? res.json() : { role: 'manager' }))
+      .then((data) => {
         setRole(data.role || 'manager');
         setProfile(data);
       })
@@ -54,110 +71,198 @@ export default function AdminSidebar() {
     window.location.href = '/admin';
   };
 
-  const menuItems = [
+  // Prevent body scroll when mobile drawer is open
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
+  const menuItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; roles: string[] }> = [
     { href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
     { href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/leads', icon: UsersRound, label: 'Müşteri Listesi', roles: ['superadmin', 'restaurant_owner'] },
+    { href: '/admin/leads', icon: UsersRound, label: locale === 'en' ? 'Customer List' : 'Müşteri Listesi', roles: ['superadmin', 'restaurant_owner'] },
   ];
 
   if (role === 'superadmin') {
-    menuItems.push({ href: '/admin/members', icon: Crown, label: 'İşletmeciler', roles: ['superadmin'] } as any);
-    menuItems.push({ href: '/admin/users', icon: Users, label: t('users'), roles: ['superadmin'] } as any);
-    menuItems.push({ href: '/admin/customers', icon: UsersRound, label: 'Müşteriler', roles: ['superadmin'] } as any);
-    menuItems.push({ href: '/admin/blog', icon: BookOpen, label: 'Blog Yönetimi', roles: ['superadmin'] } as any);
-    menuItems.push({ href: '/admin/announcements', icon: Megaphone, label: 'Duyurular', roles: ['superadmin'] } as any);
-    menuItems.push({ href: '/admin/site-settings', icon: Settings, label: 'Site Ayarları', roles: ['superadmin'] } as any);
+    menuItems.push(
+      { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Owners' : 'İşletmeciler', roles: ['superadmin'] },
+      { href: '/admin/users', icon: Users, label: t('users'), roles: ['superadmin'] },
+      { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler', roles: ['superadmin'] },
+      { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog Yönetimi', roles: ['superadmin'] },
+      { href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular', roles: ['superadmin'] },
+      { href: '/admin/site-settings', icon: Settings, label: locale === 'en' ? 'Site Settings' : 'Site Ayarları', roles: ['superadmin'] },
+    );
   }
 
-  // Profilim her zaman en altta olsun
-  menuItems.push({ href: '/admin/profile', icon: User, label: 'Profilim', roles: ['superadmin', 'manager', 'restaurant_owner'] });
+  menuItems.push({
+    href: '/admin/profile',
+    icon: User,
+    label: locale === 'en' ? 'Profile' : 'Profilim',
+    roles: ['superadmin', 'manager', 'restaurant_owner'],
+  });
 
-  const roleLabel = role === 'superadmin' ? 'Superadmin' : role === 'restaurant_owner' ? 'Restoran Sahibi' : 'Restoran Yetkilisi';
+  const roleLabel =
+    role === 'superadmin'
+      ? locale === 'en'
+        ? 'Superadmin'
+        : 'Superadmin'
+      : role === 'restaurant_owner'
+        ? locale === 'en'
+          ? 'Owner'
+          : 'Restoran Sahibi'
+        : locale === 'en'
+          ? 'Manager'
+          : 'Restoran Yetkilisi';
   const displayName = profile?.name || profile?.username || profile?.email?.split('@')[0] || 'Kullanıcı';
+  const initial = displayName.charAt(0).toUpperCase();
   const trialInfo = profile?.plan === 'trial' ? getTrialInfo(profile?.trialEndsAt) : null;
 
-  const planBadge = () => {
-    if (role === 'superadmin') return <span className="bg-[#C6F24E] text-[#0A0A0A] text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1"><Crown size={9} />ADMIN</span>;
-    if (!profile?.plan || profile.plan === 'trial') return <span className="bg-[#C6F24E]/20 text-[#C6F24E] text-[10px] font-bold px-2 py-0.5 rounded-full">DENEME</span>;
-    if (profile.plan === 'monthly') return <span className="bg-blue-500/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full">AYLIK</span>;
-    if (profile.plan === 'yearly') return <span className="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">YILLIK</span>;
-    return null;
-  };
+  const workspaceName =
+    profile?.workspaceName ||
+    (role === 'superadmin' ? (locale === 'en' ? 'Buaze Admin' : 'Buaze Yönetim') : displayName);
+  const workspaceMeta =
+    role === 'superadmin'
+      ? locale === 'en'
+        ? 'ADMIN WORKSPACE'
+        : 'YÖNETİM PANELİ'
+      : profile?.locationCount
+        ? `${profile.locationCount} ${locale === 'en' ? 'LOCATIONS' : 'KONUM'}`
+        : locale === 'en'
+          ? 'SINGLE WORKSPACE'
+          : 'TEK İŞLETME';
+
+  const planLabel = (() => {
+    if (role === 'superadmin') return locale === 'en' ? 'ADMIN' : 'ADMIN';
+    if (!profile?.plan || profile.plan === 'trial') return locale === 'en' ? 'TRIAL' : 'TRIAL';
+    if (profile.plan === 'monthly') return locale === 'en' ? 'MONTHLY' : 'AYLIK';
+    if (profile.plan === 'yearly') return locale === 'en' ? 'YEARLY' : 'YILLIK';
+    return profile.plan.toUpperCase();
+  })();
+
+  const quotaText = (() => {
+    if (role === 'superadmin') {
+      return locale === 'en' ? 'Full system access' : 'Tüm sistem erişimi';
+    }
+    if (trialInfo) {
+      return `${trialInfo.daysLeft} ${locale === 'en' ? 'day trial' : 'gün deneme'}`;
+    }
+    return locale === 'en' ? 'Unlimited reviews' : 'Sınırsız yorum';
+  })();
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-[#0A0A0A]">
-      {/* ─── Logo ─── */}
-      <div className="p-6 border-b border-white/10 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 flex-shrink-0">
-            <BuazeLogo size={40} variant="on-dark" imageUrl={profile?.logoUrl} />
+    <div className="flex flex-col h-full bg-[#0A0A0A]" style={{ fontFamily: "'Inter', sans-serif" }}>
+      {/* Logo */}
+      <div className="px-4 pt-5 pb-3">
+        <Link href="/admin/dashboard" className="flex items-center gap-2.5">
+          <BuazeLogo size={32} variant="on-dark" imageUrl={profile?.logoUrl} />
+          <span
+            className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            buaze<span className="text-[#C6F24E]">.</span>
+          </span>
+        </Link>
+      </div>
+
+      {/* Workspace switcher */}
+      <div className="px-3 pb-3">
+        <div className="flex items-center gap-2.5 rounded-lg bg-[#1A1A1A] px-3 py-2.5">
+          <div
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {workspaceName.charAt(0).toUpperCase()}
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-extrabold text-white tracking-tight leading-none">Buaze</h1>
-            <p className="text-[10px] text-white/45 font-bold tracking-widest uppercase mt-1">{roleLabel}</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold text-white leading-tight">{workspaceName}</p>
+            <p className="pulse-eyebrow text-white/50 mt-0.5">{workspaceMeta}</p>
           </div>
-          {planBadge()}
+          <ChevronDown size={14} className="text-white/40 shrink-0" strokeWidth={2} />
         </div>
       </div>
 
-      {/* ─── Nav ─── */}
-      <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
-        {menuItems.filter(i => i.roles.includes(role)).map((item) => {
-          const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-black text-sm border border-transparent ${
-                isActive
-                  ? 'bg-[#C6F24E] text-[#0A0A0A] shadow-sm'
-                  : 'text-white/60 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <item.icon size={20} className={isActive ? 'text-[#0A0A0A]' : 'text-white/45 group-hover:text-white'} strokeWidth={2} />
-              {item.label}
-            </Link>
-          );
-        })}
+      {/* Nav */}
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3">
+        {menuItems
+          .filter((i) => i.roles.includes(role))
+          .map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
+                  isActive
+                    ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
+                    : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
+                }`}
+              >
+                <Icon size={16} strokeWidth={2} />
+                <span className="truncate">{item.label}</span>
+              </Link>
+            );
+          })}
       </nav>
 
-      {/* ─── Trial Warning ─── */}
-      {trialInfo && !trialInfo.isExpired && trialInfo.daysLeft <= 7 && (
-        <div className="mx-4 mb-4 bg-[#C6F24E]/10 border-2 border-[#C6F24E]/30 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Clock size={14} className="text-[#C6F24E]" strokeWidth={2} />
-            <p className="text-[#C6F24E] text-[11px] font-black uppercase tracking-wider">Deneme Süresi</p>
+      {/* Plan card (superadmin → "admin access" info · owner → trial/quota) */}
+      <div className="mx-3 my-3 rounded-lg bg-[#1A1A1A] p-3.5">
+        <div className="flex items-center gap-1.5">
+          {role === 'superadmin' && <Crown size={11} strokeWidth={2} className="text-[#C6F24E]" />}
+          {trialInfo && <BarChart3 size={11} strokeWidth={2} className="text-[#C6F24E]" />}
+          <span className="pulse-eyebrow text-[#C6F24E]">{planLabel}</span>
+        </div>
+        <p className="mt-2 text-[12px] text-white/70 leading-[1.45]">
+          {quotaText}
+        </p>
+        {trialInfo && !trialInfo.isExpired && (
+          <div className="mt-2 h-1 w-full bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#C6F24E] transition-all"
+              style={{ width: `${Math.min(100, (trialInfo.daysLeft / 14) * 100)}%` }}
+            />
           </div>
-          <p className="text-white text-xs font-bold leading-tight">{trialInfo.daysLeft} gün kaldı</p>
-          <div className="mt-3 w-full bg-[#C6F24E]/25 rounded-full h-2 overflow-hidden border border-[#C6F24E]/15">
-            <div className="h-full bg-[#C6F24E] transition-all duration-500" style={{ width: `${(trialInfo.daysLeft / 14) * 100}%` }} />
+        )}
+        {role !== 'superadmin' && (
+          <Link
+            href="/admin/profile"
+            onClick={() => setMobileOpen(false)}
+            className="mt-2.5 block rounded-full bg-[#C6F24E] px-3 py-1.5 text-center text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
+          >
+            {locale === 'en' ? 'Manage plan' : 'Planı yönet'}
+          </Link>
+        )}
+      </div>
+
+      {/* User card + locale switcher + logout */}
+      <div className="border-t border-white/10 bg-black/20 p-3">
+        <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-white/5 px-2.5 py-2">
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] border border-white/10 text-[12px] font-semibold text-[#C6F24E]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {initial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[12px] font-medium text-white">{displayName}</p>
+            <p className="truncate pulse-eyebrow text-white/50 mt-0.5">{roleLabel}</p>
           </div>
         </div>
-      )}
 
-      {/* ─── User Info ─── */}
-      <div className="p-4 border-t border-white/10 bg-black/20">
-        <div className="flex items-center gap-3 px-3 py-3 mb-2 rounded-2xl bg-white/5 border border-white/5">
-          <div className="w-9 h-9 rounded-xl bg-[#C6F24E] border border-[#0A0A0A] flex items-center justify-center text-sm font-black text-[#0A0A0A] flex-shrink-0">
-            {displayName.charAt(0).toUpperCase()}
+        <div className="flex items-center justify-between px-1 py-2 border-t border-white/10">
+          <div className="flex items-center gap-1.5">
+            <Globe size={12} strokeWidth={2} className="text-white/60" />
+            <span className="pulse-eyebrow text-white/60">{t('system_language')}</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-black text-white truncate">{displayName}</p>
-            <p className="text-[10px] text-white/45 font-bold truncate tracking-tight">{profile?.email || profile?.username}</p>
-          </div>
-        </div>
-
-        <div className="pt-2 pb-3 mb-2 border-b border-white/10 flex items-center justify-between px-2">
-          <div className="flex items-center gap-2">
-            <Globe size={14} className="text-white/60" />
-            <span className="text-[10px] uppercase font-bold text-white/60 tracking-widest">{t('system_language')}</span>
-          </div>
-          <select 
+          <select
             value={locale}
-            onChange={(e: any) => setLocale(e.target.value)}
-            className="bg-white/10 text-white text-xs border-none rounded-lg px-2 py-1 outline-none font-bold"
+            onChange={(e) => setLocale(e.target.value as 'tr' | 'en')}
+            className="bg-white/10 text-white text-[11px] font-medium border-none rounded-md px-2 py-1 outline-none cursor-pointer"
           >
             <option value="tr" className="text-black">TR</option>
             <option value="en" className="text-black">EN</option>
@@ -166,9 +271,9 @@ export default function AdminSidebar() {
 
         <button
           onClick={handleLogout}
-          className="flex items-center justify-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-2xl transition-all w-full text-sm font-bold border border-transparent active:scale-95"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-medium text-white/60 transition-all hover:bg-white/5 hover:text-red-300"
         >
-          <LogOut size={16} strokeWidth={2} />
+          <LogOut size={13} strokeWidth={2} />
           {t('logout')}
         </button>
       </div>
@@ -177,33 +282,60 @@ export default function AdminSidebar() {
 
   return (
     <>
-      {/* Desktop Sidebar */}
+      {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-64 bg-[#0A0A0A] border-r border-white/5 flex-col h-full z-30">
         <SidebarContent />
       </aside>
 
-      {/* Mobile Top Bar */}
-      <div className="lg:hidden bg-[#0A0A0A] border-b border-white/10 px-5 py-4 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8"><BuazeLogo size={32} variant="on-dark" imageUrl={profile?.logoUrl} /></div>
-          <span className="text-white font-black text-lg tracking-tight">Buaze</span>
-        </div>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white p-2 hover:bg-white/5 transition-colors rounded-xl">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {mobileOpen
-              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
+      {/* Mobile top bar */}
+      <div
+        className="lg:hidden sticky top-0 z-40 flex items-center justify-between bg-[#0A0A0A] border-b border-white/10 px-4 py-3"
+        style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
+      >
+        <Link href="/admin/dashboard" className="flex items-center gap-2">
+          <BuazeLogo size={26} variant="on-dark" imageUrl={profile?.logoUrl} />
+          <span
+            className="text-[16px] font-medium tracking-[-0.03em] text-white"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            buaze<span className="text-[#C6F24E]">.</span>
+          </span>
+        </Link>
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-white hover:bg-white/10 transition-colors"
+          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            {mobileOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            )}
           </svg>
         </button>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile drawer */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="w-72 bg-[#0A0A0A] h-full flex flex-col border-r border-white/10 shadow-2xl">
+        <div
+          className="lg:hidden fixed inset-0 z-50 flex"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Admin navigation"
+        >
+          <div
+            className="w-[280px] max-w-[85vw] h-full bg-[#0A0A0A] border-r border-white/10 shadow-2xl flex flex-col"
+            style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+          >
             <SidebarContent />
           </div>
-          <div className="flex-1 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <button
+            type="button"
+            className="flex-1 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close menu"
+          />
         </div>
       )}
     </>

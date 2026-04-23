@@ -123,6 +123,32 @@
 //   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 //   @@map("brand_settings")
 // }
+//
+// model FeedbackTag {
+//   id         String   @id @default(cuid())
+//   feedbackId String   @map("feedback_id")
+//   feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+//   label      String
+//   score      Int?     // optional +1..+5 weight
+//   createdAt  DateTime @default(now()) @map("created_at")
+//   @@unique([feedbackId, label])
+//   @@map("feedback_tags")
+// }
+//
+// Reports (analytics export jobs). When enabling CSV/PDF export, either
+// stream directly from the route handler or queue a job:
+//
+// model AnalyticsExport {
+//   id         String   @id @default(cuid())
+//   userId     String   @map("user_id")
+//   format     String   // csv | pdf
+//   range      String   // 7d | 30d | 90d | all | custom
+//   status     String   @default("pending") // pending | ready | failed
+//   fileUrl    String?  @map("file_url")
+//   requestedAt DateTime @default(now()) @map("requested_at")
+//   @@index([userId, requestedAt])
+//   @@map("analytics_exports")
+// }
 // ─────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server';
