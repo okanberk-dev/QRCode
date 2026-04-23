@@ -90,11 +90,15 @@ export default function AdminSidebar() {
     { href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/reviews', icon: Inbox, label: locale === 'en' ? 'Reviews' : 'Yorumlar', roles: ['superadmin', 'manager', 'restaurant_owner'] },
     { href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik', roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/campaigns', icon: Sparkles, label: locale === 'en' ? 'Campaigns' : 'Kampanyalar', roles: ['superadmin', 'restaurant_owner'] },
-    { href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip', roles: ['superadmin', 'restaurant_owner'] },
-    { href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma', roles: ['superadmin', 'restaurant_owner'] },
-    { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notifications' : 'Bildirimler', roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar', roles: ['superadmin', 'restaurant_owner'] },
+    // Workspace-scoped features — shown only to restaurant_owner (and
+    // managers where it makes sense). Superadmin manages the platform
+    // globally via Üyeler / Kullanıcılar / Müşteriler / Site Ayarları
+    // below, so these workspace entries would only clutter that view.
+    { href: '/admin/campaigns', icon: Sparkles, label: locale === 'en' ? 'Campaigns' : 'Kampanyalar', roles: ['restaurant_owner'] },
+    { href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip', roles: ['restaurant_owner'] },
+    { href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma', roles: ['restaurant_owner'] },
+    { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notifications' : 'Bildirimler', roles: ['manager', 'restaurant_owner'] },
+    { href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar', roles: ['restaurant_owner'] },
   ];
 
   if (role === 'superadmin') {
