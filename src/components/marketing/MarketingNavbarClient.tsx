@@ -231,7 +231,10 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
         {/* Logo */}
         <Link href={`${base}`} className="flex items-center gap-2 group">
           <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
-          <span className="text-[17px] font-extrabold tracking-[-0.02em] text-[#0A0A0A]">
+          <span
+            className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
             buaze<span className="text-[#C6F24E]">.</span>
           </span>
         </Link>
@@ -259,7 +262,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
 
             {/* Dropdown Panel */}
             <div
-              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[260px] bg-white border border-[#0A0A0A] rounded-2xl shadow-md overflow-hidden transition-all duration-200 origin-top ${
+              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[260px] bg-white border border-[#EDEDED] rounded-2xl shadow-[0_8px_24px_rgba(10,10,10,0.08)] overflow-hidden transition-all duration-200 origin-top ${
                 learnOpen
                   ? 'opacity-100 scale-100 pointer-events-auto'
                   : 'opacity-0 scale-95 pointer-events-none'
@@ -269,34 +272,34 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
                 <Link
                   href={`${base}/#how-it-works`}
                   onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFFFFF] transition-colors group"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#C6F24E]/10 rounded-lg flex items-center justify-center text-[#C6F24E] group-hover:scale-110 transition-transform">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <Utensils size={15} />
                   </div>
-                  <div className="text-[14px] font-bold text-[#0A0A0A]">{t.nav_learn_features}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_features}</div>
                 </Link>
-                
+
                 <Link
                   href={`${base}/blog`}
                   onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFFFFF] transition-colors group"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#10b981]/10 rounded-lg flex items-center justify-center text-[#10b981] group-hover:scale-110 transition-transform">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <BookOpen size={15} />
                   </div>
-                  <div className="text-[14px] font-bold text-[#0A0A0A]">{t.nav_learn_blog}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_blog}</div>
                 </Link>
 
                 <Link
                   href={`${base}/compare`}
                   onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#FFFFFF] transition-colors group"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#6366f1]/10 rounded-lg flex items-center justify-center text-[#6366f1] group-hover:scale-110 transition-transform">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <Layers size={15} />
                   </div>
-                  <div className="text-[14px] font-bold text-[#0A0A0A]">{t.nav_compare}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_compare}</div>
                 </Link>
               </div>
             </div>
@@ -322,7 +325,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
 
             {/* Dropdown Panel (Mega Menu) */}
             <div
-              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[720px] bg-white border border-[#0A0A0A] rounded-2xl shadow-md overflow-hidden transition-all duration-200 origin-top ${
+              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[720px] bg-white border border-[#EDEDED] rounded-2xl shadow-[0_8px_24px_rgba(10,10,10,0.08)] overflow-hidden transition-all duration-200 origin-top ${
                 solutionsOpen
                   ? 'opacity-100 scale-100 pointer-events-auto'
                   : 'opacity-0 scale-95 pointer-events-none'
@@ -331,7 +334,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
               <div className="p-6 grid grid-cols-3 gap-8">
                 {solutionCategories.map((category, idx) => (
                   <div key={idx} className="space-y-4">
-                    <h5 className="text-[10px] font-extrabold uppercase tracking-widest text-[#6B7280] px-2">
+                    <h5 className="pulse-eyebrow text-[#737373] px-2">
                       {category.title}
                     </h5>
                     <div className="space-y-1">
@@ -340,12 +343,12 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
                           key={i}
                           href={item.href}
                           onClick={() => setSolutionsOpen(false)}
-                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#FFFFFF] transition-colors group"
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#EAF9B8] transition-colors"
                         >
-                          <div className={`flex-shrink-0 w-8 h-8 ${item.bgColor} rounded-lg flex items-center justify-center ${item.color} group-hover:scale-110 transition-transform`}>
+                          <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                             {item.icon}
                           </div>
-                          <div className="text-[13px] font-bold text-[#0A0A0A] leading-tight group-hover:text-[#C6F24E] transition-colors">
+                          <div className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
                             {item.label}
                           </div>
                         </Link>
@@ -354,11 +357,11 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
                   </div>
                 ))}
               </div>
-              <div className="border-t border-[#EDEDED] px-6 py-4 bg-[#FFFFFF] flex items-center justify-between">
+              <div className="border-t border-[#EDEDED] px-6 py-4 bg-[#FAFAFA] flex items-center justify-between">
                 <Link
                   href={`${base}/pricing`}
                   onClick={() => setSolutionsOpen(false)}
-                  className="text-[11px] font-bold text-[#6B7280] hover:text-[#0A0A0A] transition-colors uppercase tracking-widest"
+                  className="pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
                 >
                   {locale === 'tr' ? 'TÜM PLANLARI GÖRÜNTÜLE →' : 'VIEW ALL PLANS →'}
                 </Link>
@@ -386,13 +389,12 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             {langMenuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setLangMenuOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 bg-white border border-[#EDEDED] rounded-lg shadow-lg p-1 min-w-[110px] z-50">
+                <div className="absolute right-0 top-full mt-2 bg-white border border-[#EDEDED] rounded-lg shadow-[0_8px_24px_rgba(10,10,10,0.08)] p-1 min-w-[110px] z-50">
                   <button
                     onClick={switchLocale}
-                    className="w-full text-left px-3.5 py-2.5 rounded-md text-[13px] font-medium hover:bg-[#FFFFFF] transition-colors flex items-center gap-2"
+                    className="w-full text-left px-3.5 py-2.5 rounded-md text-[13px] font-medium hover:bg-[#EAF9B8] transition-colors"
                   >
-                    <span>{otherLocale === 'tr' ? '🇹🇷' : '🇬🇧'}</span>
-                    <span>{otherLocale === 'tr' ? 'Türkçe' : 'English'}</span>
+                    {otherLocale === 'tr' ? 'Türkçe' : 'English'}
                   </button>
                 </div>
               </>
@@ -402,21 +404,21 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
           {isLoggedIn ? (
             <Link
               href={`${base}/dashboard`}
-              className="px-5 py-2 text-[14px] font-extrabold bg-[#0A0A0A] text-white rounded-lg border border-[#0A0A0A] shadow-sm hover:bg-[#C6F24E] hover:text-[#0A0A0A] active:translate-y-[3px] active:shadow-none transition-all"
+              className="px-5 py-2 text-[14px] font-medium bg-[#0A0A0A] text-white rounded-full hover:bg-[#1A1A1A] transition-colors"
             >
-              {t.nav_dashboard || (locale === 'tr' ? 'PANELE GİT' : 'DASHBOARD')}
+              {t.nav_dashboard || (locale === 'tr' ? 'Panele git' : 'Dashboard')}
             </Link>
           ) : (
             <>
               <Link
                 href={`${base}/auth/login`}
-                className="hidden sm:inline-flex px-4 py-2 text-[14px] font-bold text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
+                className="hidden sm:inline-flex px-4 py-2 text-[14px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
               >
                 {t.nav_login}
               </Link>
               <Link
                 href={`${base}/auth/register`}
-                className="px-5 py-2 text-[14px] font-extrabold bg-[#C6F24E] text-[#0A0A0A] rounded-lg shadow-sm hover:bg-[#A8D62E] active:translate-y-[3px] active:shadow-none transition-all"
+                className="px-5 py-2 text-[14px] font-medium bg-[#C6F24E] text-[#0A0A0A] rounded-full hover:bg-[#A8D62E] transition-colors"
               >
                 {t.nav_register}
               </Link>
@@ -453,32 +455,32 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
                 <Link
                   href={`${base}/#how-it-works`}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="w-8 h-8 bg-[#C6F24E]/10 rounded-lg flex items-center justify-center text-[#C6F24E]">
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <Utensils size={15} />
                   </div>
-                  <div className="text-[14px] font-semibold text-[#0A0A0A]">{t.nav_learn_features}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_features}</div>
                 </Link>
                 <Link
                   href={`${base}/blog`}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="w-8 h-8 bg-[#10b981]/10 rounded-lg flex items-center justify-center text-[#10b981]">
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <BookOpen size={15} />
                   </div>
-                  <div className="text-[14px] font-semibold text-[#0A0A0A]">{t.nav_learn_blog}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_blog}</div>
                 </Link>
                 <Link
                   href={`${base}/compare`}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
                 >
-                  <div className="w-8 h-8 bg-[#6366f1]/10 rounded-lg flex items-center justify-center text-[#6366f1]">
+                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     <Layers size={15} />
                   </div>
-                  <div className="text-[14px] font-semibold text-[#0A0A0A]">{t.nav_compare}</div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_compare}</div>
                 </Link>
               </div>
             )}
@@ -498,7 +500,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
               <div className="pl-3 space-y-4 pb-4">
                 {solutionCategories.map((category, idx) => (
                   <div key={idx} className="space-y-2">
-                    <h5 className="text-[9px] font-extrabold uppercase tracking-widest text-[#6B7280] px-3 mt-2">
+                    <h5 className="pulse-eyebrow text-[#737373] px-3 mt-2">
                       {category.title}
                     </h5>
                     <div className="space-y-0.5">
@@ -507,12 +509,12 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
                           key={i}
                           href={item.href}
                           onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors"
+                          className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
                         >
-                          <div className={`w-8 h-8 ${item.bgColor} rounded-lg flex items-center justify-center ${item.color}`}>
+                          <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                             {item.icon}
                           </div>
-                          <div className="text-[14px] font-semibold text-[#0A0A0A]">{item.label}</div>
+                          <div className="text-[14px] font-medium text-[#0A0A0A]">{item.label}</div>
                         </Link>
                       ))}
                     </div>
@@ -526,19 +528,19 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             <Link href={`${base}/contact`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_contact}</Link>
             <div className="pt-3 mt-2 border-t border-[#EDEDED] space-y-0.5">
               {isLoggedIn ? (
-                <Link href={`${base}/dashboard`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-black text-[#C6F24E] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] uppercase tracking-tight">
-                  {t.nav_dashboard || (locale === 'tr' ? '👤 Panele Git' : '👤 Dashboard')}
+                <Link href={`${base}/dashboard`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors">
+                  {t.nav_dashboard || (locale === 'tr' ? 'Panele git' : 'Dashboard')}
                 </Link>
               ) : (
-                <Link href={`${base}/auth/login`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF]">{t.nav_login}</Link>
+                <Link href={`${base}/auth/login`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors">{t.nav_login}</Link>
               )}
             </div>
             <button
               onClick={() => { switchLocale(); setMobileMenuOpen(false); }}
-              className="flex items-center gap-2 text-[13px] font-medium text-[#6B7280] hover:text-[#0A0A0A] py-3 px-3 mt-1"
+              className="flex items-center gap-2 text-[13px] font-medium text-[#737373] hover:text-[#0A0A0A] py-3 px-3 mt-1"
             >
               <Globe size={14} />
-              {otherLocale === 'tr' ? '🇹🇷 Türkçe' : '🇬🇧 English'}
+              {otherLocale === 'tr' ? 'Türkçe' : 'English'}
             </button>
           </div>
         </>

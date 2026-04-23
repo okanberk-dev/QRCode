@@ -32,11 +32,14 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
           <div className="sm:col-span-2 md:col-span-1 min-w-0">
             <Link href={base} className="flex items-center gap-2 mb-5 group inline-flex">
               <BuazeLogo size={28} variant="on-dark" imageUrl={s.logoUrl} className="opacity-90 group-hover:opacity-100 transition-opacity" />
-              <span className="text-[17px] font-extrabold tracking-[-0.02em] text-white">
+              <span
+                className="text-[18px] font-medium tracking-[-0.03em] text-white"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
                 buaze<span className="text-[#C6F24E]">.</span>
               </span>
             </Link>
-            <p className="text-[#EDEDED] text-[13px] leading-relaxed mb-5">
+            <p className="text-white/70 text-[13px] leading-relaxed mb-5">
               {t.siteDescription || 'Restoranınızın dijital itibarını profesyonelce yönetin.'}
             </p>
 
@@ -70,10 +73,10 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
 
           {/* Col 2: Product */}
           <div>
-            <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">
+            <h4 className="pulse-eyebrow text-white/60 mb-6">
               {locale === 'tr' ? 'Ürün' : 'Product'}
             </h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-[#EDEDED]">
+            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
               <li><Link href={`${base}/how-it-works`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}</Link></li>
               <li><Link href={`${base}/pricing`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Fiyatlandırma' : 'Pricing'}</Link></li>
               <li><Link href={`${base}/compare`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Karşılaştır' : 'Compare'}</Link></li>
@@ -85,10 +88,10 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
 
           {/* Col 3: Legal */}
           <div>
-            <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">
+            <h4 className="pulse-eyebrow text-white/60 mb-6">
               {locale === 'tr' ? 'Yasal' : 'Legal'}
             </h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-[#EDEDED]">
+            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
               <li><Link href={`${base}/terms`} className="hover:text-[#C6F24E] transition-colors">{t.footer_terms}</Link></li>
               <li><Link href={`${base}/privacy`} className="hover:text-[#C6F24E] transition-colors">{t.footer_privacy}</Link></li>
               <li><Link href={`${base}/google-compliance`} className="hover:text-[#C6F24E] transition-colors">{t.footer_google_compliance}</Link></li>
@@ -101,24 +104,24 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
 
           {/* Col 4: Platform */}
           <div>
-            <h4 className="text-white/70 font-extrabold uppercase tracking-widest text-[10px] mb-6">Platform</h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-[#EDEDED]">
-              <li><Link href={`${base}/auth/login`} className="hover:text-[#C6F24E] transition-colors font-bold">{locale === 'tr' ? 'Giriş Yap' : 'Log In'}</Link></li>
-              <li><Link href={`${base}/auth/register`} className="hover:text-[#C6F24E] transition-colors font-bold text-[#C6F24E]">{locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}</Link></li>
+            <h4 className="pulse-eyebrow text-white/60 mb-6">Platform</h4>
+            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
+              <li><Link href={`${base}/auth/login`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Giriş Yap' : 'Log In'}</Link></li>
+              <li><Link href={`${base}/auth/register`} className="text-[#C6F24E] hover:text-white transition-colors">{locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}</Link></li>
             </ul>
           </div>
         </div>
 
         {/* Bottom */}
         <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <p className="text-white/60 text-[11px] font-medium">
+          <p className="text-white/60 text-[12px]">
             © {new Date().getFullYear()} Buaze. {t.footer_copyright}
           </p>
           <div className="flex items-center gap-6">
-             <Link href={`${base}/terms`} className="text-white/60 text-[10px] font-bold hover:text-white transition-colors uppercase tracking-widest">
+             <Link href={`${base}/terms`} className="pulse-eyebrow text-white/60 hover:text-white transition-colors">
                {locale === 'tr' ? 'Şartlar' : 'Terms'}
              </Link>
-             <Link href={`${base}/privacy`} className="text-white/60 text-[10px] font-bold hover:text-white transition-colors uppercase tracking-widest">
+             <Link href={`${base}/privacy`} className="pulse-eyebrow text-white/60 hover:text-white transition-colors">
                {locale === 'tr' ? 'Gizlilik' : 'Privacy'}
              </Link>
           </div>
