@@ -187,183 +187,227 @@ export default function DashboardRestaurantsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-[#0A0A0A]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
       </div>
     );
   }
 
   if (fetchError) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-10">
-        <div className="rounded-[28px] border border-red-200 bg-red-50 px-6 py-12 text-center">
-          <p className="text-sm font-black uppercase tracking-widest text-red-500">Hata</p>
-          <p className="mt-2 text-lg font-black text-red-700">{fetchError}</p>
+      <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-8">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-10 text-center">
+          <p className="pulse-eyebrow text-red-500">{locale === 'tr' ? 'HATA' : 'ERROR'}</p>
+          <p className="mt-2 text-[16px] font-semibold text-red-700">{fetchError}</p>
           <button
             onClick={fetchRestaurants}
-            className="mt-6 rounded-2xl bg-[#0A0A0A] px-6 py-3 text-sm font-black text-white"
+            className="mt-5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
           >
-            Tekrar Dene
+            {locale === 'tr' ? 'Tekrar dene' : 'Retry'}
           </button>
         </div>
       </div>
     );
   }
 
+  const filtered = restaurants.filter(
+    (r) =>
+      r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.category.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
-      <div className="flex flex-col gap-4 rounded-[28px] border border-[#EDEDED] bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-8">
+    <div
+      className="mx-auto max-w-[1200px] space-y-6 px-4 py-8 sm:px-8 lg:py-10"
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl">{copy.title}</h1>
-          <p className="mt-2 max-w-2xl text-sm font-bold text-[#1A1A1A] sm:text-base">{copy.subtitle}</p>
+          <p className="pulse-eyebrow text-[#737373]">
+            {locale === 'tr' ? 'PANEL / KONUMLAR' : 'PANEL / LOCATIONS'}
+          </p>
+          <h1
+            className="mt-2 text-[26px] sm:text-[32px] font-medium tracking-[-0.025em] leading-[1.05] text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {copy.title}
+          </h1>
+          <p className="mt-2 max-w-[560px] text-[14px] text-[#525252] leading-[1.55]">
+            {copy.subtitle}
+          </p>
         </div>
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#C6F24E] px-6 py-3 text-sm font-black text-[#0A0A0A] shadow-sm"
+          className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
         >
-          <Plus size={18} strokeWidth={2} />
+          <Plus size={14} strokeWidth={2} />
           {copy.add}
         </button>
-      </div>
+      </header>
 
+      {/* Search */}
       <div className="relative">
-        <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#6B7280]" />
+        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
         <input
           type="text"
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder={copy.search}
-          className="w-full rounded-[24px] border border-[#EDEDED] bg-white py-4 pl-14 pr-5 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
+          className="w-full rounded-full border border-[#EDEDED] bg-white py-3 pl-11 pr-5 text-[14px] text-[#0A0A0A] placeholder:text-[#737373] outline-none transition-all focus:border-[#C6F24E]"
         />
       </div>
 
       {restaurants.length === 0 ? (
-        <div className="rounded-[28px] border border-[#EDEDED] bg-white px-6 py-16 text-center shadow-sm sm:px-10">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-[#FFFFFF] text-[#0A0A0A]">
-            <Store size={36} strokeWidth={2} />
+        <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] px-6 py-14 text-center sm:px-10">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-[#EDEDED]">
+            <Store size={22} className="text-[#737373]" strokeWidth={2} />
           </div>
-          <h2 className="text-xl font-extrabold text-[#0A0A0A]">{copy.emptyTitle}</h2>
-          <p className="mx-auto mt-2 max-w-lg text-sm font-bold text-[#1A1A1A]">{copy.emptyText}</p>
+          <h2
+            className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {copy.emptyTitle}
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-[14px] text-[#525252] leading-[1.55]">{copy.emptyText}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {restaurants
-            .filter((restaurant) =>
-              restaurant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              restaurant.category.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-            .map((restaurant) => (
-              <div
-                key={restaurant.id}
-                className={`overflow-hidden rounded-[28px] border border-[#EDEDED] bg-white shadow-sm transition-all ${!restaurant.isActive ? 'opacity-70 grayscale-[0.4]' : 'hover:-translate-y-1 hover:shadow-md'}`}
-              >
-                <div className="h-2 w-full" style={{ backgroundColor: restaurant.primaryColor }} />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((restaurant) => (
+            <div
+              key={restaurant.id}
+              className={`overflow-hidden rounded-2xl border border-[#EDEDED] bg-white transition-colors ${!restaurant.isActive ? 'opacity-70' : 'hover:border-[#C6F24E]'}`}
+            >
+              <div className="h-1.5 w-full" style={{ backgroundColor: restaurant.primaryColor }} />
 
-                <div className="space-y-6 p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex min-w-0 items-center gap-4">
-                      <div
-                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-white"
-                        style={{ backgroundColor: restaurant.primaryColor }}
+              <div className="space-y-5 p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[16px] font-semibold text-white"
+                      style={{ backgroundColor: restaurant.primaryColor, fontFamily: 'var(--font-heading)' }}
+                    >
+                      {restaurant.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <h3
+                        className="truncate text-[16px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+                        style={{ fontFamily: 'var(--font-heading)' }}
                       >
-                        {restaurant.name.charAt(0).toUpperCase()}
+                        {restaurant.name}
+                      </h3>
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <p className="pulse-eyebrow text-[#737373] truncate">/{restaurant.slug}</p>
+                        <CopyUrlButton
+                          url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurant.slug}`}
+                          className="h-5 w-5"
+                        />
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="truncate text-lg font-extrabold text-[#0A0A0A]">{restaurant.name}</h3>
-                        <div className="flex items-center gap-2">
-                           <p className="truncate text-xs font-bold text-[#6B7280]">/{restaurant.slug}</p>
-                           <CopyUrlButton 
-                             url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurant.slug}`} 
-                             className="h-6 w-6" 
-                           />
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
-                      className={restaurant.isActive ? 'text-emerald-500' : 'text-[#6B7280]'}
-                    >
-                      {restaurant.isActive ? <ToggleRight size={40} strokeWidth={1.75} /> : <ToggleLeft size={40} strokeWidth={1.75} />}
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 rounded-[22px] bg-[#FFFFFF] p-4">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7280]">{copy.category}</p>
-                      <p className="mt-2 text-sm font-black text-[#0A0A0A]">{restaurant.category}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B7280]">{copy.reviews}</p>
-                      <p className="mt-2 text-sm font-black text-[#0A0A0A]">{restaurant._count.feedbacks}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <Link
-                      href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
-                      className="flex-1 rounded-2xl bg-[#0A0A0A] px-4 py-3 text-center text-sm font-black text-white"
+                  <button
+                    onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
+                    className={restaurant.isActive ? 'text-[#16A34A]' : 'text-[#737373]'}
+                    aria-label={restaurant.isActive ? 'deactivate' : 'activate'}
+                  >
+                    {restaurant.isActive ? <ToggleRight size={32} strokeWidth={1.75} /> : <ToggleLeft size={32} strokeWidth={1.75} />}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-4">
+                  <div>
+                    <p className="pulse-eyebrow text-[#737373]">{copy.category}</p>
+                    <p
+                      className="mt-1.5 text-[14px] font-semibold text-[#0A0A0A] truncate"
+                      style={{ fontFamily: 'var(--font-heading)' }}
                     >
-                      {copy.manage}
-                    </Link>
-                    <Link
-                      href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
-                      className="flex-1 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-center text-sm font-black text-[#0A0A0A]"
+                      {restaurant.category}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="pulse-eyebrow text-[#737373]">{copy.reviews}</p>
+                    <p
+                      className="mt-1.5 text-[14px] font-semibold text-[#0A0A0A] tabular-nums"
+                      style={{ fontFamily: 'var(--font-heading)' }}
                     >
-                      {copy.qr}
-                    </Link>
-                    <Link
-                      href={`/r/${restaurant.slug}`}
-                      target="_blank"
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#EDEDED] bg-white text-[#0A0A0A]"
-                    >
-                      <ExternalLink size={18} strokeWidth={2} />
-                    </Link>
+                      {restaurant._count.feedbacks}
+                    </p>
                   </div>
                 </div>
+
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
+                    className="flex-1 rounded-full bg-[#0A0A0A] px-4 py-2.5 text-center text-[12px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
+                  >
+                    {copy.manage}
+                  </Link>
+                  <Link
+                    href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
+                    className="flex-1 rounded-full border border-[#0A0A0A] px-4 py-2.5 text-center text-[12px] font-medium text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"
+                  >
+                    {copy.qr}
+                  </Link>
+                  <Link
+                    href={`/r/${restaurant.slug}`}
+                    target="_blank"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] hover:border-[#C6F24E] transition-colors"
+                    aria-label="Open public page"
+                  >
+                    <ExternalLink size={14} strokeWidth={2} />
+                  </Link>
+                </div>
               </div>
-            ))}
+            </div>
+          ))}
         </div>
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[20px] sm:rounded-[28px] bg-white shadow-2xl">
-            <div className="relative border-b border-[#EDEDED] bg-[#FFFFFF] p-5 sm:p-6 md:p-8">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-[#0A0A0A] pr-10">{copy.add}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(10,10,10,0.2)]">
+            <div className="relative border-b border-[#EDEDED] p-5 sm:p-6 md:p-7">
+              <h2
+                className="text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] pr-10"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {copy.add}
+              </h2>
               <button
                 type="button"
                 onClick={() => {
                   setShowCreateModal(false);
                   setCreateError('');
                 }}
-                className="absolute right-5 top-5 rounded-2xl p-2 text-[#1A1A1A] transition-all hover:bg-white"
+                className="absolute right-5 top-5 rounded-lg p-2 text-[#525252] transition-all hover:bg-[#FAFAFA]"
+                aria-label="close"
               >
-                <X size={20} strokeWidth={2} />
+                <X size={18} strokeWidth={2} />
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-4 sm:space-y-5 overflow-y-auto p-5 sm:p-6 md:p-8">
+            <form onSubmit={handleCreate} className="space-y-5 overflow-y-auto p-5 sm:p-6 md:p-7">
               {createError && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm font-bold text-red-600">
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">
                   {createError}
                 </div>
               )}
 
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <label className="space-y-2 sm:col-span-2">
-                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">İşletme Adı</span>
+                  <span className="ml-1 pulse-eyebrow text-[#737373]">İşletme Adı</span>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(event) => handleNameChange(event.target.value)}
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
+                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
                   />
                 </label>
 
                 <label className="space-y-2 sm:col-span-2">
-                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">URL Slug</span>
+                  <span className="ml-1 pulse-eyebrow text-[#737373]">URL Slug</span>
                   <div className="flex items-center gap-2 sm:gap-3 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-3 sm:px-4">
                     <span className="shrink-0 text-[11px] sm:text-xs font-black text-[#1A1A1A]">buaze.com/r/</span>
                     <input
@@ -438,7 +482,7 @@ export default function DashboardRestaurantsPage() {
                 </div>
 
                 <label className="space-y-2 sm:col-span-2">
-                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">Getir Yemek URL</span>
+                  <span className="ml-1 pulse-eyebrow text-[#737373]">Getir Yemek URL</span>
                   <input
                     type="url"
                     value={formData.getirYemekUrl}
@@ -449,7 +493,7 @@ export default function DashboardRestaurantsPage() {
                 </label>
 
                 <label className="space-y-2">
-                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">Yemek Sepeti URL</span>
+                  <span className="ml-1 pulse-eyebrow text-[#737373]">Yemek Sepeti URL</span>
                   <input
                     type="url"
                     value={formData.yemekSepetiUrl}
@@ -460,7 +504,7 @@ export default function DashboardRestaurantsPage() {
                 </label>
 
                 <label className="space-y-2">
-                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">Trendyol Yemek URL</span>
+                  <span className="ml-1 pulse-eyebrow text-[#737373]">Trendyol Yemek URL</span>
                   <input
                     type="url"
                     value={formData.trendyolYemekUrl}
@@ -471,47 +515,47 @@ export default function DashboardRestaurantsPage() {
                 </label>
 
                 <label className="space-y-2">
-                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">Kategori</span>
+                  <span className="ml-1 pulse-eyebrow text-[#737373]">Kategori</span>
                   <input
                     type="text"
                     value={formData.category}
                     onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
+                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
                   />
                 </label>
 
                 <label className="space-y-2">
-                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">Bildirim E-postası</span>
+                  <span className="ml-1 pulse-eyebrow text-[#737373]">Bildirim E-postası</span>
                   <input
                     type="email"
                     value={formData.notificationEmail}
                     onChange={(event) => setFormData((prev) => ({ ...prev, notificationEmail: event.target.value }))}
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
+                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
                   />
                 </label>
 
                 <label className="space-y-2 sm:col-span-2">
-                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">Adres</span>
+                  <span className="ml-1 pulse-eyebrow text-[#737373]">Adres</span>
                   <input
                     type="text"
                     value={formData.address}
                     onChange={(event) => setFormData((prev) => ({ ...prev, address: event.target.value }))}
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
+                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
                   />
                 </label>
 
                 <label className="space-y-2">
-                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">Telefon</span>
+                  <span className="ml-1 pulse-eyebrow text-[#737373]">Telefon</span>
                   <input
                     type="text"
                     value={formData.phone}
                     onChange={(event) => setFormData((prev) => ({ ...prev, phone: event.target.value }))}
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
+                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
                   />
                 </label>
 
                 <label className="space-y-2">
-                  <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">Tema Rengi</span>
+                  <span className="ml-1 pulse-eyebrow text-[#737373]">Tema Rengi</span>
                   <div className="flex h-[54px] items-center gap-3 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4">
                     <input
                       type="color"
@@ -524,20 +568,20 @@ export default function DashboardRestaurantsPage() {
                 </label>
               </div>
 
-              <div className="flex flex-col gap-3 border-t border-[#EDEDED] pt-5 sm:flex-row sm:justify-end">
+              <div className="flex flex-col gap-2 border-t border-[#EDEDED] pt-5 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="rounded-2xl border border-[#EDEDED] bg-white px-5 py-3 text-sm font-black text-[#0A0A0A]"
+                  className="rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
                 >
                   {locale === 'tr' ? 'İptal' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0A0A0A] px-5 py-3 text-sm font-black text-white disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-60 transition-colors"
                 >
-                  {creating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus size={18} strokeWidth={2} />}
+                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus size={14} strokeWidth={2} />}
                   {copy.add}
                 </button>
               </div>

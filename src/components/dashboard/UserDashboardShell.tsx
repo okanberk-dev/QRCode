@@ -99,16 +99,21 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
       {/* Logo */}
       <div className="border-b border-white/10 px-5 py-5">
         <Link href={`/${locale}/dashboard`} className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center flex-shrink-0"><BuazeLogo size={44} variant="on-dark" imageUrl={logoUrl} /></div>
+          <div className="flex h-10 w-10 items-center justify-center flex-shrink-0"><BuazeLogo size={40} variant="on-dark" imageUrl={logoUrl} /></div>
           <div className="min-w-0">
-            <p className="text-lg font-black tracking-tight text-white">Buaze</p>
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">{copy.dashboard}</p>
+            <p
+              className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              buaze<span className="text-[#C6F24E]">.</span>
+            </p>
+            <p className="pulse-eyebrow text-white/50 mt-1.5">{copy.dashboard}</p>
           </div>
         </Link>
       </div>
 
       {/* Nav */}
-      <div className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <div className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
           const Icon = item.icon;
@@ -117,13 +122,13 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
               key={item.href}
               href={item.href}
               onClick={() => setDrawerOpen(false)}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition-all ${
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
                 isActive
-                  ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                  : 'text-white/60 hover:bg-white/5 hover:text-white'
+                  ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
+                  : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
               }`}
             >
-              <Icon size={18} strokeWidth={2} />
+              <Icon size={16} strokeWidth={2} />
               <span>{item.label}</span>
             </Link>
           );
@@ -132,29 +137,42 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
 
       {/* Trial banner */}
       {user.plan === 'trial' && trialDaysLeft !== null && (
-        <div className="mx-3 mb-3 rounded-2xl border border-[#C6F24E]/30 bg-[#C6F24E]/10 p-4">
-          <div className="mb-1.5 flex items-center gap-2 text-[#C6F24E]">
-            <Crown size={13} strokeWidth={2} />
-            <span className="text-[10px] font-black uppercase tracking-[0.25em]">{copy.plan}</span>
+        <div className="mx-3 mb-3 rounded-xl bg-[#1A1A1A] p-4">
+          <div className="flex items-center gap-1.5 text-[#C6F24E]">
+            <Crown size={12} strokeWidth={2} />
+            <span className="pulse-eyebrow text-[#C6F24E]">{copy.plan}</span>
           </div>
-          <p className="text-sm font-black text-white">{trialDaysLeft} {copy.trialLeft}</p>
+          <p className="mt-2 text-[14px] font-medium text-white">
+            <span
+              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[22px] tracking-[-0.02em] leading-none"
+            >
+              {trialDaysLeft}
+            </span>{' '}
+            <span className="text-white/60 text-[12px]">{copy.trialLeft}</span>
+          </p>
         </div>
       )}
 
       {/* User footer */}
       <div className="border-t border-white/10 bg-black/20 p-3">
-        <div className="mb-2 flex items-center gap-3 rounded-2xl border border-white/5 bg-white/5 px-3 py-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] text-sm font-black text-[#0A0A0A]">{initial}</div>
+        <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#C6F24E] text-[13px] font-semibold text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {initial}
+          </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-black text-white">{displayName}</p>
-            <p className="truncate text-[11px] font-bold text-white/45">{user.email}</p>
+            <p className="truncate text-[13px] font-medium text-white">{displayName}</p>
+            <p className="truncate text-[11px] text-white/50">{user.email}</p>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black text-red-400 transition-all hover:bg-red-500/10 hover:text-red-300 active:scale-95"
+          className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-medium text-white/60 transition-all hover:bg-white/5 hover:text-red-300"
         >
-          <LogOut size={16} strokeWidth={2} />
+          <LogOut size={14} strokeWidth={2} />
           {copy.logout}
         </button>
       </div>
@@ -170,21 +188,27 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
 
       <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto">
         {/* Mobile top bar */}
-        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#EDEDED]/60 bg-white/95 px-4 py-3 backdrop-blur lg:hidden shadow-sm">
-          <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center"><BuazeLogo size={36} variant="default" imageUrl={logoUrl} /></div>
-            <span className="text-base font-black tracking-tight text-[#0A0A0A]">Buaze</span>
+        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#EDEDED] bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+          <Link href={`/${locale}/dashboard`} className="flex items-center gap-2">
+            <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
+            <span
+              className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              buaze<span className="text-[#C6F24E]">.</span>
+            </span>
           </Link>
 
           <div className="flex items-center gap-2">
             {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 5 && (
-              <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-[#EAF9B8] border border-[#D7F98E]/50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#A8D62E]">
+              <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-[#EAF9B8] px-3 py-1 pulse-eyebrow text-[#0A0A0A]">
                 <Crown size={10} /> {trialDaysLeft}g
               </span>
             )}
             <button
               onClick={() => setDrawerOpen((v) => !v)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0A0A0A] text-sm font-black text-[#C6F24E]"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]"
+              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {drawerOpen ? <X size={18} strokeWidth={2} /> : <span>{initial}</span>}
             </button>
@@ -228,8 +252,8 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
                   href={item.href}
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`relative flex flex-col items-center gap-1 px-1 py-1.5 rounded-xl transition-colors ${
-                    isActive ? 'text-[#C6F24E]' : 'text-[#EDEDED]/70 hover:text-white'
+                  className={`relative flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-colors ${
+                    isActive ? 'text-[#C6F24E]' : 'text-white/60 hover:text-white'
                   }`}
                 >
                   {isActive && (
@@ -238,12 +262,10 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
                       className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#C6F24E] rounded-b-full"
                     />
                   )}
-                  <span className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-[#C6F24E]/15' : ''}`}>
-                    <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                  <span className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-[#C6F24E]/15' : ''}`}>
+                    <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full leading-none">
-                    {item.label}
-                  </span>
+                  <span className="pulse-eyebrow truncate max-w-full">{item.label}</span>
                 </Link>
               </li>
             );
@@ -255,8 +277,8 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
               aria-label={copy.more}
               aria-expanded={moreOpen}
               aria-haspopup="dialog"
-              className={`relative flex w-full flex-col items-center gap-1 px-1 py-1.5 rounded-xl transition-colors ${
-                moreActive ? 'text-[#C6F24E]' : 'text-[#EDEDED]/70 hover:text-white'
+              className={`relative flex w-full flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-colors ${
+                moreActive ? 'text-[#C6F24E]' : 'text-white/60 hover:text-white'
               }`}
             >
               {moreActive && (
@@ -265,12 +287,10 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
                   className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#C6F24E] rounded-b-full"
                 />
               )}
-              <span className={`p-2 rounded-xl transition-colors ${moreActive ? 'bg-[#C6F24E]/15' : ''}`}>
-                <MoreHorizontal size={20} strokeWidth={moreActive ? 2.5 : 2} />
+              <span className={`p-2 rounded-lg transition-colors ${moreActive ? 'bg-[#C6F24E]/15' : ''}`}>
+                <MoreHorizontal size={18} strokeWidth={moreActive ? 2.5 : 2} />
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full leading-none">
-                {copy.more}
-              </span>
+              <span className="pulse-eyebrow truncate max-w-full">{copy.more}</span>
             </button>
           </li>
         </ul>
@@ -290,17 +310,17 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <div className="mb-3 flex items-center justify-between px-2">
-              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/60">{copy.more}</p>
+              <p className="pulse-eyebrow text-white/60">{copy.more}</p>
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}
                 aria-label="close"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/60 hover:bg-white/5 hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-white/60 hover:bg-white/5 hover:text-white"
               >
                 <X size={18} strokeWidth={2} />
               </button>
             </div>
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               {moreSheetItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
@@ -310,13 +330,13 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
                       href={item.href}
                       onClick={() => setMoreOpen(false)}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${
+                      className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] transition-colors ${
                         isActive
-                          ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                          : 'text-white/80 hover:bg-white/5 hover:text-white'
+                          ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
+                          : 'text-white/80 hover:bg-white/5 hover:text-white font-medium'
                       }`}
                     >
-                      <Icon size={18} strokeWidth={2} />
+                      <Icon size={16} strokeWidth={2} />
                       <span>{item.label}</span>
                     </Link>
                   </li>
@@ -329,9 +349,9 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
                     setMoreOpen(false);
                     handleLogout();
                   }}
-                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-medium text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
                 >
-                  <LogOut size={18} strokeWidth={2} />
+                  <LogOut size={16} strokeWidth={2} />
                   <span>{copy.logout}</span>
                 </button>
               </li>
