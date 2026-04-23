@@ -1,10 +1,29 @@
-import { Star, QrCode, ShieldCheck, TrendingUp, ArrowRight, Zap, Users, ChevronRight, Utensils, Hotel, Stethoscope, Scissors, Dumbbell, Scale, Home as HomeIcon, Car, Sparkles, GraduationCap, PawPrint, Building2 } from 'lucide-react';
+import {
+  QrCode,
+  TrendingUp,
+  Users,
+  ChevronRight,
+  Utensils,
+  Hotel,
+  Stethoscope,
+  Scissors,
+  Dumbbell,
+  Scale,
+  Home as HomeIcon,
+  Car,
+  Sparkles,
+  GraduationCap,
+  PawPrint,
+  Building2,
+  Star,
+  ShieldCheck,
+  Zap,
+} from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import type { Locale, Translations } from '@/lib/translations';
 import Link from 'next/link';
 import { ReactNode } from 'react';
-import { CtaButton } from '@/components/ui/CtaButton';
 
 interface SolutionPageLayoutProps {
   locale: Locale;
@@ -15,15 +34,14 @@ interface SolutionPageLayoutProps {
   h1Prefix: string;
   h1Suffix: string;
   description: string;
+  /** Deprecated — kept for prop-compat; layout now always uses Pulse lime. */
   accentColor?: string;
   stats?: { num: string; label: string; context?: string }[];
   steps?: { title: string; desc: string; icon: ReactNode }[];
   benefits?: { title: string; desc: string; icon: ReactNode }[];
   faqs?: { q: string; a: string }[];
   isLoggedIn?: boolean;
-  /** URL slug for this page (e.g. "restaurants"). Auto-derived from industryKey if omitted. */
   slug?: string;
-  /** Optional intro paragraph displayed between hero and steps sections. */
   overview?: string;
 }
 
@@ -68,85 +86,78 @@ export default function SolutionPageLayout({
   h1Prefix,
   h1Suffix,
   description,
-  accentColor = '#C6F24E',
   stats,
   steps,
   benefits,
   faqs,
-  isLoggedIn,
   slug: slugProp,
   overview,
 }: SolutionPageLayoutProps) {
   const base = `/${locale}`;
+  const isTr = locale === 'tr';
   const currentSlug = slugProp ?? INDUSTRY_SLUG_MAP[industryKey] ?? '';
   const canonicalUrl = `https://buaze.com/${locale}/solutions/${currentSlug}`;
-  const relatedSolutions = ALL_SOLUTIONS.filter(s => s.slug !== currentSlug).slice(0, 4);
+  const relatedSolutions = ALL_SOLUTIONS.filter((s) => s.slug !== currentSlug).slice(0, 4);
 
-  // Default steps if not provided
   const displaySteps = steps || [
     {
-      icon: <QrCode size={24} />,
-      title: locale === 'tr' ? 'QR Kodunuzu Yerleştirin' : 'Place Your QR Code',
-      desc: locale === 'tr' 
-        ? 'Stratejik noktalara markanıza özel tasarlanmış QR kodları yerleştirin.' 
+      icon: <QrCode size={22} />,
+      title: isTr ? 'QR kodunuzu yerleştirin' : 'Place your QR code',
+      desc: isTr
+        ? 'Stratejik noktalara markanıza özel QR kodlarını yerleştirin.'
         : 'Place custom-branded QR codes at strategic spots.',
     },
     {
-      icon: <Users size={24} />,
-      title: locale === 'tr' ? 'Müşteri Kolayca Tarar' : 'Customers Scan Easily',
-      desc: locale === 'tr'
-        ? 'Müşteriniz saniyeler içinde tarar, uygulama indirmesine gerek kalmaz.'
-        : 'Customers scan in seconds — no app download needed.',
+      icon: <Users size={22} />,
+      title: isTr ? 'Müşteri kolayca tarar' : 'Customers scan easily',
+      desc: isTr
+        ? 'Saniyeler içinde tarar, uygulama indirmesine gerek kalmaz.'
+        : 'Scans in seconds — no app download needed.',
     },
-      {
-        icon: <TrendingUp size={24} />,
-        title: locale === 'tr' ? 'Görünürlüğünüz Artar' : 'Your Visibility Increases',
-        desc: locale === 'tr'
-          ? 'Geri bildirim akışını profesyonelce yönetin.'
-          : 'Manage your feedback flow professionally.',
-      },
+    {
+      icon: <TrendingUp size={22} />,
+      title: isTr ? 'Görünürlüğünüz artar' : 'Your visibility increases',
+      desc: isTr ? 'Geri bildirim akışını profesyonelce yönetin.' : 'Manage your feedback flow professionally.',
+    },
   ];
 
-  // Default benefits
   const displayBenefits = benefits || [
     {
-      title: locale === 'tr' ? 'Dijital İtibar Artışı' : 'Digital Reputation Growth',
-      desc: locale === 'tr' ? 'Organik ve güvenli itibar artışı sağlayın.' : 'Achieve organic and secure reputation growth.',
-      icon: <Star size={20} className="text-[#C6F24E]" />,
+      title: isTr ? 'Dijital itibar artışı' : 'Digital reputation growth',
+      desc: isTr ? 'Organik ve güvenli itibar büyümesi.' : 'Organic and secure reputation growth.',
+      icon: <Star size={18} />,
     },
     {
-      title: locale === 'tr' ? 'Profesyonel Geri Bildirim Ops.' : 'Professional Feedback Ops.',
-      desc: locale === 'tr' ? 'Krizleri büyümeden operasyonel olarak çözün.' : 'Resolve crises operationally before they grow.',
-      icon: <ShieldCheck size={20} className="text-[#10b981]" />,
+      title: isTr ? 'Profesyonel geri bildirim' : 'Professional feedback ops',
+      desc: isTr ? 'Krizleri büyümeden operasyonel çözün.' : 'Resolve crises operationally before they grow.',
+      icon: <ShieldCheck size={18} />,
     },
     {
-      title: locale === 'tr' ? 'Müşteri Sadakati' : 'Customer Loyalty',
-      desc: locale === 'tr' ? 'Geri bildirimlerle hizmet kalitenizi artırın.' : 'Improve service quality with feedback.',
-      icon: <TrendingUp size={20} className="text-[#C6F24E]" />,
+      title: isTr ? 'Müşteri sadakati' : 'Customer loyalty',
+      desc: isTr ? 'Geri bildirim hizmet kalitesini artırır.' : 'Feedback lifts service quality.',
+      icon: <TrendingUp size={18} />,
     },
     {
-      title: locale === 'tr' ? 'Dijital Görünürlük' : 'Digital Visibility',
-      desc: locale === 'tr' ? 'Sıralamalarda rakiplerinizin önüne geçin.' : 'Stand out from competitors in rankings.',
-      icon: <Zap size={20} className="text-[#C6F24E]" />,
+      title: isTr ? 'Dijital görünürlük' : 'Digital visibility',
+      desc: isTr ? 'Sıralamada rakiplerin önüne geçin.' : 'Stand out from competitors in rankings.',
+      icon: <Zap size={18} />,
     },
   ];
 
-  // Default stats
   const displayStats = stats || [
-    { num: '500+', label: locale === 'tr' ? 'AKTİF İŞLETME' : 'ACTIVE BUSINESSES', context: locale === 'tr' ? 'Pilot veri' : 'Pilot data' },
-    { num: '4.8',  label: locale === 'tr' ? 'ORT. SKOR'     : 'AVG. SCORE',        context: locale === 'tr' ? 'Ağ ortalaması' : 'Network average' },
-    { num: '%92',  label: locale === 'tr' ? 'İTİBAR ARTIŞI' : 'REPUTATION GROWTH', context: locale === 'tr' ? '90 günlük trend' : '90-day trend' },
-    { num: '<5dk', label: locale === 'tr' ? 'KURULUM'      : 'SETUP',             context: locale === 'tr' ? 'Hızlı entegrasyon' : 'Fast integration' },
+    { num: '500+', label: isTr ? 'AKTİF İŞLETME' : 'ACTIVE BUSINESSES', context: isTr ? 'Pilot veri' : 'Pilot data' },
+    { num: '4.8', label: isTr ? 'ORT. SKOR' : 'AVG. SCORE', context: isTr ? 'Ağ ortalaması' : 'Network average' },
+    { num: '%92', label: isTr ? 'İTİBAR ARTIŞI' : 'REPUTATION GROWTH', context: isTr ? '90 günlük trend' : '90-day trend' },
+    { num: '<5dk', label: isTr ? 'KURULUM' : 'SETUP', context: isTr ? 'Hızlı entegrasyon' : 'Fast integration' },
   ];
 
-  // JSON-LD: BreadcrumbList + optional FAQPage
   const jsonLdSchemas: object[] = [
     {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: locale === 'tr' ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-        { '@type': 'ListItem', position: 2, name: locale === 'tr' ? 'Çözümler' : 'Solutions', item: `https://buaze.com/${locale}/solutions` },
+        { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+        { '@type': 'ListItem', position: 2, name: isTr ? 'Çözümler' : 'Solutions', item: `https://buaze.com/${locale}/solutions` },
         { '@type': 'ListItem', position: 3, name: industryBadge, item: canonicalUrl },
       ],
     },
@@ -164,7 +175,7 @@ export default function SolutionPageLayout({
     jsonLdSchemas.push({
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
-      mainEntity: faqs.map(f => ({
+      mainEntity: faqs.map((f) => ({
         '@type': 'Question',
         name: f.q,
         acceptedAnswer: { '@type': 'Answer', text: f.a },
@@ -173,107 +184,146 @@ export default function SolutionPageLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] font-sans pt-[64px] selection:bg-[#C6F24E]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchemas) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* Hero */}
-      <section className="pt-20 sm:pt-32 pb-12 sm:pb-16 px-5 sm:px-8 bg-[#FFFFFF] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-[150px] translate-x-1/3 -translate-y-1/3" style={{ backgroundColor: `${accentColor}0d` }} />
-        <div className="max-w-[1200px] mx-auto relative content-left">
+      {/* ─── Hero ─── */}
+      <section className="relative overflow-hidden px-6 sm:px-10 pt-14 sm:pt-20 pb-14 sm:pb-20">
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
+          width="100%"
+          height="100%"
+        >
+          <defs>
+            <pattern id="solGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#solGrid)" />
+        </svg>
+
+        <div className="relative max-w-[1200px] mx-auto">
           {/* Breadcrumb */}
-          <nav aria-label={locale === 'tr' ? 'Site yolu' : 'Breadcrumb'} className="mb-8 text-[12px] sm:text-[13px] font-medium text-[#1A1A1A] flex items-center flex-wrap gap-1.5">
-            <Link href={base} className="hover:text-[#0A0A0A] transition-colors">{locale === 'tr' ? 'Ana Sayfa' : 'Home'}</Link>
-            <ChevronRight size={14} className="text-[#6B7280]" aria-hidden />
-            <span className="text-[#1A1A1A]">{locale === 'tr' ? 'Çözümler' : 'Solutions'}</span>
-            <ChevronRight size={14} className="text-[#6B7280]" aria-hidden />
-            <span className="text-[#0A0A0A] font-bold">{industryBadge}</span>
+          <nav
+            aria-label={isTr ? 'Site yolu' : 'Breadcrumb'}
+            className="mb-6 text-[12px] text-[#737373] flex items-center flex-wrap gap-1.5"
+          >
+            <Link href={base} className="hover:text-[#0A0A0A] transition-colors">
+              {isTr ? 'Ana sayfa' : 'Home'}
+            </Link>
+            <ChevronRight size={12} className="text-[#A3A3A3]" aria-hidden />
+            <span>{isTr ? 'Çözümler' : 'Solutions'}</span>
+            <ChevronRight size={12} className="text-[#A3A3A3]" aria-hidden />
+            <span className="text-[#0A0A0A] font-medium">{industryBadge}</span>
           </nav>
 
-          <div className="max-w-[720px] space-y-6">
-            <div className="inline-flex items-center gap-2 px-5 py-2 bg-white border-2 border-[#0A0A0A] rounded-full shadow-md">
-              {icon}
-              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">{industryBadge}</span>
+          <div className="max-w-[780px] space-y-6">
+            <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] rounded-full pl-2 pr-4 py-1.5">
+              <span className="w-6 h-6 bg-[#C6F24E] rounded-full flex items-center justify-center text-[#0A0A0A]">
+                {icon}
+              </span>
+              <span className="pulse-eyebrow text-[#0A0A0A]">{industryBadge}</span>
             </div>
-            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight text-[#0A0A0A]">
-              {h1Prefix} <span style={{ color: accentColor }}>{h1Suffix}</span>
+            <h1 className="text-[40px] sm:text-[60px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+              {h1Prefix}{' '}
+              <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">{h1Suffix}</span>
             </h1>
-            <p className="text-[16px] sm:text-[20px] text-[#1A1A1A] font-bold leading-relaxed max-w-[600px]">
+            <p className="text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[620px]">
               {description}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <CtaButton variant="primary" href={`${base}/auth/register`} className="w-full sm:w-auto">
-                {locale === 'tr' ? '14 Gün Ücretsiz Dene' : 'Start 14-Day Free Trial'}
-              </CtaButton>
-              <CtaButton variant="secondary" href={`${base}/pricing`} className="w-full sm:w-auto">
-                {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
-              </CtaButton>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Link
+                href={`${base}/auth/register`}
+                className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
+              >
+                {isTr ? '14 gün ücretsiz dene' : 'Start 14-day free trial'}
+                <span aria-hidden>→</span>
+              </Link>
+              <Link
+                href={`${base}/pricing`}
+                className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
+              >
+                {isTr ? 'Planları incele' : 'View plans'}
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Overview (optional intro paragraph) */}
+      {/* ─── Overview (optional) ─── */}
       {overview && (
-        <section className="py-10 sm:py-14 px-5 sm:px-8 bg-white border-t border-[#EDEDED]">
-          <div className="max-w-[800px] mx-auto">
-            <p className="text-[16px] sm:text-[18px] text-[#1A1A1A] leading-relaxed font-medium">{overview}</p>
+        <section className="border-y border-[#EDEDED] px-6 sm:px-10 py-10 sm:py-14 bg-[#FAFAFA]">
+          <div className="max-w-[820px] mx-auto">
+            <p className="text-[16px] sm:text-[17px] text-[#525252] leading-[1.7]">{overview}</p>
           </div>
         </section>
       )}
 
-      {/* Steps */}
-      <section className="py-16 sm:py-32 px-5 sm:px-8 bg-white border-y-[3px] border-[#0A0A0A]">
+      {/* ─── Steps ─── */}
+      <section className="px-6 sm:px-10 py-20 sm:py-28">
         <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-16 sm:mb-24">
-            <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#C6F24E] mb-4">
-              {locale === 'tr' ? 'SÜREÇ' : 'PROCESS'}
-            </p>
-            <h2 className="text-[32px] sm:text-[52px] font-extrabold text-[#0A0A0A] tracking-tight leading-tight">
-              {locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}
+          <div className="mb-12 sm:mb-14 max-w-[720px]">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Süreç' : 'Process'}
+            </span>
+            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+              {isTr ? 'Üç adım, üç saniye.' : 'Three steps, three seconds.'}
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-14">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {displaySteps.map((step, i) => (
-              <div key={i} className="group relative bg-[#FFFFFF] p-8 sm:p-10 rounded-[32px] border sm:border border-[#0A0A0A] shadow-md hover:-translate-y-2 transition-transform duration-300">
-                <div className="absolute -top-5 -right-5 sm:-top-6 sm:-right-6 w-14 h-14 sm:w-16 sm:h-16 bg-[#C6F24E] rounded-[20px] border border-[#0A0A0A] shadow-md flex items-center justify-center text-[18px] sm:text-[22px] font-black text-[#0A0A0A] z-10 rotate-3">
-                  {`0${i + 1}`}
+              <div
+                key={i}
+                className="bg-[#FAFAFA] border border-[#EDEDED] rounded-3xl p-7 sm:p-8 flex flex-col"
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <span className="pulse-eyebrow text-[#A8D62E]">
+                    {isTr ? 'ADIM' : 'STEP'} {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div className="w-10 h-10 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    {step.icon}
+                  </div>
                 </div>
-                <div className="w-14 h-14 bg-white rounded-2xl border border-[#0A0A0A] flex items-center justify-center mb-8 text-[#0A0A0A] shadow-md">
-                  {step.icon}
-                </div>
-                <h3 className="text-[20px] sm:text-[22px] font-extrabold text-[#0A0A0A] mb-4 tracking-tight">{step.title}</h3>
-                <p className="text-[14px] sm:text-[15px] text-[#1A1A1A] leading-relaxed font-bold">{step.desc}</p>
+                <h3 className="text-[20px] sm:text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-tight mb-3">
+                  {step.title}
+                </h3>
+                <p className="text-[14px] text-[#525252] leading-[1.6]">{step.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Benefits */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#0A0A0A] relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#C6F24E]/5 rounded-full blur-[150px]" />
-        <div className="max-w-[1200px] mx-auto relative z-10">
-          <div className="mb-12 sm:mb-16 space-y-4 text-center">
-            <p className="text-[11px] sm:text-[12px] font-black text-[#C6F24E] uppercase tracking-widest">
-              {locale === 'tr' ? 'AVANTAJLAR' : 'BENEFITS'}
-            </p>
-            <h2 className="text-[32px] sm:text-[52px] font-extrabold text-white tracking-tight leading-tight">
-              {locale === 'tr' ? 'Neden Buaze?' : 'Why Buaze?'}
+      {/* ─── Benefits ─── */}
+      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="mb-12 sm:mb-14 max-w-[720px]">
+            <span className="pulse-eyebrow text-[#C6F24E]">
+              {isTr ? 'Avantajlar' : 'Benefits'}
+            </span>
+            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-white">
+              {isTr ? 'Neden Buaze?' : 'Why Buaze?'}
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {displayBenefits.map((b, i) => (
-              <div key={i} className="group flex gap-6 bg-white/5 border-2 border-white/10 p-7 sm:p-10 rounded-[32px] hover:bg-white/10 transition-all hover:-translate-y-1">
-                <div className="flex-shrink-0 w-14 h-14 bg-white/5 rounded-2xl border-2 border-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div
+                key={i}
+                className="flex gap-5 bg-white/5 border border-white/10 p-7 rounded-2xl"
+              >
+                <div className="shrink-0 w-11 h-11 bg-[#C6F24E] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                   {b.icon}
                 </div>
-                <div className="space-y-2">
-                  <h4 className="text-[18px] sm:text-[20px] font-extrabold text-white tracking-tight">{b.title}</h4>
-                  <p className="text-[13px] sm:text-[14px] text-white/80 font-medium leading-relaxed">{b.desc}</p>
+                <div>
+                  <h3 className="text-[18px] font-medium text-white tracking-[-0.01em] leading-tight">
+                    {b.title}
+                  </h3>
+                  <p className="mt-2 text-[14px] text-white/70 leading-[1.6]">{b.desc}</p>
                 </div>
               </div>
             ))}
@@ -281,36 +331,43 @@ export default function SolutionPageLayout({
         </div>
       </section>
 
-      {/* Stats Bar */}
-      <section className="py-16 sm:py-20 px-5 sm:px-8 bg-[#C6F24E] border-y-[3px] sm:border-y-[4px] border-[#0A0A0A]">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-          {displayStats.map((stat: any, i) => (
-            <div key={i} className="space-y-2">
-              <div className="text-[36px] sm:text-[60px] font-black text-[#0A0A0A] tracking-tighter leading-none">{stat.num}</div>
-              <div className="text-[10px] sm:text-[11px] font-black text-[#0A0A0A] uppercase tracking-[0.2em]">{stat.label}</div>
-              <div className="text-[9px] sm:text-[10px] font-black text-[#0A0A0A]/40 uppercase tracking-[0.1em]">{stat.context}</div>
+      {/* ─── Stats Bar ─── */}
+      <section className="bg-[#C6F24E] border-y border-[#A8D62E] px-6 sm:px-10 py-14">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {displayStats.map((stat, i) => (
+            <div key={i}>
+              <div
+                className="text-[36px] sm:text-[52px] font-medium text-[#0A0A0A] leading-none tracking-[-0.03em]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {stat.num}
+              </div>
+              <div className="pulse-eyebrow text-[#0A0A0A]/70 mt-3">{stat.label}</div>
+              {stat.context && (
+                <div className="text-[11px] text-[#0A0A0A]/60 mt-1">{stat.context}</div>
+              )}
             </div>
           ))}
         </div>
       </section>
 
-      {/* FAQ */}
+      {/* ─── FAQ ─── */}
       {faqs && faqs.length > 0 && (
-        <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FFFFFF] border-t-[3px] border-[#0A0A0A]">
+        <section className="px-6 sm:px-10 py-20 sm:py-28">
           <div className="max-w-[840px] mx-auto">
-            <div className="text-center mb-12 sm:mb-20">
-              <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: accentColor }}>
-                {locale === 'tr' ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
-              </p>
-              <h2 className="text-[32px] sm:text-[52px] font-extrabold text-[#0A0A0A] tracking-tight leading-tight">
-                {locale === 'tr' ? 'Merak Ettikleriniz' : 'Common Questions'}
+            <div className="text-center mb-12">
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'Sıkça sorulan sorular' : 'Frequently asked'}
+              </span>
+              <h2 className="mt-4 text-[32px] sm:text-[44px] font-medium tracking-[-0.035em] text-[#0A0A0A] leading-[1.05]">
+                {isTr ? 'Merak ettikleriniz.' : 'Common questions.'}
               </h2>
             </div>
-            <div className="space-y-6">
+            <div className="divide-y divide-[#EDEDED] border-y border-[#EDEDED]">
               {faqs.map((faq, i) => (
-                <div key={i} className="bg-white border border-[#0A0A0A] rounded-[24px] sm:rounded-[32px] p-7 sm:p-10 shadow-md transition-all hover:shadow-md hover:-translate-y-1">
-                  <h3 className="text-[16px] sm:text-[18px] font-extrabold text-[#0A0A0A] mb-4 tracking-tight leading-snug">{faq.q}</h3>
-                  <p className="text-[14px] sm:text-[15px] text-[#1A1A1A] leading-relaxed font-bold">{faq.a}</p>
+                <div key={i} className="py-6">
+                  <h3 className="text-[17px] font-medium text-[#0A0A0A] leading-snug">{faq.q}</h3>
+                  <p className="mt-3 text-[15px] text-[#525252] leading-[1.65]">{faq.a}</p>
                 </div>
               ))}
             </div>
@@ -318,30 +375,35 @@ export default function SolutionPageLayout({
         </section>
       )}
 
-      {/* Related Solutions */}
+      {/* ─── Related Solutions ─── */}
       {relatedSolutions.length > 0 && (
-        <section className="py-16 sm:py-20 px-5 sm:px-8 bg-[#FFFFFF] border-t border-[#EDEDED]">
+        <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-16 sm:py-20">
           <div className="max-w-[1200px] mx-auto">
-            <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#C6F24E] mb-4 text-center">
-              {locale === 'tr' ? 'DİĞER SEKTÖRLER' : 'OTHER INDUSTRIES'}
-            </p>
-            <h2 className="text-[22px] sm:text-[28px] font-extrabold text-[#0A0A0A] tracking-tight text-center mb-10">
-              {locale === 'tr' ? 'Farklı sektörler için de çözümlerimiz var' : 'We have solutions for other industries too'}
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {relatedSolutions.map(sol => (
+            <div className="mb-10 text-center max-w-[640px] mx-auto">
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'Diğer sektörler' : 'Other industries'}
+              </span>
+              <h2 className="mt-4 text-[26px] sm:text-[32px] font-medium tracking-[-0.02em] leading-[1.1] text-[#0A0A0A]">
+                {isTr ? 'Farklı sektörler için de hazırız.' : 'We have solutions for other industries too.'}
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {relatedSolutions.map((sol) => (
                 <Link
                   key={sol.slug}
                   href={`${base}/solutions/${sol.slug}`}
-                  className="group flex items-center gap-3 bg-white border border-[#0A0A0A] rounded-2xl p-4 sm:p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all"
+                  className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
                 >
-                  <div className="flex-shrink-0 w-9 h-9 bg-[#C6F24E]/10 border border-[#C6F24E]/30 rounded-xl flex items-center justify-center text-[#0A0A0A] group-hover:bg-[#C6F24E]/20 transition-colors">
+                  <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                     {sol.icon}
-                  </div>
-                  <span className="text-[13px] sm:text-[14px] font-bold text-[#0A0A0A] leading-tight">
-                    {locale === 'tr' ? sol.tr : sol.en}
                   </span>
-                  <ChevronRight size={14} className="ml-auto text-[#6B7280] flex-shrink-0 group-hover:text-[#C6F24E] transition-colors" />
+                  <span className="text-[13px] sm:text-[14px] font-medium text-[#0A0A0A] leading-tight">
+                    {isTr ? sol.tr : sol.en}
+                  </span>
+                  <ChevronRight
+                    size={14}
+                    className="ml-auto text-[#A3A3A3] shrink-0 group-hover:text-[#0A0A0A] transition-colors"
+                  />
                 </Link>
               ))}
             </div>
@@ -349,23 +411,29 @@ export default function SolutionPageLayout({
         </section>
       )}
 
-      {/* CTA */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#0A0A0A] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-        <div className="relative z-10 max-w-[800px] mx-auto text-center space-y-8">
-          <h2 className="text-[28px] sm:text-[48px] font-extrabold text-white tracking-tight leading-tight">
-            {locale === 'tr' ? 'İşletmenizi Bugün Büyütün' : 'Grow Your Business Today'}
+      {/* ─── CTA ─── */}
+      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
+        <div className="max-w-[900px] mx-auto text-center">
+          <h2 className="text-[32px] sm:text-[52px] font-medium leading-[1.04] tracking-[-0.035em] text-white">
+            {isTr ? 'İşletmenizi bugün büyütün.' : 'Grow your business today.'}
           </h2>
-          <p className="text-[15px] sm:text-[18px] text-white/80 font-medium">
-            {locale === 'tr' ? '14 gün ücretsiz dene. Kredi kartı gerekmez.' : '14-day free trial. No credit card required.'}
+          <p className="mt-5 text-[16px] sm:text-[17px] text-white/70 max-w-[520px] mx-auto">
+            {isTr ? '14 gün ücretsiz. Kredi kartı gerekmez.' : '14-day free trial. No card required.'}
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-            <CtaButton variant="primary" href={`${base}/auth/register`} className="w-full sm:w-auto">
-              {locale === 'tr' ? 'Hemen Başlayın' : 'Get Started Now'} <ArrowRight size={18} className="ml-2" />
-            </CtaButton>
-            <CtaButton variant="secondary" href={`${base}/pricing`} className="w-full sm:w-auto">
-              {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
-            </CtaButton>
+          <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+            <Link
+              href={`${base}/auth/register`}
+              className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors"
+            >
+              {isTr ? 'Hemen başla' : 'Get started'}
+              <span aria-hidden>→</span>
+            </Link>
+            <Link
+              href={`${base}/pricing`}
+              className="inline-flex items-center justify-center gap-2 border border-white/20 text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-white/10 transition-colors"
+            >
+              {isTr ? 'Planları incele' : 'View plans'}
+            </Link>
           </div>
         </div>
       </section>

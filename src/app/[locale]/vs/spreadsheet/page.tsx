@@ -32,38 +32,38 @@ export default async function VsSpreadsheetPage({
   const rows = [
     {
       label: t.compare_f1, // Dinamik QR
-      buaze: <Check className="mx-auto text-green-600" />,
-      competitor: <X className="mx-auto text-red-400" />,
+      buaze: <span className="inline-flex w-7 h-7 rounded-full bg-[#C6F24E] items-center justify-center mx-auto"><Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} /></span>,
+      competitor: <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF2F2] items-center justify-center mx-auto"><X size={14} className="text-[#B91C1C]" strokeWidth={2.5} /></span>,
     },
     {
       label: t.compare_f2, // Negatif Yorum Filtreleme
-      buaze: <Check className="mx-auto text-green-600" />,
-      competitor: <X className="mx-auto text-red-400" />,
+      buaze: <span className="inline-flex w-7 h-7 rounded-full bg-[#C6F24E] items-center justify-center mx-auto"><Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} /></span>,
+      competitor: <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF2F2] items-center justify-center mx-auto"><X size={14} className="text-[#B91C1C]" strokeWidth={2.5} /></span>,
     },
     {
       label: t.compare_f3, // Anlık SMS/Email Bildirimi
-      buaze: <Check className="mx-auto text-green-600" />,
-      competitor: <Minus className="mx-auto text-[#C9D0DB]" />,
+      buaze: <span className="inline-flex w-7 h-7 rounded-full bg-[#C6F24E] items-center justify-center mx-auto"><Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} /></span>,
+      competitor: <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF3C7] items-center justify-center mx-auto"><Minus size={14} className="text-[#92400E]" strokeWidth={2.5} /></span>,
     },
     {
         label: t.compare_f7, // Gelişmiş Analitik Panel
-        buaze: <Check className="mx-auto text-green-600" />,
-        competitor: <div className="text-[12px]">{locale === 'tr' ? 'Manuel Grafik' : 'Manual Charts'}</div>,
+        buaze: <span className="inline-flex w-7 h-7 rounded-full bg-[#C6F24E] items-center justify-center mx-auto"><Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} /></span>,
+        competitor: <span className="text-[13px] text-[#525252]">{locale === 'tr' ? 'Manuel grafik' : 'Manual charts'}</span>,
       },
     {
       label: t.compare_f4, // Müşteri Veri Tabanı (CRM)
-      buaze: <Check className="mx-auto text-green-600" />,
-      competitor: <div className="text-[12px]">{locale === 'tr' ? 'Zor Yönetilen Satırlar' : 'Hard to Manage Rows'}</div>,
+      buaze: <span className="inline-flex w-7 h-7 rounded-full bg-[#C6F24E] items-center justify-center mx-auto"><Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} /></span>,
+      competitor: <span className="text-[13px] text-[#525252]">{locale === 'tr' ? 'Zor yönetilen satırlar' : 'Hard to manage rows'}</span>,
     },
     {
       label: t.compare_f5, // Otomatik Google Yönlendirme
-      buaze: <Check className="mx-auto text-green-600" />,
-      competitor: <X className="mx-auto text-red-400" />,
+      buaze: <span className="inline-flex w-7 h-7 rounded-full bg-[#C6F24E] items-center justify-center mx-auto"><Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} /></span>,
+      competitor: <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF2F2] items-center justify-center mx-auto"><X size={14} className="text-[#B91C1C]" strokeWidth={2.5} /></span>,
     },
     {
         label: locale === 'tr' ? 'Veri Kayıp Riski' : 'Data Loss Risk',
-        buaze: <div className="text-[12px]">{locale === 'tr' ? 'Sıfır (%100 Cloud)' : 'Zero (100% Cloud)'}</div>,
-        competitor: <div className="text-[12px] font-black text-red-500">{locale === 'tr' ? 'YÜKSEK' : 'HIGH'}</div>,
+        buaze: <span className="pulse-eyebrow text-[#A8D62E]">{locale === 'tr' ? 'SIFIR' : 'ZERO'}</span>,
+        competitor: <span className="pulse-eyebrow text-[#B91C1C]">{locale === 'tr' ? 'YÜKSEK' : 'HIGH'}</span>,
       },
   ];
 
