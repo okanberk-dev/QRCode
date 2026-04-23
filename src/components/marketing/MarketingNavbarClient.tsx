@@ -1,8 +1,9 @@
 'use client';
 
-import { 
-  Menu, X, Globe, ChevronDown, Utensils, BedDouble, HeartPulse, BookOpen, 
-  Stethoscope, Sparkles, PawPrint, Home, Car, Scissors, Dumbbell, Scale, GraduationCap, Bed, Layers 
+import {
+  Menu, X, Globe, ChevronDown, Utensils, BedDouble, HeartPulse, BookOpen,
+  Stethoscope, Sparkles, PawPrint, Home, Car, Scissors, Dumbbell, Scale, GraduationCap, Bed, Layers,
+  Zap, TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useTransition, useRef, useEffect } from 'react';
@@ -270,7 +271,18 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             >
               <div className="p-2 space-y-1">
                 <Link
-                  href={`${base}/#how-it-works`}
+                  href={`${base}/features`}
+                  onClick={() => setLearnOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <Zap size={15} />
+                  </div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Özellikler' : 'Features'}</div>
+                </Link>
+
+                <Link
+                  href={`${base}/how-it-works`}
                   onClick={() => setLearnOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
                 >
@@ -278,6 +290,17 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
                     <Utensils size={15} />
                   </div>
                   <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_features}</div>
+                </Link>
+
+                <Link
+                  href={`${base}/customer-stories`}
+                  onClick={() => setLearnOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
+                >
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
+                    <TrendingUp size={15} />
+                  </div>
+                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Başarı Hikayeleri' : 'Customer Stories'}</div>
                 </Link>
 
                 <Link

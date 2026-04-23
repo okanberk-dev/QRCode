@@ -135,38 +135,38 @@ export default async function LandingPage({
   );
 
   const heroSub = isTr
-    ? 'Her yorum bir işarettir. Buaze, QR ile topladığınız sinyalleri tek panelde toplar, ekibinize yönlendirir ve itibarınızı büyütür.'
-    : 'Every review is a signal. Buaze collects the pulses you capture via QR into one dashboard, routes them to your team, and grows your reputation.';
+    ? 'QR ile gerçek müşterilerden geri bildirim toplayın, yorumları tek panelden yönetin, Google politikalarına uyumlu şekilde itibarınızı büyütün.'
+    : 'Collect feedback from real customers via QR, manage every review from one panel, grow your reputation in a way that stays compliant with Google policies.';
 
   const trustTicks = isTr
-    ? ['2 dakikada kurulum', 'Google politikalarına uyumlu', 'Ekip atama & SLA']
-    : ['2-minute setup', 'Google policy compliant', 'Team assignment & SLA'];
+    ? ['Kredi kartı gerekmez', '5 dakikada kurulum', 'Türkçe destek']
+    : ['No credit card required', '5-minute setup', 'Turkish support'];
 
-  const brandWordmarks = ['NORTHWIND', 'HELIOS', 'ATLASBAY', 'MERIDIAN', 'KADIKÖY', 'LUMEN'];
+  const brandWordmarks = ['ARK BISTRO', 'HOTEL NORA', 'DERMA+', 'LAW&CO', 'KAHVE DUKKAN', 'SPA REN'];
 
   const steps = [
     {
       num: '01',
-      title: isTr ? 'QR ile yakala' : 'Capture via QR',
+      title: isTr ? 'Topla' : 'Collect',
       body: isTr
-        ? 'Masaya yapıştır. Müşteri okuttuğunda konum, masa ve kanal otomatik etiketlenir.'
-        : 'Stick it on the table. When scanned, location, table and channel are auto-tagged.',
+        ? 'Masanızdaki QR kodu tarayan müşteri, 20 saniyede yorum bırakır. Zahmet sıfır.'
+        : 'A customer scans the QR on your table and leaves a review in 20 seconds. Zero friction.',
       Ill: IllusCompass,
     },
     {
       num: '02',
-      title: isTr ? 'Tek panelde topla' : 'Collect in one panel',
+      title: isTr ? 'Yönet' : 'Manage',
       body: isTr
-        ? 'Google, Yemeksepeti, Getir ve Trendyol GO yorumları tek akışta birleşir.'
-        : 'Google, Yemeksepeti, Getir and Trendyol GO reviews merge into a single feed.',
+        ? 'Tüm yorumları tek panelden yanıtla. Olumsuzu ekibine ata, olumluyu Google\'da yayına taşı.'
+        : 'Reply to every review from one panel. Route negatives to your team, push positives to Google.',
       Ill: IllusInbox,
     },
     {
       num: '03',
-      title: isTr ? 'Büyümeyi ölç' : 'Measure growth',
+      title: isTr ? 'Büyü' : 'Grow',
       body: isTr
-        ? 'Puan, kanal ve şube bazında trend. Hangi aksiyon işe yaradı, net gör.'
-        : 'Trend by rating, channel and branch. See exactly which action moved the needle.',
+        ? 'Canlı analitik ile puanını izle, Google sıralamanı yükselt, organik büyümeyi yakala.'
+        : 'Track your score with live analytics, lift your Google ranking, capture organic growth.',
       Ill: IllusChart,
     },
   ];
@@ -174,13 +174,13 @@ export default async function LandingPage({
   const darkFeatures = isTr
     ? [
         { t: 'Otomatik etiketleme', d: 'Anahtar kelime ve duyguya göre.' },
-        { t: 'Duygu analizi', d: 'AI ile pozitif / nötr / negatif.' },
+        { t: 'Duygu analizi (AI)', d: 'AI ile pozitif / nötr / negatif.' },
         { t: 'Takım atama', d: 'Yorum doğru kişiye düşer.' },
         { t: 'SLA takibi', d: 'Yanıt süresi hedefleri tutulsun.' },
       ]
     : [
         { t: 'Auto-tagging', d: 'By keyword and sentiment.' },
-        { t: 'Sentiment analysis', d: 'AI: positive / neutral / negative.' },
+        { t: 'Sentiment analysis (AI)', d: 'AI: positive / neutral / negative.' },
         { t: 'Team assignment', d: 'Reviews land on the right person.' },
         { t: 'SLA tracking', d: 'Hit your response-time targets.' },
       ];
@@ -200,48 +200,48 @@ export default async function LandingPage({
 
   const policyBlocks = isTr
     ? [
-        { n: '01', t: 'Gating yok', d: 'Düşük puanları gizlemeyiz. Google politikasına uygun.' },
-        { n: '02', t: 'Doğal davet', d: 'Müşteri QR\'ı kendisi okutur. Organik deneyim.' },
-        { n: '03', t: 'Şeffaf akış', d: 'Tüm yorumlar panelinizde görünür, hiçbiri kaybolmaz.' },
+        { n: '01', t: 'Tercih gönderimi', d: 'QR müşteriyi önce gerçek geri bildirime yönlendirir.' },
+        { n: '02', t: 'Şeffaf akış', d: 'Negatif yorumları süzmez; içeride çözüme aktarır.' },
+        { n: '03', t: 'Kural motoru', d: 'Her kampanya Google politikasına göre otomatik denetlenir.' },
       ]
     : [
-        { n: '01', t: 'No gating', d: 'We never hide low ratings. Aligned with Google policy.' },
-        { n: '02', t: 'Natural prompt', d: 'Customers scan the QR themselves. Organic journey.' },
-        { n: '03', t: 'Transparent flow', d: 'Every review appears in your panel. Nothing is lost.' },
+        { n: '01', t: 'Preference-first', d: 'The QR routes the customer to real feedback first.' },
+        { n: '02', t: 'Transparent flow', d: 'Negative reviews aren\'t filtered; they reach your team for resolution.' },
+        { n: '03', t: 'Rule engine', d: 'Every campaign is auto-audited against Google policy.' },
       ];
 
   const sectors = isTr
     ? [
-        { t: 'Restoran & Kafe', c: '1.200+' },
-        { t: 'Otel', c: '340+' },
-        { t: 'Klinik', c: '280+' },
-        { t: 'Hukuk', c: '120+' },
-        { t: 'Güzellik', c: '460+' },
-        { t: 'Perakende', c: '220+' },
-        { t: 'Spor', c: '180+' },
-        { t: 'Eğitim', c: '90+' },
+        { t: 'Restoran & Kafe', c: '1.200+', s: 'mekan' },
+        { t: 'Otel', c: '340+', s: 'konaklama' },
+        { t: 'Klinik & Muayenehane', c: '520+', s: 'sağlık' },
+        { t: 'Hukuk Ofisi', c: '180+', s: 'ofis' },
+        { t: 'Güzellik & Spa', c: '410+', s: 'salon' },
+        { t: 'Perakende', c: '260+', s: 'mağaza' },
+        { t: 'Spor & Fitness', c: '140+', s: 'tesis' },
+        { t: 'Eğitim', c: '90+', s: 'kurum' },
       ]
     : [
-        { t: 'Restaurant & Café', c: '1,200+' },
-        { t: 'Hotel', c: '340+' },
-        { t: 'Clinic', c: '280+' },
-        { t: 'Legal', c: '120+' },
-        { t: 'Beauty', c: '460+' },
-        { t: 'Retail', c: '220+' },
-        { t: 'Sports', c: '180+' },
-        { t: 'Education', c: '90+' },
+        { t: 'Restaurant & Café', c: '1,200+', s: 'venues' },
+        { t: 'Hotel', c: '340+', s: 'properties' },
+        { t: 'Clinic & Practice', c: '520+', s: 'providers' },
+        { t: 'Legal', c: '180+', s: 'offices' },
+        { t: 'Beauty & Spa', c: '410+', s: 'salons' },
+        { t: 'Retail', c: '260+', s: 'stores' },
+        { t: 'Sports & Fitness', c: '140+', s: 'facilities' },
+        { t: 'Education', c: '90+', s: 'institutions' },
       ];
 
   const caseStats = isTr
     ? [
-        { v: '+184%', l: 'Organik yorum' },
-        { v: '4.8', l: 'Google puanı' },
-        { v: '90g', l: 'Süre' },
+        { v: '4.2 → 4.8', l: 'Google ort.' },
+        { v: '+184%', l: 'Yorum/ay' },
+        { v: '12 dk', l: 'Yanıt' },
       ]
     : [
-        { v: '+184%', l: 'Organic reviews' },
-        { v: '4.8', l: 'Google rating' },
-        { v: '90d', l: 'Duration' },
+        { v: '4.2 → 4.8', l: 'Google avg.' },
+        { v: '+184%', l: 'Reviews/mo' },
+        { v: '12 min', l: 'Reply' },
       ];
 
   return (
@@ -276,7 +276,7 @@ export default async function LandingPage({
             <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] rounded-full pl-2 pr-4 py-1.5">
               <span className="w-2 h-2 rounded-full bg-[#16A34A] pulse-heartbeat" />
               <span className="pulse-eyebrow text-[#0A0A0A]">
-                {isTr ? 'Canlı · 2.847 yorum bugün' : 'Live · 2,847 reviews today'}
+                {isTr ? '2.400+ işletme kullanıyor' : '2,400+ businesses using it'}
               </span>
             </div>
 
@@ -293,14 +293,15 @@ export default async function LandingPage({
                 href={`${base}/auth/register`}
                 className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
               >
-                {t.hero_cta || (isTr ? 'Ücretsiz başla' : 'Start free')}
+                {isTr ? '14 gün ücretsiz başla' : 'Start 14-day free trial'}
                 <span aria-hidden>→</span>
               </Link>
               <Link
                 href={`${base}/how-it-works`}
                 className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
               >
-                {isTr ? 'Demoyu izle' : 'Watch demo'}
+                <span aria-hidden>▶</span>
+                {isTr ? 'Demo izle (2 dk)' : 'Watch demo (2 min)'}
               </Link>
             </div>
 
@@ -470,8 +471,8 @@ export default async function LandingPage({
             </h2>
             <p className="mt-5 text-[16px] text-[#A3A3A3] leading-[1.6] max-w-[480px]">
               {isTr
-                ? 'Kanal ne olursa olsun — Google, Yemeksepeti, Getir, Trendyol — tüm geri bildirimler aynı iş akışına düşer. Ekibiniz tek bir yerden yanıtlar.'
-                : 'Whatever the channel — Google, Yemeksepeti, Getir, Trendyol — feedback lands in one workflow. Your team replies from one place.'}
+                ? 'Google, Tripadvisor, Yemeksepeti, Getir — tüm platformlardaki yorumlar Buaze\'de buluşur. Olumsuzu önce sen gör, kriz büyümeden çöz.'
+                : 'Google, Tripadvisor, Yemeksepeti, Getir — reviews from every platform meet inside Buaze. Spot the negative first and resolve it before it grows.'}
             </p>
 
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -550,7 +551,7 @@ export default async function LandingPage({
                 </div>
                 <div className="text-[15px] font-medium text-[#0A0A0A] leading-tight">{s.t}</div>
                 <div className="pulse-eyebrow text-[#737373] mt-auto">
-                  {s.c} {isTr ? 'mekan' : 'venues'}
+                  {s.c} {s.s}
                 </div>
               </div>
             ))}
@@ -701,18 +702,18 @@ export default async function LandingPage({
             </h2>
             <p className="mt-6 text-[17px] text-[#525252] leading-[1.6] max-w-[520px]">
               {isTr
-                ? '"QR\'ı masaya yapıştırdığımız ilk haftada fark yarattı. Müşteriler kendiliğinden yazıyor, ekip cevap yetiştiriyor. Google puanımız 4.2\'den 4.8\'e çıktı."'
-                : '"The first week we stuck the QR on the table, it made a difference. Customers write spontaneously and the team keeps up with replies. Our Google rating went from 4.2 to 4.8."'}
+                ? '"Masalara QR koyduk. İlk ay içinde Google ortalamamız 4.2\'den 4.8\'e çıktı. Artık müşteri yorumunu bekleyecek vakit harcamıyoruz — sistem kendi kendine çalışıyor."'
+                : '"We put QRs on the tables. Within the first month our Google average went from 4.2 to 4.8. We don\'t spend time waiting for reviews anymore — the system runs itself."'}
             </p>
 
             <div className="mt-7 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#0A0A0A] text-[#C6F24E] flex items-center justify-center text-[14px] font-semibold">
-                E
+                EK
               </div>
               <div>
-                <div className="text-[14px] font-medium text-[#0A0A0A]">Elif Demir</div>
+                <div className="text-[14px] font-medium text-[#0A0A0A]">Emre Kaya</div>
                 <div className="text-[12px] text-[#737373]">
-                  {isTr ? 'İşletme sahibi' : 'Owner'}
+                  {isTr ? 'Kadıköy Bistro · Kurucu' : 'Kadıköy Bistro · Founder'}
                 </div>
               </div>
             </div>
@@ -741,22 +742,22 @@ export default async function LandingPage({
           </h2>
           <p className="mt-5 text-[16px] sm:text-[17px] text-[#1A1A1A] max-w-[560px] mx-auto">
             {isTr
-              ? 'Kurulum 2 dakika. Kart bilgisi istemiyoruz. İlk 14 gün ücretsiz.'
-              : '2-minute setup. No card required. First 14 days free.'}
+              ? '14 gün ücretsiz deneme · Kredi kartı gerekmez · İstediğinde vazgeç'
+              : '14-day free trial · No credit card required · Cancel anytime'}
           </p>
           <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
             <Link
               href={`${base}/auth/register`}
               className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
             >
-              {isTr ? 'Ücretsiz dene' : 'Try it free'}
+              {isTr ? 'Ücretsiz başla' : 'Start free'}
               <span aria-hidden>→</span>
             </Link>
             <Link
               href={`${base}/pricing`}
               className="inline-flex items-center justify-center gap-2 border-2 border-[#0A0A0A] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
             >
-              {isTr ? 'Planları gör' : 'See plans'}
+              {isTr ? 'Fiyatlara bak' : 'See pricing'}
             </Link>
           </div>
         </div>

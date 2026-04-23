@@ -27,7 +27,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
   return (
     <footer className="bg-[#0A0A0A] pt-16 pb-8 px-5 sm:px-8 text-white border-t border-white/5">
       <div className="max-w-[1200px] mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 mb-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10 mb-14">
           {/* Col 1: Brand */}
           <div className="sm:col-span-2 md:col-span-1 min-w-0">
             <Link href={base} className="flex items-center gap-2 mb-5 group inline-flex">
@@ -77,13 +77,30 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
               {locale === 'tr' ? 'Ürün' : 'Product'}
             </h4>
             <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
+              <li><Link href={`${base}/features`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Özellikler' : 'Features'}</Link></li>
               <li><Link href={`${base}/solutions`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Çözümler' : 'Solutions'}</Link></li>
+              <li><Link href={`${base}/solutions/delivery`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Paket Servis' : 'Delivery'}</Link></li>
               <li><Link href={`${base}/solutions/qr-generator`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}</Link></li>
+              <li><Link href={`${base}/integrations`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Entegrasyonlar' : 'Integrations'}</Link></li>
               <li><Link href={`${base}/how-it-works`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}</Link></li>
               <li><Link href={`${base}/pricing`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Fiyatlandırma' : 'Pricing'}</Link></li>
               <li><Link href={`${base}/compare`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Karşılaştır' : 'Compare'}</Link></li>
-              <li><Link href={`${base}/faq`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Sıkça Sorulan Sorular' : 'FAQ'}</Link></li>
+            </ul>
+          </div>
+
+          {/* Col 3: Discover */}
+          <div>
+            <h4 className="pulse-eyebrow text-white/60 mb-6">
+              {locale === 'tr' ? 'Keşfet' : 'Discover'}
+            </h4>
+            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
+              <li><Link href={`${base}/customer-stories`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Başarı Hikayeleri' : 'Customer Stories'}</Link></li>
+              <li><Link href={`${base}/roi`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'ROI Hesaplayıcı' : 'ROI Calculator'}</Link></li>
+              <li><Link href={`${base}/blog`} className="hover:text-[#C6F24E] transition-colors">Blog</Link></li>
+              <li><Link href={`${base}/help`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Yardım Merkezi' : 'Help Center'}</Link></li>
+              <li><Link href={`${base}/faq`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'SSS' : 'FAQ'}</Link></li>
               <li><Link href={`${base}/about`} className="hover:text-[#C6F24E] transition-colors">{t.footer_about}</Link></li>
+              <li><Link href={`${base}/careers`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Kariyer' : 'Careers'}</Link></li>
               <li><Link href={`${base}/contact`} className="hover:text-[#C6F24E] transition-colors">{t.footer_contact}</Link></li>
             </ul>
           </div>
