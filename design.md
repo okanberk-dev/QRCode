@@ -400,7 +400,7 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 | Automation rules | AdminSettings Automation | mock `/api/automations` (501) | Faz 7 | `AutomationRule` modeli (rating_lte/keyword/platform trigger → assign/email/webhook) |
 | Notification preferences persist | AdminNotifications | `GET /api/notifications` döner, `PUT` 501 | Faz 7 | `NotificationPreference` modeli |
 | Onboarding progress persist | `site-onboarding-v2.jsx` | mock `/api/onboarding/state` + `/complete` (501) | Faz 2 | `OnboardingProgress` modeli (zaten scaffolding.ts'de) |
-| **Admin QR 4-step wizard** | `.design/site/site-admin.jsx` AdminQRBuilder | **Known-gap (Faz 8 audit)** — 910 satır flat form; wizard refactor ayrı PR gerektiriyor | Faz 6 ⚠️ | State machine (`currentStep` + 4-step kartlar) + form validation refactor; backend submit/persist akışı korunmalı |
+| ~~Admin QR 4-step wizard~~ | `.design/site/site-admin.jsx` AdminQRBuilder | **✅ Kapatıldı (Post-phase PR)** — görsel 4-step rail + 3 numaralı step kartı (Kampanya / Akış / Tasarım) eklendi; form state + submit akışı DOKUNULMADI | Faz 6 → Post-phase ✓ | Form validation progressive (step-by-step) geliştirme, backend submit'e dokunmadan ileride yapılabilir |
 | **Sektör sayfası bespoke content** | `.design/site/site-pages4.jsx` per-sektör | **Known-gap (Faz 8 audit)** — 6 sektör jenerik `SolutionPageLayout` boilerplate kullanıyor; yalnız `/solutions/restaurants` 1:1 | Faz 4 ⚠️ | `CaseStudy`/sektör CMS modeli (scaffolding.ts'de) bağlandığında DB'den beslenecek; el yazımı placeholder yerleştirmek yerine bekleme tercih edildi |
 
 ---
@@ -410,8 +410,28 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 **Bitti.** 9 draft PR (Faz 0–8 + hotfix #41) kullanıcı incelemesinde. Merge sırası: #39 → #40 → #41 → #42 → #43 → #44 → #45 → #46 → #47 → Faz 8 PR. PR'lar branch zinciri olduğundan önceki merge sonrası bir sonraki PR rebase/ready otomatik güncellenir.
 
 **Production öncesi yapılacaklar:**
-1. **Backend açıkları tablosu** — yukarıdaki 16 satır production'a çıkmadan bağlanmalı.
-2. **QR wizard refactor** — yukarıda known-gap, ayrı PR scoped.
+1. **Backend açıkları tablosu** — yukarıdaki satırlar production'a çıkmadan bağlanmalı.
+2. ~~QR wizard refactor~~ — ✅ Post-phase PR ile kapatıldı (visual step rail + 3 numaralı section kartı).
 3. **Sektör içerik CMS** — CaseStudy + sektör metni Prisma modelleri + admin editör UI.
 4. **E2E smoke** — login → dashboard → QR üret → feedback bırak → OpenAI yanıt taslağı döngüsü; Vercel deploy'unda test edilir.
 5. **Mobile QA** — 375/768/1280 breakpoint'lerde her sayfa gezilmeli (dev server 200/307 doğruladı ama görsel QA cihazda yapılmalı).
+
+---
+
+### Post-phase — 2026-04-23 — QR Wizard Visual Refactor
+
+**Kapsam:** Faz 8 audit'inde known-gap olarak bırakılan `/admin/qr` "4-step wizard" boşluğu backend-safe yöntemle kapatıldı.
+
+**Strateji:** State-machine + submit akışı refactor'u yerine **pure visual** split. 910 satırlık form'un state/event handler'larına sıfır dokunuş, yalnız JSX wrapping:
+
+- Mevcut tek "Ayarlar" kartı üçe bölündü:
+  - **Step 1 — Kampanya Detayları**: İşletme + Masa/Konum + Platform seçimi
+  - **Step 2 — Akış** (yeni görsel kart): 4 adımlı müşteri journey mini-kartları (QR tara → Yıldız → Not → Yönlendir) + Google uyumu hint'i
+  - **Step 3 — Tasarım**: Çözünürlük + Renk + Generate button + Batch mode — hepsi mevcutla birebir
+- Üstte yatay 4-step rail (01 Kampanya · 02 Akış · 03 Tasarım · 04 Yayına al) — numeric lime badge + eyebrow labels + connecting lines
+
+**Değişen dosya:** `src/app/admin/qr/page.tsx` (≈130 satır eklendi — step rail + 2 section header + yeni Akış kartı + 2 yeni card wrapper divi; orijinal form state + submit + QR generation + batch logic **aynen** kalır).
+
+**Backend etkisi:** Yok. `selectedId` / `tableNumber` / `selectedPlatform` / `size` / `useBrandColor` / `customDark` / `activeDark` state'leri + `/api/restaurants/[id]/qr` + `/api/admin/qr-history` + batch loop — hiçbiri değişmedi.
+
+**Verification:** `npx tsc --noEmit` temiz. Sayfa render edildiğinde 3 numaralı lime badge'li section + üst progress rail görünür, aşağıdaki form davranışı (alan doldurma → canlı preview → "Kopyala/İndir/Toplu Oluştur") aynen çalışır.
