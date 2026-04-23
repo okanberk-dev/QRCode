@@ -164,7 +164,7 @@ export default function RestaurantDetailPage() {
           <ArrowLeft size={20} className="text-[#0A0A0A]" />
         </Link>
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-extrabold text-[#0A0A0A] tracking-tight">Restoran Düzenle</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#0A0A0A] tracking-tight">Restoran Düzenle</h1>
           <p className="text-[#6B7280] text-sm font-medium truncate">{formData.name}</p>
         </div>
       </div>
@@ -177,7 +177,7 @@ export default function RestaurantDetailPage() {
       )}
 
       {/* Menu management — outside the main form so its toggles don't submit the whole thing */}
-      <div className="mb-6 bg-white rounded-2xl border border-[#EDEDED] shadow-sm p-4 sm:p-6">
+      <div className="mb-6 bg-white rounded-2xl border border-[#EDEDED] p-4 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#C6F24E]/10 text-[#0A0A0A]">
@@ -192,7 +192,7 @@ export default function RestaurantDetailPage() {
           </div>
           <Link
             href={`/tr/dashboard/restaurants/${id}/menu`}
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#0A0A0A] px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95"
+            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#0A0A0A] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#1A1A1A] active:scale-95"
           >
             <UtensilsCrossed size={14} strokeWidth={2} />
             Menüyü Yönet
@@ -209,8 +209,8 @@ export default function RestaurantDetailPage() {
             }`}
           >
             <div>
-              <p className="text-[11px] font-black uppercase tracking-widest text-[#6B7280]">Menü Yetkisi</p>
-              <p className="mt-0.5 text-sm font-extrabold text-[#0A0A0A]">
+              <p className="pulse-eyebrow text-[#737373]">Menü Yetkisi</p>
+              <p className="mt-0.5 text-sm font-semibold text-[#0A0A0A]">
                 {menuSaving === 'enabled' ? 'Kaydediliyor…' : menuEnabled ? 'Açık' : 'Kapalı'}
               </p>
             </div>
@@ -229,8 +229,8 @@ export default function RestaurantDetailPage() {
             title={!menuEnabled ? 'Önce menü yetkisini açın' : undefined}
           >
             <div>
-              <p className="text-[11px] font-black uppercase tracking-widest text-[#6B7280]">Yayın Durumu</p>
-              <p className="mt-0.5 text-sm font-extrabold text-[#0A0A0A]">
+              <p className="pulse-eyebrow text-[#737373]">Yayın Durumu</p>
+              <p className="mt-0.5 text-sm font-semibold text-[#0A0A0A]">
                 {menuSaving === 'published' ? 'Kaydediliyor…' : menuPublished ? 'Yayında' : 'Taslak'}
               </p>
             </div>
@@ -246,7 +246,7 @@ export default function RestaurantDetailPage() {
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-white rounded-2xl border border-[#EDEDED] shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-2xl border border-[#EDEDED] p-4 sm:p-6">
           <h3 className="font-semibold text-[#0A0A0A] mb-4 flex items-center gap-2">
             <div className="w-1.5 h-5 rounded-full" style={{ backgroundColor: formData.primaryColor }} />
             Temel Bilgiler
@@ -260,7 +260,7 @@ export default function RestaurantDetailPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm shadow-sm transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm transition-all"
                 />
               </div>
               <div>
@@ -272,7 +272,7 @@ export default function RestaurantDetailPage() {
                     required
                     value={formData.slug}
                     onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm font-mono shadow-sm transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm font-mono transition-all"
                   />
                 </div>
               </div>
@@ -284,7 +284,7 @@ export default function RestaurantDetailPage() {
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm shadow-sm transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm transition-all"
                 >
                   <option>Restoran</option>
                   <option>Hamburger Restoranı</option>
@@ -326,7 +326,7 @@ export default function RestaurantDetailPage() {
         </div>
 
         {/* Contact Info */}
-        <div className="bg-white rounded-2xl border border-[#EDEDED] shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-2xl border border-[#EDEDED] p-4 sm:p-6">
           <h3 className="font-semibold text-[#0A0A0A] mb-4">İletişim Bilgileri</h3>
           <div className="space-y-4">
             <div>
@@ -336,7 +336,7 @@ export default function RestaurantDetailPage() {
                 value={formData.address}
                 onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                 placeholder="Mahall Ankara, Çankaya/Ankara"
-                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm transition-all"
               />
             </div>
             <div>
@@ -345,14 +345,14 @@ export default function RestaurantDetailPage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm transition-all"
               />
             </div>
           </div>
         </div>
 
         {/* Notification & Google */}
-        <div className="bg-white rounded-2xl border border-[#EDEDED] shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-2xl border border-[#EDEDED] p-4 sm:p-6">
           <h3 className="font-semibold text-[#0A0A0A] mb-4 flex items-center gap-2">
             <Mail size={16} className="text-[#0A0A0A]" />
             Bildirim & Google Ayarları
@@ -365,7 +365,7 @@ export default function RestaurantDetailPage() {
                 value={formData.notificationEmail}
                 onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
                 placeholder="restoran@email.com"
-                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm transition-all"
               />
               <p className="text-xs text-[#6B7280] mt-1">1-2-3 yıldız puanlarında bu e-posta adresine bildirim gönderilir.</p>
             </div>
@@ -379,7 +379,7 @@ export default function RestaurantDetailPage() {
                 value={formData.googlePlaceId}
                 onChange={(e) => setFormData(prev => ({ ...prev, googlePlaceId: e.target.value }))}
                 placeholder="ChIJ... veya https://maps.app.goo.gl/..."
-                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm font-mono shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#0A0A0A] outline-none text-sm font-mono transition-all"
               />
               <p className="text-xs text-[#6B7280] mt-1">Mekan kimliğini ya da Google Haritalar Yorum linkini direkt ekleyebilirsiniz. Olumlu geri bildirimler buraya yönlendirilecek.</p>
             </div>
@@ -394,7 +394,7 @@ export default function RestaurantDetailPage() {
                 value={formData.getirYemekUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, getirYemekUrl: e.target.value }))}
                 placeholder="https://getir.com/yemek/..."
-                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#5D3EBC] focus:ring-2 focus:ring-[#5D3EBC] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#5D3EBC] focus:ring-2 focus:ring-[#5D3EBC] outline-none text-sm transition-all"
               />
             </div>
 
@@ -408,7 +408,7 @@ export default function RestaurantDetailPage() {
                 value={formData.yemekSepetiUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, yemekSepetiUrl: e.target.value }))}
                 placeholder="https://www.yemeksepeti.com/..."
-                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#FA0050] focus:ring-2 focus:ring-[#FA0050] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#FA0050] focus:ring-2 focus:ring-[#FA0050] outline-none text-sm transition-all"
               />
             </div>
 
@@ -422,7 +422,7 @@ export default function RestaurantDetailPage() {
                 value={formData.trendyolYemekUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, trendyolYemekUrl: e.target.value }))}
                 placeholder="https://www.trendyol.com/..."
-                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#F27A1A] focus:ring-2 focus:ring-[#F27A1A] outline-none text-sm shadow-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[#EDEDED] focus:border-[#F27A1A] focus:ring-2 focus:ring-[#F27A1A] outline-none text-sm transition-all"
               />
             </div>
           </div>
@@ -452,7 +452,7 @@ export default function RestaurantDetailPage() {
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-2 bg-[#0A0A0A] hover:bg-[#1f2937] text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50 shadow-md hover:shadow-lg"
+              className="flex items-center gap-2 bg-[#0A0A0A] hover:bg-[#1f2937] text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50 hover:shadow-lg"
             >
               {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
               Kaydet

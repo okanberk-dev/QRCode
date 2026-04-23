@@ -167,10 +167,10 @@ export default function AdminCustomersPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-8">
       {/* Header */}
-      <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-7">
+      <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl">
+            <h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl">
               <Users size={22} strokeWidth={2} />
               Müşteriler
             </h1>
@@ -182,7 +182,7 @@ export default function AdminCustomersPage() {
             <button
               onClick={fetchData}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-50"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
               Yenile
@@ -190,7 +190,7 @@ export default function AdminCustomersPage() {
             <button
               onClick={downloadCsv}
               disabled={exporting || (data?.meta.total ?? 0) === 0}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
             >
               {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
               CSV İndir
@@ -212,9 +212,9 @@ export default function AdminCustomersPage() {
       </div>
 
       {/* Filters */}
-      <div className="rounded-[24px] border border-[#EDEDED] bg-white p-4 shadow-sm sm:p-5">
+      <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1 text-[11px] font-black uppercase tracking-widest">
+          <div className="inline-flex rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1 pulse-eyebrow">
             {([
               { key: '7d', label: 'Son 7 gün' },
               { key: '30d', label: 'Son 30 gün' },
@@ -257,7 +257,7 @@ export default function AdminCustomersPage() {
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
+              className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 pulse-eyebrow text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
             >
               <X size={12} strokeWidth={2} />
               Filtreleri temizle
@@ -265,7 +265,7 @@ export default function AdminCustomersPage() {
           )}
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-widest">
+        <div className="mt-3 flex flex-wrap gap-2 pulse-eyebrow">
           <FilterToggle active={hasEmail} onClick={() => setHasEmail((v) => !v)}>E-posta var</FilterToggle>
           <FilterToggle active={hasPhone} onClick={() => setHasPhone((v) => !v)}>Telefon var</FilterToggle>
           <FilterToggle active={hasComment} onClick={() => setHasComment((v) => !v)}>Yorum var</FilterToggle>
@@ -273,12 +273,12 @@ export default function AdminCustomersPage() {
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold uppercase tracking-widest text-red-700">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700">
           {error}
         </div>
       )}
 
-      <div className="overflow-hidden rounded-[24px] border border-[#EDEDED] bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-sm">
         {loading && !data ? (
           <div className="flex items-center justify-center p-16">
             <Loader2 size={22} className="animate-spin text-[#0A0A0A]" />
@@ -288,7 +288,7 @@ export default function AdminCustomersPage() {
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#FFFFFF] text-[#6B7280]">
               <Users size={22} strokeWidth={2} />
             </div>
-            <p className="text-sm font-extrabold text-[#0A0A0A]">Kriterlere uyan müşteri yok</p>
+            <p className="text-sm font-semibold text-[#0A0A0A]">Kriterlere uyan müşteri yok</p>
             <p className="mt-1 text-xs font-medium text-[#6B7280]">Filtreleri değiştirerek veya temizleyerek tekrar deneyin.</p>
           </div>
         ) : (
@@ -297,7 +297,7 @@ export default function AdminCustomersPage() {
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#FFFFFF]">
-                  <tr className="text-[10px] font-black uppercase tracking-widest text-[#6B7280]">
+                  <tr className="pulse-eyebrow text-[#737373]">
                     <th className="px-5 py-3">Müşteri</th>
                     <th className="px-5 py-3">İletişim</th>
                     <th className="px-5 py-3">Restoran</th>
@@ -309,7 +309,7 @@ export default function AdminCustomersPage() {
                 <tbody className="divide-y divide-[#EDEDED]">
                   {rows.map((r) => (
                     <tr key={r.key} className="hover:bg-[#FFFFFF]/50">
-                      <td className="px-5 py-3 font-extrabold text-[#0A0A0A]">{r.name || 'İsimsiz'}</td>
+                      <td className="px-5 py-3 font-semibold text-[#0A0A0A]">{r.name || 'İsimsiz'}</td>
                       <td className="px-5 py-3 text-[#1A1A1A]">
                         <div className="flex flex-col gap-0.5">
                           {r.email && (
@@ -339,7 +339,7 @@ export default function AdminCustomersPage() {
                             </span>
                           )}
                           {r.platform && (
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
+                            <span className="pulse-eyebrow text-[#6B7280]">
                               {PLATFORM_LABEL[r.platform] || r.platform}
                             </span>
                           )}
@@ -347,7 +347,7 @@ export default function AdminCustomersPage() {
                       </td>
                       <td className="px-5 py-3 text-right">
                         {r.lastRating !== null ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#C6F24E]/15 px-2 py-0.5 font-black text-[#0A0A0A]">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#C6F24E]/15 px-2 py-0.5 font-semibold text-[#0A0A0A]">
                             <Star size={11} fill="#C6F24E" strokeWidth={0} />
                             {r.lastRating}
                           </span>
@@ -369,14 +369,14 @@ export default function AdminCustomersPage() {
                 <div key={r.key} className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-extrabold text-[#0A0A0A]">{r.name || 'İsimsiz'}</p>
+                      <p className="truncate text-sm font-semibold text-[#0A0A0A]">{r.name || 'İsimsiz'}</p>
                       <p className="mt-0.5 inline-flex items-center gap-1 truncate text-[11px] font-bold text-[#1A1A1A]">
                         <Store size={11} strokeWidth={2} />
                         {r.restaurantName || '—'}
                       </p>
                     </div>
                     {r.lastRating !== null && (
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#C6F24E]/15 px-2 py-0.5 text-[11px] font-black text-[#0A0A0A]">
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#C6F24E]/15 px-2 py-0.5 text-[11px] font-semibold text-[#0A0A0A]">
                         <Star size={11} fill="#C6F24E" strokeWidth={0} />
                         {r.lastRating}
                       </span>
@@ -387,7 +387,7 @@ export default function AdminCustomersPage() {
                     {r.phone && <p><Phone size={10} className="mr-1 inline" strokeWidth={2} />{r.phone}</p>}
                     {r.branch && <p><MapPin size={10} className="mr-1 inline" strokeWidth={2} />{r.branch}</p>}
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
+                  <div className="mt-2 flex items-center justify-between pulse-eyebrow text-[#6B7280]">
                     <span>{r.feedbackCount} feedback</span>
                     <span>{new Date(r.lastAt).toLocaleDateString('tr-TR')}</span>
                   </div>
@@ -397,21 +397,21 @@ export default function AdminCustomersPage() {
 
             {totalPages > 1 && (
               <div className="flex items-center justify-between gap-3 border-t border-[#EDEDED] bg-[#FFFFFF] px-5 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[#6B7280]">
+                <p className="pulse-eyebrow text-[#6B7280]">
                   Sayfa {data?.meta.page} / {totalPages} · Toplam {data?.meta.total}
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1 || loading}
-                    className="rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
+                    className="rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 pulse-eyebrow text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
                   >
                     Önceki
                   </button>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages || loading}
-                    className="rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
+                    className="rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 pulse-eyebrow text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
                   >
                     Sonraki
                   </button>
@@ -428,11 +428,11 @@ export default function AdminCustomersPage() {
 function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] p-4">
-      <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#6B7280]">
+      <p className="flex items-center gap-1.5 pulse-eyebrow text-[#737373]">
         {icon}
         {label}
       </p>
-      <p className="mt-1 text-2xl font-extrabold tabular-nums text-[#0A0A0A]">{value}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums text-[#0A0A0A]">{value}</p>
     </div>
   );
 }

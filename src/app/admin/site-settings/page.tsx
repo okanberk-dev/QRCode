@@ -18,8 +18,8 @@ interface SiteSettings {
   logoUrl: string | null;
 }
 
-const CARD = 'bg-white rounded-[24px] border border-[#EDEDED] shadow-md p-6 sm:p-8';
-const LABEL = 'block text-[12px] font-black text-[#1A1A1A] uppercase tracking-wider mb-2';
+const CARD = 'bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-8';
+const LABEL = 'block text-[12px] font-semibold text-[#1A1A1A] uppercase tracking-wider mb-2';
 const INPUT = 'w-full px-4 py-3 bg-[#FFFFFF] border border-[#EDEDED] rounded-xl text-[14px] font-medium text-[#0A0A0A] focus:outline-none focus:border-[#C6F24E] focus:bg-white transition-colors';
 const HINT = 'text-[11px] font-medium text-[#6B7280] mt-1';
 
@@ -121,14 +121,14 @@ export default function SiteSettingsPage() {
       {/* ─── Header ─── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-[28px] sm:text-[36px] font-extrabold text-[#0A0A0A] tracking-tight">Site Ayarları</h1>
+          <h1 className="text-[28px] sm:text-[36px] font-semibold text-[#0A0A0A] tracking-tight">Site Ayarları</h1>
           <p className="text-[14px] text-[#1A1A1A] font-medium mt-1">
             SEO metadatası, Open Graph görseli, logo ve favicon — her değişiklik tüm site genelinde yansır.
           </p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 bg-[#C6F24E]/10 border border-[#C6F24E]/30 rounded-full">
           <Sparkles size={14} className="text-[#C6F24E]" />
-          <span className="text-[11px] font-black text-[#0A0A0A] uppercase tracking-widest">Superadmin</span>
+          <span className="text-[11px] font-semibold text-[#0A0A0A] ">Superadmin</span>
         </div>
       </div>
 
@@ -150,7 +150,7 @@ export default function SiteSettingsPage() {
       <div className={CARD}>
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h2 className="text-[20px] font-extrabold text-[#0A0A0A] tracking-tight">SEO Metadata</h2>
+            <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">SEO Metadata</h2>
             <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">Başlık, açıklama ve anahtar kelimeler — dil başına.</p>
           </div>
           <div className="flex gap-1 bg-[#FFFFFF] p-1 rounded-xl border border-[#EDEDED]">
@@ -158,7 +158,7 @@ export default function SiteSettingsPage() {
               <button
                 key={l}
                 onClick={() => setActiveLang(l)}
-                className={`px-4 py-1.5 rounded-lg text-[12px] font-black uppercase tracking-wider transition-colors ${
+                className={`px-4 py-1.5 rounded-lg text-[12px] font-semibold uppercase tracking-wider transition-colors ${
                   activeLang === l ? 'bg-[#0A0A0A] text-white' : 'text-[#1A1A1A] hover:bg-white'
                 }`}
               >
@@ -237,7 +237,7 @@ export default function SiteSettingsPage() {
       {/* ─── Kart 2: Open Graph ─── */}
       <div className={CARD}>
         <div className="mb-6">
-          <h2 className="text-[20px] font-extrabold text-[#0A0A0A] tracking-tight">Open Graph Görseli</h2>
+          <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">Open Graph Görseli</h2>
           <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
             Link paylaşımlarında (Twitter, Facebook, WhatsApp) görünen görsel. Önerilen: 1200×630 PNG/JPG.
           </p>
@@ -258,7 +258,7 @@ export default function SiteSettingsPage() {
       {/* ─── Kart 3: Branding ─── */}
       <div className={CARD}>
         <div className="mb-6">
-          <h2 className="text-[20px] font-extrabold text-[#0A0A0A] tracking-tight">Marka Kimliği</h2>
+          <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">Marka Kimliği</h2>
           <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
             Site genelinde (navbar, footer, auth sayfaları) görünen logo ve tarayıcı favicon'u.
           </p>
@@ -297,7 +297,7 @@ export default function SiteSettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="ml-auto flex items-center gap-2 bg-[#C6F24E] text-[#0A0A0A] font-black text-[14px] px-6 py-3 rounded-xl border-2 border-[#0A0A0A] hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            className="ml-auto flex items-center gap-2 bg-[#C6F24E] text-[#0A0A0A] font-semibold text-[14px] px-6 py-3 rounded-xl border border-[#EDEDED] hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed transition-all"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
             {saving ? 'Kaydediliyor…' : 'Kaydet'}

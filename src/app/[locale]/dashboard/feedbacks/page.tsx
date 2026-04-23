@@ -103,15 +103,41 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     [feedbacks, activeId, filteredList],
   );
 
-  const counts = useMemo(
-    () => ({
+  // Initial counts from server aggregate (fast first paint) —
+  // /api/feedback/counts returns {all,new,attention,replied} using
+  // Prisma aggregates. Falls back to derived list counts when the
+  // endpoint is unavailable.
+  const [serverCounts, setServerCounts] = useState<{
+    all: number;
+    new: number;
+    attention: number;
+    replied: number;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/feedback/counts');
+        if (res.ok && !cancelled) setServerCounts(await res.json());
+      } catch {
+        /* keep fallback */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const counts = useMemo(() => {
+    if (serverCounts && feedbacks.length === 0) return serverCounts;
+    return {
       all: feedbacks.length,
       new: feedbacks.filter((r) => !r.isReplied).length,
       attention: feedbacks.filter((r) => r.rating <= 2).length,
       replied: feedbacks.filter((r) => r.isReplied).length,
-    }),
-    [feedbacks],
-  );
+    };
+  }, [feedbacks, serverCounts]);
 
   const tabs: { k: typeof activeTab; l: string; c: number }[] = [
     { k: 'all', l: isTr ? 'Hepsi' : 'All', c: counts.all },

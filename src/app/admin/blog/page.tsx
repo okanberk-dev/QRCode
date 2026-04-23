@@ -155,12 +155,12 @@ export default function AdminBlogPage() {
   return (
     <div className="flex-1 min-h-screen bg-[#FFFFFF] p-3 sm:p-6 md:p-10 space-y-8">
       {/* Banner Header */}
-      <div className="bg-[#0A0A0A] rounded-[24px] sm:rounded-[32px] border border-white/10 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
+      <div className="bg-[#0A0A0A] rounded-2xl sm:rounded-2xl border border-white/10 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-[#C6F24E]/10 text-[#C6F24E] px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em]">
+          <div className="inline-flex items-center gap-2 bg-[#C6F24E]/10 text-[#C6F24E] px-4 py-1.5 rounded-full pulse-eyebrow">
             ✦ İÇERİK YÖNETİMİ
           </div>
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight leading-tight">
             Blog Yazıları
           </h1>
           <p className="text-white/80 text-sm sm:text-base font-medium max-w-md">
@@ -170,20 +170,20 @@ export default function AdminBlogPage() {
 
         <div className="flex items-center gap-3 self-start md:self-center relative z-10">
           <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/10 text-center">
-            <p className="text-2xl font-black text-white">{posts.length}</p>
-            <p className="text-[10px] text-[#6B7280] font-bold uppercase tracking-widest mt-1">Toplam Yazı</p>
+            <p className="text-2xl font-semibold text-white">{posts.length}</p>
+            <p className="text-[10px] pulse-eyebrow text-[#737373] mt-1">Toplam Yazı</p>
           </div>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-[20px] border border-[#EDEDED] shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-xl border border-[#EDEDED] shadow-sm">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
           {(['all', 'tr', 'en'] as const).map(l => (
             <button
               key={l}
               onClick={() => setFilterLocale(l)}
-              className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
+              className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl pulse-eyebrow transition-all whitespace-nowrap ${
                 filterLocale === l
                   ? 'bg-[#0A0A0A] text-white shadow-md'
                   : 'bg-[#FFFFFF] text-[#6B7280] hover:bg-[#EDEDED]'
@@ -198,7 +198,7 @@ export default function AdminBlogPage() {
           <button
             onClick={handleSeed}
             disabled={seeding}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2.5 sm:py-3 bg-white text-[#1A1A1A] border border-[#EDEDED] hover:bg-[#FFFFFF] rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm disabled:opacity-50 whitespace-nowrap"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-5 py-2.5 sm:py-3 bg-white text-[#1A1A1A] border border-[#EDEDED] hover:bg-[#FFFFFF] rounded-xl pulse-eyebrow transition-all disabled:opacity-50 whitespace-nowrap"
           >
             {seeding ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
             <span className="hidden sm:inline">Örnekleri Aktar</span>
@@ -206,7 +206,7 @@ export default function AdminBlogPage() {
           </button>
           <button
             onClick={openNew}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#C6F24E] text-[#0A0A0A] rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#f5b914] transition-all shadow-lg shadow-[#C6F24E]/10 active:scale-95 whitespace-nowrap"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#C6F24E] text-[#0A0A0A] rounded-xl font-semibold text-[10px]  hover:bg-[#f5b914] transition-all shadow-lg shadow-[#C6F24E]/10 active:scale-95 whitespace-nowrap"
           >
             <Plus size={18} strokeWidth={2} />
             Yeni Yazı
@@ -239,11 +239,11 @@ export default function AdminBlogPage() {
           <Loader2 size={32} className="animate-spin text-[#C6F24E]" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-[32px] border border-[#EDEDED] shadow-sm p-16 text-center space-y-4">
-          <div className="w-20 h-20 bg-[#FFFFFF] rounded-[28px] flex items-center justify-center mx-auto">
+        <div className="bg-white rounded-2xl border border-[#EDEDED] p-16 text-center space-y-4">
+          <div className="w-20 h-20 bg-[#FFFFFF] rounded-2xl flex items-center justify-center mx-auto">
             <BookOpen size={40} className="text-[#EDEDED]" />
           </div>
-          <p className="text-xl font-black text-[#0A0A0A]">Henüz yazı bulunamadı</p>
+          <p className="text-xl font-semibold text-[#0A0A0A]">Henüz yazı bulunamadı</p>
           <p className="text-[#6B7280] text-sm max-w-sm mx-auto font-medium">
             Yukarıdaki "Örnekleri Aktar" butonuna tıklayarak demo içerikleri yükleyebilir veya yeni bir yazı oluşturabilirsiniz.
           </p>
@@ -253,7 +253,7 @@ export default function AdminBlogPage() {
           {filtered.map(post => (
             <div
               key={post.id}
-              className={`group bg-white border rounded-[24px] p-4 flex flex-col sm:flex-row sm:items-center gap-5 transition-all hover:shadow-md hover:border-[#C6F24E]/30 ${
+              className={`group bg-white border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-5 transition-all hover:shadow-md hover:border-[#C6F24E]/30 ${
                 post.isActive ? 'border-[#EDEDED]' : 'border-[#EDEDED] opacity-60 grayscale-[0.5]'
               }`}
             >
@@ -268,7 +268,7 @@ export default function AdminBlogPage() {
                 )}
                 {!post.isActive && (
                   <div className="absolute inset-0 bg-[#0A0A0A]/40 backdrop-blur-[1px] flex items-center justify-center">
-                    <span className="text-[8px] font-black text-white uppercase tracking-widest px-1.5 py-0.5 bg-[#0A0A0A]/60 rounded-full">Taslak</span>
+                    <span className="text-[8px] font-semibold text-white  px-1.5 py-0.5 bg-[#0A0A0A]/60 rounded-full">Taslak</span>
                   </div>
                 )}
               </div>
@@ -276,15 +276,15 @@ export default function AdminBlogPage() {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className={`text-[10px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg ${
+                  <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg ${
                     post.locale === 'tr' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
                   }`}>
                     {post.locale === 'tr' ? 'TÜRKÇE 🇹🇷' : 'ENGLISH 🇺🇸'}
                   </span>
                   {post.isActive ? (
-                    <span className="text-[10px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600">Aktif</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600">Aktif</span>
                   ) : (
-                    <span className="text-[10px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg bg-[#FFFFFF] text-[#6B7280]">Pasif</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg bg-[#FFFFFF] text-[#6B7280]">Pasif</span>
                   )}
                 </div>
                 <h3 className="text-[#0A0A0A] font-bold text-[15px] leading-tight group-hover:text-[#0A0A0A] transition-colors">{post.title}</h3>
@@ -317,13 +317,13 @@ export default function AdminBlogPage() {
                   <div className="flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
                     <button
                       onClick={() => handleDelete(post.id)}
-                      className="px-4 py-2 text-[10px] font-black text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all shadow-lg shadow-red-500/20"
+                      className="px-4 py-2 text-[10px] font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all shadow-lg shadow-red-500/20"
                     >
                       SİL
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(null)}
-                      className="px-4 py-2 text-[10px] font-black text-[#6B7280] bg-[#EDEDED] hover:bg-[#EDEDED] rounded-xl transition-all"
+                      className="px-4 py-2 text-[10px] font-semibold text-[#6B7280] bg-[#EDEDED] hover:bg-[#EDEDED] rounded-xl transition-all"
                     >
                       İPTAL
                     </button>
@@ -346,7 +346,7 @@ export default function AdminBlogPage() {
       {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-[#0A0A0A]/60 backdrop-blur-md z-60 flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-[32px] w-full max-w-4xl my-8 shadow-2xl border border-[#EDEDED] overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-white rounded-2xl w-full max-w-4xl my-8 shadow-2xl border border-[#EDEDED] overflow-hidden animate-in fade-in zoom-in-95 duration-300">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-8 border-b border-[#FFFFFF]">
               <div className="flex items-center gap-4">
@@ -354,8 +354,8 @@ export default function AdminBlogPage() {
                   {editingPost ? <Pencil size={20} className="text-[#C6F24E]" strokeWidth={2} /> : <Plus size={20} className="text-[#C6F24E]" strokeWidth={2} />}
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-[#0A0A0A]">{editingPost ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı'}</h2>
-                  <p className="text-[#6B7280] text-xs font-bold uppercase tracking-widest mt-0.5">{editingPost ? editingPost.title : 'Harika bir içerik oluşturun'}</p>
+                  <h2 className="text-xl font-semibold text-[#0A0A0A]">{editingPost ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı'}</h2>
+                  <p className="text-[#6B7280] text-xs font-semibold mt-0.5">{editingPost ? editingPost.title : 'Harika bir içerik oluşturun'}</p>
                 </div>
               </div>
               <button
@@ -371,14 +371,14 @@ export default function AdminBlogPage() {
               {/* Locale + Slug */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-3">DİL SEÇİMİ</label>
+                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">DİL SEÇİMİ</label>
                   <div className="flex gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
                     {(['tr', 'en'] as const).map(l => (
                       <button
                         key={l}
                         type="button"
                         onClick={() => setForm(f => ({ ...f, locale: l }))}
-                        className={`flex-1 py-3 rounded-xl text-xs font-black transition-all ${
+                        className={`flex-1 py-3 rounded-xl text-xs font-semibold transition-all ${
                           form.locale === l
                             ? 'bg-[#0A0A0A] text-white shadow-lg'
                             : 'text-[#6B7280] hover:text-[#0A0A0A]'
@@ -390,7 +390,7 @@ export default function AdminBlogPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-3">URL SLUG</label>
+                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">URL SLUG</label>
                   <input
                     type="text"
                     required
@@ -404,7 +404,7 @@ export default function AdminBlogPage() {
 
               {/* Title */}
               <div>
-                <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-3">BAŞLIK</label>
+                <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BAŞLIK</label>
                 <input
                   type="text"
                   required
@@ -417,21 +417,21 @@ export default function AdminBlogPage() {
 
               {/* Description */}
               <div>
-                <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-3">SEO AÇIKLAMASI (META)</label>
+                <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">SEO AÇIKLAMASI (META)</label>
                 <textarea
                   required
                   rows={2}
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   placeholder="Arama sonuçlarında görünecek kısa açıklama..."
-                  className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm resize-none"
+                  className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all resize-none"
                 />
               </div>
 
               {/* Cover Image + Author */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-3">KAPAK GÖRSELİ URL</label>
+                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">KAPAK GÖRSELİ URL</label>
                   <input
                     type="url"
                     value={form.coverImage}
@@ -441,7 +441,7 @@ export default function AdminBlogPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-3">YAZAR</label>
+                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">YAZAR</label>
                   <input
                     type="text"
                     value={form.author}
@@ -453,7 +453,7 @@ export default function AdminBlogPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-3">YAYIN TARİHİ</label>
+                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">YAYIN TARİHİ</label>
                   <input
                     type="text"
                     value={form.date}
@@ -463,7 +463,7 @@ export default function AdminBlogPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-3">OKUMA SÜRESİ</label>
+                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">OKUMA SÜRESİ</label>
                   <input
                     type="text"
                     value={form.readTime}
@@ -475,9 +475,9 @@ export default function AdminBlogPage() {
               </div>
 
               {/* Active toggle */}
-              <div className="flex items-center justify-between p-5 bg-[#FFFFFF] rounded-[20px] border border-[#EDEDED]">
+              <div className="flex items-center justify-between p-5 bg-[#FFFFFF] rounded-xl border border-[#EDEDED]">
                 <div className="space-y-0.5">
-                  <p className="text-[#0A0A0A] text-[13px] font-black uppercase tracking-tight">{form.isActive ? 'YAYINDA' : 'TASLAK'}</p>
+                  <p className="text-[#0A0A0A] text-[13px] font-semibold uppercase tracking-tight">{form.isActive ? 'YAYINDA' : 'TASLAK'}</p>
                   <p className="text-[#6B7280] text-[11px] font-bold">{form.isActive ? 'Yazı sitede tüm ziyaretçilere görünür.' : 'Yazı sadece panelde görünür.'}</p>
                 </div>
                 <button
@@ -485,19 +485,19 @@ export default function AdminBlogPage() {
                   onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
                   className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.isActive ? 'bg-[#C6F24E]' : 'bg-[#C9D0DB]'}`}
                 >
-                  <span className={`absolute top-1 left-1 w-4.5 h-4.5 bg-white rounded-full shadow-md transition-all duration-300 ${form.isActive ? 'translate-x-5.5' : ''}`} />
+                  <span className={`absolute top-1 left-1 w-4.5 h-4.5 bg-white rounded-full transition-all duration-300 ${form.isActive ? 'translate-x-5.5' : ''}`} />
                 </button>
               </div>
 
               {/* Content */}
               <div>
-                <label className="block text-[10px] font-black text-[#6B7280] uppercase tracking-[0.2em] mb-3">İÇERİK (HTML)</label>
+                <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">İÇERİK (HTML)</label>
                 <textarea
                   required
                   rows={12}
                   value={form.content}
                   onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                  className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-[20px] px-5 py-4 text-[#0A0A0A] text-sm font-mono placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-inner leading-relaxed"
+                  className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-4 text-[#0A0A0A] text-sm font-mono placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-inner leading-relaxed"
                 />
               </div>
 
@@ -506,14 +506,14 @@ export default function AdminBlogPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-8 py-3.5 text-[#6B7280] hover:text-[#0A0A0A] font-black text-xs uppercase tracking-widest transition-all"
+                  className="px-8 py-3.5 text-[#6B7280] hover:text-[#0A0A0A] font-semibold text-xs  transition-all"
                 >
                   İPTAL
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex items-center gap-2 px-10 py-3.5 bg-[#0A0A0A] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#1A1A1A] transition-all shadow-xl shadow-[#EDEDED] disabled:opacity-50 active:scale-95"
+                  className="flex items-center gap-2 px-10 py-3.5 bg-[#0A0A0A] text-white rounded-xl font-semibold text-xs  hover:bg-[#1A1A1A] transition-all shadow-xl shadow-[#EDEDED] disabled:opacity-50 active:scale-95"
                 >
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                   {editingPost ? 'GÜNCELLE' : 'YAYINLA'}

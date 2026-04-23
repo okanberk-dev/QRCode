@@ -752,11 +752,11 @@ export default function DashboardQrPage() {
             )}
           </div>
 
-          {/* Two-up preview: QR card + phone screen mockup */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Two-up preview: QR card + phone screen mockup (stacks on narrow viewports) */}
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
             {/* QR card mock */}
             <div
-              className="rounded-2xl p-4 aspect-[3/4] flex flex-col items-center justify-between"
+              className="rounded-2xl p-4 aspect-[3/4] min-[420px]:aspect-[3/4] flex flex-col items-center justify-between max-w-[280px] w-full mx-auto min-[420px]:max-w-none min-[420px]:mx-0"
               style={{ background: activeDark === '#C6F24E' ? '#C6F24E' : '#C6F24E' }}
             >
               <div className="text-center">
@@ -791,8 +791,8 @@ export default function DashboardQrPage() {
               </div>
             </div>
 
-            {/* Phone screen mockup */}
-            <div className="bg-[#0A0A0A] rounded-[28px] p-2.5 aspect-[9/19]">
+            {/* Phone screen mockup — hide on < 420px to avoid cramped layout */}
+            <div className="hidden min-[420px]:block bg-[#0A0A0A] rounded-[28px] p-2.5 aspect-[9/19]">
               <div className="bg-white rounded-[20px] h-full p-3 flex flex-col gap-2.5">
                 <div className="pulse-eyebrow text-[#737373] text-[9px]">
                   {(selectedRestaurant?.name || 'BUAZE').toUpperCase().slice(0, 18)}

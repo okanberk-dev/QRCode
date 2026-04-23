@@ -165,12 +165,12 @@ export default function AdminDashboard() {
     <div className="p-3 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-8 sm:space-y-10 pb-32">
 
       {/* ─── Welcome Banner ─── */}
-      <div className="bg-[#0A0A0A] rounded-[24px] sm:rounded-[32px] border border-white/10 p-4 sm:p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden shadow-2xl">
+      <div className="bg-[#0A0A0A] rounded-2xl sm:rounded-2xl border border-white/10 p-4 sm:p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-3 sm:space-y-4 min-w-0">
-          <div className="inline-flex items-center gap-2 bg-[#C6F24E]/10 text-[#C6F24E] px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em]">
+          <div className="inline-flex items-center gap-2 bg-[#C6F24E]/10 text-[#C6F24E] px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:pulse-eyebrow">
             ✦ CANLI PANEL
           </div>
-          <h1 className="text-xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight break-words">
+          <h1 className="text-xl sm:text-4xl font-semibold text-white tracking-tight leading-tight break-words">
             {t('welcome')}, {displayName} 👋
           </h1>
           <p className="text-white/80 text-sm sm:text-[17px] font-medium max-w-md">Gerçek zamanlı verilerle işletmenizin nabzını tutun.</p>
@@ -178,25 +178,25 @@ export default function AdminDashboard() {
 
         {/* Satisfaction Rate Badge */}
         {satisfactionRate !== null && (
-          <div className="bg-white rounded-[20px] sm:rounded-[24px] px-4 sm:px-6 md:px-10 py-4 sm:py-6 md:py-8 text-center flex-shrink-0 relative z-10 shadow-lg border border-[#EDEDED] self-stretch md:self-auto">
+          <div className="bg-white rounded-xl sm:rounded-2xl px-4 sm:px-6 md:px-10 py-4 sm:py-6 md:py-8 text-center flex-shrink-0 relative z-10 shadow-lg border border-[#EDEDED] self-stretch md:self-auto">
             <div className="flex items-center gap-2 justify-center mb-1.5 sm:mb-2">
               <TrendingUp size={20} className="text-[#C6F24E]" strokeWidth={2} />
-              <span className="text-[10px] sm:text-[11px] text-[#6B7280] font-black uppercase tracking-widest">{t('satisfaction')}</span>
+              <span className="text-[10px] sm:text-[11px] pulse-eyebrow text-[#737373]">{t('satisfaction')}</span>
             </div>
-            <p className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0A0A0A] tracking-tighter">{satisfactionRate}%</p>
-            <p className="text-[9px] sm:text-[10px] text-[#1A1A1A] mt-1.5 sm:mt-2 font-black uppercase tracking-wider">POZİTİF / TOPLAM</p>
+            <p className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#0A0A0A] tracking-tighter">{satisfactionRate}%</p>
+            <p className="text-[9px] sm:text-[10px] text-[#1A1A1A] mt-1.5 sm:mt-2 font-semibold uppercase tracking-wider">POZİTİF / TOPLAM</p>
           </div>
         )}
       </div>
 
       {/* ─── Toolbar ─── */}
-      <div className="flex flex-col md:flex-row md:items-center md:flex-wrap gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-[#EDEDED] shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:flex-wrap gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
         <label className="flex items-center gap-2 w-full md:w-auto md:flex-1 md:max-w-[220px]">
           <Calendar size={16} strokeWidth={2} className="text-[#6B7280] shrink-0" />
           <select
             value={daysFilter}
             onChange={(e) => { setDaysFilter(e.target.value as DaysFilter); setPage(1); }}
-            className="w-full px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#EDEDED] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-[#1A1A1A] cursor-pointer"
+            className="w-full px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#EDEDED] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:border-transparent bg-white font-semibold transition-all text-[#1A1A1A] cursor-pointer"
           >
             <option value="1">BUGÜN</option>
             <option value="7">SON 7 GÜN</option>
@@ -210,7 +210,7 @@ export default function AdminDashboard() {
           <select
             value={selectedRestaurant}
             onChange={(e) => { setSelectedRestaurant(e.target.value); setPage(1); }}
-            className="w-full md:w-auto md:flex-1 md:max-w-[240px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#EDEDED] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-[#1A1A1A] cursor-pointer"
+            className="w-full md:w-auto md:flex-1 md:max-w-[240px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#EDEDED] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:border-transparent bg-white font-semibold transition-all text-[#1A1A1A] cursor-pointer"
           >
             <option value="all">TÜM RESTORANLAR</option>
             {restaurants.map((r) => (
@@ -222,7 +222,7 @@ export default function AdminDashboard() {
         <select
           value={selectedBranch}
           onChange={(e) => { setSelectedBranch(e.target.value); setPage(1); }}
-          className="w-full md:w-auto md:flex-1 md:max-w-[220px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#EDEDED] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:border-transparent bg-white font-bold uppercase tracking-widest shadow-sm transition-all text-[#1A1A1A] cursor-pointer"
+          className="w-full md:w-auto md:flex-1 md:max-w-[220px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#EDEDED] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:border-transparent bg-white font-semibold transition-all text-[#1A1A1A] cursor-pointer"
         >
           <option value="all">TÜM ŞUBELER</option>
           {branches.map((b) => (
@@ -232,7 +232,7 @@ export default function AdminDashboard() {
 
         <button
           onClick={handleExport}
-          className="w-full md:w-auto md:ml-auto flex items-center justify-center gap-2 bg-white text-[#1A1A1A] border border-[#EDEDED] hover:bg-[#FFFFFF] px-5 py-3 rounded-xl text-[11px] sm:text-xs font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95"
+          className="w-full md:w-auto md:ml-auto flex items-center justify-center gap-2 bg-white text-[#1A1A1A] border border-[#EDEDED] hover:bg-[#FFFFFF] px-5 py-3 rounded-xl text-[11px] sm:text-xs font-semibold transition-all active:scale-95"
         >
           <Download size={16} strokeWidth={2} />
           DIŞA AKTAR
@@ -248,28 +248,28 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Link
           href="/admin/qr"
-          className="flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-[#1A1A1A] active:scale-95 transition-all"
+          className="flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-semibold hover:bg-[#1A1A1A] active:scale-95 transition-all"
         >
           <QrCode size={16} strokeWidth={2} />
           <span>QR Oluştur</span>
         </Link>
         <button
           onClick={handleShowAll}
-          className="flex items-center justify-center gap-2 bg-white text-[#1A1A1A] border border-[#EDEDED] px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-[#FFFFFF] active:scale-95 transition-all"
+          className="flex items-center justify-center gap-2 bg-white text-[#1A1A1A] border border-[#EDEDED] px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-semibold hover:bg-[#FFFFFF] active:scale-95 transition-all"
         >
           <ListChecks size={16} strokeWidth={2} />
           <span>Tüm Yorumlar</span>
         </button>
         <button
           onClick={handleShowLow}
-          className="flex items-center justify-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-red-50 active:scale-95 transition-all"
+          className="flex items-center justify-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-semibold hover:bg-red-50 active:scale-95 transition-all"
         >
           <AlertTriangle size={16} strokeWidth={2} />
           <span>Düşük Puanlılar</span>
         </button>
         <button
           onClick={handleExport}
-          className="flex items-center justify-center gap-2 bg-white text-[#1A1A1A] border border-[#EDEDED] px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-[#FFFFFF] active:scale-95 transition-all"
+          className="flex items-center justify-center gap-2 bg-white text-[#1A1A1A] border border-[#EDEDED] px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-semibold hover:bg-[#FFFFFF] active:scale-95 transition-all"
         >
           <Download size={16} strokeWidth={2} />
           <span>CSV İndir</span>
@@ -278,13 +278,13 @@ export default function AdminDashboard() {
 
       {/* ─── Aspect Breakdown: Food / Service / Atmosphere ─── */}
       {stats?.aspects && (
-        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#EDEDED] shadow-sm">
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
           <div className="mb-4 sm:mb-6 flex items-center gap-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <SlidersHorizontal size={20} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-extrabold text-[#0A0A0A]">Kategori Analizi</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">Kategori Analizi</h3>
               <p className="text-[11px] sm:text-xs font-bold text-[#1A1A1A] mt-0.5">
                 Yemek, servis ve atmosfer puanlarınızı karşılaştırın.
               </p>
@@ -296,13 +296,13 @@ export default function AdminDashboard() {
 
       {/* ─── Google Review Conversion ─── */}
       {stats?.googleConversion && (
-        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#EDEDED] shadow-sm">
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
           <div className="mb-4 sm:mb-6 flex items-center gap-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <TrendingUp size={20} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-extrabold text-[#0A0A0A]">
+              <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">
                 {locale === 'en' ? 'Google Review Conversion' : 'Google Yorum Dönüşümü'}
               </h3>
               <p className="text-[11px] sm:text-xs font-bold text-[#1A1A1A] mt-0.5">
@@ -322,13 +322,13 @@ export default function AdminDashboard() {
 
       {/* ─── Platform Distribution ─── */}
       {stats?.platformDistribution && stats.platformDistribution.length > 0 && (
-        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#EDEDED] shadow-sm">
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
           <div className="mb-4 sm:mb-6 flex items-center gap-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
               <Layers size={20} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-extrabold text-[#0A0A0A]">
+              <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">
                 {locale === 'en' ? 'Platform Distribution' : 'Platform Dağılımı'}
               </h3>
               <p className="text-[11px] sm:text-xs font-bold text-[#1A1A1A] mt-0.5">
@@ -344,21 +344,21 @@ export default function AdminDashboard() {
 
       {/* ─── Advanced Charts ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
-        <div className="lg:col-span-2 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#EDEDED] shadow-sm overflow-hidden min-h-[260px] sm:min-h-[350px] md:min-h-[400px]">
+        <div className="lg:col-span-2 bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] overflow-hidden min-h-[260px] sm:min-h-[350px] md:min-h-[400px]">
           <div className="flex items-center gap-3 mb-6 sm:mb-8">
             <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <TrendingUp size={20} strokeWidth={2} />
             </div>
-            <h3 className="text-lg sm:text-xl font-extrabold text-[#0A0A0A]">Trend Analizi</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">Trend Analizi</h3>
           </div>
           {stats && <TrendsChart data={stats.trends} />}
         </div>
-        <div className="lg:col-span-1 bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#EDEDED] shadow-sm overflow-hidden min-h-[260px] sm:min-h-[350px] md:min-h-[400px]">
+        <div className="lg:col-span-1 bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] overflow-hidden min-h-[260px] sm:min-h-[350px] md:min-h-[400px]">
           <div className="flex items-center gap-3 mb-6 sm:mb-8">
             <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
               <BarChart3 size={20} strokeWidth={2} />
             </div>
-            <h3 className="text-lg sm:text-xl font-extrabold text-[#0A0A0A]">Günlük Dağılım</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">Günlük Dağılım</h3>
           </div>
           {stats && <DayDistributionChart data={stats.dayDistribution} />}
         </div>
@@ -368,22 +368,22 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left column: WordCloud + Breakdown */}
         <div className="lg:col-span-1 space-y-4 sm:space-y-6">
-           <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#EDEDED] shadow-sm">
+           <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
              <div className="flex items-center gap-3 mb-6 sm:mb-8">
                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EAF9B8] text-[#A8D62E] flex items-center justify-center">
                  <Calendar size={20} strokeWidth={2} />
                </div>
-               <h3 className="text-lg sm:text-xl font-extrabold text-[#0A0A0A]">Puan Dağılımı</h3>
+               <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">Puan Dağılımı</h3>
              </div>
              {stats && <RatingChart distribution={stats.distribution} totalCount={stats.totalCount} />}
            </div>
 
-           <div className="bg-white p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#EDEDED] shadow-sm">
+           <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
              <div className="flex items-center gap-3 mb-6 sm:mb-8">
                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center">
                  <TrendingUp size={20} strokeWidth={2} />
                </div>
-               <h3 className="text-lg sm:text-xl font-extrabold text-[#0A0A0A]">Anahtar Kelimeler</h3>
+               <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">Anahtar Kelimeler</h3>
              </div>
              {stats && <WordCloud words={stats.wordCloud} />}
            </div>
@@ -391,7 +391,7 @@ export default function AdminDashboard() {
 
         {/* Right column: Feedback Table */}
         <div ref={feedbackTableRef} className="lg:col-span-2 space-y-4 sm:space-y-6 scroll-mt-6">
-          <div className="bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] border border-[#EDEDED] shadow-sm space-y-3 sm:space-y-4">
+          <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-[#EDEDED] space-y-3 sm:space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h3 className="text-lg sm:text-xl font-bold text-[#0A0A0A] tracking-tight">İşletme Günlüğü</h3>
               <div className="relative w-full sm:max-w-xs">
@@ -463,18 +463,18 @@ export default function AdminDashboard() {
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
                 aria-label="Önceki sayfa"
-                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border border-[#EDEDED] bg-white text-[#1A1A1A] disabled:opacity-30 disabled:cursor-not-allowed shadow-sm hover:bg-[#FFFFFF] active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/25 transition-all"
+                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border border-[#EDEDED] bg-white text-[#1A1A1A] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#FFFFFF] active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/25 transition-all"
               >
                 <ArrowRight size={20} className="rotate-180" strokeWidth={2} />
               </button>
-              <span className="px-6 py-3 bg-[#0A0A0A] text-white rounded-2xl font-bold text-sm shadow-md tracking-widest">
+              <span className="px-6 py-3 bg-[#0A0A0A] text-white rounded-2xl font-bold text-sm tracking-widest">
                 {page} / {totalPages}
               </span>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
                 aria-label="Sonraki sayfa"
-                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border border-[#EDEDED] bg-white text-[#1A1A1A] disabled:opacity-30 disabled:cursor-not-allowed shadow-sm hover:bg-[#FFFFFF] active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/25 transition-all"
+                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border border-[#EDEDED] bg-white text-[#1A1A1A] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#FFFFFF] active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/25 transition-all"
               >
                 <ArrowRight size={20} strokeWidth={2} />
               </button>

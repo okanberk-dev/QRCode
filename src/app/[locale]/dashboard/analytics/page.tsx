@@ -4,7 +4,8 @@ import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
-import { Download, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
+import ExportReportButton from '@/components/dashboard/ExportReportButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -234,13 +235,11 @@ export default async function AnalyticsPage({
             <Calendar size={12} strokeWidth={2} />
             {isTr ? 'Son 90 gün' : 'Last 90 days'}
           </button>
-          <a
-            href={`/api/analytics/export?format=csv&range=90d`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors"
-          >
-            <Download size={12} strokeWidth={2} />
-            {isTr ? 'Rapor indir' : 'Download report'}
-          </a>
+          <ExportReportButton
+            label={isTr ? 'Rapor indir' : 'Download report'}
+            format="csv"
+            range="90d"
+          />
         </div>
       </div>
 
