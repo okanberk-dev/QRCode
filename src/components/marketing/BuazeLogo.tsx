@@ -1,3 +1,7 @@
+'use client';
+
+import { useState } from 'react';
+
 type LogoVariant = 'default' | 'on-dark' | 'on-lime';
 
 interface BuazeLogoProps {
@@ -9,17 +13,28 @@ interface BuazeLogoProps {
 
 // Pulse brand symbol — speech bubble with ECG pulse line + lime accent spark.
 // Graphite on pure surfaces, pure on graphite, graphite on lime.
+// Falls back to SVG when imageUrl is missing, empty, not an absolute URL, or fails to load.
 export default function BuazeLogo({ size = 40, className = '', variant = 'default', imageUrl }: BuazeLogoProps) {
-  if (imageUrl) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  const isUsableUrl =
+    typeof imageUrl === 'string' &&
+    imageUrl.trim().length > 0 &&
+    (imageUrl.startsWith('http://') ||
+      imageUrl.startsWith('https://') ||
+      imageUrl.startsWith('data:'));
+
+  if (isUsableUrl && !imgFailed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={imageUrl}
+        src={imageUrl as string}
         width={size}
         height={size}
         className={className}
         alt="Buaze"
         style={{ objectFit: 'contain' }}
+        onError={() => setImgFailed(true)}
       />
     );
   }
