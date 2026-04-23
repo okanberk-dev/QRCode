@@ -546,3 +546,76 @@ Restoran panelindeki yorum gelen kutularında (`/[locale]/dashboard/feedbacks` +
 
 _Son güncelleme: 2026-04 (üçüncü dalga) — §15 AI Co-Pilot eklendi, §3 depolama mimarisi güncellendi (base64-in-DB), §12 builder'a görsel/logo upload + visibility toggle + reorder perf notları eklendi, §12.4 backend davranışları (cross-category sortOrder + TR price parser), §13.8 analytics admin UI davranışları (refresh, reset, window date, all-time note, mobile chart responsive)._
 
+---
+
+## 16. Claude Design Handoff — Buaze Site Tasarımı (2026-04)
+
+**Kaynak:** Claude Design (claude.ai/design) üzerinden kullanıcının hazırlattığı Pulse marka kimliği + tam site tasarımı.
+
+### 16.1 Tasarım dosyalarının konumu
+
+Tüm tasarım dosyaları `.design/` klasöründe (git-tracked, kaynak referansı olarak saklanıyor):
+
+```
+.design/
+├── buaze-site.html          ← Ana canvas (tüm sayfalar için entry point)
+├── chat1.md                 ← Tasarım geçmişi & karar log'u (ÖNCE OKU)
+├── design-canvas.jsx        ← Canvas layout motoru
+├── pulse/
+│   ├── pulse-tokens.jsx     ← Renk, tipografi, spacing token'ları
+│   ├── pulse-symbols.jsx    ← Logo & sembol SVG varyantları
+│   ├── pulse-artboards-1.jsx ← Marka kimliği artboard'ları (1. parça)
+│   ├── pulse-artboards-2.jsx ← Marka kimliği artboard'ları (2. parça)
+│   ├── pulse-app.jsx        ← Pulse marka sistemi app
+│   └── design-canvas.jsx    ← Pulse canvas
+└── site/
+    ├── site-shared.jsx      ← Ortak nav, footer, illüstrasyonlar
+    ├── site-platforms.jsx   ← Platform logo'ları (Google, Yemeksepeti, Getir, Trendyol GO, Yelp, Tripadvisor...)
+    ├── site-premium.jsx     ← Premium nav/footer v2 (mega-dropdown, mobile hamburger, animated footer)
+    ├── site-homepage-v2.jsx ← Ana sayfa v2 (animasyonlu hero, ECG dashboard, live review ticker, video modal, bento grid)
+    ├── site-homepage-v3.jsx ← Ana sayfa v3 (gerçek buaze.com içeriğine uyarlanmış)
+    ├── site-onboarding-v2.jsx ← 5 adımlı onboarding wizard (tamamen redesign)
+    ├── site-marketing.jsx   ← Marketing sayfaları (fiyatlar, QR, nasıl çalışır, karşılaştır, ROI)
+    ├── site-more.jsx        ← Ekstra sayfalar (entegrasyonlar, müşteri hikayeleri, SSS, yardım, kariyer, yasal)
+    ├── site-admin.jsx       ← Admin panel sayfaları (dashboard, inbox, QR builder, analitik, konumlar, ayarlar)
+    ├── site-pages3.jsx      ← Çözüm sayfaları + sektör detayları + auth
+    ├── site-pages4.jsx      ← Daha fazla sayfa (onboarding, 404, admin ek: kampanya, ekip, fatura, API)
+    └── site-app.jsx         ← Tüm sayfaları bir araya getiren canvas uygulaması
+```
+
+### 16.2 Tasarım kararları & içerik özeti
+
+**Marka:** Pulse kimliği — graphite (#0A0A0A) + lime (#C6F24E) + pure white. Zaten §11'de belgelenmiş.
+
+**Canvas'ta kaç sayfa var:** ~38 sayfa, 5 grup:
+1. **Marketing** — Anasayfa v2/v3, özellikler, AI Co-Pilot, fiyatlar, ROI hesaplayıcı, QR studio, entegrasyonlar, karşılaştır, müşteri hikayeleri, EN uluslararası
+2. **Çözümler** — Restoran, Paket servis (Yemeksepeti/Getir/Trendyol GO logolarıyla), Otel (Booking/Tripadvisor), Klinik, Hukuk, Spa, Perakende
+3. **İçerik** — Blog listesi, blog yazısı, SSS, yardım, hakkımızda, kariyer, iletişim, gizlilik
+4. **Auth** — Kayıt, giriş, şifre sıfırla, onboarding (5 adım), 404
+5. **Admin** — Dashboard, yorum inbox (AI Co-Pilot), QR builder, analitik, konumlar, kampanyalar, ekip, bildirimler, fatura, API/webhook, ayarlar
+
+**Platform entegrasyonları:** TR için Google, Yemeksepeti, Getir, Trendyol GO + EN için Yelp, Tripadvisor, Foursquare, Facebook.
+
+**Animasyonlar:** ECG banner (SVG stroke-dashoffset), live review ticker, AnimCounter (sayı koşma), marquee logo şeridi, heartbeat pulse, social proof toast, video modal, sticky CTA bar.
+
+**Onboarding wizard (5 adım):** İşletme bilgileri → Sektör → Konum → Platform seçimi → QR oluştur → Done screen.
+
+### 16.3 Implementasyon öncelikleri (bir sonraki oturumda)
+
+Kullanıcı "tasarımı geliştirme planına geçeceğiz" dedi. Implementasyon sırası için önerilen yaklaşım:
+
+1. **Marketing anasayfa** (`src/app/[locale]/page.tsx` veya yeni landing) — hero, nav, conversion öğeleri
+2. **Auth sayfaları** (login/register) — Pulse tasarımına uyarla
+3. **Onboarding wizard** — 5 adım, mevcut `src/app/[locale]/onboarding/` route'una bak
+4. **Admin dashboard** — mevcut `src/app/admin/dashboard/` sayfasını Pulse v2 ile güncelle
+5. **Public QR landing** (`/r/[slug]`) — buaze-site.html'deki QR kart tasarımı referans
+
+**ÖNEMLI:** Implementasyon başlamadan kullanıcıdan scope onayı al. Hangi sayfadan başlanacağını sor.
+
+### 16.4 Dikkat edilecekler
+
+- `.design/` klasörü sadece **referans** — bu dosyaları doğrudan `src/`'ye kopyalama, React/Babel prototipleri
+- Renk token'ları zaten `globals.css` `@theme {}` blokunda tanımlı (§11'e bak)
+- Logo SVG → `src/components/marketing/BuazeLogo.tsx` zaten güncel
+- Font'lar zaten yüklü (`src/app/layout.tsx`)
+
