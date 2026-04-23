@@ -154,6 +154,20 @@ h1, h2, h3, h4, h5, h6 {
   to   { stroke-dashoffset: 0; }
 }
 
+/* Onboarding finish burst — CSS-only confetti particle. Per-particle
+ * inline styles set --cf-x / --cf-y / --cf-rot for travel direction
+ * and rotation; the keyframe consumes them via calc(). */
+@keyframes confettiFly {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc(-50% + var(--cf-x, 0px)), calc(-50% + var(--cf-y, 0px))) rotate(var(--cf-rot, 0deg));
+    opacity: 0;
+  }
+}
+
 /* Marquee — horizontal logo strip, GPU-friendly, respects reduced motion */
 @keyframes marqueeSlide {
   from { transform: translateX(0); }

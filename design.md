@@ -11,8 +11,8 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 | Faz | Başlık | Branch | PR | Durum |
 |-----|--------|--------|----|-------|
 | 0 | Baseline audit + design.md iskelet + `.design/` + §16 | `claude/design-phase-0-baseline` | #39 draft | ✅ Tamamlandı |
-| 1 | Chrome + Homepage v3 (animated counter, bento, marquee, sticky CTA, toast, video modal) | `claude/design-phase-1-home` | draft | 🔄 Devam |
-| 2 | Auth + Onboarding (5 adım + confetti + 404) | `claude/design-phase-2-auth-onboarding` | — | ⏳ Bekliyor |
+| 1 | Chrome + Homepage v3 (animated counter, bento, marquee, sticky CTA, toast, video modal) | `claude/design-phase-1-home` | #40 draft | ✅ Tamamlandı |
+| 2 | Auth + Onboarding (5 adım + confetti + 404) | `claude/design-phase-2-auth-onboarding` | draft | 🔄 Devam |
 | 3 | Marketing secondary (features, AI Co-Pilot, pricing, ROI, QR, integrations, compare, stories, case-study) | `claude/design-phase-3-marketing` | — | ⏳ Bekliyor |
 | 4 | Solutions (7 sektör) | `claude/design-phase-4-solutions` | — | ⏳ Bekliyor |
 | 5 | Content (blog, faq, help, about, careers, contact, 8 legal) | `claude/design-phase-5-content` | — | ⏳ Bekliyor |
@@ -98,6 +98,41 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 - Faz 2: Auth (login/register Pulse split-screen, sol sosyal proof sidebar) + Onboarding 5-adım + not-found sayfası. Mevcut JWT cookie akışı (`verifyJwt` + redirect) dokunulmaz.
 - Öncelikle `.design/site/site-onboarding-v2.jsx` (5-step canonical) + `.design/site/site-pages3.jsx` (auth forms) okunmalı.
 - Canvas confetti için dep tercihi (`canvas-confetti`) scope'a eklenecek mi — küçük paket ama yine de sorulmalı.
+
+---
+
+### Faz 2 — 2026-04-23
+
+**Kapsam:** Onboarding 4→5 adıma genişletildi + CSS-only confetti + 404 sayfası Pulse temizlik.
+
+**Audit sonucu yapılacak listenin daralması:** Faz 2 planında auth sayfalarının tamamen yeniden tasarlanması vardı ama Explore sonra mevcut `src/app/[locale]/auth/{login,register,forgot-password,reset-password}/page.tsx` ve 4 auth form'un (LoginForm, RegisterForm, ForgotPasswordForm, ResetPasswordForm) zaten Pulse uyumlu olduğunu gösterdi (0 lingering pattern). Login page'i zaten `hidden lg:flex w-[44%] bg-[#0A0A0A]` split-screen + "CANLI · 340K+ YORUM" sidebar'ı var. Bu yüzden auth tarafı dokunulmadı; ek bir PR #41 (hotfix) dışında tek iş onboarding + 404 oldu.
+
+**Paralel iş — PR #41 (ayrı branch):** `src/app/[locale]/dashboard/restaurants/page.tsx` — owner panel mini map kazara deactivation bug'ı düzeltildi. Mini map artık `<div aria-hidden>`, liste `?status=all&limit=100` ile yüklenir, açık "Devre dışı bırak / Etkinleştir" pill + `confirm()` uyarısı eklendi. Main'e karşı hotfix PR olarak kapsam dışında açıldı.
+
+**Değişen dosyalar (Phase 2 branch'i):**
+- `src/app/[locale]/onboarding/page.tsx` — tamamen yeniden yazıldı (221 → 420+ satır). 4 adım (profile/placement/platforms/team) → 5 adım (profile/sector/location/platforms/qr):
+  - Profile: işletme adı + iletişim + telefon
+  - Sector: 10 sektör (restoran/paket/otel/klinik/hukuk/spa/perakende/fitness/eğitim/diğer) — iki kolon kart, seçilen lime-soft bg
+  - Location: konum adı + şehir + "birden fazla şube sonra" hint
+  - Platforms: 6 platform toggle (Google/Yemeksepeti/Getir/Trendyol GO/Tripadvisor/Yelp) + review/delivery grup rozeti
+  - QR: 4 template preview (lime/dark/white/minimal) + canlı QR kart mock (işletme adı + masa 01 + QR icon + business slug)
+  - Adım ilerleyişinde tüm state `data` objesinde toplanır; `PATCH /api/onboarding/state` her `goNext`'te, `POST /api/onboarding/complete` finish'te çağrılır (ikisi de 501 scaffold, Phase 5'ten beri)
+  - Son butonda `ConfettiBurst` komponenti DOM-only CSS animasyonu ile 40 partikül patlatır (no `canvas-confetti` dep); reduced-motion'da pas geçer
+- `src/app/not-found.tsx` — 4 lingering pattern Pulse'a çekildi (`font-extrabold` x2 → `font-semibold`, `rounded-[32px]` → `rounded-3xl`, `rounded-[24px]` → `rounded-2xl`)
+- `src/app/globals.css` — `@keyframes confettiFly` eklendi (per-particle --cf-x/--cf-y/--cf-rot custom properties ile tek keyframe tüm partikülleri sürer)
+
+**Backend etkisi:** Yok. Mevcut `/api/onboarding/state` + `/api/onboarding/complete` (Phase 5'ten) wire-up korundu — sadece body payload'a `data` objesi eklendi (backend bağlandığında OnboardingProgress modeline yazılacak). JWT cookie + auth flow hiç dokunulmadı.
+
+**Verification:**
+- `npx tsc --noEmit` → yalnız globals.css pre-existing side-effect hatası (CLAUDE.md'de not edilmiş, ilgisiz)
+- `/tr/onboarding` ve `/en/onboarding` → 200
+- 5 adımda ileri/geri navigasyon, step numarası 00..04 sayacı, aktif adım lime dot + önceki adımlar dark tick
+- Finish butonunda konfeti patladı → 1.1s sonra `/tr/dashboard` yönlendirmesi (auth redirect 307)
+- Reduced-motion'da konfeti render edilmez
+
+**Sonraki faz için not:**
+- Faz 3 — Marketing secondary: /features, /features/ai-copilot (yeni), /pricing, /roi, /qr, /integrations, /compare (yeni), /customer-stories, /case-study/[slug] (yeni), /en uluslararası. İçerik öncelikle `.design/site/site-marketing.jsx` + `site-pages3.jsx` + `site-pages4.jsx`'ten okunmalı.
+- `QRGeneratorForm` ve `BlogPost` Prisma sorgularına kesinlikle dokunulmaz.
 
 ---
 
