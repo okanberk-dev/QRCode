@@ -54,7 +54,7 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
       Icon: isLoggedIn ? LayoutDashboard : Sparkles,
     },
     {
-      href: `${base}/#qr-generator`,
+      href: `${base}/solutions/qr-generator`,
       label: locale === 'tr' ? 'QR Kod' : 'QR Code',
       Icon: QrCode,
     },

@@ -77,6 +77,8 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
               {locale === 'tr' ? 'Ürün' : 'Product'}
             </h4>
             <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
+              <li><Link href={`${base}/solutions`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Çözümler' : 'Solutions'}</Link></li>
+              <li><Link href={`${base}/solutions/qr-generator`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}</Link></li>
               <li><Link href={`${base}/how-it-works`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}</Link></li>
               <li><Link href={`${base}/pricing`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Fiyatlandırma' : 'Pricing'}</Link></li>
               <li><Link href={`${base}/compare`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Karşılaştır' : 'Compare'}</Link></li>

@@ -305,7 +305,15 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             </div>
           </div>
           
-          {/* Solutions Dropdown */}
+          {/* Çözümler — solutions overview link */}
+          <Link
+            href={`${base}/solutions`}
+            className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
+          >
+            {t.nav_solutions}
+          </Link>
+
+          {/* Sektörler — industry sectors dropdown */}
           <div
             ref={solutionsRef}
             className="relative"
@@ -316,7 +324,7 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
               className="flex items-center gap-1 text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
               onClick={() => setSolutionsOpen(!solutionsOpen)}
             >
-              {t.nav_solutions}
+              {locale === 'tr' ? 'Sektörler' : 'Industries'}
               <ChevronDown
                 size={14}
                 className={`transition-transform duration-200 ${solutionsOpen ? 'rotate-180' : ''}`}
@@ -369,8 +377,17 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
             </div>
           </div>
 
-          <Link href={`${base}/about`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_about}</Link>
+          <Link
+            href={`${base}/solutions/qr-generator`}
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
+          >
+            {locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}
+            <span className="pulse-eyebrow bg-[#EAF9B8] text-[#0A0A0A] px-1.5 py-0.5 rounded">
+              {locale === 'tr' ? 'YENİ' : 'NEW'}
+            </span>
+          </Link>
           <Link href={`${base}/pricing`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_pricing}</Link>
+          <Link href={`${base}/about`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_about}</Link>
           <Link href={`${base}/contact`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_contact}</Link>
         </div>
 
@@ -485,12 +502,21 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
               </div>
             )}
             
-            {/* Mobile Solutions Accordion */}
+            {/* Mobile Çözümler link */}
+            <Link
+              href={`${base}/solutions`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
+            >
+              {t.nav_solutions}
+            </Link>
+
+            {/* Mobile Sektörler accordion */}
             <button
               onClick={() => setMobileSolutionsOpen(!mobileSolutionsOpen)}
               className="flex items-center justify-between text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors w-full text-left"
             >
-              {t.nav_solutions}
+              {locale === 'tr' ? 'Sektörler' : 'Industries'}
               <ChevronDown
                 size={16}
                 className={`transition-transform duration-200 text-[#6B7280] ${mobileSolutionsOpen ? 'rotate-180' : ''}`}
@@ -523,6 +549,16 @@ export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: Mark
               </div>
             )}
 
+            <Link
+              href={`${base}/solutions/qr-generator`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
+            >
+              {locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}
+              <span className="pulse-eyebrow bg-[#EAF9B8] text-[#0A0A0A] px-1.5 py-0.5 rounded">
+                {locale === 'tr' ? 'YENİ' : 'NEW'}
+              </span>
+            </Link>
             <Link href={`${base}/about`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_about}</Link>
             <Link href={`${base}/pricing`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_pricing}</Link>
             <Link href={`${base}/contact`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_contact}</Link>

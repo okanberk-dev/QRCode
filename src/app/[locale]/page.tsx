@@ -559,6 +559,120 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
+          6.5 QR GENERATOR TOOL TEASER
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="px-6 sm:px-10 py-16 sm:py-20">
+        <div className="max-w-[1100px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-8 sm:p-12 relative overflow-hidden">
+          <div className="absolute -top-32 -right-32 w-[400px] h-[400px] bg-[#C6F24E]/15 rounded-full blur-[100px] pointer-events-none" />
+          <div className="relative grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-10 items-center">
+            <div>
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'ÜCRETSİZ ARAÇ · YENİ' : 'FREE TOOL · NEW'}
+              </span>
+              <h2 className="mt-4 text-[28px] sm:text-[40px] lg:text-[48px] font-medium text-white tracking-[-0.03em] leading-[1.05]">
+                {isTr ? (
+                  <>
+                    Saniyede{' '}
+                    <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
+                      QR kodu
+                    </span>{' '}
+                    oluştur.
+                  </>
+                ) : (
+                  <>
+                    Generate a{' '}
+                    <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
+                      QR code
+                    </span>{' '}
+                    in seconds.
+                  </>
+                )}
+              </h2>
+              <p className="mt-5 text-[15px] sm:text-[16px] text-white/70 leading-[1.65] max-w-[520px]">
+                {isTr
+                  ? 'Web sitenizin, menünüzün veya herhangi bir linkinizin yüksek çözünürlüklü QR kodunu hemen indirin. Kayıt gerekmez — Buaze deneyimine ısınırken kullanabileceğiniz bir araç.'
+                  : "Instantly download a high-resolution QR code for your website, menu or any link. No signup needed — a tool you can use while warming up to the Buaze experience."}
+              </p>
+              <div className="mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <Link
+                  href={`${base}/solutions/qr-generator`}
+                  className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#A8D62E] transition-colors"
+                >
+                  {isTr ? 'QR oluşturucuya git' : 'Open the generator'}
+                  <span aria-hidden>→</span>
+                </Link>
+                <Link
+                  href={`${base}/solutions`}
+                  className="inline-flex items-center justify-center gap-2 border border-white/20 text-white px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-white/10 transition-colors"
+                >
+                  {isTr ? 'Tüm çözümleri gör' : 'See all solutions'}
+                </Link>
+              </div>
+            </div>
+
+            {/* Decorative QR preview */}
+            <div className="flex justify-center lg:justify-end">
+              <div className="bg-white rounded-3xl p-6 w-[240px] aspect-square flex items-center justify-center shadow-[0_20px_60px_rgba(198,242,78,0.25)]">
+                <svg viewBox="0 0 64 64" width="180" height="180" aria-hidden>
+                  <rect width="64" height="64" rx="6" fill="#FFFFFF" />
+                  {/* three finder patterns */}
+                  {[
+                    [6, 6],
+                    [42, 6],
+                    [6, 42],
+                  ].map(([x, y], i) => (
+                    <g key={i}>
+                      <rect x={x} y={y} width="16" height="16" fill="#0A0A0A" />
+                      <rect x={x + 3} y={y + 3} width="10" height="10" fill="#FFFFFF" />
+                      <rect x={x + 5} y={y + 5} width="6" height="6" fill="#0A0A0A" />
+                    </g>
+                  ))}
+                  {/* data cells */}
+                  {[
+                    [26, 8],
+                    [30, 8],
+                    [34, 8],
+                    [38, 10],
+                    [26, 14],
+                    [34, 14],
+                    [8, 26],
+                    [14, 26],
+                    [24, 26],
+                    [30, 28],
+                    [36, 26],
+                    [42, 30],
+                    [48, 26],
+                    [54, 28],
+                    [8, 34],
+                    [14, 30],
+                    [22, 34],
+                    [30, 36],
+                    [38, 34],
+                    [46, 38],
+                    [54, 34],
+                    [26, 42],
+                    [34, 46],
+                    [42, 44],
+                    [50, 46],
+                    [28, 50],
+                    [36, 52],
+                    [44, 50],
+                    [52, 54],
+                    [30, 58],
+                    [42, 58],
+                  ].map(([x, y], i) => (
+                    <rect key={`d-${i}`} x={x} y={y} width="4" height="4" fill="#0A0A0A" />
+                  ))}
+                  {/* lime accent dot */}
+                  <rect x="48" y="48" width="4" height="4" fill="#C6F24E" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
           7. CASE STUDY + MOUNTAIN
       ═══════════════════════════════════════════════════════════ */}
       <section className="px-6 sm:px-10 py-20 sm:py-28">
