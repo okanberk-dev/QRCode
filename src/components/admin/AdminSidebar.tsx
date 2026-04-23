@@ -11,6 +11,7 @@ import {
   Crown,
   Globe,
   Inbox,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Megaphone,
@@ -98,6 +99,7 @@ export default function AdminSidebar() {
     { href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip', roles: ['restaurant_owner'] },
     { href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma', roles: ['restaurant_owner'] },
     { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notifications' : 'Bildirimler', roles: ['manager', 'restaurant_owner'] },
+    { href: '/admin/api', icon: KeyRound, label: locale === 'en' ? 'API & Webhooks' : 'API & Webhook', roles: ['restaurant_owner'] },
     { href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar', roles: ['restaurant_owner'] },
   ];
 

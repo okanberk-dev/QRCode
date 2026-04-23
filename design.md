@@ -16,8 +16,8 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 | 3 | Marketing secondary (features, AI Co-Pilot, pricing, ROI, QR, integrations, compare, stories, case-study) | `claude/design-phase-3-marketing` | #43 draft | ✅ Tamamlandı |
 | 4 | Solutions (7 sektör) | `claude/design-phase-4-solutions` | #44 draft | ✅ Tamamlandı |
 | 5 | Content (blog, faq, help, about, careers, contact, 8 legal) | `claude/design-phase-5-content` | #45 draft | ✅ Tamamlandı |
-| 6 | Admin core (dashboard, reviews, QR wizard, analytics, restaurants, settings) | `claude/design-phase-6-admin-core` | draft | 🔄 Devam |
-| 7 | Admin advanced (campaigns, team, notifications, billing, API/webhook, tüm ikincil) | `claude/design-phase-7-admin-advanced` | — | ⏳ Bekliyor |
+| 6 | Admin core (dashboard, reviews, QR wizard, analytics, restaurants, settings) | `claude/design-phase-6-admin-core` | #46 draft | ✅ Tamamlandı |
+| 7 | Admin advanced (campaigns, team, notifications, billing, API/webhook, tüm ikincil) | `claude/design-phase-7-admin-advanced` | draft | 🔄 Devam |
 | 8 | Public QR + Menu + Mobile/A11y polish | `claude/design-phase-8-public-polish` | — | ⏳ Bekliyor |
 
 ---
@@ -288,6 +288,53 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 - Faz 7 — Admin advanced: `/admin/campaigns` + `/admin/team` + `/admin/notifications` + `/admin/billing` + `/admin/leads` + `/admin/members` + `/admin/customers` + `/admin/users` + `/admin/announcements` + `/admin/blog` + `/admin/profile` + `/admin/trial-expired` + yeni `/admin/api` (veya `/admin/integrations`).
 - İlk 5'i (campaigns/team/notifications/billing/settings) `SuperadminBlock` ile zaten gate'li — bu korunmalı.
 - Stripe billing model'i (`BillingInvoice` + `BillingSubscription`) scaffolding.ts'de mevcut.
+
+---
+
+### Faz 7 — 2026-04-23
+
+**Kapsam:** Admin advanced sayfaları. Audit yine scope'u daralttı:
+
+**Audit sonucu (12 mevcut admin advanced sayfa):**
+- Hepsi 0 lingering Pulse pattern
+- 4 workspace-scoped (campaigns / team / notifications / billing) PR #40-41'den `SuperadminBlock` gate'li + `PANEL / {isim}` eyebrow'lu
+- 4 sayfa zaten `PANEL /` eyebrow'lu, 8 sayfa değildi
+- **Gerçek boşluk:** plan'daki yeni `/admin/api` (API & Webhook) sayfası hiç yoktu
+
+**Yeni dosyalar:**
+- `src/app/admin/api/page.tsx` — 3-parçalı API & Webhook sayfası:
+  - **API Keys** list + "Yeni anahtar" modal (label input + `/api/api-keys` POST scaffold'a bağlı, 501 düşerse local placeholder key gösterir)
+  - **Webhooks** list (mock 1 Slack endpoint, event filter display + active/paused/failing durum pill'leri)
+  - **OAuth providers** placeholder kart — Settings → Integrations'a pointer
+  - **Recent Activity** sağ kolonu (mock 3 event, yeşil/kırmızı/lime dot ile durum rozeti)
+  - `SuperadminBlock` ile wrap'li (workspace-scoped olduğu için superadmin'e "Yönetici için değil" kartı gösterir)
+  - `PANEL / API & WEBHOOK` eyebrow + Pulse h1
+
+**Değişen dosyalar (consistency pass):**
+- `src/components/admin/AdminSidebar.tsx` — yeni `{ href: '/admin/api', icon: KeyRound, label: 'API & Webhook', roles: ['restaurant_owner'] }` entry; `KeyRound` lucide import eklendi
+- `src/app/admin/members/page.tsx` — header'a `PANEL / İŞLETMECİLER` eyebrow + Pulse h1 ("Üye Yönetimi" → "İşletmeci Yönetimi") + muted subtitle
+- `src/app/admin/users/page.tsx` — header'a `PANEL / KULLANICILAR` eyebrow + Pulse h1 + muted subtitle
+- `src/app/admin/customers/page.tsx` — header'a `PANEL / MÜŞTERİLER` eyebrow + Pulse h1 (Users icon korundu) + muted subtitle
+
+**Bilinçli atlanmış sayfalar (unique hero stili var, müdahale riski yüksek):**
+- `/admin/announcements` — dark banner hero
+- `/admin/blog` — dark banner hero
+- `/admin/profile` — italic stylized hero (yerel kimlik)
+- `/admin/trial-expired` — modal-style warning card (farklı layout)
+- `/admin/leads` — özel `<LeadsTable>` component'i kendi başlığını yönetiyor
+
+**Backend etkisi:** Hiçbir route, Prisma, auth değişmedi. `/admin/api` sayfası mevcut `/api/api-keys` endpoint'ini (501 scaffold, Phase 5'ten) çağırır — UI tarafı 501'i başarı olarak yorumlayıp local placeholder gösterir. Webhook + OAuth verisi tamamen mock (Prisma modelleri scaffolding.ts'de hazır).
+
+**Verification:**
+- `npx tsc --noEmit` yeni dosyalarda 0 hata
+- `/admin/api` (superadmin) → `SuperadminBlock` "Yönetici için değil" kartı görünür
+- `/admin/api` (restaurant_owner) → 3-part layout render eder, "Yeni anahtar" modal açılır, API key POST 501 cevabını "Scaffold — key yerelde saklandı" flash'ıyla yutar
+- `/admin/{members,users,customers}` header'ları `PANEL / {isim}` pattern'iyle tutarlı
+
+**Sonraki faz için not:**
+- Faz 8 — Public QR + Menu + polish: `/r/[slug]` (public feedback form, `POST /api/feedback` DOKUNULMAZ), `/menu/[slug]` tema son pass + mobile responsive QA (375/768/1280) + a11y + animasyon polish.
+- A11y için: aria-label'lar, keyboard nav (Tab order), contrast AA. `prefers-reduced-motion` tüm eklenen animasyonlarda zaten respect ediliyor.
+- Final `design.md` güncellemesi: tüm fazlar ✅, "Backend açıkları" son bir kez gözden geçirilir.
 
 ---
 
