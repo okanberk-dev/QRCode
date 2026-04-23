@@ -119,14 +119,14 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
       <div className="w-full mt-4">
         <div className="space-y-6">
           {/* Experience Input Section */}
-          <div className="bg-white rounded-[24px] border-2 border-[#E8ECF2] p-6 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 transition-all duration-300 shadow-sm">
+          <div className="bg-white rounded-[24px] border-2 border-[#EDEDED] p-6 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 transition-all duration-300 shadow-sm">
             <textarea
               id="comment"
               rows={5}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder={t('feedback_placeholder') || 'Deneyiminizi paylaşın...'}
-              className="w-full px-0 py-0 bg-transparent border-none focus:ring-0 text-[16px] text-[#1A2332] placeholder-[#6B7280] resize-none min-h-[140px] leading-relaxed font-medium"
+              className="w-full px-0 py-0 bg-transparent border-none focus:ring-0 text-[16px] text-[#0A0A0A] placeholder-[#6B7280] resize-none min-h-[140px] leading-relaxed font-medium"
             />
           </div>
 
@@ -134,7 +134,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
           {(rating > 0 && rating <= 3) && (
             <div className="space-y-5 animate-in fade-in slide-in-from-top-4 duration-500">
               <div className="px-1">
-                <h3 className="text-[14px] font-extrabold text-[#1A2332] uppercase tracking-tight mb-1 flex items-center gap-2">
+                <h3 className="text-[14px] font-extrabold text-[#0A0A0A] uppercase tracking-tight mb-1 flex items-center gap-2">
                   <span className="w-1.5 h-4 bg-blue-600 rounded-full" />
                   {t('feedback_contact_title') || 'Size ulaşmamızı ister misiniz?'}
                 </h3>
@@ -150,7 +150,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder={t('feedback_name_placeholder') || 'Adınız Soyadınız'}
-                    className="w-full bg-[#F8F6F1]/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm group-hover:border-[#E8ECF2]"
+                    className="w-full bg-[#FFFFFF]/50 border-2 border-[#EDEDED] rounded-2xl px-5 py-4 text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm group-hover:border-[#EDEDED]"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -159,14 +159,14 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder={t('feedback_phone_placeholder') || 'Telefon Numaranız'}
-                    className="w-full bg-[#F8F6F1]/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-[#FFFFFF]/50 border-2 border-[#EDEDED] rounded-2xl px-5 py-4 text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
                   />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t('feedback_email_placeholder') || 'E-posta Adresiniz'}
-                    className="w-full bg-[#F8F6F1]/50 border-2 border-[#E8ECF2] rounded-2xl px-5 py-4 text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-[#FFFFFF]/50 border-2 border-[#EDEDED] rounded-2xl px-5 py-4 text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -178,16 +178,16 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                   className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                     hasKvkkConsent 
                       ? 'bg-blue-50/30 border-blue-100 shadow-sm' 
-                      : 'bg-white border-[#F8F6F1] hover:border-[#E8ECF2]'
+                      : 'bg-white border-[#FFFFFF] hover:border-[#EDEDED]'
                   }`}
                 >
                   <div className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all border-2 ${
-                    hasKvkkConsent ? 'bg-blue-600 border-blue-600' : 'bg-white border-[#E8ECF2]'
+                    hasKvkkConsent ? 'bg-blue-600 border-blue-600' : 'bg-white border-[#EDEDED]'
                   }`}>
                     {hasKvkkConsent && <Check size={14} className="text-white" strokeWidth={4} />}
                   </div>
                   <div className="flex-1">
-                    <p className="text-[12px] font-bold text-[#2A3444] leading-snug">
+                    <p className="text-[12px] font-bold text-[#1A1A1A] leading-snug">
                       <span className="inline-block bg-blue-600 text-white text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded mr-1 align-middle">Zorunlu</span>
                       6698 sayılı KVKK kapsamında <button type="button" onClick={(e) => openLegal('kvkk', e)} className="text-blue-600 underline underline-offset-4 decoration-2 hover:text-blue-800 transition-colors">Aydınlatma Metni</button>'ni okudum; kişisel verilerimin geri bildirim sürecinin yürütülmesi amacıyla işlenmesine <strong className="font-black">açık rıza</strong> veriyorum.
                     </p>
@@ -199,16 +199,16 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                   className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                     hasMarketingConsent
                       ? 'bg-emerald-50/30 border-emerald-100 shadow-sm'
-                      : 'bg-white border-[#F8F6F1] hover:border-[#E8ECF2]'
+                      : 'bg-white border-[#FFFFFF] hover:border-[#EDEDED]'
                   }`}
                 >
                   <div className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all border-2 ${
-                    hasMarketingConsent ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-[#E8ECF2]'
+                    hasMarketingConsent ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-[#EDEDED]'
                   }`}>
                     {hasMarketingConsent && <Check size={14} className="text-white" strokeWidth={4} />}
                   </div>
                   <div className="flex-1">
-                    <p className="text-[12px] font-bold text-[#2A3444] leading-snug">
+                    <p className="text-[12px] font-bold text-[#1A1A1A] leading-snug">
                       <span className="inline-block bg-emerald-600 text-white text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded mr-1 align-middle">İsteğe bağlı</span>
                       6563 sayılı ETK kapsamında kampanya, indirim ve duyurulardan haberdar olmak için <button type="button" onClick={(e) => openLegal('marketing', e)} className="text-emerald-600 underline underline-offset-4 decoration-2 hover:text-emerald-800 transition-colors">ticari elektronik ileti iznini</button> veriyorum. Dilediğim zaman ücretsiz olarak iptal edebilirim.
                     </p>
@@ -245,8 +245,8 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
               disabled={isSubmitting || !comment.trim()}
               className={`w-full py-5 rounded-2xl text-[15px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-3 ${
                 isSubmitting || !comment.trim()
-                  ? 'bg-[#E8ECF2] text-[#6B7280] cursor-not-allowed' 
-                  : 'bg-[#1A2332] text-white shadow-xl hover:bg-[#2A3444] hover:-translate-y-1 active:scale-95'
+                  ? 'bg-[#EDEDED] text-[#6B7280] cursor-not-allowed' 
+                  : 'bg-[#0A0A0A] text-white shadow-xl hover:bg-[#1A1A1A] hover:-translate-y-1 active:scale-95'
               }`}
             >
               {isSubmitting ? (
@@ -269,15 +269,15 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
 
         {/* Premium Legal Modal Overlay */}
         {showLegalModal && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-[#1A2332]/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-[#0A0A0A]/40 backdrop-blur-md animate-in fade-in duration-300">
             <div className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300">
-              <div className="p-7 border-b border-[#E8ECF2] flex items-center justify-between bg-[#F8F6F1]/50">
+              <div className="p-7 border-b border-[#EDEDED] flex items-center justify-between bg-[#FFFFFF]/50">
                 <div className="flex items-center gap-3">
                    <div className={`p-2 rounded-xl ${showLegalModal === 'kvkk' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
                       {showLegalModal === 'kvkk' ? <ShieldCheck size={20} /> : <Mail size={20} />}
                    </div>
                    <div>
-                      <h3 className="font-extrabold text-[#1A2332] uppercase tracking-tighter text-sm">
+                      <h3 className="font-extrabold text-[#0A0A0A] uppercase tracking-tighter text-sm">
                         {showLegalModal === 'kvkk' ? 'KVKK Aydınlatma Metni' : 'İletişim İzni'}
                       </h3>
                       <p className="text-[9px] font-bold text-[#6B7280] uppercase tracking-widest leading-none">Legal & Privacy</p>
@@ -285,27 +285,27 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                 </div>
                 <button 
                   onClick={() => setShowLegalModal(null)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white hover:shadow-sm text-[#6B7280] transition-all border border-transparent hover:border-[#E8ECF2]"
+                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white hover:shadow-sm text-[#6B7280] transition-all border border-transparent hover:border-[#EDEDED]"
                 >
                   <X size={20} strokeWidth={2} />
                 </button>
               </div>
               <div className="p-7 sm:p-8 max-h-[65vh] overflow-y-auto scroll-smooth">
-                <p className="text-[13.5px] text-[#2A3444] leading-[1.75] font-medium whitespace-pre-wrap">
+                <p className="text-[13.5px] text-[#1A1A1A] leading-[1.75] font-medium whitespace-pre-wrap">
                   {showLegalModal === 'kvkk'
                     ? t('feedback_kvkk_text')
                     : t('feedback_marketing_text')}
                 </p>
-                <p className="mt-6 pt-4 border-t border-[#E8ECF2] text-[10px] text-[#6B7280] font-bold uppercase tracking-widest">
+                <p className="mt-6 pt-4 border-t border-[#EDEDED] text-[10px] text-[#6B7280] font-bold uppercase tracking-widest">
                   {showLegalModal === 'kvkk'
                     ? (t('feedback_kvkk_footer') || 'Son Güncelleme: Nisan 2026 · v2.0')
                     : (t('feedback_marketing_footer') || 'İYS Kayıt Zorunlu · ETK m. 6')}
                 </p>
               </div>
-              <div className="p-6 bg-[#F8F6F1]/80 border-t border-[#E8ECF2] flex justify-end gap-3">
+              <div className="p-6 bg-[#FFFFFF]/80 border-t border-[#EDEDED] flex justify-end gap-3">
                 <button 
                   onClick={() => setShowLegalModal(null)}
-                  className="w-full py-4 bg-[#1A2332] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-[#2A3444] transition-all shadow-lg shadow-[#E8ECF2] active:scale-95"
+                  className="w-full py-4 bg-[#0A0A0A] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-[#1A1A1A] transition-all shadow-lg shadow-[#EDEDED] active:scale-95"
                 >
                   KAPAT
                 </button>

@@ -56,20 +56,20 @@ export default async function RegisterPage({
     : ['Unlimited QR Scans', 'Internal Feedback System', 'Admin Dashboard', 'No credit card required'];
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#FFFFFF] flex flex-col font-sans">
       <MarketingNavbar locale={locale} t={t} />
 
       <main className="flex-1 flex pt-[64px]">
         {/* Left Panel - Hidden on mobile */}
-        <div className="hidden lg:flex w-[44%] bg-[#1A2332] text-white flex-col justify-center px-12 xl:px-16 py-16 relative overflow-hidden">
+        <div className="hidden lg:flex w-[44%] bg-[#0A0A0A] text-white flex-col justify-center px-12 xl:px-16 py-16 relative overflow-hidden">
           <div className="relative z-10 max-w-lg">
             <Link href={`/${locale}`} className="inline-flex items-center gap-3 mb-10 group">
               <BuazeLogo size={48} variant="on-dark" imageUrl={logoUrl} />
               <span className="text-[24px] font-extrabold tracking-[-0.02em] text-white">
-                buaze<span className="text-[#F4B400]">.</span>
+                buaze<span className="text-[#C6F24E]">.</span>
               </span>
             </Link>
-            <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 border border-[#F4B400]/30 text-[#F4B400] px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest mb-6">
+            <div className="inline-flex items-center gap-2 bg-[#C6F24E]/10 border border-[#C6F24E]/30 text-[#C6F24E] px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest mb-6">
               ✦ {t.auth_trial_badge}
             </div>
             
@@ -78,7 +78,7 @@ export default async function RegisterPage({
                 ? 'İtibarınızı büyütmeye bugün başlayın'
                 : 'Start growing your reputation today'}
             </h2>
-            <p className="text-[#E8ECF2] font-medium text-[16px] leading-relaxed mb-10">
+            <p className="text-[#EDEDED] font-medium text-[16px] leading-relaxed mb-10">
               {locale === 'tr'
                 ? '14 gün boyunca tüm özellikleri ücretsiz kullanın. Dilediğiniz zaman iptal edin.'
                 : 'Use all features free for 14 days. Cancel anytime.'}
@@ -87,8 +87,8 @@ export default async function RegisterPage({
             <ul className="space-y-3.5 bg-white/5 p-7 rounded-[24px] border border-white/10 backdrop-blur-sm">
               {trialFeatures.map(feat => (
                 <li key={feat} className="flex items-center gap-3 font-bold text-white/90 text-sm">
-                  <div className="w-6 h-6 rounded-lg bg-[#F4B400] flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 size={14} className="text-[#1A2332]" />
+                  <div className="w-6 h-6 rounded-lg bg-[#C6F24E] flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 size={14} className="text-[#0A0A0A]" />
                   </div>
                   {feat}
                 </li>
@@ -102,19 +102,19 @@ export default async function RegisterPage({
           </div>
 
           {/* Decoration */}
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#F4B400]/10 blur-[130px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#C6F24E]/10 blur-[130px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
 
         {/* Right Panel - Form */}
-        <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative bg-[#F8F6F1]">
+        <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative bg-[#FFFFFF]">
           <div className="w-full max-w-md relative z-10">
-            <div className="bg-white rounded-[32px] shadow-md border border-[#E8ECF2] p-8 sm:p-10 mb-8">
+            <div className="bg-white rounded-[32px] shadow-md border border-[#EDEDED] p-8 sm:p-10 mb-8">
               <div className="mb-8 space-y-3 text-center lg:text-left">
-                <div className="inline-flex lg:hidden items-center gap-2 bg-[#F4B400]/10 text-[#F4B400] px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border border-[#F4B400]/20">
+                <div className="inline-flex lg:hidden items-center gap-2 bg-[#C6F24E]/10 text-[#C6F24E] px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border border-[#C6F24E]/20">
                   ✦ {t.auth_trial_badge} - {t.auth_no_cc}
                 </div>
-                <h1 className="text-3xl font-extrabold text-[#1A2332] tracking-tighter">{t.auth_register_title}</h1>
-                <p className="text-[#2A3444] font-bold text-sm">{t.auth_register_subtitle}</p>
+                <h1 className="text-3xl font-extrabold text-[#0A0A0A] tracking-tighter">{t.auth_register_title}</h1>
+                <p className="text-[#1A1A1A] font-bold text-sm">{t.auth_register_subtitle}</p>
               </div>
 
               <RegisterForm locale={locale} t={t} />
@@ -122,7 +122,7 @@ export default async function RegisterPage({
             
             <p className="text-center text-sm font-medium text-[#6B7280]">
               {locale === 'tr' ? 'Zaten hesabınız var mı?' : "Already have an account?"}{' '}
-              <Link href={`/${locale}/auth/login`} className="text-[#1A2332] font-black hover:text-[#F4B400] hover:underline transition-all">
+              <Link href={`/${locale}/auth/login`} className="text-[#0A0A0A] font-black hover:text-[#C6F24E] hover:underline transition-all">
                 {locale === 'tr' ? 'Giriş yapın →' : 'Log in here →'}
               </Link>
             </p>

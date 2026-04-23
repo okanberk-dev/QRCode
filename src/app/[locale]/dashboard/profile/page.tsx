@@ -105,21 +105,21 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F8F6F1]">
-        <Loader2 className="animate-spin text-[#1A2332] w-12 h-12" strokeWidth={2} />
+      <div className="flex h-screen items-center justify-center bg-[#FFFFFF]">
+        <Loader2 className="animate-spin text-[#0A0A0A] w-12 h-12" strokeWidth={2} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] font-sans selection:bg-[#F4B400]/30 p-4 sm:p-6 md:p-10 lg:p-16">
+    <div className="min-h-screen bg-[#FFFFFF] font-sans selection:bg-[#C6F24E]/30 p-4 sm:p-6 md:p-10 lg:p-16">
       <div className="max-w-4xl mx-auto space-y-8 sm:space-y-12">
         {/* Back Link */}
         <Link 
           href={`/${locale}/dashboard`}
-          className="inline-flex items-center gap-2 text-xs font-black text-[#2A3444] hover:text-[#1A2332] transition-all uppercase tracking-widest group"
+          className="inline-flex items-center gap-2 text-xs font-black text-[#1A1A1A] hover:text-[#0A0A0A] transition-all uppercase tracking-widest group"
         >
-          <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#1A2332] flex items-center justify-center shadow-md group-hover:translate-y-0.5 group-hover:shadow-none transition-all">
+          <div className="w-8 h-8 rounded-lg bg-white border-2 border-[#0A0A0A] flex items-center justify-center shadow-md group-hover:translate-y-0.5 group-hover:shadow-none transition-all">
             <ArrowLeft size={16} strokeWidth={2} />
           </div>
           {locale === 'tr' ? 'Dashboard\'a Dön' : 'Back to Dashboard'}
@@ -129,17 +129,17 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
           {/* Sidebar Info */}
           <div className="space-y-8">
             <div className="space-y-4">
-              <h1 className="text-2xl sm:text-3xl md:text-[40px] font-extrabold text-[#1A2332] leading-[1.1] sm:leading-[0.9] tracking-tighter uppercase italic break-words">
+              <h1 className="text-2xl sm:text-3xl md:text-[40px] font-extrabold text-[#0A0A0A] leading-[1.1] sm:leading-[0.9] tracking-tighter uppercase italic break-words">
                 {t.profile_title}
               </h1>
-              <p className="text-[15px] sm:text-[17px] text-[#2A3444] font-bold italic">
+              <p className="text-[15px] sm:text-[17px] text-[#1A1A1A] font-bold italic">
                 {t.profile_subtitle}
               </p>
             </div>
 
-            <div className="p-6 sm:p-8 bg-[#1A2332] rounded-[32px] sm:rounded-[40px] border-2 border-[#1A2332] shadow-md sm:shadow-md space-y-6">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[20px] bg-[#F4B400] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
-                <ShieldCheck size={28} className="text-[#1A2332]" strokeWidth={2} />
+            <div className="p-6 sm:p-8 bg-[#0A0A0A] rounded-[32px] sm:rounded-[40px] border-2 border-[#0A0A0A] shadow-md sm:shadow-md space-y-6">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[20px] bg-[#C6F24E] border-2 border-[#0A0A0A] flex items-center justify-center shadow-md">
+                <ShieldCheck size={28} className="text-[#0A0A0A]" strokeWidth={2} />
               </div>
               <div className="space-y-2">
                 <h4 className="text-white font-extrabold uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
@@ -152,7 +152,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
 
           {/* Form Area */}
           <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="bg-white rounded-[24px] sm:rounded-[40px] border-2 border-[#1A2332] shadow-md sm:shadow-md p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-10">
+            <form onSubmit={handleSubmit} className="bg-white rounded-[24px] sm:rounded-[40px] border-2 border-[#0A0A0A] shadow-md sm:shadow-md p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-10">
               {error && (
                 <div className="flex items-center gap-4 p-5 bg-red-50 border-2 border-red-500/20 rounded-2xl text-red-600 text-[13px] font-black uppercase tracking-widest shadow-sm">
                   <AlertCircle size={20} strokeWidth={2} />
@@ -169,10 +169,10 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
               {/* Personal Info */}
               <div className="space-y-6 sm:space-y-8">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
+                  <div className="w-8 h-8 rounded-lg bg-[#FFFFFF] border-2 border-[#0A0A0A] flex items-center justify-center shadow-md">
                     <User size={16} strokeWidth={2} />
                   </div>
-                  <h3 className="text-lg font-extrabold text-[#1A2332] uppercase tracking-tighter italic">Kişisel Bilgiler</h3>
+                  <h3 className="text-lg font-extrabold text-[#0A0A0A] uppercase tracking-tighter italic">Kişisel Bilgiler</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
@@ -183,7 +183,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
                       required
                       value={formData.name}
                       onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all"
+                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all"
                     />
                   </div>
                   <div className="space-y-2">
@@ -193,19 +193,19 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
                       required
                       value={formData.email}
                       onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all"
+                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all"
                     />
                   </div>
                 </div>
               </div>
 
               {/* System language Settings */}
-              <div className="pt-6 sm:pt-10 border-t-4 border-[#F8F6F1] space-y-6 sm:space-y-8">
+              <div className="pt-6 sm:pt-10 border-t-4 border-[#FFFFFF] space-y-6 sm:space-y-8">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
+                  <div className="w-8 h-8 rounded-lg bg-[#FFFFFF] border-2 border-[#0A0A0A] flex items-center justify-center shadow-md">
                     <Globe size={16} strokeWidth={2} />
                   </div>
-                  <h3 className="text-lg font-extrabold text-[#1A2332] uppercase tracking-tighter italic">Sistem Dili</h3>
+                  <h3 className="text-lg font-extrabold text-[#0A0A0A] uppercase tracking-tighter italic">Sistem Dili</h3>
                 </div>
 
                 <div className="space-y-2">
@@ -213,7 +213,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
                   <select
                     value={locale}
                     onChange={(e) => handleLocaleChange(e.target.value)}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all cursor-pointer appearance-none"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all cursor-pointer appearance-none"
                   >
                     <option value="tr">Türkçe</option>
                     <option value="en">English</option>
@@ -222,12 +222,12 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
               </div>
 
               {/* Password Change */}
-              <div className="pt-6 sm:pt-10 border-t-4 border-[#F8F6F1] space-y-6 sm:space-y-8">
+              <div className="pt-6 sm:pt-10 border-t-4 border-[#FFFFFF] space-y-6 sm:space-y-8">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#F8F6F1] border-2 border-[#1A2332] flex items-center justify-center shadow-md">
+                  <div className="w-8 h-8 rounded-lg bg-[#FFFFFF] border-2 border-[#0A0A0A] flex items-center justify-center shadow-md">
                     <Key size={16} strokeWidth={2} />
                   </div>
-                  <h3 className="text-lg font-extrabold text-[#1A2332] uppercase tracking-tighter italic">Şifre Değiştir</h3>
+                  <h3 className="text-lg font-extrabold text-[#0A0A0A] uppercase tracking-tighter italic">Şifre Değiştir</h3>
                 </div>
 
                 <div className="space-y-6">
@@ -238,7 +238,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
                       value={formData.currentPassword}
                       onChange={(e) => setFormData(p => ({ ...p, currentPassword: e.target.value }))}
                       placeholder="••••••••"
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all"
+                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all"
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -249,7 +249,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
                         value={formData.newPassword}
                         onChange={(e) => setFormData(p => ({ ...p, newPassword: e.target.value }))}
                         placeholder="Min 8 karakter"
-                        className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all"
+                        className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all"
                       />
                     </div>
                     <div className="space-y-2">
@@ -259,7 +259,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
                         value={formData.confirmPassword}
                         onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
                         placeholder="Şifreyi doğrula"
-                        className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#1A2332] bg-[#F8F6F1] focus:border-[#F4B400] focus:shadow-md outline-none text-[15px] font-bold transition-all"
+                        className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border-2 border-[#0A0A0A] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all"
                       />
                     </div>
                   </div>
@@ -269,7 +269,7 @@ export default function ProfilePage({ params }: { params: { locale: Locale } }) 
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full py-5 bg-[#1A2332] text-white font-black rounded-2xl border-2 border-[#1A2332] shadow-sm hover:bg-[#1A2332]/90 active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 text-[15px] tracking-widest uppercase"
+                className="w-full py-5 bg-[#0A0A0A] text-white font-black rounded-2xl border-2 border-[#0A0A0A] shadow-sm hover:bg-[#0A0A0A]/90 active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 text-[15px] tracking-widest uppercase"
               >
                 {saving ? (
                   <>

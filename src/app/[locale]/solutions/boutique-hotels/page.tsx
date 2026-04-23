@@ -84,7 +84,7 @@ export default async function BoutiqueHotelsSolutionPage({ params }: { params: P
     {
       title: isTr ? 'Sadık Misafir Kitlesi' : 'Loyal Guest Base',
       desc: isTr ? 'Kişisel ilgi gören misafir tekrar aynı oteli tercih eder. Sadakat programını dijital geri bildirimle destekleyin.' : 'Guests who receive personal attention return to the same hotel. Support your loyalty program with digital feedback.',
-      icon: <Star size={20} className="text-[#F4B400]" />,
+      icon: <Star size={20} className="text-[#C6F24E]" />,
     },
   ];
 

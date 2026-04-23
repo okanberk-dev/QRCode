@@ -79,7 +79,7 @@ export default async function HealthcareSolutionPage({ params }: { params: Promi
     {
       title: isTr ? 'Hasta Güveni' : 'Patient Trust',
       desc: isTr ? 'Onlarca olumlu yorum, yeni hastaların klinikt tercih etme olasılığını 3 kat artırır.' : 'Dozens of positive reviews triple the likelihood of new patients choosing your clinic.',
-      icon: <Star size={20} className="text-[#F4B400]" />,
+      icon: <Star size={20} className="text-[#C6F24E]" />,
     },
     {
       title: isTr ? 'Departman Analitik' : 'Department Analytics',

@@ -25,15 +25,15 @@ export default function RatingChart({ distribution, totalCount }: RatingChartPro
               {star} <StarIcon />
             </div>
             
-            <div className="flex-1 h-3 bg-[#F8F6F1] rounded-full overflow-hidden border border-[#E8ECF2]">
+            <div className="flex-1 h-3 bg-[#FFFFFF] rounded-full overflow-hidden border border-[#EDEDED]">
               <div 
-                className="h-full rounded-full bg-[#F4B400] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] transition-all duration-500"
+                className="h-full rounded-full bg-[#C6F24E] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] transition-all duration-500"
                 style={{ width: `${percentage}%` }}
               />
             </div>
             
             <div className="w-20 text-right text-sm">
-              <span className="font-black text-[#1A2332]">{count}</span>
+              <span className="font-black text-[#0A0A0A]">{count}</span>
               <span className="text-[#6B7280] text-[10px] font-bold ml-1">({displayPercentage}%)</span>
             </div>
           </div>

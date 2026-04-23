@@ -73,7 +73,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
               router.push(`/${locale}/auth/reset-password`);
             }
           }}
-          className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all group"
+          className="w-full flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] font-black py-4 rounded-2xl border border-[#0A0A0A] shadow-sm hover:bg-[#C6F24E] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all group"
         >
           {locale === 'tr' ? 'KODU GİR' : 'ENTER CODE'}
           <ArrowRight size={18} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />
@@ -86,7 +86,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
             setToken('');
             setEmail('');
           }}
-          className="w-full text-[11px] font-black uppercase tracking-widest text-[#2A3444] hover:text-[#1A2332] transition-colors"
+          className="w-full text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
         >
           {locale === 'tr' ? 'Farklı bir e-posta dene' : 'Try a different email'}
         </button>
@@ -116,7 +116,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="can@sirket.com"
-            className="w-full pl-11 pr-5 py-4 bg-[#F8F6F1] rounded-xl border-2 border-[#1A2332] focus:border-[#F4B400] focus:shadow-[0_0_0_4px_rgba(244, 180, 0,0.1)] outline-none transition-all font-bold text-sm"
+            className="w-full pl-11 pr-5 py-4 bg-[#FFFFFF] rounded-xl border-2 border-[#0A0A0A] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198, 242, 78,0.1)] outline-none transition-all font-bold text-sm"
           />
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#F4B400] text-[#1A2332] font-black py-4 rounded-2xl border border-[#1A2332] shadow-sm hover:bg-[#F4B400] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+        className="w-full flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] font-black py-4 rounded-2xl border border-[#0A0A0A] shadow-sm hover:bg-[#C6F24E] hover:translate-y-[-2px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
       >
         {loading ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <ArrowRight size={20} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />}
         {loading

@@ -8,7 +8,7 @@ const REVIEWS = [
     rating: 5,
     text: "Mekan müthiş… Hamburgerin lezzeti efsane… Genel olarak harika bir atmosfer yakalanmış kendinizi doymuş, konforlu ve iyi hissediyorsunuz :) Personeller güler yüzlü hizmet kalitesi, hijyen mükemmel. Fiyatları bu kadar güzel lezzete göre makul şiddetle tavsiye ederim kesinlikle denenmeli…",
     time: "Bir hafta önce",
-    avatarColor: "bg-[#E8F0FE] text-[#F4B400]",
+    avatarColor: "bg-[#E8F0FE] text-[#C6F24E]",
     isLocalGuide: true
   },
   {
@@ -37,17 +37,17 @@ const REVIEWS = [
 
 export default function ReviewList() {
   return (
-    <div className="w-full bg-white divide-y divide-[#E8ECF2]">
+    <div className="w-full bg-white divide-y divide-[#EDEDED]">
       <div className="px-5 py-4 flex items-center justify-between">
-        <h3 className="text-base font-medium text-[#1A2332]">En Alakalı Yorumlar</h3>
+        <h3 className="text-base font-medium text-[#0A0A0A]">En Alakalı Yorumlar</h3>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-[#F4B400] font-medium">Sırala</span>
+          <span className="text-sm text-[#C6F24E] font-medium">Sırala</span>
           <MoreVertical size={18} className="text-[#6B7280]" />
         </div>
       </div>
 
       {REVIEWS.map((review, idx) => (
-        <div key={idx} className="px-5 py-6 flex gap-4 transition-colors hover:bg-[#F8F6F1]/30">
+        <div key={idx} className="px-5 py-6 flex gap-4 transition-colors hover:bg-[#FFFFFF]/30">
           {/* Avatar Area */}
           <div className="flex flex-col items-center flex-shrink-0">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-medium text-lg shadow-sm border border-white ${review.avatarColor}`}>
@@ -60,7 +60,7 @@ export default function ReviewList() {
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-[#1A2332]">{review.name}</span>
+                  <span className="text-sm font-medium text-[#0A0A0A]">{review.name}</span>
                   {review.isLocalGuide && (
                     <span className="text-[11px] text-[#6B7280]">· Yerel Rehber</span>
                   )}
@@ -71,7 +71,7 @@ export default function ReviewList() {
                       <Star 
                         key={i} 
                         size={12} 
-                        className={i < review.rating ? "fill-[#F4B400] text-[#F4B400]" : "text-[#E8ECF2] fill-transparent"} 
+                        className={i < review.rating ? "fill-[#C6F24E] text-[#C6F24E]" : "text-[#EDEDED] fill-transparent"} 
                       />
                     ))}
                   </div>
@@ -88,11 +88,11 @@ export default function ReviewList() {
             {/* Google-specific icons */}
             <div className="mt-4 flex items-center gap-6">
               <div className="flex items-center gap-2 cursor-pointer group">
-                <ThumbsUp size={14} className="text-[#6B7280] group-hover:text-[#F4B400]" />
+                <ThumbsUp size={14} className="text-[#6B7280] group-hover:text-[#C6F24E]" />
                 <span className="text-[11px] text-[#6B7280] font-medium">Yararlı</span>
               </div>
               <div className="flex items-center gap-2 cursor-pointer group">
-                <Share2 size={14} className="text-[#6B7280] group-hover:text-[#F4B400]" />
+                <Share2 size={14} className="text-[#6B7280] group-hover:text-[#C6F24E]" />
                 <span className="text-[11px] text-[#6B7280] font-medium">Paylaş</span>
               </div>
             </div>
@@ -101,7 +101,7 @@ export default function ReviewList() {
       ))}
 
       <div className="p-6 flex justify-center">
-        <button className="text-sm text-[#F4B400] font-medium px-6 py-2.5 rounded-full border border-[#dadce0] hover:bg-blue-50 transition-all">
+        <button className="text-sm text-[#C6F24E] font-medium px-6 py-2.5 rounded-full border border-[#dadce0] hover:bg-blue-50 transition-all">
           Tüm yorumları gör
         </button>
       </div>

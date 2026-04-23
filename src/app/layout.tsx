@@ -1,15 +1,15 @@
 import type { Metadata, Viewport } from 'next';
-import { Manrope, Inter } from 'next/font/google';
+import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { getSiteSettings } from '@/lib/site-settings';
 
 export const dynamic = 'force-dynamic';
 
-const manrope = Manrope({
+const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
-  variable: '--font-manrope',
+  variable: '--font-space-grotesk',
 });
 
 const inter = Inter({
@@ -17,6 +17,13 @@ const inter = Inter({
   weight: ['400', '500', '600', '700', '800', '900'],
   display: 'swap',
   variable: '--font-inter',
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  display: 'swap',
+  variable: '--font-jetbrains-mono',
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -48,8 +55,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F8F6F1' },
-    { media: '(prefers-color-scheme: dark)', color: '#1A2332' },
+    { media: '(prefers-color-scheme: light)', color: '#FFFFFF' },
+    { media: '(prefers-color-scheme: dark)', color: '#0A0A0A' },
   ],
 };
 
@@ -59,7 +66,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="tr" className={`${manrope.variable} ${inter.variable}`}>
+    <html lang="tr" className={`${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}>
       <body className={`${inter.className} antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-screen`}>
         {children}
       </body>

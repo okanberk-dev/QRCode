@@ -58,7 +58,7 @@ const BADGE_META: Record<MenuBadge, { tr: string; en: string; icon: typeof Flame
   vegetaryen:  { tr: 'Vejetaryen',    en: 'Vegetarian',    icon: Leaf,     cls: 'bg-lime-100 text-lime-800' },
   aci:         { tr: 'Acı',           en: 'Spicy',         icon: Flame,    cls: 'bg-red-100 text-red-700' },
   sef_onerisi: { tr: 'Şef Önerisi',   en: "Chef's Pick",   icon: Star,     cls: 'bg-purple-100 text-purple-800' },
-  glutensiz:   { tr: 'Glutensiz',     en: 'Gluten-Free',   icon: WheatOff, cls: 'bg-[#FFF8D6] text-[#B88800]' },
+  glutensiz:   { tr: 'Glutensiz',     en: 'Gluten-Free',   icon: WheatOff, cls: 'bg-[#EAF9B8] text-[#0A0A0A]' },
 };
 
 function BadgeChip({ badge, locale }: { badge: string; locale: 'tr' | 'en' }) {
@@ -259,7 +259,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr', 
 
 function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
-    <div className="min-h-full bg-[#F8F6F1]">
+    <div className="min-h-full bg-[#FFFFFF]">
       <header className="relative overflow-hidden">
         <div
           className="absolute inset-0"
@@ -290,7 +290,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
         <EmptyState copy={copy} />
       ) : (
         <>
-          <nav className="sticky top-0 z-30 border-b border-[#E8ECF2]/80 bg-[#F8F6F1]/95 backdrop-blur">
+          <nav className="sticky top-0 z-30 border-b border-[#EDEDED]/80 bg-[#FFFFFF]/95 backdrop-blur">
             <div className="mx-auto max-w-2xl overflow-x-auto px-3 py-3 no-scrollbar">
               <div className="flex gap-2">
                 {visibleCategories.map((c) => {
@@ -301,7 +301,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                       href={`#cat-${c.id}`}
                       onClick={() => onCategoryClick(c.id)}
                       className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all ${
-                        isActive ? 'text-white shadow-sm' : 'bg-white text-[#1A2332] hover:bg-[#F8F6F1]'
+                        isActive ? 'text-white shadow-sm' : 'bg-white text-[#0A0A0A] hover:bg-[#FFFFFF]'
                       }`}
                       style={isActive ? { backgroundColor: accent } : undefined}
                     >
@@ -320,9 +320,9 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-5">
-                    <h2 className="text-xl font-extrabold tracking-tight text-[#1A2332] sm:text-2xl">{category.name}</h2>
+                    <h2 className="text-xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-2xl">{category.name}</h2>
                     {category.description && (
-                      <p className="mt-1 text-sm font-bold text-[#2A3444]">{category.description}</p>
+                      <p className="mt-1 text-sm font-bold text-[#1A1A1A]">{category.description}</p>
                     )}
                     <div className="mt-2 h-1 w-12 rounded-full" style={{ backgroundColor: accent }} />
                   </div>
@@ -333,11 +333,11 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
                         onClick={() => onProductClick(item, category.id)}
-                        className={`flex cursor-pointer gap-4 rounded-2xl border border-[#E8ECF2] bg-white p-3 shadow-sm transition-all sm:p-4 ${
+                        className={`flex cursor-pointer gap-4 rounded-2xl border border-[#EDEDED] bg-white p-3 shadow-sm transition-all sm:p-4 ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
-                        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[#E8ECF2] sm:h-28 sm:w-28">
+                        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[#EDEDED] sm:h-28 sm:w-28">
                           {item.imageUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
@@ -358,7 +358,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-[15px] font-extrabold leading-tight text-[#1A2332]">{item.name}</h3>
+                            <h3 className="text-[15px] font-extrabold leading-tight text-[#0A0A0A]">{item.name}</h3>
                             <span
                               className="shrink-0 text-sm font-black sm:text-base"
                               style={{ color: accent }}
@@ -367,7 +367,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                             </span>
                           </div>
                           {item.description && (
-                            <p className="mt-1 line-clamp-3 text-xs font-bold text-[#2A3444] sm:text-[13px]">{item.description}</p>
+                            <p className="mt-1 line-clamp-3 text-xs font-bold text-[#1A1A1A] sm:text-[13px]">{item.description}</p>
                           )}
                           {item.badges.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1">
@@ -397,7 +397,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
 function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
     <div className="min-h-full bg-white">
-      <header className="border-b border-[#E8ECF2] bg-white">
+      <header className="border-b border-[#EDEDED] bg-white">
         <div className="mx-auto max-w-5xl px-5 py-7 sm:px-8">
           <div className="flex items-center gap-4">
             <div
@@ -413,7 +413,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">{restaurant.category}</p>
-              <h1 className="truncate text-2xl font-extrabold tracking-tight text-[#1A2332] sm:text-3xl">{restaurant.name}</h1>
+              <h1 className="truncate text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl">{restaurant.name}</h1>
             </div>
           </div>
           <RestaurantMeta restaurant={restaurant} variant="dark" />
@@ -424,7 +424,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
         <EmptyState copy={copy} />
       ) : (
         <>
-          <nav className="sticky top-0 z-30 border-b border-[#E8ECF2] bg-white/95 backdrop-blur">
+          <nav className="sticky top-0 z-30 border-b border-[#EDEDED] bg-white/95 backdrop-blur">
             <div className="mx-auto max-w-5xl overflow-x-auto px-3 py-3 no-scrollbar">
               <div className="flex gap-2">
                 {visibleCategories.map((c) => {
@@ -436,9 +436,9 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                       onClick={() => onCategoryClick(c.id)}
                       className="shrink-0 rounded-full border-2 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest transition-all"
                       style={{
-                        borderColor: isActive ? accent : '#E8ECF2',
+                        borderColor: isActive ? accent : '#EDEDED',
                         backgroundColor: isActive ? accent : 'white',
-                        color: isActive ? '#fff' : '#1A2332',
+                        color: isActive ? '#fff' : '#0A0A0A',
                       }}
                     >
                       {c.name}
@@ -456,8 +456,8 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-5 flex items-baseline gap-3">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-[#1A2332] sm:text-3xl">{category.name}</h2>
-                    <div className="h-1 flex-1 rounded-full bg-[#E8ECF2]" />
+                    <h2 className="text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl">{category.name}</h2>
+                    <div className="h-1 flex-1 rounded-full bg-[#EDEDED]" />
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
                     {items.map((item) => (
@@ -466,11 +466,11 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
                         onClick={() => onProductClick(item, category.id)}
-                        className={`group cursor-pointer overflow-hidden rounded-2xl border border-[#E8ECF2] bg-white shadow-sm transition-all hover:shadow-md ${
+                        className={`group cursor-pointer overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-sm transition-all hover:shadow-md ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
-                        <div className="relative aspect-square w-full overflow-hidden bg-[#F8F6F1]">
+                        <div className="relative aspect-square w-full overflow-hidden bg-[#FFFFFF]">
                           {item.imageUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -490,7 +490,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                           )}
                         </div>
                         <div className="space-y-1.5 p-3 sm:p-4">
-                          <h3 className="text-[13px] font-extrabold leading-tight text-[#1A2332] sm:text-sm">{item.name}</h3>
+                          <h3 className="text-[13px] font-extrabold leading-tight text-[#0A0A0A] sm:text-sm">{item.name}</h3>
                           {item.description && (
                             <p className="line-clamp-2 text-[11px] font-medium text-[#6B7280]">{item.description}</p>
                           )}
@@ -522,16 +522,16 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
 function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
     <div className="min-h-full bg-white" style={{ fontFamily: 'var(--font-heading), var(--font-body)' }}>
-      <header className="border-b border-[#E8ECF2] bg-white">
+      <header className="border-b border-[#EDEDED] bg-white">
         <div className="mx-auto max-w-2xl px-6 py-12 text-center sm:py-16">
           {restaurant.menuLogoUrl && (
-            <div className="mx-auto mb-4 h-16 w-16 overflow-hidden rounded-full border border-[#E8ECF2] bg-white shadow-sm sm:h-20 sm:w-20">
+            <div className="mx-auto mb-4 h-16 w-16 overflow-hidden rounded-full border border-[#EDEDED] bg-white shadow-sm sm:h-20 sm:w-20">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
             </div>
           )}
           <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#6B7280]">{restaurant.category}</p>
-          <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-[#1A2332] sm:text-5xl" style={{ fontFamily: 'var(--font-heading)' }}>
+          <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-5xl" style={{ fontFamily: 'var(--font-heading)' }}>
             {restaurant.name}
           </h1>
           <div className="mx-auto mt-4 h-0.5 w-12 rounded" style={{ backgroundColor: accent }} />
@@ -546,7 +546,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
         <EmptyState copy={copy} />
       ) : (
         <>
-          <nav className="sticky top-0 z-30 border-b border-[#E8ECF2] bg-white/95 backdrop-blur">
+          <nav className="sticky top-0 z-30 border-b border-[#EDEDED] bg-white/95 backdrop-blur">
             <div className="mx-auto max-w-2xl overflow-x-auto px-3 py-3 no-scrollbar">
               <div className="flex justify-center gap-4">
                 {visibleCategories.map((c) => {
@@ -559,7 +559,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
                       className="shrink-0 border-b-2 px-1 py-1.5 text-[10px] font-bold uppercase tracking-[0.25em] transition-all"
                       style={{
                         borderColor: isActive ? accent : 'transparent',
-                        color: isActive ? '#1A2332' : '#6B7280',
+                        color: isActive ? '#0A0A0A' : '#6B7280',
                       }}
                     >
                       {c.name}
@@ -577,7 +577,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-8 text-center">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-[#1A2332] sm:text-3xl" style={{ fontFamily: 'var(--font-heading)' }}>
+                    <h2 className="text-2xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-3xl" style={{ fontFamily: 'var(--font-heading)' }}>
                       {category.name}
                     </h2>
                     {category.description && (
@@ -585,7 +585,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
                     )}
                     <div className="mx-auto mt-3 h-px w-12 rounded" style={{ backgroundColor: accent }} />
                   </div>
-                  <div className="divide-y divide-[#E8ECF2]">
+                  <div className="divide-y divide-[#EDEDED]">
                     {items.map((item) => (
                       <article
                         key={item.id}
@@ -602,8 +602,8 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                            <h3 className="text-lg font-bold tracking-tight text-[#1A2332]" style={{ fontFamily: 'var(--font-heading)' }}>{item.name}</h3>
-                            <div className="flex-1 border-b border-dotted border-[#2A3444]/30" />
+                            <h3 className="text-lg font-bold tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>{item.name}</h3>
+                            <div className="flex-1 border-b border-dotted border-[#1A1A1A]/30" />
                             <span className="shrink-0 text-base font-extrabold" style={{ color: accent }}>
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
                             </span>
@@ -641,13 +641,13 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
 
 function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
-    <div className="min-h-full bg-[#0E1525] text-white" style={{ fontFamily: 'var(--font-heading), var(--font-body)' }}>
+    <div className="min-h-full bg-[#000000] text-white" style={{ fontFamily: 'var(--font-heading), var(--font-body)' }}>
       <header className="relative overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 opacity-30" style={{ background: `radial-gradient(circle at 20% 20%, ${accent}44, transparent 60%)` }} />
         <div className="relative mx-auto max-w-3xl px-6 py-14 text-center sm:py-20">
           {restaurant.menuLogoUrl && (
             <div className="mx-auto mb-5 h-20 w-20 overflow-hidden rounded-full p-[2px] shadow-lg sm:h-24 sm:w-24" style={{ backgroundColor: accent }}>
-              <div className="h-full w-full overflow-hidden rounded-full bg-[#0E1525]">
+              <div className="h-full w-full overflow-hidden rounded-full bg-[#000000]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
               </div>
@@ -669,7 +669,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
         <EmptyState copy={copy} dark />
       ) : (
         <>
-          <nav className="sticky top-0 z-30 border-b border-white/10 bg-[#0E1525]/95 backdrop-blur">
+          <nav className="sticky top-0 z-30 border-b border-white/10 bg-[#000000]/95 backdrop-blur">
             <div className="mx-auto max-w-3xl overflow-x-auto px-3 py-3 no-scrollbar">
               <div className="flex gap-2 justify-center">
                 {visibleCategories.map((c) => {
@@ -683,7 +683,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                       style={{
                         borderColor: isActive ? accent : 'rgba(255,255,255,0.2)',
                         backgroundColor: isActive ? accent : 'transparent',
-                        color: isActive ? '#0E1525' : 'rgba(255,255,255,0.75)',
+                        color: isActive ? '#000000' : 'rgba(255,255,255,0.75)',
                       }}
                     >
                       {c.name}
@@ -779,17 +779,17 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
 function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
     <div className="min-h-full bg-white">
-      <header className="border-b border-[#E8ECF2] bg-white">
+      <header className="border-b border-[#EDEDED] bg-white">
         <div className="mx-auto flex max-w-2xl items-center gap-4 px-5 py-6 sm:px-8 sm:py-8">
           {restaurant.menuLogoUrl && (
-            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[#E8ECF2] bg-white shadow-sm">
+            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[#EDEDED] bg-white shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
             </div>
           )}
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#6B7280]">{restaurant.category}</p>
-            <h1 className="truncate text-xl font-extrabold tracking-tight text-[#1A2332] sm:text-2xl">{restaurant.name}</h1>
+            <h1 className="truncate text-xl font-extrabold tracking-tight text-[#0A0A0A] sm:text-2xl">{restaurant.name}</h1>
           </div>
           <p className="hidden text-[11px] font-bold uppercase tracking-widest text-[#6B7280] sm:block">{copy.menuOf}</p>
         </div>
@@ -799,7 +799,7 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
         <EmptyState copy={copy} />
       ) : (
         <>
-          <nav className="sticky top-0 z-30 border-b border-[#E8ECF2] bg-white/95 backdrop-blur">
+          <nav className="sticky top-0 z-30 border-b border-[#EDEDED] bg-white/95 backdrop-blur">
             <div className="mx-auto max-w-2xl overflow-x-auto px-3 py-3 no-scrollbar">
               <div className="flex gap-4">
                 {visibleCategories.map((c) => {
@@ -833,27 +833,27 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
                   {category.description && (
                     <p className="mb-4 text-[13px] font-medium text-[#6B7280]">{category.description}</p>
                   )}
-                  <div className="divide-y divide-[#E8ECF2]">
+                  <div className="divide-y divide-[#EDEDED]">
                     {items.map((item) => (
                       <article
                         key={item.id}
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
                         onClick={() => onProductClick(item, category.id)}
-                        className={`flex cursor-pointer items-center gap-4 py-4 transition-colors active:bg-[#F8F6F1] ${
+                        className={`flex cursor-pointer items-center gap-4 py-4 transition-colors active:bg-[#FFFFFF] ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
                         {item.imageUrl && (
-                          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#F8F6F1] sm:h-16 sm:w-16">
+                          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#FFFFFF] sm:h-16 sm:w-16">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-baseline gap-2">
-                            <h3 className="flex-1 truncate text-[15px] font-extrabold text-[#1A2332]">{item.name}</h3>
-                            <span className="shrink-0 text-sm font-black tabular-nums text-[#1A2332]">
+                            <h3 className="flex-1 truncate text-[15px] font-extrabold text-[#0A0A0A]">{item.name}</h3>
+                            <span className="shrink-0 text-sm font-black tabular-nums text-[#0A0A0A]">
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
                             </span>
                           </div>
@@ -1033,7 +1033,7 @@ function RestaurantMeta({
       ? 'bg-white/15 text-white/90 backdrop-blur'
       : variant === 'ondark'
       ? 'border text-white/80'
-      : 'bg-[#F8F6F1] text-[#2A3444] border border-[#E8ECF2]';
+      : 'bg-[#FFFFFF] text-[#1A1A1A] border border-[#EDEDED]';
   const chipStyle =
     variant === 'ondark' && accent ? { borderColor: `${accent}4D`, backgroundColor: `${accent}1A` } : undefined;
 
@@ -1068,11 +1068,11 @@ function RestaurantMeta({
 function EmptyState({ copy, dark }: { copy: LayoutProps['copy']; dark?: boolean }) {
   return (
     <div className="mx-auto max-w-xl px-6 py-20 text-center">
-      <div className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full ${dark ? 'bg-white/10' : 'bg-[#E8ECF2]'}`}>
+      <div className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full ${dark ? 'bg-white/10' : 'bg-[#EDEDED]'}`}>
         <Sparkles size={28} className={dark ? 'text-white/50' : 'text-[#6B7280]'} strokeWidth={2} />
       </div>
-      <h2 className={`text-lg font-extrabold ${dark ? 'text-white' : 'text-[#1A2332]'}`}>{copy.emptyTitle}</h2>
-      <p className={`mt-1 text-sm font-bold ${dark ? 'text-white/60' : 'text-[#2A3444]'}`}>{copy.emptyBody}</p>
+      <h2 className={`text-lg font-extrabold ${dark ? 'text-white' : 'text-[#0A0A0A]'}`}>{copy.emptyTitle}</h2>
+      <p className={`mt-1 text-sm font-bold ${dark ? 'text-white/60' : 'text-[#1A1A1A]'}`}>{copy.emptyBody}</p>
     </div>
   );
 }

@@ -116,7 +116,7 @@ export default async function QRGeneratorPage({
   };
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px]">
+    <div className="min-h-screen overflow-x-clip bg-[#FFFFFF] text-[#0A0A0A] font-sans pt-[64px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -131,19 +131,19 @@ export default async function QRGeneratorPage({
             {/* Breadcrumbs (also rendered as structured data above) */}
             <nav
               aria-label={isTr ? 'Site yolu' : 'Breadcrumb'}
-              className="mb-8 text-[12px] sm:text-[13px] font-medium text-[#2A3444] flex items-center flex-wrap gap-1.5"
+              className="mb-8 text-[12px] sm:text-[13px] font-medium text-[#1A1A1A] flex items-center flex-wrap gap-1.5"
             >
-              <Link href={base} className="hover:text-[#1A2332] transition-colors">
+              <Link href={base} className="hover:text-[#0A0A0A] transition-colors">
                 {isTr ? 'Ana Sayfa' : 'Home'}
               </Link>
               <ChevronRight size={14} className="text-[#6B7280]" aria-hidden />
-              <span className="text-[#1A2332] font-bold">
+              <span className="text-[#0A0A0A] font-bold">
                 {isTr ? 'QR Kod Oluşturucu' : 'QR Code Generator'}
               </span>
             </nav>
 
             <div className="max-w-[720px] space-y-5">
-              <div className="inline-flex items-center gap-2 bg-[#F4B400] text-[#1A2332] px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em] border border-[#1A2332] shadow-md">
+              <div className="inline-flex items-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em] border border-[#0A0A0A] shadow-md">
                 <QrCode size={14} />
                 {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
               </div>
@@ -152,17 +152,17 @@ export default async function QRGeneratorPage({
                   <>
                     Her Web Sitesi İçin
                     <br />
-                    <span className="text-[#F4B400]">Anında QR Kodu</span>
+                    <span className="text-[#C6F24E]">Anında QR Kodu</span>
                   </>
                 ) : (
                   <>
                     Instant QR Code for
                     <br />
-                    <span className="text-[#F4B400]">Any Website</span>
+                    <span className="text-[#C6F24E]">Any Website</span>
                   </>
                 )}
               </h1>
-              <p className="text-[16px] sm:text-[18px] text-[#2A3444] font-medium leading-relaxed max-w-[560px] text-pretty">
+              <p className="text-[16px] sm:text-[18px] text-[#1A1A1A] font-medium leading-relaxed max-w-[560px] text-pretty">
                 {isTr
                   ? 'İşletmenizin web sitesini, menüsünü veya rezervasyon sayfasını girin; biz size özel, yüksek çözünürlüklü bir QR kodu oluşturalım.'
                   : 'Enter your business website, menu, or reservation page — and we\'ll generate a high-resolution QR code tailored just to that URL.'}
@@ -177,14 +177,14 @@ export default async function QRGeneratorPage({
           className="pb-16 sm:pb-24 px-5 sm:px-8"
         >
           <div className="max-w-[1200px] mx-auto">
-            <div className="bg-white border border-[#1A2332] rounded-[24px] sm:rounded-[32px] shadow-md p-6 sm:p-10 lg:p-14">
+            <div className="bg-white border border-[#0A0A0A] rounded-[24px] sm:rounded-[32px] shadow-md p-6 sm:p-10 lg:p-14">
               <h2
                 id="generator-title"
-                className="text-[24px] sm:text-[32px] font-extrabold text-[#1A2332] tracking-[-0.02em] mb-2 text-balance"
+                className="text-[24px] sm:text-[32px] font-extrabold text-[#0A0A0A] tracking-[-0.02em] mb-2 text-balance"
               >
                 {isTr ? 'Bağlantınızı Girin' : 'Paste Your Link'}
               </h2>
-              <p className="text-[14px] sm:text-[15px] text-[#2A3444] font-medium mb-8 max-w-[560px]">
+              <p className="text-[14px] sm:text-[15px] text-[#1A1A1A] font-medium mb-8 max-w-[560px]">
                 {isTr
                   ? 'Tam URL\'yi yapıştırın — QR kodu ve indirme hemen sağda hazır olacak.'
                   : 'Paste the full URL — the QR code and download will appear on the right immediately.'}
@@ -197,22 +197,22 @@ export default async function QRGeneratorPage({
         {/* ─── Benefits / upsell ─── */}
         <section
           aria-labelledby="benefits-title"
-          className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-t-[2px] border-[#E8ECF2]"
+          className="py-16 sm:py-24 px-5 sm:px-8 bg-white border-t-[2px] border-[#EDEDED]"
         >
           <div className="max-w-[1200px] mx-auto">
             <div className="text-center max-w-[640px] mx-auto space-y-3 mb-10 sm:mb-14">
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#F4B400]">
+              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#C6F24E]">
                 {isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}
               </p>
               <h2
                 id="benefits-title"
-                className="text-[26px] sm:text-[36px] font-extrabold text-[#1A2332] tracking-[-0.02em] text-balance"
+                className="text-[26px] sm:text-[36px] font-extrabold text-[#0A0A0A] tracking-[-0.02em] text-balance"
               >
                 {isTr
                   ? 'Basit QR kodun ötesine geçin'
                   : 'Go beyond a simple QR code'}
               </h2>
-              <p className="text-[15px] text-[#2A3444] font-medium leading-relaxed">
+              <p className="text-[15px] text-[#1A1A1A] font-medium leading-relaxed">
                 {isTr
                   ? 'Bu araç ücretsiz. Ancak Buaze hesabı oluşturduğunuzda QR kod taramalarını takip edebilir, yorum toplayabilir ve dijital itibarınızı büyütebilirsiniz.'
                   : 'This tool is free. But when you create a Buaze account you can also track scans, collect reviews, and grow your digital reputation.'}
@@ -245,15 +245,15 @@ export default async function QRGeneratorPage({
               ].map(({ Icon, title, desc }) => (
                 <article
                   key={title}
-                  className="bg-[#F8F6F1] border border-[#1A2332] rounded-2xl p-6 shadow-md hover:-translate-y-1 transition-transform"
+                  className="bg-[#FFFFFF] border border-[#0A0A0A] rounded-2xl p-6 shadow-md hover:-translate-y-1 transition-transform"
                 >
-                  <div className="w-11 h-11 rounded-xl bg-[#F4B400] border border-[#1A2332] flex items-center justify-center mb-4">
-                    <Icon size={20} className="text-[#1A2332]" />
+                  <div className="w-11 h-11 rounded-xl bg-[#C6F24E] border border-[#0A0A0A] flex items-center justify-center mb-4">
+                    <Icon size={20} className="text-[#0A0A0A]" />
                   </div>
-                  <h3 className="text-[17px] font-extrabold text-[#1A2332] mb-2">
+                  <h3 className="text-[17px] font-extrabold text-[#0A0A0A] mb-2">
                     {title}
                   </h3>
-                  <p className="text-[13px] text-[#2A3444] font-medium leading-relaxed">
+                  <p className="text-[13px] text-[#1A1A1A] font-medium leading-relaxed">
                     {desc}
                   </p>
                 </article>
@@ -263,7 +263,7 @@ export default async function QRGeneratorPage({
             <div className="mt-10 sm:mt-14 text-center">
               <Link
                 href={`${base}/auth/register`}
-                className="inline-flex items-center gap-2 bg-[#1A2332] text-white font-extrabold text-[14px] sm:text-[15px] px-7 py-4 rounded-xl border border-[#1A2332] shadow-md hover:-translate-y-0.5 hover:shadow-md active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
+                className="inline-flex items-center gap-2 bg-[#0A0A0A] text-white font-extrabold text-[14px] sm:text-[15px] px-7 py-4 rounded-xl border border-[#0A0A0A] shadow-md hover:-translate-y-0.5 hover:shadow-md active:translate-x-[5px] active:translate-y-[6px] active:shadow-none transition-all"
               >
                 {isTr ? 'Ücretsiz hesap oluştur' : 'Create a free account'}
                 <ChevronRight size={16} />

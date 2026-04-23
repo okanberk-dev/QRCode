@@ -69,7 +69,7 @@ export default async function SchoolsSolutionPage({ params }: { params: Promise<
     {
       title: isTr ? 'Veli Güveni' : 'Parent Trust',
       desc: isTr ? 'Okul tercihi yaparken veliler Google yorumlarına büyük önem verir. Yüksek değerlendirme kayıt oranını artırır.' : 'Parents place great importance on Google reviews when choosing a school. High ratings increase enrollment rate.',
-      icon: <Star size={20} className="text-[#F4B400]" />,
+      icon: <Star size={20} className="text-[#C6F24E]" />,
     },
     {
       title: isTr ? 'Öğretmen Gelişimi' : 'Teacher Development',

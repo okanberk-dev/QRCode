@@ -82,7 +82,7 @@ export default async function AboutPage({
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] font-sans pt-[64px] selection:bg-[#C6F24E]/30">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -91,18 +91,18 @@ export default async function AboutPage({
 
       {/* ─── Page Header ─── */}
       <section className="pt-20 sm:pt-32 pb-12 sm:pb-14 px-5 sm:px-8 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#F4B400]/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#C6F24E]/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
         <div className="max-w-[1200px] mx-auto relative">
           <div className="max-w-[720px] space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-[#1A2332] rounded-full shadow-md">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-[#0A0A0A] rounded-full shadow-md">
                <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest">{isTr ? 'BİZ KİMİZ?' : 'WHO ARE WE?'}</span>
             </div>
-            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight text-[#1A2332]">
+            <h1 className="text-[34px] sm:text-[72px] font-extrabold leading-[1] sm:leading-[0.95] tracking-tight text-[#0A0A0A]">
               {t.about_hero_title_1}{' '}
-              <span className="text-[#F4B400] block sm:inline">{t.about_hero_title_2}</span>
+              <span className="text-[#C6F24E] block sm:inline">{t.about_hero_title_2}</span>
             </h1>
-            <p className="text-[16px] sm:text-[20px] text-[#2A3444] font-bold leading-relaxed max-w-[600px]">
+            <p className="text-[16px] sm:text-[20px] text-[#1A1A1A] font-bold leading-relaxed max-w-[600px]">
               {t.about_hero_subtitle}
             </p>
           </div>
@@ -110,38 +110,38 @@ export default async function AboutPage({
       </section>
 
       {/* ─── Numbers / Social Proof ─── */}
-      <section className="py-10 sm:py-14 px-5 sm:px-8 bg-[#F4B400] border-y-[3px] sm:border-y-[4px] border-[#1A2332]">
+      <section className="py-10 sm:py-14 px-5 sm:px-8 bg-[#C6F24E] border-y-[3px] sm:border-y-[4px] border-[#0A0A0A]">
         <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {numbers.map((item, i) => (
             <div key={i} className="space-y-1.5">
-              <div className="text-[32px] sm:text-[52px] font-black text-[#1A2332] tracking-tighter leading-none">{item.num}</div>
-              <div className="text-[10px] sm:text-[11px] font-black text-[#1A2332]/70 uppercase tracking-[0.15em]">{item.label}</div>
+              <div className="text-[32px] sm:text-[52px] font-black text-[#0A0A0A] tracking-tighter leading-none">{item.num}</div>
+              <div className="text-[10px] sm:text-[11px] font-black text-[#0A0A0A]/70 uppercase tracking-[0.15em]">{item.label}</div>
             </div>
           ))}
         </div>
       </section>
 
       {/* ─── Mission & Vision (3D Cards) ─── */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1] border-t border-[#E8ECF2]">
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FFFFFF] border-t border-[#EDEDED]">
         <div className="max-w-[1200px] mx-auto text-center mb-16 sm:mb-20">
-           <p className="text-[12px] font-black uppercase tracking-widest text-[#F4B400] mb-4">{isTr ? 'GELECEĞİ ŞEKİLLENDİRİYORUZ' : 'SHAPING THE FUTURE'}</p>
-           <h2 className="text-[34px] sm:text-[56px] font-extrabold text-[#1A2332] tracking-tight leading-[1.1] sm:leading-none">
+           <p className="text-[12px] font-black uppercase tracking-widest text-[#C6F24E] mb-4">{isTr ? 'GELECEĞİ ŞEKİLLENDİRİYORUZ' : 'SHAPING THE FUTURE'}</p>
+           <h2 className="text-[34px] sm:text-[56px] font-extrabold text-[#0A0A0A] tracking-tight leading-[1.1] sm:leading-none">
               {isTr ? 'Amacımız ve Vizyonumuz' : 'Our Purpose & Vision'}
            </h2>
         </div>
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
           {/* Mission */}
-          <div className="bg-white p-8 sm:p-14 rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md space-y-6 flex flex-col items-start transition-transform hover:-translate-y-2">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400] border sm:border border-[#1A2332] text-[#1A2332] rounded-2xl flex items-center justify-center shadow-md">
+          <div className="bg-white p-8 sm:p-14 rounded-[32px] sm:rounded-[40px] border sm:border border-[#0A0A0A] shadow-md sm:shadow-md space-y-6 flex flex-col items-start transition-transform hover:-translate-y-2">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#C6F24E] border sm:border border-[#0A0A0A] text-[#0A0A0A] rounded-2xl flex items-center justify-center shadow-md">
               <Target size={28} className="sm:size-8" strokeWidth={2} />
             </div>
-            <h2 className="text-[26px] sm:text-[34px] font-extrabold text-[#1A2332] tracking-tight leading-tight">{t.about_mission_title}</h2>
-            <p className="text-[15px] sm:text-[17px] text-[#2A3444] leading-relaxed font-medium">{t.about_mission_desc}</p>
+            <h2 className="text-[26px] sm:text-[34px] font-extrabold text-[#0A0A0A] tracking-tight leading-tight">{t.about_mission_title}</h2>
+            <p className="text-[15px] sm:text-[17px] text-[#1A1A1A] leading-relaxed font-medium">{t.about_mission_desc}</p>
           </div>
 
           {/* Vision */}
-          <div className="bg-[#1A2332] p-8 sm:p-14 rounded-[32px] sm:rounded-[40px] border sm:border border-[#1A2332] shadow-md sm:shadow-md space-y-6 flex flex-col items-start transition-transform hover:-translate-y-2">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#F4B400] text-[#1A2332] rounded-2xl flex items-center justify-center shadow-md">
+          <div className="bg-[#0A0A0A] p-8 sm:p-14 rounded-[32px] sm:rounded-[40px] border sm:border border-[#0A0A0A] shadow-md sm:shadow-md space-y-6 flex flex-col items-start transition-transform hover:-translate-y-2">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#C6F24E] text-[#0A0A0A] rounded-2xl flex items-center justify-center shadow-md">
                <Eye size={28} className="sm:size-8" strokeWidth={2} />
             </div>
             <h2 className="text-[26px] sm:text-[34px] font-extrabold text-white tracking-tight leading-tight">{t.about_vision_title}</h2>
@@ -151,20 +151,20 @@ export default async function AboutPage({
       </section>
 
       {/* ─── Values (Enriched 3D Grid) ─── */}
-      <section className="py-20 sm:py-40 px-5 sm:px-8 bg-[#1A2332] overflow-hidden relative">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#F4B400]/5 rounded-full blur-[150px] -z-0" />
+      <section className="py-20 sm:py-40 px-5 sm:px-8 bg-[#0A0A0A] overflow-hidden relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#C6F24E]/5 rounded-full blur-[150px] -z-0" />
 
         <div className="max-w-[1200px] mx-auto relative z-10">
           <div className="mb-12 sm:mb-24 space-y-4 text-center sm:text-left">
-            <p className="text-[11px] sm:text-[13px] font-black text-[#F4B400] uppercase tracking-widest">{isTr ? 'TEMEL DEĞERLERİMİZ' : 'OUR CORE VALUES'}</p>
+            <p className="text-[11px] sm:text-[13px] font-black text-[#C6F24E] uppercase tracking-widest">{isTr ? 'TEMEL DEĞERLERİMİZ' : 'OUR CORE VALUES'}</p>
             <h2 className="text-[34px] sm:text-[56px] font-extrabold text-white tracking-tight leading-[1.1] sm:leading-none">{t.about_values_title}</h2>
             <p className="text-[15px] sm:text-[16px] font-medium text-white/75 max-w-[500px] mx-auto sm:mx-0">{t.about_values_subtitle}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {values.map((value, i) => (
-              <div key={i} className="bg-white/5 border sm:border border-[#3d3a36] rounded-[24px] sm:rounded-[32px] p-7 sm:p-10 hover:bg-white/10 hover:border-[#F4B400]/50 transition-all group space-y-5 sm:space-y-6">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#F4B400] text-[#1A2332] rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md sm:shadow-md">
+              <div key={i} className="bg-white/5 border sm:border border-[#3d3a36] rounded-[24px] sm:rounded-[32px] p-7 sm:p-10 hover:bg-white/10 hover:border-[#C6F24E]/50 transition-all group space-y-5 sm:space-y-6">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#C6F24E] text-[#0A0A0A] rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md sm:shadow-md">
                   {value.icon}
                 </div>
                 <div className="space-y-2 sm:space-y-3">
@@ -178,19 +178,19 @@ export default async function AboutPage({
       </section>
 
       {/* ─── Story / Why We Built This ─── */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1] border-t border-[#E8ECF2]">
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FFFFFF] border-t border-[#EDEDED]">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
           {/* Left: text */}
           <div className="space-y-6">
-            <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#F4B400]">
+            <p className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-[#C6F24E]">
               {isTr ? 'NEDEN BULDUK?' : 'WHY WE BUILT THIS'}
             </p>
-            <h2 className="text-[28px] sm:text-[42px] font-extrabold text-[#1A2332] tracking-tight leading-tight">
+            <h2 className="text-[28px] sm:text-[42px] font-extrabold text-[#0A0A0A] tracking-tight leading-tight">
               {isTr
                 ? 'Bir restoranın kaybettiği itibar bizi harekete geçirdi'
                 : 'A restaurant\'s lost reputation set us in motion'}
             </h2>
-            <div className="space-y-4 text-[15px] sm:text-[16px] text-[#2A3444] leading-relaxed font-medium">
+            <div className="space-y-4 text-[15px] sm:text-[16px] text-[#1A1A1A] leading-relaxed font-medium">
               <p>
                 {isTr
                   ? 'İşletme sahipleriyle konuşurken fark ettik: müşteri memnuniyetsizliği çoğu zaman işletmeye değil, doğrudan Google\'a gidiyordu. Bir yıldızlık yorum, aylar içinde kasıp kavurabiliyordu. Buna bir çözüm olmalıydı.'
@@ -213,33 +213,33 @@ export default async function AboutPage({
           <div className="space-y-4">
             {[
               {
-                icon: <MessageSquare size={20} className="text-[#F4B400]" />,
+                icon: <MessageSquare size={20} className="text-[#C6F24E]" />,
                 title: isTr ? 'Akıllı Yönlendirme' : 'Smart Routing',
                 desc: isTr ? 'Yüksek puanlar Google\'a, düşük puanlar panele.' : 'High ratings go to Google, low ones go to your dashboard.',
               },
               {
-                icon: <TrendingUp size={20} className="text-[#F4B400]" />,
+                icon: <TrendingUp size={20} className="text-[#C6F24E]" />,
                 title: isTr ? 'Organik İtibar Artışı' : 'Organic Reputation Growth',
                 desc: isTr ? 'Yorum hacmi artar, Google sıralamanız yükselir.' : 'Review volume grows, your Google ranking climbs.',
               },
               {
-                icon: <ShieldCheck size={20} className="text-[#F4B400]" />,
+                icon: <ShieldCheck size={20} className="text-[#C6F24E]" />,
                 title: isTr ? 'Kriz Öncesi Müdahale' : 'Pre-Crisis Intervention',
                 desc: isTr ? 'Sorun büyümeden fark edin ve çözün.' : 'Spot and resolve problems before they escalate.',
               },
               {
-                icon: <Zap size={20} className="text-[#F4B400]" />,
+                icon: <Zap size={20} className="text-[#C6F24E]" />,
                 title: isTr ? '5 Dakikada Kurulum' : '5-Minute Setup',
                 desc: isTr ? 'QR kodunuzu yazdırın, masaya koyun, başlayın.' : 'Print your QR code, place it, and you\'re live.',
               },
             ].map((item, i) => (
-              <div key={i} className="flex gap-4 bg-white border border-[#E8ECF2] rounded-2xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all">
-                <div className="flex-shrink-0 w-10 h-10 bg-[#F4B400]/10 rounded-xl border border-[#F4B400]/20 flex items-center justify-center">
+              <div key={i} className="flex gap-4 bg-white border border-[#EDEDED] rounded-2xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all">
+                <div className="flex-shrink-0 w-10 h-10 bg-[#C6F24E]/10 rounded-xl border border-[#C6F24E]/20 flex items-center justify-center">
                   {item.icon}
                 </div>
                 <div className="space-y-0.5 min-w-0">
-                  <h3 className="text-[15px] font-extrabold text-[#1A2332]">{item.title}</h3>
-                  <p className="text-[13px] text-[#2A3444] font-medium leading-relaxed">{item.desc}</p>
+                  <h3 className="text-[15px] font-extrabold text-[#0A0A0A]">{item.title}</h3>
+                  <p className="text-[13px] text-[#1A1A1A] font-medium leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -248,10 +248,10 @@ export default async function AboutPage({
       </section>
 
       {/* ─── Final CTA ─── */}
-      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#F8F6F1]">
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[#FFFFFF]">
         <div className="max-w-[1200px] mx-auto">
-          <div className="bg-[#1A2332] rounded-[32px] sm:rounded-[50px] p-8 sm:p-20 shadow-md flex flex-col md:flex-row items-center justify-between gap-8 sm:gap-12 text-center md:text-left relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#F4B400]/8 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
+          <div className="bg-[#0A0A0A] rounded-[32px] sm:rounded-[50px] p-8 sm:p-20 shadow-md flex flex-col md:flex-row items-center justify-between gap-8 sm:gap-12 text-center md:text-left relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#C6F24E]/8 rounded-full blur-[80px] translate-x-1/2 -translate-y-1/2" />
             <div className="space-y-4 sm:space-y-5 relative">
               <h3 className="text-[28px] sm:text-[44px] font-extrabold text-white tracking-tight leading-[1.1]">
                 {isTr ? 'Hemen başlayın, ilk 14 gün bizden.' : 'Start today, first 14 days on us.'}
@@ -263,7 +263,7 @@ export default async function AboutPage({
             <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0 relative w-full sm:w-auto">
               <Link
                 href={`${base}/auth/register`}
-                className="flex items-center justify-center gap-2 px-8 py-5 bg-[#F4B400] text-[#1A2332] text-[16px] sm:text-[17px] font-black rounded-[20px] border border-[#F4B400] shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all uppercase tracking-wide"
+                className="flex items-center justify-center gap-2 px-8 py-5 bg-[#C6F24E] text-[#0A0A0A] text-[16px] sm:text-[17px] font-black rounded-[20px] border border-[#C6F24E] shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all uppercase tracking-wide"
               >
                 {isTr ? 'Ücretsiz Dene' : 'Start Free Trial'}
                 <ArrowRight size={18} />

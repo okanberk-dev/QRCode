@@ -29,7 +29,7 @@ export default function DashboardRestaurantDetailPage() {
     yemekSepetiUrl: '',
     trendyolYemekUrl: '',
     notificationEmail: '',
-    primaryColor: '#F4B400',
+    primaryColor: '#C6F24E',
     isActive: true,
   });
 
@@ -51,7 +51,7 @@ export default function DashboardRestaurantDetailPage() {
           yemekSepetiUrl: data.yemekSepetiUrl || '',
           trendyolYemekUrl: data.trendyolYemekUrl || '',
           notificationEmail: data.notificationEmail || '',
-          primaryColor: data.primaryColor || '#F4B400',
+          primaryColor: data.primaryColor || '#C6F24E',
           isActive: data.isActive ?? true,
         });
       } catch (fetchError) {
@@ -118,7 +118,7 @@ export default function DashboardRestaurantDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-[#1A2332]" />
+        <Loader2 className="h-10 w-10 animate-spin text-[#0A0A0A]" />
       </div>
     );
   }
@@ -126,13 +126,13 @@ export default function DashboardRestaurantDetailPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
       <div className="flex items-center gap-3">
-        <Link href={`/${locale}/dashboard/restaurants`} className="rounded-2xl border border-[#E8ECF2] bg-white p-3 shadow-sm">
+        <Link href={`/${locale}/dashboard/restaurants`} className="rounded-2xl border border-[#EDEDED] bg-white p-3 shadow-sm">
           <ArrowLeft size={18} strokeWidth={2} />
         </Link>
         <div>
-          <h1 className="text-2xl font-extrabold text-[#1A2332]">{formData.name || (locale === 'tr' ? 'İşletme' : 'Location')}</h1>
+          <h1 className="text-2xl font-extrabold text-[#0A0A0A]">{formData.name || (locale === 'tr' ? 'İşletme' : 'Location')}</h1>
           <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-[#2A3444]">/{formData.slug}</p>
+            <p className="text-sm font-bold text-[#1A1A1A]">/{formData.slug}</p>
             <CopyUrlButton 
               url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${formData.slug}`} 
             />
@@ -148,10 +148,10 @@ export default function DashboardRestaurantDetailPage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
-        <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-6 shadow-sm sm:p-8">
+        <div className="rounded-[28px] border border-[#EDEDED] bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-6 flex items-center gap-3">
             <div className="h-6 w-2 rounded-full" style={{ backgroundColor: formData.primaryColor }} />
-            <h2 className="text-lg font-extrabold text-[#1A2332]">{locale === 'tr' ? 'Temel Bilgiler' : 'Basics'}</h2>
+            <h2 className="text-lg font-extrabold text-[#0A0A0A]">{locale === 'tr' ? 'Temel Bilgiler' : 'Basics'}</h2>
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -162,20 +162,20 @@ export default function DashboardRestaurantDetailPage() {
                 required
                 value={formData.name}
                 onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
-                className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-5 py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-5 py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
               />
             </label>
 
             <label className="space-y-2">
               <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">URL Slug</span>
-              <div className="flex items-center gap-3 rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-4">
-                <span className="shrink-0 text-xs font-black text-[#2A3444]">buaze.com/r/</span>
+              <div className="flex items-center gap-3 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4">
+                <span className="shrink-0 text-xs font-black text-[#1A1A1A]">buaze.com/r/</span>
                 <input
                   type="text"
                   required
                   value={formData.slug}
                   onChange={(event) => setFormData((prev) => ({ ...prev, slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
-                  className="w-full bg-transparent py-4 text-sm font-bold text-[#1A2332] outline-none"
+                  className="w-full bg-transparent py-4 text-sm font-bold text-[#0A0A0A] outline-none"
                 />
               </div>
             </label>
@@ -186,20 +186,20 @@ export default function DashboardRestaurantDetailPage() {
                 type="text"
                 value={formData.category}
                 onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
-                className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-5 py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-5 py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
               />
             </label>
 
             <label className="space-y-2">
               <span className="ml-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6B7280]">{locale === 'tr' ? 'Tema Rengi' : 'Theme Color'}</span>
-              <div className="flex h-[56px] items-center gap-3 rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-4">
+              <div className="flex h-[56px] items-center gap-3 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4">
                 <input
                   type="color"
                   value={formData.primaryColor}
                   onChange={(event) => setFormData((prev) => ({ ...prev, primaryColor: event.target.value }))}
                   className="h-10 w-12 cursor-pointer rounded-xl border-0 bg-transparent"
                 />
-                <span className="text-sm font-black text-[#1A2332]">{formData.primaryColor}</span>
+                <span className="text-sm font-black text-[#0A0A0A]">{formData.primaryColor}</span>
               </div>
             </label>
 
@@ -209,7 +209,7 @@ export default function DashboardRestaurantDetailPage() {
                 type="text"
                 value={formData.address}
                 onChange={(event) => setFormData((prev) => ({ ...prev, address: event.target.value }))}
-                className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-5 py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-5 py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
               />
             </label>
 
@@ -219,7 +219,7 @@ export default function DashboardRestaurantDetailPage() {
                 type="text"
                 value={formData.phone}
                 onChange={(event) => setFormData((prev) => ({ ...prev, phone: event.target.value }))}
-                className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-5 py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-5 py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
               />
             </label>
 
@@ -228,7 +228,7 @@ export default function DashboardRestaurantDetailPage() {
               <select
                 value={formData.isActive ? '1' : '0'}
                 onChange={(event) => setFormData((prev) => ({ ...prev, isActive: event.target.value === '1' }))}
-                className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-5 py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-5 py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
               >
                 <option value="1">{locale === 'tr' ? 'Aktif' : 'Active'}</option>
                 <option value="0">{locale === 'tr' ? 'Pasif' : 'Inactive'}</option>
@@ -237,10 +237,10 @@ export default function DashboardRestaurantDetailPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-[#E8ECF2] bg-white p-6 shadow-sm sm:p-8">
+        <div className="rounded-[28px] border border-[#EDEDED] bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-6 flex items-center gap-3">
-            <ExternalLink size={18} strokeWidth={2} className="text-[#1A2332]" />
-            <h2 className="text-lg font-extrabold text-[#1A2332]">{locale === 'tr' ? 'Harici Bağlantılar ve Bildirimler' : 'External Links & Notifications'}</h2>
+            <ExternalLink size={18} strokeWidth={2} className="text-[#0A0A0A]" />
+            <h2 className="text-lg font-extrabold text-[#0A0A0A]">{locale === 'tr' ? 'Harici Bağlantılar ve Bildirimler' : 'External Links & Notifications'}</h2>
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -250,7 +250,7 @@ export default function DashboardRestaurantDetailPage() {
                 type="email"
                 value={formData.notificationEmail}
                 onChange={(event) => setFormData((prev) => ({ ...prev, notificationEmail: event.target.value }))}
-                className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-5 py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-5 py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
               />
             </label>
 
@@ -263,7 +263,7 @@ export default function DashboardRestaurantDetailPage() {
                 type="text"
                 value={formData.googlePlaceId}
                 onChange={(event) => setFormData((prev) => ({ ...prev, googlePlaceId: event.target.value }))}
-                className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-5 py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-[#F4B400]"
+                className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-5 py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
               />
             </label>
 
@@ -277,7 +277,7 @@ export default function DashboardRestaurantDetailPage() {
                 value={formData.getirYemekUrl}
                 onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
                 placeholder="https://getir.com/yemek/..."
-                className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-5 py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-purple-600"
+                className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-5 py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-purple-600"
               />
             </label>
 
@@ -291,7 +291,7 @@ export default function DashboardRestaurantDetailPage() {
                 value={formData.yemekSepetiUrl}
                 onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
                 placeholder="https://www.yemeksepeti.com/..."
-                className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-5 py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-pink-600"
+                className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-5 py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-pink-600"
               />
             </label>
 
@@ -305,7 +305,7 @@ export default function DashboardRestaurantDetailPage() {
                 value={formData.trendyolYemekUrl}
                 onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
                 placeholder="https://www.trendyol.com/..."
-                className="w-full rounded-2xl border border-[#E8ECF2] bg-[#F8F6F1] px-5 py-4 text-sm font-bold text-[#1A2332] outline-none transition-all focus:ring-2 focus:ring-orange-500"
+                className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-5 py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-orange-500"
               />
             </label>
           </div>
@@ -326,7 +326,7 @@ export default function DashboardRestaurantDetailPage() {
             <Link
               href={`/r/${formData.slug}`}
               target="_blank"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#E8ECF2] bg-white px-5 py-3 text-sm font-black text-[#1A2332]"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#EDEDED] bg-white px-5 py-3 text-sm font-black text-[#0A0A0A]"
             >
               <ExternalLink size={18} strokeWidth={2} />
               {locale === 'tr' ? 'Önizle' : 'Preview'}
@@ -334,7 +334,7 @@ export default function DashboardRestaurantDetailPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#1A2332] px-5 py-3 text-sm font-black text-white disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0A0A0A] px-5 py-3 text-sm font-black text-white disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save size={18} strokeWidth={2} />}
               {locale === 'tr' ? 'Kaydet' : 'Save'}

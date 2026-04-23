@@ -95,7 +95,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
   };
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col bg-[#1A2332]">
+    <div className="flex h-full flex-col bg-[#0A0A0A]">
       {/* Logo */}
       <div className="border-b border-white/10 px-5 py-5">
         <Link href={`/${locale}/dashboard`} className="flex items-center gap-3">
@@ -119,7 +119,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
               onClick={() => setDrawerOpen(false)}
               className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition-all ${
                 isActive
-                  ? 'bg-[#F4B400] text-[#1A2332]'
+                  ? 'bg-[#C6F24E] text-[#0A0A0A]'
                   : 'text-white/60 hover:bg-white/5 hover:text-white'
               }`}
             >
@@ -132,8 +132,8 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
 
       {/* Trial banner */}
       {user.plan === 'trial' && trialDaysLeft !== null && (
-        <div className="mx-3 mb-3 rounded-2xl border border-[#F4B400]/30 bg-[#F4B400]/10 p-4">
-          <div className="mb-1.5 flex items-center gap-2 text-[#F4B400]">
+        <div className="mx-3 mb-3 rounded-2xl border border-[#C6F24E]/30 bg-[#C6F24E]/10 p-4">
+          <div className="mb-1.5 flex items-center gap-2 text-[#C6F24E]">
             <Crown size={13} strokeWidth={2} />
             <span className="text-[10px] font-black uppercase tracking-[0.25em]">{copy.plan}</span>
           </div>
@@ -144,7 +144,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
       {/* User footer */}
       <div className="border-t border-white/10 bg-black/20 p-3">
         <div className="mb-2 flex items-center gap-3 rounded-2xl border border-white/5 bg-white/5 px-3 py-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F4B400] text-sm font-black text-[#1A2332]">{initial}</div>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] text-sm font-black text-[#0A0A0A]">{initial}</div>
           <div className="min-w-0">
             <p className="truncate text-sm font-black text-white">{displayName}</p>
             <p className="truncate text-[11px] font-bold text-white/45">{user.email}</p>
@@ -162,7 +162,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
   );
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] lg:flex lg:h-screen lg:overflow-hidden">
+    <div className="min-h-screen bg-[#FFFFFF] lg:flex lg:h-screen lg:overflow-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden h-full w-64 shrink-0 border-r border-white/5 lg:flex">
         <SidebarContent />
@@ -170,21 +170,21 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
 
       <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto">
         {/* Mobile top bar */}
-        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#E8ECF2]/60 bg-white/95 px-4 py-3 backdrop-blur lg:hidden shadow-sm">
+        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#EDEDED]/60 bg-white/95 px-4 py-3 backdrop-blur lg:hidden shadow-sm">
           <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center"><BuazeLogo size={36} variant="default" imageUrl={logoUrl} /></div>
-            <span className="text-base font-black tracking-tight text-[#1A2332]">Buaze</span>
+            <span className="text-base font-black tracking-tight text-[#0A0A0A]">Buaze</span>
           </Link>
 
           <div className="flex items-center gap-2">
             {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 5 && (
-              <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-[#FFF8D6] border border-[#FFD666]/50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#D69E00]">
+              <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-[#EAF9B8] border border-[#D7F98E]/50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#A8D62E]">
                 <Crown size={10} /> {trialDaysLeft}g
               </span>
             )}
             <button
               onClick={() => setDrawerOpen((v) => !v)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1A2332] text-sm font-black text-[#F4B400]"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0A0A0A] text-sm font-black text-[#C6F24E]"
             >
               {drawerOpen ? <X size={18} strokeWidth={2} /> : <span>{initial}</span>}
             </button>
@@ -215,7 +215,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
       {/* Mobile bottom nav — 4 primary tabs + More */}
       <nav
         aria-label={copy.dashboard}
-        className="fixed bottom-0 left-0 right-0 z-40 bg-[#1A2332]/95 border-t border-white/10 backdrop-blur-md shadow-[0_-4px_20px_0_rgba(0,0,0,0.35)] lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 bg-[#0A0A0A]/95 border-t border-white/10 backdrop-blur-md shadow-[0_-4px_20px_0_rgba(0,0,0,0.35)] lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <ul className="flex items-stretch px-2 pt-2 pb-1.5">
@@ -229,16 +229,16 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
                   className={`relative flex flex-col items-center gap-1 px-1 py-1.5 rounded-xl transition-colors ${
-                    isActive ? 'text-[#F4B400]' : 'text-[#E8ECF2]/70 hover:text-white'
+                    isActive ? 'text-[#C6F24E]' : 'text-[#EDEDED]/70 hover:text-white'
                   }`}
                 >
                   {isActive && (
                     <span
                       aria-hidden="true"
-                      className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#F4B400] rounded-b-full"
+                      className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#C6F24E] rounded-b-full"
                     />
                   )}
-                  <span className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-[#F4B400]/15' : ''}`}>
+                  <span className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-[#C6F24E]/15' : ''}`}>
                     <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                   </span>
                   <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full leading-none">
@@ -256,16 +256,16 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
               aria-expanded={moreOpen}
               aria-haspopup="dialog"
               className={`relative flex w-full flex-col items-center gap-1 px-1 py-1.5 rounded-xl transition-colors ${
-                moreActive ? 'text-[#F4B400]' : 'text-[#E8ECF2]/70 hover:text-white'
+                moreActive ? 'text-[#C6F24E]' : 'text-[#EDEDED]/70 hover:text-white'
               }`}
             >
               {moreActive && (
                 <span
                   aria-hidden="true"
-                  className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#F4B400] rounded-b-full"
+                  className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#C6F24E] rounded-b-full"
                 />
               )}
-              <span className={`p-2 rounded-xl transition-colors ${moreActive ? 'bg-[#F4B400]/15' : ''}`}>
+              <span className={`p-2 rounded-xl transition-colors ${moreActive ? 'bg-[#C6F24E]/15' : ''}`}>
                 <MoreHorizontal size={20} strokeWidth={moreActive ? 2.5 : 2} />
               </span>
               <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full leading-none">
@@ -282,11 +282,11 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
           <button
             type="button"
             aria-label="close"
-            className="absolute inset-0 bg-[#0E1525]/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#000000]/60 backdrop-blur-sm"
             onClick={() => setMoreOpen(false)}
           />
           <div
-            className="absolute bottom-0 left-0 right-0 bg-[#1A2332] rounded-t-3xl border-t border-white/10 shadow-2xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            className="absolute bottom-0 left-0 right-0 bg-[#0A0A0A] rounded-t-3xl border-t border-white/10 shadow-2xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <div className="mb-3 flex items-center justify-between px-2">
@@ -312,7 +312,7 @@ export default function UserDashboardShell({ locale, user, announcements = [], l
                       aria-current={isActive ? 'page' : undefined}
                       className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${
                         isActive
-                          ? 'bg-[#F4B400] text-[#1A2332]'
+                          ? 'bg-[#C6F24E] text-[#0A0A0A]'
                           : 'text-white/80 hover:bg-white/5 hover:text-white'
                       }`}
                     >
