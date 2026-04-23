@@ -148,6 +148,12 @@ h1, h2, h3, h4, h5, h6 {
   animation: slideIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
+/* ECG draw — stroke-dashoffset reveal for the lime heartbeat line (footer) */
+@keyframes ecgDraw {
+  from { stroke-dashoffset: 2000; }
+  to   { stroke-dashoffset: 0; }
+}
+
 /* Marquee — horizontal logo strip, GPU-friendly, respects reduced motion */
 @keyframes marqueeSlide {
   from { transform: translateX(0); }
@@ -165,6 +171,15 @@ h1, h2, h3, h4, h5, h6 {
   .animate-slide-up,
   .animate-slide-in {
     animation: none !important;
+  }
+}
+
+/* ECG draw stops instantly for reduced motion too. Scoped separately
+ * because it targets an inline-styled element, not a class. */
+@media (prefers-reduced-motion: reduce) {
+  [style*='ecgDraw'] {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
   }
 }
 

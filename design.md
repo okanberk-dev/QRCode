@@ -10,8 +10,8 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 
 | Faz | Başlık | Branch | PR | Durum |
 |-----|--------|--------|----|-------|
-| 0 | Baseline audit + design.md iskelet + `.design/` + §16 | `claude/design-phase-0-baseline` | draft | 🔄 Devam |
-| 1 | Chrome + Homepage v3 (animated counter, bento, marquee, sticky CTA, toast, video modal) | `claude/design-phase-1-home` | — | ⏳ Bekliyor |
+| 0 | Baseline audit + design.md iskelet + `.design/` + §16 | `claude/design-phase-0-baseline` | #39 draft | ✅ Tamamlandı |
+| 1 | Chrome + Homepage v3 (animated counter, bento, marquee, sticky CTA, toast, video modal) | `claude/design-phase-1-home` | draft | 🔄 Devam |
 | 2 | Auth + Onboarding (5 adım + confetti + 404) | `claude/design-phase-2-auth-onboarding` | — | ⏳ Bekliyor |
 | 3 | Marketing secondary (features, AI Co-Pilot, pricing, ROI, QR, integrations, compare, stories, case-study) | `claude/design-phase-3-marketing` | — | ⏳ Bekliyor |
 | 4 | Solutions (7 sektör) | `claude/design-phase-4-solutions` | — | ⏳ Bekliyor |
@@ -66,13 +66,48 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 
 ---
 
+### Faz 1 — 2026-04-23
+
+**Kapsam:** Chrome (footer premium redesign) + Homepage v3 conversion layer (hero animated counter + video modal + marquee + bento grid + industry tabs + sticky CTA bar + social proof toast).
+
+**Yeni dosyalar** (7 client component + 1 API scaffold):
+- `src/components/marketing/AnimatedCounter.tsx` — IntersectionObserver-tabanlı scroll-tetiklenen sayaç, easeOut 1.6s, `prefers-reduced-motion` farkında (ref: `.design/site/site-homepage-v3.jsx:10` Counter)
+- `src/components/marketing/MarqueeRow.tsx` — CSS-only marquee, globals.css'teki `animate-marquee` ile beraber çalışır, maske ile kenar fade (ref: `.design/site/site-homepage-v3.jsx:484`)
+- `src/components/marketing/StickyCtaBar.tsx` — scroll > 600px eşiğinde görünen koyu CTA çubuğu, sessionStorage dedupe (ref: `.design/site/site-premium.jsx:301` ConversionLayer)
+- `src/components/marketing/SocialProofToast.tsx` — 3s sonra ilk, sonra 8s aralıklarla TR/EN 5 toast döner, sessionStorage dedupe, reduced-motion'da hiç çıkmaz (ref: aynı ConversionLayer)
+- `src/components/marketing/VideoModal.tsx` — iframe sandbox + ESC + backdrop close + body-scroll lock
+- `src/components/marketing/WatchDemoButton.tsx` — hero'daki "Demo izle" CTA'nın client-sarıcısı, VideoModal'ı tetikler
+- `src/components/marketing/HomeIndustryTabs.tsx` — 8 sektör tab'ı, aktif tab koyu, body metni dinamik değişir (ref: `.design/site/site-homepage-v3.jsx:409` activeSector)
+- `src/components/marketing/NewsletterSignup.tsx` — footer email capture, optimistic UX (501 de başarılı sayılır)
+- `src/app/api/newsletter/route.ts` — 501 scaffold + per-IP rate limit (10 / 10dk)
+
+**Değişen dosyalar:**
+- `src/components/marketing/MarketingFooter.tsx` — tamamen yeniden yazıldı: ECG animated SVG divider + newsletter capture row + 1.6fr+4-col link grid (Ürün/Çözümler/Şirket/Destek) + 4 social pill + bottom rail (© BUAZE BİLİŞİM + "Tüm sistemler çalışıyor" canlı yeşil nokta)
+- `src/app/[locale]/page.tsx` — hero badge'de AnimatedCounter, hero CTA'larında WatchDemoButton + "Nasıl çalışır?" link; logo strip MarqueeRow'a çevrildi; yeni bento grid section (5.5 — QR Studio / AI Co-Pilot / Analytics / Integrations, 4-cell responsive); solutions grid'i HomeIndustryTabs ile değiştirildi; footer sonrasına StickyCtaBar + SocialProofToast mount'landı; eski `sectors` değişkeni kaldırıldı (HomeIndustryTabs kendi listesini tutuyor)
+- `src/app/globals.css` — `@keyframes ecgDraw` eklendi (footer heartbeat line), reduced-motion bloğuna ecgDraw scope'u eklendi
+
+**Backend etkisi:** Tek yeni API: `/api/newsletter` scaffold (501). Mevcut hiçbir route, Prisma, auth veya IDOR helper'ı değişmedi. Homepage server component olmayı sürdürüyor; tüm yeni interaktif parçalar ayrı `'use client'` dosyalarına taşındı.
+
+**Verification:**
+- `npx tsc --noEmit` yeni/değişen dosyalarda 0 hata
+- `/tr` ve `/en` → 200 (dev server)
+- `POST /api/newsletter` → `{ error: 'not_implemented', received: { email, locale }, ... }` (status 501, UI bunu başarı sayar)
+- Manual: homepage scrolled >600px sticky CTA görünür, 3s sonra sosyal kanıt toast çıkar, "Demo izle" video modalını açar, bento grid lg breakpoint'te 4x2 asimetrik grid, industry tabs aktif tab'ı değiştirince body metni değişir
+
+**Sonraki faz için not:**
+- Faz 2: Auth (login/register Pulse split-screen, sol sosyal proof sidebar) + Onboarding 5-adım + not-found sayfası. Mevcut JWT cookie akışı (`verifyJwt` + redirect) dokunulmaz.
+- Öncelikle `.design/site/site-onboarding-v2.jsx` (5-step canonical) + `.design/site/site-pages3.jsx` (auth forms) okunmalı.
+- Canvas confetti için dep tercihi (`canvas-confetti`) scope'a eklenecek mi — küçük paket ama yine de sorulmalı.
+
+---
+
 ## Backend açıkları
 
 Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. Her faz sırasında bu tablo doldurulur; production'a çıkmadan önce bağlanmalı.
 
 | Feature | Tasarım referansı | Durum | UI sahibi | Yapılması gereken |
 |---------|-------------------|-------|-----------|---------------------|
-| Newsletter signup | `site-shared.jsx` / `site-premium.jsx` footer | yok | Faz 1 | `POST /api/newsletter` (Resend/Mailchimp) + email store |
+| Newsletter signup | `site-shared.jsx` / `site-premium.jsx` footer | UI + `/api/newsletter` (501 scaffold, Faz 1) | Faz 1 ✓ | Provider bağla (Resend / Mailchimp / Brevo) + `NewsletterSubscriber` Prisma modeli |
 | Stripe/Iyzico billing | `site-pages3.jsx` AdminBilling | mock `GET /api/billing/summary` + `/invoices` (501) | Faz 7 | `BillingSubscription` + `BillingInvoice` Prisma modelleri, Stripe webhook, plan change flow |
 | ROI hesaplayıcı — kaydet | `site-pages3.jsx` ROICalculatorPage | UI only | Faz 3 | Opsiyonel: `POST /api/roi/save` veya localStorage + email paylaş |
 | Kariyer başvurusu | `site-pages3.jsx` Careers | mock liste | Faz 5 | `POST /api/careers/apply` (attachment + HR mail) veya Ashby/Greenhouse entegrasyonu |
