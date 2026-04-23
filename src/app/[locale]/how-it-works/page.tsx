@@ -12,11 +12,26 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const isTr = locale === 'tr';
+  const title = isTr ? 'Nasıl Çalışır? — Buaze QR İtibar Yönetimi' : 'How It Works — Buaze QR Reputation Management';
+  const description = isTr
+    ? 'Buaze ile dijital itibarınızı 3 basit adımda yönetmeye başlayın: QR kod oluştur, müşteri geri bildirimi topla, panelde takip et.'
+    : 'Start managing your digital reputation in 3 simple steps with Buaze: create a QR code, collect customer feedback, track in your dashboard.';
   return {
-    title: locale === 'tr' ? 'Nasıl Çalışır? — Buaze' : 'How it Works — Buaze',
-    description: locale === 'tr'
-      ? 'Buaze ile dijital itibarınızı 3 basit adımda yönetmeye başlayın.'
-      : 'Start managing your digital reputation in 3 simple steps with Buaze.',
+    title: { absolute: title },
+    description,
+    keywords: isTr
+      ? ['QR kod itibar yönetimi nasıl çalışır', 'müşteri geri bildirim sistemi kurulum', 'google yorum toplama sistemi', 'dijital itibar adımları']
+      : ['QR reputation management how it works', 'customer feedback system setup', 'Google review collection system', 'digital reputation steps'],
+    alternates: {
+      canonical: `https://buaze.com/${locale}/how-it-works`,
+      languages: { 'tr': 'https://buaze.com/tr/how-it-works', 'en': 'https://buaze.com/en/how-it-works', 'x-default': 'https://buaze.com/en/how-it-works' },
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://buaze.com/${locale}/how-it-works`,
+    },
   };
 }
 
@@ -31,38 +46,71 @@ export default async function HowItWorksPage({
   const t = getTranslations(locale);
   const base = `/${locale}`;
 
+  const isTr = locale === 'tr';
+
   const steps = [
     {
       id: '01',
-      title: locale === 'tr' ? 'Profesyonel QR Kodunuzu Oluşturun' : 'Create Your Professional QR Code',
-      desc: locale === 'tr' 
-        ? 'İşletmenize özel, estetik ve dikkat çekici QR kodları saniyeler içinde panelimizden tasarlayın.' 
+      title: isTr ? 'Profesyonel QR Kodunuzu Oluşturun' : 'Create Your Professional QR Code',
+      desc: isTr
+        ? 'İşletmenize özel, estetik ve dikkat çekici QR kodları saniyeler içinde panelimizden tasarlayın.'
         : 'Design aesthetic and remarkable QR codes specific to your business from our panel in seconds.',
       icon: <QrCode size={32} />,
       color: '#F4B400'
     },
     {
       id: '02',
-      title: locale === 'tr' ? 'Müşteri Deneyimini Basitleştirin' : 'Simplify Customer Experience',
-      desc: locale === 'tr' 
-        ? 'Müşterileriniz tek bir tarama ile doğrudan sizin belirlediğiniz akıllı akışa yönlendirilsin.' 
+      title: isTr ? 'Müşteri Deneyimini Basitleştirin' : 'Simplify Customer Experience',
+      desc: isTr
+        ? 'Müşterileriniz tek bir tarama ile doğrudan sizin belirlediğiniz akıllı akışa yönlendirilsin.'
         : 'Your customers are directed directly to the smart flow you specify with a single scan.',
       icon: <Users size={32} />,
       color: '#F4B400'
     },
     {
       id: '03',
-      title: locale === 'tr' ? 'Operasyonları Yönetin' : 'Manage Operations',
-      desc: locale === 'tr' 
-        ? 'Geri bildirim akışını anlık takip edin ve krizleri operasyonel olarak profesyonelce yönetin.' 
+      title: isTr ? 'Operasyonları Yönetin' : 'Manage Operations',
+      desc: isTr
+        ? 'Geri bildirim akışını anlık takip edin ve krizleri operasyonel olarak profesyonelce yönetin.'
         : 'Monitor feedback flow in real-time and manage crises operationally and professionally.',
       icon: <Trophy size={32} />,
       color: '#F4B400'
     }
   ];
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'HowTo',
+        name: isTr ? 'Buaze ile Dijital İtibarınızı Nasıl Yönetirsiniz?' : 'How to Manage Your Digital Reputation with Buaze',
+        description: isTr
+          ? 'QR kod oluşturun, müşteri geri bildirimi toplayın ve panelde takip edin.'
+          : 'Create a QR code, collect customer feedback, and track in your dashboard.',
+        totalTime: 'PT5M',
+        step: steps.map((s, i) => ({
+          '@type': 'HowToStep',
+          position: i + 1,
+          name: s.title,
+          text: s.desc,
+        })),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+          { '@type': 'ListItem', position: 2, name: isTr ? 'Nasıl Çalışır?' : 'How It Works', item: `https://buaze.com/${locale}/how-it-works` },
+        ],
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F6F1] text-[#1A2332] font-sans pt-[64px] selection:bg-[#F4B400]/30">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero Section (3D Enriched) ─── */}

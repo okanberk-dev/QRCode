@@ -174,7 +174,7 @@ export default function ComparisonLayout({
           <h2 className="text-[32px] sm:text-[64px] font-extrabold leading-[1.1] sm:leading-[1] tracking-tight">
             {locale === 'tr' ? 'Daha Fazla Beklemeyin' : 'Don\'t Wait Any Longer'}
           </h2>
-          <p className="text-[17px] sm:text-[20px] text-[#6B7280] font-medium max-w-[600px] mx-auto">
+          <p className="text-[17px] sm:text-[20px] text-white/80 font-medium max-w-[600px] mx-auto">
              {locale === 'tr' ? 'Onlarca işletme gibi siz de manuel süreçleri geride bırakın.' : 'Join dozens of businesses leaving manual processes behind.'}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-4">

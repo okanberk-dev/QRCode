@@ -134,9 +134,69 @@ export const translations = {
     feedback_email_placeholder: 'E-posta Adresiniz',
     feedback_kvkk_label: 'Kişisel verilerimin işlenmesine ilişkin KVKK metnini okudum ve onaylıyorum.',
     feedback_marketing_label: 'Kampanya ve duyurulardan haberdar olmak için iletişim izni veriyorum.',
-    feedback_kvkk_text: '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, bu form aracılığıyla paylaştığınız kişisel verileriniz (ad, soyad, telefon, e-posta), şikayet ve önerilerinizin değerlendirilmesi ve müşteri memnuniyetinin sağlanması amacıyla işlenmektedir. Verileriniz, yasal zorunluluklar dışında üçüncü taraflarla paylaşılmayacaktır.',
-    feedback_marketing_text: 'Paylaştığım iletişim bilgilerine kampanya, indirim, promosyon ve yeni ürünler hakkında bilgilendirme amaçlı ticari elektronik ileti gönderilmesini kabul ediyorum.',
+    feedback_kvkk_text: `KVKK AYDINLATMA METNİ
+
+1. Veri Sorumlusu
+Bu form aracılığıyla paylaşılan kişisel veriler; hizmet aldığınız restoran işletmesi ("İşletme") ile İşletme'ye teknik altyapı ve veri işleme hizmeti sağlayan Buaze (veri işleyen) tarafından, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında işlenmektedir. Veri sorumlusu sıfatını, QR kodunu bulundurarak geri bildirim toplayan İşletme taşır.
+
+2. İşlenen Kişisel Veriler
+• Kimlik: ad, soyad
+• İletişim: telefon numarası, e-posta adresi
+• Müşteri işlem: ziyaret tarihi, masa numarası, şube/lokasyon, puan, yorum metni
+• İşlem güvenliği: IP adresi, cihaz/tarayıcı bilgisi, zaman damgası
+
+3. İşleme Amacı ve Hukuki Sebebi
+Kişisel verileriniz; (i) şikâyet ve önerilerinizin değerlendirilmesi, (ii) müşteri memnuniyetinin sağlanması ve deneyiminizin iyileştirilmesi, (iii) sizinle iletişime geçilerek konunun çözümlenmesi, (iv) hizmet kalitesinin ölçülmesi ve raporlanması amaçlarıyla işlenir. İşleme; KVKK m. 5/2-(c) "sözleşmenin kurulması veya ifası", m. 5/2-(f) "meşru menfaat" hukuki sebeplerine ve aşağıdaki açık rıza onayınıza dayanır.
+
+4. Aktarım
+Verileriniz; yalnızca (a) hizmet sağlayıcı Buaze'nin sunucu ve altyapısı kapsamında, (b) yasal yükümlülükler gereği yetkili kamu kurum ve kuruluşlarına, (c) gerektiğinde hukuki danışmanlarımıza KVKK m. 8 ve m. 9 şartlarına uygun şekilde aktarılabilir. Yurt dışına aktarım yapılmaz; veriler Türkiye'deki veri merkezlerinde saklanır.
+
+5. Saklama Süresi
+Kişisel verileriniz, işleme amacının ortadan kalkmasını takiben en geç 24 ay içinde ya da talebiniz üzerine derhâl silinir, yok edilir veya anonim hâle getirilir. Mevzuatta daha uzun süre öngörülmesi hâlinde yasal süre esas alınır.
+
+6. Haklarınız (KVKK m. 11)
+Veri sorumlusuna başvurarak; kişisel verilerinizin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme, işlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme, yurt içi/yurt dışı aktarıldığı üçüncü kişileri bilme, eksik/yanlış işlenmişse düzeltilmesini isteme, silinmesini veya yok edilmesini isteme, düzeltme/silme işlemlerinin aktarıldığı üçüncü kişilere bildirilmesini isteme, otomatik sistemlerle analiz edilmesi sonucu aleyhinize çıkan bir sonuca itiraz etme ve zarara uğramanız hâlinde tazminat talep etme haklarına sahipsiniz.
+
+7. Başvuru
+Haklarınızı kullanmak için QR kodu bulunduran İşletme'ye doğrudan yazılı başvurabilir ya da Buaze aracılığıyla destek@buaze.com adresi üzerinden talepte bulunabilirsiniz. Başvurularınız en geç 30 gün içinde ücretsiz olarak sonuçlandırılır.
+
+Yukarıdaki aydınlatmayı okuduğumu, anladığımı; kişisel verilerimin bu kapsamda işlenmesine AÇIK RIZA verdiğimi beyan ederim.`,
+    feedback_marketing_text: `TİCARİ ELEKTRONİK İLETİ (İLETİŞİM) İZNİ
+
+6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun ("ETK"), Ticari İletişim ve Ticari Elektronik İletiler Hakkında Yönetmelik ve KVKK m. 5/1 kapsamındaki açık rızam ile;
+
+1. Kapsam
+Paylaştığım ad, telefon ve e-posta bilgilerime; hizmet aldığım restoran işletmesi ("İşletme") ve teknik hizmet sağlayıcısı Buaze tarafından veya bunlar adına aracı hizmet sağlayıcılar vasıtasıyla; SMS, MMS, e-posta, otomatik arama, anlık bildirim ve benzeri elektronik iletişim kanallarıyla ticari elektronik ileti gönderilmesini kabul ediyorum.
+
+2. İçerik
+Bu iletiler; kampanya, indirim, kupon, sadakat programı, özel gün kutlamaları, yeni menü ve ürün duyuruları, etkinlik davetleri ile müşteri memnuniyet anketlerini içerebilir.
+
+3. İYS Kaydı
+İzin bilgim, ETK m. 6 gereği İleti Yönetim Sistemi'ne (İYS — iys.org.tr) kaydedilecektir. İYS üzerinden dilediğim zaman izin durumumu görüntüleyebilir ve değiştirebilirim.
+
+4. Ret Hakkı
+Bu izni hiçbir gerekçe göstermeksizin ve ücretsiz olarak her zaman geri çekebilirim. Her iletide yer alacak "RED" / "ÇIK" bağlantısını kullanarak, İYS üzerinden ya da destek@buaze.com adresine e-posta göndererek iletişimi sonlandırabilirim. Ret talebim en geç 3 iş günü içinde işleme alınır.
+
+5. Saklama
+İletişim onayım ve ret kayıtlarım, ispat yükümlülüğü gereği izin sona erdikten sonra en az 3 yıl süreyle saklanır.
+
+Bu metni okudum, anladım ve yukarıda belirtilen şekilde tarafıma ticari elektronik ileti gönderilmesine AÇIK RIZA veriyorum. Bu izni vermesem de geri bildirim formumu gönderebileceğimi biliyorum.`,
     feedback_low_disclaimer: 'Bilgileriniz sadece restoran yetkilisi ile paylaşılacaktır.',
+    feedback_kvkk_footer: 'Son Güncelleme: Nisan 2026 · v2.0',
+    feedback_marketing_footer: 'İYS Kayıt Zorunlu · ETK m. 6',
+
+    // Rating-specific thank-you messages (1-3 stars)
+    thanks_1_title: 'Yaşadıklarınız için üzgünüz',
+    thanks_1_sub: 'Deneyiminiz hiç olmaması gereken bir şekilde sonlanmış. Geri bildiriminiz doğrudan restoran yönetimine iletildi ve en kısa sürede size ulaşarak bu durumu telafi etmek için gerekli adımları atacaklar. Bize ikinci bir şans verdiğiniz için teşekkür ederiz.',
+    thanks_1_note: 'Restoran yönetimi en geç 24 saat içinde sizinle iletişime geçecektir.',
+
+    thanks_2_title: 'Geri bildiriminiz için teşekkürler',
+    thanks_2_sub: 'Sizi memnun edemediğimiz için özür dileriz. Belirttiğiniz noktalar titizlikle incelenecek ve hizmet kalitemizi artırmak için somut adımlar atacağız. Sesinizi duymak, daha iyi olmamız için en değerli rehberimiz.',
+    thanks_2_note: 'Restoran ekibimiz konuyu değerlendirip geri dönüş yapacaktır.',
+
+    thanks_3_title: 'Dürüst yorumunuz için teşekkürler',
+    thanks_3_sub: 'İyileştirebileceğimiz yönleri paylaştığınız için minnettarız. Görüşleriniz, mutfaktan servise her alanda kendimizi geliştirmemize yardımcı oluyor. Bir sonraki ziyaretinizde fark yaratacak bir deneyim sunmak için çalışıyoruz.',
+    thanks_3_note: 'Geri bildiriminiz ilgili ekiplere iletildi.',
     rating_title_suffix: 'DEĞERLENDİRMESİ',
     rating_very_poor: 'Çok Kötü',
     rating_poor: 'Kötü',
@@ -158,21 +218,21 @@ export const translations = {
     // About
     about_hero_title_1: 'Gerçek İncelemeler',
     about_hero_title_2: 'Gerçek Büyüme',
-    about_hero_subtitle: 'Amacımız, işletmelerin müşterileriyle olan bağını güçlendirmek, her yapıcı eleştiriyi bir gelişim fırsatına dönüştürmek ve dijital dünyada hak ettikleri itibar seviyesini korumaktır.',
+    about_hero_subtitle: 'Müşteri sesi, bir işletmenin en değerli varlığıdır. Biz bu sesi ölçülür, yönetilebilir ve büyümeye dönüştürülebilir kılmak için buradayız. Her yapıcı eleştiri bir fırsat, her olumlu yorum ise kalıcı bir güven inşasıdır.',
     about_mission_title: 'Vizyoner Misyonumuz',
-    about_mission_desc: 'İşletme sahiplerine, veriye dayalı kararlar almalarını sağlayacak şeffaf araçlar sunmak. Her müşteri etkileşiminin ve her başarının duyulması gerektiğine yürekten inanıyoruz.',
+    about_mission_desc: 'İşletme sahiplerine, veriye dayalı kararlar almalarını sağlayacak şeffaf araçlar sunmak. Düşük puanların Google\'a gitmeden işletmeye iletilmesi ve yüksek puanların organik olarak yayılması — tüm bu sürecin tek, sade bir panelde yönetilmesi bizim varoluş sebebimizdir.',
     about_vision_title: 'Gelecek Vizyonumuz',
-    about_vision_desc: 'Dijital itibar yönetiminde dünya çapında standartları belirleyen, güvenilirliği en üst seviyeye taşıyan bir teknoloji ortağı olmak. Restoranlardan otellere kadar her işletmenin dijital pusulası olmayı hedefliyoruz.',
+    about_vision_desc: 'Dijital itibar yönetiminde Türkiye\'nin lider platformu olmak ve küresel pazara açılmak. Restoranlardan otellere, kliniklerden hukuk bürolarına kadar her işletmenin dijital pusulası olan Buaze, itibar yönetimini sektör bağımsız bir standart haline getirmeyi hedefliyor.',
     about_values_title: 'Sarsılmaz Değerlerimiz',
     about_values_subtitle: 'Şeffaflık, teknolojik yenilikçilik ve yüzde yüz müşteri odaklılık.',
     about_val1_title: 'Mutlak Şeffaflık',
-    about_val1_desc: 'Gerçek insanlardan gelen, doğrulanmış geri bildirimler.',
+    about_val1_desc: 'Gerçek insanlardan gelen, doğrulanmış geri bildirimler. Hiçbir manipülasyon ya da yapay şişirme — sadece doğru veri, doğru karar.',
     about_val2_title: 'Sürekli İnovasyon',
-    about_val2_desc: 'En modern QR ve geri bildirim yönetimi algoritmaları.',
+    about_val2_desc: 'QR teknolojisini akıllı yönlendirme sistemiyle bir arada kullanan platformumuz, her müşteri geri bildirimini saniyeler içinde aksiyon alınabilir veriye dönüştürür.',
     about_val3_title: 'İşletme Tutkusu',
-    about_val3_desc: 'Büyüme yolculuğunuzda en yakın yol arkadaşınız.',
+    about_val3_desc: 'Büyüme yolculuğunuzda en yakın yol arkadaşınız. 500\'den fazla işletmenin başarısına ortak olduk; her birinin hikayesini öğrenerek platformumuzu geliştirdik.',
     about_val4_title: 'Kesintisiz Destek',
-    about_val4_desc: 'İhtiyaç duyduğunuz her an uzman ekibimiz yanınızda.',
+    about_val4_desc: 'İhtiyaç duyduğunuz her an uzman ekibimiz yanınızda. Teknik ve stratejik konularda hızlı ve güvenilir destek taahhüdü veriyoruz.',
 
     // Contact
     contact_title: 'İletişime Geçin',
@@ -578,21 +638,21 @@ export const translations = {
     // About
     about_hero_title_1: 'Real Reviews',
     about_hero_title_2: 'Real Growth',
-    about_hero_subtitle: 'Our goal is to strengthen the bond between businesses and their customers, turn every constructive criticism into a growth opportunity, and protect the level of reputation they deserve.',
+    about_hero_subtitle: 'The customer\'s voice is a business\'s most valuable asset. We\'re here to make that voice measurable, manageable, and convertible into growth. Every piece of constructive feedback is an opportunity; every positive review is lasting trust.',
     about_mission_title: 'Our Visionary Mission',
-    about_mission_desc: 'To provide business owners with transparent tools that enable data-driven decisions. We believe that every customer interaction and every success deserves to be heard.',
+    about_mission_desc: 'To provide business owners with transparent tools that enable data-driven decisions. Negative ratings reaching you before they hit Google, and positive ones spreading organically — all managed in one clean dashboard — that\'s our reason for being.',
     about_vision_title: 'Our Future Vision',
-    about_vision_desc: 'To be a technology partner that sets global standards in digital reputation management. We aim to be the digital compass for every business from restaurants to hotels.',
+    about_vision_desc: 'To become Turkey\'s leading digital reputation platform and expand globally. From restaurants to hotels, clinics to law firms, Buaze aims to make reputation management an industry-agnostic standard.',
     about_values_title: 'Our Core Values',
     about_values_subtitle: 'Transparency, technological innovation, and 100% customer focus.',
     about_val1_title: 'Absolute Transparency',
-    about_val1_desc: 'Verified feedback from real human beings.',
+    about_val1_desc: 'Verified feedback from real people. No manipulation or artificial inflation — just accurate data for accurate decisions.',
     about_val2_title: 'Continuous Innovation',
-    about_val2_desc: 'The most modern QR and feedback management algorithms.',
+    about_val2_desc: 'Our platform pairs QR technology with a smart routing system that converts every customer response into actionable insight within seconds.',
     about_val3_title: 'Passion for Business',
-    about_val3_desc: 'Your closest companion on your growth journey.',
+    about_val3_desc: 'Your closest partner on your growth journey. We\'ve contributed to the success of 500+ businesses, learning from each story to improve our platform.',
     about_val4_title: 'Uninterrupted Support',
-    about_val4_desc: 'Our expert team is by your side whenever you need them.',
+    about_val4_desc: 'Our expert team is by your side whenever you need them — fast, reliable support on both technical and strategic matters.',
 
     // Contact
     contact_title: 'Get in Touch',
@@ -713,9 +773,69 @@ export const translations = {
     feedback_email_placeholder: 'Your Email Address',
     feedback_kvkk_label: 'I have read and approve the KVKK text regarding the processing of my personal data.',
     feedback_marketing_label: 'I give consent to be contacted regarding campaigns and announcements.',
-    feedback_kvkk_text: 'In accordance with the Personal Data Protection laws, your personal data (name, surname, phone, email) shared through this form are processed for the purpose of evaluating your complaints and suggestions and ensuring customer satisfaction. Your data will not be shared with third parties except for legal obligations.',
-    feedback_marketing_text: 'I agree to receive commercial electronic messages for the purpose of informing about campaigns, discounts, promotions and new products to the contact information I have shared.',
+    feedback_kvkk_text: `PERSONAL DATA PROTECTION NOTICE (KVKK)
+
+1. Data Controller
+Personal data shared through this form is processed by the restaurant business where you receive service (the "Business") as the data controller, together with Buaze acting as the data processor providing the technical infrastructure, in accordance with Turkish Personal Data Protection Law No. 6698 ("KVKK") and, where applicable, the GDPR.
+
+2. Categories of Data Processed
+• Identity: first name, last name
+• Contact: phone number, email address
+• Customer transaction: visit date, table number, branch/location, rating, comment
+• Technical security: IP address, device/browser info, timestamp
+
+3. Purpose and Legal Basis
+Your personal data is processed to (i) evaluate your complaints and suggestions, (ii) ensure customer satisfaction and improve your experience, (iii) reach out to you to resolve the matter, (iv) measure and report service quality. Processing relies on KVKK Art. 5/2-(c) "performance of a contract", Art. 5/2-(f) "legitimate interest" and your explicit consent below.
+
+4. Transfer
+Your data may be transferred only (a) within the scope of Buaze's servers and infrastructure, (b) to competent public authorities where required by law, (c) to our legal advisors when necessary, always in compliance with KVKK Articles 8 and 9. No cross-border transfer is made; data is stored in data centers located in Türkiye.
+
+5. Retention
+Your personal data will be deleted, destroyed or anonymized within 24 months after the purpose of processing has ceased, or immediately upon your request. Longer statutory retention periods prevail where applicable.
+
+6. Your Rights (KVKK Art. 11)
+You have the right to: learn whether your data is processed, request information about processing, learn the purpose and whether it is used accordingly, know third parties to whom data is transferred domestically or abroad, request correction of incomplete or inaccurate data, request deletion or destruction, request notification of correction/deletion to third parties, object to decisions based solely on automated processing, and claim compensation for damages suffered.
+
+7. How to Apply
+To exercise your rights, you may apply in writing directly to the Business holding the QR code or via Buaze at support@buaze.com. Your request will be answered free of charge within 30 days at the latest.
+
+I confirm that I have read and understood this notice and hereby give my EXPLICIT CONSENT to the processing of my personal data within this scope.`,
+    feedback_marketing_text: `COMMERCIAL ELECTRONIC MESSAGE (MARKETING) CONSENT
+
+Under Turkish Law No. 6563 on the Regulation of Electronic Commerce ("ETK"), the Regulation on Commercial Communication and Commercial Electronic Messages, and KVKK Art. 5/1, with my explicit consent:
+
+1. Scope
+I agree to receive commercial electronic messages from the restaurant (the "Business") and its technical service provider Buaze, or intermediary service providers acting on their behalf, to my shared name, phone and email via SMS, MMS, email, automated calls, push notifications and similar electronic channels.
+
+2. Content
+Such messages may include campaigns, discounts, coupons, loyalty program updates, special-day greetings, new menu and product announcements, event invitations, and customer satisfaction surveys.
+
+3. IYS Registration
+My consent will be registered with the Turkish Message Management System (IYS — iys.org.tr) as required by ETK Art. 6. I can view and change my consent status via IYS at any time.
+
+4. Right to Opt Out
+I may withdraw this consent at any time without giving a reason and free of charge, by using the "STOP" / "OPT-OUT" link included in every message, via IYS, or by emailing support@buaze.com. My opt-out request will be processed within 3 business days at the latest.
+
+5. Retention
+My consent record and opt-out log will be retained for at least 3 years after the consent ends, for evidentiary purposes.
+
+I have read and understood this notice and give my EXPLICIT CONSENT to receive commercial electronic messages as described above. I understand that I may submit my feedback form even without giving this consent.`,
     feedback_low_disclaimer: 'Your information will only be shared with the restaurant management.',
+    feedback_kvkk_footer: 'Last Updated: April 2026 · v2.0',
+    feedback_marketing_footer: 'IYS Registration Required · ETK Art. 6',
+
+    // Rating-specific thank-you messages (1-3 stars)
+    thanks_1_title: 'We are truly sorry',
+    thanks_1_sub: 'Your experience ended in a way it never should have. Your feedback has been sent directly to restaurant management, and they will reach out to you as soon as possible to make things right. Thank you for giving us a second chance.',
+    thanks_1_note: 'The restaurant management will contact you within 24 hours.',
+
+    thanks_2_title: 'Thank you for your feedback',
+    thanks_2_sub: 'We apologize for not meeting your expectations. The points you raised will be carefully reviewed, and we will take concrete steps to improve our service quality. Hearing your voice is our most valuable guide toward doing better.',
+    thanks_2_note: 'Our team will review your feedback and get back to you.',
+
+    thanks_3_title: 'Thank you for your honest review',
+    thanks_3_sub: 'We appreciate you sharing the areas where we can improve. Your perspective helps us grow in every aspect — from the kitchen to the dining floor. We are committed to delivering an experience that makes a difference on your next visit.',
+    thanks_3_note: 'Your feedback has been forwarded to the relevant teams.',
     rating_very_poor: 'Very Poor',
     rating_poor: 'Poor',
     rating_fair: 'Fair',

@@ -2,12 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+async function loadSiteBranding(): Promise<{ logoUrl: string | null; faviconUrl: string | null }> {
+  try {
+    const rows = await prisma.settings.findMany({
+      where: { key: { in: ['site.logo_url', 'site.favicon_url'] } },
+    });
+    const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    return {
+      logoUrl: map['site.logo_url'] || null,
+      faviconUrl: map['site.favicon_url'] || null,
+    };
+  } catch {
+    return { logoUrl: null, faviconUrl: null };
+  }
+}
+
 export async function GET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
 
   if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
   }
+
+  const { logoUrl, faviconUrl } = await loadSiteBranding();
 
   // If this is a restaurant_owner, fetch their extra info from the users table
   if (actor.role === 'restaurant_owner') {
@@ -42,6 +59,8 @@ export async function GET(req: NextRequest) {
           trialEndsAt: user.trialEndsAt,
           restaurantId: restaurantIds[0] || null,
           restaurantIds,
+          logoUrl,
+          faviconUrl,
         });
       }
     } catch (e) {
@@ -67,6 +86,8 @@ export async function GET(req: NextRequest) {
         trialEndsAt: null,
         restaurantId: adminUser.restaurantId || null,
         restaurantIds: adminUser.restaurantId ? [adminUser.restaurantId] : [],
+        logoUrl,
+        faviconUrl,
       });
     }
   } catch (e) {
@@ -82,6 +103,8 @@ export async function GET(req: NextRequest) {
     role: actor.role || 'superadmin',
     plan: actor.plan,
     trialEndsAt: null,
-    restaurantId: actor.restaurantId || null
+    restaurantId: actor.restaurantId || null,
+    logoUrl,
+    faviconUrl,
   });
 }

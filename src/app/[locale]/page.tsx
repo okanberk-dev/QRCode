@@ -540,11 +540,11 @@ export default async function LandingPage({
                   >
                     {locale === 'tr' ? 'Dijital İtibarınızın' : 'Your Digital Reputation\'s'}
                     <br />
-                    <span className="text-[#F4B400]">
+                    <span className="bg-gradient-to-r from-[#F4B400] to-[#FFD666] bg-clip-text text-transparent">
                       {locale === 'tr' ? 'Komuta Merkezi' : 'Command Center'}
                     </span>
                   </h2>
-                  <p className="text-[15px] sm:text-[17px] lg:text-[18px] text-[#6B7280] font-medium leading-relaxed max-w-[520px] text-pretty">
+                  <p className="text-[15px] sm:text-[17px] lg:text-[18px] text-white/90 font-medium leading-relaxed max-w-[520px] text-pretty">
                     {locale === 'tr'
                       ? 'Buaze sadece veri toplamaz; itibarınızı proaktif bir zırh gibi korur ve her etkileşimi kalıcı bir güvene dönüştürür.'
                       : 'Buaze doesn\'t just collect data; it protects your reputation like a proactive shield and turns every interaction into lasting trust.'}
@@ -566,16 +566,16 @@ export default async function LandingPage({
                   ].map((item, i) => (
                     <div
                       key={i}
-                      className="group flex gap-4 sm:gap-5 bg-white/5 border border-white/10 p-4 sm:p-6 rounded-2xl hover:bg-white/10 transition-all hover:translate-x-2"
+                      className="group flex gap-4 sm:gap-5 bg-white/[0.08] border border-white/15 p-5 sm:p-6 rounded-2xl hover:bg-white/[0.12] hover:border-[#F4B400]/40 transition-all hover:translate-x-2"
                     >
-                      <div className="flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 bg-white/5 rounded-xl border border-white/20 flex items-center justify-center">
+                      <div className="flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 bg-[#F4B400]/15 rounded-xl border border-[#F4B400]/30 flex items-center justify-center group-hover:bg-[#F4B400]/25 transition-colors">
                         {item.icon}
                       </div>
-                      <div className="space-y-1 min-w-0">
-                        <h3 className="text-[16px] sm:text-[17px] font-extrabold text-white">
+                      <div className="space-y-1.5 min-w-0">
+                        <h3 className="text-[16px] sm:text-[18px] font-extrabold text-white leading-tight">
                           {item.title}
                         </h3>
-                        <p className="text-[13px] text-[#6B7280] leading-relaxed">
+                        <p className="text-[13px] sm:text-[14px] text-white/90 font-medium leading-relaxed">
                           {item.desc}
                         </p>
                       </div>
@@ -599,58 +599,94 @@ export default async function LandingPage({
                   </div>
                 </div>
 
-                {/* Main 3D Browser Mockup — full width on mobile, capped on desktop */}
-                <div className="relative w-full max-w-[500px] h-[340px] sm:h-[420px] lg:h-[440px] bg-[#1a1a1a] rounded-[24px] sm:rounded-[32px] border sm:border border-[#3d3a36] shadow-md sm:shadow-md lg:shadow-md transform lg:rotate-[-2deg] flex flex-col overflow-hidden">
+                {/* Mockup wrapper — allows the floating badge to escape the clipped inner */}
+                <div className="relative w-full max-w-[500px] transform lg:rotate-[-2deg]">
+                {/* Main 3D Browser Mockup — admin panel visual language */}
+                <div className="relative w-full h-[380px] sm:h-[440px] lg:h-[460px] bg-[#0E1525] rounded-[24px] sm:rounded-[32px] border border-white/10 shadow-2xl shadow-[#F4B400]/10 flex flex-col overflow-hidden">
                    {/* Browser Bar */}
-                   <div className="bg-[#1A2332] border-b border-[#3d3a36] p-4 flex gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#3d3a36]" />
-                   </div>
-                   
-                   {/* Mock Content */}
-                   <div className="p-6 sm:p-8 space-y-6 flex-1 text-left">
-                      <div className="space-y-3">
-                         <div className="h-4 bg-white/10 w-1/3 rounded-full" />
-                         <div className="flex gap-2">
-                            {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#F4B400" strokeWidth={0} />)}
-                         </div>
+                   <div className="bg-[#1A2332] border-b border-white/10 px-4 py-3 flex items-center gap-3 flex-shrink-0">
+                      <div className="flex gap-1.5">
+                         <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
+                         <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
+                         <div className="w-2.5 h-2.5 rounded-full bg-white/15" />
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
-                            <div className="text-[10px] text-[#2A3444] font-bold uppercase">{locale === 'tr' ? 'YORUMLAR' : 'REVIEWS'}</div>
-                            <div className="text-[20px] font-black text-white">+142</div>
-                         </div>
-                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
-                            <div className="text-[10px] text-[#2A3444] font-bold uppercase">{locale === 'tr' ? 'MEMNUNİYET' : 'SATISFACTION'}</div>
-                            <div className="text-[20px] font-black text-[#F4B400]">99%</div>
-                         </div>
-                      </div>
-
-                      <div className="bg-white/5 p-5 rounded-xl border border-white/10">
-                         <div className="flex justify-between items-center mb-4">
-                            <div className="h-3 bg-white/10 w-1/4 rounded-full" />
-                            <div className="h-3 bg-[#F4B400]/20 w-10 rounded-full" />
-                         </div>
-                         <div className="space-y-2">
-                            <div className="h-2 bg-white/5 w-full rounded-full overflow-hidden">
-                               <div className="h-full w-[85%] bg-[#F4B400] shadow-[0_0_15px_rgba(244, 180, 0,0.3)]" />
-                            </div>
-                            <div className="h-2 bg-white/5 w-full rounded-full overflow-hidden">
-                               <div className="h-full w-[65%] bg-[#F4B400] opacity-60" />
-                            </div>
-                         </div>
+                      <div className="flex-1 bg-white/10 border border-white/15 rounded-md px-3 py-1 text-[9px] sm:text-[10px] text-white/75 font-mono truncate">
+                        buaze.com/admin/dashboard
                       </div>
                    </div>
 
-                   {/* Floating Bottom Badge — inside-bounds on mobile, overflowing on desktop */}
-                   <div className="absolute bottom-3 sm:bottom-5 right-3 sm:right-5 lg:-right-8 z-20">
-                      <div className="bg-[#F4B400] text-[#1A2332] p-3 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl border sm:border border-[#1A2332] shadow-md sm:shadow-md flex flex-col items-center gap-1 group cursor-default">
-                         <Zap size={20} fill="#1A2332" className="group-hover:scale-110 transition-transform sm:w-6 sm:h-6" />
-                         <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.1em] sm:tracking-widest whitespace-nowrap">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
+                   {/* Mock Dashboard Content */}
+                   <div className="p-3 sm:p-4 space-y-3 flex-1 overflow-hidden text-left">
+                      {/* Stat Cards */}
+                      <div className="grid grid-cols-2 gap-2">
+                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
+                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'TOPLAM YORUM' : 'TOTAL REVIEWS'}</div>
+                            <div className="text-[17px] sm:text-[20px] font-black text-white flex items-baseline gap-1">
+                              142
+                              <span className="text-[9px] font-bold text-[#4ade80]">↑ 23%</span>
+                            </div>
+                         </div>
+                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
+                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'ORT. PUAN' : 'AVG. SCORE'}</div>
+                            <div className="text-[17px] sm:text-[20px] font-black text-[#F4B400] flex items-baseline gap-1">
+                              4.8
+                              <span className="text-[9px] font-bold text-white/60">/ 5.0</span>
+                            </div>
+                         </div>
+                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
+                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'QR TARAMA' : 'QR SCANS'}</div>
+                            <div className="text-[17px] sm:text-[20px] font-black text-white flex items-baseline gap-1">
+                              891
+                              <span className="text-[9px] font-bold text-[#4ade80]">↑ 41%</span>
+                            </div>
+                         </div>
+                         <div className="bg-white/6 p-2.5 sm:p-3 rounded-xl border border-white/10 space-y-1">
+                            <div className="text-[8px] sm:text-[9px] text-white/60 font-bold uppercase tracking-wider">{locale === 'tr' ? 'OLUMLU YÖN.' : 'POS. REDIRECT'}</div>
+                            <div className="text-[17px] sm:text-[20px] font-black text-[#4ade80] flex items-baseline gap-1">
+                              %82
+                              <span className="text-[9px] font-bold text-white/60">{locale === 'tr' ? 'oran' : 'rate'}</span>
+                            </div>
+                         </div>
+                      </div>
+
+                      {/* Platform Distribution */}
+                      <div className="bg-white/5 p-3 rounded-xl border border-white/10 space-y-2">
+                         <div className="text-[8px] sm:text-[9px] text-white/70 font-black uppercase tracking-wider mb-1">{locale === 'tr' ? 'PLATFORM DAĞILIMI' : 'PLATFORM BREAKDOWN'}</div>
+                         {[
+                           { label: 'Google', pct: 72, color: '#4285F4' },
+                           { label: 'Yemeksepeti', pct: 18, color: '#FA0050' },
+                           { label: 'Getir', pct: 10, color: '#5D3EBC' },
+                         ].map(p => (
+                           <div key={p.label} className="flex items-center gap-2">
+                             <span className="text-[7px] sm:text-[8px] font-bold text-white/70 w-16 sm:w-20 shrink-0">{p.label}</span>
+                             <div className="flex-1 h-1.5 bg-white/8 rounded-full overflow-hidden">
+                               <div className="h-full rounded-full" style={{ width: `${p.pct}%`, backgroundColor: p.color }} />
+                             </div>
+                             <span className="text-[7px] sm:text-[8px] font-bold text-white/60 w-6 text-right">{p.pct}%</span>
+                           </div>
+                         ))}
+                      </div>
+
+                      {/* Mini Review Row */}
+                      <div className="bg-white/5 px-3 py-2.5 rounded-xl border border-white/10 flex items-center gap-3">
+                         <div className="flex gap-0.5 flex-shrink-0">
+                            {[1,2,3,4,5].map(i => <Star key={i} size={9} fill="#F4B400" strokeWidth={0} />)}
+                         </div>
+                         <span className="text-[9px] sm:text-[10px] text-white/80 font-medium truncate">
+                           {locale === 'tr' ? '"Harika bir deneyim, kesinlikle tavsiye ederim."' : '"Great experience, highly recommend!"'}
+                         </span>
+                         <span className="text-[8px] text-white/60 font-medium flex-shrink-0">2dk</span>
                       </div>
                    </div>
+                </div>
+
+                {/* Floating Bottom Badge — positioned relative to wrapper, escapes clip */}
+                <div className="absolute -bottom-3 right-3 sm:-bottom-4 sm:right-4 lg:-bottom-5 lg:-right-5 z-20">
+                   <div className="bg-[#F4B400] text-[#1A2332] px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl border border-[#1A2332] shadow-lg flex items-center gap-2 group cursor-default">
+                      <Zap size={16} fill="#1A2332" className="sm:w-[18px] sm:h-[18px] group-hover:scale-110 transition-transform" />
+                      <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.1em] whitespace-nowrap">{locale === 'tr' ? 'AKTİF KORUMA' : 'ACTIVE PROTECTION'}</span>
+                   </div>
+                </div>
                 </div>
               </div>
             </div>
@@ -698,14 +734,14 @@ export default async function LandingPage({
                 {t.pricing_yearly_badge}
               </div>
               <h3 className="text-[20px] font-extrabold mb-1.5">{t.pricing_yearly_title}</h3>
-              <p className="text-[#6B7280] text-[13px] mb-6">{t.pricing_yearly_desc}</p>
+              <p className="text-white/70 text-[13px] mb-6">{t.pricing_yearly_desc}</p>
               <div className="mb-6 sm:mb-8">
                 <span className="text-[40px] sm:text-[48px] font-extrabold tracking-tighter">{t.pricing_yearly_price}</span>
-                <span className="text-[#6B7280] font-medium ml-1 text-[14px]">{t.pricing_yearly_period}</span>
+                <span className="text-white/60 font-medium ml-1 text-[14px]">{t.pricing_yearly_period}</span>
               </div>
               <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-1">
                 {[t.pricing_feature_all, t.pricing_feature_free_months, t.pricing_feature_priority, t.pricing_feature_google].map(feat => (
-                  <li key={feat} className="flex items-start gap-2.5 text-[13px] sm:text-[14px] font-medium text-[#6B7280]">
+                  <li key={feat} className="flex items-start gap-2.5 text-[13px] sm:text-[14px] font-medium text-white/80">
                     <CheckCircle2 size={16} className="text-[#F4B400] flex-shrink-0 mt-0.5" />
                     <span>{feat}</span>
                   </li>
@@ -723,20 +759,60 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════ Final CTA ═══════ */}
-      <section className="py-16 sm:py-24 px-5 sm:px-8 text-center bg-[#1A2332] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-        <div className="relative z-10 max-w-[600px] mx-auto space-y-7">
-          <h2 className="text-[32px] sm:text-[42px] font-extrabold text-white leading-[1.15] tracking-[-0.02em]">
-            {t.cta_title_1} <br />
-            <span className="text-[#F4B400]">{t.cta_title_2}</span>
+      <section className="py-20 sm:py-28 lg:py-32 px-5 sm:px-8 text-center bg-[#1A2332] relative overflow-hidden">
+        {/* Subtle dotted pattern */}
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        {/* Gold glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#F4B400]/8 blur-[140px] rounded-full pointer-events-none" />
+
+        <div className="relative z-10 max-w-[760px] mx-auto space-y-7 sm:space-y-8">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 bg-[#F4B400]/10 border border-[#F4B400]/25 rounded-full px-4 py-1.5">
+            <Zap size={14} className="text-[#F4B400]" fill="#F4B400" />
+            <span className="text-[10px] sm:text-[11px] font-black text-[#F4B400] uppercase tracking-[0.15em]">
+              {locale === 'tr' ? '14 GÜN ÜCRETSİZ' : '14-DAY FREE TRIAL'}
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h2 className="text-[30px] sm:text-[44px] lg:text-[56px] font-extrabold text-white leading-[1.08] tracking-[-0.025em] text-balance px-2">
+            {t.cta_title_1}{' '}
+            <span className="text-white">
+              {t.cta_title_2}
+            </span>
           </h2>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <CtaButton variant="primary" href={`${base}/auth/register`}>
+
+          {/* Supporting description */}
+          <p className="text-[15px] sm:text-[17px] lg:text-[18px] text-white/80 font-medium max-w-[560px] mx-auto leading-relaxed text-pretty">
+            {locale === 'tr'
+              ? 'Kredi kartı gerekmez. 5 dakikada kurulum, anında kullanım. 500+ işletmenin tercihi.'
+              : 'No credit card required. 5-minute setup, instant access. Trusted by 500+ businesses.'}
+          </p>
+
+          {/* CTA buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-2">
+            <CtaButton variant="primary" href={`${base}/auth/register`} className="w-full sm:w-auto">
               {t.cta_button} <ArrowRight size={18} className="ml-2" />
             </CtaButton>
-            <CtaButton variant="secondary" href={`${base}/pricing`}>
+            <CtaButton variant="secondary" href={`${base}/pricing`} className="w-full sm:w-auto">
               {locale === 'tr' ? 'Planları İncele' : 'View Plans'}
             </CtaButton>
+          </div>
+
+          {/* Trust indicators */}
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pt-4 text-[12px] sm:text-[13px] text-white/70 font-semibold">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={15} className="text-[#4ade80]" />
+              {locale === 'tr' ? '500+ aktif işletme' : '500+ active businesses'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={15} className="text-[#4ade80]" />
+              {locale === 'tr' ? '%92 itibar artışı' : '92% reputation growth'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={15} className="text-[#4ade80]" />
+              {locale === 'tr' ? '5dk kurulum' : '5-min setup'}
+            </span>
           </div>
         </div>
       </section>

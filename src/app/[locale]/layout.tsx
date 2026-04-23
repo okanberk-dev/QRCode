@@ -5,6 +5,7 @@ import { getTranslations, type Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { verifyJwt } from '@/lib/auth';
+import { getSiteSettings } from '@/lib/site-settings';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
 
@@ -16,18 +17,21 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
+  const s = await getSiteSettings();
+
+  const title = locale === 'tr' ? s.titleDefaultTr : s.titleDefaultEn;
+  const description = locale === 'tr' ? s.descriptionTr : s.descriptionEn;
+  const keywords = locale === 'tr' ? s.keywordsTr : s.keywordsEn;
+  const ogImage = s.ogImageUrl;
 
   return {
     metadataBase: new URL('https://buaze.com'),
     title: {
-      default: `${t.siteName} | ${locale === 'tr' ? 'Dijital İtibar ve Geri Bildirim Yönetimi' : 'Digital Reputation and Feedback Management'}`,
-      template: `%s | ${t.siteName}`,
+      default: title,
+      template: s.titleTemplate,
     },
-    description: t.siteDescription,
-    keywords: locale === 'tr'
-      ? ['Dijital itibar yönetimi', 'Google haritalar geri bildirim toplama', 'Geri bildirim operasyonları', 'QR yorum sistemi', 'restoran itibar yönetimi', 'dijital itibar', 'müşteri deneyimi yönetimi', 'müşteri memnuniyeti', 'buaze']
-      : ['Digital reputation management', 'Increase Google Maps feedback', 'Feedback operations', 'QR review system', 'reputation management', 'digital reputation', 'Google review collection', 'customer feedback', 'buaze'],
+    description,
+    keywords,
     authors: [{ name: 'Buaze', url: 'https://buaze.com' }],
     creator: 'Buaze',
     publisher: 'Buaze',
@@ -58,15 +62,17 @@ export async function generateMetadata({
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       url: `https://buaze.com/${locale}`,
       siteName: 'Buaze',
-      title: `${t.siteName} | ${locale === 'tr' ? 'Dijital İtibar ve Geri Bildirim Yönetimi' : 'Digital Reputation and Feedback Management'}`,
-      description: t.siteDescription,
+      title,
+      description,
+      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630 }] } : {}),
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${t.siteName} | ${locale === 'tr' ? 'Dijital İtibar ve Geri Bildirim Yönetimi' : 'Digital Reputation and Feedback Management'}`,
-      description: t.siteDescription,
+      title,
+      description,
       site: '@buaze',
       creator: '@buaze',
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
     alternates: {
       canonical: `https://buaze.com/${locale}`,
@@ -77,7 +83,7 @@ export async function generateMetadata({
       },
     },
     icons: {
-      icon: '/favicon.svg',
+      icon: s.faviconUrl || '/favicon.svg',
     },
   };
 }
@@ -96,6 +102,7 @@ export default async function LocaleLayout({
   }
 
   const t = getTranslations(locale);
+  const s = await getSiteSettings();
   const siteUrl = 'https://buaze.com';
 
   // Detect whether the visitor is authenticated so we can hide chat-style
@@ -119,9 +126,10 @@ export default async function LocaleLayout({
       '@type': 'Organization',
       name: 'Buaze',
       url: siteUrl,
-      logo: `${siteUrl}/favicon.svg`,
-      description: t.siteDescription,
+      logo: s.logoUrl || `${siteUrl}/favicon.svg`,
+      description: locale === 'tr' ? s.descriptionTr : s.descriptionEn,
       sameAs: [
+        'https://www.instagram.com/buazerating',
         'https://twitter.com/buaze',
         'https://www.linkedin.com/company/buaze',
       ],

@@ -188,16 +188,17 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                   </div>
                   <div className="flex-1">
                     <p className="text-[12px] font-bold text-[#2A3444] leading-snug">
-                      Kişisel verilerimin işlenmesine ilişkin <button type="button" onClick={(e) => openLegal('kvkk', e)} className="text-blue-600 underline underline-offset-4 decoration-2 hover:text-blue-800 transition-colors">KVKK metnini</button> okudum ve onaylıyorum.
+                      <span className="inline-block bg-blue-600 text-white text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded mr-1 align-middle">Zorunlu</span>
+                      6698 sayılı KVKK kapsamında <button type="button" onClick={(e) => openLegal('kvkk', e)} className="text-blue-600 underline underline-offset-4 decoration-2 hover:text-blue-800 transition-colors">Aydınlatma Metni</button>'ni okudum; kişisel verilerimin geri bildirim sürecinin yürütülmesi amacıyla işlenmesine <strong className="font-black">açık rıza</strong> veriyorum.
                     </p>
                   </div>
                 </div>
 
-                <div 
+                <div
                   onClick={() => setHasMarketingConsent(!hasMarketingConsent)}
                   className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
-                    hasMarketingConsent 
-                      ? 'bg-emerald-50/30 border-emerald-100 shadow-sm' 
+                    hasMarketingConsent
+                      ? 'bg-emerald-50/30 border-emerald-100 shadow-sm'
                       : 'bg-white border-[#F8F6F1] hover:border-[#E8ECF2]'
                   }`}
                 >
@@ -208,7 +209,8 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                   </div>
                   <div className="flex-1">
                     <p className="text-[12px] font-bold text-[#2A3444] leading-snug">
-                      Kampanya ve duyurulardan haberdar olmak için <button type="button" onClick={(e) => openLegal('marketing', e)} className="text-emerald-600 underline underline-offset-4 decoration-2 hover:text-emerald-800 transition-colors">iletişim izni</button> veriyorum.
+                      <span className="inline-block bg-emerald-600 text-white text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded mr-1 align-middle">İsteğe bağlı</span>
+                      6563 sayılı ETK kapsamında kampanya, indirim ve duyurulardan haberdar olmak için <button type="button" onClick={(e) => openLegal('marketing', e)} className="text-emerald-600 underline underline-offset-4 decoration-2 hover:text-emerald-800 transition-colors">ticari elektronik ileti iznini</button> veriyorum. Dilediğim zaman ücretsiz olarak iptal edebilirim.
                     </p>
                   </div>
                 </div>
@@ -288,11 +290,16 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                   <X size={20} strokeWidth={2} />
                 </button>
               </div>
-              <div className="p-8 max-h-[50vh] overflow-y-auto no-scrollbar scroll-smooth">
-                <p className="text-[14px] text-[#2A3444] leading-relaxed font-medium whitespace-pre-wrap">
-                  {showLegalModal === 'kvkk' 
-                    ? (t('feedback_kvkk_text') || '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, bu form aracılığıyla paylaştığınız kişisel verileriniz (ad, soyad, telefon, e-posta), şikayet ve önerilerinizin değerlendirilmesi ve müşteri memnuniyetinin sağlanması amacıyla işlenmektedir. Verileriniz, yasal zorunluluklar dışında üçüncü taraflarla paylaşılmayacaktır.')
-                    : (t('feedback_marketing_text') || 'Paylaştığım iletişim bilgilerine kampanya, indirim, promosyon ve yeni ürünler hakkında bilgilendirme amaçlı ticari elektronik ileti gönderilmesini kabul ediyorum.')}
+              <div className="p-7 sm:p-8 max-h-[65vh] overflow-y-auto scroll-smooth">
+                <p className="text-[13.5px] text-[#2A3444] leading-[1.75] font-medium whitespace-pre-wrap">
+                  {showLegalModal === 'kvkk'
+                    ? t('feedback_kvkk_text')
+                    : t('feedback_marketing_text')}
+                </p>
+                <p className="mt-6 pt-4 border-t border-[#E8ECF2] text-[10px] text-[#6B7280] font-bold uppercase tracking-widest">
+                  {showLegalModal === 'kvkk'
+                    ? (t('feedback_kvkk_footer') || 'Son Güncelleme: Nisan 2026 · v2.0')
+                    : (t('feedback_marketing_footer') || 'İYS Kayıt Zorunlu · ETK m. 6')}
                 </p>
               </div>
               <div className="p-6 bg-[#F8F6F1]/80 border-t border-[#E8ECF2] flex justify-end gap-3">

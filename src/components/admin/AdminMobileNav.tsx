@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Store, QrCode, UsersRound, Crown, Menu } from 'lucide-react';
+import { LayoutDashboard, Store, QrCode, UsersRound, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
 
@@ -27,49 +27,44 @@ export default function AdminMobileNav() {
 
   const filteredItems = navItems.filter(item => item.roles.includes(role));
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/admin/logout', { method: 'POST' });
-    } catch (e) {
-      console.error('Logout error', e);
-    }
-    window.location.href = '/admin';
-  };
-
   return (
-    <div
-      className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1A2332] border-t border-white/10 z-50 flex items-center justify-around px-2 pt-2 shadow-[0_-4px_20px_0_rgba(0,0,0,0.4)] backdrop-blur-md bg-opacity-95"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)' }}
+    <nav
+      aria-label="Mobil navigasyon"
+      className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1A2332]/95 border-t border-white/10 z-50 shadow-[0_-4px_20px_0_rgba(0,0,0,0.4)] backdrop-blur-md"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      {filteredItems.map((item) => {
-        const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-        const Icon = item.icon;
+      <ul className="flex items-stretch justify-around px-2 pt-2 pb-1.5">
+        {filteredItems.map((item) => {
+          const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+          const Icon = item.icon;
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex flex-col items-center gap-0.5 transition-all flex-1 min-w-0 ${
-              isActive ? 'text-[#F4B400]' : 'text-[#6B7280] hover:text-[#C9D0DB]'
-            }`}
-          >
-            <div className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-[#F4B400]/10' : ''}`}>
-              <Icon size={20} strokeWidth={isActive ? 3 : 2} />
-            </div>
-            <span className="text-[9px] font-black uppercase tracking-tight truncate max-w-full">{item.label}</span>
-          </Link>
-        );
-      })}
-
-      <button
-        onClick={handleLogout}
-        className="flex flex-col items-center gap-0.5 transition-all text-red-500/80 hover:text-red-400 flex-1 min-w-0"
-      >
-        <div className="p-1.5 rounded-lg transition-all">
-          <Menu size={20} strokeWidth={2} />
-        </div>
-        <span className="text-[9px] font-black uppercase tracking-tight truncate max-w-full">{t('logout') || 'Çıkış'}</span>
-      </button>
-    </div>
+          return (
+            <li key={item.href} className="flex-1 min-w-0">
+              <Link
+                href={item.href}
+                aria-label={item.label}
+                aria-current={isActive ? 'page' : undefined}
+                className={`relative flex flex-col items-center gap-1 px-1 py-1.5 rounded-xl transition-colors ${
+                  isActive ? 'text-[#F4B400]' : 'text-[#E8ECF2]/70 hover:text-white'
+                }`}
+              >
+                {isActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#F4B400] rounded-b-full"
+                  />
+                )}
+                <span className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-[#F4B400]/15' : ''}`}>
+                  <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full leading-none">
+                  {item.label}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }

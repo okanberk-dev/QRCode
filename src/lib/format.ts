@@ -13,11 +13,45 @@ export function formatPrice(cents: number, currency = 'TRY', locale: string = 't
   }
 }
 
+// Accepts both TR ("1.234,56") and EN ("1,234.56") formats, plus simple
+// decimals ("1,50" / "1.50"). When both a comma and a dot appear, the last
+// occurrence is treated as the decimal separator; the other becomes a
+// thousands separator. When only dots appear with multiple occurrences,
+// all dots are treated as thousands separators.
 export function parsePriceInput(value: string): number | null {
   if (typeof value !== 'string') return null;
-  const cleaned = value.replace(/\s/g, '').replace(',', '.');
-  if (!/^\d{1,6}(\.\d{0,2})?$/.test(cleaned)) return null;
+  let cleaned = value.replace(/\s/g, '');
+  if (!cleaned) return null;
+
+  const hasComma = cleaned.includes(',');
+  const dotCount = (cleaned.match(/\./g) || []).length;
+
+  if (hasComma && dotCount > 0) {
+    const lastComma = cleaned.lastIndexOf(',');
+    const lastDot = cleaned.lastIndexOf('.');
+    if (lastComma > lastDot) {
+      // TR: "1.234,56"
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else {
+      // EN: "1,234.56"
+      cleaned = cleaned.replace(/,/g, '');
+    }
+  } else if (hasComma) {
+    // "1,50" or "1,234,567" — treat comma as decimal only when there's one,
+    // otherwise as thousands separators.
+    const commaCount = (cleaned.match(/,/g) || []).length;
+    if (commaCount === 1) {
+      cleaned = cleaned.replace(',', '.');
+    } else {
+      cleaned = cleaned.replace(/,/g, '');
+    }
+  } else if (dotCount > 1) {
+    // Multiple dots: all thousands separators.
+    cleaned = cleaned.replace(/\./g, '');
+  }
+
+  if (!/^\d{1,9}(\.\d{0,2})?$/.test(cleaned)) return null;
   const num = Number(cleaned);
-  if (!Number.isFinite(num) || num < 0) return null;
+  if (!Number.isFinite(num) || num < 0 || num > 10_000_000) return null;
   return Math.round(num * 100);
 }

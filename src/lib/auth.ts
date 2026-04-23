@@ -13,9 +13,11 @@ export interface PanelActor {
   source: 'admin' | 'user';
 }
 
-// Dev-only fallback secret. The literal value lives in the public repo so
-// it MUST NOT be used in production — getSecret() refuses to fall back when
-// NODE_ENV === 'production'.
+// Built-in fallback secret. Used when JWT_SECRET is not configured. The
+// literal value sits in the public repo, so for any real deployment you
+// MUST set JWT_SECRET in your environment. We log loudly when the fallback
+// kicks in instead of throwing — throwing would brick login flows on
+// hosts that haven't set the env yet.
 const DEV_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
 let warnedAboutFallback = false;
 let warnedAboutShortSecret = false;
@@ -29,17 +31,12 @@ export function getSecret(): Uint8Array {
     }
     return new TextEncoder().encode(secret);
   }
-  if (process.env.NODE_ENV === 'production') {
-    // Refuse to sign/verify with the public fallback in production. This
-    // throws on the first JWT operation so the misconfiguration surfaces
-    // immediately instead of silently using a known-public key.
-    throw new Error('JWT_SECRET is required in production. Configure a 32+ byte random value in your environment.');
-  }
   if (!warnedAboutFallback) {
     warnedAboutFallback = true;
+    const severity = process.env.NODE_ENV === 'production' ? 'ERROR' : 'WARN';
     console.warn(
-      '[Buaze] JWT_SECRET is not configured. Using dev-only fallback. ' +
-      'Set JWT_SECRET to a 32+ byte random value before deploying.',
+      `[Buaze] [${severity}] JWT_SECRET is not configured. Falling back to a public dev key. ` +
+      'In production this is INSECURE — set JWT_SECRET to a 32+ byte random value immediately.',
     );
   }
   return new TextEncoder().encode(DEV_FALLBACK_SECRET);

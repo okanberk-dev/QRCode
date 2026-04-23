@@ -8,6 +8,7 @@ import {
   Utensils, Search
 } from 'lucide-react';
 import { getTranslations, Locale, locales } from '@/lib/translations';
+import { useMenuAnalytics, useProductViewTracking } from '@/hooks/useMenuAnalytics';
 
 interface Category {
   id: string;
@@ -31,6 +32,8 @@ interface RestaurantData {
   name: string;
   menuLogoUrl: string | null;
   primaryColor: string;
+  menuTheme?: string;
+  menuAccentColor?: string | null;
   categories: Category[];
 }
 
@@ -50,6 +53,36 @@ export default function PublicMenuPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+
+  // Analytics — fires menu_view on mount, tracks category clicks, product views, product detail opens.
+  const analytics = useMenuAnalytics({ slug, enabled: !!slug });
+  useEffect(() => {
+    if (slug) analytics.trackMenuView();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
+
+  const trackedProducts = useMemo(() => {
+    if (!data) return [];
+    return data.categories.flatMap((c) => c.items.map((i) => ({ productId: i.id, categoryId: c.id })));
+  }, [data]);
+  const setProductRef = useProductViewTracking({
+    enabled: !!slug,
+    track: analytics.trackProductView,
+    products: trackedProducts,
+  });
+
+  const filteredCategories = useMemo(() => {
+    if (!data) return [];
+    if (!searchQuery.trim()) return data.categories;
+
+    return data.categories.map(cat => ({
+      ...cat,
+      items: cat.items.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    })).filter(cat => cat.items.length > 0);
+  }, [data, searchQuery]);
 
   useEffect(() => {
     if (loading || filteredCategories.length === 0) return;
@@ -95,19 +128,6 @@ export default function PublicMenuPage() {
     fetchMenu();
   }, [slug]);
 
-  const filteredCategories = useMemo(() => {
-    if (!data) return [];
-    if (!searchQuery.trim()) return data.categories;
-
-    return data.categories.map(cat => ({
-      ...cat,
-      items: cat.items.filter(item => 
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    })).filter(cat => cat.items.length > 0);
-  }, [data, searchQuery]);
-
   if (loading) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
@@ -121,7 +141,7 @@ export default function PublicMenuPage() {
 
   if (!data) return notFound();
 
-  const themeColor = data.primaryColor || '#1A2332';
+  const themeColor = data.menuAccentColor || data.primaryColor || '#1A2332';
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F8F6F1] selection:bg-[#E8ECF2]">
@@ -172,6 +192,7 @@ export default function PublicMenuPage() {
                 key={cat.id}
                 onClick={() => {
                   setActiveCategory(cat.id);
+                  analytics.trackCategoryClick(cat.id);
                   const el = document.getElementById(`cat-${cat.id}`);
                   if (el) {
                     const offset = 160; // adjust based on header height
@@ -221,9 +242,11 @@ export default function PublicMenuPage() {
 
                 <div className="grid grid-cols-1 gap-4">
                    {cat.items.map(item => (
-                     <div 
+                     <div
                        key={item.id}
-                       onClick={() => setSelectedItem(item)}
+                       data-pid={item.id}
+                       ref={(el) => setProductRef(item.id, el)}
+                       onClick={() => { setSelectedItem(item); analytics.trackProductClick(item.id, cat.id); }}
                        className="relative bg-white rounded-[28px] p-4 flex gap-4 border border-[#F8F6F1] shadow-sm active:scale-[0.98] transition-all group cursor-pointer"
                      >
                         <div className="flex-1 space-y-1.5">

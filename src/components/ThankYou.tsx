@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, CheckCircle2 } from 'lucide-react';
+import { ExternalLink, CheckCircle2, Heart, MessageCircle, Sparkles, Info } from 'lucide-react';
 
 interface ThankYouProps {
   rating?: number;
@@ -8,16 +8,63 @@ interface ThankYouProps {
   t: (key: any) => string;
 }
 
+type Variant = {
+  bubbleBg: string;
+  bubbleText: string;
+  Icon: typeof CheckCircle2;
+  accent: string;
+  titleKey: string;
+  subKey: string;
+  noteKey: string;
+};
+
+const VARIANTS: Record<1 | 2 | 3, Variant> = {
+  1: {
+    bubbleBg: 'bg-red-50',
+    bubbleText: 'text-red-500',
+    Icon: Heart,
+    accent: 'bg-red-500',
+    titleKey: 'thanks_1_title',
+    subKey: 'thanks_1_sub',
+    noteKey: 'thanks_1_note',
+  },
+  2: {
+    bubbleBg: 'bg-orange-50',
+    bubbleText: 'text-orange-500',
+    Icon: MessageCircle,
+    accent: 'bg-orange-500',
+    titleKey: 'thanks_2_title',
+    subKey: 'thanks_2_sub',
+    noteKey: 'thanks_2_note',
+  },
+  3: {
+    bubbleBg: 'bg-amber-50',
+    bubbleText: 'text-amber-500',
+    Icon: Sparkles,
+    accent: 'bg-amber-500',
+    titleKey: 'thanks_3_title',
+    subKey: 'thanks_3_sub',
+    noteKey: 'thanks_3_note',
+  },
+};
+
 export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) {
   const hasGoogleUrl = !!googleReviewUrl && (rating === undefined || rating >= 4);
+  const lowRatingVariant = rating && rating >= 1 && rating <= 3 ? VARIANTS[rating as 1 | 2 | 3] : null;
+
+  const title = lowRatingVariant ? t(lowRatingVariant.titleKey) : t('feedback_thank_you');
+  const subtitle = lowRatingVariant ? t(lowRatingVariant.subKey) : t('feedback_thank_you_sub');
+  const BubbleIcon = lowRatingVariant ? lowRatingVariant.Icon : CheckCircle2;
+  const bubbleBg = lowRatingVariant ? lowRatingVariant.bubbleBg : 'bg-green-50';
+  const bubbleText = lowRatingVariant ? lowRatingVariant.bubbleText : 'text-green-500';
 
   return (
     <div className="w-full max-w-sm mx-auto text-center py-6 animate-in zoom-in-95 duration-500">
       {/* Success Animation Container */}
       <div className="flex justify-center mb-6">
         <div className="relative">
-          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-500 transition-transform hover:scale-110 duration-300">
-            <CheckCircle2 size={44} strokeWidth={1.5} />
+          <div className={`w-20 h-20 ${bubbleBg} rounded-full flex items-center justify-center ${bubbleText} transition-transform hover:scale-110 duration-300`}>
+            <BubbleIcon size={44} strokeWidth={1.5} />
           </div>
           {/* Decorative particles for success feel */}
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-100 rounded-full animate-ping" />
@@ -27,12 +74,23 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
 
       {/* Title & Message */}
       <h2 className="text-2xl font-bold text-[#1A2332] mb-3 tracking-tight">
-        {t('feedback_thank_you')}
+        {title}
       </h2>
 
-      <p className="text-[#6B7280] mb-10 text-[15px] leading-relaxed px-4">
-        {t('feedback_thank_you_sub')}
+      <p className="text-[#6B7280] mb-6 text-[15px] leading-relaxed px-4">
+        {subtitle}
       </p>
+
+      {/* Rating-specific note card */}
+      {lowRatingVariant && (
+        <div className="mx-4 mb-8 flex items-start gap-3 text-left bg-[#F8F6F1]/60 border border-[#E8ECF2] rounded-2xl px-4 py-3">
+          <div className={`mt-0.5 w-1.5 h-1.5 rounded-full ${lowRatingVariant.accent} flex-shrink-0 animate-pulse`} />
+          <Info size={14} className="text-[#6B7280] flex-shrink-0 mt-0.5" />
+          <p className="text-[11.5px] font-semibold text-[#2A3444] leading-snug">
+            {t(lowRatingVariant.noteKey)}
+          </p>
+        </div>
+      )}
 
       {/* Google CTA - Minimalist Version */}
       {hasGoogleUrl && (
@@ -45,7 +103,7 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
                <span className="bg-white px-3 text-[#6B7280] font-bold tracking-widest">{t('feedback_share_google')}</span>
              </div>
           </div>
-          
+
           <a
             href={googleReviewUrl!}
             target="_blank"
@@ -64,8 +122,8 @@ export default function ThankYou({ rating, googleReviewUrl, t }: ThankYouProps) 
           </a>
         </div>
       )}
-      
-      <button 
+
+      <button
         onClick={() => window.location.reload()}
         className="mt-12 text-sm font-bold text-[#6B7280] hover:text-[#F4B400] transition-colors"
       >

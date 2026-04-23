@@ -17,20 +17,25 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const isTr = locale === 'tr';
+  const title = isTr ? 'Fiyatlandırma | Buaze — İtibar Yönetimi Planları' : 'Pricing | Buaze — Reputation Management Plans';
+  const description = isTr
+    ? 'Aylık ve yıllık planları karşılaştırın, işletmeniz için en uygun QR tabanlı itibar yönetimi çözümünü seçin. 14 gün ücretsiz deneme, kredi kartı gerekmez.'
+    : 'Compare monthly and annual plans and choose the best QR-based reputation management solution. 14-day free trial, no credit card required.';
   return {
-    title: {
-      absolute: locale === 'tr' ? 'Fiyatlandırma | Buaze' : 'Pricing | Buaze',
-    },
-    description: locale === 'tr'
-      ? 'Aylık ve yıllık planları karşılaştırın, işletmeniz için en uygun itibar yönetimi çözümünü seçin.'
-      : 'Compare monthly and annual plans, choose the best reputation management solution for your business.',
+    title: { absolute: title },
+    description,
+    keywords: isTr
+      ? ['buaze fiyatlandırma', 'itibar yönetimi plan fiyatı', 'QR yorum sistemi ücret', 'google yorum artırma platform fiyatı', 'restoran itibar yazılım']
+      : ['buaze pricing', 'reputation management plan cost', 'QR review system pricing', 'restaurant reputation software price'],
     openGraph: {
-      title: locale === 'tr' ? 'Fiyatlandırma | Buaze' : 'Pricing | Buaze',
-      description: locale === 'tr' ? 'Aylık ve yıllık planları karşılaştır...' : 'Compare monthly and annual plans...',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/pricing`,
     },
     alternates: {
       canonical: `https://buaze.com/${locale}/pricing`,
-      languages: { 'tr': 'https://buaze.com/tr/pricing', 'en': 'https://buaze.com/en/pricing' },
+      languages: { 'tr': 'https://buaze.com/tr/pricing', 'en': 'https://buaze.com/en/pricing', 'x-default': 'https://buaze.com/en/pricing' },
     },
   };
 }

@@ -4,11 +4,33 @@ interface BuazeLogoProps {
   size?: number;
   className?: string;
   variant?: LogoVariant;
+  imageUrl?: string | null;
 }
 
-export default function BuazeLogo({ size = 40, className = '', variant = 'default' }: BuazeLogoProps) {
-  const body = variant === 'on-dark' ? '#F8F6F1' : '#0E1525';
-  const curl = variant === 'on-gold' ? '#0E1525' : '#F4B400';
+export default function BuazeLogo({ size = 40, className = '', variant = 'default', imageUrl }: BuazeLogoProps) {
+  if (imageUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={imageUrl}
+        width={size}
+        height={size}
+        className={className}
+        alt="Buaze"
+        style={{ objectFit: 'contain' }}
+      />
+    );
+  }
+
+  // Unique gradient id per variant so multiple instances on the same page don't clash
+  const gradientId = `buazeLogoGrad-${variant}`;
+
+  // On gold backgrounds, flip to a dark monochrome "b" with a gold checkmark;
+  // on every other surface the signature orange gradient is used for the bowl
+  // and the checkmark stays white.
+  const useGradient = variant !== 'on-gold';
+  const solidBody = '#1A2332';
+  const checkColor = variant === 'on-gold' ? '#F4B400' : '#FFFFFF';
 
   return (
     <svg
@@ -21,24 +43,32 @@ export default function BuazeLogo({ size = 40, className = '', variant = 'defaul
       aria-label="Buaze Logo"
       role="img"
     >
-      {/* Ascender — capsule-shaped vertical stroke of the "b" */}
-      <rect x="22" y="10" width="14" height="76" rx="7" fill={body} />
+      <defs>
+        <linearGradient id={gradientId} x1="15%" y1="10%" x2="85%" y2="90%">
+          <stop offset="0%" stopColor="#FFB347" />
+          <stop offset="55%" stopColor="#FB923C" />
+          <stop offset="100%" stopColor="#F97316" />
+        </linearGradient>
+      </defs>
 
-      {/* Bowl — open ring (top + left + bottom via left side); gap sits at top-right */}
-      <path
-        d="M 62 52 A 22 22 0 0 0 62 96"
-        stroke={body}
-        strokeWidth="12"
-        strokeLinecap="round"
-        fill="none"
-      />
+      <g fill={useGradient ? `url(#${gradientId})` : solidBody}>
+        {/* Ascender — the tall stroke of the lowercase "b" */}
+        <rect x="22" y="8" width="16" height="58" rx="8" />
 
-      {/* Signature gold curl — closes the bowl at bottom-right (3→6 o'clock) */}
+        {/* Speech-bubble bowl */}
+        <circle cx="62" cy="74" r="34" />
+
+        {/* Speech-bubble tail at the 7-o'clock position */}
+        <path d="M 34 96 Q 28 108 30 118 Q 42 110 48 102 Z" />
+      </g>
+
+      {/* Checkmark nested inside the bowl */}
       <path
-        d="M 84 74 A 22 22 0 0 1 62 96"
-        stroke={curl}
-        strokeWidth="12"
+        d="M 46 74 L 57 85 L 80 62"
+        stroke={checkColor}
+        strokeWidth="9"
         strokeLinecap="round"
+        strokeLinejoin="round"
         fill="none"
       />
     </svg>

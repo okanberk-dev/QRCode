@@ -30,6 +30,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  // When moving an item to a different category, drop it at the end of the
+  // target category unless an explicit sortOrder was supplied. Otherwise the
+  // item keeps its old numeric sortOrder which may collide with existing ones.
+  const targetCategoryId = parsed.data.categoryId;
+  if (targetCategoryId && targetCategoryId !== existing.categoryId && parsed.data.sortOrder === undefined) {
+    const last = await prisma.menuItem.findFirst({
+      where: { categoryId: targetCategoryId, deletedAt: null, id: { not: itemId } },
+      orderBy: { sortOrder: 'desc' },
+      select: { sortOrder: true },
+    });
+    parsed.data.sortOrder = last ? last.sortOrder + 1 : 0;
+  }
+
   const item = await prisma.menuItem.update({
     where: { id: itemId },
     data: parsed.data,

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, LogOut, Store, QrCode, Users, Clock, Crown, UsersRound, Globe, User, BookOpen, Megaphone } from 'lucide-react';
+import { LayoutDashboard, LogOut, Store, QrCode, Users, Clock, Crown, UsersRound, Globe, User, BookOpen, Megaphone, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -16,6 +16,7 @@ interface AdminProfile {
   email?: string | null;
   plan?: string | null;
   trialEndsAt?: string | null;
+  logoUrl?: string | null;
 }
 
 function getTrialInfo(trialEndsAt: string | null | undefined): { daysLeft: number; isExpired: boolean } | null {
@@ -66,6 +67,7 @@ export default function AdminSidebar() {
     menuItems.push({ href: '/admin/customers', icon: UsersRound, label: t('customers'), roles: ['superadmin'] } as any);
     menuItems.push({ href: '/admin/blog', icon: BookOpen, label: 'Blog Yönetimi', roles: ['superadmin'] } as any);
     menuItems.push({ href: '/admin/announcements', icon: Megaphone, label: 'Duyurular', roles: ['superadmin'] } as any);
+    menuItems.push({ href: '/admin/site-settings', icon: Settings, label: 'Site Ayarları', roles: ['superadmin'] } as any);
   }
 
   // Profilim her zaman en altta olsun
@@ -89,7 +91,7 @@ export default function AdminSidebar() {
       <div className="p-6 border-b border-white/10 mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 flex-shrink-0">
-            <BuazeLogo size={40} variant="on-dark" />
+            <BuazeLogo size={40} variant="on-dark" imageUrl={profile?.logoUrl} />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-extrabold text-white tracking-tight leading-none">Buaze</h1>
@@ -183,7 +185,7 @@ export default function AdminSidebar() {
       {/* Mobile Top Bar */}
       <div className="lg:hidden bg-[#1A2332] border-b border-white/10 px-5 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8"><BuazeLogo size={32} variant="on-dark" /></div>
+          <div className="w-8 h-8"><BuazeLogo size={32} variant="on-dark" imageUrl={profile?.logoUrl} /></div>
           <span className="text-white font-black text-lg tracking-tight">Buaze</span>
         </div>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white p-2 hover:bg-white/5 transition-colors rounded-xl">
