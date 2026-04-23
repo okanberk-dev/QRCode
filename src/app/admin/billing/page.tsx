@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { CreditCard, Download, FileText, Loader2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import SuperadminBlock from '@/components/admin/SuperadminBlock';
 
 interface BillingSummary {
   plan: string;
@@ -23,6 +24,14 @@ interface Invoice {
 }
 
 export default function AdminBillingPage() {
+  return (
+    <SuperadminBlock>
+      <AdminBillingBody />
+    </SuperadminBlock>
+  );
+}
+
+function AdminBillingBody() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
   const [summary, setSummary] = useState<BillingSummary | null>(null);

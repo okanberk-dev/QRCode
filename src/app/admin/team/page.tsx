@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Mail, Plus, ShieldCheck, Users as UsersIcon } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import SuperadminBlock from '@/components/admin/SuperadminBlock';
 
 interface TeamMember {
   id: string;
@@ -30,6 +31,14 @@ const STATUS_STYLE: Record<TeamMember['status'], { tr: string; en: string; cls: 
 };
 
 export default function AdminTeamPage() {
+  return (
+    <SuperadminBlock>
+      <AdminTeamBody />
+    </SuperadminBlock>
+  );
+}
+
+function AdminTeamBody() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
   const [members, setMembers] = useState<TeamMember[]>([]);

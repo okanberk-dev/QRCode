@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, Check, Loader2, Mail, MessageSquare, Webhook } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import SuperadminBlock from '@/components/admin/SuperadminBlock';
 
 interface Prefs {
   lowRatingEmail: boolean;
@@ -19,6 +20,14 @@ const DEFAULT_PREFS: Prefs = {
 };
 
 export default function AdminNotificationsPage() {
+  return (
+    <SuperadminBlock>
+      <AdminNotificationsBody />
+    </SuperadminBlock>
+  );
+}
+
+function AdminNotificationsBody() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);

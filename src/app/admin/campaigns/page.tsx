@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Plus, QrCode, Sparkles } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import SuperadminBlock from '@/components/admin/SuperadminBlock';
 
 interface Campaign {
   id: string;
@@ -66,6 +67,14 @@ const STATUS_STYLE: Record<Campaign['status'], { tr: string; en: string; cls: st
 };
 
 export default function AdminCampaignsPage() {
+  return (
+    <SuperadminBlock>
+      <AdminCampaignsBody />
+    </SuperadminBlock>
+  );
+}
+
+function AdminCampaignsBody() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
   const [items, setItems] = useState<Campaign[]>([]);

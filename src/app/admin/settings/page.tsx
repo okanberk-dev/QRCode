@@ -14,10 +14,19 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import SuperadminBlock from '@/components/admin/SuperadminBlock';
 
 type TabId = 'account' | 'brand' | 'integrations' | 'automation' | 'team' | 'billing' | 'notifications' | 'api';
 
 export default function AdminSettingsPage() {
+  return (
+    <SuperadminBlock>
+      <AdminSettingsBody />
+    </SuperadminBlock>
+  );
+}
+
+function AdminSettingsBody() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
   const [tab, setTab] = useState<TabId>('account');
