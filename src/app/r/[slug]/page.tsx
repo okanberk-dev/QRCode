@@ -165,9 +165,9 @@ function SlugContent() {
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-6">
           <div className="relative">
-            <div className="w-16 h-16 rounded-full border-4 border-[#FFFFFF] border-t-blue-500 animate-spin" />
+            <div className="w-16 h-16 rounded-full border-4 border-[#FFFFFF] border-t-[#C6F24E] animate-spin" />
             <div className="absolute inset-0 m-auto w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                <Star className="text-blue-500 w-4 h-4 fill-blue-500" />
+                <Star className="text-[#0A0A0A] w-4 h-4 fill-[#C6F24E]" />
             </div>
           </div>
           <p className="text-sm font-bold text-[#6B7280] tracking-widest uppercase animate-pulse">BUAZE</p>
@@ -204,7 +204,7 @@ function SlugContent() {
           </div>
           
           <div className="w-[min(100%,16rem)] h-1.5 bg-[#EDEDED] rounded-full overflow-hidden mb-4">
-            <div className="h-full bg-blue-500 rounded-full animate-[progressBar_2s_linear_forwards]" />
+            <div className="h-full bg-[#C6F24E] rounded-full animate-[progressBar_2s_linear_forwards]" />
           </div>
           
           <style jsx>{`
@@ -234,7 +234,7 @@ function SlugContent() {
           
           <div className="flex items-center gap-3">
             {!showForm && !showThankYou && (
-               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-sm ring-1 ring-[#EDEDED]">
+               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0A0A0A] to-[#1A1A1A] flex items-center justify-center text-white text-xs font-bold border border-[#EDEDED] shadow-sm ring-1 ring-[#EDEDED]">
                   {restaurant.name.charAt(0).toUpperCase()}
                </div>
             )}
@@ -279,12 +279,12 @@ function SlugContent() {
       <footer className="py-10 px-6 mt-auto bg-[#FFFFFF]/30">
         <div className="max-w-xl mx-auto flex flex-col items-center gap-6">
           <div className="flex gap-6">
-            <a href="/tr/privacy" className="text-[10px] font-bold text-[#C9D0DB] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">GİZLİLİK</a>
-            <a href="/tr/terms" className="text-[10px] font-bold text-[#C9D0DB] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">KULLANIM</a>
+            <a href="/tr/privacy" className="text-[10px] font-bold text-[#A3A3A3] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">GİZLİLİK</a>
+            <a href="/tr/terms" className="text-[10px] font-bold text-[#A3A3A3] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">KULLANIM</a>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold text-[#C9D0DB] tracking-[0.2em]">POWERED BY</span>
-            <a href="https://buaze.com" className="text-[10px] font-black text-[#6B7280] hover:text-blue-500 transition-colors tracking-tighter uppercase">BUAZE</a>
+            <span className="text-[9px] font-bold text-[#A3A3A3] tracking-[0.2em]">POWERED BY</span>
+            <a href="https://buaze.com" className="text-[10px] font-semibold text-[#6B7280] hover:text-[#0A0A0A] transition-colors tracking-tighter uppercase">BUAZE</a>
           </div>
         </div>
       </footer>
@@ -297,7 +297,7 @@ export default function SlugPage() {
     <Suspense fallback={
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-6">
-          <div className="w-16 h-16 rounded-full border-4 border-[#FFFFFF] border-t-blue-500 animate-spin" />
+          <div className="w-16 h-16 rounded-full border-4 border-[#FFFFFF] border-t-[#C6F24E] animate-spin" />
         </div>
       </div>
     }>

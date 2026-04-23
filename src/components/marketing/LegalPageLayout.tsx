@@ -62,49 +62,79 @@ export default function LegalPageLayout({
 
       {/* ─── Body ─── */}
       <main className="flex-1 px-6 sm:px-10 py-12 sm:py-16">
-        <div className="max-w-[760px] mx-auto">
-          {intro && (
-            <div className="bg-[#EAF9B8] border border-[#C6F24E] rounded-2xl p-6 sm:p-7 text-[15px] text-[#0A0A0A] leading-[1.7] mb-12">
-              {intro}
-            </div>
-          )}
+        <div className="mx-auto grid max-w-[1040px] grid-cols-1 gap-10 lg:grid-cols-[1fr_220px]">
+          <div>
+            {intro && (
+              <div className="bg-[#EAF9B8] border border-[#C6F24E] rounded-2xl p-6 sm:p-7 text-[15px] text-[#0A0A0A] leading-[1.7] mb-12">
+                {intro}
+              </div>
+            )}
 
-          <div className="space-y-10">
-            {sections.map((s, i) => (
-              <section key={i} className="scroll-mt-24" id={`sec-${i + 1}`}>
-                <h2 className="text-[22px] sm:text-[26px] font-medium tracking-[-0.02em] text-[#0A0A0A] leading-tight">
-                  {s.heading}
-                </h2>
-                <div className="mt-4 text-[15px] sm:text-[16px] text-[#525252] leading-[1.75] space-y-4 [&_a]:text-[#0A0A0A] [&_a]:underline [&_a]:decoration-[#C6F24E] [&_a]:decoration-2 [&_a]:underline-offset-4 hover:[&_a]:decoration-[#A8D62E] [&_strong]:text-[#0A0A0A] [&_strong]:font-medium [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:space-y-2 [&_li]:pl-1">
-                  {s.body}
-                </div>
-              </section>
-            ))}
+            <div className="space-y-10">
+              {sections.map((s, i) => (
+                <section key={i} className="scroll-mt-24" id={`sec-${i + 1}`}>
+                  <h2 className="text-[22px] sm:text-[26px] font-medium tracking-[-0.02em] text-[#0A0A0A] leading-tight">
+                    {s.heading}
+                  </h2>
+                  <div className="mt-4 text-[15px] sm:text-[16px] text-[#525252] leading-[1.75] space-y-4 [&_a]:text-[#0A0A0A] [&_a]:underline [&_a]:decoration-[#C6F24E] [&_a]:decoration-2 [&_a]:underline-offset-4 hover:[&_a]:decoration-[#A8D62E] [&_strong]:text-[#0A0A0A] [&_strong]:font-medium [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:space-y-2 [&_li]:pl-1">
+                    {s.body}
+                  </div>
+                </section>
+              ))}
+            </div>
+
+            {footerBlock !== null && (
+              <div className="mt-16 pt-10 border-t border-[#EDEDED]">
+                {footerBlock ?? (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                    <div>
+                      <span className="pulse-eyebrow text-[#737373]">
+                        {isTr ? 'SORULARINIZ İÇİN' : 'FOR QUESTIONS'}
+                      </span>
+                      <p className="mt-2 text-[14px] text-[#525252]">
+                        {isTr ? 'hello@buaze.com adresine yazın.' : 'Write to hello@buaze.com.'}
+                      </p>
+                    </div>
+                    <a
+                      href="mailto:hello@buaze.com"
+                      className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#1A1A1A] transition-colors"
+                    >
+                      hello@buaze.com
+                      <span aria-hidden>→</span>
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {footerBlock !== null && (
-            <div className="mt-16 pt-10 border-t border-[#EDEDED]">
-              {footerBlock ?? (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-                  <div>
-                    <span className="pulse-eyebrow text-[#737373]">
-                      {isTr ? 'SORULARINIZ İÇİN' : 'FOR QUESTIONS'}
-                    </span>
-                    <p className="mt-2 text-[14px] text-[#525252]">
-                      {isTr ? 'hello@buaze.com adresine yazın.' : 'Write to hello@buaze.com.'}
-                    </p>
-                  </div>
-                  <a
-                    href="mailto:hello@buaze.com"
-                    className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#1A1A1A] transition-colors"
-                  >
-                    hello@buaze.com
-                    <span aria-hidden>→</span>
-                  </a>
-                </div>
-              )}
+          {/* Table of contents — sticky sidebar, desktop only.
+              Closes Phase 8 audit gap #4 (legal section nav missing). */}
+          <nav
+            aria-label={isTr ? 'Bölümler' : 'Sections'}
+            className="hidden lg:block"
+          >
+            <div className="sticky top-24 space-y-3">
+              <p className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'BÖLÜMLER' : 'SECTIONS'}
+              </p>
+              <ol className="space-y-2 border-l border-[#EDEDED] pl-4">
+                {sections.map((s, i) => (
+                  <li key={i}>
+                    <a
+                      href={`#sec-${i + 1}`}
+                      className="block text-[13px] leading-snug text-[#525252] transition-colors hover:text-[#0A0A0A]"
+                    >
+                      <span className="pulse-eyebrow mr-1.5 text-[#A3A3A3]">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      {s.heading}
+                    </a>
+                  </li>
+                ))}
+              </ol>
             </div>
-          )}
+          </nav>
         </div>
       </main>
 

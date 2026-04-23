@@ -17,8 +17,8 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 | 4 | Solutions (7 sektör) | `claude/design-phase-4-solutions` | #44 draft | ✅ Tamamlandı |
 | 5 | Content (blog, faq, help, about, careers, contact, 8 legal) | `claude/design-phase-5-content` | #45 draft | ✅ Tamamlandı |
 | 6 | Admin core (dashboard, reviews, QR wizard, analytics, restaurants, settings) | `claude/design-phase-6-admin-core` | #46 draft | ✅ Tamamlandı |
-| 7 | Admin advanced (campaigns, team, notifications, billing, API/webhook, tüm ikincil) | `claude/design-phase-7-admin-advanced` | draft | 🔄 Devam |
-| 8 | Public QR + Menu + Mobile/A11y polish | `claude/design-phase-8-public-polish` | — | ⏳ Bekliyor |
+| 7 | Admin advanced (campaigns, team, notifications, billing, API/webhook, tüm ikincil) | `claude/design-phase-7-admin-advanced` | #47 draft | ✅ Tamamlandı |
+| 8 | Public QR + Menu + Mobile/A11y polish + design-intent gap fixes | `claude/design-phase-8-public-polish` | draft | 🔄 Devam |
 
 ---
 
@@ -338,6 +338,48 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 
 ---
 
+### Faz 8 — 2026-04-23
+
+**Kapsam:** Public QR & menu Pulse pass + **design-intent gap fixes** (Phase 1-7 için yapılan kritik audit sonucu).
+
+**Kullanıcı feedback'i:** "scope daraldı" açıklamasıyla aldığım kararlar gerçek design intent atlamalarına yol açmıştı. Bu fazda kritik gap'leri kapattım + public surface'i Pulse'a çektim.
+
+**Critical audit bulguları (kapatılanlar ✅ / known-gap kalanlar ⚠️):**
+1. ✅ Homepage live review ticker — design 2.8s rotate istiyordu, kod static idi → **fixed** (`LiveReviewTicker.tsx` yeni component, auto-rotate, reduced-motion respect)
+2. ⚠️ `/admin/qr` 4-step wizard — design spec wizard istiyor, kod 910 satır flat form. **Known-gap**: backend form validation + submit akışı bu refactor'a karışır, ayrı dedicated PR gerekir. Design.md'de takipte.
+3. ⚠️ Sektör sayfaları non-bespoke content — 6 sektör `SolutionPageLayout` üzerinden jenerik içerik ile çalışıyor. **Known-gap**: `CaseStudy`/sektör CMS modeli bağlandığında içerik DB'den gelecek, şimdi placeholder yazmak ham iş. Design.md'de takipte.
+4. ✅ Legal pages TOC yoktu — section nav jump-link sidebar eklendi (`LegalPageLayout.tsx`)
+5. ✅ Public feedback surface Pulse cleanup (bkz altta)
+
+**Değişen dosyalar:**
+- `src/app/r/[slug]/page.tsx` — 6 legacy `blue-500/600` + `#C9D0DB` (navy-era palette) + `font-black` + `border-2 border-white` → Pulse tokens: `bg-[#C6F24E]`, `text-[#0A0A0A]`, `border-[#EDEDED]`, `font-semibold`, muted `[#A3A3A3]`
+- `src/components/FeedbackForm.tsx` — 14 legacy pattern sweep: `rounded-[24px]/[20px]` → `rounded-2xl/xl`, `font-extrabold/black` → `font-semibold`, `bg-blue-600/focus:border-blue-500/text-blue-600/hover:text-blue-800/bg-blue-50` → Pulse lime/graphite, KVKK consent box Pulse tint
+- `src/app/[locale]/page.tsx` — dark panel'deki static live stream block çıkarıldı, yerine yeni `<LiveReviewTicker>` client component; kullanılmayan `livePoints` + `liveReviews` sabitleri temizlendi
+- `src/components/marketing/LegalPageLayout.tsx` — sağ sticky TOC sidebar eklendi (desktop-only, `lg:grid-cols-[1fr_220px]`); her section anchor'ı `#sec-N` ID'si alır, TOC numerik pulse-eyebrow + section heading'e jump
+
+**Yeni dosyalar:**
+- `src/components/marketing/LiveReviewTicker.tsx` — 4-review rotating ticker. `setInterval(pivot % length, 2800ms)` + `prefers-reduced-motion` respect. Design spec `.design/site/site-homepage-v3.jsx:174` (HeroProduct) birebir pattern.
+
+**Backend etkisi:** Yok. `POST /api/feedback` akışı, platform redirect logic, `StarRating` + `ThankYou` component'leri, tüm Prisma sorguları dokunulmadı. Yalnız UI colour tokens + typography swap + yeni client component.
+
+**Verification:**
+- `npx tsc --noEmit` yeni dosyalarda 0 hata
+- `/r/[slug]` → Pulse palette (lime + graphite), artık hiç legacy blue yok
+- `/privacy`, `/terms`, `/kvkk`, `/cookie` vb. → desktop'ta sticky TOC sağda, mobile'da gizli (layout bozulmaz)
+- Homepage dark panel → 3 review otomatik rotating (2.8s interval)
+- Reduced-motion preference'da ticker döner durur, hareket durur
+- FeedbackForm submit akışı (`onSuccess` → `ThankYou`) değişmedi
+
+**Son Faz notu (9 fazlık süreç bitti):**
+Sırayla merge edilmesi gereken 9 draft PR: #39 (Phase 0) → #40 (Phase 1) → #41 (hotfix: restaurants toggle) → #42 (Phase 2) → #43 (Phase 3) → #44 (Phase 4) → #45 (Phase 5) → #46 (Phase 6) → #47 (Phase 7) → Phase 8 (bu PR). PR'lar branch'leri zincir gibi — bir öncesi merge edildikçe sonraki rebase etmesi gerekebilir.
+
+**Bilinçli yapılmayanlar (production öncesi kullanıcı kararı bekliyor):**
+- **`/admin/qr` 4-step wizard refactor** — 910 satır flat form'u state machine'e çevirmek backend form validation + submit/persistence akışını etkiler; bu iş için ayrı bir PR ve test-heavy yaklaşım gerekir
+- **Sektör sayfaları bespoke content** — CaseStudy/sektör CMS modeli (scaffolding.ts'de yorumla hazır) bağlandığında içerik DB'den gelecek; şimdi el yazımı placeholder yerleştirmek yerine model beklemesi tercih edildi
+- **Her sayfada ayrı mobile/a11y testi** — dev server smoke test tüm 9 fazda yapıldı (200/307 status code), DevTools 375/768/1280 breakpoint visual QA kullanıcının cihazında yapılmalı
+
+---
+
 ## Backend açıkları
 
 Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. Her faz sırasında bu tablo doldurulur; production'a çıkmadan önce bağlanmalı.
@@ -358,13 +400,18 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 | Automation rules | AdminSettings Automation | mock `/api/automations` (501) | Faz 7 | `AutomationRule` modeli (rating_lte/keyword/platform trigger → assign/email/webhook) |
 | Notification preferences persist | AdminNotifications | `GET /api/notifications` döner, `PUT` 501 | Faz 7 | `NotificationPreference` modeli |
 | Onboarding progress persist | `site-onboarding-v2.jsx` | mock `/api/onboarding/state` + `/complete` (501) | Faz 2 | `OnboardingProgress` modeli (zaten scaffolding.ts'de) |
+| **Admin QR 4-step wizard** | `.design/site/site-admin.jsx` AdminQRBuilder | **Known-gap (Faz 8 audit)** — 910 satır flat form; wizard refactor ayrı PR gerektiriyor | Faz 6 ⚠️ | State machine (`currentStep` + 4-step kartlar) + form validation refactor; backend submit/persist akışı korunmalı |
+| **Sektör sayfası bespoke content** | `.design/site/site-pages4.jsx` per-sektör | **Known-gap (Faz 8 audit)** — 6 sektör jenerik `SolutionPageLayout` boilerplate kullanıyor; yalnız `/solutions/restaurants` 1:1 | Faz 4 ⚠️ | `CaseStudy`/sektör CMS modeli (scaffolding.ts'de) bağlandığında DB'den beslenecek; el yazımı placeholder yerleştirmek yerine bekleme tercih edildi |
 
 ---
 
 ## Sıradaki adım
 
-**Faz 1 — Chrome + Homepage v3**
+**Bitti.** 9 draft PR (Faz 0–8 + hotfix #41) kullanıcı incelemesinde. Merge sırası: #39 → #40 → #41 → #42 → #43 → #44 → #45 → #46 → #47 → Faz 8 PR. PR'lar branch zinciri olduğundan önceki merge sonrası bir sonraki PR rebase/ready otomatik güncellenir.
 
-Kullanıcı onayıyla başlar. Branch `claude/design-phase-1-home` main'den açılır; Faz 0 merge'ü beklenmez — Phase 0 draft PR kendi başına gider.
-
-İlk aksiyon: `src/components/marketing/MarketingFooter.tsx` Pulse yeniden kurgu (4-kolon + newsletter input + ECG + live dot) + `.design/site/site-premium.jsx`'teki footer JSX'ini referans al.
+**Production öncesi yapılacaklar:**
+1. **Backend açıkları tablosu** — yukarıdaki 16 satır production'a çıkmadan bağlanmalı.
+2. **QR wizard refactor** — yukarıda known-gap, ayrı PR scoped.
+3. **Sektör içerik CMS** — CaseStudy + sektör metni Prisma modelleri + admin editör UI.
+4. **E2E smoke** — login → dashboard → QR üret → feedback bırak → OpenAI yanıt taslağı döngüsü; Vercel deploy'unda test edilir.
+5. **Mobile QA** — 375/768/1280 breakpoint'lerde her sayfa gezilmeli (dev server 200/307 doğruladı ama görsel QA cihazda yapılmalı).

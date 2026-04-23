@@ -17,6 +17,7 @@ import WatchDemoButton from '@/components/marketing/WatchDemoButton';
 import StickyCtaBar from '@/components/marketing/StickyCtaBar';
 import SocialProofToast from '@/components/marketing/SocialProofToast';
 import HomeIndustryTabs from '@/components/marketing/HomeIndustryTabs';
+import LiveReviewTicker from '@/components/marketing/LiveReviewTicker';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
@@ -192,19 +193,6 @@ export default async function LandingPage({
         { t: 'SLA tracking', d: 'Hit your response-time targets.' },
       ];
 
-  const livePoints = [4, 12, 8, 16, 10, 20, 14, 24, 22];
-  const liveReviews = isTr
-    ? [
-        { n: 'Ayşe K.', c: 'Servis çok hızlıydı, tatlılar harika.', r: 5 },
-        { n: 'Mert D.', c: 'Mekan güzel, sadece ses biraz yüksekti.', r: 4 },
-        { n: 'Zeynep A.', c: 'Kahve tam istediğim gibi geldi.', r: 5 },
-      ]
-    : [
-        { n: 'Alice K.', c: 'Service was fast, desserts were great.', r: 5 },
-        { n: 'Mark D.', c: 'Nice place, just a bit loud.', r: 4 },
-        { n: 'Jenny A.', c: 'Coffee came exactly how I ordered.', r: 5 },
-      ];
-
   const policyBlocks = isTr
     ? [
         { n: '01', t: 'Tercih gönderimi', d: 'QR müşteriyi önce gerçek geri bildirime yönlendirir.' },
@@ -369,64 +357,9 @@ export default async function LandingPage({
       ═══════════════════════════════════════════════════════════ */}
       <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Live stream card */}
-          <div className="bg-[#1A1A1A] border border-[#333333] rounded-2xl p-6 sm:p-7">
-            <div className="flex items-center gap-2 mb-5">
-              <span className="w-2 h-2 rounded-full bg-[#C6F24E] pulse-heartbeat" />
-              <span className="pulse-eyebrow text-[#C6F24E]">
-                {isTr ? 'CANLI AKIŞ' : 'LIVE STREAM'}
-              </span>
-            </div>
-
-            <svg viewBox="0 0 320 100" className="w-full h-auto mb-5" aria-hidden>
-              <defs>
-                <linearGradient id="liveGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#C6F24E" stopOpacity="0.35" />
-                  <stop offset="100%" stopColor="#C6F24E" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {(() => {
-                const pts = livePoints.map((v, i) => {
-                  const x = (i / (livePoints.length - 1)) * 320;
-                  const y = 90 - (v / 24) * 70;
-                  return `${x},${y}`;
-                });
-                const line = pts.join(' ');
-                const area = `0,100 ${line} 320,100`;
-                return (
-                  <>
-                    <polygon points={area} fill="url(#liveGrad)" />
-                    <polyline points={line} fill="none" stroke="#C6F24E" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-                    {livePoints.map((v, i) => {
-                      const x = (i / (livePoints.length - 1)) * 320;
-                      const y = 90 - (v / 24) * 70;
-                      return <circle key={i} cx={x} cy={y} r="3" fill="#C6F24E" />;
-                    })}
-                  </>
-                );
-              })()}
-            </svg>
-
-            <div className="space-y-3">
-              {liveReviews.map((r, i) => (
-                <div key={i} className="flex items-start gap-3 py-2 border-t border-[#333333] first:border-t-0">
-                  <div className="w-9 h-9 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[13px] font-semibold shrink-0">
-                    {r.n.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[13px] font-medium text-white truncate">{r.n}</span>
-                      <span className="text-[#C6F24E] text-[12px] tracking-wide shrink-0">
-                        {'★'.repeat(r.r)}
-                        <span className="text-[#525252]">{'★'.repeat(5 - r.r)}</span>
-                      </span>
-                    </div>
-                    <p className="text-[13px] text-[#A3A3A3] mt-0.5 truncate">{r.c}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Live stream card — auto-rotating review ticker, mirrors the
+              HeroProduct helper in .design/site/site-homepage-v3.jsx:174 */}
+          <LiveReviewTicker locale={locale} />
 
           {/* Copy + feature grid */}
           <div>
