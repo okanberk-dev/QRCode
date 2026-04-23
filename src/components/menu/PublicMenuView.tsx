@@ -5,6 +5,8 @@ import { Clock, MapPin, Phone, Flame, Leaf, Star, Sparkles, WheatOff } from 'luc
 import { formatPrice } from '@/lib/format';
 import type { MenuBadge, MenuTheme } from '@/lib/validations';
 import { useMenuAnalytics, useProductViewTracking } from '@/hooks/useMenuAnalytics';
+import ProductDetailModal from './ProductDetailModal';
+import MenuSplash from './MenuSplash';
 
 export interface MenuItemView {
   id: string;
@@ -39,6 +41,7 @@ export interface RestaurantView {
   primaryColor: string;
   menuTheme: MenuTheme;
   menuAccentColor: string | null;
+  menuLogoUrl: string | null;
 }
 
 interface PublicMenuViewProps {
@@ -109,7 +112,7 @@ type LayoutProps = {
   priceLocale: string;
   setProductRef: (productId: string, el: HTMLElement | null) => void;
   onCategoryClick: (categoryId: string) => void;
-  onProductClick: (productId: string, categoryId: string | null) => void;
+  onProductClick: (item: MenuItemView, categoryId: string | null) => void;
 };
 
 export default function PublicMenuView({ restaurant, categories, locale = 'tr', disableAnalytics }: PublicMenuViewProps) {
@@ -118,9 +121,28 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr', 
     [categories],
   );
   const [activeId, setActiveId] = useState<string | null>(visibleCategories[0]?.id ?? null);
+  const [detailItem, setDetailItem] = useState<MenuItemView | null>(null);
+  // QR-sourced visits see a 3-second branded splash. We initialize lazily so
+  // SSR -> CSR doesn't flash the splash on non-QR visits.
+  const [showSplash, setShowSplash] = useState(false);
+  const [splashReady, setSplashReady] = useState(false);
 
   const analyticsEnabled = !disableAnalytics;
   const analytics = useMenuAnalytics({ slug: restaurant.slug, enabled: analyticsEnabled });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (!disableAnalytics && params.get('source') === 'qr') {
+      setShowSplash(true);
+      // Remove ?source=qr so a refresh doesn't re-trigger the splash.
+      params.delete('source');
+      const qs = params.toString();
+      const url = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash;
+      window.history.replaceState(null, '', url);
+    }
+    setSplashReady(true);
+  }, [disableAnalytics]);
 
   useEffect(() => {
     if (!analyticsEnabled) return;
@@ -145,8 +167,9 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr', 
   const onCategoryClick = (categoryId: string) => {
     if (analyticsEnabled) analytics.trackCategoryClick(categoryId);
   };
-  const onProductClick = (productId: string, categoryId: string | null) => {
-    if (analyticsEnabled) analytics.trackProductClick(productId, categoryId);
+  const onProductClick = (item: MenuItemView, categoryId: string | null) => {
+    setDetailItem(item);
+    if (analyticsEnabled) analytics.trackProductClick(item.id, categoryId);
   };
 
   useEffect(() => {
@@ -185,17 +208,47 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr', 
     setProductRef, onCategoryClick, onProductClick,
   };
 
-  switch (restaurant.menuTheme) {
-    case 'modern':
-      return <ModernLayout {...layoutProps} />;
-    case 'elegant':
-      return <ElegantLayout {...layoutProps} />;
-    case 'gastronomy':
-      return <GastronomyLayout {...layoutProps} />;
-    case 'classic':
-    default:
-      return <ClassicLayout {...layoutProps} />;
+  const renderLayout = () => {
+    switch (restaurant.menuTheme) {
+      case 'modern':     return <ModernLayout {...layoutProps} />;
+      case 'elegant':    return <ElegantLayout {...layoutProps} />;
+      case 'gastronomy': return <GastronomyLayout {...layoutProps} />;
+      case 'minimal':    return <MinimalLayout {...layoutProps} />;
+      case 'bistro':     return <BistroLayout {...layoutProps} />;
+      case 'classic':
+      default:           return <ClassicLayout {...layoutProps} />;
+    }
+  };
+
+  if (!splashReady) {
+    // Render the layout during SSR. Once mounted, we know whether to overlay the splash.
+    return renderLayout();
   }
+
+  if (showSplash) {
+    return (
+      <MenuSplash
+        name={restaurant.name}
+        accent={accent}
+        logoUrl={restaurant.menuLogoUrl}
+        onDone={() => setShowSplash(false)}
+      />
+    );
+  }
+
+  return (
+    <>
+      {renderLayout()}
+      {detailItem && (
+        <ProductDetailModal
+          item={detailItem}
+          accent={accent}
+          locale={locale}
+          onClose={() => setDetailItem(null)}
+        />
+      )}
+    </>
+  );
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -212,8 +265,13 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         <div className="relative px-5 pt-10 pb-8 sm:px-8 sm:pt-14 sm:pb-10">
           <div className="mx-auto flex max-w-2xl items-start gap-4 sm:gap-5">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/95 text-3xl font-black shadow-lg sm:h-20 sm:w-20 sm:text-4xl" style={{ color: accent }}>
-              {restaurant.name.charAt(0).toUpperCase()}
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/95 text-3xl font-black shadow-lg sm:h-20 sm:w-20 sm:text-4xl" style={{ color: accent }}>
+              {restaurant.menuLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+              ) : (
+                restaurant.name.charAt(0).toUpperCase()
+              )}
             </div>
             <div className="min-w-0 flex-1 text-white">
               <p className="text-[11px] font-black uppercase tracking-[0.25em] opacity-80">{restaurant.category}</p>
@@ -271,7 +329,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                         key={item.id}
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
-                        onClick={() => onProductClick(item.id, category.id)}
+                        onClick={() => onProductClick(item, category.id)}
                         className={`flex cursor-pointer gap-4 rounded-2xl border border-[#E8ECF2] bg-white p-3 shadow-sm transition-all sm:p-4 ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
@@ -340,10 +398,15 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
         <div className="mx-auto max-w-5xl px-5 py-7 sm:px-8">
           <div className="flex items-center gap-4">
             <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl font-black text-white shadow-md"
+              className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-black text-white shadow-md"
               style={{ backgroundColor: accent }}
             >
-              {restaurant.name.charAt(0).toUpperCase()}
+              {restaurant.menuLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+              ) : (
+                restaurant.name.charAt(0).toUpperCase()
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#6B7280]">{restaurant.category}</p>
@@ -399,7 +462,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                         key={item.id}
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
-                        onClick={() => onProductClick(item.id, category.id)}
+                        onClick={() => onProductClick(item, category.id)}
                         className={`group cursor-pointer overflow-hidden rounded-2xl border border-[#E8ECF2] bg-white shadow-sm transition-all hover:shadow-md ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
@@ -458,6 +521,12 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
     <div className="min-h-full bg-white" style={{ fontFamily: 'var(--font-heading), var(--font-body)' }}>
       <header className="border-b border-[#E8ECF2] bg-white">
         <div className="mx-auto max-w-2xl px-6 py-12 text-center sm:py-16">
+          {restaurant.menuLogoUrl && (
+            <div className="mx-auto mb-4 h-16 w-16 overflow-hidden rounded-full border border-[#E8ECF2] bg-white shadow-sm sm:h-20 sm:w-20">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+            </div>
+          )}
           <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#6B7280]">{restaurant.category}</p>
           <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-[#1A2332] sm:text-5xl" style={{ fontFamily: 'var(--font-heading)' }}>
             {restaurant.name}
@@ -519,7 +588,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
                         key={item.id}
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
-                        onClick={() => onProductClick(item.id, category.id)}
+                        onClick={() => onProductClick(item, category.id)}
                         className={`flex cursor-pointer items-start gap-5 py-5 sm:py-6 ${item.isOutOfStock ? 'opacity-60' : ''}`}
                       >
                         {item.imageUrl && (
@@ -573,6 +642,14 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
       <header className="relative overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 opacity-30" style={{ background: `radial-gradient(circle at 20% 20%, ${accent}44, transparent 60%)` }} />
         <div className="relative mx-auto max-w-3xl px-6 py-14 text-center sm:py-20">
+          {restaurant.menuLogoUrl && (
+            <div className="mx-auto mb-5 h-20 w-20 overflow-hidden rounded-full p-[2px] shadow-lg sm:h-24 sm:w-24" style={{ backgroundColor: accent }}>
+              <div className="h-full w-full overflow-hidden rounded-full bg-[#0E1525]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+              </div>
+            </div>
+          )}
           <p className="text-[10px] font-bold uppercase tracking-[0.4em]" style={{ color: accent }}>{restaurant.category}</p>
           <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-6xl" style={{ fontFamily: 'var(--font-heading)' }}>
             {restaurant.name}
@@ -635,7 +712,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                         key={item.id}
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
-                        onClick={() => onProductClick(item.id, category.id)}
+                        onClick={() => onProductClick(item, category.id)}
                         className={`flex cursor-pointer gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:bg-white/10 sm:p-5 ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
@@ -686,6 +763,250 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
             <footer className="pt-4 pb-6 text-center text-[10px] font-bold uppercase tracking-widest text-white/40">
               Powered by Buaze
             </footer>
+          </main>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Minimal — typography-first, single-column, ultra-clean
+
+function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
+  return (
+    <div className="min-h-full bg-white">
+      <header className="border-b border-[#E8ECF2] bg-white">
+        <div className="mx-auto flex max-w-2xl items-center gap-4 px-5 py-6 sm:px-8 sm:py-8">
+          {restaurant.menuLogoUrl && (
+            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[#E8ECF2] bg-white shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#6B7280]">{restaurant.category}</p>
+            <h1 className="truncate text-xl font-extrabold tracking-tight text-[#1A2332] sm:text-2xl">{restaurant.name}</h1>
+          </div>
+          <p className="hidden text-[11px] font-bold uppercase tracking-widest text-[#6B7280] sm:block">{copy.menuOf}</p>
+        </div>
+      </header>
+
+      {visibleCategories.length === 0 ? (
+        <EmptyState copy={copy} />
+      ) : (
+        <>
+          <nav className="sticky top-0 z-30 border-b border-[#E8ECF2] bg-white/95 backdrop-blur">
+            <div className="mx-auto max-w-2xl overflow-x-auto px-3 py-3 no-scrollbar">
+              <div className="flex gap-4">
+                {visibleCategories.map((c) => {
+                  const isActive = activeId === c.id;
+                  return (
+                    <a
+                      key={c.id}
+                      href={`#cat-${c.id}`}
+                      onClick={() => onCategoryClick(c.id)}
+                      className="shrink-0 py-1.5 text-[11px] font-bold uppercase tracking-widest transition-all"
+                      style={{
+                        color: isActive ? accent : '#6B7280',
+                        borderBottom: `2px solid ${isActive ? accent : 'transparent'}`,
+                      }}
+                    >
+                      {c.name}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          </nav>
+
+          <main className="mx-auto max-w-2xl space-y-10 px-5 py-8 sm:px-8 sm:py-12">
+            {visibleCategories.map((category) => {
+              const items = category.items.filter((i) => i.isAvailable).sort((a, b) => a.sortOrder - b.sortOrder);
+              if (items.length === 0) return null;
+              return (
+                <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-20">
+                  <h2 className="mb-1 text-xs font-black uppercase tracking-[0.3em]" style={{ color: accent }}>{category.name}</h2>
+                  {category.description && (
+                    <p className="mb-4 text-[13px] font-medium text-[#6B7280]">{category.description}</p>
+                  )}
+                  <div className="divide-y divide-[#E8ECF2]">
+                    {items.map((item) => (
+                      <article
+                        key={item.id}
+                        data-pid={item.id}
+                        ref={(el) => setProductRef(item.id, el)}
+                        onClick={() => onProductClick(item, category.id)}
+                        className={`flex cursor-pointer items-center gap-4 py-4 transition-colors active:bg-[#F8F6F1] ${
+                          item.isOutOfStock ? 'opacity-60' : ''
+                        }`}
+                      >
+                        {item.imageUrl && (
+                          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#F8F6F1] sm:h-16 sm:w-16">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline gap-2">
+                            <h3 className="flex-1 truncate text-[15px] font-extrabold text-[#1A2332]">{item.name}</h3>
+                            <span className="shrink-0 text-sm font-black tabular-nums text-[#1A2332]">
+                              {formatPrice(item.priceCents, item.currency, priceLocale)}
+                            </span>
+                          </div>
+                          {item.description && (
+                            <p className="mt-0.5 line-clamp-2 text-[12px] font-medium text-[#6B7280]">{item.description}</p>
+                          )}
+                          {item.badges.length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                              {item.badges.map((b) => (
+                                <BadgeChip key={b} badge={b} locale={locale} />
+                              ))}
+                            </div>
+                          )}
+                          {item.isOutOfStock && (
+                            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-red-600">{copy.outOfStock}</p>
+                          )}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+            <Footer />
+          </main>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Bistro — warm cream palette, grid cards, cafe vibe
+
+function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
+  return (
+    <div className="min-h-full" style={{ backgroundColor: '#FAF7F0' }}>
+      <header className="relative overflow-hidden">
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-40"
+          style={{ background: `radial-gradient(circle at 80% 20%, ${accent}33, transparent 55%)` }}
+        />
+        <div className="relative mx-auto flex max-w-3xl items-center gap-5 px-5 pt-10 pb-8 sm:px-8 sm:pt-14 sm:pb-10">
+          <div
+            className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-white text-3xl font-black shadow-md sm:h-24 sm:w-24 sm:text-4xl"
+            style={{ color: accent }}
+          >
+            {restaurant.menuLogoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+            ) : (
+              restaurant.name.charAt(0).toUpperCase()
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: accent }}>{restaurant.category}</p>
+            <h1 className="mt-1 truncate text-2xl font-extrabold tracking-tight text-[#2A1E15] sm:text-3xl" style={{ fontFamily: 'var(--font-heading)' }}>
+              {restaurant.name}
+            </h1>
+            <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-[#7A6758]">{copy.menuOf}</p>
+          </div>
+        </div>
+        <div className="relative mx-auto max-w-3xl px-5 pb-5 sm:px-8">
+          <RestaurantMeta restaurant={restaurant} variant="dark" />
+        </div>
+      </header>
+
+      {visibleCategories.length === 0 ? (
+        <EmptyState copy={copy} />
+      ) : (
+        <>
+          <nav className="sticky top-0 z-30 border-b border-[#E8E0D2] bg-[#FAF7F0]/95 backdrop-blur">
+            <div className="mx-auto max-w-3xl overflow-x-auto px-3 py-3 no-scrollbar">
+              <div className="flex gap-2">
+                {visibleCategories.map((c) => {
+                  const isActive = activeId === c.id;
+                  return (
+                    <a
+                      key={c.id}
+                      href={`#cat-${c.id}`}
+                      onClick={() => onCategoryClick(c.id)}
+                      className="shrink-0 rounded-full px-4 py-1.5 text-[11px] font-black uppercase tracking-widest transition-all"
+                      style={{
+                        backgroundColor: isActive ? accent : 'white',
+                        color: isActive ? '#fff' : '#2A1E15',
+                        boxShadow: isActive ? '0 6px 16px -8px rgba(0,0,0,0.25)' : undefined,
+                      }}
+                    >
+                      {c.name}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          </nav>
+
+          <main className="mx-auto max-w-3xl space-y-10 px-4 py-8 sm:px-6 sm:py-10">
+            {visibleCategories.map((category) => {
+              const items = category.items.filter((i) => i.isAvailable).sort((a, b) => a.sortOrder - b.sortOrder);
+              if (items.length === 0) return null;
+              return (
+                <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
+                  <div className="mb-4">
+                    <h2 className="text-xl font-extrabold tracking-tight text-[#2A1E15] sm:text-2xl" style={{ fontFamily: 'var(--font-heading)' }}>
+                      {category.name}
+                    </h2>
+                    {category.description && (
+                      <p className="mt-1 text-sm italic text-[#7A6758]">{category.description}</p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    {items.map((item) => (
+                      <article
+                        key={item.id}
+                        data-pid={item.id}
+                        ref={(el) => setProductRef(item.id, el)}
+                        onClick={() => onProductClick(item, category.id)}
+                        className={`group cursor-pointer overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-[#E8E0D2] transition-all hover:shadow-md active:scale-[0.98] ${
+                          item.isOutOfStock ? 'opacity-60' : ''
+                        }`}
+                      >
+                        <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#F3ECDF]">
+                          {item.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                          ) : (
+                            <Placeholder accent={accent} />
+                          )}
+                          {item.isOutOfStock && (
+                            <span className="absolute inset-x-0 top-0 bg-black/70 py-1 text-center text-[10px] font-black uppercase tracking-widest text-white">
+                              {copy.outOfStock}
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-1 p-3 sm:p-4">
+                          <h3 className="line-clamp-2 text-[13px] font-extrabold leading-tight text-[#2A1E15] sm:text-sm">{item.name}</h3>
+                          {item.description && (
+                            <p className="line-clamp-2 text-[11px] font-medium text-[#7A6758]">{item.description}</p>
+                          )}
+                          <div className="flex items-center justify-between pt-1.5">
+                            <span className="text-sm font-extrabold tabular-nums" style={{ color: accent }}>
+                              {formatPrice(item.priceCents, item.currency, priceLocale)}
+                            </span>
+                            {item.badges.length > 0 && (
+                              <BadgeChip badge={item.badges[0]} locale={locale} />
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+            <Footer />
           </main>
         </>
       )}

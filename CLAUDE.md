@@ -283,20 +283,54 @@ Menü yapısı tek tip modern builder etrafında toplandı. Legacy `MenuEditor.t
 - **Tema:** 4 preset — `classic` (default) / `modern` / `elegant` / `gastronomy`. `Restaurant.menuTheme` kolonu.
 - **Accent renk:** 8 hazır swatch + native `<input type="color">`. `Restaurant.menuAccentColor` (null → `primaryColor` fallback).
 - **Logo:** `Restaurant.menuLogoUrl`. ThemePanel'de upload + preview + remove. `POST /api/restaurants/[id]/menu/upload` (kind=`logo`, 512x512 cover).
-- **Ürün görseli:** ItemModal'da dosya yükleme butonu + URL input (hybrid). Dosya seçildiğinde `kind=item` (1200px max, inside fit) endpoint'ine gider → data URL → form state'e yazılır → kaydetme anında item satırına gömülür.
+- **Ürün görseli:** ItemModal'da dosya yükleme butonu + URL input (hybrid). Dosya seçildiğinde `compressImage()` (src/lib/client-image.ts) tarayıcıda Canvas ile 1600px max WebP'ye çevirir → request payload ~200-400 KB'a düşer → `kind=item` endpoint'ine gider → sharp server'da 1200px'e indirip base64 döner → form state → item satırı. Client compression **dep-free** (Canvas/OffscreenCanvas), API yoksa orijinal dosya olduğu gibi yüklenir.
+- **Logo:** `Restaurant.menuLogoUrl`. ThemePanel'de upload + preview + remove. `POST /api/restaurants/[id]/menu/upload` (kind=`logo`, 512x512 cover). Upload'tan önce `compressImage(file, { maxDim: 1024 })`.
+- **6 tema:** Builder'da `themes` array 6 item içerir (classic, modern, elegant, gastronomy, minimal, bistro). Grid `sm:grid-cols-3`. Her tema için `ThemeThumb` inline SVG preview.
 - **Quick toggle'lar:** Kategori satırında `isVisible` eye, ürün satırında `isAvailable` eye + `isOutOfStock` AlertTriangle. Modal açmadan tek tıkla değiştir — optimistic state + revert on failure.
 - **Menü QR:** `/api/restaurants/[id]/menu/qr?format=png|svg` → PNG/SVG indir. URL'de `?source=qr` attribution parametresi taşır (analytics attribution için kritik).
 - **Reorder perf:** `reorderCategories` / `reorderItems` sadece **error** durumunda `fetchAll()` çağırır (önceden her reorder'da yapıyordu — 2x network). Optimistic state zaten doğru.
 
-### 12.2 Public men̈u & PublicMenuView
+### 12.2 Public menü & PublicMenuView
 
 **Dosya:** `src/components/menu/PublicMenuView.tsx`
 
-Tek giriş noktası: `restaurant.menuTheme` üzerinden `switch` ile 4 layout component'i (`ClassicLayout` / `ModernLayout` / `ElegantLayout` / `GastronomyLayout`). Paylaşılan helper'lar: `BadgeChip`, `BadgeChipOnDark`, `Placeholder`, `RestaurantMeta`, `EmptyState`, `Footer`.
+Tek giriş noktası: `restaurant.menuTheme` üzerinden `switch` ile 6 layout component'i:
+- `ClassicLayout` (default) — gradient hero + liste kartları
+- `ModernLayout` — grid kartlar, fiyat overlay
+- `ElegantLayout` — magazine, tek sütun, Manrope heading
+- `GastronomyLayout` — koyu tema (#0E1525) + gold accent çerçeveli logo
+- `MinimalLayout` (yeni 2026-04) — tipografi ağırlıklı, tek sütun, ince divider
+- `BistroLayout` (yeni 2026-04) — cream bg (#FAF7F0), 2-sütun grid, kafe tarzı
+
+Paylaşılan helper'lar: `BadgeChip`, `BadgeChipOnDark`, `Placeholder`, `RestaurantMeta`, `EmptyState`, `Footer`.
 
 `accent = restaurant.menuAccentColor || restaurant.primaryColor` — accent her tema JSX'ine prop olarak geçer.
 
-Admin preview modu `disableAnalytics` prop'u ile tracking'i kapatır — builder'daki önizleme üretim verilerini kirletmez.
+**Logo placement:** `restaurant.menuLogoUrl` varsa her temanın hero alanında uygun pozisyonda görünür (Classic+Modern+Bistro: köşe kartı; Elegant: merkez üstünde dairesel; Gastronomy: gold-çerçeveli dairesel). Logo yoksa restoran adının ilk harfi fallback olarak render edilir.
+
+Admin preview modu `disableAnalytics` prop'u ile tracking'i kapatır **ve** splash'i devre dışı bırakır — builder'daki önizleme üretim verilerini kirletmez ve 3 sn beklemeye sokmaz.
+
+### 12.2.1 Ürün detay modal'ı
+
+**Dosya:** `src/components/menu/ProductDetailModal.tsx`
+
+Ürün kartına tıklayan müşteriye ürünün büyük görseli + tam açıklaması + badge'leri + fiyatı gösterir. Tema-agnostik (restoran accent rengini vurgu için kullanır).
+
+- Mobilde (< 640px): alt-yapışık bottom sheet, `rounded-t-3xl`, `max-h-[92vh]`, yukarı slide animasyonu.
+- Desktop'ta (≥ 640px): merkez modal, `max-w-lg`, padding'li.
+- Backdrop click + ESC tuşu kapatır.
+- `document.body.style.overflow` kilidi ile arka plan scroll önlendi.
+- Modal açılırken analytics `menu_product_click` fırlatılır (PublicMenuView'ın `onProductClick` handler'ı).
+
+### 12.2.2 QR splash (açılış animasyonu)
+
+**Dosya:** `src/components/menu/MenuSplash.tsx`
+
+`?source=qr` parametresiyle gelen müşteriye 3 sn markalı splash gösterir: accent gradient arka plan, logo (varsa — yoksa harf initial), restoran adı, ince ilerleme çubuğu.
+
+- `window.history.replaceState` ile `?source=qr` param'ı silinir → yenilemede splash tekrar çıkmaz.
+- `setSplashReady` ilk mount'ta tetiklenir → SSR'de hiçbir şey flash etmez, yalnızca client mount sonrası splash veya menü render edilir.
+- Animasyon `globals.css`'teki `slide-in-from-bottom-6` + yerel `buaze-splash-fill` keyframe'i ile sürdürülür.
 
 ### 12.3 Eski `/r/[slug]/menu` sayfası
 

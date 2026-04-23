@@ -16,6 +16,7 @@ import { CSS } from '@dnd-kit/utilities';
 import PublicMenuView, { type MenuCategoryView, type MenuItemView, type RestaurantView } from '@/components/menu/PublicMenuView';
 import { MENU_BADGES, MENU_THEMES, type MenuBadge, type MenuTheme } from '@/lib/validations';
 import { formatPrice, parsePriceInput } from '@/lib/format';
+import { compressImage } from '@/lib/client-image';
 import type { Locale } from '@/lib/translations';
 
 interface RestaurantShape extends RestaurantView {
@@ -109,6 +110,8 @@ export default function RestaurantMenuBuilderPage() {
       themeModern: isTr ? 'Modern' : 'Modern',
       themeElegant: isTr ? 'Şık' : 'Elegant',
       themeGastronomy: isTr ? 'Gastronomi' : 'Gastronomy',
+      themeMinimal: isTr ? 'Minimal' : 'Minimal',
+      themeBistro: isTr ? 'Bistro' : 'Bistro',
       accentColor: isTr ? 'Renk' : 'Accent Color',
       menuQr: isTr ? 'Menü QR' : 'Menu QR',
       downloadQr: isTr ? 'İndir' : 'Download',
@@ -203,8 +206,11 @@ export default function RestaurantMenuBuilderPage() {
     setThemeSaving(true);
     setError(null);
     try {
+      // Pre-compress in the browser so the request payload is small (~200 KB
+      // instead of several MB) before sharp does the final resize server-side.
+      const compressed = await compressImage(file, { maxDim: 1024, quality: 0.85 });
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', compressed);
       fd.append('kind', 'logo');
       const res = await fetch(`/api/restaurants/${id}/menu/upload`, { method: 'POST', body: fd });
       const data = await res.json();
@@ -833,8 +839,10 @@ function ItemModal({
     setUploading(true);
     setFormError(null);
     try {
+      // Client-side compression cuts upload time ~80% for heavy phone photos.
+      const compressed = await compressImage(file, { maxDim: 1600, quality: 0.85 });
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', compressed);
       fd.append('kind', 'item');
       const res = await fetch(`/api/restaurants/${restaurantId}/menu/upload`, { method: 'POST', body: fd });
       const body = await res.json();
@@ -1239,6 +1247,8 @@ function ThemePanel({
     { id: 'modern', label: copy.themeModern },
     { id: 'elegant', label: copy.themeElegant },
     { id: 'gastronomy', label: copy.themeGastronomy },
+    { id: 'minimal', label: copy.themeMinimal },
+    { id: 'bistro', label: copy.themeBistro },
   ];
   const currentAccent = restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#F4B400';
   const logoFileRef = useRef<HTMLInputElement | null>(null);
@@ -1253,7 +1263,7 @@ function ThemePanel({
       <div className="mt-4 space-y-4">
         <div>
           <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#6B7280]">{copy.themeLabel}</p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {themes.map((t) => {
               const active = restaurant.menuTheme === t.id;
               return (
@@ -1398,6 +1408,37 @@ function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
           <div className="h-1 w-full rounded bg-[#6B7280]/30" />
           <div className="h-1 w-4/5 rounded bg-[#6B7280]/30" />
         </div>
+      </div>
+    );
+  }
+  if (theme === 'minimal') {
+    return (
+      <div className="relative h-20 overflow-hidden rounded-xl border border-[#E8ECF2] bg-white p-2">
+        <div className="flex items-center gap-1">
+          <div className="h-1 flex-1 rounded bg-[#1A2332]" />
+          <div className="h-1 w-6 rounded" style={{ backgroundColor: accent }} />
+        </div>
+        <div className="mt-2 space-y-1.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-1">
+              <div className="h-0.5 flex-1 rounded bg-[#6B7280]/30" />
+              <div className="h-0.5 w-6 rounded" style={{ backgroundColor: accent, opacity: 0.7 }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  if (theme === 'bistro') {
+    return (
+      <div className="relative grid h-20 grid-cols-2 gap-1 overflow-hidden rounded-xl border border-[#E8E0D2] p-1.5" style={{ backgroundColor: '#FAF7F0' }}>
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="rounded-xl bg-white shadow-sm"
+            style={{ borderBottom: `2px solid ${accent}` }}
+          />
+        ))}
       </div>
     );
   }

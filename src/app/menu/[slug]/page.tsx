@@ -93,6 +93,7 @@ export default async function PublicMenuPage({
     primaryColor: data.primaryColor,
     menuTheme,
     menuAccentColor: data.menuAccentColor ?? null,
+    menuLogoUrl: data.menuLogoUrl ?? null,
   };
 
   const categories: MenuCategoryView[] = data.menuCategories.map((c) => ({
