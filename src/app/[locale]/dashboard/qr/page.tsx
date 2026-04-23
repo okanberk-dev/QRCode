@@ -335,17 +335,26 @@ export default function DashboardQrPage() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="order-2 lg:order-1 space-y-4 sm:space-y-6">
-          <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#A8D62E]">
-                <QrCode size={20} strokeWidth={2} />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.3fr_1fr]">
+        <div className="order-2 lg:order-1 space-y-4">
+          {/* ═════ Step 1 — Kampanya detayları ═════ */}
+          <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                1
               </div>
-              <h2 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.qrPreview}</h2>
+              <h2
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {locale === 'tr' ? 'Kampanya detayları' : 'Campaign details'}
+              </h2>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label className="space-y-2 block">
                 <span className="pulse-eyebrow text-[#737373]">{copy.business}</span>
                 <select
@@ -362,67 +371,185 @@ export default function DashboardQrPage() {
                 </select>
               </label>
 
+              <label className="space-y-2 block">
+                <span className="pulse-eyebrow text-[#737373]">{copy.platform}</span>
+                <select
+                  value={selectedPlatform}
+                  onChange={(event) => setSelectedPlatform(event.target.value)}
+                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
+                >
+                  <option value="">{copy.genel}</option>
+                  <option value="google">Google</option>
+                  <option value="yemeksepeti">Yemeksepeti</option>
+                  <option value="getir">Getir</option>
+                  <option value="trendyol_go">Trendyol GO</option>
+                </select>
+              </label>
+
+              {/* Yerleşim pills — frontend only, backend to be wired later */}
+              <div className="space-y-2 sm:col-span-2">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {locale === 'tr' ? 'YERLEŞİM' : 'PLACEMENT'}
+                </span>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {(locale === 'tr' ? ['Masa', 'Fatura', 'Kapı', 'Paket'] : ['Table', 'Receipt', 'Door', 'Pack']).map(
+                    (label, i) => (
+                      <button
+                        type="button"
+                        key={label}
+                        className={`rounded-lg px-2 py-2 text-[12px] font-medium transition-colors ${
+                          i === 0 ? 'bg-[#0A0A0A] text-white' : 'bg-[#F5F5F5] text-[#0A0A0A] hover:bg-[#EDEDED]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <span className="pulse-eyebrow text-[#737373]">{copy.table}</span>
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setTableNumber((value) => (value && Number(value) > 1 ? String(Number(value) - 1) : ''))}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#EDEDED] bg-white text-[#0A0A0A] shadow-sm"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#EDEDED] bg-white text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
                   >
-                    <Minus size={18} strokeWidth={2} />
+                    <Minus size={14} strokeWidth={2} />
                   </button>
                   <input
                     type="text"
                     value={tableNumber}
                     onChange={(event) => setTableNumber(event.target.value.replace(/\D/g, ''))}
                     placeholder={locale === 'tr' ? 'Genel' : 'General'}
-                    className="min-w-0 flex-1 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-3 sm:px-5 py-3.5 sm:py-4 text-center text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
+                    className="min-w-0 flex-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2.5 text-center text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
                   />
                   <button
                     type="button"
                     onClick={() => setTableNumber((value) => (value ? String(Number(value) + 1) : '1'))}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#EDEDED] bg-white text-[#0A0A0A] shadow-sm"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#EDEDED] bg-white text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
                   >
-                    <Plus size={18} strokeWidth={2} />
+                    <Plus size={14} strokeWidth={2} />
                   </button>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-5 space-y-2">
-              <span className="pulse-eyebrow text-[#737373]">{copy.platform}</span>
-              <select
-                value={selectedPlatform}
-                onChange={(event) => setSelectedPlatform(event.target.value)}
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
+              <div className="space-y-2">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {locale === 'tr' ? 'ADET' : 'QTY'}
+                </span>
+                <div className="rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#525252]">
+                  {tableNumber
+                    ? `${locale === 'tr' ? 'Tek QR' : '1 QR'}${tableNumber ? ` (M${tableNumber})` : ''}`
+                    : locale === 'tr' ? '1 adet (genel)' : '1 QR (general)'}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ═════ Step 2 — Akış ═════ */}
+          <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
+                style={{ fontFamily: 'var(--font-heading)' }}
               >
-                <option value="">{copy.genel}</option>
-                <option value="google">GOOGLE</option>
-                <option value="yemeksepeti">YEMEKSEPETİ</option>
-                <option value="getir">GETİR</option>
-                <option value="trendyol_go">TRENDYOL GO</option>
-              </select>
+                2
+              </div>
+              <h2
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {locale === 'tr' ? 'Akış' : 'Flow'}
+              </h2>
             </div>
 
-            {/* ─── Color Picker ─── */}
-            <div className="mt-5 space-y-2">
-              <span className="pulse-eyebrow text-[#737373]">
-                <Palette size={12} className="inline -mt-0.5 mr-1" />{copy.colorLabel}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+              {(
+                locale === 'tr'
+                  ? [
+                      { n: '1', t: 'Tarama', d: 'Müşteri QR okur' },
+                      { n: '2', t: 'Puan verir', d: '1-5 yıldız ekran' },
+                      { n: '3', t: 'Not bırakır', d: 'Opsiyonel metin' },
+                      { n: '4', t: 'Yönlendirme', d: '≥4 → Google\n<4 → Özel form' },
+                    ]
+                  : [
+                      { n: '1', t: 'Scan', d: 'Customer scans QR' },
+                      { n: '2', t: 'Rate', d: '1-5 star screen' },
+                      { n: '3', t: 'Note', d: 'Optional text' },
+                      { n: '4', t: 'Route', d: '≥4 → Google\n<4 → Private form' },
+                    ]
+              ).map((s) => (
+                <div key={s.n} className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3.5">
+                  <div className="pulse-eyebrow text-[#A8D62E]">
+                    {locale === 'tr' ? 'ADIM' : 'STEP'} {s.n}
+                  </div>
+                  <div
+                    className="mt-1.5 text-[14px] font-semibold text-[#0A0A0A]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {s.t}
+                  </div>
+                  <p className="mt-1 text-[11px] text-[#737373] leading-[1.45] whitespace-pre-line">
+                    {s.d}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex items-start gap-2 rounded-lg bg-[#EAF9B8] p-3 text-[12px] leading-[1.5]">
+              <span className="text-[13px]">✓</span>
+              <span>
+                {locale === 'tr' ? (
+                  <>
+                    Google politikalarına <b>%100 uyumlu</b>. Olumsuz yorumlar gizlenmez; süzülmez — sadece iç yönetime atanır.
+                  </>
+                ) : (
+                  <>
+                    <b>100% compliant</b> with Google policy. Negative reviews are never hidden or filtered — only routed to internal management.
+                  </>
+                )}
               </span>
-              <div className="flex items-center gap-2 flex-wrap">
+            </div>
+          </section>
+
+          {/* ═════ Step 3 — Tasarım ═════ */}
+          <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                3
+              </div>
+              <h2
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {locale === 'tr' ? 'Tasarım' : 'Design'}
+              </h2>
+            </div>
+
+            {/* Color pills (brand / custom) */}
+            <div className="mb-4">
+              <span className="pulse-eyebrow text-[#737373]">
+                <Palette size={11} className="inline -mt-0.5 mr-1" />
+                {copy.colorLabel}
+              </span>
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
                 {selectedRestaurant?.primaryColor && (
                   <button
                     type="button"
                     onClick={() => setUseBrandColor(true)}
                     className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 pulse-eyebrow transition-all ${
                       useBrandColor
-                        ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white shadow-md'
-                        : 'border-[#EDEDED] bg-white text-[#1A1A1A] hover:border-[#C9D0DB]'
+                        ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                        : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A]'
                     }`}
                   >
                     <span
-                      className="inline-block h-4 w-4 rounded-md border border-white/30"
+                      className="inline-block h-4 w-4 rounded-md"
                       style={{ background: selectedRestaurant.primaryColor }}
                     />
                     {copy.brandColor}
@@ -433,12 +560,12 @@ export default function DashboardQrPage() {
                   onClick={() => setUseBrandColor(false)}
                   className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 pulse-eyebrow transition-all ${
                     !useBrandColor
-                      ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white shadow-md'
-                      : 'border-[#EDEDED] bg-white text-[#1A1A1A] hover:border-[#C9D0DB]'
+                      ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                      : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A]'
                   }`}
                 >
                   <span
-                    className="inline-block h-4 w-4 rounded-md border border-[#C9D0DB]"
+                    className="inline-block h-4 w-4 rounded-md border border-[#EDEDED]"
                     style={{ background: customDark }}
                   />
                   {copy.customColor}
@@ -448,50 +575,103 @@ export default function DashboardQrPage() {
                     type="color"
                     value={customDark}
                     onChange={(e) => setCustomDark(e.target.value)}
-                    className="h-10 w-10 cursor-pointer rounded-xl border border-[#EDEDED] bg-transparent p-0.5"
+                    className="h-9 w-9 cursor-pointer rounded-lg border border-[#EDEDED] bg-transparent p-0.5"
                   />
                 )}
               </div>
             </div>
 
-            <div className="mt-6 rounded-xl bg-[#0A0A0A] p-5 text-white">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <span className="pulse-eyebrow text-[#C6F24E]">{copy.target}</span>
-                <button
-                  type="button"
-                  onClick={copyUrl}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 py-1.5 pulse-eyebrow text-white transition-colors"
-                >
-                  {copied ? <Check size={12} strokeWidth={2} /> : <Copy size={12} strokeWidth={2} />}
-                  {copied ? copy.copied : copy.copy}
-                </button>
+            {/* Template thumbnails — visual only, backend to be wired later */}
+            <div>
+              <span className="pulse-eyebrow text-[#737373]">
+                {locale === 'tr' ? 'ŞABLON' : 'TEMPLATE'}
+              </span>
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                {[
+                  { bg: '#C6F24E', fg: '#0A0A0A', l: locale === 'tr' ? 'Lime' : 'Lime', active: true },
+                  { bg: '#FFFFFF', fg: '#0A0A0A', l: locale === 'tr' ? 'Beyaz' : 'White' },
+                  { bg: '#0A0A0A', fg: '#C6F24E', l: locale === 'tr' ? 'Koyu' : 'Dark' },
+                  { bg: '#FAFAFA', fg: '#0A0A0A', l: locale === 'tr' ? 'Minimal' : 'Minimal' },
+                ].map((x) => (
+                  <div
+                    key={x.l}
+                    className={`aspect-[3/4] rounded-lg p-2.5 flex flex-col items-center justify-between cursor-pointer ${
+                      x.active ? 'ring-2 ring-[#0A0A0A]' : 'ring-1 ring-[#EDEDED]'
+                    }`}
+                    style={{ background: x.bg }}
+                  >
+                    <div
+                      className="text-[11px] font-semibold"
+                      style={{ color: x.fg, fontFamily: 'var(--font-heading)' }}
+                    >
+                      {locale === 'tr' ? 'Yorum' : 'Review'}
+                    </div>
+                    <div className="h-8 w-8 rounded" style={{ background: x.fg }} />
+                    <div
+                      className="pulse-eyebrow"
+                      style={{ color: x.fg, opacity: 0.6 }}
+                    >
+                      {x.l.toUpperCase()}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <p className="truncate text-[12px] text-white/60 font-mono">{qrTargetUrl || 'https://buaze.com/r/...'}</p>
             </div>
+          </section>
 
-            <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+          {/* Target URL + Actions row */}
+          <div className="rounded-xl bg-[#0A0A0A] p-5 text-white">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="pulse-eyebrow text-[#C6F24E]">{copy.target}</span>
               <button
                 type="button"
-                onClick={generateQr}
-                disabled={generating || !selectedId}
-                className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors disabled:opacity-50"
+                onClick={copyUrl}
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 py-1.5 pulse-eyebrow text-white transition-colors"
               >
-                {generating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
-                {copy.refresh}
-              </button>
-              <button type="button" onClick={() => downloadQr('svg')} className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors">
-                <Download size={14} strokeWidth={2} />
-                SVG
-              </button>
-              <button type="button" onClick={() => downloadQr('png')} className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors">
-                <Download size={14} strokeWidth={2} />
-                PNG
-              </button>
-              <button type="button" onClick={handlePrint} className="col-span-2 sm:col-auto inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors">
-                <Printer size={14} strokeWidth={2} />
-                {copy.print}
+                {copied ? <Check size={12} strokeWidth={2} /> : <Copy size={12} strokeWidth={2} />}
+                {copied ? copy.copied : copy.copy}
               </button>
             </div>
+            <p className="truncate text-[12px] text-white/60 font-mono">{qrTargetUrl || 'https://buaze.com/r/...'}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => downloadQr('svg')}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-3 text-[13px] font-medium text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors"
+            >
+              {locale === 'tr' ? 'Taslak kaydet' : 'Save draft'}
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadQr('png')}
+              disabled={generating || !selectedId}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-3 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors disabled:opacity-50"
+            >
+              {generating ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
+              {locale === 'tr' ? 'Yayınla & indir →' : 'Publish & download →'}
+            </button>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={generateQr}
+              disabled={generating || !selectedId}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors disabled:opacity-50"
+            >
+              {generating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
+              {copy.refresh}
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors"
+            >
+              <Printer size={14} strokeWidth={2} />
+              {copy.print}
+            </button>
           </div>
 
           <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
@@ -542,65 +722,119 @@ export default function DashboardQrPage() {
           </div>
         </div>
 
-        <div className="order-1 lg:order-2 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-          <div className="mb-4 sm:mb-5 flex items-center justify-between gap-3">
-             <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
-                   <QrCode size={20} strokeWidth={2} />
-                </div>
-                <h2 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.qrPreview}</h2>
-                {selectedPlatform && PLATFORM_BADGE[selectedPlatform] && (
-                  <span className={`px-2 py-1 rounded-full pulse-eyebrow text-white ${PLATFORM_BADGE[selectedPlatform].bg}`}>
-                    {PLATFORM_BADGE[selectedPlatform].label}
-                  </span>
-                )}
-             </div>
-             {duplicateWarning && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 pulse-eyebrow">
-                   <AlertCircle size={11} strokeWidth={2} />
-                   {locale === 'tr' ? 'ZATEN MEVCUT' : 'ALREADY EXISTS'}
-                </div>
-             )}
-          </div>
-
-          <div className="flex min-h-[260px] sm:min-h-[360px] items-center justify-center rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-5 sm:p-7">
-            {generating ? (
-              <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
-            ) : qrSvg ? (
-              <div className="w-full space-y-4 text-center">
-                <div className="mx-auto w-full max-w-[220px] overflow-hidden sm:max-w-[280px] [&>svg]:h-auto [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: qrSvg }} />
-                <div>
-                  <p
-                    className="text-[17px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
-                    {selectedRestaurant?.name}
-                  </p>
-                  {tableNumber && (
-                    <p className="mt-1 pulse-eyebrow text-[#737373]">
-                      {locale === 'tr' ? 'MASA' : 'TABLE'} {tableNumber}
-                    </p>
-                  )}
-                </div>
+        <div className="order-1 lg:order-2 space-y-3">
+          <div className="flex items-center justify-between sticky top-0">
+            <span className="pulse-eyebrow text-[#737373]">
+              {locale === 'tr' ? 'CANLI ÖNİZLEME' : 'LIVE PREVIEW'}
+            </span>
+            {duplicateWarning && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 pulse-eyebrow">
+                <AlertCircle size={11} strokeWidth={2} />
+                {locale === 'tr' ? 'ZATEN MEVCUT' : 'ALREADY EXISTS'}
               </div>
-            ) : qrError ? (
-              <div className="flex flex-col items-center gap-3 text-center px-4">
-                <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center">
-                  <QrCode size={20} strokeWidth={2} className="text-red-400" />
-                </div>
-                <p className="pulse-eyebrow text-red-500">{qrError}</p>
-                <button
-                  type="button"
-                  onClick={generateQr}
-                  className="pulse-eyebrow text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E] transition-colors"
-                >
-                  {locale === 'tr' ? 'TEKRAR DENE' : 'RETRY'}
-                </button>
-              </div>
-            ) : (
-              <p className="text-[13px] text-[#525252]">{locale === 'tr' ? 'QR oluşturmak için işletme seçin.' : 'Select a location to generate a QR code.'}</p>
             )}
           </div>
+
+          {/* Two-up preview: QR card + phone screen mockup */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* QR card mock */}
+            <div
+              className="rounded-2xl p-4 aspect-[3/4] flex flex-col items-center justify-between"
+              style={{ background: activeDark === '#C6F24E' ? '#C6F24E' : '#C6F24E' }}
+            >
+              <div className="text-center">
+                <div className="pulse-eyebrow text-[#0A0A0A]/60">
+                  {(selectedRestaurant?.name || (locale === 'tr' ? 'İŞLETME' : 'BUSINESS'))
+                    .toUpperCase()
+                    .slice(0, 22)}
+                </div>
+                <div
+                  className="mt-2 text-[20px] font-medium leading-[1] tracking-[-0.02em] text-[#0A0A0A]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {locale === 'tr' ? 'Deneyiminizi paylaşın.' : 'Share your experience.'}
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-2">
+                {generating ? (
+                  <div className="h-[80px] w-[80px] flex items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-[#0A0A0A]" />
+                  </div>
+                ) : qrSvg ? (
+                  <div
+                    className="h-[80px] w-[80px] [&>svg]:h-full [&>svg]:w-full"
+                    dangerouslySetInnerHTML={{ __html: qrSvg }}
+                  />
+                ) : (
+                  <div className="h-[80px] w-[80px] bg-[#F5F5F5] rounded" />
+                )}
+              </div>
+              <div className="pulse-eyebrow text-[#0A0A0A]/80">
+                BUAZE · {tableNumber ? `M${tableNumber.padStart(2, '0')}` : locale === 'tr' ? 'GENEL' : 'GENERAL'}
+              </div>
+            </div>
+
+            {/* Phone screen mockup */}
+            <div className="bg-[#0A0A0A] rounded-[28px] p-2.5 aspect-[9/19]">
+              <div className="bg-white rounded-[20px] h-full p-3 flex flex-col gap-2.5">
+                <div className="pulse-eyebrow text-[#737373] text-[9px]">
+                  {(selectedRestaurant?.name || 'BUAZE').toUpperCase().slice(0, 18)}
+                </div>
+                <div
+                  className="text-[14px] font-medium text-[#0A0A0A] tracking-[-0.015em] leading-[1.15]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {locale === 'tr' ? 'Deneyiminiz nasıldı?' : 'How was your experience?'}
+                </div>
+                <div className="flex justify-between">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div
+                      key={i}
+                      className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${
+                        i <= 4 ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#EDEDED] text-[#0A0A0A]'
+                      }`}
+                    >
+                      ★
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-[#FAFAFA] rounded p-2 text-[9px] text-[#A3A3A3] min-h-[40px]">
+                  {locale === 'tr' ? 'Kısa notunuz...' : 'Your note...'}
+                </div>
+                <div className="mt-auto bg-[#0A0A0A] text-white rounded-full text-center text-[10px] font-medium py-1.5">
+                  {locale === 'tr' ? 'Paylaş →' : 'Share →'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* QR URL */}
+          <div className="rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-3.5">
+            <span className="pulse-eyebrow text-[#737373]">QR URL</span>
+            <p className="mt-1 text-[11px] font-mono text-[#0A0A0A] break-all leading-[1.4]">
+              {qrTargetUrl ? qrTargetUrl.replace(/^https?:\/\//, '') : 'buaze.com/r/...'}
+            </p>
+          </div>
+
+          {/* Error state fallback */}
+          {qrError && !qrSvg && (
+            <div className="flex flex-col items-center gap-2 text-center px-4 py-4 rounded-xl bg-red-50 border border-red-200">
+              <p className="pulse-eyebrow text-red-500">{qrError}</p>
+              <button
+                type="button"
+                onClick={generateQr}
+                className="pulse-eyebrow text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E] transition-colors"
+              >
+                {locale === 'tr' ? 'TEKRAR DENE' : 'RETRY'}
+              </button>
+            </div>
+          )}
+
+          {!selectedId && !qrError && (
+            <p className="text-[12px] text-[#737373] text-center py-3">
+              {locale === 'tr' ? 'QR oluşturmak için işletme seçin.' : 'Select a location to generate a QR code.'}
+            </p>
+          )}
         </div>
       </div>
     </div>

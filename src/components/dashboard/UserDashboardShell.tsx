@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, ChevronDown, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, QrCode, Search, Store, User, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -44,13 +44,14 @@ function useTopBar(locale: Locale, pathname: string | null) {
   if (!pathname) return null;
   const rest = pathname.replace(`/${locale}/dashboard`, '') || '/';
   if (rest === '/') return { breadcrumb: isTr ? 'PANEL / GENEL BAKIŞ' : 'PANEL / OVERVIEW', title: isTr ? 'Genel bakış' : 'Overview' };
-  if (rest.startsWith('/feedbacks')) return { breadcrumb: isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS', title: isTr ? 'Yorumlar' : 'Reviews' };
-  if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'PANEL / QR OLUŞTUR' : 'PANEL / CREATE QR', title: isTr ? 'QR oluştur' : 'Create QR' };
+  if (rest.startsWith('/feedbacks')) return { breadcrumb: isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS', title: isTr ? 'Yorum gelen kutusu' : 'Review inbox' };
+  if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'QR OLUŞTUR / YENİ KAMPANYA' : 'QR / NEW CAMPAIGN', title: isTr ? 'QR kodu oluştur' : 'Create QR code' };
+  if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
   if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / KONUMLAR' : 'PANEL / LOCATIONS', title: isTr ? 'Konumlar' : 'Locations' };
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
   if (rest.startsWith('/leads')) return { breadcrumb: isTr ? 'PANEL / MÜŞTERİLER' : 'PANEL / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
-  if (rest.startsWith('/profile')) return { breadcrumb: isTr ? 'HESAP / PROFİL' : 'ACCOUNT / PROFILE', title: isTr ? 'Profil' : 'Profile' };
+  if (rest.startsWith('/profile')) return { breadcrumb: isTr ? 'AYARLAR / HESAP' : 'SETTINGS / ACCOUNT', title: isTr ? 'Ayarlar' : 'Settings' };
   return null;
 }
 
@@ -67,11 +68,12 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     return {
       dashboard: isTr ? 'Panel' : 'Dashboard',
       feedbacks: isTr ? 'Yorumlar' : 'Feedbacks',
+      analytics: isTr ? 'Analitik' : 'Analytics',
       restaurants: isTr ? 'İşletmeler' : 'Locations',
       qr: 'QR',
       menu: isTr ? 'Menü' : 'Menu',
       guide: isTr ? 'Kılavuz' : 'Guide',
-      profile: isTr ? 'Profil' : 'Profile',
+      profile: isTr ? 'Ayarlar' : 'Settings',
       logout: isTr ? 'Çıkış' : 'Logout',
       plan: isTr ? 'Plan' : 'Plan',
       trialLeft: isTr ? 'gün kaldı' : 'days left',
@@ -83,12 +85,12 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const navItems = [
     { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
     { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
+    { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
+    { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
-    { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
-    { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
-    { href: `/${locale}/dashboard/profile`, icon: User, label: copy.profile },
+    { href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
 
   // Mobile bottom nav: 4 primary tabs + "More" sheet for the rest.
@@ -99,10 +101,11 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
   ];
   const moreSheetItems = [
+    { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
     { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
-    { href: `/${locale}/dashboard/profile`, icon: User, label: copy.profile },
+    { href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
   const moreActive = moreSheetItems.some(
     (i) => pathname === i.href || pathname?.startsWith(`${i.href}/`),
