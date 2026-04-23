@@ -59,6 +59,7 @@ const INDUSTRY_SLUG_MAP: Record<string, string> = {
   aes: 'aesthetic',
   sch: 'schools',
   bho: 'boutique-hotels',
+  ret: 'retail',
 };
 
 const ALL_SOLUTIONS = [

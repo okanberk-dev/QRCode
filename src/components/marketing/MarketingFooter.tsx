@@ -55,10 +55,10 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
       items: [
         { label: isTr ? 'Restoran & Kafe' : 'Restaurant & Cafe', href: `${base}/solutions/restaurants` },
         { label: isTr ? 'Paket Servis' : 'Delivery', href: `${base}/solutions/delivery` },
-        { label: isTr ? 'Otel' : 'Hotel', href: `${base}/solutions/hotel` },
-        { label: isTr ? 'Klinik' : 'Clinic', href: `${base}/solutions/clinic` },
-        { label: isTr ? 'Hukuk Ofisi' : 'Legal', href: `${base}/solutions/legal` },
-        { label: isTr ? 'Güzellik & Spa' : 'Beauty & Spa', href: `${base}/solutions/spa` },
+        { label: isTr ? 'Otel' : 'Hotel', href: `${base}/solutions/hotels` },
+        { label: isTr ? 'Klinik' : 'Clinic', href: `${base}/solutions/healthcare` },
+        { label: isTr ? 'Hukuk Ofisi' : 'Legal', href: `${base}/solutions/law-firms` },
+        { label: isTr ? 'Güzellik & Spa' : 'Beauty & Spa', href: `${base}/solutions/beauty-salon` },
       ],
     },
     {

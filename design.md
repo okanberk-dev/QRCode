@@ -13,8 +13,8 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 | 0 | Baseline audit + design.md iskelet + `.design/` + §16 | `claude/design-phase-0-baseline` | #39 draft | ✅ Tamamlandı |
 | 1 | Chrome + Homepage v3 (animated counter, bento, marquee, sticky CTA, toast, video modal) | `claude/design-phase-1-home` | #40 draft | ✅ Tamamlandı |
 | 2 | Auth + Onboarding (5 adım + confetti + 404) | `claude/design-phase-2-auth-onboarding` | #42 draft | ✅ Tamamlandı |
-| 3 | Marketing secondary (features, AI Co-Pilot, pricing, ROI, QR, integrations, compare, stories, case-study) | `claude/design-phase-3-marketing` | draft | 🔄 Devam |
-| 4 | Solutions (7 sektör) | `claude/design-phase-4-solutions` | — | ⏳ Bekliyor |
+| 3 | Marketing secondary (features, AI Co-Pilot, pricing, ROI, QR, integrations, compare, stories, case-study) | `claude/design-phase-3-marketing` | #43 draft | ✅ Tamamlandı |
+| 4 | Solutions (7 sektör) | `claude/design-phase-4-solutions` | draft | 🔄 Devam |
 | 5 | Content (blog, faq, help, about, careers, contact, 8 legal) | `claude/design-phase-5-content` | — | ⏳ Bekliyor |
 | 6 | Admin core (dashboard, reviews, QR wizard, analytics, restaurants, settings) | `claude/design-phase-6-admin-core` | — | ⏳ Bekliyor |
 | 7 | Admin advanced (campaigns, team, notifications, billing, API/webhook, tüm ikincil) | `claude/design-phase-7-admin-advanced` | — | ⏳ Bekliyor |
@@ -172,6 +172,53 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 - Faz 4 — Solutions: 7 sektör sayfası `/solutions/{restoran,delivery,otel,klinik,hukuk,spa,perakende}`. Mevcut `SolutionPageLayout.tsx` (varsa) Pulse'a hizalanır veya 13 sayfalık layout abstraction tekrar kullanılır.
 - Delivery sayfası Yemeksepeti + Getir + Trendyol GO logolarıyla özel; `.design/site/site-pages3.jsx` DeliverySolutionPage refere.
 - Otel/Klinik/Hukuk/Spa/Perakende için `.design/site/site-pages4.jsx` refere.
+
+---
+
+### Faz 4 — 2026-04-23
+
+**Kapsam:** 7 sektör sayfası planlanmıştı ama audit çıktısı daraltıcı oldu:
+
+**Audit sonucu:**
+- `SolutionPageLayout.tsx` (444 satır) — zaten tamamen Pulse uyumlu (0 lingering pattern)
+- 6 sektör sayfası hâlihazırda mevcut ve Pulse-clean: `/solutions/{restaurants,delivery,hotels,healthcare,law-firms,beauty-salon}`. Ek olarak `aesthetic,auto-service,boutique-hotels,dentists,gym,real-estate,schools,veterinary` toplam 14 sektör sayfası var
+- Delivery sayfası TR_DELIVERY platform logolarıyla (Yemeksepeti, Getir, Trendyol GO) zaten bağlı
+- **GERÇEK BOŞLUKLAR:**
+  - `MarketingFooter.tsx`'de 4 kırık link: `/solutions/hotel|clinic|legal|spa` → mevcut slug'lar `hotels|healthcare|law-firms|beauty-salon`
+  - Turkish slug alias'ları yok (`/solutions/{otel,klinik,hukuk,spa,perakende}`) — footer + design spec için referans veriliyordu ama 404'tu
+  - Retail sektör sayfası yoktu (plan'ın 7. sektörü)
+  - Restoran sayfasının hero copy'si "Masanın sesi, Google'da" slogandan farklıydı
+
+**Değişen dosyalar:**
+- `src/components/marketing/MarketingFooter.tsx` — 4 footer link'i kanonik slug'lara eşitlendi (hotel→hotels, clinic→healthcare, legal→law-firms, spa→beauty-salon)
+- `src/components/marketing/SolutionPageLayout.tsx` — `INDUSTRY_SLUG_MAP`'e tek satır eklendi: `ret: 'retail'`
+- `src/app/[locale]/solutions/restaurants/page.tsx` — hero prop'ları tasarım copy'sine hizalandı: `h1Prefix: "Masanın sesi,"`, `h1Suffix: "Google'da."`, description 4 temas noktasına (masa/fatura/kapı/paket) vurgu yapıyor
+
+**Yeni dosyalar (8):**
+- `src/app/[locale]/solutions/retail/page.tsx` — yedinci sektör. `SolutionPageLayout` üzerinden: 4 stat (260+ mağaza, +142% yorum/ay, %88 sadakat, tek panel), 3 adım (kasa+poşet QR / kategori analizi / multi-store cockpit), 4 fayda, 2 SSS. Türkçe + İngilizce metin + Metadata/alternates.
+- 7 redirect sayfası → kanonik sayfalara yönlendirir:
+  - `/solutions/hotel` → `/solutions/hotels`
+  - `/solutions/clinic` → `/solutions/healthcare`
+  - `/solutions/legal` → `/solutions/law-firms`
+  - `/solutions/spa` → `/solutions/beauty-salon`
+  - `/solutions/otel` → `/solutions/hotels`
+  - `/solutions/klinik` → `/solutions/healthcare`
+  - `/solutions/hukuk` → `/solutions/law-firms`
+  - `/solutions/perakende` → `/solutions/retail`
+
+**Backend etkisi:** Yok. `SolutionPageLayout` sadece slug map'i bir satır genişledi; mevcut 14 sektör sayfasının davranışı değişmedi. Hiçbir API, Prisma, auth dokunulmadı.
+
+**Verification:**
+- `npx tsc --noEmit` yeni dosyalarda 0 hata (pre-existing globals.css dışında)
+- Footer'dan tıklanabilir tüm `/solutions/*` link'leri 200 döner
+- `/tr/solutions/otel` + `/tr/solutions/klinik` + `/tr/solutions/hukuk` + `/tr/solutions/spa` + `/tr/solutions/perakende` → 307 → kanonik slug
+- `/tr/solutions/hotel` + `/clinic` + `/legal` (İngilizce design slug'ları) → 307 → canonical
+- `/tr/solutions/retail` + `/en/solutions/retail` → 200, SolutionPageLayout ile Pulse hero
+- `/tr/solutions/restaurants` → yeni hero: "Masanın sesi, Google'da."
+
+**Sonraki faz için not:**
+- Faz 5 — Content: `/blog` + `/blog/[slug]` (BlogPost Prisma sorgusu dokunulmaz), `/faq`, `/help` (mock articles), `/about`, `/careers`, `/contact` + 8 yasal sayfa (privacy, kvkk, terms, cookie, açık-rıza, ticari-ileti, google-compliance, gizlilik).
+- Yasal sayfaların şablon olmadığı yerler var — önce inventory, sonra sed-sweep.
 
 ---
 
