@@ -503,11 +503,46 @@ Her deploy'da schema sync edilir → `P2022 column does not exist` hatası oluş
 - `JWT_SECRET` — auth token signing
 - `NEXT_PUBLIC_APP_URL` — QR URL'lerinde kullanılır
 
+**Opsiyonel:**
+- `OPENAI_API_KEY` — AI Co-Pilot yanıt önerileri için (§15). Yoksa endpoint deterministik şablona düşer, UI çalışmaya devam eder.
+- `OPENAI_MODEL` — Varsayılan `gpt-4o-mini`.
+
 ### 14.2 Rate limit notu
 
 `src/lib/rate-limit.ts` in-memory. Vercel serverless'ta her instance farklı Map tutar — hard limit değil, yumuşak bir koruma. Ciddi abuse'a karşı Upstash Redis veya Vercel Edge Config gerekir (şimdilik opex gereksiz).
 
 ---
 
-_Son güncelleme: 2026-04 (ikinci dalga) — §3 depolama mimarisi güncellendi (base64-in-DB), §12 builder'a görsel/logo upload + visibility toggle + reorder perf notları eklendi, §12.4 backend davranışları (cross-category sortOrder + TR price parser), §13.8 analytics admin UI davranışları (refresh, reset, window date, all-time note, mobile chart responsive)._
+## 15. AI Co-Pilot (OpenAI) — 2026-04
+
+Restoran panelindeki yorum gelen kutularında (`/[locale]/dashboard/feedbacks` + `/admin/reviews`) "Taslak oluştur" butonu OpenAI'a yanıt taslağı yazdırır.
+
+**Helper:** `src/lib/openai.ts` — `hasOpenAIKey()` + `chatCompletion(messages, opts)`. Doğrudan `fetch` kullanır, `openai` SDK dep yok (CLAUDE.md §7).
+
+**Endpoint:** `POST /api/feedback/[id]/suggest-reply`
+- Auth: `getPanelActorFromRequest` + `canAccessRestaurant` (IDOR)
+- Rate limit: 30 istek / dk / actor (in-memory)
+- Body: `{ locale?: 'tr' | 'en' }` — diğer her şey Prisma'dan çekilir (rating, comment, customerName, platform, restaurant.name/category)
+- Response: `{ feedbackId, suggestion, source: 'openai' | 'template' | 'template-fallback' }`
+- Fallback: `OPENAI_API_KEY` yoksa veya API hatası olursa `buildReplyTemplate()` deterministik şablonu döner — UI her zaman bir şey alır.
+
+**Prompt:**
+- System: Restoran itibar uzmanı rolü; 2-4 cümle, maks. 80 kelime; olumluya teşekkür + yeniden davet, olumsuza özür + somut düzeltme (ücretsiz ikram ÖNERME), emoji yok, müşteri adı ilk adıyla.
+- User: İşletme adı + kategori + müşteri + puan + platform + yorum — yapılandırılmış format.
+- Model: `gpt-4o-mini` default (hızlı + ucuz). `OPENAI_MODEL` env'iyle override.
+- `temperature=0.7`, `max_tokens=300`.
+
+**UI davranışı:**
+- Admin reviews sayfası (`src/app/admin/reviews/page.tsx`): butonda loader + `AI` / `ŞABLON` rozeti response source'una göre. Optimistik olarak önce local template doldurur, sonra endpoint cevabını kullanır.
+- Owner feedbacks sayfası (`src/app/[locale]/dashboard/feedbacks/page.tsx`): zaten endpoint'i çağırıyordu, OpenAI cevabını otomatik alır.
+
+**Maliyet notu:** 1 öneri ≈ 400 token ≈ $0.0001 (gpt-4o-mini). 10.000 öneri/ay = $1. Kotayı OpenAI dashboard'dan takip et.
+
+**Güvenlik:**
+- Anahtar yalnız server-side (`process.env`). Client bundle'a sızmaz (NEXT_PUBLIC_ prefix yok).
+- Rate limit + IDOR koruması var. Anahtarı yanlışlıkla commit etmemek için `.env.local` git-ignored; `.env.example`'da boş bırakılmış.
+
+---
+
+_Son güncelleme: 2026-04 (üçüncü dalga) — §15 AI Co-Pilot eklendi, §3 depolama mimarisi güncellendi (base64-in-DB), §12 builder'a görsel/logo upload + visibility toggle + reorder perf notları eklendi, §12.4 backend davranışları (cross-category sortOrder + TR price parser), §13.8 analytics admin UI davranışları (refresh, reset, window date, all-time note, mobile chart responsive)._
 

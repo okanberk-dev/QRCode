@@ -5,6 +5,8 @@ import { Flag, Inbox, Loader2, Search, Send, Sparkles, Star, UserPlus } from 'lu
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { buildReplyTemplate } from '@/lib/scaffolding';
 
+type Source = 'openai' | 'template' | 'template-fallback' | null;
+
 interface FeedbackRow {
   id: string;
   rating: number;
@@ -57,6 +59,8 @@ export default function AdminReviewsPage() {
   const [search, setSearch] = useState('');
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [aiSource, setAiSource] = useState<Source>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -97,6 +101,7 @@ export default function AdminReviewsPage() {
 
   useEffect(() => {
     setDraft('');
+    setAiSource(null);
   }, [active?.id]);
 
   const flash = (msg: string) => {
@@ -104,9 +109,32 @@ export default function AdminReviewsPage() {
     setTimeout(() => setNotice(null), 2500);
   };
 
-  const onSuggest = () => {
+  const onSuggest = async () => {
     if (!active) return;
+    setSuggesting(true);
+    // Optimistic local template so the box fills instantly even if the
+    // server round-trip is slow.
     setDraft(buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }));
+    setAiSource('template');
+    try {
+      const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ locale }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (typeof data?.suggestion === 'string' && data.suggestion.length > 0) {
+          setDraft(data.suggestion);
+          setAiSource((data.source as Source) ?? 'template');
+        }
+      } else if (res.status === 429) {
+        flash(isTr ? 'Çok sık istek — biraz bekle' : 'Too many requests — slow down');
+      }
+    } catch {
+      /* keep local template */
+    }
+    setSuggesting(false);
   };
 
   const onSend = async () => {
@@ -297,18 +325,28 @@ export default function AdminReviewsPage() {
                   <div className="flex items-center gap-2">
                     <Sparkles size={14} className="text-[#0A0A0A]" />
                     <p className="pulse-eyebrow text-[#0A0A0A]">{isTr ? 'AI YARDIMCI' : 'AI CO-PILOT'}</p>
+                    {aiSource === 'openai' && (
+                      <span className="pulse-eyebrow rounded-full bg-[#0A0A0A] px-2 py-0.5 text-white">AI</span>
+                    )}
+                    {(aiSource === 'template' || aiSource === 'template-fallback') && (
+                      <span className="pulse-eyebrow rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[#737373]">
+                        {isTr ? 'ŞABLON' : 'TEMPLATE'}
+                      </span>
+                    )}
                   </div>
                   <button
                     onClick={onSuggest}
-                    className="pulse-eyebrow rounded-full bg-[#0A0A0A] px-3 py-1 text-white hover:bg-[#1A1A1A]"
+                    disabled={suggesting}
+                    className="pulse-eyebrow inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-3 py-1 text-white hover:bg-[#1A1A1A] disabled:opacity-50"
                   >
+                    {suggesting && <Loader2 size={10} className="animate-spin" />}
                     {isTr ? 'Taslak oluştur' : 'Generate draft'}
                   </button>
                 </div>
                 <p className="mt-2 text-[12px] text-[#525252]">
                   {isTr
-                    ? 'Puan ve müşteriye göre otomatik Türkçe yanıt taslağı üretir.'
-                    : 'Generates a draft reply based on the rating and customer.'}
+                    ? 'OpenAI ile puan, yorum ve müşteriye göre kişiselleştirilmiş Türkçe yanıt üretir. Anahtar yoksa şablona düşer.'
+                    : 'Generates a personalized reply via OpenAI based on the rating, comment and customer. Falls back to template without the key.'}
                 </p>
               </div>
 
