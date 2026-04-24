@@ -14,3 +14,22 @@ export const SYSTEM_FEEDBACK = {
  * Type-safe feedback comment types
  */
 export type SystemFeedbackType = typeof SYSTEM_FEEDBACK[keyof typeof SYSTEM_FEEDBACK];
+
+/**
+ * Monthly feedback-ingest quota per plan.
+ * `enterprise` is effectively unlimited; we expose a high ceiling so
+ * the UI progress bar stays sensible without special-casing Infinity.
+ */
+export const PLAN_QUOTA: Record<string, number> = {
+  trial: 500,
+  monthly: 2000,
+  yearly: 50000,
+  enterprise: 999999,
+};
+
+export const PLAN_LABELS: Record<string, { tr: string; en: string }> = {
+  trial: { tr: 'Deneme', en: 'Trial' },
+  monthly: { tr: 'Aylık', en: 'Monthly' },
+  yearly: { tr: 'Yıllık', en: 'Yearly' },
+  enterprise: { tr: 'Kurumsal', en: 'Enterprise' },
+};
