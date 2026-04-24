@@ -82,7 +82,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
   };
 
   const inputClass =
-    'w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]';
+    'min-h-[44px] w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]';
   const labelClass = 'pulse-eyebrow text-[#737373] ml-1 mb-2 block';
 
   return (
@@ -295,7 +295,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
             type="submit"
             id="contact-submit-btn"
             disabled={loading || !kvkkChecked}
-            className={`w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium text-[14px] py-3.5 rounded-full transition-colors ${
+            className={`min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium text-[14px] py-3.5 rounded-full transition-colors ${
               !kvkkChecked || loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#1A1A1A]'
             }`}
           >
@@ -402,7 +402,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
             <div className="p-6 border-t border-[#EDEDED] flex justify-end">
               <button
                 onClick={() => setModal(null)}
-                className="w-full py-3.5 bg-[#0A0A0A] text-white rounded-full font-medium text-[14px] hover:bg-[#1A1A1A] transition-colors"
+                className="min-h-[48px] w-full py-3.5 bg-[#0A0A0A] text-white rounded-full font-medium text-[14px] hover:bg-[#1A1A1A] transition-colors"
               >
                 {isTr ? 'Anladım' : 'I understand'}
               </button>
