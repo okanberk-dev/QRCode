@@ -8,7 +8,6 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import { RoiCalculator } from '@/components/roi-calculator/RoiCalculator';
 
 export async function generateMetadata({
   params,
@@ -331,26 +330,6 @@ export default async function PricingPage({
           <p className="pulse-eyebrow text-center text-[#737373] mt-10">
             {isTr ? 'GÜVENLİ ÖDEME · İSTEDİĞİNDE İPTAL · TAAHHÜTSÜZ' : 'SECURE PAYMENT · CANCEL ANYTIME · NO COMMITMENT'}
           </p>
-        </div>
-      </section>
-
-      {/* ─── ROI Calculator ─── */}
-      <section id="roi-calculator" className="bg-[#FAFAFA] border-y border-[#EDEDED] py-20 sm:py-28 px-6 sm:px-10">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-12 max-w-[720px] mx-auto">
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Yatırım getirisi' : 'Return on investment'}
-            </span>
-            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
-              {isTr ? 'Rakamlarla görün. Buaze size ne kazandırır?' : 'See the numbers. What Buaze delivers.'}
-            </h2>
-            <p className="mt-5 text-[16px] text-[#525252] leading-[1.6]">
-              {isTr
-                ? 'Kendi işletme verilerinizi girin; aylık ek müşteri, tahmini ek ciro ve amortisman süresini sektör benchmark\'ları üzerinden şeffafça görün.'
-                : 'Enter your own business data and see your monthly new customers, estimated extra revenue and payback period against industry benchmarks.'}
-            </p>
-          </div>
-          <RoiCalculator locale={locale} />
         </div>
       </section>
 
