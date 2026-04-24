@@ -66,7 +66,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
       items: [
         { label: isTr ? 'Hakkımızda' : 'About', href: `${base}/about` },
         { label: isTr ? 'Müşteri hikayeleri' : 'Customer stories', href: `${base}/customer-stories` },
-        { label: isTr ? 'Vaka çalışmaları' : 'Case studies', href: `${base}/case-study/kadikoy-bistro` },
+        { label: isTr ? 'Vaka çalışmaları' : 'Case studies', href: `${base}/customer-stories` },
         { label: 'Blog', href: `${base}/blog` },
         { label: isTr ? 'Kariyer' : 'Careers', href: `${base}/careers`, badge: isTr ? '5 POZİSYON' : '5 ROLES' },
         { label: isTr ? 'İletişim' : 'Contact', href: `${base}/contact` },
