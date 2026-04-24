@@ -35,9 +35,48 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  const bodyObj = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
+  const bizNameRaw = typeof bodyObj.bizName === 'string' ? bodyObj.bizName.trim() : '';
+  const sector = typeof bodyObj.sector === 'string' ? bodyObj.sector.trim() : '';
+  const city = typeof bodyObj.city === 'string' ? bodyObj.city.trim() : '';
+
+  // Auto-create restaurant ONLY if onboarding data has business name filled in.
+  // Skip/finish-later without filling name → no restaurant created.
+  let createdRestaurantId: string | null = null;
+  if (bizNameRaw.length >= 2) {
+    const existing = await prisma.restaurant.findFirst({
+      where: { userId: actor.id },
+      select: { id: true },
+    });
+    if (!existing) {
+      const baseSlug = slugify(bizNameRaw) || 'restoran';
+      const similar = await prisma.restaurant.findMany({
+        where: { slug: { startsWith: baseSlug } },
+        select: { slug: true },
+      });
+      const taken = new Set(similar.map((s) => s.slug));
+      let finalSlug = baseSlug;
+      let counter = 1;
+      while (taken.has(finalSlug)) {
+        finalSlug = `${baseSlug}-${counter++}`;
+      }
+      const created = await prisma.restaurant.create({
+        data: {
+          name: bizNameRaw,
+          slug: finalSlug,
+          userId: actor.id,
+          category: sector && SECTOR_LABEL[sector] ? SECTOR_LABEL[sector] : 'Restoran',
+          primaryColor: '#C6F24E',
+          ...(city ? { address: city } : {}),
+        },
+        select: { id: true },
+      });
+      createdRestaurantId = created.id;
+    }
+  }
+
   if (actor.email) {
-    const bodyObj = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
-    const bizName = typeof bodyObj.bizName === 'string' ? bodyObj.bizName : null;
+    const bizName = bizNameRaw || null;
     const greetingBiz = bizName ? ` · ${bizName}` : '';
     sendMail({
       to: actor.email,
@@ -52,7 +91,36 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     step: row.step,
     completedAt: row.completedAt,
+    createdRestaurantId,
   });
+}
+
+const SECTOR_LABEL: Record<string, string> = {
+  restaurant: 'Restoran',
+  delivery: 'Paket Servis',
+  hotel: 'Otel',
+  clinic: 'Klinik',
+  legal: 'Hukuk',
+  spa: 'Spa',
+  retail: 'Perakende',
+  fitness: 'Fitness',
+  education: 'Eğitim',
+  other: 'Diğer',
+};
+
+function slugify(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/[çÇ]/g, 'c')
+    .replace(/[ğĞ]/g, 'g')
+    .replace(/[ıİ]/g, 'i')
+    .replace(/[öÖ]/g, 'o')
+    .replace(/[şŞ]/g, 's')
+    .replace(/[üÜ]/g, 'u')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 function escape(v: string) {
