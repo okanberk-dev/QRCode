@@ -139,20 +139,36 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
             </div>
           </div>
 
-          {/* Lighthouse illustration */}
+          {/* IllusLighthouse — exact SVG from .design/site/site-shared.jsx:114-140 */}
           <div className="flex justify-center lg:justify-end">
-            <svg viewBox="0 0 320 320" className="h-auto w-full max-w-[320px]" aria-hidden>
-              <rect x="0" y="0" width="320" height="320" rx="24" fill="#F5F5F5" />
-              <path d="M0 260 Q80 250 160 258 T320 252 L320 320 L0 320 Z" fill="#EDEDED" />
-              <path d="M140 90 L140 260 L180 260 L180 90 Z" fill="#FAFAFA" stroke="#0A0A0A" strokeWidth="2.5" />
-              <rect x="135" y="80" width="50" height="14" rx="2" fill="#0A0A0A" />
-              <rect x="150" y="100" width="20" height="18" fill="#0A0A0A" />
-              <rect x="150" y="135" width="20" height="18" fill="#0A0A0A" />
-              <rect x="150" y="170" width="20" height="18" fill="#0A0A0A" />
-              <path d="M155 50 L140 80 L180 80 L165 50 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2.5" />
-              <path d="M160 55 L40 25 L40 85 Z" fill="#C6F24E" fillOpacity="0.18" />
-              <path d="M160 55 L280 25 L280 85 Z" fill="#C6F24E" fillOpacity="0.18" />
-              <circle cx="160" cy="55" r="6" fill="#0A0A0A" />
+            <svg viewBox="0 0 240 260" className="h-auto w-full max-w-[280px]" aria-hidden>
+              {/* Waves */}
+              <path d="M0 220 Q30 215 60 220 T120 220 T180 220 T240 220 L240 260 L0 260 Z" fill="#EAF9B8" />
+              <path d="M0 234 Q30 229 60 234 T120 234 T180 234 T240 234 L240 260 L0 260 Z" fill="#C6F24E" opacity="0.6" />
+              {/* Rock base */}
+              <path d="M70 220 L170 220 L160 205 L80 205 Z" fill="#0A0A0A" />
+              {/* Tower */}
+              <path d="M100 205 L100 90 L140 90 L140 205 Z" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2.5" />
+              <path
+                d="M100 120 L140 120 M100 150 L140 150 M100 180 L140 180"
+                stroke="#0A0A0A"
+                strokeWidth="1.2"
+              />
+              {/* Light chamber */}
+              <rect x="94" y="70" width="52" height="24" fill="#0A0A0A" />
+              <rect x="98" y="74" width="44" height="16" fill="#C6F24E" />
+              {/* Roof */}
+              <path d="M92 70 L148 70 L142 55 L98 55 Z" fill="#0A0A0A" />
+              {/* Spike */}
+              <path d="M120 55 L120 38" stroke="#0A0A0A" strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="120" cy="32" r="5" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
+              {/* Light beams */}
+              <path d="M148 82 L215 50 L215 98 Z" fill="#C6F24E" opacity="0.35" />
+              <path d="M92 82 L25 50 L25 98 Z" fill="#C6F24E" opacity="0.2" />
+              {/* Stars */}
+              <circle cx="200" cy="30" r="2" fill="#0A0A0A" />
+              <circle cx="180" cy="18" r="1.5" fill="#0A0A0A" />
+              <circle cx="40" cy="25" r="1.5" fill="#0A0A0A" />
             </svg>
           </div>
         </div>

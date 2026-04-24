@@ -127,25 +127,49 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
             </div>
           </div>
 
-          {/* Shield illustration */}
+          {/* IllusShield — exact SVG from .design/site/site-shared.jsx:270-285 */}
           <div className="flex justify-center lg:justify-end">
-            <svg viewBox="0 0 300 300" className="h-auto w-full max-w-[300px]" aria-hidden>
-              <rect x="0" y="0" width="300" height="300" rx="24" fill="#F5F5F5" />
+            <svg viewBox="0 0 200 240" className="h-auto w-full max-w-[260px]" aria-hidden>
               <path
-                d="M150 40 L230 75 L230 165 Q230 225 150 260 Q70 225 70 165 L70 75 Z"
-                fill="#FAFAFA"
-                stroke="#0A0A0A"
-                strokeWidth="3"
-              />
-              <path
-                d="M150 90 L200 110 L200 170 Q200 205 150 225 Q100 205 100 170 L100 110 Z"
-                fill="#C6F24E"
+                d="M100 15 L175 40 L175 120 Q175 180 100 225 Q25 180 25 120 L25 40 Z"
+                fill="#FFFFFF"
                 stroke="#0A0A0A"
                 strokeWidth="2.5"
+                strokeLinejoin="round"
               />
-              {/* Medical cross */}
-              <rect x="142" y="130" width="16" height="60" rx="2" fill="#0A0A0A" />
-              <rect x="120" y="152" width="60" height="16" rx="2" fill="#0A0A0A" />
+              <path
+                d="M100 25 L165 47 L165 120 Q165 172 100 212 Q35 172 35 120 L35 47 Z"
+                fill="#C6F24E"
+                opacity="0.15"
+              />
+              {/* Check */}
+              <circle cx="100" cy="110" r="34" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2.5" />
+              <path
+                d="M82 110 L95 123 L118 98"
+                fill="none"
+                stroke="#0A0A0A"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Dots */}
+              <circle cx="65" cy="165" r="3" fill="#0A0A0A" />
+              <circle cx="100" cy="175" r="3" fill="#0A0A0A" />
+              <circle cx="135" cy="165" r="3" fill="#0A0A0A" />
+              {/* Ribbon */}
+              <rect x="70" y="45" width="60" height="14" rx="3" fill="#0A0A0A" />
+              <text
+                x="100"
+                y="56"
+                textAnchor="middle"
+                fontFamily="JetBrains Mono"
+                fontSize="9"
+                fill="#C6F24E"
+                fontWeight="600"
+                letterSpacing="0.1em"
+              >
+                GOOGLE SAFE
+              </text>
             </svg>
           </div>
         </div>

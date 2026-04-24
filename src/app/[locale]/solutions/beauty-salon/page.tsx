@@ -123,44 +123,60 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
             </div>
           </div>
 
-          {/* Mountain illustration */}
+          {/* IllusMountain — exact SVG from .design/site/site-shared.jsx:143-165 */}
           <div className="flex justify-center lg:justify-end">
-            <svg viewBox="0 0 280 280" className="h-auto w-full max-w-[280px]" aria-hidden>
-              <rect x="0" y="0" width="280" height="280" rx="24" fill="#F5F5F5" />
+            <svg viewBox="0 0 240 220" className="h-auto w-full max-w-[280px]" aria-hidden>
               {/* Back mountain */}
+              <path d="M0 200 L70 80 L130 150 L180 100 L240 200 Z" fill="#E4E4E4" />
+              {/* Snow caps */}
               <path
-                d="M30 220 L110 90 L170 170 L220 120 L260 220 Z"
-                fill="#EDEDED"
+                d="M60 95 L70 80 L82 98 L75 100 L70 95 L65 100 Z"
+                fill="#FFFFFF"
                 stroke="#0A0A0A"
-                strokeWidth="2"
+                strokeWidth="1.2"
+              />
+              <path
+                d="M170 110 L180 100 L192 115 L185 117 L180 113 L175 117 Z"
+                fill="#FFFFFF"
+                stroke="#0A0A0A"
+                strokeWidth="1.2"
               />
               {/* Front mountain */}
+              <path d="M20 200 L90 110 L130 165 L200 200 Z" fill="#0A0A0A" />
+              {/* Flag */}
               <path
-                d="M20 230 L90 120 L150 195 L210 145 L270 230 Z"
-                fill="#C6F24E"
+                d="M90 110 L90 55"
                 stroke="#0A0A0A"
                 strokeWidth="2.5"
+                strokeLinecap="round"
               />
-              {/* Snowcap */}
-              <path d="M85 125 L90 120 L100 135 L95 135 Z" fill="#FAFAFA" stroke="#0A0A0A" strokeWidth="1.5" />
-              <path d="M205 150 L210 145 L218 158 L212 158 Z" fill="#FAFAFA" stroke="#0A0A0A" strokeWidth="1.5" />
+              <path
+                d="M90 55 L130 62 L122 70 L130 78 L90 72 Z"
+                fill="#C6F24E"
+                stroke="#0A0A0A"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              {/* Trail with pulse dots */}
+              <path
+                d="M20 200 Q50 180 70 170 Q85 160 90 110"
+                fill="none"
+                stroke="#C6F24E"
+                strokeWidth="2.5"
+                strokeDasharray="3 4"
+              />
+              <circle cx="50" cy="185" r="3" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
+              <circle cx="72" cy="165" r="3" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
+              <circle cx="88" cy="130" r="3" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
               {/* Sun */}
-              <circle cx="220" cy="70" r="22" fill="#FAFAFA" stroke="#0A0A0A" strokeWidth="2.5" />
-              {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
-                const angle = (i / 8) * Math.PI * 2;
-                return (
-                  <line
-                    key={i}
-                    x1={220 + Math.cos(angle) * 28}
-                    y1={70 + Math.sin(angle) * 28}
-                    x2={220 + Math.cos(angle) * 36}
-                    y2={70 + Math.sin(angle) * 36}
-                    stroke="#0A0A0A"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                );
-              })}
+              <circle cx="195" cy="60" r="18" fill="#C6F24E" />
+              {/* Cloud */}
+              <path
+                d="M30 60 Q25 50 35 48 Q38 38 50 42 Q58 38 62 48 Q72 50 68 58 Q65 65 50 64 Q40 65 30 60 Z"
+                fill="#FFFFFF"
+                stroke="#0A0A0A"
+                strokeWidth="1.5"
+              />
             </svg>
           </div>
         </div>

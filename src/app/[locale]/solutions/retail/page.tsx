@@ -90,13 +90,9 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
     <div className="min-h-screen bg-white pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* Hero — dark */}
-      <section className="relative overflow-hidden bg-[#0A0A0A] px-6 sm:px-10 py-16 sm:py-20 text-white">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-[#C6F24E]/10 blur-[140px]"
-        />
-        <div className="relative mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
+      {/* Hero — dark (1:1 .design/site/site-pages4.jsx:246-267) */}
+      <section className="bg-[#0A0A0A] px-6 sm:px-10 pt-[72px] pb-10 sm:pt-20 text-white">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-12 lg:grid-cols-[1.2fr_1fr]">
           <div>
             <span className="pulse-eyebrow text-[#C6F24E]">
               {isTr ? 'SEKTÖR · PERAKENDE & MAĞAZA' : 'SECTOR · RETAIL & STORE'}
@@ -127,86 +123,75 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
                 </>
               )}
             </h1>
-            <p className="mt-5 max-w-[500px] text-[16px] leading-[1.6] text-white/70">
+            <p className="mt-[18px] max-w-[500px] text-[16px] leading-[1.6] text-[#A3A3A3]">
               {isTr
                 ? "Müşteri kasadan çıkarken fişinin altındaki QR'ı tarar. Google ve Yandex'e yönlendirilir. Çok mağaza, tek panel."
                 : 'Customers scan the QR under their receipt on the way out — routed to Google and Yandex. Multi-store, one panel.'}
             </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-6 flex flex-col gap-[10px] sm:flex-row">
               <Link
                 href={`${base}/auth/register`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-6 py-3.5 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E]"
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-[22px] py-[14px] text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#A8D62E]"
               >
                 {isTr ? '14 gün ücretsiz başla' : 'Start 14-day free trial'}
                 <ArrowRight size={16} />
               </Link>
               <Link
                 href={`${base}/contact`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/20 px-6 py-3.5 text-[15px] font-medium text-white transition-colors hover:border-white/60 hover:bg-white/5"
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#333] px-[22px] py-[14px] text-[15px] font-medium text-white transition-colors hover:border-white/60 hover:bg-white/5"
               >
                 {isTr ? 'Demo iste' : 'Request demo'}
               </Link>
             </div>
           </div>
 
-          {/* IllusChart — minimal bar chart SVG */}
+          {/* IllusChart — exact SVG from .design/site/site-shared.jsx:242-267 */}
           <div className="flex justify-center lg:justify-end">
-            <svg
-              viewBox="0 0 260 260"
-              className="h-auto w-full max-w-[260px]"
-              aria-hidden
-            >
-              <rect x="0" y="0" width="260" height="260" rx="24" fill="#141414" />
-              <g>
-                {[
-                  { x: 30, h: 60, c: '#333' },
-                  { x: 65, h: 95, c: '#333' },
-                  { x: 100, h: 130, c: '#333' },
-                  { x: 135, h: 160, c: '#C6F24E' },
-                  { x: 170, h: 185, c: '#C6F24E' },
-                  { x: 205, h: 215, c: '#C6F24E' },
-                ].map((b) => (
-                  <rect
-                    key={b.x}
-                    x={b.x}
-                    y={240 - b.h}
-                    width="24"
-                    height={b.h}
-                    rx="4"
-                    fill={b.c}
-                  />
-                ))}
-                <path
-                  d="M 30 180 L 65 160 L 100 130 L 135 100 L 170 75 L 205 55"
-                  fill="none"
-                  stroke="#C6F24E"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+            <svg viewBox="0 0 260 220" className="h-auto w-full max-w-[260px]" aria-hidden>
+              <rect x="20" y="20" width="220" height="170" rx="10" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2.5" />
+              {[60, 100, 140, 180].map((y) => (
+                <line key={y} x1="20" y1={y} x2="240" y2={y} stroke="#EDEDED" strokeWidth="1" />
+              ))}
+              {([
+                [45, 90],
+                [80, 70],
+                [115, 100],
+                [150, 55],
+                [185, 80],
+              ] as const).map(([x, h], i) => (
+                <rect
+                  key={i}
+                  x={x - 10}
+                  y={180 - h}
+                  width="20"
+                  height={h}
+                  fill={i === 3 ? '#C6F24E' : '#0A0A0A'}
+                  rx="3"
                 />
-                <circle cx="205" cy="55" r="6" fill="#C6F24E" />
-              </g>
-              <text
-                x="30"
-                y="40"
-                fontFamily="JetBrains Mono, monospace"
-                fontSize="10"
-                letterSpacing="2"
-                fill="#A3A3A3"
-              >
-                REVIEWS · 30D
+              ))}
+              <path
+                d="M45 110 L80 130 L115 90 L150 60 L185 80"
+                fill="none"
+                stroke="#0A0A0A"
+                strokeWidth="2"
+                strokeDasharray="3 3"
+              />
+              <circle cx="150" cy="60" r="10" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
+              <path d="M150 60 L220 30 L255 30" fill="none" stroke="#0A0A0A" strokeWidth="1.5" />
+              <rect x="200" y="5" width="60" height="24" rx="12" fill="#0A0A0A" />
+              <text x="230" y="21" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="10" fill="#C6F24E" fontWeight="600">
+                +184%
               </text>
-              <text
-                x="200"
-                y="40"
-                fontFamily="Space Grotesk, sans-serif"
-                fontSize="18"
-                fontWeight="500"
-                fill="#C6F24E"
-                textAnchor="end"
-              >
-                +210%
-              </text>
+              <rect x="30" y="30" width="90" height="10" rx="5" fill="#0A0A0A" />
+              <rect x="30" y="44" width="60" height="6" rx="3" fill="#EDEDED" />
+              <circle cx="230" cy="170" r="12" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
+              <path
+                d="M215 200 Q230 185 245 200"
+                fill="none"
+                stroke="#0A0A0A"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </div>
         </div>
