@@ -24,16 +24,28 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0 });
     }
 
-    const [all, attention, replied] = await Promise.all([
+    const [all, attention] = await Promise.all([
       prisma.feedback.count({ where: baseWhere }),
       prisma.feedback.count({ where: { ...baseWhere, rating: { lte: 2 } } }),
-      prisma.feedback.count({
+    ]);
+
+    // Replied count joins the FeedbackReply table which may not exist on
+    // environments where `prisma db push` has not run yet. Fall back to 0
+    // so the counts strip still renders instead of blanking the page.
+    let replied = 0;
+    try {
+      replied = await prisma.feedback.count({
         where: {
           ...baseWhere,
           replies: { some: {} },
         },
-      }),
-    ]);
+      });
+    } catch (err) {
+      console.warn(
+        '[feedback/counts] replied fallback — did `prisma db push` run?',
+        (err as Error).message,
+      );
+    }
 
     return NextResponse.json({
       all,

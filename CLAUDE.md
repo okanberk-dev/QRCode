@@ -903,3 +903,134 @@ POS'suz halde çalıştığı doğrulandı:
 
 _Son güncelleme: 2026-04 (beşinci dalga) — §18 Backend Wiring Wave eklendi (3 commit, 10 yeni Prisma model, 9'dan 7 scaffold bağlandı, POS kasıtlı ertelendi). §17.10 gap listesi güncellendi. Daha önceki güncelleme §17 Pulse Redesign idi._
 
+---
+
+## 19. Admin & Owner Panel Alignment Wave (2026-04 altıncı dalga)
+
+Session özeti: kullanıcının "admin + restoran paneli tasarım dosyalarındaki gibi değil, bazı yerler çalışmıyor (anasayfa istatistik), bazı form'lar 'Coming soon' diyor, yorumlara yanıt mail atmıyor, AI taslak üretmiyor" şikayetleri dalga dalga kapatıldı. Branch: `claude/connect-prisma-providers-3ytkP` (§18'in üstüne 6 commit daha).
+
+**Commit zinciri** (sırayla merge edilmeli):
+
+| Commit | Başlık | İçerik |
+|---|---|---|
+| `b18a2fa` | feat(faz-1): fix analytics page data mapping + dark NPS scoreboard | `/admin/analytics` broken API mapping bug'ı + koyu NPS kartı |
+| `534605a` | feat(faz-2): wire reviews reply/flag/assign to real Prisma models | 3 yeni model + 3 endpoint + inbox UI state |
+| `c8b25df` | feat(faz-3): wire team/campaigns/notifications to real Prisma models | 3 yeni model + 5 endpoint + form UI |
+| `2a4c7e6` | fix(reviews): repair AI suggest-reply + send replies via Resend | AI bug fix + Resend email delivery |
+| (bu commit) | fix(feedback): resilient list query + CLAUDE.md §19 | Schema mismatch fallback + docs |
+
+### 19.1 Faz 1 — Analytics & Dashboard (commit `b18a2fa`)
+
+**Kritik bulgu:** `/admin/analytics` sayfası broken'dı. `stats.total / stats.avg / stats.byRating / stats.byPlatform` okuyordu ama `/api/feedback/stats` `totalCount / avgRating / distribution / platformDistribution` döner. Çoğu kart 0 gösteriyordu. "Backend aggregation gelince aktif olur" placeholder metni bir özelliği değil bir bug'ı örtüyordu.
+
+**Dokunulan tek dosya:** `src/app/admin/analytics/page.tsx` (komple yeniden yazıldı).
+
+- Doğru API field mapping
+- **Koyu NPS scoreboard** (tasarım referansı: `.design/site/site-admin.jsx:525-681`): büyük lime NPS skoru, tone-aware label (Mükemmel/İyi/Ortalama/Dikkat), destekçi-nötr-eleştiren progress barları, dönem başından delta
+- Inline SVG 7-day trend chart (mevcut `stats.trends` data'sını kullanır, yeni endpoint yok)
+- Tag bulutu (`stats.wordCloud` frekansına göre font-size scaling, lime chip)
+- Puan dağılımı renk kodlu: 4-5★ lime, 3★ amber, 1-2★ kırmızı
+- "TODO disclaimer" silindi
+
+### 19.2 Faz 2 — Reviews aksiyonları (commit `534605a`)
+
+**3 yeni Prisma modeli** (scaffolding.ts bloklarından şemaya alındı):
+- `FeedbackReply` — feedbackId + authorUserId + body + channel + status
+- `FeedbackFlag` — feedbackId `@unique` + reason + flaggedBy
+- `FeedbackAssignment` — feedbackId `@unique` + assigneeId + assignedById
+
+**3 endpoint canlı backend'e** (hepsi `requireFeedbackAccess` helper'ı ile IDOR korumalı):
+- `POST /api/feedback/[id]/reply` — insert + `GET` yanıt listesi
+- `POST /api/feedback/[id]/flag` — upsert; `DELETE` kaldırır
+- `POST /api/feedback/[id]/assign` — upsert; `'self'` sentinel actor'a atar
+
+**Feedback list endpoint değişti:** `GET /api/feedback` artık `flag` + `_count.replies` + `assignment` join'leriyle `isReplied / isFlagged / isAssigned / assigneeId / customerName / customerEmail` flag'lerini döndürür.
+
+**Counts endpoint** gerçek `new` (unreplied) + `replied` buckets'ları hesaplar.
+
+**Reviews UI** (admin + owner):
+- Liste satırında + detay header'ında **YANITLANDI / DİKKAT / ATANDI** badge'leri
+- Her aksiyon için ayrı loading spinner; in-flight iken buton disabled
+- Success'te local row + counts diff'lenir (tam refresh yok)
+- Tone-aware notice: success=lime, error=kırmızı, info=nötr
+- Flag butonu toggle (POST/DELETE)
+
+### 19.3 Faz 3 — Admin formlarını canlı backend'e (commit `c8b25df`)
+
+**3 yeni Prisma modeli:**
+- `TeamMember` — `(ownerId + email) @@unique`; role (`owner/manager/staff/viewer`), status (`invited/active/revoked`), locations Json, lastSeenAt
+- `Campaign` — userId + opsiyonel restaurantId + name + placement (`table/receipt/door/pack`) + template (`lime/white/dark/minimal`) + color + status (`draft/live/archived`)
+- `NotificationPreference` — userId `@id`; lowRatingEmail + dailyDigestEmail + weeklyReport + slackWebhook
+
+**5 endpoint canlı:**
+- `GET/POST /api/team` + `PATCH/DELETE /api/team/[id]` — owner-scoped (invite için `actor.source === 'user'` şartı)
+- `GET/POST /api/campaigns` + `GET/PATCH/DELETE /api/campaigns/[id]` — `canAccessRestaurant` ile opsiyonel restaurant attach
+- `GET/PUT /api/notifications` — upsert; slackWebhook http(s) URL doğrulama
+
+**Yeni helper:** `resolveOwnerUserId(actor)` → `src/lib/panel-access.ts`. 4 endpoint kullandığı için extract edildi (§7 3+ tekrar kuralı). `billing/summary` ve `billing/invoices` de refactor edildi.
+
+**UI:** Team / Campaigns / Notifications sayfalarındaki DEMO fallback'ları kaldırıldı, success'te local state güncellenir, hata payload'ı görünür.
+
+### 19.4 AI Co-Pilot ve Resend email fix (commit `2a4c7e6`)
+
+**Bug 1 — AI taslak oluşturmuyor:**
+`/api/feedback/[id]/suggest-reply` Prisma select'te `customerName: true` istiyordu ama Feedback modelinde alan `name`. Prisma query reddediyor, endpoint 500 dönüyor, UI sessizce template'e düşüyordu. **Fix:** `name: true` → `feedback.name` referansları güncellendi. Artık `OPENAI_API_KEY` set ise gerçek OpenAI yanıtı gelir.
+
+**Bug 2 — Yanıt müşteriye email olarak gitmiyor:**
+- `POST /api/feedback/[id]/reply` artık `channel: 'email'` veya `sendEmail: true` flag'ı kabul ediyor
+- Müşteri `feedback.email` bırakmışsa: Pulse temalı Resend e-postası (lime greeting-card block + orijinal yorum alıntı) `sendMail` helper'ı ile gönderilir
+- `FeedbackReply.status` transitions `pending → sent / failed` (Resend response'una göre)
+- Response `{ email: { status, reason, requested, hasCustomerEmail } }` → UI doğru badge'i flash eder
+- `replyTo`: restoranın `notificationEmail`'i (varsa) — müşteri cevap verirse işletmeye gelir
+
+**4-5★ davranışı:** Yüksek puan bırakanlar Google'a yönlendirildiği için çoğu durumda `feedback.email` null. UI bunu net gösterir: "Müşteri e-posta bırakmamış (yüksek puanlılar Google'a yönlendirildiği için bu beklenir) — yanıt sadece dahili kayıt". Buton da "Dahili kaydet" olarak değişir.
+
+**UI değişikliği — her iki panel** (`/admin/reviews` + `/[locale]/dashboard/feedbacks`):
+- E-posta varsa: `☑ Müşteriye e-posta gönder · ahmet@...` checkbox'ı (default on)
+- E-posta yoksa: info satırı + buton "Dahili kaydet"
+- Send butonu: email modunda Mail ikonu + "E-posta ile gönder"; dahili modda Send + "Dahili kaydet"
+- Post-send notice: `sent → lime "E-posta gönderildi: ..."`, `failed → kırmızı`, `skipped → lime "Yanıt kaydedildi (dahili)"`
+
+### 19.5 Feedback list resilience (bu commit)
+
+**Kök neden:** Faz 2'de `GET /api/feedback` list endpoint'i `include: { flag, _count: { replies }, assignment }` ile join'lendi. Eğer `prisma db push` henüz çalışmamış bir ortamda (preview deploy, stale local DB) bu tablolar yok → query throw → **tüm feedback listesi çöker** → admin dashboard + reviews sayfaları boş, "bazı sayfalar açılmıyor" algısı oluşur.
+
+**Çözüm:**
+- `/api/feedback` GET: primary join'li query bir try/catch içinde; başarısızsa **join'siz fallback** çalışır, satırlar gösterilir ama `isReplied/isFlagged/isAssigned` false döner
+- `/api/feedback/counts`: `replied` sayacı `try/catch` ile sarıldı, hata durumunda 0 döner ama `all + attention` gösterilmeye devam eder
+- Sayfalar DB schema sync edilene kadar "degrade gracefully" çalışır
+
+### 19.6 Deploy & "neden göremiyorum" notu
+
+Bu session'ın tüm değişiklikleri `claude/connect-prisma-providers-3ytkP` branch'inde. Kullanıcı `buaze.com` (production main) veya başka bir branch deploy'una bakarken bu değişiklikleri görmez. Değişikliklerin canlıda görünmesi için:
+
+1. **Vercel preview deploy** — branch push'u Vercel otomatik preview üretir; preview URL'i (genellikle `claude-connect-prisma-providers-3ytkp-<team>.vercel.app`) ziyaret et.
+2. **Production merge** — `main`'e merge + Vercel production deploy. Bu otomatik olarak `prisma db push --accept-data-loss && next build` çalıştırır.
+3. **Local dev** — `npm install && npx prisma generate && npx prisma db push && npm run dev`. `DATABASE_URL + DIRECT_URL` env'i gerekli (§14.1).
+
+Son session'dan bu yana şemaya toplam **10 + 6 = 16 yeni Prisma modeli** eklendi (§18 + §19 birleşik: CaseStudy, OnboardingProgress, NewsletterSubscriber, ROIRequest, HelpArticle, CareerApplication, BillingSubscription, BillingInvoice, FeedbackReply, FeedbackFlag, FeedbackAssignment, TeamMember, Campaign, NotificationPreference). **`prisma db push` çalışmadan** bu tablolara dokunan endpoint'ler 500 döner. Vercel build script'i bunu otomatik halleder ama local dev'de manuel.
+
+### 19.7 Session'da kasten atlanmış
+
+- **Admin CRUD** (CaseStudy, HelpArticle, CareerApplication yazma UI) — seed yeterli
+- **Stripe/Iyzico POS** — kullanıcı bilinçli ertelendi, billing sadece read-side
+- **Mobile QA** — deploy sonrası cihazda test edilmeli (Faz 5)
+- **`.design/*.jsx` prototiplerinin birebir kopyalanması** — proje Pulse token'lara hizalı, ama bazı `.design` detayları (örn. konum mini-map pulse animasyonu, tag bulutu gerçek NLP) scope dışı bırakıldı
+
+### 19.8 Deployment verification checklist
+
+Deploy sonrası kontrol:
+
+- [ ] `/admin/dashboard` yükleniyor, istatistik kartları gerçek sayı gösteriyor
+- [ ] `/admin/analytics` NPS scoreboard + trend + tag bulutu doluyor (boş DB'de dahi NPS=0 + "veri yok" placeholder)
+- [ ] `/admin/reviews` liste açılıyor, badge'ler görünüyor; reply gönderince DB'de `feedback_replies` satırı oluşuyor; müşteri email varsa Resend log'da gönderim mesajı
+- [ ] `/admin/team` davet POST sonrası satır listede; PATCH ile rol değişiyor
+- [ ] `/admin/campaigns` yeni kampanya oluşturulur
+- [ ] `/admin/notifications` toggle kaydedilir, refresh sonrası durum korunur
+- [ ] `/[locale]/dashboard/feedbacks` owner panelinde aynı yanıt + email akışı çalışır
+- [ ] Browser console: `prisma db push run?` warning'i **yoksa** tablolar canlı; **varsa** deploy db push başarısız, tekrar deploy tetikle
+
+---
+
+_Son güncelleme: 2026-04 (altıncı dalga) — §19 Admin & Owner Panel Alignment eklendi (5 commit: analytics fix + reviews actions + admin forms + AI/email fix + resilience). §18'in üstüne 6 yeni Prisma modeli, 8 yeni endpoint canlı, feedback list join'siz fallback. §17.10 gap listesi §17.4 scaffoldları dahil kapatıldı (geriye sadece sanal POS kaldı)._
+

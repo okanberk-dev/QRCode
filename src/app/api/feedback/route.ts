@@ -229,20 +229,41 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const feedbacks = await prisma.feedback.findMany({
-      where,
-      orderBy: { createdAt: sortOrder },
-      skip,
-      take: limit,
-      include: {
-        restaurant: {
-          select: { name: true, slug: true }
+    // Primary query includes the Faz-2 flag/reply/assignment joins. When
+    // the database schema is ahead of push (e.g. a preview env where
+    // `prisma db push` hasn't run yet), that include set throws and would
+    // otherwise break every panel page that renders a feedback list. We
+    // fall back to a joinless query so the inbox keeps rendering and the
+    // admin can at least see rows even before the new tables exist.
+    let feedbacks: any[];
+    let joinsAvailable = true;
+    try {
+      feedbacks = await prisma.feedback.findMany({
+        where,
+        orderBy: { createdAt: sortOrder },
+        skip,
+        take: limit,
+        include: {
+          restaurant: { select: { name: true, slug: true } },
+          flag: { select: { id: true } },
+          assignment: { select: { assigneeId: true } },
+          _count: { select: { replies: true } },
         },
-        flag: { select: { id: true } },
-        assignment: { select: { assigneeId: true } },
-        _count: { select: { replies: true } },
-      }
-    });
+      });
+    } catch (joinErr) {
+      console.warn(
+        '[feedback] falling back to joinless query — did `prisma db push` run?',
+        (joinErr as Error).message,
+      );
+      joinsAvailable = false;
+      feedbacks = await prisma.feedback.findMany({
+        where,
+        orderBy: { createdAt: sortOrder },
+        skip,
+        take: limit,
+        include: { restaurant: { select: { name: true, slug: true } } },
+      });
+    }
 
     const total = await prisma.feedback.count({ where });
 
@@ -250,10 +271,10 @@ export async function GET(req: NextRequest) {
       ...f,
       customerName: f.name,
       customerEmail: f.email,
-      isReplied: (f._count?.replies ?? 0) > 0,
-      isFlagged: Boolean(f.flag),
-      isAssigned: Boolean(f.assignment),
-      assigneeId: f.assignment?.assigneeId ?? null,
+      isReplied: joinsAvailable ? (f._count?.replies ?? 0) > 0 : false,
+      isFlagged: joinsAvailable ? Boolean(f.flag) : false,
+      isAssigned: joinsAvailable ? Boolean(f.assignment) : false,
+      assigneeId: joinsAvailable ? f.assignment?.assigneeId ?? null : null,
     }));
 
     return NextResponse.json({
