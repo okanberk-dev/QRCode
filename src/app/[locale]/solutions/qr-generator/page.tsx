@@ -146,35 +146,21 @@ export default async function QRGeneratorPage({
             <rect width="100%" height="100%" fill="url(#qrGrid)" />
           </svg>
 
-          <div className="relative max-w-[1200px] mx-auto">
-            <nav
-              aria-label={isTr ? 'Site yolu' : 'Breadcrumb'}
-              className="mb-6 text-[12px] text-[#737373] flex items-center flex-wrap gap-1.5"
+          <div className="relative max-w-[900px] mx-auto text-center">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
+            </span>
+            <h1
+              className="mt-3 text-[40px] sm:text-[56px] lg:text-[68px] font-medium leading-[1] tracking-[-0.035em] text-[#0A0A0A]"
+              style={{ fontFamily: 'var(--font-heading)' }}
             >
-              <Link href={base} className="hover:text-[#0A0A0A] transition-colors">
-                {isTr ? 'Ana sayfa' : 'Home'}
-              </Link>
-              <ChevronRight size={12} className="text-[#A3A3A3]" aria-hidden />
-              <span className="text-[#0A0A0A] font-medium">
-                {isTr ? 'QR Kod Oluşturucu' : 'QR Code Generator'}
-              </span>
-            </nav>
-
-            <div className="max-w-[760px] space-y-5">
-              <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] rounded-full px-3 py-1.5">
-                <span className="pulse-eyebrow text-[#0A0A0A]">
-                  {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
-                </span>
-              </div>
-              <h1 className="text-[40px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.98] tracking-[-0.035em] text-balance">
-                {isTr ? 'QR kod oluşturucu.' : 'QR code generator.'}
-              </h1>
-              <p className="text-[16px] sm:text-[18px] text-[#525252] leading-[1.6] max-w-[560px]">
-                {isTr
-                  ? 'Hesap açmadan, ücretsiz, sınırsız QR kod üret. Markana göre özelleştir, PDF olarak indir.'
-                  : 'Generate unlimited QR codes for free — no account required. Customize to your brand, download as PDF.'}
-              </p>
-            </div>
+              {isTr ? 'QR kod oluşturucu.' : 'QR code generator.'}
+            </h1>
+            <p className="mx-auto mt-4 max-w-[560px] text-[16px] leading-[1.6] text-[#525252] sm:text-[17px]">
+              {isTr
+                ? 'Hesap açmadan, ücretsiz, sınırsız QR kod üret. Markana göre özelleştir, PDF olarak indir.'
+                : 'Generate unlimited QR codes for free — no account required. Customize to your brand, download as PDF.'}
+            </p>
           </div>
         </section>
 

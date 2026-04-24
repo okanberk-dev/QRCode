@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password, name, restaurantName, website } = await req.json();
-    
+    const { email, password, name, website } = await req.json();
+
     // Honeypot check
     if (website) {
       // Silently ignore or return success to trick the bot
@@ -51,93 +51,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Atomically create user and restaurant
-    const { user, createdRestaurantId } = await prisma.$transaction(async (tx) => {
-      // 1. Check if user already exists (inside transaction for isolation)
-      const existingUser = await tx.user.findUnique({
-        where: { email: email.toLowerCase().trim() },
-      });
+    // Create user only. Restaurant creation is deferred to onboarding — if the
+    // user skips onboarding, no restaurant is created. See
+    // /api/onboarding/complete for the auto-create path (bizName ≥ 2 chars).
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+    if (existingUser) {
+      throw new Error('USER_EXISTS');
+    }
 
-      if (existingUser) {
-        throw new Error('USER_EXISTS');
-      }
+    const passwordHash = await bcrypt.hash(password, 12);
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
-      // 2. Hash password
-      const passwordHash = await bcrypt.hash(password, 12);
-
-      // 3. Calculate trial end date (14 days from now)
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
-
-      // 4. Create user
-      const user = await tx.user.create({
-        data: {
-          email: email.toLowerCase().trim(),
-          passwordHash,
-          name: name?.trim() || null,
-          plan: 'trial',
-          trialEndsAt,
-        },
-      });
-
-      let restaurantId = null;
-
-      // 5. Create restaurant if name provided
-      if (restaurantName) {
-        let baseSlug = restaurantName.toLowerCase()
-          .replace(/[çÇ]/g, 'c')
-          .replace(/[ğĞ]/g, 'g')
-          .replace(/[ıİ]/g, 'i')
-          .replace(/[öÖ]/g, 'o')
-          .replace(/[şŞ]/g, 's')
-          .replace(/[üÜ]/g, 'u')
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-|-$/g, '');
-        
-        if (!baseSlug) baseSlug = 'restoran';
-
-        // Check for existing slug and increment if necessary
-        let finalSlug = baseSlug;
-        const similarSlugs = await tx.restaurant.findMany({
-          where: { slug: { startsWith: baseSlug } },
-          select: { slug: true }
-        });
-
-        if (similarSlugs.length > 0) {
-          const slugList = similarSlugs.map(s => s.slug);
-          let counter = 1;
-          while (slugList.includes(finalSlug)) {
-            finalSlug = `${baseSlug}-${counter}`;
-            counter++;
-          }
-        }
-
-        const restaurant = await tx.restaurant.create({
-          data: {
-            name: restaurantName.trim(),
-            slug: finalSlug,
-            userId: user.id,
-            category: 'Restoran',
-            primaryColor: '#C6F24E', // Updated to premium orange default
-          }
-        });
-        restaurantId = restaurant.id;
-      }
-
-      return { user, createdRestaurantId: restaurantId };
-    }, {
-      timeout: 10000 // 10s timeout for transaction to handle potential pooler lag
+    const user = await prisma.user.create({
+      data: {
+        email: email.toLowerCase().trim(),
+        passwordHash,
+        name: name?.trim() || null,
+        plan: 'trial',
+        trialEndsAt,
+      },
     });
 
-    // 6. Sign tokens (outside transaction)
+    // Sign tokens — no restaurantId yet; it's populated after onboarding completes.
     const token = await signJwt({
       userId: user.id,
       email: user.email,
       role: user.role,
       plan: user.plan,
-      restaurantId: createdRestaurantId,
+      restaurantId: null,
     });
 
     const isSecure = process.env.NODE_ENV === 'production' && 

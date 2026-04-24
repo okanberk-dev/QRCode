@@ -36,7 +36,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [kvkkConsent, setKvkkConsent] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '', restaurantName: '', website: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', website: '' });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showKvkk, setShowKvkk] = useState(false);
 
@@ -96,25 +96,6 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           className="min-h-[44px] w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
           placeholder="Can Demir"
         />
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="reg-restaurant-name" className="pulse-eyebrow text-[#737373] ml-1 block">
-          {locale === 'tr' ? 'İŞLETME ADI · OPSİYONEL' : 'BUSINESS NAME · OPTIONAL'}
-        </label>
-        <input
-          id="reg-restaurant-name"
-          type="text"
-          value={form.restaurantName}
-          onChange={(e) => setForm(prev => ({ ...prev, restaurantName: e.target.value }))}
-          className="min-h-[44px] w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
-          placeholder={locale === 'tr' ? 'Örn: Ark Bistro' : 'e.g. Ark Bistro'}
-        />
-        <p className="ml-1 text-[11px] text-[#A3A3A3]">
-          {locale === 'tr'
-            ? 'Sonra onboarding\'de doldurabilirsin.'
-            : 'You can fill this later during onboarding.'}
-        </p>
       </div>
 
       <div className="space-y-2">
