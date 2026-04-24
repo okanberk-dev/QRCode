@@ -648,18 +648,22 @@ function QRPageContent() {
                     type="button"
                     onClick={() => setUseBrandColor((v) => !v)}
                     disabled={!selectedRestaurant?.primaryColor}
-                    className={`flex-1 px-4 py-3 rounded-xl border-2 pulse-eyebrow transition-all flex items-center justify-center gap-2 ${
+                    className={`flex-1 px-4 py-3 rounded-xl border pulse-eyebrow transition-all flex items-center justify-center gap-2 ${
                       useBrandColor
-                        ? 'bg-[#C6F24E]/10 border-[#C6F24E] text-[#0A0A0A]'
-                        : 'bg-white border-[#EDEDED] text-[#6B7280] hover:bg-[#FFFFFF]'
+                        ? 'bg-[#EAF9B8] border-[#C6F24E] text-[#0A0A0A]'
+                        : 'bg-white border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]'
                     } disabled:opacity-40 disabled:cursor-not-allowed`}
-                    title={selectedRestaurant?.primaryColor ? `Marka rengi: ${selectedRestaurant.primaryColor}` : 'Restoranda marka rengi tanımlı değil'}
+                    title={
+                      selectedRestaurant?.primaryColor
+                        ? `Marka rengi: ${selectedRestaurant.primaryColor}`
+                        : 'Önce bir işletme seçin veya restoran ayarlarında marka rengi tanımlayın.'
+                    }
                   >
                     <span
                       className="w-4 h-4 rounded border border-[#EDEDED]"
-                      style={{ backgroundColor: selectedRestaurant?.primaryColor || '#000' }}
+                      style={{ backgroundColor: selectedRestaurant?.primaryColor || '#D4D4D4' }}
                     />
-                    Marka Rengi
+                    {selectedRestaurant?.primaryColor ? 'Marka Rengi' : 'Marka Rengi Tanımsız'}
                   </button>
                   <label className="relative cursor-pointer">
                     <input

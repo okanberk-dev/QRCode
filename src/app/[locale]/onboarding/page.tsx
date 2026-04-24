@@ -98,9 +98,10 @@ export default function OnboardingPage({ params }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-[#EDEDED]">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+    <div className="flex min-h-screen flex-col bg-[#FAFAFA]">
+      {/* Top bar — logo + skip */}
+      <header className="border-b border-[#EDEDED] bg-white">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">
           <Link href={`/${locale}`} className="flex items-center gap-2">
             <BuazeLogo size={28} />
             <span
@@ -110,69 +111,97 @@ export default function OnboardingPage({ params }: Props) {
               buaze<span className="text-[#C6F24E]">.</span>
             </span>
           </Link>
-          <button
-            onClick={finish}
-            className="text-[12px] font-medium text-[#737373] hover:text-[#0A0A0A]"
-          >
-            {isTr ? 'Sonra yaparım' : 'Skip for now'}
-          </button>
+          <div className="flex items-center gap-4">
+            <span className="hidden sm:inline text-[13px] text-[#A3A3A3]">
+              {isTr ? 'Adım' : 'Step'} {currentIdx + 1} / {steps.length}
+            </span>
+            <button
+              onClick={finish}
+              className="text-[12px] font-semibold text-[#0A0A0A] hover:text-[#525252]"
+            >
+              {isTr ? 'Sonra tamamla' : 'Finish later'}
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-8 sm:py-14">
-        {/* Progress rail */}
-        <div className="mb-8 flex items-center gap-2 text-[11px]">
-          {steps.map((s, i) => (
-            <div key={s.id} className="flex flex-1 items-center gap-2">
-              <div
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors ${
-                  i < currentIdx
-                    ? 'bg-[#0A0A0A] text-white'
-                    : i === currentIdx
-                      ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                      : 'bg-[#F5F5F5] text-[#737373]'
-                }`}
-              >
-                {i < currentIdx ? (
-                  <Check size={12} />
-                ) : (
-                  <span className="pulse-eyebrow">{String(i + 1).padStart(2, '0')}</span>
+      {/* Progress rail — big 40px circles with labels (matches design v2) */}
+      <div className="border-b border-[#EDEDED] bg-white px-4 py-5 sm:px-8 sm:py-6">
+        <div className="mx-auto flex max-w-[680px] items-start">
+          {steps.map((s, i) => {
+            const done = i < currentIdx;
+            const active = i === currentIdx;
+            return (
+              <div key={s.id} className="flex min-w-0 flex-1 items-start">
+                <div className="flex min-w-0 flex-col items-center gap-2 flex-shrink-0">
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-semibold transition-all ${
+                      done
+                        ? 'bg-[#C6F24E] text-[#0A0A0A]'
+                        : active
+                          ? 'bg-[#0A0A0A] text-[#C6F24E] ring-[6px] ring-[#C6F24E]/25'
+                          : 'border-2 border-[#EDEDED] bg-[#F5F5F5] text-[#A3A3A3]'
+                    }`}
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {done ? <Check size={16} strokeWidth={2.5} /> : i + 1}
+                  </div>
+                  <span
+                    className={`pulse-eyebrow whitespace-nowrap ${
+                      active
+                        ? 'text-[#0A0A0A]'
+                        : done
+                          ? 'text-[#16A34A]'
+                          : 'text-[#A3A3A3]'
+                    }`}
+                  >
+                    {s.label[isTr ? 'tr' : 'en']}
+                  </span>
+                </div>
+                {i < steps.length - 1 && (
+                  <div
+                    className={`mt-[18px] h-0.5 flex-1 transition-colors ${
+                      done ? 'bg-[#C6F24E]' : 'bg-[#EDEDED]'
+                    }`}
+                  />
                 )}
               </div>
-              {i < steps.length - 1 && (
-                <div className={`h-0.5 flex-1 ${i < currentIdx ? 'bg-[#0A0A0A]' : 'bg-[#EDEDED]'}`} />
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
+      </div>
 
-        <p className="pulse-eyebrow text-[#737373]">
-          {isTr ? 'ADIM' : 'STEP'} {currentIdx + 1} / {steps.length}
-        </p>
-        <h1
-          className="mt-2 text-[32px] font-medium leading-tight tracking-tight text-[#0A0A0A] sm:text-[42px]"
-          style={{ fontFamily: 'var(--font-heading)' }}
-        >
-          {step === 'profile' && (isTr ? 'İşletmenizi tanıyalım.' : "Tell us about your business.")}
-          {step === 'sector' && (isTr ? 'Hangi sektördesiniz?' : 'Which sector?')}
-          {step === 'location' && (isTr ? 'İlk konumunuzu ekleyin.' : 'Add your first location.')}
-          {step === 'platforms' && (isTr ? 'Hangi platformlar?' : 'Which platforms?')}
-          {step === 'qr' && (isTr ? 'İlk QR kodunuz.' : 'Your first QR code.')}
-        </h1>
+      {/* Step body */}
+      <main className="flex-1 px-4 py-10 sm:px-8 sm:py-14 pb-32">
+        <div className="mx-auto max-w-3xl">
+          <h1
+            className="text-[32px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A] sm:text-[42px]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {step === 'profile' && (isTr ? 'İşletmenizi tanıyalım.' : "Tell us about your business.")}
+            {step === 'sector' && (isTr ? 'Hangi sektördesiniz?' : 'Which sector?')}
+            {step === 'location' && (isTr ? 'İlk konumunuzu ekleyin.' : 'Add your first location.')}
+            {step === 'platforms' && (isTr ? 'Hangi platformlar?' : 'Which platforms?')}
+            {step === 'qr' && (isTr ? 'İlk QR kodunuz.' : 'Your first QR code.')}
+          </h1>
 
-        <div className="mt-8 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-8">
-          {step === 'profile' && <ProfileStep isTr={isTr} data={data} update={update} />}
-          {step === 'sector' && <SectorStep isTr={isTr} data={data} update={update} />}
-          {step === 'location' && <LocationStep isTr={isTr} data={data} update={update} />}
-          {step === 'platforms' && <PlatformStep isTr={isTr} data={data} update={update} />}
-          {step === 'qr' && <QrStep isTr={isTr} data={data} update={update} />}
+          <div className="mt-8 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-8">
+            {step === 'profile' && <ProfileStep isTr={isTr} data={data} update={update} />}
+            {step === 'sector' && <SectorStep isTr={isTr} data={data} update={update} />}
+            {step === 'location' && <LocationStep isTr={isTr} data={data} update={update} />}
+            {step === 'platforms' && <PlatformStep isTr={isTr} data={data} update={update} />}
+            {step === 'qr' && <QrStep isTr={isTr} data={data} update={update} />}
+          </div>
         </div>
+      </main>
 
-        <div className="mt-6 flex items-center justify-between">
+      {/* Sticky bottom nav — Geri + Devam/Yayınla */}
+      <div className="sticky bottom-0 border-t border-[#EDEDED] bg-white px-4 py-4 sm:px-8">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
           <button
             onClick={() => currentIdx > 0 && setStep(steps[currentIdx - 1].id)}
             disabled={currentIdx === 0}
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#525252] hover:text-[#0A0A0A] disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E5E5] px-5 py-2.5 text-[13px] font-medium text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ArrowLeft size={14} /> {isTr ? 'Geri' : 'Back'}
           </button>
@@ -182,7 +211,7 @@ export default function OnboardingPage({ params }: Props) {
             <button
               onClick={goNext}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-5 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-50"
+              className="pulse-btn-dark inline-flex items-center gap-1.5 rounded-full disabled:opacity-50"
             >
               {saving && <Loader2 size={13} className="animate-spin" />}
               {isTr ? 'Devam' : 'Continue'}
@@ -190,7 +219,7 @@ export default function OnboardingPage({ params }: Props) {
             </button>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
