@@ -43,9 +43,19 @@ export default function PlatformLogo({ id, size = 40, rounded = 10, className }:
       return (
         <svg {...common}>
           <rect width="40" height="40" fill="#FA0050" />
-          <path d="M8 14 L14 26 L20 14 Z" fill="#FFFFFF" />
-          <path d="M22 14 L28 26 L34 14 Z" fill="#FFFFFF" opacity="0.85" />
-          <circle cx="20" cy="29" r="2" fill="#FFFFFF" />
+          <text
+            x="20"
+            y="27"
+            textAnchor="middle"
+            fontFamily="Inter, sans-serif"
+            fontSize="17"
+            fontWeight="800"
+            fill="#FFFFFF"
+            letterSpacing="-0.04em"
+          >
+            ys
+          </text>
+          <circle cx="30" cy="11" r="1.6" fill="#FFFFFF" />
         </svg>
       );
     case 'getir-yemek':
@@ -71,11 +81,31 @@ export default function PlatformLogo({ id, size = 40, rounded = 10, className }:
       return (
         <svg {...common}>
           <rect width="40" height="40" fill="#F27A1A" />
-          <path
-            d="M13 12 L27 12 L27 16 L22 16 L22 30 L18 30 L18 16 L13 16 Z"
+          <text
+            x="17"
+            y="27"
+            textAnchor="middle"
+            fontFamily="Inter, sans-serif"
+            fontSize="17"
+            fontWeight="800"
             fill="#FFFFFF"
-          />
-          <circle cx="30" cy="30" r="3" fill="#FFFFFF" />
+            letterSpacing="-0.04em"
+          >
+            ty
+          </text>
+          <circle cx="30" cy="28" r="4" fill="#FFFFFF" />
+          <text
+            x="30"
+            y="30"
+            textAnchor="middle"
+            fontFamily="Inter, sans-serif"
+            fontSize="6"
+            fontWeight="900"
+            fill="#F27A1A"
+            letterSpacing="-0.05em"
+          >
+            GO
+          </text>
         </svg>
       );
     case 'migros-hemen':

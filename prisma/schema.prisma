@@ -95,21 +95,106 @@ model Feedback {
   hasKvkkConsent      Boolean     @default(true) @map("has_kvkk_consent")
   hasMarketingConsent Boolean     @default(false) @map("has_marketing_consent")
   platform            String?     @map("platform")   // google | yemeksepeti | getir | trendyol_go
-  
+
   // Rich Feedback Additions
   serviceType         String?     @map("service_type")
   foodRating          Int?        @map("food_rating")
   serviceRating       Int?        @map("service_rating")
   atmosphereRating    Int?        @map("atmosphere_rating")
-  
+
   createdAt           DateTime    @default(now()) @map("created_at")
 
   restaurantId        String?     @map("restaurant_id")
   restaurant          Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
+  replies             FeedbackReply[]
+  flag                FeedbackFlag?
+  assignment          FeedbackAssignment?
+
   @@index([restaurantId, createdAt])
   @@index([ipAddress, createdAt])
   @@map("feedback")
+}
+
+model FeedbackReply {
+  id           String   @id @default(cuid())
+  feedbackId   String   @map("feedback_id")
+  feedback     Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  authorUserId String   @map("author_user_id")
+  body         String   @db.Text
+  channel      String   @default("internal") // internal | google | email
+  status       String   @default("sent")     // draft | sent | failed
+  createdAt    DateTime @default(now())      @map("created_at")
+
+  @@index([feedbackId, createdAt])
+  @@map("feedback_replies")
+}
+
+model FeedbackFlag {
+  id         String   @id @default(cuid())
+  feedbackId String   @unique @map("feedback_id")
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  reason     String?
+  flaggedBy  String   @map("flagged_by_user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("feedback_flags")
+}
+
+model FeedbackAssignment {
+  id           String   @id @default(cuid())
+  feedbackId   String   @unique @map("feedback_id")
+  feedback     Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  assigneeId   String   @map("assignee_user_id")
+  assignedById String   @map("assigned_by_user_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("feedback_assignments")
+}
+
+model TeamMember {
+  id         String   @id @default(cuid())
+  ownerId    String   @map("owner_user_id")
+  email      String
+  name       String?
+  role       String   @default("manager")  // owner | manager | staff | viewer
+  locations  Json?    // string[] — restaurant ids
+  status     String   @default("invited")  // invited | active | revoked
+  lastSeenAt DateTime? @map("last_seen_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([ownerId, email])
+  @@index([ownerId, status])
+  @@map("team_members")
+}
+
+model Campaign {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  restaurantId   String?  @map("restaurant_id")
+  name           String
+  placement      String   // table | receipt | door | pack
+  count          Int      @default(1)
+  template       String   @default("lime") // lime | white | dark | minimal
+  color          String   @default("#C6F24E")
+  status         String   @default("draft") // draft | live | archived
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@index([userId, restaurantId])
+  @@map("campaigns")
+}
+
+model NotificationPreference {
+  userId           String   @id @map("user_id")
+  lowRatingEmail   Boolean  @default(true)  @map("low_rating_email")
+  dailyDigestEmail Boolean  @default(false) @map("daily_digest_email")
+  weeklyReport     Boolean  @default(true)  @map("weekly_report")
+  slackWebhook     String?  @map("slack_webhook")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("notification_preferences")
 }
 
 model AdminUser {
@@ -233,4 +318,132 @@ model BlogPost {
 
   @@unique([slug, locale])
   @@map("blog_posts")
+}
+
+model CaseStudy {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  brand       String
+  sector      String
+  sectorEn    String?  @map("sector_en")
+  location    String
+  heroImage   String   @map("hero_image")
+  heroTr      String   @db.Text @map("hero_tr")
+  heroEn      String   @db.Text @map("hero_en")
+  subtitleTr  String?  @db.Text @map("subtitle_tr")
+  subtitleEn  String?  @db.Text @map("subtitle_en")
+  stats       Json     // [{label:{tr,en}, value}]
+  highlights  Json     // [{tr, en}]
+  quoteTr     String?  @db.Text @map("quote_tr")
+  quoteEn     String?  @db.Text @map("quote_en")
+  personName  String?  @map("person_name")
+  personRole  Json?    @map("person_role") // {tr, en}
+  isPublished Boolean  @default(true) @map("is_published")
+  publishedAt DateTime @default(now()) @map("published_at")
+
+  @@index([isPublished, publishedAt])
+  @@map("case_studies")
+}
+
+model OnboardingProgress {
+  userId      String    @id @map("user_id")
+  step        Int       @default(1)
+  data        Json?
+  completedAt DateTime? @map("completed_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@map("onboarding_progress")
+}
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  locale         String    @default("tr")
+  source         String?
+  ip             String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+
+  @@index([createdAt])
+  @@map("newsletter_subscribers")
+}
+
+model ROIRequest {
+  id             String   @id @default(cuid())
+  email          String?
+  restaurantName String?  @map("restaurant_name")
+  tables         Int?
+  avgTicket      Decimal? @db.Decimal(10, 2) @map("avg_ticket")
+  noShowRate     Float?   @map("no_show_rate")
+  projection     Json?
+  ip             String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([email, createdAt])
+  @@map("roi_requests")
+}
+
+model HelpArticle {
+  id          String   @id @default(cuid())
+  slug        String
+  locale      String   @default("tr") // tr | en
+  category    String
+  title       String
+  excerpt     String?  @db.Text
+  body        String   @db.Text
+  searchTags  String[] @default([]) @map("search_tags")
+  isPublished Boolean  @default(true) @map("is_published")
+  order       Int      @default(0)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@unique([slug, locale])
+  @@index([locale, category, order])
+  @@index([isPublished, updatedAt])
+  @@map("help_articles")
+}
+
+model CareerApplication {
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  roleSlug   String?  @map("role_slug")
+  message    String?  @db.Text
+  portfolio  String?
+  attachment String?
+  locale     String   @default("tr")
+  ip         String?
+  status     String   @default("new")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([roleSlug, createdAt])
+  @@index([status, createdAt])
+  @@map("career_applications")
+}
+
+model BillingSubscription {
+  userId       String    @id @map("user_id")
+  plan         String    @default("trial")  // trial | monthly | yearly | enterprise
+  status       String    @default("active") // active | past_due | canceled
+  trialEndsAt  DateTime? @map("trial_ends_at")
+  renewsAt     DateTime? @map("renews_at")
+  providerRef  String?   @unique @map("provider_ref")
+  paymentBrand String?   @map("payment_brand")
+  paymentLast4 String?   @map("payment_last4")
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@map("billing_subscriptions")
+}
+
+model BillingInvoice {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  amount      Decimal  @db.Decimal(10, 2)
+  currency    String   @default("TRY")
+  status      String   @default("paid") // paid | pending | failed | refunded
+  providerRef String?  @unique @map("provider_ref")
+  pdfUrl      String?  @map("pdf_url")
+  issuedAt    DateTime @default(now()) @map("issued_at")
+
+  @@index([userId, issuedAt])
+  @@map("billing_invoices")
 }

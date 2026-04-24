@@ -107,8 +107,16 @@ export default function MembersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-[#0A0A0A] tracking-tight uppercase">Üye Yönetimi</h1>
-          <p className="text-[#1A1A1A] text-[13px] sm:text-[15px] font-bold">Kayıtlı işletme sahiplerinin planlarını ve erişimlerini yönetin.</p>
+          <p className="pulse-eyebrow text-[#737373]">PANEL / İŞLETMECİLER</p>
+          <h1
+            className="text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            İşletmeci Yönetimi
+          </h1>
+          <p className="text-[#525252] text-[13px] sm:text-[14px] max-w-[520px]">
+            Kayıtlı işletme sahiplerinin planlarını ve erişimlerini yönetin.
+          </p>
         </div>
         <button
           onClick={fetchMembers}

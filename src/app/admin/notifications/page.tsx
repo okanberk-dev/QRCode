@@ -60,9 +60,19 @@ function AdminNotificationsBody() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(next),
       });
-      if (res.status === 501) flash(isTr ? 'Tercih yerel kaydedildi — backend yakında' : 'Saved locally — backend soon');
-      else if (res.ok) flash(isTr ? 'Kaydedildi' : 'Saved');
-      else flash(isTr ? 'Hata' : 'Error');
+      if (res.ok) {
+        const saved = await res.json();
+        setPrefs({
+          lowRatingEmail: Boolean(saved.lowRatingEmail),
+          dailyDigestEmail: Boolean(saved.dailyDigestEmail),
+          weeklyReport: Boolean(saved.weeklyReport),
+          slackWebhook: saved.slackWebhook ?? null,
+        });
+        flash(isTr ? 'Kaydedildi' : 'Saved');
+      } else {
+        const body = await res.json().catch(() => ({}));
+        flash(isTr ? `Hata: ${body.error ?? res.status}` : `Error: ${body.error ?? res.status}`);
+      }
     } catch {
       flash(isTr ? 'Ağ hatası' : 'Network error');
     }

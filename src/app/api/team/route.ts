@@ -1,16 +1,101 @@
-// SCAFFOLDED: Team members & roles (TeamMember model).
-import { scaffoldedResponse, type TeamInviteInput } from '@/lib/scaffolding';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getPanelActorFromRequest } from '@/lib/auth';
+import { resolveOwnerUserId } from '@/lib/panel-access';
+import { isValidEmail } from '@/lib/validations';
 
-export async function GET() {
-  return Response.json({ data: [] });
+export const dynamic = 'force-dynamic';
+
+const VALID_ROLES = new Set(['owner', 'manager', 'staff', 'viewer']);
+
+export async function GET(req: NextRequest) {
+  const actor = await getPanelActorFromRequest(req);
+  if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  const ownerId = await resolveOwnerUserId(actor);
+  if (!ownerId) {
+    return NextResponse.json({ error: 'forbidden', hint: 'team is workspace-scoped' }, { status: 403 });
+  }
+
+  const members = await prisma.teamMember.findMany({
+    where: { ownerId },
+    orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+  });
+
+  return NextResponse.json({
+    data: members.map((m) => ({
+      id: m.id,
+      email: m.email,
+      name: m.name,
+      role: m.role,
+      status: m.status,
+      lastSeenAt: m.lastSeenAt?.toISOString() ?? null,
+      createdAt: m.createdAt.toISOString(),
+    })),
+  });
 }
 
-export async function POST(req: Request) {
-  let body: Partial<TeamInviteInput> = {};
+export async function POST(req: NextRequest) {
+  const actor = await getPanelActorFromRequest(req);
+  if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  if (actor.source !== 'user') {
+    return NextResponse.json(
+      { error: 'forbidden', hint: 'only workspace owner can invite' },
+      { status: 403 },
+    );
+  }
+
+  let body: { email?: string; name?: string; role?: string; locations?: string[] } = {};
   try {
     body = await req.json();
   } catch {
-    /* ignore */
+    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
-  return scaffoldedResponse('src/app/api/team/route.ts', { received: body });
+
+  const email = (body.email ?? '').trim().toLowerCase();
+  if (!email || !isValidEmail(email)) {
+    return NextResponse.json({ error: 'invalid_email' }, { status: 400 });
+  }
+  if (email.length > 200) {
+    return NextResponse.json({ error: 'email_too_long' }, { status: 400 });
+  }
+
+  const role = body.role && VALID_ROLES.has(body.role) ? body.role : 'manager';
+  const name = typeof body.name === 'string' ? body.name.trim().slice(0, 120) || null : null;
+  const locations =
+    Array.isArray(body.locations) && body.locations.every((x) => typeof x === 'string')
+      ? body.locations.slice(0, 40)
+      : null;
+
+  const member = await prisma.teamMember.upsert({
+    where: { ownerId_email: { ownerId: actor.id, email } },
+    create: {
+      ownerId: actor.id,
+      email,
+      name,
+      role,
+      locations: locations ?? undefined,
+      status: 'invited',
+    },
+    update: {
+      name: name ?? undefined,
+      role,
+      locations: locations ?? undefined,
+      status: 'invited',
+    },
+  });
+
+  return NextResponse.json({
+    ok: true,
+    member: {
+      id: member.id,
+      email: member.email,
+      name: member.name,
+      role: member.role,
+      status: member.status,
+      lastSeenAt: null,
+      createdAt: member.createdAt.toISOString(),
+    },
+  });
 }

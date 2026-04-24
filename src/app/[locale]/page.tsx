@@ -3,7 +3,6 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
 import {
-  IllusLighthouse,
   IllusMountain,
   IllusCompass,
   IllusInbox,
@@ -11,6 +10,14 @@ import {
   IllusShield,
 } from '@/components/marketing/PulseIllustrations';
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
+import AnimatedCounter from '@/components/marketing/AnimatedCounter';
+import MarqueeRow from '@/components/marketing/MarqueeRow';
+import WatchDemoButton from '@/components/marketing/WatchDemoButton';
+import StickyCtaBar from '@/components/marketing/StickyCtaBar';
+import SocialProofToast from '@/components/marketing/SocialProofToast';
+import HomeIndustryTabs from '@/components/marketing/HomeIndustryTabs';
+import LiveReviewTicker from '@/components/marketing/LiveReviewTicker';
+import HomeHeroDashboard from '@/components/marketing/HomeHeroDashboard';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
@@ -186,19 +193,6 @@ export default async function LandingPage({
         { t: 'SLA tracking', d: 'Hit your response-time targets.' },
       ];
 
-  const livePoints = [4, 12, 8, 16, 10, 20, 14, 24, 22];
-  const liveReviews = isTr
-    ? [
-        { n: 'Ayşe K.', c: 'Servis çok hızlıydı, tatlılar harika.', r: 5 },
-        { n: 'Mert D.', c: 'Mekan güzel, sadece ses biraz yüksekti.', r: 4 },
-        { n: 'Zeynep A.', c: 'Kahve tam istediğim gibi geldi.', r: 5 },
-      ]
-    : [
-        { n: 'Alice K.', c: 'Service was fast, desserts were great.', r: 5 },
-        { n: 'Mark D.', c: 'Nice place, just a bit loud.', r: 4 },
-        { n: 'Jenny A.', c: 'Coffee came exactly how I ordered.', r: 5 },
-      ];
-
   const policyBlocks = isTr
     ? [
         { n: '01', t: 'Tercih gönderimi', d: 'QR müşteriyi önce gerçek geri bildirime yönlendirir.' },
@@ -209,28 +203,6 @@ export default async function LandingPage({
         { n: '01', t: 'Preference-first', d: 'The QR routes the customer to real feedback first.' },
         { n: '02', t: 'Transparent flow', d: 'Negative reviews aren\'t filtered; they reach your team for resolution.' },
         { n: '03', t: 'Rule engine', d: 'Every campaign is auto-audited against Google policy.' },
-      ];
-
-  const sectors = isTr
-    ? [
-        { t: 'Restoran & Kafe', c: '1.200+', s: 'mekan' },
-        { t: 'Otel', c: '340+', s: 'konaklama' },
-        { t: 'Klinik & Muayenehane', c: '520+', s: 'sağlık' },
-        { t: 'Hukuk Ofisi', c: '180+', s: 'ofis' },
-        { t: 'Güzellik & Spa', c: '410+', s: 'salon' },
-        { t: 'Perakende', c: '260+', s: 'mağaza' },
-        { t: 'Spor & Fitness', c: '140+', s: 'tesis' },
-        { t: 'Eğitim', c: '90+', s: 'kurum' },
-      ]
-    : [
-        { t: 'Restaurant & Café', c: '1,200+', s: 'venues' },
-        { t: 'Hotel', c: '340+', s: 'properties' },
-        { t: 'Clinic & Practice', c: '520+', s: 'providers' },
-        { t: 'Legal', c: '180+', s: 'offices' },
-        { t: 'Beauty & Spa', c: '410+', s: 'salons' },
-        { t: 'Retail', c: '260+', s: 'stores' },
-        { t: 'Sports & Fitness', c: '140+', s: 'facilities' },
-        { t: 'Education', c: '90+', s: 'institutions' },
       ];
 
   const caseStats = isTr
@@ -277,7 +249,8 @@ export default async function LandingPage({
             <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] rounded-full pl-2 pr-4 py-1.5">
               <span className="w-2 h-2 rounded-full bg-[#16A34A] pulse-heartbeat" />
               <span className="pulse-eyebrow text-[#0A0A0A]">
-                {isTr ? '2.400+ işletme kullanıyor' : '2,400+ businesses using it'}
+                <AnimatedCounter to={2400} suffix="+" locale={isTr ? 'tr-TR' : 'en-US'} />{' '}
+                {isTr ? 'işletme kullanıyor' : 'businesses using it'}
               </span>
             </div>
 
@@ -292,17 +265,17 @@ export default async function LandingPage({
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
               <Link
                 href={`${base}/auth/register`}
-                className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
+                className="pulse-btn-dark inline-flex items-center justify-center gap-2 rounded-full"
               >
                 {isTr ? '14 gün ücretsiz başla' : 'Start 14-day free trial'}
                 <span aria-hidden>→</span>
               </Link>
+              <WatchDemoButton locale={locale} />
               <Link
                 href={`${base}/how-it-works`}
-                className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
+                className="inline-flex items-center justify-center gap-2 text-[#525252] underline-offset-4 hover:text-[#0A0A0A] hover:underline text-[14px] font-medium"
               >
-                <span aria-hidden>▶</span>
-                {isTr ? 'Demo izle (2 dk)' : 'Watch demo (2 min)'}
+                {isTr ? 'Nasıl çalışır?' : 'How it works?'} →
               </Link>
             </div>
 
@@ -318,8 +291,8 @@ export default async function LandingPage({
             </ul>
           </div>
 
-          <div className="flex justify-center md:justify-end">
-            <IllusLighthouse size={340} className="w-full max-w-[340px] h-auto" />
+          <div className="w-full pr-3 md:pr-6">
+            <HomeHeroDashboard locale={locale} />
           </div>
         </div>
       </section>
@@ -327,23 +300,20 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           2. LOGO STRIP — trusted brands
       ═══════════════════════════════════════════════════════════ */}
-      <section className="border-y border-[#EDEDED] py-8 px-6 sm:px-10">
-        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10">
-          <span className="pulse-eyebrow text-[#737373] whitespace-nowrap">
-            {isTr ? 'Güvenen markalar' : 'Trusted by'}
-          </span>
-          <div className="flex-1 flex flex-wrap items-center justify-start md:justify-between gap-x-8 gap-y-3">
-            {brandWordmarks.map((name) => (
-              <span
-                key={name}
-                className="text-[16px] sm:text-[18px] font-semibold tracking-[0.08em] text-[#A3A3A3]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                {name}
-              </span>
-            ))}
-          </div>
-        </div>
+      <section className="border-y border-[#EDEDED] bg-[#FAFAFA] py-5">
+        <MarqueeRow
+          eyebrow={isTr ? 'GÜVENEN MARKALAR' : 'TRUSTED BY'}
+          itemClassName="shrink-0 px-10 sm:px-12"
+          items={brandWordmarks.map((name) => (
+            <span
+              key={name}
+              className="text-[16px] sm:text-[18px] font-semibold tracking-[0.08em] text-[#D4D4D4] whitespace-nowrap"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              {name}
+            </span>
+          ))}
+        />
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
@@ -387,64 +357,9 @@ export default async function LandingPage({
       ═══════════════════════════════════════════════════════════ */}
       <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Live stream card */}
-          <div className="bg-[#1A1A1A] border border-[#333333] rounded-2xl p-6 sm:p-7">
-            <div className="flex items-center gap-2 mb-5">
-              <span className="w-2 h-2 rounded-full bg-[#C6F24E] pulse-heartbeat" />
-              <span className="pulse-eyebrow text-[#C6F24E]">
-                {isTr ? 'CANLI AKIŞ' : 'LIVE STREAM'}
-              </span>
-            </div>
-
-            <svg viewBox="0 0 320 100" className="w-full h-auto mb-5" aria-hidden>
-              <defs>
-                <linearGradient id="liveGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#C6F24E" stopOpacity="0.35" />
-                  <stop offset="100%" stopColor="#C6F24E" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {(() => {
-                const pts = livePoints.map((v, i) => {
-                  const x = (i / (livePoints.length - 1)) * 320;
-                  const y = 90 - (v / 24) * 70;
-                  return `${x},${y}`;
-                });
-                const line = pts.join(' ');
-                const area = `0,100 ${line} 320,100`;
-                return (
-                  <>
-                    <polygon points={area} fill="url(#liveGrad)" />
-                    <polyline points={line} fill="none" stroke="#C6F24E" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-                    {livePoints.map((v, i) => {
-                      const x = (i / (livePoints.length - 1)) * 320;
-                      const y = 90 - (v / 24) * 70;
-                      return <circle key={i} cx={x} cy={y} r="3" fill="#C6F24E" />;
-                    })}
-                  </>
-                );
-              })()}
-            </svg>
-
-            <div className="space-y-3">
-              {liveReviews.map((r, i) => (
-                <div key={i} className="flex items-start gap-3 py-2 border-t border-[#333333] first:border-t-0">
-                  <div className="w-9 h-9 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[13px] font-semibold shrink-0">
-                    {r.n.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[13px] font-medium text-white truncate">{r.n}</span>
-                      <span className="text-[#C6F24E] text-[12px] tracking-wide shrink-0">
-                        {'★'.repeat(r.r)}
-                        <span className="text-[#525252]">{'★'.repeat(5 - r.r)}</span>
-                      </span>
-                    </div>
-                    <p className="text-[13px] text-[#A3A3A3] mt-0.5 truncate">{r.c}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Live stream card — auto-rotating review ticker, mirrors the
+              HeroProduct helper in .design/site/site-homepage-v3.jsx:174 */}
+          <LiveReviewTicker locale={locale} />
 
           {/* Copy + feature grid */}
           <div>
@@ -545,11 +460,151 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
-          6. SOLUTIONS GRID
+          5.5 BENTO GRID — QR Studio / AI Co-Pilot / Analytics / Platforms
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="px-6 sm:px-10 py-20 sm:py-24">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="max-w-[720px] mb-10 sm:mb-12">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Tek platform' : 'One platform'}
+            </span>
+            <h2 className="mt-4 text-[34px] sm:text-[46px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+              {isTr ? 'Tek panelde, dört süper güç.' : 'One panel, four superpowers.'}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2">
+            {/* QR Studio — lg:col-span-2 lg:row-span-2 */}
+            <div className="relative overflow-hidden rounded-2xl border border-[#EDEDED] bg-[#0A0A0A] p-6 sm:p-7 text-white lg:col-span-2 lg:row-span-2">
+              <span className="pulse-eyebrow text-[#C6F24E]">QR STUDIO</span>
+              <h3
+                className="mt-3 text-[26px] sm:text-[32px] font-medium leading-[1.05] tracking-[-0.025em]"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                {isTr ? 'Tasarla. Yerleştir. Takip et.' : 'Design. Place. Track.'}
+              </h3>
+              <p className="mt-3 text-[14px] leading-[1.6] text-[#A3A3A3] max-w-[400px]">
+                {isTr
+                  ? 'Markana özel QR şablonları, dört yerleştirme yolu (masa / fatura / kapı / paket), ham rapor.'
+                  : 'Branded QR templates, four placement modes (table / receipt / door / pack), raw reports.'}
+              </p>
+              <div className="mt-8 flex items-end justify-between gap-6">
+                <svg viewBox="0 0 90 90" className="h-28 w-28 sm:h-32 sm:w-32" aria-hidden>
+                  <rect x="2" y="2" width="86" height="86" rx="6" fill="#C6F24E" />
+                  <g fill="#0A0A0A">
+                    {[
+                      [10, 10, 20, 20],
+                      [60, 10, 20, 20],
+                      [10, 60, 20, 20],
+                      [40, 40, 10, 10],
+                      [55, 40, 10, 10],
+                      [40, 55, 10, 10],
+                      [60, 60, 20, 20],
+                    ].map(([x, y, w, h], i) => (
+                      <rect key={i} x={x} y={y} width={w} height={h} />
+                    ))}
+                  </g>
+                </svg>
+                <div className="text-right">
+                  <p
+                    className="text-[38px] font-semibold leading-none tracking-tight text-[#C6F24E] sm:text-[46px]"
+                    style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                  >
+                    +184%
+                  </p>
+                  <p className="pulse-eyebrow mt-1 text-[#737373]">
+                    {isTr ? 'ORGANİK YORUM' : 'ORGANIC REVIEWS'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* AI Co-Pilot */}
+            <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8]/40 p-6">
+              <span className="pulse-eyebrow text-[#0A0A0A]">AI CO-PILOT</span>
+              <h3
+                className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                {isTr ? 'Yanıtı saniyede yaz.' : 'Draft replies in seconds.'}
+              </h3>
+              <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">
+                {isTr
+                  ? 'Her yorum için OpenAI destekli Türkçe yanıt taslağı.'
+                  : 'OpenAI-backed Turkish/English reply drafts per review.'}
+              </p>
+              <div className="mt-4 rounded-xl bg-[#0A0A0A] px-3 py-2 text-[11px] text-white">
+                <span className="pulse-eyebrow text-[#C6F24E]">DRAFT</span>
+                <p className="mt-1 leading-snug text-white/80">
+                  {isTr
+                    ? '"Merhaba Mert, harika yorumun için çok teşekkür ederiz…"'
+                    : '"Hi Mark, thank you so much for taking the time…"'}
+                </p>
+              </div>
+            </div>
+
+            {/* Analytics */}
+            <div className="rounded-2xl border border-[#EDEDED] bg-white p-6">
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'ANALİTİK' : 'ANALYTICS'}
+              </span>
+              <h3
+                className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                {isTr ? 'Nabzını canlı izle.' : 'Watch your pulse live.'}
+              </h3>
+              <svg viewBox="0 0 220 56" className="mt-4 w-full">
+                <defs>
+                  <linearGradient id="bentoG" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#C6F24E" stopOpacity="0.45" />
+                    <stop offset="100%" stopColor="#C6F24E" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path d="M0 40 L30 36 L60 30 L90 20 L120 24 L150 14 L180 16 L210 8 L220 6 L220 56 L0 56 Z" fill="url(#bentoG)" />
+                <path d="M0 40 L30 36 L60 30 L90 20 L120 24 L150 14 L180 16 L210 8 L220 6" fill="none" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="220" cy="6" r="4" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
+              </svg>
+              <p className="mt-3 text-[12px] text-[#737373]">
+                {isTr ? 'NPS, trend, konum kırılımı.' : 'NPS, trend, per-location breakdown.'}
+              </p>
+            </div>
+
+            {/* Platforms */}
+            <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-6 sm:col-span-2">
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'ENTEGRASYONLAR' : 'INTEGRATIONS'}
+              </span>
+              <h3
+                className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                {isTr ? 'Türkiye ve dünya — aynı panelde.' : 'Turkey and the world, same panel.'}
+              </h3>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(['google', 'yemeksepeti', 'getir-yemek', 'trendyol-go', 'yelp', 'tripadvisor', 'booking'] as const).map((id) => (
+                  <div
+                    key={id}
+                    className="flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-white px-2.5 py-1.5"
+                  >
+                    <PlatformLogo id={id} size={22} rounded={4} />
+                    <span className="text-[11px] font-medium text-[#0A0A0A] capitalize">
+                      {id.replace('-', ' ')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          6. INDUSTRY TABS — interactive sector switcher
       ═══════════════════════════════════════════════════════════ */}
       <section className="bg-[#FAFAFA] px-6 sm:px-10 py-20 sm:py-28">
         <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-14 max-w-[720px] mx-auto">
+          <div className="text-center mb-10 max-w-[720px] mx-auto">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Sektörler' : 'Industries'}
             </span>
@@ -557,25 +612,7 @@ export default async function LandingPage({
               {isTr ? 'Her sektör için, tam oturur.' : 'Fits every industry, perfectly.'}
             </h2>
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {sectors.map((s) => (
-              <div
-                key={s.t}
-                className="bg-white border border-[#EDEDED] rounded-2xl p-5 flex flex-col gap-3"
-              >
-                <div className="w-10 h-10 rounded-lg bg-[#EAF9B8] flex items-center justify-center">
-                  <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden>
-                    <path d="M4 16 L9 16 L11 10 L15 22 L17 14 L20 18 L28 18" stroke="#0A0A0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <div className="text-[15px] font-medium text-[#0A0A0A] leading-tight">{s.t}</div>
-                <div className="pulse-eyebrow text-[#737373] mt-auto">
-                  {s.c} {s.s}
-                </div>
-              </div>
-            ))}
-          </div>
+          <HomeIndustryTabs locale={locale} />
         </div>
       </section>
 
@@ -850,7 +887,7 @@ export default async function LandingPage({
           <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
             <Link
               href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
+              className="pulse-btn-dark inline-flex items-center justify-center gap-2 rounded-full"
             >
               {isTr ? 'Ücretsiz başla' : 'Start free'}
               <span aria-hidden>→</span>
@@ -866,6 +903,10 @@ export default async function LandingPage({
       </section>
 
       <MarketingFooter locale={locale} t={t} />
+
+      {/* Conversion layer — client-only, renders only after user interacts */}
+      <StickyCtaBar locale={locale} />
+      <SocialProofToast locale={locale} />
     </div>
   );
 }

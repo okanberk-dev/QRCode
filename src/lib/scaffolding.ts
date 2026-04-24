@@ -187,6 +187,88 @@
 //   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 //   @@map("onboarding_progress")
 // }
+//
+// model NewsletterSubscriber {
+//   id         String   @id @default(cuid())
+//   email      String   @unique
+//   locale     String   @default("tr")        // tr | en
+//   source     String?  // "footer" | "blog" | etc.
+//   ip         String?
+//   createdAt  DateTime @default(now()) @map("created_at")
+//   unsubscribedAt DateTime? @map("unsubscribed_at")
+//   @@index([createdAt])
+//   @@map("newsletter_subscribers")
+// }
+//
+// model CaseStudy {
+//   id         String   @id @default(cuid())
+//   slug       String   @unique
+//   brand      String
+//   sector     String
+//   location   String
+//   heroTr     String   @db.Text
+//   heroEn     String   @db.Text
+//   subtitleTr String?  @db.Text
+//   subtitleEn String?  @db.Text
+//   stats      Json     // [{label:{tr,en}, value}]
+//   highlights Json     // [{tr, en}]
+//   quoteTr    String?  @db.Text
+//   quoteEn    String?  @db.Text
+//   personName String?
+//   personRole Json?    // {tr, en}
+//   isPublished Boolean @default(true) @map("is_published")
+//   publishedAt DateTime @default(now()) @map("published_at")
+//   @@index([isPublished, publishedAt])
+//   @@map("case_studies")
+// }
+//
+// model ROIRequest {
+//   id            String   @id @default(cuid())
+//   email         String?
+//   restaurantName String? @map("restaurant_name")
+//   tables        Int?
+//   avgTicket     Decimal? @db.Decimal(10, 2) @map("avg_ticket")
+//   noShowRate    Float?   @map("no_show_rate")
+//   projection    Json?    // computed ROI numbers snapshot
+//   ip            String?
+//   createdAt     DateTime @default(now()) @map("created_at")
+//   @@index([email, createdAt])
+//   @@map("roi_requests")
+// }
+//
+// model HelpArticle {
+//   id         String   @id @default(cuid())
+//   slug       String   @unique
+//   locale     String   @default("tr")  // tr | en
+//   category   String   // getting-started | qr | billing | admin | ...
+//   title      String
+//   excerpt    String?  @db.Text
+//   body       String   @db.Text        // markdown or rendered HTML
+//   searchTags String[] @map("search_tags")
+//   isPublished Boolean @default(true) @map("is_published")
+//   order      Int      @default(0)
+//   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+//   @@index([locale, category, order])
+//   @@index([isPublished, updatedAt])
+//   @@map("help_articles")
+// }
+//
+// model CareerApplication {
+//   id         String   @id @default(cuid())
+//   name       String
+//   email      String
+//   roleSlug   String?  @map("role_slug")     // 'frontend' | 'growth' | ...
+//   message    String?  @db.Text
+//   portfolio  String?                        // URL
+//   attachment String?                        // supabase storage path / data URL
+//   locale     String   @default("tr")
+//   ip         String?
+//   createdAt  DateTime @default(now())       @map("created_at")
+//   status     String   @default("new")       // new | reviewed | shortlisted | rejected
+//   @@index([roleSlug, createdAt])
+//   @@index([status, createdAt])
+//   @@map("career_applications")
+// }
 // ─────────────────────────────────────────────────────────────────────
 
 import { NextResponse } from 'next/server';

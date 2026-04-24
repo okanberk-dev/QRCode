@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Locale } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
+import NewsletterSignup from './NewsletterSignup';
 import { getSiteSettings } from '@/lib/site-settings';
 
 interface MarketingFooterProps {
@@ -20,18 +21,125 @@ interface MarketingFooterProps {
   };
 }
 
+const SOCIAL = [
+  { label: 'X', href: 'https://x.com/buaze', bg: '#000' },
+  { label: 'in', href: 'https://linkedin.com/company/buaze', bg: '#0A66C2' },
+  { label: 'IG', href: 'https://instagram.com/buazerating', bg: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)' },
+  { label: 'YT', href: 'https://youtube.com/@buaze', bg: '#FF0000' },
+];
+
+/**
+ * Premium footer — matches `.design/site/site-premium.jsx` line 200 (PremiumFooter):
+ * ECG divider + newsletter capture + 4-col link grid + live "all systems
+ * operational" dot on the bottom rail.
+ */
 export default async function MarketingFooter({ locale, t }: MarketingFooterProps) {
   const base = `/${locale}`;
   const s = await getSiteSettings();
+  const isTr = locale === 'tr';
+
+  const cols: { title: string; items: { label: string; href: string; badge?: string }[] }[] = [
+    {
+      title: isTr ? 'Ürün' : 'Product',
+      items: [
+        { label: isTr ? 'QR Stüdyosu' : 'QR Studio', href: `${base}/solutions/qr-generator` },
+        { label: 'AI Co-Pilot', href: `${base}/features/ai-copilot` },
+        { label: isTr ? 'Yorum Yönetimi' : 'Review Management', href: `${base}/features` },
+        { label: isTr ? 'Analitik & Raporlar' : 'Analytics & Reports', href: `${base}/features` },
+        { label: isTr ? 'Entegrasyonlar' : 'Integrations', href: `${base}/integrations` },
+        { label: 'API & Webhook', href: '/admin/api' },
+      ],
+    },
+    {
+      title: isTr ? 'Çözümler' : 'Solutions',
+      items: [
+        { label: isTr ? 'Restoran & Kafe' : 'Restaurant & Café', href: `${base}/solutions/restaurants` },
+        { label: isTr ? 'Paket Servis' : 'Delivery', href: `${base}/solutions/delivery` },
+        { label: isTr ? 'Otel' : 'Hotel', href: `${base}/solutions/hotels` },
+        { label: isTr ? 'Klinik' : 'Clinic', href: `${base}/solutions/healthcare` },
+        { label: isTr ? 'Hukuk Ofisi' : 'Legal', href: `${base}/solutions/law-firms` },
+        { label: isTr ? 'Güzellik & Spa' : 'Beauty & Spa', href: `${base}/solutions/beauty-salon` },
+        { label: isTr ? 'Tüm 14 sektör →' : 'All 14 sectors →', href: `${base}/solutions` },
+      ],
+    },
+    {
+      title: isTr ? 'Şirket' : 'Company',
+      items: [
+        { label: isTr ? 'Hakkımızda' : 'About', href: `${base}/about` },
+        { label: isTr ? 'Müşteri hikayeleri' : 'Customer stories', href: `${base}/customer-stories` },
+        { label: isTr ? 'Vaka çalışmaları' : 'Case studies', href: `${base}/case-study/kadikoy-bistro` },
+        { label: 'Blog', href: `${base}/blog` },
+        { label: isTr ? 'Kariyer' : 'Careers', href: `${base}/careers`, badge: isTr ? '5 POZİSYON' : '5 ROLES' },
+        { label: isTr ? 'İletişim' : 'Contact', href: `${base}/contact` },
+      ],
+    },
+    {
+      title: isTr ? 'Kaynaklar' : 'Resources',
+      items: [
+        { label: isTr ? 'Yardım merkezi' : 'Help center', href: `${base}/help` },
+        { label: isTr ? 'SSS' : 'FAQ', href: `${base}/faq` },
+        { label: isTr ? 'ROI hesaplayıcı' : 'ROI calculator', href: `${base}/roi` },
+        { label: isTr ? 'Karşılaştır' : 'Compare', href: `${base}/compare` },
+        { label: isTr ? 'Ücretsiz QR üret' : 'Free QR generator', href: `${base}/solutions/qr-generator`, badge: isTr ? 'ÜCRETSİZ' : 'FREE' },
+        { label: isTr ? 'Fiyatlandırma' : 'Pricing', href: `${base}/pricing` },
+      ],
+    },
+  ];
 
   return (
-    <footer className="bg-[#0A0A0A] pt-16 pb-8 px-5 sm:px-8 text-white border-t border-white/5">
-      <div className="max-w-[1200px] mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10 mb-14">
-          {/* Col 1: Brand */}
-          <div className="sm:col-span-2 md:col-span-1 min-w-0">
-            <Link href={base} className="flex items-center gap-2 mb-5 group inline-flex">
-              <BuazeLogo size={28} variant="on-dark" imageUrl={s.logoUrl} className="opacity-90 group-hover:opacity-100 transition-opacity" />
+    <footer className="bg-[#0A0A0A] text-white">
+      {/* ECG divider — animated lime heartbeat line */}
+      <div className="relative h-14 overflow-hidden border-t border-[#1F1F1F]">
+        <svg
+          viewBox="0 0 1440 56"
+          preserveAspectRatio="none"
+          className="absolute inset-0 h-full w-full"
+          aria-hidden="true"
+        >
+          <path
+            d="M0 28 L200 28 L240 8 L280 48 L320 18 L360 38 L500 28 L700 28 L740 8 L780 48 L820 18 L860 38 L1000 28 L1200 28 L1240 8 L1280 48 L1320 18 L1360 38 L1440 28"
+            fill="none"
+            stroke="#C6F24E"
+            strokeWidth="2"
+            opacity="0.5"
+            style={{ strokeDasharray: 2000, strokeDashoffset: 2000, animation: 'ecgDraw 3s ease-out forwards' }}
+          />
+        </svg>
+      </div>
+
+      {/* Newsletter capture */}
+      <div className="border-b border-[#1F1F1F] px-5 py-10 sm:px-10 sm:py-12">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-6 md:grid-cols-2 md:gap-10">
+          <div>
+            <h3
+              className="text-[26px] font-medium leading-tight tracking-tight sm:text-[32px] md:text-[36px]"
+              style={{ fontFamily: 'var(--font-space-grotesk)' }}
+            >
+              {isTr ? 'Haftalık itibar rehberi. ' : 'Weekly reputation playbook. '}
+              <span className="text-[#C6F24E]">{isTr ? 'Ücretsiz.' : 'Free.'}</span>
+            </h3>
+            <p className="mt-2 text-[13px] text-[#A3A3A3]">
+              {isTr
+                ? 'Google politikaları, QR ipuçları, vaka çalışmaları. Haftada bir, fazla değil.'
+                : 'Google policies, QR tips, case studies. Once a week, never more.'}
+            </p>
+          </div>
+          <NewsletterSignup locale={locale} />
+        </div>
+      </div>
+
+      {/* Link grid */}
+      <div className="px-5 py-12 sm:px-10 sm:py-14">
+        <div className="mx-auto grid max-w-[1240px] grid-cols-2 gap-8 sm:gap-10 lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:gap-8">
+          {/* Brand */}
+          <div className="col-span-2 lg:col-span-1">
+            <Link href={base} className="inline-flex items-center gap-2 group">
+              <BuazeLogo
+                size={32}
+                variant="on-dark"
+                imageUrl={s.logoUrl}
+                className="opacity-90 transition-opacity group-hover:opacity-100"
+              />
               <span
                 className="text-[18px] font-medium tracking-[-0.03em] text-white"
                 style={{ fontFamily: 'var(--font-heading)' }}
@@ -39,110 +147,105 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 buaze<span className="text-[#C6F24E]">.</span>
               </span>
             </Link>
-            <p className="text-white/70 text-[13px] leading-relaxed mb-5">
-              {t.siteDescription || 'Restoranınızın dijital itibarını profesyonelce yönetin.'}
+            <p className="mt-4 max-w-[280px] text-[13px] leading-[1.7] text-[#A3A3A3]">
+              {t.siteDescription ||
+                (isTr
+                  ? 'İşletmeler için dijital itibar platformu. QR ile topla, tek panelden yönet, gerçek zamanlı izle.'
+                  : 'Digital reputation platform for businesses. Collect via QR, manage from one panel, track in real time.')}
             </p>
-
-            {/* Social */}
-            <div className="flex items-center gap-2">
-              <a
-                href="https://instagram.com/buazerating"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram — buazerating"
-                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:bg-[#C6F24E] hover:text-[#0A0A0A] hover:border-[#C6F24E] transition-colors"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+            <div className="mt-5 flex gap-2">
+              {SOCIAL.map((s) => (
+                <a
+                  key={s.label}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={s.label}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[11px] font-semibold text-white transition-transform hover:scale-110"
+                  style={{ background: s.bg, fontFamily: 'var(--font-jetbrains-mono)' }}
                 >
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                </svg>
-              </a>
+                  {s.label}
+                </a>
+              ))}
+            </div>
+            {/* Trust micro-row */}
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/40 bg-[#C6F24E]/10 px-2.5 py-1">
+                <span className="text-[#C6F24E]">★</span>
+                <span className="pulse-eyebrow text-[#C6F24E]">
+                  {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
+                </span>
+              </span>
+              <span className="pulse-eyebrow rounded-full border border-[#1F1F1F] px-2.5 py-1 text-[#A3A3A3]">
+                KVKK · GDPR
+              </span>
             </div>
           </div>
 
-          {/* Col 2: Product */}
-          <div>
-            <h4 className="pulse-eyebrow text-white/60 mb-6">
-              {locale === 'tr' ? 'Ürün' : 'Product'}
-            </h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
-              <li><Link href={`${base}/features`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Özellikler' : 'Features'}</Link></li>
-              <li><Link href={`${base}/solutions`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Çözümler' : 'Solutions'}</Link></li>
-              <li><Link href={`${base}/solutions/delivery`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Paket Servis' : 'Delivery'}</Link></li>
-              <li><Link href={`${base}/solutions/qr-generator`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}</Link></li>
-              <li><Link href={`${base}/integrations`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Entegrasyonlar' : 'Integrations'}</Link></li>
-              <li><Link href={`${base}/how-it-works`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Nasıl Çalışır?' : 'How It Works'}</Link></li>
-              <li><Link href={`${base}/pricing`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Fiyatlandırma' : 'Pricing'}</Link></li>
-              <li><Link href={`${base}/compare`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Karşılaştır' : 'Compare'}</Link></li>
-            </ul>
-          </div>
-
-          {/* Col 3: Discover */}
-          <div>
-            <h4 className="pulse-eyebrow text-white/60 mb-6">
-              {locale === 'tr' ? 'Keşfet' : 'Discover'}
-            </h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
-              <li><Link href={`${base}/customer-stories`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Başarı Hikayeleri' : 'Customer Stories'}</Link></li>
-              <li><Link href={`${base}/roi`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'ROI Hesaplayıcı' : 'ROI Calculator'}</Link></li>
-              <li><Link href={`${base}/blog`} className="hover:text-[#C6F24E] transition-colors">Blog</Link></li>
-              <li><Link href={`${base}/help`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Yardım Merkezi' : 'Help Center'}</Link></li>
-              <li><Link href={`${base}/faq`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'SSS' : 'FAQ'}</Link></li>
-              <li><Link href={`${base}/about`} className="hover:text-[#C6F24E] transition-colors">{t.footer_about}</Link></li>
-              <li><Link href={`${base}/careers`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Kariyer' : 'Careers'}</Link></li>
-              <li><Link href={`${base}/contact`} className="hover:text-[#C6F24E] transition-colors">{t.footer_contact}</Link></li>
-            </ul>
-          </div>
-
-          {/* Col 3: Legal */}
-          <div>
-            <h4 className="pulse-eyebrow text-white/60 mb-6">
-              {locale === 'tr' ? 'Yasal' : 'Legal'}
-            </h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
-              <li><Link href={`${base}/terms`} className="hover:text-[#C6F24E] transition-colors">{t.footer_terms}</Link></li>
-              <li><Link href={`${base}/privacy`} className="hover:text-[#C6F24E] transition-colors">{t.footer_privacy}</Link></li>
-              <li><Link href={`${base}/google-compliance`} className="hover:text-[#C6F24E] transition-colors">{t.footer_google_compliance}</Link></li>
-              <li><Link href={`${base}/cookie`} className="hover:text-[#C6F24E] transition-colors">{t.footer_cookie}</Link></li>
-              {locale === 'tr' && (
-                <li><Link href={`${base}/kvkk`} className="hover:text-[#C6F24E] transition-colors">{t.footer_kvkk}</Link></li>
-              )}
-            </ul>
-          </div>
-
-          {/* Col 4: Platform */}
-          <div>
-            <h4 className="pulse-eyebrow text-white/60 mb-6">Platform</h4>
-            <ul className="space-y-3.5 text-[13px] font-medium text-white/80">
-              <li><Link href={`${base}/auth/login`} className="hover:text-[#C6F24E] transition-colors">{locale === 'tr' ? 'Giriş Yap' : 'Log In'}</Link></li>
-              <li><Link href={`${base}/auth/register`} className="text-[#C6F24E] hover:text-white transition-colors">{locale === 'tr' ? 'Ücretsiz Dene' : 'Try for Free'}</Link></li>
-            </ul>
-          </div>
+          {cols.map((col) => (
+            <div key={col.title}>
+              <h4 className="pulse-eyebrow mb-4 text-[#C6F24E]">{col.title}</h4>
+              <ul className="space-y-2.5">
+                {col.items.map((item) => (
+                  <li key={item.href + item.label}>
+                    <Link
+                      href={item.href}
+                      className="group inline-flex items-center gap-1.5 text-[13px] text-[#A3A3A3] transition-colors hover:text-white"
+                    >
+                      <span>{item.label}</span>
+                      {item.badge && (
+                        <span className="pulse-eyebrow rounded-full bg-[#C6F24E] px-1.5 py-0.5 text-[#0A0A0A]">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
+      </div>
 
-        {/* Bottom */}
-        <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <p className="text-white/60 text-[12px]">
-            © {new Date().getFullYear()} Buaze. {t.footer_copyright}
+      {/* Bottom rail — copyright + legal mini-links + status */}
+      <div className="border-t border-[#1F1F1F] px-5 py-5 sm:px-10">
+        <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-4 text-center lg:flex-row lg:justify-between lg:gap-6 lg:text-left">
+          <p className="pulse-eyebrow text-[#525252]">
+            © {new Date().getFullYear()} BUAZE BİLİŞİM A.Ş. · İSTANBUL
           </p>
-          <div className="flex items-center gap-6">
-             <Link href={`${base}/terms`} className="pulse-eyebrow text-white/60 hover:text-white transition-colors">
-               {locale === 'tr' ? 'Şartlar' : 'Terms'}
-             </Link>
-             <Link href={`${base}/privacy`} className="pulse-eyebrow text-white/60 hover:text-white transition-colors">
-               {locale === 'tr' ? 'Gizlilik' : 'Privacy'}
-             </Link>
+          {/* Legal mini-links — compact bottom-of-funnel surface */}
+          <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            {[
+              { label: isTr ? 'Gizlilik' : 'Privacy', href: `${base}/privacy` },
+              ...(isTr ? [{ label: 'KVKK', href: `${base}/kvkk` }] : []),
+              { label: isTr ? 'Şartlar' : 'Terms', href: `${base}/terms` },
+              { label: isTr ? 'Çerez' : 'Cookies', href: `${base}/cookie` },
+              ...(isTr
+                ? [
+                    { label: 'Açık Rıza', href: `${base}/acik-riza` },
+                    { label: 'Ticari İleti', href: `${base}/ticari-ileti` },
+                  ]
+                : []),
+              { label: isTr ? 'Google Uyumu' : 'Google compliance', href: `${base}/google-compliance` },
+            ].map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="text-[11px] text-[#737373] transition-colors hover:text-white"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#16A34A]" />
+            </span>
+            <span className="text-[12px] text-[#737373]">
+              {isTr ? 'Tüm sistemler çalışıyor' : 'All systems operational'}
+            </span>
           </div>
         </div>
       </div>

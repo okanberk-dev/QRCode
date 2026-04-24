@@ -17,19 +17,19 @@ export default function NotFound() {
 
       <div className="relative z-10 w-full max-w-md mx-auto text-center">
         {/* Sleek 3D-like container */}
-        <div className="bg-white rounded-[32px] p-10 sm:p-12 border border-[#0A0A0A] shadow-md transform hover:-translate-y-2 transition-transform duration-500">
+        <div className="bg-white rounded-3xl p-10 sm:p-12 border border-[#0A0A0A] shadow-md transform hover:-translate-y-2 transition-transform duration-500">
           
           <div className="flex justify-center mb-8">
-            <div className="w-24 h-24 bg-[#0A0A0A] rounded-[24px] flex items-center justify-center border-2 border-white shadow-sm transform rotate-[-3deg] hover:rotate-[3deg] transition-transform">
+            <div className="w-24 h-24 bg-[#0A0A0A] rounded-2xl flex items-center justify-center border-2 border-white shadow-sm transform rotate-[-3deg] hover:rotate-[3deg] transition-transform">
               <Ghost size={48} className="text-[#C6F24E]" strokeWidth={2} />
             </div>
           </div>
           
-          <h1 className="text-[64px] font-extrabold text-[#0A0A0A] leading-none mb-4 tracking-tighter">
+          <h1 className="text-[64px] font-semibold text-[#0A0A0A] leading-none mb-4 tracking-tighter">
             404
           </h1>
           
-          <h2 className="text-[20px] font-extrabold text-[#0A0A0A] mb-4 uppercase tracking-tight">
+          <h2 className="text-[20px] font-semibold text-[#0A0A0A] mb-4 uppercase tracking-tight">
             Sayfa Bulunamadı
           </h2>
           
@@ -39,7 +39,7 @@ export default function NotFound() {
 
           <Link 
             href="/"
-            className="inline-flex items-center justify-center gap-2 w-full px-8 py-4 bg-[#C6F24E] text-[#0A0A0A] text-sm font-extrabold rounded-xl border border-[#0A0A0A] shadow-sm hover:bg-[#C6F24E] transition-all active:translate-y-[4px] active:shadow-none uppercase tracking-widest"
+            className="inline-flex items-center justify-center gap-2 w-full px-8 py-4 bg-[#C6F24E] text-[#0A0A0A] text-sm font-semibold rounded-xl border border-[#0A0A0A] shadow-sm hover:bg-[#C6F24E] transition-all active:translate-y-[4px] active:shadow-none uppercase tracking-widest"
           >
             <ArrowLeft size={18} strokeWidth={2} />
             Ana Sayfaya Dön

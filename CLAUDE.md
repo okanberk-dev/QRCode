@@ -546,3 +546,491 @@ Restoran panelindeki yorum gelen kutularında (`/[locale]/dashboard/feedbacks` +
 
 _Son güncelleme: 2026-04 (üçüncü dalga) — §15 AI Co-Pilot eklendi, §3 depolama mimarisi güncellendi (base64-in-DB), §12 builder'a görsel/logo upload + visibility toggle + reorder perf notları eklendi, §12.4 backend davranışları (cross-category sortOrder + TR price parser), §13.8 analytics admin UI davranışları (refresh, reset, window date, all-time note, mobile chart responsive)._
 
+---
+
+## 16. Claude Design Handoff — Buaze Site Tasarımı (2026-04)
+
+**Kaynak:** Claude Design (claude.ai/design) üzerinden kullanıcının hazırlattığı Pulse marka kimliği + tam site tasarımı.
+
+### 16.1 Tasarım dosyalarının konumu
+
+Tüm tasarım dosyaları `.design/` klasöründe (git-tracked, kaynak referansı olarak saklanıyor):
+
+```
+.design/
+├── buaze-site.html          ← Ana canvas (tüm sayfalar için entry point)
+├── chat1.md                 ← Tasarım geçmişi & karar log'u (ÖNCE OKU)
+├── design-canvas.jsx        ← Canvas layout motoru
+├── pulse/
+│   ├── pulse-tokens.jsx     ← Renk, tipografi, spacing token'ları
+│   ├── pulse-symbols.jsx    ← Logo & sembol SVG varyantları
+│   ├── pulse-artboards-1.jsx ← Marka kimliği artboard'ları (1. parça)
+│   ├── pulse-artboards-2.jsx ← Marka kimliği artboard'ları (2. parça)
+│   ├── pulse-app.jsx        ← Pulse marka sistemi app
+│   └── design-canvas.jsx    ← Pulse canvas
+└── site/
+    ├── site-shared.jsx      ← Ortak nav, footer, illüstrasyonlar
+    ├── site-platforms.jsx   ← Platform logo'ları (Google, Yemeksepeti, Getir, Trendyol GO, Yelp, Tripadvisor...)
+    ├── site-premium.jsx     ← Premium nav/footer v2 (mega-dropdown, mobile hamburger, animated footer)
+    ├── site-homepage-v2.jsx ← Ana sayfa v2 (animasyonlu hero, ECG dashboard, live review ticker, video modal, bento grid)
+    ├── site-homepage-v3.jsx ← Ana sayfa v3 (gerçek buaze.com içeriğine uyarlanmış)
+    ├── site-onboarding-v2.jsx ← 5 adımlı onboarding wizard (tamamen redesign)
+    ├── site-marketing.jsx   ← Marketing sayfaları (fiyatlar, QR, nasıl çalışır, karşılaştır, ROI)
+    ├── site-more.jsx        ← Ekstra sayfalar (entegrasyonlar, müşteri hikayeleri, SSS, yardım, kariyer, yasal)
+    ├── site-admin.jsx       ← Admin panel sayfaları (dashboard, inbox, QR builder, analitik, konumlar, ayarlar)
+    ├── site-pages3.jsx      ← Çözüm sayfaları + sektör detayları + auth
+    ├── site-pages4.jsx      ← Daha fazla sayfa (onboarding, 404, admin ek: kampanya, ekip, fatura, API)
+    └── site-app.jsx         ← Tüm sayfaları bir araya getiren canvas uygulaması
+```
+
+### 16.2 Tasarım kararları & içerik özeti
+
+**Marka:** Pulse kimliği — graphite (#0A0A0A) + lime (#C6F24E) + pure white. Zaten §11'de belgelenmiş.
+
+**Canvas'ta kaç sayfa var:** ~38 sayfa, 5 grup:
+1. **Marketing** — Anasayfa v2/v3, özellikler, AI Co-Pilot, fiyatlar, ROI hesaplayıcı, QR studio, entegrasyonlar, karşılaştır, müşteri hikayeleri, EN uluslararası
+2. **Çözümler** — Restoran, Paket servis (Yemeksepeti/Getir/Trendyol GO logolarıyla), Otel (Booking/Tripadvisor), Klinik, Hukuk, Spa, Perakende
+3. **İçerik** — Blog listesi, blog yazısı, SSS, yardım, hakkımızda, kariyer, iletişim, gizlilik
+4. **Auth** — Kayıt, giriş, şifre sıfırla, onboarding (5 adım), 404
+5. **Admin** — Dashboard, yorum inbox (AI Co-Pilot), QR builder, analitik, konumlar, kampanyalar, ekip, bildirimler, fatura, API/webhook, ayarlar
+
+**Platform entegrasyonları:** TR için Google, Yemeksepeti, Getir, Trendyol GO + EN için Yelp, Tripadvisor, Foursquare, Facebook.
+
+**Animasyonlar:** ECG banner (SVG stroke-dashoffset), live review ticker, AnimCounter (sayı koşma), marquee logo şeridi, heartbeat pulse, social proof toast, video modal, sticky CTA bar.
+
+**Onboarding wizard (5 adım):** İşletme bilgileri → Sektör → Konum → Platform seçimi → QR oluştur → Done screen.
+
+### 16.3 Implementasyon öncelikleri (bir sonraki oturumda)
+
+Kullanıcı "tasarımı geliştirme planına geçeceğiz" dedi. Implementasyon sırası için önerilen yaklaşım:
+
+1. **Marketing anasayfa** (`src/app/[locale]/page.tsx` veya yeni landing) — hero, nav, conversion öğeleri
+2. **Auth sayfaları** (login/register) — Pulse tasarımına uyarla
+3. **Onboarding wizard** — 5 adım, mevcut `src/app/[locale]/onboarding/` route'una bak
+4. **Admin dashboard** — mevcut `src/app/admin/dashboard/` sayfasını Pulse v2 ile güncelle
+5. **Public QR landing** (`/r/[slug]`) — buaze-site.html'deki QR kart tasarımı referans
+
+**ÖNEMLI:** Implementasyon başlamadan kullanıcıdan scope onayı al. Hangi sayfadan başlanacağını sor.
+
+### 16.4 Dikkat edilecekler
+
+- `.design/` klasörü sadece **referans** — bu dosyaları doğrudan `src/`'ye kopyalama, React/Babel prototipleri
+- Renk token'ları zaten `globals.css` `@theme {}` blokunda tanımlı (§11'e bak)
+- Logo SVG → `src/components/marketing/BuazeLogo.tsx` zaten güncel
+- Font'lar zaten yüklü (`src/app/layout.tsx`)
+
+---
+
+## 17. 2026-04 Pulse Redesign Wave — Session Wrap-Up
+
+Tek bir session'da 15 draft PR üretildi (#39 → #53). Bir sonraki oturum bu bölümü okuyunca ne merge edilmesi gerektiğini, hangi component/util/endpoint'in nereye eklendiğini, neyin hâlâ açık known-gap olduğunu görebilsin.
+
+### 17.0 Nerede ne var — hızlı dosya haritası
+
+| Yol | İçerik |
+|---|---|
+| `.design/` (repo kökü) | **Claude Design handoff bundle** — 21 dosya, JSX prototipleri + canonical site HTML. Git-tracked, referans olarak tutulur. `.design/site/*.jsx` (12 artboard grubu) + `.design/pulse/*.jsx` (token + sembol) + `.design/buaze-site.html` + `.design/chat1.md` (design chat geçmişi). Detaylı dosya haritası §16.1'de. |
+| `design.md` (repo kökü) | **Faz log'u** — her faz için "Kapsam / Değişen dosyalar / Backend etkisi / Verification / Sonraki adım" + "Backend açıkları" tablosu. 15 PR'lık zincirin teknik günlüğü. |
+| `CLAUDE.md` (bu dosya) | Proje referansı + her yeni sessionda önce okunur. §1-16 mevcut mimari, §17 bu Pulse redesign dalgasının özeti. |
+| `src/components/marketing/*` | Yeni marketing component'leri (§17.2) |
+| `src/app/globals.css` | Pulse button utility'leri + 5 motion keyframe (§17.3) |
+| `src/app/api/**` | Mevcut 68 API + 9 yeni 501 scaffold (§17.4) |
+| `src/lib/scaffolding.ts` | Henüz eklenmemiş Prisma modelleri için yorum-önerisi blokları + `scaffoldedResponse()` helper'ı |
+| `src/lib/openai.ts` | AI Co-Pilot OpenAI client (§15) |
+
+**Kritik kural:** `.design/*.jsx` React prototipleridir → `src/`'ye **doğrudan kopyalanmaz**. Yalnız referans olarak okunur; Pulse token'lar zaten `globals.css`'te var, font'lar `layout.tsx`'te yüklü.
+
+### 17.1 Draft PR zinciri (merge sırası önemli)
+
+Her PR bir önceki branch'in üzerine açıldı — merge sırayla yapılmalı:
+
+| PR | Başlık | Branch |
+|---|---|---|
+| #39 | docs(design): Phase 0 — baseline + .design bundle + design.md | `claude/design-phase-0-baseline` |
+| #40 | feat(design): Phase 1 — chrome + homepage v3 conversion layer | `claude/design-phase-1-home` |
+| #41 | fix(owner): restaurants list vanished after clicking the mini map | `claude/fix-owner-restaurants-accidental-toggle` |
+| #42 | feat(design): Phase 2 — onboarding 5-step + confetti + 404 | `claude/design-phase-2-auth-onboarding` |
+| #43 | feat(design): Phase 3 — AI Co-Pilot + dynamic case studies + ROI | `claude/design-phase-3-marketing` |
+| #44 | feat(design): Phase 4 — retail sector + TR/design slug aliases + footer | `claude/design-phase-4-solutions` |
+| #45 | feat(design): Phase 5 — content APIs scaffolded | `claude/design-phase-5-content` |
+| #46 | feat(design): Phase 6 — admin core header consistency | `claude/design-phase-6-admin-core` |
+| #47 | feat(design): Phase 7 — API & Webhook page + admin headers | `claude/design-phase-7-admin-advanced` |
+| #48 | feat(design): Phase 8 — public Pulse sweep + design-intent gap fixes | `claude/design-phase-8-public-polish` |
+| #49 | feat(admin): QR page 4-step visual wizard | `claude/post-phase-qr-wizard` |
+| #50 | feat(home): animated v2 hero dashboard | `claude/post-phase-hero-v2` |
+| #51 | feat(chrome): conversion-led IA redesign for header + footer | `claude/post-phase-nav-footer-ia` |
+| #52 | feat(polish): pulse button system + real Unsplash imagery | `claude/post-phase-buttons-imagery` |
+| #53 | fix(ux): onboarding polish + QR pages cleanup + api entry scoped | `claude/post-phase-onboarding-qr-fix` |
+
+**Takip dosyası:** Repo kökünde `design.md` — her faz için "Kapsam / Değişen dosyalar / Backend etkisi / Verification / Sonraki faz" kayıtları + "Backend açıkları" tablosu.
+
+### 17.2 Yeni eklenen marketing component'leri (hepsi client-side)
+
+`src/components/marketing/`:
+
+- `AnimatedCounter.tsx` — IntersectionObserver ile 0→hedefe easeOut tween. `locale` prop'u TR `1.284` / EN `1,284` ayrımı yapar. Phase 1.
+- `MarqueeRow.tsx` — CSS-only horizontal logo marquee + edge mask. Phase 1.
+- `StickyCtaBar.tsx` — 600px scroll sonrası altta koyu "Bugün başla" CTA + session-dismiss. Phase 1.
+- `SocialProofToast.tsx` — 3s → 8s döngüyle TR/EN 5 toast gösterir. Phase 1.
+- `VideoModal.tsx` — sandboxed iframe + ESC/backdrop close + body-scroll lock. Phase 1.
+- `WatchDemoButton.tsx` — hero'daki "Demo izle" client sarıcısı (VideoModal'ı açar). Phase 1.
+- `HomeIndustryTabs.tsx` — 8 sektör tab'ı + per-sektör body copy. Phase 1.
+- `NewsletterSignup.tsx` — footer email capture, 501'i "başarı" sayar. Phase 1.
+- `LiveReviewTicker.tsx` — homepage dark panel'de 4 review 2.8s rotate. Phase 8.
+- `HomeHeroDashboard.tsx` — v2 hero'daki animasyonlu canlı dashboard kartı (chart stroke-dashoffset reveal + AnimCounter + floating +184% badge + staggered review rows). Post-phase #50.
+
+`src/components/admin/`:
+
+- `SuperadminBlock.tsx` — workspace-scoped admin sayfalarını (`/admin/{billing,campaigns,team,notifications,settings}`) superadmin için "Yönetici için değil" kartıyla gate'ler. Phase 5.
+
+### 17.3 Yeni Pulse utility class'ları (`src/app/globals.css`)
+
+**Button system** (Post-phase #52):
+- `.pulse-btn-primary` — lime `#C6F24E`, hover `#A8D62E`, active scale 0.98
+- `.pulse-btn-dark` — graphite `#0A0A0A`, hover `#1A1A1A`
+- `.pulse-btn-ghost` — transparent, hover border `#0A0A0A`
+- `.pulse-card-hover` — `translateY(-3px)` lift + soft shadow + border highlight
+
+**Motion keyframes:**
+- `@keyframes slideIn` + `.animate-slide-in` — sticky CTA / toast giriş (Phase 0)
+- `@keyframes marqueeSlide` + `.animate-marquee` — logo strip (Phase 0)
+- `@keyframes ecgDraw` — footer lime heartbeat line reveal (Phase 1)
+- `@keyframes confettiFly` — onboarding finish burst, `--cf-x/y/rot` per-particle custom properties (Phase 2)
+- `@keyframes bzFloat` + `.bz-float` — hero +184% badge ±6px Y oscillation (Post-phase #50)
+
+Tüm animasyonlar `prefers-reduced-motion: reduce` altında devre dışı (tek bir `@media` bloğu hepsini kapsar).
+
+### 17.4 Yeni scaffolded API endpoint'leri (501 döner)
+
+Hepsi `scaffolding.ts` helper'ını kullanır. Prisma model önerileri scaffolding.ts başındaki yorum bloğunda tanımlı.
+
+| Endpoint | Method | Prisma model (öneri) | Faz |
+|---|---|---|---|
+| `/api/newsletter` | POST | `NewsletterSubscriber` | Phase 1 |
+| `/api/admin/analytics/export` | GET | `AnalyticsExport` | Phase 5 |
+| `/api/roi/save` | POST | `ROIRequest` | Phase 3 |
+| `/api/help/articles` | GET | `HelpArticle` | Phase 5 |
+| `/api/careers/apply` | POST | `CareerApplication` | Phase 5 |
+| `/api/billing/summary` | GET | `BillingSubscription` | Phase 5 |
+| `/api/billing/invoices` | GET | `BillingInvoice` | Phase 5 |
+| `/api/onboarding/state` | GET/PATCH | `OnboardingProgress` | Phase 5 |
+| `/api/onboarding/complete` | POST | `OnboardingProgress` | Phase 5 |
+
+**OpenAI / AI Co-Pilot canlı:** `POST /api/feedback/[id]/suggest-reply` gerçek OpenAI gpt-4o-mini'ye bağlı (rate-limit 30/dk/actor + IDOR koruması + template fallback). §15'e bak.
+
+### 17.5 Yeni UI route'ları
+
+**Public:**
+- `/features/ai-copilot` — AI Co-Pilot ürün sayfası (Phase 3)
+- `/case-study/[slug]` — dinamik vaka çalışmaları (3 mock: `kadikoy-bistro`, `hotel-nora`, `derma-klinik`) (Phase 3)
+- `/[locale]/onboarding` — 5-step wizard + confetti (Phase 2, polished Post-phase #53)
+
+**Solutions aliasları (7 redirect + 1 yeni):**
+- `/solutions/retail` yeni sektör sayfası
+- `/solutions/{hotel,clinic,legal,spa,otel,klinik,hukuk,perakende}` → kanonik slug'lara redirect
+
+**Admin workspace-scoped (SuperadminBlock'lu):**
+- `/admin/reviews`, `/admin/analytics`, `/admin/settings`, `/admin/campaigns`, `/admin/team`, `/admin/billing`, `/admin/notifications`, `/admin/api`
+
+### 17.6 IA değişiklikleri
+
+**Header (`MarketingNavbarClient.tsx`, tamamen yeniden yazıldı Post-phase #51):**
+- 5 top entry: Ürün / Çözümler / Müşteriler / Kaynaklar / Fiyatlandırma
+- 3 mega-dropdown (Ürün + Çözümler + Kaynaklar) + 1 mini dropdown (Müşteriler)
+- Logo yanında "2.400+ işletme" trust chip
+- Ürün dropdown'unda AI Co-Pilot lime featured card + inline Demo izle
+
+**Footer (`MarketingFooter.tsx`, 4 → 5 kolon):**
+- Yeni **Resources** kolonu (Help / FAQ / ROI / Compare / Ücretsiz QR / Pricing)
+- Ürün kolonuna "Review Management" + "API & Webhook" eklendi
+- Company kolonuna "Vaka çalışmaları" + "Kariyer · 5 POZİSYON" badge
+- Brand kolonuna "★ 2.400+ işletme" + "KVKK · GDPR" trust pill'leri
+- Bottom rail: 7-link legal mini-strip (Gizlilik / KVKK / Şartlar / Çerez / Açık-Rıza / Ticari-İleti / Google Uyumu)
+
+### 17.7 Gerçek görseller (Post-phase #52)
+
+Unsplash CC0 fotoğrafları 3 stratejik yerde:
+- **About → Takım**: 4 inisiyal placeholder → portrait fotoğraflar (CEO/CTO/Product/Growth), hover scale 1.02
+- **Customer Stories grid**: 6 düz renkli stat bloğu → gerçek mekan fotoğrafları + dark gradient + metric overlay + `pulse-card-hover`
+- **Case Study `/[slug]`**: 3 mock için magazine-style cover photo (16:9 → 21:9 → 3:1 responsive) + sektör eyebrow + brand h1
+
+`next.config.ts` zaten `remotePatterns: [{ hostname: '**' }]` — Unsplash config eklemedi. `<img>` tag kullanıldı (next/image değil) — external CC0 asset'ler için optimizer hop'unu atlamak için.
+
+### 17.8 PlatformLogo iyileştirmeleri (Post-phase #53)
+
+`src/components/marketing/PlatformLogo.tsx`:
+- **Yemeksepeti**: abstract üçgenler → "ys" monogram (brand kırmızı)
+- **Trendyol GO**: jenerik T + nokta → "ty" + beyaz "GO" puck (brand turuncu)
+- Diğer 14 platform (Google, Getir, Migros Hemen, Yelp, Tripadvisor, Booking, Trustpilot, Facebook, Foursquare, OpenTable, Uber Eats, DoorDash, Instagram, Zomato) dokunulmadı
+
+### 17.9 Backend güvenliği (dokunulmayan)
+
+Hiçbir post-phase PR bu bölümü etkilemedi:
+- **68 API route** (`src/app/api/**` mevcut) — sadece yeni scaffold'lar eklendi
+- **Prisma schema** — sıfır değişiklik; tüm yeni modeller `scaffolding.ts` yorum bloğunda önerilir
+- **Auth helpers** (`src/lib/auth.ts`, `panel-access.ts`) — dokunulmadı
+- **IDOR**: `getScopedRestaurantIds` + `canAccessRestaurant` her yeni API'de uygulanıyor
+- **Rate-limit**: `rateLimit()` helper'ı newsletter/careers/roi'de per-IP, openai'de per-actor
+- **JWT cookie flow**: `MarketingNavbar.tsx` server wrapper'da `verifyJwt` korundu
+- **OpenAI anahtarı**: `src/lib/openai.ts` + `process.env.OPENAI_API_KEY`, client bundle'a sızmıyor
+
+### 17.10 Bilinen açık gap'ler (production öncesi)
+
+`design.md` "Backend açıkları" tablosunda detaylı — özet (2026-04 beşinci dalga'dan sonra güncel durum):
+
+1. ~~**Sektör bespoke content** — CaseStudy modeli ve CMS bağlantısı.~~ **§18.1'de kısmen kapatıldı** (CaseStudy modeli + seed + DB-backed `/case-study/[slug]`). SolutionPageLayout ↔ CaseStudy `sector` alanı ile "Related" bağlama henüz yapılmadı.
+2. ~~**501 scaffold'larının gerçek backend'i**~~ — **§18'de 7/9 kapatıldı**. 9 scaffolddan 7'si artık Prisma + mevcut provider'lara bağlı (Resend, Supabase Storage). Sadece billing tarafı yarım kaldı (POS entegrasyonu yok).
+3. **Sanal POS entegrasyonu** — Billing read-side (§18.3) canlı ama `POST /api/billing/checkout` ve `POST /api/billing/webhook/iyzico` henüz yok. Iyzico/Stripe seçimi + provider hesabı + webhook secret'ı gerekiyor.
+4. **Mobile QA cihazda** — dev server 200/307 doğruladı, ama 375/768/1280 breakpoint'lerde görsel QA gerçek cihazda yapılmalı.
+
+### 17.11 Design handoff referans dosyaları
+
+`.design/` klasörü (21 dosya, branch `save-design-files-moe8c`'den Phase 0'da alındı, §16'da dosya haritası):
+- `site/site-homepage-v2.jsx` — hero dashboard animasyon referansı (HeroDashboard, AnimCounter, LiveTicker)
+- `site/site-homepage-v3.jsx` — canonical copy (trust tickler, 3-step, ticker)
+- `site/site-premium.jsx` — PremiumNav / PremiumFooter / ConversionLayer (sticky CTA + toast)
+- `site/site-onboarding-v2.jsx` — 5-step canonical + OnboardingProgress + Confetti
+- `site/site-admin.jsx` — AdminShell, AdminDashboard, AdminReviews, AdminQRBuilder, AdminAnalytics, AdminLocations, AdminSettings
+- `site/site-pages3.jsx`, `site-pages4.jsx` — sektör + legal + admin advanced
+
+**Dikkat:** `.design/*.jsx` React prototipleridir, `src/`'ye direkt kopyalanmaz — yalnız referans olarak okunur.
+
+---
+
+## 18. Backend Wiring Wave — §17.10 kapanışı (2026-04)
+
+Session özeti: CLAUDE.md §17.10'daki üç gap'ten ikisi (CaseStudy + 9 scaffold) dalga dalga bağlandı. Branch: `claude/connect-prisma-providers-3ytkP`. Üç commit:
+
+| Commit | Kapsam |
+|---|---|
+| `6f1a05a` | Wave 1 — CaseStudy + Onboarding + Newsletter + ROI |
+| `a048615` | Wave 2 — HelpArticle + Admin Analytics CSV + Careers |
+| `f8a8f1c` | Wave 3 kısmi — Billing read-side (POS YOK) |
+
+**Stratejik karar:** Hiçbir yeni external provider eklenmedi. Zaten kurulu olan Resend (mail) + Supabase Storage (dosya) + OpenAI (AI Co-Pilot) yeterli. POS (Iyzico/Stripe) kasıtlı olarak ertelendi (§18.3'e bak).
+
+### 18.1 Wave 1 — Hızlı win'ler (commit `6f1a05a`)
+
+Tek dış bağımlılık yok; sadece Prisma + mevcut helper'lar.
+
+**Yeni Prisma modelleri:**
+- `CaseStudy` — `slug @unique, brand, sector, sectorEn, location, heroImage, heroTr/En, subtitleTr/En, stats Json, highlights Json, quoteTr/En, personName, personRole Json, isPublished, publishedAt`
+- `OnboardingProgress` — `userId @id, step Int, data Json?, completedAt` (UI kontratına hizalandı; scaffolding'deki 4 boolean kolon bu wizard'a uymuyordu)
+- `NewsletterSubscriber` — `email @unique, locale, source, ip, createdAt, unsubscribedAt`
+- `ROIRequest` — `email, restaurantName, tables, avgTicket Decimal, noShowRate, projection Json, ip, createdAt`
+
+**Yeni/değişen endpoint'ler:**
+- `GET /api/case-studies[?slug=]` — list veya tek kayıt; `isPublished=true` filtresi.
+- `src/app/[locale]/case-study/[slug]/page.tsx` — inline `STUDIES` array silindi, `prisma.caseStudy.findUnique` + `notFound()`; JSX 1:1 korundu.
+- `prisma/seed-case-studies.ts` — 3 mock (`kadikoy-bistro`, `hotel-nora`, `derma-klinik`) idempotent `upsert`. **Manuel çalıştır:** `npx ts-node prisma/seed-case-studies.ts` (migration file kullanılmaz).
+- `GET/PATCH /api/onboarding/state` — `getPanelActorFromRequest` ile scoped; `prisma.onboardingProgress.upsert` pattern.
+- `POST /api/onboarding/complete` — `completedAt = new Date()`; actor email varsa Resend ile welcome mail (`sendMail`).
+- `POST /api/newsletter` — `prisma.newsletterSubscriber.upsert(email)` (duplicate-safe, unsubscribed olanı yeniden aktifleştirir); mevcut `rateLimit()` korundu.
+- `POST /api/roi/save` — insert + `NOTIFICATION_EMAIL` env set ise sales inbox'a mail; `Prisma.Decimal` ile fiyat alanı.
+
+### 18.2 Wave 2 — Orta karmaşıklık (commit `a048615`)
+
+**Yeni Prisma modelleri:**
+- `HelpArticle` — `slug + locale @@unique, category, title, excerpt, body Text, searchTags String[], isPublished, order`
+- `CareerApplication` — `name, email, roleSlug, message, portfolio, attachment, locale, ip, status, createdAt`
+
+**Yeni/değişen endpoint'ler:**
+- `GET /api/help/articles?locale=&category=&slug=` — kategoriye göre gruplu liste VEYA tek makale (`slug` + `locale` bileşik key ile). Seed yok — mevcut `/help` sayfası statik hub. Admin CRUD sonra.
+- `GET /api/admin/analytics/export?format=csv&range=7d|30d|90d|all` — **stream-only CSV** (`AnalyticsExport` model eklenmedi, premature). `getScopedRestaurantIds` ile IDOR; restoran başına toplam/ort./düşük/yüksek + 4 platform dağılımı. UTF-8 BOM + `attachment` Content-Disposition.
+- `POST /api/careers/apply` — JSON body (multipart değil; frontend henüz form göndermemiş durumda). Data URL attachment varsa (`^data:mime;base64,...`) → `uploadToStorage('careers/...')` ile Supabase Storage'a kaydeder, URL döner. 5 MB limit; PDF/DOC/DOCX/PNG/JPG. `isStorageConfigured()` false ise 503. `CAREERS_INBOX_EMAIL` (fallback `NOTIFICATION_EMAIL`) ile HR mail'i.
+
+**Dikkat:** `HelpArticle` arrayField (`searchTags String[]`) sadece PostgreSQL'de native destek alır — Supabase Postgres kullanıldığı için sorun yok.
+
+### 18.3 Wave 3 — Billing read-side (commit `f8a8f1c`, POS YOK)
+
+Kullanıcı sanal POS entegrasyonunu bilinçli ertelemek istedi. Read-side canlı — POS bağlanınca webhook bu tablolara yazacak, UI değişmeden çalışacak.
+
+**Yeni Prisma modelleri:**
+- `BillingSubscription` — `userId @id, plan, status, trialEndsAt, renewsAt, providerRef @unique, paymentBrand, paymentLast4`. `providerRef @unique` webhook idempotency için.
+- `BillingInvoice` — `id, userId, amount Decimal(10,2), currency @default("TRY"), status, providerRef @unique, pdfUrl, issuedAt`.
+
+**Yeni sabitler (`src/lib/constants.ts`):**
+- `PLAN_QUOTA: Record<string, number>` — `trial: 500, monthly: 2000, yearly: 50000, enterprise: 999999` (Infinity UI progress bar için kötü; sabit yüksek tavan).
+- `PLAN_LABELS: Record<string, {tr, en}>` — UI rozetleri için.
+
+**Değişen endpoint'ler:**
+- `GET /api/billing/summary` — `resolveOwnerUserId(actor)` ile owner userId çözer (user → actor.id; manager → `restaurant.userId`). `BillingSubscription` source-of-truth; yoksa `User.plan` + `trialEndsAt` fallback (trial user). Quota: ay başından beri owner'ın tüm restoranlarındaki `Feedback.count`. Response shape admin UI'ın beklediği `{ plan, planLabel, status, trialDaysLeft, renewsAt, quota, paymentMethod }`.
+- `GET /api/billing/invoices` — `userId`-scoped `findMany`; response'u admin UI'ın beklediği `{date, amount, status, url}` shape'ine map eder (`issuedAt → date`, `pdfUrl → url`).
+
+**Henüz YOK (POS geldiğinde):**
+- `POST /api/billing/checkout` — Iyzico subscription create + redirect URL.
+- `POST /api/billing/webhook/iyzico` — imza doğrula → `subscription + invoice` `upsert` (`providerRef @unique` ile idempotent).
+- Env: `IYZICO_API_KEY`, `IYZICO_SECRET_KEY`, `IYZICO_BASE_URL` (sandbox/prod), `IYZICO_WEBHOOK_SECRET`. Stripe parite ikinci iterasyon.
+
+### 18.4 Schema sync & dağıtım
+
+- 4 wave'in tamamı `prisma/schema.prisma`'ya toplam **10 yeni model** ekledi: `CaseStudy`, `OnboardingProgress`, `NewsletterSubscriber`, `ROIRequest`, `HelpArticle`, `CareerApplication`, `BillingSubscription`, `BillingInvoice`.
+- Migration dosyası **üretilmedi** (CLAUDE.md §7 kuralı) — deploy sırasında `package.json::build` scripti `prisma db push --accept-data-loss` çalıştırır, Supabase'teki şema otomatik senkronize olur.
+- Local dev için: `npx prisma generate` yeterli (bu session'da yapıldı, TypeScript tipleri hazır).
+- Case study seed **manuel çalıştırılmalı:** `npx ts-node prisma/seed-case-studies.ts` (veya `tsx prisma/seed-case-studies.ts`). Deploy akışına eklenmedi — 3 kayıt küçük, bir kere çalışır.
+
+### 18.5 Kasten atlanmış kararlar (scope disiplini)
+
+Aşağıdakilerin hiçbiri **eklenmedi** — her biri ayrı iş kalemi:
+
+- Admin CRUD (CaseStudy, HelpArticle, CareerApplication için) — mevcut seed/scaffolded read yeterli
+- `AnalyticsExport` modeli + Supabase Storage job path — stream-only ilk sürüm
+- Resend Audiences sync (newsletter subs) — DB source of truth; Wave 2.4 opsiyonel katmanı yapılmadı
+- `shared helper` dört DB-insert endpoint için — benzer görünse de şemalar farklı, 3+ tekrar kuralına henüz ulaşılmadı
+- `zod` / `shadcn/ui` — proje kararına sadık, manuel validation + Tailwind arbitrary values
+- Stripe parite — Iyzico TR öncelik, Stripe ikinci iterasyon
+- Plan enforcement (quota aşımı durumunda feedback POST'u reddet) — şu an read-only yerinde; write-time enforcement ayrı scope
+
+### 18.6 Yeni env var'ları (hiçbiri zorunlu değil, hepsi opsiyonel)
+
+- `CAREERS_INBOX_EMAIL` — HR başvuru maili için; yoksa `NOTIFICATION_EMAIL` fallback.
+- `NOTIFICATION_EMAIL` — zaten mevcut; ROI save ve Careers apply kullanır.
+- `RESEND_API_KEY` — zaten mevcut; newsletter/welcome/ROI/careers mail gönderimleri bunu kullanır.
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET` — zaten mevcut; careers attachment upload bunu kullanır.
+
+POS için gerekli env'ler (Wave 3.5+): yukarıda §18.3'te listelendi.
+
+### 18.7 Verification checklist
+
+POS'suz halde çalıştığı doğrulandı:
+- [x] `npx tsc --noEmit` — sadece 2 pre-existing hata (globals.css + menu analytics JSON tip), yeni kod temiz
+- [x] `npx prisma generate` — 10 yeni model tipli
+- [ ] `prisma db push` — local DB'de çalışmadı (bu sandbox'ta Supabase bağlantısı yok); Vercel deploy'da otomatik uygulanır
+- [ ] Seed — deploy sonrası `npx ts-node prisma/seed-case-studies.ts` manuel çalıştırılmalı
+- [ ] Mobile QA — dev server'da 375/768/1280 breakpoint'leri kontrol edilmeli
+
+---
+
+_Son güncelleme: 2026-04 (beşinci dalga) — §18 Backend Wiring Wave eklendi (3 commit, 10 yeni Prisma model, 9'dan 7 scaffold bağlandı, POS kasıtlı ertelendi). §17.10 gap listesi güncellendi. Daha önceki güncelleme §17 Pulse Redesign idi._
+
+---
+
+## 19. Admin & Owner Panel Alignment Wave (2026-04 altıncı dalga)
+
+Session özeti: kullanıcının "admin + restoran paneli tasarım dosyalarındaki gibi değil, bazı yerler çalışmıyor (anasayfa istatistik), bazı form'lar 'Coming soon' diyor, yorumlara yanıt mail atmıyor, AI taslak üretmiyor" şikayetleri dalga dalga kapatıldı. Branch: `claude/connect-prisma-providers-3ytkP` (§18'in üstüne 6 commit daha).
+
+**Commit zinciri** (sırayla merge edilmeli):
+
+| Commit | Başlık | İçerik |
+|---|---|---|
+| `b18a2fa` | feat(faz-1): fix analytics page data mapping + dark NPS scoreboard | `/admin/analytics` broken API mapping bug'ı + koyu NPS kartı |
+| `534605a` | feat(faz-2): wire reviews reply/flag/assign to real Prisma models | 3 yeni model + 3 endpoint + inbox UI state |
+| `c8b25df` | feat(faz-3): wire team/campaigns/notifications to real Prisma models | 3 yeni model + 5 endpoint + form UI |
+| `2a4c7e6` | fix(reviews): repair AI suggest-reply + send replies via Resend | AI bug fix + Resend email delivery |
+| (bu commit) | fix(feedback): resilient list query + CLAUDE.md §19 | Schema mismatch fallback + docs |
+
+### 19.1 Faz 1 — Analytics & Dashboard (commit `b18a2fa`)
+
+**Kritik bulgu:** `/admin/analytics` sayfası broken'dı. `stats.total / stats.avg / stats.byRating / stats.byPlatform` okuyordu ama `/api/feedback/stats` `totalCount / avgRating / distribution / platformDistribution` döner. Çoğu kart 0 gösteriyordu. "Backend aggregation gelince aktif olur" placeholder metni bir özelliği değil bir bug'ı örtüyordu.
+
+**Dokunulan tek dosya:** `src/app/admin/analytics/page.tsx` (komple yeniden yazıldı).
+
+- Doğru API field mapping
+- **Koyu NPS scoreboard** (tasarım referansı: `.design/site/site-admin.jsx:525-681`): büyük lime NPS skoru, tone-aware label (Mükemmel/İyi/Ortalama/Dikkat), destekçi-nötr-eleştiren progress barları, dönem başından delta
+- Inline SVG 7-day trend chart (mevcut `stats.trends` data'sını kullanır, yeni endpoint yok)
+- Tag bulutu (`stats.wordCloud` frekansına göre font-size scaling, lime chip)
+- Puan dağılımı renk kodlu: 4-5★ lime, 3★ amber, 1-2★ kırmızı
+- "TODO disclaimer" silindi
+
+### 19.2 Faz 2 — Reviews aksiyonları (commit `534605a`)
+
+**3 yeni Prisma modeli** (scaffolding.ts bloklarından şemaya alındı):
+- `FeedbackReply` — feedbackId + authorUserId + body + channel + status
+- `FeedbackFlag` — feedbackId `@unique` + reason + flaggedBy
+- `FeedbackAssignment` — feedbackId `@unique` + assigneeId + assignedById
+
+**3 endpoint canlı backend'e** (hepsi `requireFeedbackAccess` helper'ı ile IDOR korumalı):
+- `POST /api/feedback/[id]/reply` — insert + `GET` yanıt listesi
+- `POST /api/feedback/[id]/flag` — upsert; `DELETE` kaldırır
+- `POST /api/feedback/[id]/assign` — upsert; `'self'` sentinel actor'a atar
+
+**Feedback list endpoint değişti:** `GET /api/feedback` artık `flag` + `_count.replies` + `assignment` join'leriyle `isReplied / isFlagged / isAssigned / assigneeId / customerName / customerEmail` flag'lerini döndürür.
+
+**Counts endpoint** gerçek `new` (unreplied) + `replied` buckets'ları hesaplar.
+
+**Reviews UI** (admin + owner):
+- Liste satırında + detay header'ında **YANITLANDI / DİKKAT / ATANDI** badge'leri
+- Her aksiyon için ayrı loading spinner; in-flight iken buton disabled
+- Success'te local row + counts diff'lenir (tam refresh yok)
+- Tone-aware notice: success=lime, error=kırmızı, info=nötr
+- Flag butonu toggle (POST/DELETE)
+
+### 19.3 Faz 3 — Admin formlarını canlı backend'e (commit `c8b25df`)
+
+**3 yeni Prisma modeli:**
+- `TeamMember` — `(ownerId + email) @@unique`; role (`owner/manager/staff/viewer`), status (`invited/active/revoked`), locations Json, lastSeenAt
+- `Campaign` — userId + opsiyonel restaurantId + name + placement (`table/receipt/door/pack`) + template (`lime/white/dark/minimal`) + color + status (`draft/live/archived`)
+- `NotificationPreference` — userId `@id`; lowRatingEmail + dailyDigestEmail + weeklyReport + slackWebhook
+
+**5 endpoint canlı:**
+- `GET/POST /api/team` + `PATCH/DELETE /api/team/[id]` — owner-scoped (invite için `actor.source === 'user'` şartı)
+- `GET/POST /api/campaigns` + `GET/PATCH/DELETE /api/campaigns/[id]` — `canAccessRestaurant` ile opsiyonel restaurant attach
+- `GET/PUT /api/notifications` — upsert; slackWebhook http(s) URL doğrulama
+
+**Yeni helper:** `resolveOwnerUserId(actor)` → `src/lib/panel-access.ts`. 4 endpoint kullandığı için extract edildi (§7 3+ tekrar kuralı). `billing/summary` ve `billing/invoices` de refactor edildi.
+
+**UI:** Team / Campaigns / Notifications sayfalarındaki DEMO fallback'ları kaldırıldı, success'te local state güncellenir, hata payload'ı görünür.
+
+### 19.4 AI Co-Pilot ve Resend email fix (commit `2a4c7e6`)
+
+**Bug 1 — AI taslak oluşturmuyor:**
+`/api/feedback/[id]/suggest-reply` Prisma select'te `customerName: true` istiyordu ama Feedback modelinde alan `name`. Prisma query reddediyor, endpoint 500 dönüyor, UI sessizce template'e düşüyordu. **Fix:** `name: true` → `feedback.name` referansları güncellendi. Artık `OPENAI_API_KEY` set ise gerçek OpenAI yanıtı gelir.
+
+**Bug 2 — Yanıt müşteriye email olarak gitmiyor:**
+- `POST /api/feedback/[id]/reply` artık `channel: 'email'` veya `sendEmail: true` flag'ı kabul ediyor
+- Müşteri `feedback.email` bırakmışsa: Pulse temalı Resend e-postası (lime greeting-card block + orijinal yorum alıntı) `sendMail` helper'ı ile gönderilir
+- `FeedbackReply.status` transitions `pending → sent / failed` (Resend response'una göre)
+- Response `{ email: { status, reason, requested, hasCustomerEmail } }` → UI doğru badge'i flash eder
+- `replyTo`: restoranın `notificationEmail`'i (varsa) — müşteri cevap verirse işletmeye gelir
+
+**4-5★ davranışı:** Yüksek puan bırakanlar Google'a yönlendirildiği için çoğu durumda `feedback.email` null. UI bunu net gösterir: "Müşteri e-posta bırakmamış (yüksek puanlılar Google'a yönlendirildiği için bu beklenir) — yanıt sadece dahili kayıt". Buton da "Dahili kaydet" olarak değişir.
+
+**UI değişikliği — her iki panel** (`/admin/reviews` + `/[locale]/dashboard/feedbacks`):
+- E-posta varsa: `☑ Müşteriye e-posta gönder · ahmet@...` checkbox'ı (default on)
+- E-posta yoksa: info satırı + buton "Dahili kaydet"
+- Send butonu: email modunda Mail ikonu + "E-posta ile gönder"; dahili modda Send + "Dahili kaydet"
+- Post-send notice: `sent → lime "E-posta gönderildi: ..."`, `failed → kırmızı`, `skipped → lime "Yanıt kaydedildi (dahili)"`
+
+### 19.5 Feedback list resilience (bu commit)
+
+**Kök neden:** Faz 2'de `GET /api/feedback` list endpoint'i `include: { flag, _count: { replies }, assignment }` ile join'lendi. Eğer `prisma db push` henüz çalışmamış bir ortamda (preview deploy, stale local DB) bu tablolar yok → query throw → **tüm feedback listesi çöker** → admin dashboard + reviews sayfaları boş, "bazı sayfalar açılmıyor" algısı oluşur.
+
+**Çözüm:**
+- `/api/feedback` GET: primary join'li query bir try/catch içinde; başarısızsa **join'siz fallback** çalışır, satırlar gösterilir ama `isReplied/isFlagged/isAssigned` false döner
+- `/api/feedback/counts`: `replied` sayacı `try/catch` ile sarıldı, hata durumunda 0 döner ama `all + attention` gösterilmeye devam eder
+- Sayfalar DB schema sync edilene kadar "degrade gracefully" çalışır
+
+### 19.6 Deploy & "neden göremiyorum" notu
+
+Bu session'ın tüm değişiklikleri `claude/connect-prisma-providers-3ytkP` branch'inde. Kullanıcı `buaze.com` (production main) veya başka bir branch deploy'una bakarken bu değişiklikleri görmez. Değişikliklerin canlıda görünmesi için:
+
+1. **Vercel preview deploy** — branch push'u Vercel otomatik preview üretir; preview URL'i (genellikle `claude-connect-prisma-providers-3ytkp-<team>.vercel.app`) ziyaret et.
+2. **Production merge** — `main`'e merge + Vercel production deploy. Bu otomatik olarak `prisma db push --accept-data-loss && next build` çalıştırır.
+3. **Local dev** — `npm install && npx prisma generate && npx prisma db push && npm run dev`. `DATABASE_URL + DIRECT_URL` env'i gerekli (§14.1).
+
+Son session'dan bu yana şemaya toplam **10 + 6 = 16 yeni Prisma modeli** eklendi (§18 + §19 birleşik: CaseStudy, OnboardingProgress, NewsletterSubscriber, ROIRequest, HelpArticle, CareerApplication, BillingSubscription, BillingInvoice, FeedbackReply, FeedbackFlag, FeedbackAssignment, TeamMember, Campaign, NotificationPreference). **`prisma db push` çalışmadan** bu tablolara dokunan endpoint'ler 500 döner. Vercel build script'i bunu otomatik halleder ama local dev'de manuel.
+
+### 19.7 Session'da kasten atlanmış
+
+- **Admin CRUD** (CaseStudy, HelpArticle, CareerApplication yazma UI) — seed yeterli
+- **Stripe/Iyzico POS** — kullanıcı bilinçli ertelendi, billing sadece read-side
+- **Mobile QA** — deploy sonrası cihazda test edilmeli (Faz 5)
+- **`.design/*.jsx` prototiplerinin birebir kopyalanması** — proje Pulse token'lara hizalı, ama bazı `.design` detayları (örn. konum mini-map pulse animasyonu, tag bulutu gerçek NLP) scope dışı bırakıldı
+
+### 19.8 Deployment verification checklist
+
+Deploy sonrası kontrol:
+
+- [ ] `/admin/dashboard` yükleniyor, istatistik kartları gerçek sayı gösteriyor
+- [ ] `/admin/analytics` NPS scoreboard + trend + tag bulutu doluyor (boş DB'de dahi NPS=0 + "veri yok" placeholder)
+- [ ] `/admin/reviews` liste açılıyor, badge'ler görünüyor; reply gönderince DB'de `feedback_replies` satırı oluşuyor; müşteri email varsa Resend log'da gönderim mesajı
+- [ ] `/admin/team` davet POST sonrası satır listede; PATCH ile rol değişiyor
+- [ ] `/admin/campaigns` yeni kampanya oluşturulur
+- [ ] `/admin/notifications` toggle kaydedilir, refresh sonrası durum korunur
+- [ ] `/[locale]/dashboard/feedbacks` owner panelinde aynı yanıt + email akışı çalışır
+- [ ] Browser console: `prisma db push run?` warning'i **yoksa** tablolar canlı; **varsa** deploy db push başarısız, tekrar deploy tetikle
+
+---
+
+_Son güncelleme: 2026-04 (altıncı dalga) — §19 Admin & Owner Panel Alignment eklendi (5 commit: analytics fix + reviews actions + admin forms + AI/email fix + resilience). §18'in üstüne 6 yeni Prisma modeli, 8 yeni endpoint canlı, feedback list join'siz fallback. §17.10 gap listesi §17.4 scaffoldları dahil kapatıldı (geriye sadece sanal POS kaldı)._
+

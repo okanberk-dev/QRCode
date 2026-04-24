@@ -121,14 +121,20 @@ export default function SiteSettingsPage() {
       {/* ─── Header ─── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-[28px] sm:text-[36px] font-semibold text-[#0A0A0A] tracking-tight">Site Ayarları</h1>
-          <p className="text-[14px] text-[#1A1A1A] font-medium mt-1">
+          <p className="pulse-eyebrow text-[#737373]">PANEL / SİTE AYARLARI</p>
+          <h1
+            className="mt-1 text-[28px] sm:text-[36px] font-medium text-[#0A0A0A] tracking-tight"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            Site Ayarları
+          </h1>
+          <p className="text-[14px] text-[#525252] mt-1.5 max-w-[560px]">
             SEO metadatası, Open Graph görseli, logo ve favicon — her değişiklik tüm site genelinde yansır.
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#C6F24E]/10 border border-[#C6F24E]/30 rounded-full">
-          <Sparkles size={14} className="text-[#C6F24E]" />
-          <span className="text-[11px] font-semibold text-[#0A0A0A] ">Superadmin</span>
+        <div className="flex items-center gap-2 rounded-full border border-[#C6F24E]/60 bg-[#EAF9B8] px-3 py-1.5">
+          <Sparkles size={14} className="text-[#0A0A0A]" />
+          <span className="pulse-eyebrow text-[#0A0A0A]">SUPERADMIN</span>
         </div>
       </div>
 

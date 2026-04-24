@@ -14,10 +14,6 @@ interface TeamMember {
   lastSeenAt?: string | null;
 }
 
-const DEMO_TEAM: TeamMember[] = [
-  { id: 'me', email: 'owner@buaze.com', name: 'Çalışma Alanı Sahibi', role: 'owner', status: 'active', lastSeenAt: new Date().toISOString() },
-];
-
 const ROLE_STYLE: Record<TeamMember['role'], { tr: string; en: string; cls: string }> = {
   owner: { tr: 'SAHİP', en: 'OWNER', cls: 'bg-[#0A0A0A] text-white' },
   manager: { tr: 'YÖNETİCİ', en: 'MANAGER', cls: 'bg-[#EAF9B8] text-[#0A0A0A]' },
@@ -55,12 +51,10 @@ function AdminTeamBody() {
         const res = await fetch('/api/team');
         if (res.ok) {
           const data = await res.json();
-          setMembers((data.data as TeamMember[]) ?? DEMO_TEAM);
-        } else {
-          setMembers(DEMO_TEAM);
+          setMembers((data.data as TeamMember[]) ?? []);
         }
       } catch {
-        setMembers(DEMO_TEAM);
+        /* empty state will show */
       }
       setLoading(false);
     })();
@@ -80,12 +74,25 @@ function AdminTeamBody() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
-      if (res.status === 501) flash(isTr ? 'Davet bekliyor — backend yakında' : 'Invite queued — backend coming');
-      else if (res.ok) {
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.member) {
+          setMembers((list) => {
+            const existing = list.find((m) => m.id === data.member.id);
+            return existing
+              ? list.map((m) => (m.id === data.member.id ? data.member : m))
+              : [data.member, ...list];
+          });
+        }
         flash(isTr ? 'Davet gönderildi' : 'Invite sent');
         setInviteEmail('');
         setShowInvite(false);
-      } else flash(isTr ? 'Hata' : 'Error');
+      } else if (res.status === 403) {
+        flash(isTr ? 'Yetkisiz — sadece işletme sahibi davet edebilir' : 'Only the workspace owner can invite');
+      } else {
+        const body = await res.json().catch(() => ({}));
+        flash(isTr ? `Hata: ${body.error ?? res.status}` : `Error: ${body.error ?? res.status}`);
+      }
     } catch {
       flash(isTr ? 'Ağ hatası' : 'Network error');
     }

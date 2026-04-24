@@ -403,27 +403,11 @@ export default function DashboardQrPage() {
                 </div>
               </label>
 
-              {/* Yerleşim pills — frontend only, backend to be wired later */}
-              <div className="space-y-2 sm:col-span-2">
-                <span className="pulse-eyebrow text-[#737373]">
-                  {locale === 'tr' ? 'YERLEŞİM' : 'PLACEMENT'}
-                </span>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {(locale === 'tr' ? ['Masa', 'Fatura', 'Kapı', 'Paket'] : ['Table', 'Receipt', 'Door', 'Pack']).map(
-                    (label, i) => (
-                      <button
-                        type="button"
-                        key={label}
-                        className={`rounded-lg px-2 py-2 text-[12px] font-medium transition-colors ${
-                          i === 0 ? 'bg-[#0A0A0A] text-white' : 'bg-[#F5F5F5] text-[#0A0A0A] hover:bg-[#EDEDED]'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ),
-                  )}
-                </div>
-              </div>
+              {/* Removed: dead "Yerleşim" pills (Masa/Fatura/Kapı/Paket).
+                  No backend support; the pills had no onClick and confused
+                  users into thinking they were selecting a template. The
+                  Masa/Konum input below already covers the meaningful
+                  placement decision per the QR URL contract. */}
 
               <div className="space-y-2">
                 <span className="pulse-eyebrow text-[#737373]">{copy.table}</span>
@@ -598,42 +582,12 @@ export default function DashboardQrPage() {
               </div>
             </div>
 
-            {/* Template thumbnails — visual only, backend to be wired later */}
-            <div>
-              <span className="pulse-eyebrow text-[#737373]">
-                {locale === 'tr' ? 'ŞABLON' : 'TEMPLATE'}
-              </span>
-              <div className="mt-2 grid grid-cols-4 gap-2">
-                {[
-                  { bg: '#C6F24E', fg: '#0A0A0A', l: locale === 'tr' ? 'Lime' : 'Lime', active: true },
-                  { bg: '#FFFFFF', fg: '#0A0A0A', l: locale === 'tr' ? 'Beyaz' : 'White' },
-                  { bg: '#0A0A0A', fg: '#C6F24E', l: locale === 'tr' ? 'Koyu' : 'Dark' },
-                  { bg: '#FAFAFA', fg: '#0A0A0A', l: locale === 'tr' ? 'Minimal' : 'Minimal' },
-                ].map((x) => (
-                  <div
-                    key={x.l}
-                    className={`aspect-[3/4] rounded-lg p-2.5 flex flex-col items-center justify-between cursor-pointer ${
-                      x.active ? 'ring-2 ring-[#0A0A0A]' : 'ring-1 ring-[#EDEDED]'
-                    }`}
-                    style={{ background: x.bg }}
-                  >
-                    <div
-                      className="text-[11px] font-semibold"
-                      style={{ color: x.fg, fontFamily: 'var(--font-heading)' }}
-                    >
-                      {locale === 'tr' ? 'Yorum' : 'Review'}
-                    </div>
-                    <div className="h-8 w-8 rounded" style={{ background: x.fg }} />
-                    <div
-                      className="pulse-eyebrow"
-                      style={{ color: x.fg, opacity: 0.6 }}
-                    >
-                      {x.l.toUpperCase()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Removed: dead "Şablon" thumbnail grid (Lime/Beyaz/Koyu/Minimal).
+                These cards looked clickable but had no onClick + no backend
+                template field on the QR generation endpoint. Real renk
+                kontrolü zaten yukarıdaki "Marka Rengi / Özel Renk" toggle'ı
+                üzerinden çalışıyor. UX-açısı: kullanıcı şablon seçtiğini
+                sandığında preview değişmiyordu → kafa karışıklığı. */}
           </section>
 
           {/* Target URL + Actions row */}
@@ -656,18 +610,20 @@ export default function DashboardQrPage() {
             <button
               type="button"
               onClick={() => downloadQr('svg')}
-              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-3 text-[13px] font-medium text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors"
+              disabled={generating || !selectedId}
+              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-3 text-[13px] font-medium text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors disabled:opacity-50"
             >
-              {locale === 'tr' ? 'Taslak kaydet' : 'Save draft'}
+              {generating ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
+              {locale === 'tr' ? 'SVG indir' : 'Download SVG'}
             </button>
             <button
               type="button"
               onClick={() => downloadQr('png')}
               disabled={generating || !selectedId}
-              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-3 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors disabled:opacity-50"
+              className="pulse-btn-dark inline-flex items-center justify-center gap-1.5 rounded-full disabled:opacity-50"
             >
               {generating ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
-              {locale === 'tr' ? 'Yayınla & indir →' : 'Publish & download →'}
+              {locale === 'tr' ? 'PNG indir' : 'Download PNG'}
             </button>
           </div>
 

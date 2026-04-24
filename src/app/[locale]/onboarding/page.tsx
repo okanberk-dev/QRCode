@@ -1,17 +1,50 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, use, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Check, Loader2, MapPin, QrCode, UserPlus, Users } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Compass,
+  Loader2,
+  MapPin,
+  QrCode,
+  Sparkles,
+  Store,
+  Users,
+} from 'lucide-react';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import type { Locale } from '@/lib/translations';
 
-type StepId = 'profile' | 'placement' | 'platforms' | 'team';
+type StepId = 'profile' | 'sector' | 'location' | 'platforms' | 'qr';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
 }
+
+interface OnboardingState {
+  bizName: string;
+  contactName: string;
+  phone: string;
+  sector: string;
+  locationName: string;
+  city: string;
+  platforms: string[];
+  qrTemplate: 'lime' | 'dark' | 'white' | 'minimal';
+}
+
+const INITIAL: OnboardingState = {
+  bizName: '',
+  contactName: '',
+  phone: '',
+  sector: '',
+  locationName: '',
+  city: '',
+  platforms: ['google'],
+  qrTemplate: 'lime',
+};
 
 export default function OnboardingPage({ params }: Props) {
   const { locale } = use(params);
@@ -19,15 +52,21 @@ export default function OnboardingPage({ params }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<StepId>('profile');
   const [saving, setSaving] = useState(false);
+  const [data, setData] = useState<OnboardingState>(INITIAL);
 
   const steps: { id: StepId; label: { tr: string; en: string }; icon: React.ComponentType<{ size?: number }> }[] = [
-    { id: 'profile', label: { tr: 'İşletme bilgileri', en: 'Business details' }, icon: MapPin },
-    { id: 'placement', label: { tr: 'QR yerleştir', en: 'Place QR' }, icon: QrCode },
+    { id: 'profile', label: { tr: 'İşletme', en: 'Business' }, icon: Store },
+    { id: 'sector', label: { tr: 'Sektör', en: 'Sector' }, icon: Compass },
+    { id: 'location', label: { tr: 'Konum', en: 'Location' }, icon: MapPin },
     { id: 'platforms', label: { tr: 'Platformlar', en: 'Platforms' }, icon: Users },
-    { id: 'team', label: { tr: 'Takım davet', en: 'Invite team' }, icon: UserPlus },
+    { id: 'qr', label: { tr: 'İlk QR', en: 'First QR' }, icon: QrCode },
   ];
 
   const currentIdx = steps.findIndex((s) => s.id === step);
+  const isLast = currentIdx === steps.length - 1;
+
+  const update = <K extends keyof OnboardingState>(key: K, value: OnboardingState[K]) =>
+    setData((prev) => ({ ...prev, [key]: value }));
 
   const goNext = async () => {
     setSaving(true);
@@ -35,20 +74,23 @@ export default function OnboardingPage({ params }: Props) {
       await fetch('/api/onboarding/state', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ step: currentIdx + 2 }),
+        body: JSON.stringify({ step: currentIdx + 2, data }),
       });
     } catch {
       /* ignore */
     }
     setSaving(false);
     if (currentIdx < steps.length - 1) setStep(steps[currentIdx + 1].id);
-    else await finish();
   };
 
   const finish = async () => {
     setSaving(true);
     try {
-      await fetch('/api/onboarding/complete', { method: 'POST' });
+      await fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(data),
+      });
     } catch {
       /* ignore */
     }
@@ -56,193 +98,514 @@ export default function OnboardingPage({ params }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-[#EDEDED]">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+    <div className="flex min-h-screen flex-col bg-[#FAFAFA]">
+      {/* Top bar — logo + skip */}
+      <header className="border-b border-[#EDEDED] bg-white">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">
           <Link href={`/${locale}`} className="flex items-center gap-2">
             <BuazeLogo size={28} />
-            <span className="text-[17px] font-medium tracking-[-0.03em] text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+            <span
+              className="text-[17px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
               buaze<span className="text-[#C6F24E]">.</span>
             </span>
           </Link>
-          <button
-            onClick={finish}
-            className="text-[12px] font-medium text-[#737373] hover:text-[#0A0A0A]"
-          >
-            {isTr ? 'Sonra yaparım' : 'Skip for now'}
-          </button>
+          <div className="flex items-center gap-4">
+            <span className="hidden sm:inline text-[13px] text-[#A3A3A3]">
+              {isTr ? 'Adım' : 'Step'} {currentIdx + 1} / {steps.length}
+            </span>
+            <button
+              onClick={finish}
+              className="text-[12px] font-semibold text-[#0A0A0A] hover:text-[#525252]"
+            >
+              {isTr ? 'Sonra tamamla' : 'Finish later'}
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:py-16">
-        <div className="mb-8 flex items-center gap-2 text-[11px]">
-          {steps.map((s, i) => (
-            <div key={s.id} className="flex flex-1 items-center gap-2">
-              <div
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-                  i < currentIdx
-                    ? 'bg-[#0A0A0A] text-white'
-                    : i === currentIdx
-                      ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                      : 'bg-[#F5F5F5] text-[#737373]'
-                }`}
-              >
-                {i < currentIdx ? <Check size={12} /> : <span className="pulse-eyebrow">{String(i + 1).padStart(2, '0')}</span>}
+      {/* Progress rail — big 40px circles with labels (matches design v2) */}
+      <div className="border-b border-[#EDEDED] bg-white px-4 py-5 sm:px-8 sm:py-6">
+        <div className="mx-auto flex max-w-[680px] items-start">
+          {steps.map((s, i) => {
+            const done = i < currentIdx;
+            const active = i === currentIdx;
+            return (
+              <div key={s.id} className="flex min-w-0 flex-1 items-start">
+                <div className="flex min-w-0 flex-col items-center gap-2 flex-shrink-0">
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-semibold transition-all ${
+                      done
+                        ? 'bg-[#C6F24E] text-[#0A0A0A]'
+                        : active
+                          ? 'bg-[#0A0A0A] text-[#C6F24E] ring-[6px] ring-[#C6F24E]/25'
+                          : 'border-2 border-[#EDEDED] bg-[#F5F5F5] text-[#A3A3A3]'
+                    }`}
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {done ? <Check size={16} strokeWidth={2.5} /> : i + 1}
+                  </div>
+                  <span
+                    className={`pulse-eyebrow whitespace-nowrap ${
+                      active
+                        ? 'text-[#0A0A0A]'
+                        : done
+                          ? 'text-[#16A34A]'
+                          : 'text-[#A3A3A3]'
+                    }`}
+                  >
+                    {s.label[isTr ? 'tr' : 'en']}
+                  </span>
+                </div>
+                {i < steps.length - 1 && (
+                  <div
+                    className={`mt-[18px] h-0.5 flex-1 transition-colors ${
+                      done ? 'bg-[#C6F24E]' : 'bg-[#EDEDED]'
+                    }`}
+                  />
+                )}
               </div>
-              {i < steps.length - 1 && (
-                <div className={`h-0.5 flex-1 ${i < currentIdx ? 'bg-[#0A0A0A]' : 'bg-[#EDEDED]'}`} />
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
+      </div>
 
-        <p className="pulse-eyebrow text-[#737373]">
-          {isTr ? 'ADIM' : 'STEP'} {currentIdx + 1} / {steps.length}
-        </p>
-        <h1
-          className="mt-2 text-[34px] font-medium leading-tight tracking-tight text-[#0A0A0A] sm:text-[44px]"
-          style={{ fontFamily: 'var(--font-heading)' }}
-        >
-          {step === 'profile' && (isTr ? 'İşletmeni tanıyalım.' : 'Tell us about your business.')}
-          {step === 'placement' && (isTr ? 'QR’ı nereye koyacaksın?' : 'Where will the QR live?')}
-          {step === 'platforms' && (isTr ? 'Hangi platformlar?' : 'Which platforms?')}
-          {step === 'team' && (isTr ? 'Takımını davet et.' : 'Invite your team.')}
-        </h1>
+      {/* Step body */}
+      <main className="flex-1 px-4 py-10 sm:px-8 sm:py-14 pb-32">
+        <div className="mx-auto max-w-3xl">
+          <h1
+            className="text-[32px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A] sm:text-[42px]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {step === 'profile' && (isTr ? 'İşletmenizi tanıyalım.' : "Tell us about your business.")}
+            {step === 'sector' && (isTr ? 'Hangi sektördesiniz?' : 'Which sector?')}
+            {step === 'location' && (isTr ? 'İlk konumunuzu ekleyin.' : 'Add your first location.')}
+            {step === 'platforms' && (isTr ? 'Hangi platformlar?' : 'Which platforms?')}
+            {step === 'qr' && (isTr ? 'İlk QR kodunuz.' : 'Your first QR code.')}
+          </h1>
 
-        <div className="mt-8 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-8">
-          {step === 'profile' && <ProfileStep isTr={isTr} />}
-          {step === 'placement' && <PlacementStep isTr={isTr} />}
-          {step === 'platforms' && <PlatformStep isTr={isTr} />}
-          {step === 'team' && <TeamStep isTr={isTr} />}
+          <div className="mt-8 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-8">
+            {step === 'profile' && <ProfileStep isTr={isTr} data={data} update={update} />}
+            {step === 'sector' && <SectorStep isTr={isTr} data={data} update={update} />}
+            {step === 'location' && <LocationStep isTr={isTr} data={data} update={update} />}
+            {step === 'platforms' && <PlatformStep isTr={isTr} data={data} update={update} />}
+            {step === 'qr' && <QrStep isTr={isTr} data={data} update={update} />}
+          </div>
         </div>
+      </main>
 
-        <div className="mt-6 flex items-center justify-between">
+      {/* Sticky bottom nav — Geri + Devam/Yayınla */}
+      <div className="sticky bottom-0 border-t border-[#EDEDED] bg-white px-4 py-4 sm:px-8">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
           <button
             onClick={() => currentIdx > 0 && setStep(steps[currentIdx - 1].id)}
             disabled={currentIdx === 0}
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#525252] hover:text-[#0A0A0A] disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E5E5] px-5 py-2.5 text-[13px] font-medium text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ArrowLeft size={14} /> {isTr ? 'Geri' : 'Back'}
           </button>
-          <button
-            onClick={goNext}
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-5 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-50"
-          >
-            {saving && <Loader2 size={13} className="animate-spin" />}
-            {currentIdx === steps.length - 1
-              ? isTr
-                ? 'Paneli aç'
-                : 'Open panel'
-              : isTr
-                ? 'Devam'
-                : 'Continue'}
-            {!saving && currentIdx < steps.length - 1 && <ArrowRight size={13} />}
-          </button>
+          {isLast ? (
+            <FinishButton isTr={isTr} onFinish={finish} saving={saving} />
+          ) : (
+            <button
+              onClick={goNext}
+              disabled={saving}
+              className="pulse-btn-dark inline-flex items-center gap-1.5 rounded-full disabled:opacity-50"
+            >
+              {saving && <Loader2 size={13} className="animate-spin" />}
+              {isTr ? 'Devam' : 'Continue'}
+              {!saving && <ArrowRight size={13} />}
+            </button>
+          )}
         </div>
-      </main>
-    </div>
-  );
-}
-
-function ProfileStep({ isTr }: { isTr: boolean }) {
-  return (
-    <div className="space-y-4">
-      <FormRow
-        label={isTr ? 'İşletme adı' : 'Business name'}
-        input={<input placeholder="Kadıköy Bistro" className="w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]" />}
-      />
-      <FormRow
-        label={isTr ? 'Kategori' : 'Category'}
-        input={
-          <select className="w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]">
-            <option>{isTr ? 'Restoran' : 'Restaurant'}</option>
-            <option>{isTr ? 'Kafe' : 'Cafe'}</option>
-            <option>{isTr ? 'Otel' : 'Hotel'}</option>
-            <option>{isTr ? 'Berber / Güzellik' : 'Salon / Beauty'}</option>
-          </select>
-        }
-      />
-      <FormRow
-        label={isTr ? 'Konum' : 'Location'}
-        input={<input placeholder="İstanbul, Türkiye" className="w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]" />}
-      />
-    </div>
-  );
-}
-
-function PlacementStep({ isTr }: { isTr: boolean }) {
-  const opts = [
-    { id: 'table', tr: 'Masa QR', en: 'Table QR', desc: { tr: 'Her masaya tek QR', en: 'One QR per table' } },
-    { id: 'receipt', tr: 'Fatura QR', en: 'Receipt QR', desc: { tr: 'Fatura / fişte', en: 'On bill / receipt' } },
-    { id: 'door', tr: 'Kapı çıkış', en: 'Door exit', desc: { tr: 'Kapı çıkışında sticker', en: 'Sticker at exit' } },
-    { id: 'pack', tr: 'Paket', en: 'Package', desc: { tr: 'Paket siparişte', en: 'On delivery pack' } },
-  ];
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {opts.map((o) => (
-        <button
-          key={o.id}
-          className="rounded-xl border border-[#EDEDED] bg-white p-4 text-left hover:border-[#0A0A0A]"
-        >
-          <p className="text-[14px] font-semibold text-[#0A0A0A]">{o[isTr ? 'tr' : 'en']}</p>
-          <p className="mt-1 text-[12px] text-[#737373]">{o.desc[isTr ? 'tr' : 'en']}</p>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function PlatformStep({ isTr }: { isTr: boolean }) {
-  const platforms = [
-    { id: 'google', label: 'Google' },
-    { id: 'yemeksepeti', label: 'Yemeksepeti' },
-    { id: 'getir', label: 'Getir' },
-    { id: 'trendyol_go', label: 'Trendyol GO' },
-  ];
-  return (
-    <div className="space-y-3">
-      <p className="text-[13px] text-[#525252]">
-        {isTr
-          ? 'Yüksek puanları hangi platforma yönlendirelim? İstediğin kadar seç.'
-          : 'Which platforms should we route high ratings to? Pick as many as you like.'}
-      </p>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {platforms.map((p) => (
-          <label
-            key={p.id}
-            className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] hover:border-[#0A0A0A]"
-          >
-            <input type="checkbox" defaultChecked={p.id === 'google'} className="h-4 w-4 rounded border-[#EDEDED]" />
-            <span className="font-medium text-[#0A0A0A]">{p.label}</span>
-          </label>
-        ))}
       </div>
     </div>
   );
 }
 
-function TeamStep({ isTr }: { isTr: boolean }) {
+// ─── Step 1: Profile ─────────────────────────────────────────
+function ProfileStep({
+  isTr,
+  data,
+  update,
+}: {
+  isTr: boolean;
+  data: OnboardingState;
+  update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
+}) {
   return (
     <div className="space-y-4">
       <p className="text-[13px] text-[#525252]">
         {isTr
-          ? 'Yorumlara yanıt verecek veya paneli kullanacak takım arkadaşlarının e-postalarını ekleyebilirsin. Sonra da davet edebilirsin.'
-          : 'Add teammates who will reply to reviews or use the panel. You can also do this later.'}
+          ? 'Bu bilgiler QR kartlarında ve müşteri ekranında görünecek.'
+          : 'Used on QR cards and on the customer-facing screens.'}
       </p>
-      <input placeholder="teammate@company.com" className="w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]" />
-      <p className="text-[12px] text-[#737373]">
-        {isTr ? 'Virgülle ayırarak birden fazla e-posta ekleyebilirsin.' : 'Separate multiple emails with commas.'}
-      </p>
+      <FormRow label={isTr ? 'İşletme adı' : 'Business name'}>
+        <input
+          value={data.bizName}
+          onChange={(e) => update('bizName', e.target.value)}
+          placeholder={isTr ? 'örn. Ark Bistro' : 'e.g. Ark Bistro'}
+          className={inputCls}
+        />
+      </FormRow>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormRow label={isTr ? 'İletişim kişisi' : 'Contact name'}>
+          <input
+            value={data.contactName}
+            onChange={(e) => update('contactName', e.target.value)}
+            placeholder="Emre Kaya"
+            className={inputCls}
+          />
+        </FormRow>
+        <FormRow label={isTr ? 'Telefon' : 'Phone'}>
+          <input
+            value={data.phone}
+            onChange={(e) => update('phone', e.target.value)}
+            placeholder="+90 5XX XXX XX XX"
+            className={inputCls}
+          />
+        </FormRow>
+      </div>
     </div>
   );
 }
 
-function FormRow({ label, input }: { label: string; input: React.ReactNode }) {
+// ─── Step 2: Sector ──────────────────────────────────────────
+function SectorStep({
+  isTr,
+  data,
+  update,
+}: {
+  isTr: boolean;
+  data: OnboardingState;
+  update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
+}) {
+  const sectors = [
+    { id: 'restoran', label: { tr: 'Restoran & Kafe', en: 'Restaurant & Café' }, sub: { tr: 'Masa, fatura ve paket QR', en: 'Table, receipt and pack QR' } },
+    { id: 'paket', label: { tr: 'Paket Servis', en: 'Delivery' }, sub: { tr: 'Yemeksepeti, Getir, Trendyol GO', en: 'Yemeksepeti, Getir, Trendyol GO' } },
+    { id: 'otel', label: { tr: 'Otel & Konaklama', en: 'Hotel & Hospitality' }, sub: { tr: 'Oda QR, Booking, Tripadvisor', en: 'Room QR, Booking, Tripadvisor' } },
+    { id: 'klinik', label: { tr: 'Klinik & Sağlık', en: 'Clinic & Health' }, sub: { tr: 'KVKK uyumlu anket akışı', en: 'KVKK-compliant survey flow' } },
+    { id: 'hukuk', label: { tr: 'Hukuk Ofisi', en: 'Legal' }, sub: { tr: 'Danışmanlık sonrası yorum', en: 'Post-consultation review' } },
+    { id: 'spa', label: { tr: 'Güzellik & Spa', en: 'Beauty & Spa' }, sub: { tr: 'Randevu sonrası, usta bazlı', en: 'Post-appointment, per-specialist' } },
+    { id: 'perakende', label: { tr: 'Perakende', en: 'Retail' }, sub: { tr: 'Fiş altı QR, çok mağaza', en: 'QR on receipt, multi-store' } },
+    { id: 'fitness', label: { tr: 'Spor & Fitness', en: 'Sports & Fitness' }, sub: { tr: 'Seans sonrası geri bildirim', en: 'Post-session feedback' } },
+    { id: 'egitim', label: { tr: 'Eğitim', en: 'Education' }, sub: { tr: 'Kurs ve seminer değerlendirmesi', en: 'Course and seminar review' } },
+    { id: 'diger', label: { tr: 'Diğer', en: 'Other' }, sub: { tr: 'Sektörünü özelleştir', en: 'Tell us more later' } },
+  ];
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {sectors.map((s) => {
+        const selected = data.sector === s.id;
+        return (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => update('sector', s.id)}
+            className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-all ${
+              selected
+                ? 'border-[#0A0A0A] bg-[#EAF9B8]'
+                : 'border-[#EDEDED] bg-white hover:border-[#0A0A0A]'
+            }`}
+          >
+            <div className="min-w-0 flex-1">
+              <p
+                className="text-[15px] font-semibold text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                {s.label[isTr ? 'tr' : 'en']}
+              </p>
+              <p className="mt-0.5 text-[12px] text-[#737373]">{s.sub[isTr ? 'tr' : 'en']}</p>
+            </div>
+            {selected && (
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+                <Check size={12} strokeWidth={3} />
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Step 3: Location ────────────────────────────────────────
+function LocationStep({
+  isTr,
+  data,
+  update,
+}: {
+  isTr: boolean;
+  data: OnboardingState;
+  update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <p className="text-[13px] text-[#525252]">
+        {isTr
+          ? 'Her konum için ayrı QR ve analitik. Şube eklemek sonra Ayarlar → Konumlar menüsünden.'
+          : 'Each location gets its own QR and analytics. Add more later in Settings → Locations.'}
+      </p>
+      <FormRow label={isTr ? 'Konum adı' : 'Location name'}>
+        <input
+          value={data.locationName}
+          onChange={(e) => update('locationName', e.target.value)}
+          placeholder={isTr ? 'örn. Kadıköy Şubesi' : 'e.g. Kadıköy branch'}
+          className={inputCls}
+        />
+      </FormRow>
+      <FormRow label={isTr ? 'Şehir' : 'City'}>
+        <input
+          value={data.city}
+          onChange={(e) => update('city', e.target.value)}
+          placeholder={isTr ? 'İstanbul' : 'Istanbul'}
+          className={inputCls}
+        />
+      </FormRow>
+      <div className="flex items-start gap-3 rounded-xl bg-[#EAF9B8] px-4 py-3 text-[12px] text-[#0A0A0A]">
+        <MapPin size={14} className="mt-0.5 shrink-0" />
+        <span>
+          {isTr
+            ? 'Birden fazla şubeniz varsa endişelenmeyin — ilk kurulum sonrası kolayca ekleyebilirsiniz.'
+            : 'Got more than one branch? No stress — add them after the first setup in one click.'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 4: Platforms ───────────────────────────────────────
+function PlatformStep({
+  isTr,
+  data,
+  update,
+}: {
+  isTr: boolean;
+  data: OnboardingState;
+  update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
+}) {
+  const PLATFORMS = [
+    { id: 'google', label: 'Google', group: 'review' as const },
+    { id: 'yemeksepeti', label: 'Yemeksepeti', group: 'delivery' as const },
+    { id: 'getir', label: 'Getir', group: 'delivery' as const },
+    { id: 'trendyol_go', label: 'Trendyol GO', group: 'delivery' as const },
+    { id: 'tripadvisor', label: 'Tripadvisor', group: 'review' as const },
+    { id: 'yelp', label: 'Yelp', group: 'review' as const },
+  ];
+
+  const toggle = (id: string) => {
+    update('platforms', data.platforms.includes(id)
+      ? data.platforms.filter((p) => p !== id)
+      : [...data.platforms, id]);
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-[13px] text-[#525252]">
+        {isTr
+          ? 'Yüksek puanları hangi platforma yönlendirelim? İstediğin kadar seçebilirsin.'
+          : 'Which platforms should we route high ratings to? Pick as many as you like.'}
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {PLATFORMS.map((p) => {
+          const on = data.platforms.includes(p.id);
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => toggle(p.id)}
+              className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
+                on
+                  ? 'border-[#0A0A0A] bg-[#EAF9B8]'
+                  : 'border-[#EDEDED] bg-white hover:border-[#0A0A0A]'
+              }`}
+            >
+              <div>
+                <p className="text-[14px] font-semibold text-[#0A0A0A]">{p.label}</p>
+                <p className="pulse-eyebrow text-[#737373]">
+                  {p.group === 'review'
+                    ? isTr ? 'YORUM' : 'REVIEWS'
+                    : isTr ? 'PAKET' : 'DELIVERY'}
+                </p>
+              </div>
+              <span
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                  on ? 'border-[#0A0A0A] bg-[#0A0A0A] text-[#C6F24E]' : 'border-[#EDEDED] bg-white'
+                }`}
+              >
+                {on && <Check size={11} strokeWidth={3} />}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 5: QR (preview + template) ─────────────────────────
+function QrStep({
+  isTr,
+  data,
+  update,
+}: {
+  isTr: boolean;
+  data: OnboardingState;
+  update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
+}) {
+  const templates = [
+    { id: 'lime' as const, bg: '#C6F24E', fg: '#0A0A0A', label: 'Lime', bordered: false },
+    { id: 'dark' as const, bg: '#0A0A0A', fg: '#FFFFFF', label: isTr ? 'Koyu' : 'Dark', bordered: false },
+    { id: 'white' as const, bg: '#FFFFFF', fg: '#0A0A0A', label: isTr ? 'Beyaz' : 'White', bordered: true },
+    { id: 'minimal' as const, bg: '#F5F5F5', fg: '#0A0A0A', label: 'Minimal', bordered: true },
+  ];
+  const t = templates.find((x) => x.id === data.qrTemplate) ?? templates[0];
+
+  return (
+    <div className="grid gap-6 sm:grid-cols-2">
+      <div>
+        <FormRow label={isTr ? 'Şablon' : 'Template'}>
+          <div className="mt-1 grid grid-cols-4 gap-2">
+            {templates.map((tp) => {
+              const on = data.qrTemplate === tp.id;
+              return (
+                <button
+                  key={tp.id}
+                  type="button"
+                  onClick={() => update('qrTemplate', tp.id)}
+                  className={`aspect-[3/4] rounded-lg text-[10px] font-medium transition-all ${
+                    on ? 'scale-105 ring-2 ring-[#0A0A0A]' : tp.bordered ? 'border border-[#EDEDED]' : ''
+                  }`}
+                  style={{ background: tp.bg, color: tp.fg }}
+                >
+                  {tp.label}
+                </button>
+              );
+            })}
+          </div>
+        </FormRow>
+        <p className="mt-4 text-[12px] text-[#525252]">
+          {isTr
+            ? 'Tasarımı seç, PDF + PNG + SVG olarak indir. Masaya yapıştır — kurulum biter.'
+            : "Pick a design, download PDF + PNG + SVG, stick it to the table, you're done."}
+        </p>
+      </div>
+      <div
+        className="flex aspect-[3/4] flex-col justify-between rounded-2xl p-5 sm:p-6"
+        style={{
+          background: t.bg,
+          color: t.fg,
+          border: t.bordered ? '1px solid #EDEDED' : 'none',
+          boxShadow: '0 24px 56px -20px rgba(0,0,0,0.18)',
+        }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <p
+            className="text-[17px] font-semibold leading-tight"
+            style={{ fontFamily: 'var(--font-space-grotesk)' }}
+          >
+            {data.bizName || (isTr ? 'İşletme Adı' : 'Your business')}
+          </p>
+          <span className="pulse-eyebrow opacity-70">
+            {isTr ? 'MASA' : 'TABLE'} · 01
+          </span>
+        </div>
+        <div className="mx-auto my-3 flex aspect-square w-28 items-center justify-center rounded-xl bg-white p-2 sm:w-32">
+          <QrCode size={72} strokeWidth={1.5} className="text-[#0A0A0A]" />
+        </div>
+        <div className="text-center">
+          <p
+            className="text-[15px] font-semibold"
+            style={{ fontFamily: 'var(--font-space-grotesk)' }}
+          >
+            {isTr ? 'Deneyiminizi paylaşın' : 'Share your experience'}
+          </p>
+          <p className="pulse-eyebrow mt-1 opacity-70">
+            buaze.co/r/{(data.bizName || 'your-biz').toLowerCase().replace(/\s+/g, '-').slice(0, 18)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Finish button (with confetti burst) ─────────────────────
+function FinishButton({ isTr, onFinish, saving }: { isTr: boolean; onFinish: () => void; saving: boolean }) {
+  const [popping, setPopping] = useState(false);
+
+  const onClick = () => {
+    if (saving || popping) return;
+    setPopping(true);
+    setTimeout(onFinish, 1100);
+  };
+
+  return (
+    <>
+      {popping && <ConfettiBurst />}
+      <button
+        onClick={onClick}
+        disabled={saving || popping}
+        className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-6 py-3 text-[14px] font-semibold text-white hover:bg-[#1A1A1A] disabled:opacity-60"
+      >
+        {(saving || popping) ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+        {isTr ? 'Yayınla & paneli aç' : 'Publish & open panel'}
+      </button>
+    </>
+  );
+}
+
+// ─── Lightweight confetti burst — DOM-only, no deps ──────────
+function ConfettiBurst() {
+  const [particles, setParticles] = useState<number[]>([]);
+  useEffect(() => {
+    setParticles(Array.from({ length: 40 }, (_, i) => i));
+  }, []);
+
+  const colors = ['#C6F24E', '#0A0A0A', '#A8D62E', '#EAF9B8', '#FFFFFF'];
+  const reduced =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) return null;
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
+      {particles.map((i) => {
+        const angle = (i / 40) * 360 + Math.random() * 20 - 10;
+        const distance = 180 + Math.random() * 220;
+        const delay = Math.random() * 80;
+        const size = 6 + Math.random() * 6;
+        const color = colors[i % colors.length];
+        return (
+          <span
+            key={i}
+            className="absolute left-1/2 top-1/2"
+            style={{
+              width: size,
+              height: size * 0.4,
+              background: color,
+              transform: 'translate(-50%, -50%)',
+              borderRadius: 2,
+              animation: `confettiFly 1000ms cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}ms forwards`,
+              ['--cf-x' as string]: `${Math.cos((angle * Math.PI) / 180) * distance}px`,
+              ['--cf-y' as string]: `${Math.sin((angle * Math.PI) / 180) * distance}px`,
+              ['--cf-rot' as string]: `${Math.random() * 720 - 360}deg`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Shared bits ─────────────────────────────────────────────
+const inputCls =
+  'w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#0A0A0A]';
+
+function FormRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="pulse-eyebrow text-[#737373]">{label}</span>
-      <div className="mt-1">{input}</div>
+      <div className="mt-1">{children}</div>
     </label>
   );
 }

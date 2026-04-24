@@ -409,8 +409,16 @@ function QRPageContent() {
     <div className="p-3 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-6 sm:space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-5 sm:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-xl sm:text-3xl font-semibold text-[#0A0A0A] tracking-tight uppercase">QR Kod Oluşturucu</h1>
-          <p className="text-[#1A1A1A] text-[12px] sm:text-[15px] font-bold">İşletmenize özel, yüksek çözünürlüklü QR kodlar hazırlayın.</p>
+          <p className="pulse-eyebrow text-[#737373]">PANEL / QR KOD</p>
+          <h1
+            className="text-[24px] sm:text-[30px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            QR Kod Oluşturucu
+          </h1>
+          <p className="text-[#525252] text-[13px] sm:text-[14px] max-w-[520px]">
+            İşletmenize özel, yüksek çözünürlüklü QR kodlar hazırlayın ve platform bazında dağıtın.
+          </p>
         </div>
       </div>
 
@@ -419,13 +427,50 @@ function QRPageContent() {
         {/* ─── Left: Settings ─── */}
         <div className="lg:col-span-2 space-y-6 sm:space-y-8 order-2 lg:order-1">
 
-          {/* Settings Box */}
+          {/* ─── Step rail — 4-step progress guide (adm QRBuilder spec,
+              .design/site/site-admin.jsx:381). Visual only; form state
+              stays in one submit. ─── */}
+          <div className="flex items-center gap-2 overflow-x-auto">
+            {[
+              { n: 1, label: 'Kampanya', sub: 'İşletme + platform' },
+              { n: 2, label: 'Akış', sub: 'Müşteri yolu' },
+              { n: 3, label: 'Tasarım', sub: 'Boyut + renk' },
+              { n: 4, label: 'Yayına al', sub: 'QR üret + indir' },
+            ].map((s) => (
+              <div key={s.n} className="flex min-w-0 flex-1 items-center gap-2">
+                <span
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[11px] font-semibold text-[#0A0A0A]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {String(s.n).padStart(2, '0')}
+                </span>
+                <div className="min-w-0">
+                  <p className="pulse-eyebrow text-[#0A0A0A]">{s.label}</p>
+                  <p className="pulse-eyebrow text-[#737373] hidden sm:block">{s.sub}</p>
+                </div>
+                {s.n < 4 && <span className="h-px flex-1 bg-[#EDEDED]" aria-hidden />}
+              </div>
+            ))}
+          </div>
+
+          {/* ─── Step 1: Kampanya Detayları ─── */}
           <div className="bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-8 space-y-6 sm:space-y-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#EAF9B8] text-[#A8D62E] flex items-center justify-center">
-                <QrCode size={20} strokeWidth={2} />
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[13px] font-semibold text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                1
+              </span>
+              <div>
+                <p className="pulse-eyebrow text-[#737373]">ADIM 01</p>
+                <h3
+                  className="text-[18px] font-semibold text-[#0A0A0A] tracking-tight"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  Kampanya Detayları
+                </h3>
               </div>
-              <h3 className="text-xl font-semibold text-[#0A0A0A] uppercase tracking-tighter">Ayarlar</h3>
             </div>
 
             <div className="space-y-6">
@@ -493,9 +538,81 @@ function QRPageContent() {
                   Seçilen platforma özel QR oluşturulur. Gelen yorumlar bu platform altında listelenir.
                 </p>
               </div>
+            </div>
+          </div>
 
+          {/* ─── Step 2: Akış — visual only, explains the customer journey ─── */}
+          <div className="bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-7">
+            <div className="flex items-center gap-3 mb-4">
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[13px] font-semibold text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                2
+              </span>
+              <div>
+                <p className="pulse-eyebrow text-[#737373]">ADIM 02</p>
+                <h3
+                  className="text-[18px] font-semibold text-[#0A0A0A] tracking-tight"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  Akış
+                </h3>
+              </div>
+            </div>
+            <p className="text-[13px] text-[#525252] mb-4">
+              Müşterinin QR'ı tarattıktan sonra izlediği yol — her adım tek panelden yönetilir.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { n: 1, t: 'QR tara', d: 'Masadan veya faturadan' },
+                { n: 2, t: 'Yıldız', d: '1-5 arası puan' },
+                { n: 3, t: 'Not', d: 'Detay + platform' },
+                { n: 4, t: 'Yönlendir', d: 'Google / Yemeksepeti / Getir' },
+              ].map((step) => (
+                <div key={step.n} className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
+                  <p className="pulse-eyebrow text-[#C6F24E] bg-[#0A0A0A] inline-block rounded px-1.5 py-0.5">
+                    ADIM {step.n}
+                  </p>
+                  <p
+                    className="mt-2 text-[14px] font-semibold text-[#0A0A0A]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {step.t}
+                  </p>
+                  <p className="text-[11px] text-[#737373] mt-1 leading-snug">{step.d}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex items-start gap-2 rounded-lg bg-[#EAF9B8] px-3 py-2 text-[12px] text-[#0A0A0A]">
+              <span className="mt-0.5">ℹ</span>
+              <span>
+                Google politikalarına uyumlu: müşteri platforma yönlendirilmeden önce her zaman puan ve not bırakır.
+              </span>
+            </div>
+          </div>
 
+          {/* ─── Step 3: Tasarım — boyut + renk + varsa ek stil ─── */}
+          <div className="bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-8 space-y-6 sm:space-y-8">
+            <div className="flex items-center gap-3">
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[13px] font-semibold text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                3
+              </span>
+              <div>
+                <p className="pulse-eyebrow text-[#737373]">ADIM 03</p>
+                <h3
+                  className="text-[18px] font-semibold text-[#0A0A0A] tracking-tight"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  Tasarım
+                </h3>
+              </div>
+            </div>
 
+            <div className="space-y-6">
               {/* QR Size Selector */}
               <div className="space-y-2">
                 <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Çözünürlük (PNG)</label>
@@ -531,18 +648,22 @@ function QRPageContent() {
                     type="button"
                     onClick={() => setUseBrandColor((v) => !v)}
                     disabled={!selectedRestaurant?.primaryColor}
-                    className={`flex-1 px-4 py-3 rounded-xl border-2 pulse-eyebrow transition-all flex items-center justify-center gap-2 ${
+                    className={`flex-1 px-4 py-3 rounded-xl border pulse-eyebrow transition-all flex items-center justify-center gap-2 ${
                       useBrandColor
-                        ? 'bg-[#C6F24E]/10 border-[#C6F24E] text-[#0A0A0A]'
-                        : 'bg-white border-[#EDEDED] text-[#6B7280] hover:bg-[#FFFFFF]'
+                        ? 'bg-[#EAF9B8] border-[#C6F24E] text-[#0A0A0A]'
+                        : 'bg-white border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]'
                     } disabled:opacity-40 disabled:cursor-not-allowed`}
-                    title={selectedRestaurant?.primaryColor ? `Marka rengi: ${selectedRestaurant.primaryColor}` : 'Restoranda marka rengi tanımlı değil'}
+                    title={
+                      selectedRestaurant?.primaryColor
+                        ? `Marka rengi: ${selectedRestaurant.primaryColor}`
+                        : 'Önce bir işletme seçin veya restoran ayarlarında marka rengi tanımlayın.'
+                    }
                   >
                     <span
                       className="w-4 h-4 rounded border border-[#EDEDED]"
-                      style={{ backgroundColor: selectedRestaurant?.primaryColor || '#000' }}
+                      style={{ backgroundColor: selectedRestaurant?.primaryColor || '#D4D4D4' }}
                     />
-                    Marka Rengi
+                    {selectedRestaurant?.primaryColor ? 'Marka Rengi' : 'Marka Rengi Tanımsız'}
                   </button>
                   <label className="relative cursor-pointer">
                     <input

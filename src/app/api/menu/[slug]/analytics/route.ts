@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { ANALYTICS_SOURCE_TYPES, ANALYTICS_THRESHOLDS, isValidEventType, type AnalyticsEventType } from '@/lib/analytics-heuristics';
 import { isValidSessionId } from '@/lib/analytics-session';
@@ -138,14 +139,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const validCategoryIds = new Set(validCategories.map((c) => c.id));
   const validProductIds = new Set(validProducts.map((p) => p.id));
 
-  const rows = staged.map((row) => ({
+  const rows: Prisma.MenuAnalyticsEventCreateManyInput[] = staged.map((row) => ({
     restaurantId,
     categoryId: row.categoryId && validCategoryIds.has(row.categoryId) ? row.categoryId : null,
     productId: row.productId && validProductIds.has(row.productId) ? row.productId : null,
     eventType: row.eventType,
     sessionId: sessionId as string,
     sourceType: row.sourceType,
-    metadata: row.metadata ?? undefined,
+    ...(row.metadata ? { metadata: row.metadata as Prisma.InputJsonValue } : {}),
   }));
 
   // Cross-request dedupe: look up recent events for this session inside the

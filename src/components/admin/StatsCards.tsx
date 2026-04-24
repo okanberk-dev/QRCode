@@ -3,7 +3,7 @@ import { Star, AlertTriangle, Hash, Heart } from 'lucide-react';
 interface StatsProps {
   stats: {
     totalCount: number;
-    avgRating: string;
+    avgRating: number;
     lowRatingCount: number;
     googleRedirectsCount?: number;
   };
@@ -50,7 +50,7 @@ export default function StatsCards({ stats }: StatsProps) {
             className="text-[26px] sm:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
             style={VALUE_STYLE}
           >
-            {stats.avgRating}
+            {typeof stats.avgRating === 'number' ? stats.avgRating.toFixed(1) : stats.avgRating}
             <span className="text-[14px] text-[#737373] ml-1">/ 5</span>
           </h3>
         </div>

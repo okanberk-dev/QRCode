@@ -170,11 +170,15 @@ export default function AdminCustomersPage() {
       <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl">
+            <p className="pulse-eyebrow text-[#737373]">PANEL / MÜŞTERİLER</p>
+            <h1
+              className="mt-1 flex items-center gap-3 text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
               <Users size={22} strokeWidth={2} />
               Müşteriler
             </h1>
-            <p className="mt-1 text-sm font-medium text-[#6B7280]">
+            <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252] max-w-[560px]">
               QR üzerinden geri bildirim bırakmış restoran müşterilerinin birleşik listesi. KVKK onayı olanlar gösterilir.
             </p>
           </div>

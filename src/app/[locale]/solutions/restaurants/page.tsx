@@ -110,9 +110,13 @@ export default async function RestaurantSolutionPage({ params }: { params: Promi
       industryKey="res"
       icon={<Utensils size={14} />}
       industryBadge={isTr ? 'RESTORAN & KAFELER İÇİN' : 'FOR RESTAURANTS & CAFES'}
-      h1Prefix={t.sol_res_h1.split(' ').slice(0, -1).join(' ')}
-      h1Suffix={t.sol_res_h1.split(' ').slice(-1)[0]}
-      description={t.sol_res_p}
+      h1Prefix={isTr ? 'Masanın sesi,' : 'The sound of your table,'}
+      h1Suffix={isTr ? "Google'da." : 'on Google.'}
+      description={
+        isTr
+          ? 'Masa QR, fatura QR, kapıda veda, paket siparişte — dört temas noktası, tek panel. Pozitifi Google\'a, olumsuzu ekibine yönlendir.'
+          : "Table QR, receipt QR, door exit, delivery pack — four touchpoints, one panel. Route positives to Google, negatives to your team."
+      }
       accentColor="#C6F24E"
       stats={stats}
       steps={steps}

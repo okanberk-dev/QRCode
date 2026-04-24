@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Flag, Inbox, Loader2, Search, Send, Sparkles, Star, UserPlus } from 'lucide-react';
+import { Check, Flag, Inbox, Loader2, Mail, Search, Send, Sparkles, Star, UserPlus } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { buildReplyTemplate } from '@/lib/scaffolding';
 
 type Source = 'openai' | 'template' | 'template-fallback' | null;
+type Tone = 'success' | 'info' | 'error';
 
 interface FeedbackRow {
   id: string;
@@ -17,6 +18,8 @@ interface FeedbackRow {
   customerEmail: string | null;
   isReplied?: boolean;
   isFlagged?: boolean;
+  isAssigned?: boolean;
+  assigneeId?: string | null;
   restaurant?: { name: string; slug?: string } | null;
 }
 
@@ -59,9 +62,12 @@ export default function AdminReviewsPage() {
   const [search, setSearch] = useState('');
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [flagging, setFlagging] = useState(false);
+  const [assigning, setAssigning] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [aiSource, setAiSource] = useState<Source>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ msg: string; tone: Tone } | null>(null);
+  const [sendEmail, setSendEmail] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -102,18 +108,35 @@ export default function AdminReviewsPage() {
   useEffect(() => {
     setDraft('');
     setAiSource(null);
-  }, [active?.id]);
+    // Default: turn on email delivery only if we actually have one on file.
+    setSendEmail(Boolean(active?.customerEmail));
+  }, [active?.id, active?.customerEmail]);
 
-  const flash = (msg: string) => {
-    setNotice(msg);
-    setTimeout(() => setNotice(null), 2500);
+  const flash = (msg: string, tone: Tone = 'info') => {
+    setNotice({ msg, tone });
+    setTimeout(() => setNotice(null), 2600);
+  };
+
+  const updateRow = (id: string, patch: Partial<FeedbackRow>) => {
+    setRows((list) => list.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  };
+
+  const bumpCounts = (delta: Partial<CountsResp>) => {
+    setCounts((c) =>
+      c
+        ? {
+            all: c.all + (delta.all ?? 0),
+            new: c.new + (delta.new ?? 0),
+            attention: c.attention + (delta.attention ?? 0),
+            replied: c.replied + (delta.replied ?? 0),
+          }
+        : c,
+    );
   };
 
   const onSuggest = async () => {
     if (!active) return;
     setSuggesting(true);
-    // Optimistic local template so the box fills instantly even if the
-    // server round-trip is slow.
     setDraft(buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }));
     setAiSource('template');
     try {
@@ -129,7 +152,7 @@ export default function AdminReviewsPage() {
           setAiSource((data.source as Source) ?? 'template');
         }
       } else if (res.status === 429) {
-        flash(isTr ? 'Çok sık istek — biraz bekle' : 'Too many requests — slow down');
+        flash(isTr ? 'Çok sık istek — biraz bekle' : 'Too many requests — slow down', 'error');
       }
     } catch {
       /* keep local template */
@@ -140,40 +163,101 @@ export default function AdminReviewsPage() {
   const onSend = async () => {
     if (!active || !draft.trim()) return;
     setSending(true);
+    const wantsEmail = sendEmail && Boolean(active.customerEmail);
     try {
       const res = await fetch(`/api/feedback/${active.id}/reply`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ body: draft, channel: 'internal' }),
+        body: JSON.stringify({
+          body: draft,
+          channel: wantsEmail ? 'email' : 'internal',
+          sendEmail: wantsEmail,
+          locale,
+        }),
       });
-      if (res.status === 501) {
-        flash(isTr ? 'Yakında bağlanacak — taslak kaydedildi (yerel)' : 'Coming soon — draft saved (local)');
-      } else if (res.ok) {
-        flash(isTr ? 'Yanıt gönderildi' : 'Reply sent');
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const wasReplied = active.isReplied;
+        updateRow(active.id, { isReplied: true });
+        if (!wasReplied) bumpCounts({ new: -1, replied: 1 });
         setDraft('');
+        setAiSource(null);
+        const emailStatus = data?.email?.status as 'sent' | 'skipped' | 'failed' | undefined;
+        if (emailStatus === 'sent') {
+          flash(
+            isTr ? `E-posta gönderildi: ${active.customerEmail}` : `Email sent to ${active.customerEmail}`,
+            'success',
+          );
+        } else if (emailStatus === 'failed') {
+          flash(
+            isTr ? 'Yanıt kaydedildi ama e-posta gönderilemedi' : 'Saved but email delivery failed',
+            'error',
+          );
+        } else {
+          flash(isTr ? 'Yanıt kaydedildi (dahili)' : 'Reply saved (internal)', 'success');
+        }
+      } else if (res.status === 401) {
+        flash(isTr ? 'Oturum süresi doldu' : 'Session expired', 'error');
+      } else if (res.status === 403) {
+        flash(isTr ? 'Yetkisiz erişim' : 'Forbidden', 'error');
       } else {
-        flash(isTr ? 'Hata' : 'Error');
+        const data = await res.json().catch(() => ({}));
+        flash(
+          isTr ? `Hata: ${data.error ?? res.status}` : `Error: ${data.error ?? res.status}`,
+          'error',
+        );
       }
     } catch {
-      flash(isTr ? 'Ağ hatası' : 'Network error');
+      flash(isTr ? 'Ağ hatası' : 'Network error', 'error');
     }
     setSending(false);
   };
 
   const onFlag = async () => {
-    if (!active) return;
-    const res = await fetch(`/api/feedback/${active.id}/flag`, { method: 'POST' });
-    flash(res.status === 501 ? (isTr ? 'Flag bekliyor' : 'Flag pending') : isTr ? 'İşaretlendi' : 'Flagged');
+    if (!active || flagging) return;
+    setFlagging(true);
+    try {
+      const res = await fetch(`/api/feedback/${active.id}/flag`, {
+        method: active.isFlagged ? 'DELETE' : 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: active.isFlagged ? undefined : JSON.stringify({}),
+      });
+      if (res.ok) {
+        updateRow(active.id, { isFlagged: !active.isFlagged });
+        flash(
+          active.isFlagged
+            ? isTr ? 'İşaret kaldırıldı' : 'Flag removed'
+            : isTr ? 'İşaretlendi' : 'Flagged',
+          'success',
+        );
+      } else {
+        flash(isTr ? 'İşaretleme başarısız' : 'Flag failed', 'error');
+      }
+    } catch {
+      flash(isTr ? 'Ağ hatası' : 'Network error', 'error');
+    }
+    setFlagging(false);
   };
 
   const onAssign = async () => {
-    if (!active) return;
-    const res = await fetch(`/api/feedback/${active.id}/assign`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ assigneeId: 'self' }),
-    });
-    flash(res.status === 501 ? (isTr ? 'Atama bekliyor' : 'Assign pending') : isTr ? 'Atandı' : 'Assigned');
+    if (!active || assigning) return;
+    setAssigning(true);
+    try {
+      const res = await fetch(`/api/feedback/${active.id}/assign`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ assigneeId: 'self' }),
+      });
+      if (res.ok) {
+        updateRow(active.id, { isAssigned: true });
+        flash(isTr ? 'Size atandı' : 'Assigned to you', 'success');
+      } else {
+        flash(isTr ? 'Atama başarısız' : 'Assign failed', 'error');
+      }
+    } catch {
+      flash(isTr ? 'Ağ hatası' : 'Network error', 'error');
+    }
+    setAssigning(false);
   };
 
   const tabs: { id: typeof tab; label: string; count: number | undefined }[] = [
@@ -182,6 +266,13 @@ export default function AdminReviewsPage() {
     { id: 'attention', label: isTr ? 'Dikkat' : 'Attention', count: counts?.attention },
     { id: 'replied', label: isTr ? 'Yanıtlandı' : 'Replied', count: counts?.replied },
   ];
+
+  const noticeTone =
+    notice?.tone === 'success'
+      ? 'bg-[#EAF9B8] text-[#0A0A0A]'
+      : notice?.tone === 'error'
+        ? 'bg-red-50 text-red-700'
+        : 'bg-[#F5F5F5] text-[#0A0A0A]';
 
   return (
     <div className="space-y-4">
@@ -192,7 +283,7 @@ export default function AdminReviewsPage() {
             {isTr ? 'Yorum gelen kutusu' : 'Review inbox'}
           </h1>
         </div>
-        {notice && <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">{notice}</span>}
+        {notice && <span className={`pulse-eyebrow rounded-full px-3 py-1.5 ${noticeTone}`}>{notice.msg}</span>}
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
@@ -255,10 +346,25 @@ export default function AdminReviewsPage() {
                         </p>
                         <span className="shrink-0 text-[10px] text-[#737373]">{timeAgo(r.createdAt, isTr)}</span>
                       </div>
-                      <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[#737373]">
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] text-[#737373]">
                         <Star size={11} className="fill-[#C6F24E] text-[#C6F24E]" />
                         <span>{r.rating}.0</span>
                         {r.restaurant?.name && <span className="truncate">· {r.restaurant.name}</span>}
+                        {r.isReplied && (
+                          <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-1.5 py-0.5 text-[#0A0A0A]">
+                            {isTr ? 'YANITLANDI' : 'REPLIED'}
+                          </span>
+                        )}
+                        {r.isFlagged && (
+                          <span className="pulse-eyebrow rounded-full bg-red-50 px-1.5 py-0.5 text-red-700">
+                            {isTr ? 'DİKKAT' : 'FLAGGED'}
+                          </span>
+                        )}
+                        {r.isAssigned && (
+                          <span className="pulse-eyebrow rounded-full bg-[#F5F5F5] px-1.5 py-0.5 text-[#525252]">
+                            {isTr ? 'ATANDI' : 'ASSIGNED'}
+                          </span>
+                        )}
                       </div>
                       {r.comment && <p className="mt-1 line-clamp-2 text-[12px] text-[#525252]">{r.comment}</p>}
                     </div>
@@ -287,29 +393,68 @@ export default function AdminReviewsPage() {
                   <h2 className="mt-0.5 text-[20px] font-semibold text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
                     {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
                   </h2>
-                  <div className="mt-1 flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <Star
-                        key={n}
-                        size={14}
-                        className={n <= active.rating ? 'fill-[#C6F24E] text-[#C6F24E]' : 'text-[#EDEDED]'}
-                      />
-                    ))}
-                    <span className="ml-2 text-[12px] text-[#737373]">{active.rating}.0</span>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star
+                          key={n}
+                          size={14}
+                          className={n <= active.rating ? 'fill-[#C6F24E] text-[#C6F24E]' : 'text-[#EDEDED]'}
+                        />
+                      ))}
+                      <span className="ml-1 text-[12px] text-[#737373]">{active.rating}.0</span>
+                    </div>
+                    {active.isReplied && (
+                      <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[#0A0A0A]">
+                        {isTr ? 'YANITLANDI' : 'REPLIED'}
+                      </span>
+                    )}
+                    {active.isFlagged && (
+                      <span className="pulse-eyebrow rounded-full bg-red-50 px-2 py-0.5 text-red-700">
+                        {isTr ? 'DİKKAT' : 'FLAGGED'}
+                      </span>
+                    )}
+                    {active.isAssigned && (
+                      <span className="pulse-eyebrow rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[#525252]">
+                        {isTr ? 'ATANDI' : 'ASSIGNED'}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={onFlag}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 text-[12px] font-medium text-[#525252] hover:border-[#0A0A0A]"
+                    disabled={flagging}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors disabled:opacity-50 ${
+                      active.isFlagged
+                        ? 'border-red-300 bg-red-50 text-red-700 hover:border-red-400'
+                        : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A]'
+                    }`}
                   >
-                    <Flag size={12} /> {isTr ? 'İşaretle' : 'Flag'}
+                    {flagging ? <Loader2 size={12} className="animate-spin" /> : <Flag size={12} />}
+                    {active.isFlagged
+                      ? isTr ? 'İşaret kaldır' : 'Unflag'
+                      : isTr ? 'İşaretle' : 'Flag'}
                   </button>
                   <button
                     onClick={onAssign}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 text-[12px] font-medium text-[#525252] hover:border-[#0A0A0A]"
+                    disabled={assigning}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors disabled:opacity-50 ${
+                      active.isAssigned
+                        ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                        : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A]'
+                    }`}
                   >
-                    <UserPlus size={12} /> {isTr ? 'Ata' : 'Assign'}
+                    {assigning ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : active.isAssigned ? (
+                      <Check size={12} />
+                    ) : (
+                      <UserPlus size={12} />
+                    )}
+                    {active.isAssigned
+                      ? isTr ? 'Atandı' : 'Assigned'
+                      : isTr ? 'Ata' : 'Assign'}
                   </button>
                 </div>
               </div>
@@ -358,6 +503,30 @@ export default function AdminReviewsPage() {
                   placeholder={isTr ? 'Yanıtınızı yazın…' : 'Write your reply…'}
                   className="w-full resize-none rounded-t-xl bg-transparent p-4 text-[13px] outline-none"
                 />
+                <div className="border-t border-[#EDEDED] px-3 py-2">
+                  {active.customerEmail ? (
+                    <label className="flex cursor-pointer items-center gap-2 text-[12px] text-[#0A0A0A]">
+                      <input
+                        type="checkbox"
+                        checked={sendEmail}
+                        onChange={(e) => setSendEmail(e.target.checked)}
+                        className="h-4 w-4 accent-[#0A0A0A]"
+                      />
+                      <Mail size={12} className="text-[#525252]" />
+                      <span>
+                        {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'} ·
+                        <span className="ml-1 text-[#737373]">{active.customerEmail}</span>
+                      </span>
+                    </label>
+                  ) : (
+                    <p className="flex items-center gap-2 text-[11px] text-[#737373]">
+                      <Mail size={12} />
+                      {isTr
+                        ? `Müşteri e-posta bırakmamış${active.rating >= 4 ? ' (yüksek puanlılar yönlendirildiği için bu beklenir)' : ''} — yanıt sadece dahili olarak kaydedilir.`
+                        : `No customer email on file${active.rating >= 4 ? ' (expected for high-rating redirects)' : ''} — reply will be saved internally.`}
+                    </p>
+                  )}
+                </div>
                 <div className="flex items-center justify-between border-t border-[#EDEDED] p-3">
                   <span className="text-[11px] text-[#737373]">{draft.length} / 2000</span>
                   <button
@@ -365,8 +534,16 @@ export default function AdminReviewsPage() {
                     disabled={sending || !draft.trim()}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-40"
                   >
-                    {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
-                    {isTr ? 'Gönder' : 'Send'}
+                    {sending ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : sendEmail && active.customerEmail ? (
+                      <Mail size={12} />
+                    ) : (
+                      <Send size={12} />
+                    )}
+                    {sendEmail && active.customerEmail
+                      ? isTr ? 'E-posta ile gönder' : 'Send as email'
+                      : isTr ? 'Dahili kaydet' : 'Save internal'}
                   </button>
                 </div>
               </div>

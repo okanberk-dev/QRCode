@@ -41,7 +41,7 @@ export async function POST(
       id: true,
       rating: true,
       comment: true,
-      customerName: true,
+      name: true,
       platform: true,
       restaurantId: true,
       restaurant: { select: { name: true, category: true } },
@@ -57,7 +57,7 @@ export async function POST(
   }
 
   const fallback = buildReplyTemplate({
-    name: feedback.customerName,
+    name: feedback.name,
     rating: feedback.rating,
     locale,
   });
@@ -90,7 +90,7 @@ export async function POST(
     `${feedback.restaurant?.name ?? '—'}${feedback.restaurant?.category ? ` (${feedback.restaurant.category})` : ''}`,
     '',
     locale === 'tr' ? 'Müşteri:' : 'Customer:',
-    feedback.customerName ?? (locale === 'tr' ? 'Bilinmiyor' : 'Unknown'),
+    feedback.name ?? (locale === 'tr' ? 'Bilinmiyor' : 'Unknown'),
     '',
     locale === 'tr' ? 'Puan:' : 'Rating:',
     `${feedback.rating}/5`,

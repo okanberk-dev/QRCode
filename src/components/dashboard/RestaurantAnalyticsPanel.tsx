@@ -27,7 +27,7 @@ interface RestaurantOption {
 interface StatsResponse {
   totalCount: number;
   todayCount: number;
-  avgRating: string;
+  avgRating: number;
   lowRatingCount: number;
   googleRedirectsCount: number;
   distribution: {

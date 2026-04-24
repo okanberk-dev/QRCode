@@ -49,10 +49,21 @@ export default async function CustomerStoriesPage({
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
+  // Real venue photos (Unsplash CC0) per story — gives the customer-stories
+  // grid actual texture instead of the previous flat colored stat block.
+  const photos = {
+    bistro: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1100&q=80',
+    hotel: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1100&q=80',
+    clinic: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1100&q=80',
+    cafe: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1100&q=80',
+    legal: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1100&q=80',
+    spa: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1100&q=80',
+  };
+
   const stories = isTr
     ? [
         {
-          c: 'bg-[#C6F24E]',
+          img: photos.bistro,
           b: 'Ark Bistro',
           s: 'Restoran · Kadıköy',
           m: '+184%',
@@ -60,7 +71,7 @@ export default async function CustomerStoriesPage({
           q: 'Google puanımız 4.2\'den 4.8\'e çıktı.',
         },
         {
-          c: 'bg-[#EAF9B8]',
+          img: photos.hotel,
           b: 'Hotel Nora',
           s: 'Otel · Bodrum',
           m: '4.9/5',
@@ -68,7 +79,7 @@ export default async function CustomerStoriesPage({
           q: 'Oda QR\'ları ile her misafir Booking\'e yönleniyor.',
         },
         {
-          c: 'bg-[#F5F5F5]',
+          img: photos.clinic,
           b: 'Derma+',
           s: 'Klinik · Ankara',
           m: '+62%',
@@ -76,7 +87,7 @@ export default async function CustomerStoriesPage({
           q: 'Düşük puanlar halka açık platforma gitmiyor artık.',
         },
         {
-          c: 'bg-[#F5F5F5]',
+          img: photos.cafe,
           b: 'Kahve Dükkan',
           s: 'Kafe · Çeşme · 4 şube',
           m: '3.8 → 4.7',
@@ -84,7 +95,7 @@ export default async function CustomerStoriesPage({
           q: 'Tüm şubelerin performansını tek panelde görüyorum.',
         },
         {
-          c: 'bg-[#F5F5F5]',
+          img: photos.legal,
           b: 'Law&Co',
           s: 'Hukuk ofisi · İstanbul',
           m: '+90',
@@ -92,7 +103,7 @@ export default async function CustomerStoriesPage({
           q: 'Danışma sonrası her müvekkilden yorum alıyoruz.',
         },
         {
-          c: 'bg-[#F5F5F5]',
+          img: photos.spa,
           b: 'Spa Ren',
           s: 'Güzellik · Nişantaşı',
           m: '4.95',
@@ -102,7 +113,7 @@ export default async function CustomerStoriesPage({
       ]
     : [
         {
-          c: 'bg-[#C6F24E]',
+          img: photos.bistro,
           b: 'Ark Bistro',
           s: 'Restaurant · Kadıköy',
           m: '+184%',
@@ -110,7 +121,7 @@ export default async function CustomerStoriesPage({
           q: 'Our Google rating climbed from 4.2 to 4.8.',
         },
         {
-          c: 'bg-[#EAF9B8]',
+          img: photos.hotel,
           b: 'Hotel Nora',
           s: 'Hotel · Bodrum',
           m: '4.9/5',
@@ -118,7 +129,7 @@ export default async function CustomerStoriesPage({
           q: 'Room QR codes route every guest to Booking.',
         },
         {
-          c: 'bg-[#F5F5F5]',
+          img: photos.clinic,
           b: 'Derma+',
           s: 'Clinic · Ankara',
           m: '+62%',
@@ -126,7 +137,7 @@ export default async function CustomerStoriesPage({
           q: 'Low scores no longer end up on public platforms.',
         },
         {
-          c: 'bg-[#F5F5F5]',
+          img: photos.cafe,
           b: 'Kahve Dükkan',
           s: 'Café · Çeşme · 4 branches',
           m: '3.8 → 4.7',
@@ -134,7 +145,7 @@ export default async function CustomerStoriesPage({
           q: 'I see the performance of every branch on one dashboard.',
         },
         {
-          c: 'bg-[#F5F5F5]',
+          img: photos.legal,
           b: 'Law&Co',
           s: 'Legal · Istanbul',
           m: '+90',
@@ -142,7 +153,7 @@ export default async function CustomerStoriesPage({
           q: 'Every consultation ends with a review request.',
         },
         {
-          c: 'bg-[#F5F5F5]',
+          img: photos.spa,
           b: 'Spa Ren',
           s: 'Beauty · Nişantaşı',
           m: '4.95',
@@ -176,16 +187,28 @@ export default async function CustomerStoriesPage({
           {stories.map((st) => (
             <div
               key={st.b}
-              className="border border-[#EDEDED] rounded-2xl overflow-hidden bg-white flex flex-col"
+              className="pulse-card-hover overflow-hidden rounded-2xl border border-[#EDEDED] bg-white flex flex-col"
             >
-              <div className={`${st.c} px-6 py-10 flex flex-col gap-2`}>
-                <div
-                  className="text-[44px] sm:text-[56px] font-medium leading-none tracking-[-0.03em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {st.m}
+              {/* Photo header — real venue image with dark-to-transparent
+                  gradient + stat block bottom-left for a magazine feel. */}
+              <div className="relative aspect-[16/9] bg-[#F5F5F5] overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={st.img}
+                  alt={st.b}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.04]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="absolute bottom-4 left-5 text-white">
+                  <p
+                    className="text-[34px] sm:text-[40px] font-medium leading-none tracking-[-0.03em]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {st.m}
+                  </p>
+                  <p className="pulse-eyebrow mt-1 text-[#C6F24E]">{st.ml}</p>
                 </div>
-                <div className="pulse-eyebrow text-[#0A0A0A]/70">{st.ml}</div>
               </div>
               <div className="p-6 flex flex-col gap-3 flex-1">
                 <div>
