@@ -392,8 +392,8 @@ export default function DashboardRestaurantsPage() {
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(10,10,10,0.2)]">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_20px_60px_rgba(10,10,10,0.2)] sm:rounded-2xl sm:pb-0">
             <div className="relative border-b border-[#EDEDED] p-5 sm:p-6 md:p-7">
               <h2
                 className="text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] pr-10"

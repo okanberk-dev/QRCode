@@ -1013,8 +1013,8 @@ function ItemModal({
 
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-md sm:p-6">
-      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-md sm:items-center sm:p-6">
+      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-[#EDEDED] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:rounded-2xl sm:pb-0">
         <div className="relative border-b border-[#EDEDED] bg-[#FFFFFF] p-5 sm:p-7">
           <h2 className="pr-10 text-xl font-semibold uppercase tracking-tight text-[#0A0A0A] sm:text-2xl">{title}</h2>
           <button

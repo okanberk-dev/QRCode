@@ -242,8 +242,8 @@ export default function MembersPage() {
 
       {/* Edit Modal */}
       {editingMember && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-md max-h-[92dvh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-md max-h-[92dvh] overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:pb-0">
             <div className="p-6 border-b border-[#EDEDED] flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-[#0A0A0A] uppercase tracking-tight">Üye Düzenle</h2>

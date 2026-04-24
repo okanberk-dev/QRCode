@@ -397,11 +397,11 @@ function AdminApiBody() {
 
       {showKey && (
         <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
           onClick={() => setShowKey(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-[#EDEDED] bg-white p-5"
+            className="w-full max-w-md rounded-t-2xl border border-[#EDEDED] bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-2xl sm:pb-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-4">
