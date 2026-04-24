@@ -3,7 +3,6 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
 import {
-  IllusLighthouse,
   IllusMountain,
   IllusCompass,
   IllusInbox,
@@ -18,6 +17,7 @@ import StickyCtaBar from '@/components/marketing/StickyCtaBar';
 import SocialProofToast from '@/components/marketing/SocialProofToast';
 import HomeIndustryTabs from '@/components/marketing/HomeIndustryTabs';
 import LiveReviewTicker from '@/components/marketing/LiveReviewTicker';
+import HomeHeroDashboard from '@/components/marketing/HomeHeroDashboard';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
@@ -291,8 +291,8 @@ export default async function LandingPage({
             </ul>
           </div>
 
-          <div className="flex justify-center md:justify-end">
-            <IllusLighthouse size={340} className="w-full max-w-[340px] h-auto" />
+          <div className="w-full pr-3 md:pr-6">
+            <HomeHeroDashboard locale={locale} />
           </div>
         </div>
       </section>

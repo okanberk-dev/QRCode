@@ -168,6 +168,17 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Hero float — gentle up/down oscillation for floating badges.
+ * Used by the "+184%" badge on HomeHeroDashboard. */
+@keyframes bzFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+.bz-float {
+  animation: bzFloat 3.2s ease-in-out infinite;
+}
+
 /* Marquee — horizontal logo strip, GPU-friendly, respects reduced motion */
 @keyframes marqueeSlide {
   from { transform: translateX(0); }
@@ -183,7 +194,8 @@ h1, h2, h3, h4, h5, h6 {
   .animate-marquee,
   .pulse-heartbeat,
   .animate-slide-up,
-  .animate-slide-in {
+  .animate-slide-in,
+  .bz-float {
     animation: none !important;
   }
 }

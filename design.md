@@ -435,3 +435,32 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 **Backend etkisi:** Yok. `selectedId` / `tableNumber` / `selectedPlatform` / `size` / `useBrandColor` / `customDark` / `activeDark` state'leri + `/api/restaurants/[id]/qr` + `/api/admin/qr-history` + batch loop — hiçbiri değişmedi.
 
 **Verification:** `npx tsc --noEmit` temiz. Sayfa render edildiğinde 3 numaralı lime badge'li section + üst progress rail görünür, aşağıdaki form davranışı (alan doldurma → canlı preview → "Kopyala/İndir/Toplu Oluştur") aynen çalışır.
+
+---
+
+### Post-phase — 2026-04-23 — Anasayfa Hero V2 Canlı Dashboard
+
+**Kapsam:** Kullanıcı talep etti ki anasayfa hero'daki görseller v2 tasarımında hareketliydi — bunu birebir kodla. Mevcut statik `IllusLighthouse` illüstrasyonu v2 animasyonlu dashboard kartıyla değiştirildi.
+
+**Referans:** `.design/site/site-homepage-v2.jsx:64` HeroDashboard.
+
+**V2 hero'daki 5 animasyon birebir re-coded:**
+1. **Chart reveal** — `stroke-dashoffset: 600 → 0` (1.6s cubic-bezier `.4,0,.2,1`) 600ms mount gecikmeli
+2. **AnimCounter** — "1,284" sayısı easeOut tween ile 0'dan hedefe koşar (IntersectionObserver-free, mount-triggered)
+3. **Canlı dot** — yeşil (#16A34A) nokta Tailwind `animate-ping` ile pulse
+4. **Mini review staggered fade-up** — iki review satırı sırayla 700ms + 850ms delay ile opacity+translateY
+5. **Floating +184% badge** — `bz-float` keyframe (3.2s ease-in-out infinite, ±6px Y-axis)
+
+**Yeni dosyalar:**
+- `src/components/marketing/HomeHeroDashboard.tsx` — tüm yukarıdaki davranışı içeren client component; `AnimatedCounter` (Phase 1'den) reuse edilir; `prefers-reduced-motion` hepsinde respect
+
+**Değişen dosyalar:**
+- `src/app/globals.css` — `@keyframes bzFloat` + `.bz-float` utility eklendi, reduced-motion listesine `.bz-float` eklendi
+- `src/app/[locale]/page.tsx` — hero sağ sütunda `<IllusLighthouse size={340} />` → `<HomeHeroDashboard locale={locale} />`; `IllusLighthouse` artık hiç kullanılmıyor, import kaldırıldı
+
+**Backend etkisi:** Yok. Pure client component, veri mock (1,284 sayısı + 2 review row hardcoded TR/EN).
+
+**Verification:**
+- `npx tsc --noEmit` temiz
+- Hero açıldığında: 600ms sonra chart lime çizgisi sağa doğru çizilir + 1,284'e kadar sayar + "+184%" badge sağ üstte float eder + canlı dot pulse + 2 review sırayla fade-up
+- `prefers-reduced-motion: reduce` — chart anında tam gözükür, sayı direkt final değerde, float badge sabit kalır, pulse durur
