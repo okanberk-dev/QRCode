@@ -28,7 +28,7 @@ export default function StatsCards({ stats }: StatsProps) {
         <div>
           <p className="pulse-eyebrow text-[#737373] mb-2">Toplam Yorum</p>
           <h3
-            className="text-[26px] sm:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
+            className="text-[22px] sm:text-[28px] md:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
             style={VALUE_STYLE}
           >
             {stats.totalCount}
@@ -47,7 +47,7 @@ export default function StatsCards({ stats }: StatsProps) {
         <div>
           <p className="pulse-eyebrow text-[#737373] mb-2">Ortalama Puan</p>
           <h3
-            className="text-[26px] sm:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
+            className="text-[22px] sm:text-[28px] md:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
             style={VALUE_STYLE}
           >
             {typeof stats.avgRating === 'number' ? stats.avgRating.toFixed(1) : stats.avgRating}
@@ -67,7 +67,7 @@ export default function StatsCards({ stats }: StatsProps) {
         <div>
           <p className="pulse-eyebrow text-[#737373] mb-2">Düşük Puanlı</p>
           <h3
-            className="text-[26px] sm:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
+            className="text-[22px] sm:text-[28px] md:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
             style={VALUE_STYLE}
           >
             {stats.lowRatingCount}
@@ -86,7 +86,7 @@ export default function StatsCards({ stats }: StatsProps) {
         <div>
           <p className="pulse-eyebrow text-[#737373] mb-2">Pozitif Yönlendirme</p>
           <h3
-            className="text-[26px] sm:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
+            className="text-[22px] sm:text-[28px] md:text-[30px] font-medium leading-none text-[#0A0A0A] tracking-[-0.025em] tabular-nums"
             style={VALUE_STYLE}
           >
             {stats.googleRedirectsCount || 0}

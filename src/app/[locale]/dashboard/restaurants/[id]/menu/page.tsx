@@ -1093,7 +1093,7 @@ function SortableCategoryRow({
         {...attributes}
         {...listeners}
         aria-label={copy.dragToReorder}
-        className="cursor-grab touch-none rounded-lg p-1 text-[#6B7280] hover:bg-[#EDEDED] active:cursor-grabbing"
+        className="flex h-8 w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#EDEDED] active:cursor-grabbing"
       >
         <GripVertical size={14} strokeWidth={2} />
       </button>
@@ -1106,24 +1106,25 @@ function SortableCategoryRow({
           </p>
         </div>
       </button>
-      <div className="flex shrink-0 items-center">
-        <button onClick={onMoveUp} disabled={isFirst} className="rounded-lg p-1 text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30" title="Up">
+      <div className="flex shrink-0 items-center gap-0.5">
+        <button onClick={onMoveUp} disabled={isFirst} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30" title="Up">
           <ArrowUp size={14} strokeWidth={2} />
         </button>
-        <button onClick={onMoveDown} disabled={isLast} className="rounded-lg p-1 text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30" title="Down">
+        <button onClick={onMoveDown} disabled={isLast} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30" title="Down">
           <ArrowDown size={14} strokeWidth={2} />
         </button>
         <button
           onClick={onToggleVisible}
-          className={`rounded-lg p-1 hover:bg-[#EDEDED] ${category.isVisible ? 'text-[#1A1A1A]' : 'text-amber-600'}`}
+          className={`flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[#EDEDED] ${category.isVisible ? 'text-[#1A1A1A]' : 'text-amber-600'}`}
           title={copy.toggleVisible}
+          aria-label={copy.toggleVisible}
         >
           {category.isVisible ? <Eye size={14} strokeWidth={2} /> : <EyeOff size={14} strokeWidth={2} />}
         </button>
-        <button onClick={onEdit} className="rounded-lg p-1 text-[#1A1A1A] hover:bg-[#EDEDED]" title={copy.editCategory}>
+        <button onClick={onEdit} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED]" title={copy.editCategory} aria-label={copy.editCategory}>
           <Edit2 size={14} strokeWidth={2} />
         </button>
-        <button onClick={onDelete} className="rounded-lg p-1 text-red-500 hover:bg-red-50" title={copy.delete}>
+        <button onClick={onDelete} className="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50" title={copy.delete} aria-label={copy.delete}>
           <Trash2 size={14} strokeWidth={2} />
         </button>
       </div>
@@ -1159,69 +1160,73 @@ function SortableItemRow({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-2 p-3 sm:gap-3 sm:p-4 ${isDragging ? 'z-10 bg-white shadow-lg' : ''}`}
+      className={`flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-3 sm:p-4 ${isDragging ? 'z-10 bg-white shadow-lg' : ''}`}
     >
-      <button
-        {...attributes}
-        {...listeners}
-        aria-label={copy.dragToReorder}
-        className="cursor-grab touch-none rounded-lg p-1 text-[#6B7280] hover:bg-[#EDEDED] active:cursor-grabbing"
-      >
-        <GripVertical size={14} strokeWidth={2} />
-      </button>
-      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#EDEDED]">
-        {item.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.imageUrl} alt={item.name} loading="lazy" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-[#6B7280]">
-            <ImageIcon size={18} strokeWidth={2} />
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-semibold text-[#0A0A0A]">{item.name}</p>
-          {!item.isAvailable && (
-            <span className="rounded-full bg-[#EDEDED] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-[#6B7280]">{copy.hidden}</span>
-          )}
-          {item.isOutOfStock && (
-            <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-red-600">{copy.outOfStock}</span>
+      <div className="flex items-center gap-2 sm:contents">
+        <button
+          {...attributes}
+          {...listeners}
+          aria-label={copy.dragToReorder}
+          className="flex h-9 w-9 cursor-grab touch-none items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#EDEDED] active:cursor-grabbing"
+        >
+          <GripVertical size={16} strokeWidth={2} />
+        </button>
+        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#EDEDED]">
+          {item.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={item.imageUrl} alt={item.name} loading="lazy" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-[#6B7280]">
+              <ImageIcon size={18} strokeWidth={2} />
+            </div>
           )}
         </div>
-        <p className="mt-0.5 text-[11px] font-bold text-[#1A1A1A]">
-          {formatPrice(item.priceCents, item.currency, isTr ? 'tr-TR' : 'en-US')}
-          {item.badges.length > 0 && (
-            <span className="ml-2 text-[#6B7280]">· {item.badges.map((b) => BADGE_LABELS[b as MenuBadge]?.[locale] || b).join(', ')}</span>
-          )}
-        </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="truncate text-sm font-semibold text-[#0A0A0A]">{item.name}</p>
+            {!item.isAvailable && (
+              <span className="rounded-full bg-[#EDEDED] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-[#6B7280]">{copy.hidden}</span>
+            )}
+            {item.isOutOfStock && (
+              <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-red-600">{copy.outOfStock}</span>
+            )}
+          </div>
+          <p className="mt-0.5 text-[11px] font-bold text-[#1A1A1A]">
+            {formatPrice(item.priceCents, item.currency, isTr ? 'tr-TR' : 'en-US')}
+            {item.badges.length > 0 && (
+              <span className="ml-2 text-[#6B7280]">· {item.badges.map((b) => BADGE_LABELS[b as MenuBadge]?.[locale] || b).join(', ')}</span>
+            )}
+          </p>
+        </div>
       </div>
-      <div className="flex shrink-0 items-center">
-        <button onClick={onMoveUp} disabled={isFirst} className="rounded-lg p-1.5 text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30">
-          <ArrowUp size={14} strokeWidth={2} />
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5 border-t border-[#EDEDED] pt-2 sm:border-t-0 sm:pt-0">
+        <button onClick={onMoveUp} disabled={isFirst} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30">
+          <ArrowUp size={16} strokeWidth={2} />
         </button>
-        <button onClick={onMoveDown} disabled={isLast} className="rounded-lg p-1.5 text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30">
-          <ArrowDown size={14} strokeWidth={2} />
+        <button onClick={onMoveDown} disabled={isLast} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30">
+          <ArrowDown size={16} strokeWidth={2} />
         </button>
         <button
           onClick={onToggleAvailable}
-          className={`rounded-lg p-1.5 hover:bg-[#EDEDED] ${item.isAvailable ? 'text-[#1A1A1A]' : 'text-amber-600'}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[#EDEDED] ${item.isAvailable ? 'text-[#1A1A1A]' : 'text-amber-600'}`}
           title={copy.toggleVisible}
+          aria-label={copy.toggleVisible}
         >
-          {item.isAvailable ? <Eye size={14} strokeWidth={2} /> : <EyeOff size={14} strokeWidth={2} />}
+          {item.isAvailable ? <Eye size={16} strokeWidth={2} /> : <EyeOff size={16} strokeWidth={2} />}
         </button>
         <button
           onClick={onToggleOutOfStock}
-          className={`rounded-lg p-1.5 hover:bg-[#EDEDED] ${item.isOutOfStock ? 'text-red-500' : 'text-[#1A1A1A]'}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[#EDEDED] ${item.isOutOfStock ? 'text-red-500' : 'text-[#1A1A1A]'}`}
           title={copy.toggleOutOfStock}
+          aria-label={copy.toggleOutOfStock}
         >
-          <AlertTriangle size={14} strokeWidth={2} />
+          <AlertTriangle size={16} strokeWidth={2} />
         </button>
-        <button onClick={onEdit} className="rounded-lg p-1.5 text-[#1A1A1A] hover:bg-[#EDEDED]">
-          <Edit2 size={14} strokeWidth={2} />
+        <button onClick={onEdit} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED]" aria-label={copy.editItem || 'Edit'}>
+          <Edit2 size={16} strokeWidth={2} />
         </button>
-        <button onClick={onDelete} className="rounded-lg p-1.5 text-red-500 hover:bg-red-50">
-          <Trash2 size={14} strokeWidth={2} />
+        <button onClick={onDelete} className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:bg-red-50" aria-label={copy.delete}>
+          <Trash2 size={16} strokeWidth={2} />
         </button>
       </div>
     </li>
