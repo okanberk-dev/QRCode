@@ -171,7 +171,13 @@ export async function GET(req: NextRequest) {
       _avg: { rating: true },
       where: dateFilter
     });
-    const avgRating = aggregations._avg.rating?.toFixed(1) || '0.0';
+    // Returned as a real number so UI callers can safely invoke
+    // .toFixed() on the value. Previously this was a string ("4.5") which
+    // blew up admin/analytics as `D.toFixed is not a function` once the
+    // page tried `stats.avgRating.toFixed(1)`.
+    const avgRating = aggregations._avg.rating
+      ? parseFloat(aggregations._avg.rating.toFixed(1))
+      : 0;
 
     // Aspect breakdown: Food / Service / Atmosphere averages + sample size.
     // Feedback rows where the respective aspect is null are automatically
