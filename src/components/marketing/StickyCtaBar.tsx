@@ -59,9 +59,9 @@ export default function StickyCtaBar({ locale, threshold = 600 }: Props) {
   if (!stickyVisible) return null;
 
   return (
-    <div className="fixed inset-x-3 bottom-3 z-40 animate-slide-in rounded-[24px] border border-[#1F1F1F] bg-[#0A0A0A] text-white shadow-[0_28px_70px_-30px_rgba(0,0,0,0.6)] sm:inset-x-6 lg:inset-x-0 lg:bottom-0 lg:rounded-none lg:border-x-0 lg:border-b-0">
+    <div className="fixed inset-x-0 bottom-0 z-40 animate-slide-in border-t border-[#1F1F1F] bg-[#0A0A0A] text-white shadow-[0_-18px_48px_-30px_rgba(0,0,0,0.55)]">
       <div
-        className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 py-3 sm:flex-row sm:justify-between sm:px-6 lg:px-10 lg:py-3.5"
+        className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 py-3 sm:flex-row sm:justify-between sm:px-10 sm:py-3.5"
         style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
       >
         <div className="text-center sm:text-left">

@@ -131,7 +131,7 @@ export default function SocialProofToast({
 
   return (
     <div
-      className="fixed bottom-[calc(env(safe-area-inset-bottom)+6rem)] left-4 right-4 z-30 flex max-w-[360px] animate-slide-in items-start gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.2)] sm:bottom-6 sm:left-6 sm:right-auto"
+      className="fixed bottom-6 left-6 z-30 hidden max-w-[360px] animate-slide-in items-start gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.2)] sm:flex"
       role="status"
       aria-live="polite"
     >

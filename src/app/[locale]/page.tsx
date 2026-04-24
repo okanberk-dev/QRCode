@@ -301,7 +301,7 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           3. THREE STEPS
       ═══════════════════════════════════════════════════════════ */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
+      <section id="how-it-works" className="scroll-mt-24 px-6 sm:px-10 py-20 sm:py-28">
         <div className="max-w-[1200px] mx-auto">
           <div className="mb-12 sm:mb-16 max-w-[720px]">
             <span className="pulse-eyebrow text-[#737373]">
