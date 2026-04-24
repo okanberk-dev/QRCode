@@ -51,8 +51,10 @@ export async function POST(req: NextRequest) {
 
     let user = await prisma.user.findUnique({ where: { email } });
     const now = new Date();
+    let isNewUser = false;
 
     if (!user) {
+      isNewUser = true;
       // Google tarafından gelen kullanıcı → parolasız hesap. Rastgele güçlü
       // bir hash saklıyoruz ki e-posta yolundan giriş denenemesin.
       const randomSecret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
@@ -99,8 +101,26 @@ export async function POST(req: NextRequest) {
       (req.headers.get('x-forwarded-proto') === 'https' ||
         req.nextUrl.protocol === 'https:');
 
+    // Dönen kullanıcıysa onboarding tamamlanmış mı — email akışıyla parite için
+    // aynı "yeni ise /onboarding, değilse /dashboard" davranışını client'a aktarıyoruz.
+    let onboardingCompleted = false;
+    if (!isNewUser) {
+      try {
+        const progress = await prisma.onboardingProgress.findUnique({
+          where: { userId: user.id },
+          select: { completedAt: true },
+        });
+        onboardingCompleted = Boolean(progress?.completedAt);
+      } catch {
+        // Tablo henüz deploy edilmemişse sessizce false kabul et — dashboard'a yönlendirme güvenli.
+        onboardingCompleted = true;
+      }
+    }
+
     const response = NextResponse.json({
       success: true,
+      isNewUser,
+      onboardingCompleted,
       user: {
         id: user.id,
         email: user.email,

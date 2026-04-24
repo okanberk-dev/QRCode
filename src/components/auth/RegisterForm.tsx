@@ -76,7 +76,11 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         setLoading(false);
         return;
       }
-      router.push(`/${locale}/onboarding`);
+      // Zaten onboarding'i bitirmiş kullanıcı kayıt butonuna basmışsa direkt dashboard'a.
+      const target = data.onboardingCompleted && !data.isNewUser
+        ? `/${locale}/dashboard`
+        : `/${locale}/onboarding`;
+      router.push(target);
       router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';

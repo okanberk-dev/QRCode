@@ -65,7 +65,12 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         setLoading(false);
         return;
       }
-      const redirectPath = searchParams.get('redirect') || `/${locale}/dashboard`;
+      // Yeni kullanıcı veya onboarding tamamlamamış kullanıcı → onboarding'e.
+      // Onboarding'i bitirmiş → ?redirect veya dashboard.
+      const needsOnboarding = data.isNewUser || data.onboardingCompleted === false;
+      const redirectPath = needsOnboarding
+        ? `/${locale}/onboarding`
+        : (searchParams.get('redirect') || `/${locale}/dashboard`);
       window.location.href = redirectPath;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
