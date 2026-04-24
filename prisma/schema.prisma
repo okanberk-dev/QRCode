@@ -234,3 +234,66 @@ model BlogPost {
   @@unique([slug, locale])
   @@map("blog_posts")
 }
+
+model CaseStudy {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  brand       String
+  sector      String
+  sectorEn    String?  @map("sector_en")
+  location    String
+  heroImage   String   @map("hero_image")
+  heroTr      String   @db.Text @map("hero_tr")
+  heroEn      String   @db.Text @map("hero_en")
+  subtitleTr  String?  @db.Text @map("subtitle_tr")
+  subtitleEn  String?  @db.Text @map("subtitle_en")
+  stats       Json     // [{label:{tr,en}, value}]
+  highlights  Json     // [{tr, en}]
+  quoteTr     String?  @db.Text @map("quote_tr")
+  quoteEn     String?  @db.Text @map("quote_en")
+  personName  String?  @map("person_name")
+  personRole  Json?    @map("person_role") // {tr, en}
+  isPublished Boolean  @default(true) @map("is_published")
+  publishedAt DateTime @default(now()) @map("published_at")
+
+  @@index([isPublished, publishedAt])
+  @@map("case_studies")
+}
+
+model OnboardingProgress {
+  userId      String    @id @map("user_id")
+  step        Int       @default(1)
+  data        Json?
+  completedAt DateTime? @map("completed_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@map("onboarding_progress")
+}
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  locale         String    @default("tr")
+  source         String?
+  ip             String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+
+  @@index([createdAt])
+  @@map("newsletter_subscribers")
+}
+
+model ROIRequest {
+  id             String   @id @default(cuid())
+  email          String?
+  restaurantName String?  @map("restaurant_name")
+  tables         Int?
+  avgTicket      Decimal? @db.Decimal(10, 2) @map("avg_ticket")
+  noShowRate     Float?   @map("no_show_rate")
+  projection     Json?
+  ip             String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([email, createdAt])
+  @@map("roi_requests")
+}

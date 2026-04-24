@@ -1,23 +1,61 @@
-// SCAFFOLDED: onboarding wizard progress (OnboardingProgress model).
-// Persist the 4-step completion state per user so refresh/re-visit keeps
-// the wizard at the right step.
-import { NextRequest } from 'next/server';
-import { scaffoldedResponse } from '@/lib/scaffolding';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getPanelActorFromRequest } from '@/lib/auth';
 
-export async function GET() {
-  return Response.json({
-    step: 1,
-    completed: { profile: false, placement: false, platforms: false, team: false },
-    scaffolded: true,
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
+  const actor = await getPanelActorFromRequest(req);
+  if (!actor || actor.source !== 'user') {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  const row = await prisma.onboardingProgress.findUnique({
+    where: { userId: actor.id },
+  });
+
+  return NextResponse.json({
+    step: row?.step ?? 1,
+    data: row?.data ?? null,
+    completedAt: row?.completedAt ?? null,
   });
 }
 
 export async function PATCH(req: NextRequest) {
-  let body: Record<string, unknown> = {};
+  const actor = await getPanelActorFromRequest(req);
+  if (!actor || actor.source !== 'user') {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  let body: { step?: number; data?: unknown } = {};
   try {
     body = await req.json();
   } catch {
-    /* ignore */
+    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
-  return scaffoldedResponse('src/app/api/onboarding/state/route.ts', { received: body });
+
+  const step =
+    typeof body.step === 'number' && body.step >= 1 && body.step <= 10
+      ? Math.floor(body.step)
+      : undefined;
+  const data = body.data === undefined ? undefined : (body.data as object | null);
+
+  const row = await prisma.onboardingProgress.upsert({
+    where: { userId: actor.id },
+    create: {
+      userId: actor.id,
+      step: step ?? 1,
+      data: data === undefined ? undefined : (data ?? undefined),
+    },
+    update: {
+      ...(step !== undefined ? { step } : {}),
+      ...(data === undefined ? {} : { data: data ?? undefined }),
+    },
+  });
+
+  return NextResponse.json({
+    step: row.step,
+    data: row.data,
+    completedAt: row.completedAt,
+  });
 }
