@@ -1,15 +1,35 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, Loader2, Star, TrendingUp } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import ExportReportButton from '@/components/dashboard/ExportReportButton';
 
+interface TrendPoint {
+  date: string;
+  count: number;
+  avgRating: number;
+}
+
+interface PlatformDatum {
+  platform: string;
+  label: string;
+  count: number;
+  avgRating: number | null;
+}
+
+interface WordCloudEntry {
+  text: string;
+  value: number;
+}
+
 interface StatsResp {
-  total?: number;
-  avg?: number;
-  byRating?: Record<string, number>;
-  byPlatform?: Record<string, number>;
+  totalCount?: number;
+  avgRating?: number;
+  distribution?: Record<string, number>;
+  platformDistribution?: PlatformDatum[];
+  trends?: TrendPoint[];
+  wordCloud?: WordCloudEntry[];
 }
 
 const PLATFORM_COLORS: Record<string, string> = {
@@ -17,15 +37,8 @@ const PLATFORM_COLORS: Record<string, string> = {
   yemeksepeti: '#FA0050',
   getir: '#5D3EBC',
   trendyol_go: '#F27A1A',
+  unspecified: '#737373',
   unknown: '#737373',
-};
-
-const PLATFORM_LABELS: Record<string, string> = {
-  google: 'Google',
-  yemeksepeti: 'Yemeksepeti',
-  getir: 'Getir',
-  trendyol_go: 'Trendyol GO',
-  unknown: 'Diğer',
 };
 
 export default function AdminAnalyticsPage() {
@@ -48,30 +61,52 @@ export default function AdminAnalyticsPage() {
     })();
   }, [range]);
 
-  const total = stats?.total ?? 0;
-  const avg = stats?.avg ?? 0;
-  const nps = (() => {
-    if (!stats?.byRating) return 0;
-    const sum = Object.values(stats.byRating).reduce((a, b) => a + b, 0) || 1;
-    const prom = (stats.byRating['5'] ?? 0) / sum;
-    const det = ((stats.byRating['1'] ?? 0) + (stats.byRating['2'] ?? 0)) / sum;
-    return Math.round((prom - det) * 100);
-  })();
+  const total = stats?.totalCount ?? 0;
+  const avg = stats?.avgRating ?? 0;
+
+  const distribution = stats?.distribution ?? {};
+  const distSum = Object.values(distribution).reduce((a, b) => a + b, 0) || 1;
+  const promoters = (Number(distribution['5']) || 0) + (Number(distribution['4']) || 0);
+  const detractors = (Number(distribution['1']) || 0) + (Number(distribution['2']) || 0);
+  const passives = Number(distribution['3']) || 0;
+  const promoterPct = Math.round((promoters / distSum) * 100);
+  const detractorPct = Math.round((detractors / distSum) * 100);
+  const passivePct = Math.max(0, 100 - promoterPct - detractorPct);
+  const nps = promoterPct - detractorPct;
+  const npsTone: 'lime' | 'neutral' | 'red' = nps >= 50 ? 'lime' : nps >= 0 ? 'neutral' : 'red';
+  const npsLabel =
+    nps >= 70
+      ? isTr ? 'Mükemmel' : 'Excellent'
+      : nps >= 30
+      ? isTr ? 'İyi' : 'Good'
+      : nps >= 0
+      ? isTr ? 'Ortalama' : 'Average'
+      : isTr ? 'Dikkat' : 'At risk';
+
+  const trends = stats?.trends ?? [];
+  const trendPath = useMemo(() => buildTrendPath(trends), [trends]);
 
   const ratingRows = [5, 4, 3, 2, 1].map((r) => {
-    const count = stats?.byRating?.[String(r)] ?? 0;
+    const count = Number(distribution[String(r)] ?? 0);
     const pct = total === 0 ? 0 : Math.round((count / total) * 100);
     return { r, count, pct };
   });
 
-  const platformRows = Object.entries(stats?.byPlatform ?? {})
-    .map(([key, count]) => ({
-      key,
-      count: count as number,
-      label: PLATFORM_LABELS[key] || key,
-      color: PLATFORM_COLORS[key] || PLATFORM_COLORS.unknown,
-    }))
-    .sort((a, b) => b.count - a.count);
+  const platformRows = useMemo(
+    () =>
+      (stats?.platformDistribution ?? [])
+        .map((p) => ({
+          key: p.platform || 'unspecified',
+          label: p.label,
+          count: p.count,
+          color: PLATFORM_COLORS[p.platform ?? 'unspecified'] || PLATFORM_COLORS.unspecified,
+        }))
+        .sort((a, b) => b.count - a.count),
+    [stats?.platformDistribution],
+  );
+
+  const wordCloud = stats?.wordCloud ?? [];
+  const maxWordValue = wordCloud.length > 0 ? wordCloud[0].value : 1;
 
   return (
     <div className="space-y-4">
@@ -110,6 +145,7 @@ export default function AdminAnalyticsPage() {
         </div>
       ) : (
         <>
+          {/* ─── KPI ROW ─── */}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label={isTr ? 'TOPLAM YORUM' : 'TOTAL REVIEWS'}
@@ -124,7 +160,7 @@ export default function AdminAnalyticsPage() {
             <StatCard
               label="NPS"
               value={nps.toString()}
-              accent={nps >= 50 ? 'lime' : nps >= 0 ? 'neutral' : 'red'}
+              accent={npsTone}
               icon={<TrendingUp size={14} />}
             />
             <StatCard
@@ -134,6 +170,89 @@ export default function AdminAnalyticsPage() {
             />
           </div>
 
+          {/* ─── DARK NPS SCOREBOARD ─── */}
+          <section className="rounded-2xl bg-[#0A0A0A] p-6 text-white shadow-lg sm:p-8">
+            <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+              <div>
+                <p className="pulse-eyebrow text-white/60">
+                  {isTr ? `NPS SKORU · ${range.toUpperCase()}` : `NPS SCORE · ${range.toUpperCase()}`}
+                </p>
+                <p
+                  className="mt-3 text-[80px] font-medium leading-none tracking-tight text-[#C6F24E] sm:text-[120px]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {nps}
+                </p>
+                <p className="mt-3 text-[14px] text-white/75">
+                  {npsLabel}
+                  {trends.length >= 2 && (() => {
+                    const first = trends[0].count;
+                    const last = trends[trends.length - 1].count;
+                    const delta = first === 0 ? 0 : Math.round(((last - first) / Math.max(first, 1)) * 100);
+                    if (delta === 0) return null;
+                    const arrow = delta > 0 ? '↑' : '↓';
+                    const color = delta > 0 ? '#C6F24E' : '#FB7185';
+                    return (
+                      <>
+                        {' · '}
+                        <span style={{ color }}>
+                          {arrow} {delta > 0 ? '+' : ''}{delta}%
+                        </span>{' '}
+                        {isTr ? 'dönem başından' : 'since period start'}
+                      </>
+                    );
+                  })()}
+                </p>
+
+                <div className="mt-6 space-y-2.5">
+                  <NpsBar
+                    label={isTr ? 'Destekçi (4-5★)' : 'Promoters (4-5★)'}
+                    pct={promoterPct}
+                    color="#C6F24E"
+                    textColor="text-[#0A0A0A]"
+                    badgeBg="bg-[#C6F24E]"
+                  />
+                  <NpsBar
+                    label={isTr ? 'Nötr (3★)' : 'Passives (3★)'}
+                    pct={passivePct}
+                    color="#F5F5F5"
+                    textColor="text-[#0A0A0A]"
+                    badgeBg="bg-white/80"
+                  />
+                  <NpsBar
+                    label={isTr ? 'Eleştiren (1-2★)' : 'Detractors (1-2★)'}
+                    pct={detractorPct}
+                    color="#FB7185"
+                    textColor="text-white"
+                    badgeBg="bg-[#FB7185]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <p className="pulse-eyebrow text-white/60">{isTr ? 'TREND · SON 7 GÜN' : 'TREND · LAST 7 DAYS'}</p>
+                {trends.length === 0 ? (
+                  <p className="mt-8 text-[13px] text-white/60">{isTr ? 'Trend verisi yok' : 'No trend data'}</p>
+                ) : (
+                  <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <svg viewBox="0 0 280 100" className="h-24 w-full" preserveAspectRatio="none">
+                      <path d={trendPath.fill} fill="rgba(198, 242, 78, 0.18)" />
+                      <path d={trendPath.stroke} stroke="#C6F24E" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                      {trendPath.points.map((pt, i) => (
+                        <circle key={i} cx={pt.x} cy={pt.y} r="2.5" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
+                      ))}
+                    </svg>
+                    <div className="mt-2 flex items-center justify-between text-[10px] text-white/50">
+                      <span>{trends[0]?.date}</span>
+                      <span>{trends[trends.length - 1]?.date}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* ─── RATING + PLATFORM ─── */}
           <div className="grid gap-4 lg:grid-cols-2">
             <section className="rounded-2xl border border-[#EDEDED] bg-white p-5">
               <h2 className="pulse-eyebrow text-[#737373]">{isTr ? 'PUAN DAĞILIMI' : 'RATING DISTRIBUTION'}</h2>
@@ -143,8 +262,11 @@ export default function AdminAnalyticsPage() {
                     <span className="w-10 text-[13px] font-medium text-[#0A0A0A]">{row.r} ★</span>
                     <div className="relative h-7 flex-1 overflow-hidden rounded-lg bg-[#F5F5F5]">
                       <div
-                        className="absolute inset-y-0 left-0 rounded-lg bg-[#C6F24E]"
-                        style={{ width: `${row.pct}%` }}
+                        className="absolute inset-y-0 left-0 rounded-lg"
+                        style={{
+                          width: `${row.pct}%`,
+                          backgroundColor: row.r >= 4 ? '#C6F24E' : row.r === 3 ? '#F59E0B' : '#FB7185',
+                        }}
                       />
                     </div>
                     <span className="w-16 text-right text-[12px] text-[#525252]">{row.count} · {row.pct}%</span>
@@ -179,15 +301,82 @@ export default function AdminAnalyticsPage() {
             </section>
           </div>
 
-          <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-5 text-[12px] text-[#737373]">
-            {isTr
-              ? 'Konum performansı & NPS trend grafikleri için backend aggregation eklendikten sonra aktif olacak. Şu an için CSV indir butonuyla dönemsel rapor alabilirsiniz.'
-              : 'Location performance & NPS trend charts will activate once backend aggregation lands. For now use the CSV export for period snapshots.'}
-          </div>
+          {/* ─── TAG CLOUD ─── */}
+          <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+            <h2 className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'YORUMLARDAN ÖNE ÇIKAN KELİMELER' : 'TOP KEYWORDS FROM REVIEWS'}
+            </h2>
+            {wordCloud.length === 0 ? (
+              <p className="mt-6 text-[13px] text-[#737373]">
+                {isTr ? 'Henüz anlamlı kelime toplanmadı.' : 'No significant keywords captured yet.'}
+              </p>
+            ) : (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {wordCloud.slice(0, 24).map((w) => {
+                  const size = 12 + Math.round((w.value / Math.max(maxWordValue, 1)) * 10);
+                  return (
+                    <span
+                      key={w.text}
+                      className="rounded-full bg-[#EAF9B8] px-3 py-1 font-medium text-[#0A0A0A]"
+                      style={{ fontSize: `${size}px` }}
+                    >
+                      {w.text} <span className="ml-1 text-[#525252]">· {w.value}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </>
       )}
     </div>
   );
+}
+
+function NpsBar({
+  label,
+  pct,
+  color,
+  textColor,
+  badgeBg,
+}: {
+  label: string;
+  pct: number;
+  color: string;
+  textColor: string;
+  badgeBg: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between text-[12px]">
+        <span className="text-white/75">{label}</span>
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${badgeBg} ${textColor}`}>{pct}%</span>
+      </div>
+      <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+      </div>
+    </div>
+  );
+}
+
+function buildTrendPath(trends: TrendPoint[]): {
+  stroke: string;
+  fill: string;
+  points: { x: number; y: number }[];
+} {
+  if (trends.length === 0) return { stroke: '', fill: '', points: [] };
+  const w = 280;
+  const h = 100;
+  const pad = 6;
+  const maxCount = Math.max(...trends.map((t) => t.count), 1);
+  const step = trends.length > 1 ? (w - 2 * pad) / (trends.length - 1) : 0;
+  const points = trends.map((t, i) => ({
+    x: pad + i * step,
+    y: h - pad - (t.count / maxCount) * (h - 2 * pad),
+  }));
+  const stroke = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const fill = `${stroke} L ${points[points.length - 1].x} ${h - pad} L ${points[0].x} ${h - pad} Z`;
+  return { stroke, fill, points };
 }
 
 function StatCard({
@@ -205,8 +394,8 @@ function StatCard({
     accent === 'lime'
       ? 'bg-[#EAF9B8] text-[#0A0A0A]'
       : accent === 'red'
-        ? 'bg-red-50 text-red-700'
-        : 'bg-[#F5F5F5] text-[#0A0A0A]';
+      ? 'bg-red-50 text-red-700'
+      : 'bg-[#F5F5F5] text-[#0A0A0A]';
   return (
     <div className="rounded-2xl border border-[#EDEDED] bg-white p-4">
       <div className="flex items-center justify-between">
