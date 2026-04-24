@@ -51,6 +51,8 @@ export default function SocialProofToast({
   const [current, setCurrent] = useState<Toast | null>(null);
   const [idx, setIdx] = useState(0);
   const [dismissed, setDismissed] = useState(false);
+  const [blockedBySticky, setBlockedBySticky] = useState(false);
+  const [resumeKey, setResumeKey] = useState(0);
   const toasts = locale === 'tr' ? TOASTS_TR : TOASTS_EN;
 
   useEffect(() => {
@@ -85,17 +87,51 @@ export default function SocialProofToast({
     };
   }, [toasts, initialDelay, visibleMs, intervalMs]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStickyVisibility = (event: Event) => {
+      const customEvent = event as CustomEvent<{ visible?: boolean }>;
+      const isVisible = Boolean(customEvent.detail?.visible);
+      setBlockedBySticky(isVisible);
+      if (!isVisible) {
+        setResumeKey((currentKey) => currentKey + 1);
+      }
+    };
+
+    window.addEventListener('buaze:sticky-cta-visibility', handleStickyVisibility as EventListener);
+    return () => {
+      window.removeEventListener(
+        'buaze:sticky-cta-visibility',
+        handleStickyVisibility as EventListener,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    if (dismissed || blockedBySticky || resumeKey === 0) return;
+
+    const fallbackToast =
+      current ?? toasts[(Math.max(idx - 1, 0)) % toasts.length] ?? toasts[0];
+
+    if (!fallbackToast) return;
+
+    setCurrent(fallbackToast);
+    const hideTimer = setTimeout(() => setCurrent(null), visibleMs);
+    return () => clearTimeout(hideTimer);
+  }, [blockedBySticky, current, dismissed, idx, resumeKey, toasts, visibleMs]);
+
   const onDismiss = () => {
     sessionStorage.setItem('buaze.toast.dismissed', '1');
     setDismissed(true);
     setCurrent(null);
   };
 
-  if (dismissed || !current) return null;
+  if (dismissed || !current || blockedBySticky) return null;
 
   return (
     <div
-      className="fixed bottom-4 left-4 z-30 flex max-w-[340px] animate-slide-in items-start gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.2)] sm:bottom-6 sm:left-6"
+      className="fixed bottom-[calc(env(safe-area-inset-bottom)+6rem)] left-4 right-4 z-30 flex max-w-[360px] animate-slide-in items-start gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.2)] sm:bottom-6 sm:left-6 sm:right-auto"
       role="status"
       aria-live="polite"
     >

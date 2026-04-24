@@ -325,7 +325,7 @@ export default function MarketingNavbarClient({
             : 'border-[#EDEDED] bg-white/88'
         }`}
       >
-        <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between gap-4 px-5 sm:px-8">
+        <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between gap-3 px-4 sm:gap-4 sm:px-8">
           {/* Logo */}
           <div className="flex items-center gap-3">
             <Link href={base} className="flex items-center gap-2 group">
@@ -488,7 +488,7 @@ export default function MarketingNavbarClient({
           </div>
 
           {/* Right cluster */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             {/* Locale toggle */}
             <button
               onClick={switchLocale}
@@ -527,7 +527,7 @@ export default function MarketingNavbarClient({
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-              className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-full text-[#0A0A0A] hover:bg-[#F5F5F5]"
+              className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] shadow-[0_8px_24px_-20px_rgba(10,10,10,0.28)] hover:bg-[#F5F5F5]"
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -545,10 +545,10 @@ export default function MarketingNavbarClient({
             className="absolute inset-0 bg-black/30 backdrop-blur-sm"
           />
           <div
-            className="relative ml-auto h-[calc(100dvh-64px)] w-full max-w-md overflow-y-auto bg-white shadow-2xl"
+            className="relative ml-auto h-[calc(100dvh-64px)] w-full max-w-md overflow-y-auto rounded-tl-[28px] border-l border-[#EDEDED] bg-white shadow-2xl"
             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
-            <nav className="flex flex-col p-4">
+            <nav className="flex flex-col p-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]">
               <MobileSection
                 id="product"
                 label={isTr ? 'Ürün' : 'Product'}
@@ -649,14 +649,14 @@ export default function MarketingNavbarClient({
                     <Link
                       href={`${base}/auth/register`}
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-full bg-[#C6F24E] px-4 py-3 text-center text-[14px] font-semibold text-[#0A0A0A]"
+                      className="block min-h-[48px] rounded-full bg-[#C6F24E] px-4 py-3 text-center text-[14px] font-semibold text-[#0A0A0A] shadow-[0_14px_30px_-20px_rgba(198,242,78,0.7)]"
                     >
                       {isTr ? 'Ücretsiz başla' : 'Start free'} →
                     </Link>
                     <Link
                       href={`${base}/auth/login`}
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-full border border-[#EDEDED] px-4 py-3 text-center text-[14px] font-medium text-[#0A0A0A]"
+                      className="block min-h-[48px] rounded-full border border-[#EDEDED] px-4 py-3 text-center text-[14px] font-medium text-[#0A0A0A]"
                     >
                       {isTr ? 'Giriş yap' : 'Sign in'}
                     </Link>
@@ -667,19 +667,18 @@ export default function MarketingNavbarClient({
                     switchLocale();
                     setMobileOpen(false);
                   }}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] px-4 py-2.5 text-[12px] font-medium text-[#525252]"
+                  className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] px-4 py-2.5 text-[12px] font-medium text-[#525252]"
                 >
                   <Globe size={12} />
                   {isTr ? 'Switch to English' : 'Türkçe\'ye geç'}
                 </button>
 
-                <div className="mt-4 flex items-center justify-center gap-1.5 rounded-full border border-[#C6F24E]/60 bg-[#EAF9B8] px-3 py-2">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <span className="pulse-eyebrow rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 text-[#525252]">
+                    {isTr ? '5 DAKİKADA KURULUM' : '5-MIN SETUP'}
                   </span>
-                  <span className="pulse-eyebrow text-[#0A0A0A]">
-                    {isTr ? '2.400+ İŞLETME KULLANIYOR' : '2,400+ BUSINESSES TRUST US'}
+                  <span className="pulse-eyebrow rounded-full border border-[#C6F24E]/50 bg-[#F6FCD9] px-3 py-2 text-[#0A0A0A]">
+                    KVKK · GDPR
                   </span>
                 </div>
               </div>

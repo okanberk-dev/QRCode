@@ -62,7 +62,7 @@ export default async function LoginPage({
     <div className="min-h-screen bg-[#FFFFFF] flex flex-col font-sans">
       <MarketingNavbar locale={locale} t={t} />
 
-      <main className="flex-1 flex pt-[64px]">
+      <main className="flex min-h-[calc(100dvh-64px)] flex-1 pt-[64px]">
         {/* Left Panel */}
         <div className="hidden lg:flex w-[44%] bg-[#0A0A0A] text-white flex-col justify-between px-12 xl:px-16 py-16 relative overflow-hidden">
           {/* Grid overlay */}
@@ -143,11 +143,11 @@ export default async function LoginPage({
         </div>
 
         {/* Right Panel - Form */}
-        <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 bg-[#FFFFFF]">
+        <div className="flex-1 flex flex-col items-center justify-center bg-[#FFFFFF] p-4 sm:p-8 lg:p-10">
 
           {/* Header/Logo for mobile */}
           <div className="flex lg:hidden justify-center mb-8">
-            <Link href="/" className="flex items-center gap-3 group">
+            <Link href={`/${locale}`} className="flex items-center gap-3 group">
               <BuazeLogo size={36} variant="default" imageUrl={logoUrl} />
               <span
                 className="text-[22px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
@@ -159,7 +159,7 @@ export default async function LoginPage({
           </div>
 
           <div className="w-full max-w-sm mx-auto">
-            <div className="bg-white rounded-3xl border border-[#EDEDED] p-8 sm:p-10 mb-5 shadow-[0_8px_24px_rgba(10,10,10,0.04)]">
+            <div className="mb-5 rounded-3xl border border-[#EDEDED] bg-white p-6 shadow-[0_8px_24px_rgba(10,10,10,0.04)] sm:p-10">
               <div className="mb-8 text-center lg:text-left">
                 <h1 className="text-[28px] text-[#0A0A0A] tracking-[-0.02em] leading-tight">{t.auth_login_title}</h1>
                 <p className="text-[14px] text-[#525252] mt-2">{t.auth_login_subtitle}</p>

@@ -10,7 +10,6 @@ import {
   IllusShield,
 } from '@/components/marketing/PulseIllustrations';
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
-import AnimatedCounter from '@/components/marketing/AnimatedCounter';
 import MarqueeRow from '@/components/marketing/MarqueeRow';
 import WatchDemoButton from '@/components/marketing/WatchDemoButton';
 import StickyCtaBar from '@/components/marketing/StickyCtaBar';
@@ -161,8 +160,8 @@ export default async function LandingPage({
     : 'Collect feedback from real customers via QR, manage every review from one panel, grow your reputation in a way that stays compliant with Google policies.';
 
   const trustTicks = isTr
-    ? ['Kredi kartı gerekmez', '5 dakikada kurulum', 'Türkçe destek']
-    : ['No credit card required', '5-minute setup', 'Turkish support'];
+    ? ['Kredi kartı gerekmez', '5 dakikada kurulum']
+    : ['No credit card required', '5-minute setup'];
 
   const brandWordmarks = ['ARK BISTRO', 'HOTEL NORA', 'DERMA+', 'LAW&CO', 'KAHVE DUKKAN', 'SPA REN'];
 
@@ -245,20 +244,12 @@ export default async function LandingPage({
       ═══════════════════════════════════════════════════════════ */}
       <section className="px-5 pb-16 pt-16 sm:px-8 sm:pb-20 sm:pt-20 lg:px-16 lg:pb-20 lg:pt-24">
         <div className="mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-12 md:grid-cols-2 lg:gap-16">
-          <div className="flex flex-col gap-6 sm:gap-7">
-            <div className="bz-fade-up inline-flex items-center gap-2 self-start rounded-full bg-[#EAF9B8] px-3.5 py-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#16A34A] pulse-heartbeat" />
-              <span className="pulse-eyebrow text-[#0A0A0A]">
-                <AnimatedCounter to={2400} suffix="+" locale={isTr ? 'tr-TR' : 'en-US'} />{' '}
-                {isTr ? 'işletme güveniyor' : 'businesses trust Buaze'}
-              </span>
-            </div>
-
+          <div className="flex flex-col gap-5 sm:gap-7">
             <h1 className="bz-fade-up bz-d1 text-[44px] font-medium leading-[0.92] tracking-[-0.04em] text-[#0A0A0A] text-balance sm:text-[64px] lg:text-[76px]">
               {heroHeadline}
             </h1>
 
-            <p className="bz-fade-up bz-d2 max-w-[500px] text-[17px] font-normal leading-[1.6] text-[#525252] sm:text-[18px]">
+            <p className="bz-fade-up bz-d2 max-w-[500px] text-[16px] font-normal leading-[1.65] text-[#525252] sm:text-[18px]">
               {heroSub}
             </p>
 
@@ -273,7 +264,7 @@ export default async function LandingPage({
               <WatchDemoButton locale={locale} />
             </div>
 
-            <ul className="bz-fade-up bz-d4 flex flex-wrap gap-x-5 gap-y-2 pt-1">
+            <ul className="bz-fade-up bz-d4 flex flex-wrap gap-x-4 gap-y-2 pt-1 sm:gap-x-5">
               {trustTicks.map((tick) => (
                 <li key={tick} className="text-[13px] text-[#737373]">
                   ✓ {tick}
@@ -282,7 +273,7 @@ export default async function LandingPage({
             </ul>
           </div>
 
-          <div className="bz-scale-in w-full pr-3 md:pr-4">
+          <div className="bz-scale-in w-full md:pr-4">
             <HomeHeroDashboard locale={locale} />
           </div>
         </div>
@@ -424,8 +415,11 @@ export default async function LandingPage({
       <section className="px-6 sm:px-10 py-20 sm:py-28">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div>
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Google güvenli' : 'Google safe'}
+            <span className="pulse-chip-soft">
+              <span className="h-2 w-2 rounded-full bg-[#16A34A] pulse-heartbeat" />
+              <span className="pulse-eyebrow whitespace-nowrap leading-none text-[#0A0A0A]">
+                {isTr ? 'Google güvenli' : 'Google safe'}
+              </span>
             </span>
             <h2 className="mt-4 text-[36px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? 'Politikalara uyumlu. Organik büyüme.' : 'Policy compliant. Organic growth.'}
@@ -433,7 +427,7 @@ export default async function LandingPage({
 
             <div className="mt-10 divide-y divide-[#EDEDED] border-y border-[#EDEDED]">
               {policyBlocks.map((b) => (
-                <div key={b.n} className="py-5 grid grid-cols-[auto_1fr] gap-5 items-start">
+                <div key={b.n} className="grid grid-cols-[auto_1fr] items-start gap-4 py-5 sm:gap-5">
                   <span className="pulse-eyebrow text-[#A8D62E] pt-1">{b.n}</span>
                   <div>
                     <h3 className="text-[18px] font-medium text-[#0A0A0A] leading-snug">{b.t}</h3>
@@ -820,7 +814,7 @@ export default async function LandingPage({
               </div>
             </div>
 
-            <div className="mt-10 grid grid-cols-3 gap-6">
+            <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
               {caseStats.map((s) => (
                 <div key={s.l} className="border-t-2 border-[#0A0A0A] pt-3">
                   <div className="text-[22px] sm:text-[26px] font-medium leading-none text-[#0A0A0A] tracking-[-0.02em]">

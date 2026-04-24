@@ -77,7 +77,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
       {error && (
         <div className="bg-[#FEF2F2] text-[#B91C1C] p-4 rounded-xl text-[13px] font-medium border border-[#FECACA] text-center">
           {error}
@@ -221,7 +221,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
 
       {/* KVKK Modal */}
       {showKvkk && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-6 bg-[#0A0A0A]/40 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0A0A0A]/40 p-4 backdrop-blur-sm animate-in fade-in duration-300 sm:p-6">
           <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-[0_20px_60px_rgba(10,10,10,0.25)] border border-[#EDEDED] animate-in zoom-in-95 duration-300">
             <div className="p-6 border-b border-[#EDEDED] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -240,7 +240,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
                 <X size={20} strokeWidth={2} />
               </button>
             </div>
-            <div className="p-7 max-h-[50vh] overflow-y-auto no-scrollbar">
+            <div className="max-h-[60vh] overflow-y-auto p-6 no-scrollbar sm:p-7">
               <p className="text-[13px] text-[#525252] leading-relaxed whitespace-pre-wrap">
                 {locale === 'tr'
                   ? '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kayıt sırasında paylaştığınız kişisel verileriniz, hizmetlerimizin sunulması, kullanici hesabınızın yönetilmesi ve yasal yükümlülüklerin yerine getirilmesi amacıyla işlenmektedir. Verileriniz, yasal zorunluluklar dışında üçüncü taraflarla paylaşılmayacaktır.'

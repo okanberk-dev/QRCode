@@ -1,5 +1,6 @@
 'use client';
 
+import { Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Review {
@@ -82,51 +83,62 @@ export default function LiveReviewTicker({ locale, rotateMs = 2800 }: Props) {
   }, [rotateMs]);
 
   return (
-    <div className="rounded-2xl border border-[#222] bg-[#111] overflow-hidden">
-      <div className="flex items-center justify-between border-b border-[#222] bg-[#0A0A0A] px-4 py-3">
-        <span className="pulse-eyebrow text-[#C6F24E]">
-          {isTr ? 'CANLI AKIŞ' : 'LIVE STREAM'}
-        </span>
-        <div className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#16A34A] animate-ping absolute opacity-60" aria-hidden />
-          <span className="relative h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
-          <span className="pulse-eyebrow text-[#A3A3A3]">
+    <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_right,_rgba(198,242,78,0.12),_rgba(20,20,20,0.96)_35%,_#0A0A0A_100%)] shadow-[0_40px_90px_-40px_rgba(0,0,0,0.88)]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-white/[0.03] px-4 py-3.5 sm:px-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="pulse-eyebrow text-[#C6F24E]">
+            {isTr ? 'CANLI AKIŞ' : 'LIVE STREAM'}
+          </span>
+          <span className="pulse-eyebrow rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[#D4D4D4]">
             {isTr ? '3 YENİ' : '3 NEW'}
           </span>
         </div>
+        <div className="inline-flex items-center gap-2 rounded-full border border-[#C6F24E]/20 bg-black/30 px-3 py-1.5 text-[#EAF9B8]">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-70" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
+          </span>
+          <span className="pulse-eyebrow text-[#EAF9B8]/80">
+            {isTr ? 'AKIŞ AÇIK' : 'STREAM LIVE'}
+          </span>
+        </div>
       </div>
-      <div className="space-y-2 p-4">
+      <div className="space-y-2.5 p-4 sm:p-5">
         {[0, 1, 2].map((offset) => {
           const r = REVIEWS[(pivot + offset) % REVIEWS.length];
           const isTop = offset === 0;
           return (
             <div
               key={`${pivot}-${offset}`}
-              className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 transition-all duration-500 ${
+              className={`flex items-start gap-3 rounded-[20px] border px-3.5 py-3 transition-all duration-500 ${
                 isTop
-                  ? 'bg-[#161616] border-[#2A2A2A]'
-                  : 'bg-[#111] border-[#222] opacity-70'
+                  ? 'border-[#C6F24E]/18 bg-white/[0.08] shadow-[0_18px_36px_-26px_rgba(198,242,78,0.18)]'
+                  : 'border-white/8 bg-black/20 opacity-80'
               }`}
             >
               <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold ${
-                  isTop ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#1A1A1A] text-white'
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold ${
+                  isTop ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-white/10 text-white'
                 }`}
                 style={{ fontFamily: 'var(--font-space-grotesk)' }}
               >
                 {r.init}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[13px] font-semibold text-white truncate">{r.name}</p>
-                  <span className="pulse-eyebrow text-[#C6F24E] shrink-0">
-                    {'★'.repeat(r.stars)}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="truncate text-[13px] font-semibold text-white">{r.name}</p>
+                  <span className="pulse-star-pill shrink-0" aria-label={`${r.stars} ${isTr ? 'yıldız' : 'stars'}`}>
+                    {Array.from({ length: r.stars }).map((_, starIndex) => (
+                      <Star key={starIndex} size={12} fill="currentColor" strokeWidth={0} />
+                    ))}
                   </span>
                 </div>
-                <p className="mt-0.5 text-[12px] text-[#A3A3A3] line-clamp-2">
+                <p className="mt-1 text-[12px] leading-[1.55] text-[#D4D4D4] line-clamp-2">
                   {r.text[isTr ? 'tr' : 'en']}
                 </p>
-                <p className="pulse-eyebrow mt-1 text-[#737373]">{r.platform.toUpperCase()}</p>
+                <span className="pulse-eyebrow mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[#A3A3A3]">
+                  {r.platform.toUpperCase()}
+                </span>
               </div>
             </div>
           );

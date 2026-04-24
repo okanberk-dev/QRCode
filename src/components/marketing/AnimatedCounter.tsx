@@ -30,7 +30,7 @@ export default function AnimatedCounter({
   className,
   locale = 'tr-TR',
 }: Props) {
-  const [value, setValue] = useState(to);
+  const [value, setValue] = useState(0);
   const ref = useRef<HTMLSpanElement | null>(null);
 
   useEffect(() => {

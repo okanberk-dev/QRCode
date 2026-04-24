@@ -52,14 +52,14 @@ export default async function RegisterPage({
   const { logoUrl } = await getSiteSettings();
 
   const trialFeatures = locale === 'tr'
-    ? ['5 dakikada kurulum', 'Kredi kartı gerekmez', 'İstediğin zaman iptal et', 'Türkçe destek']
-    : ['5-minute setup', 'No credit card required', 'Cancel anytime', 'Turkish support'];
+    ? ['5 dakikada kurulum', 'Kredi kartı gerekmez', 'İstediğin zaman iptal et']
+    : ['5-minute setup', 'No credit card required', 'Cancel anytime'];
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] flex flex-col font-sans">
       <MarketingNavbar locale={locale} t={t} />
 
-      <main className="flex-1 flex pt-[64px]">
+      <main className="flex min-h-[calc(100dvh-64px)] flex-1 pt-[64px]">
         {/* Left Panel - Hidden on mobile */}
         <div className="hidden lg:flex w-[44%] bg-[#0A0A0A] text-white flex-col justify-center px-12 xl:px-16 py-16 relative overflow-hidden">
           <div className="relative z-10 max-w-lg">
@@ -124,9 +124,9 @@ export default async function RegisterPage({
         </div>
 
         {/* Right Panel - Form */}
-        <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative bg-[#FFFFFF]">
+        <div className="relative flex flex-1 items-center justify-center bg-[#FFFFFF] p-4 sm:p-6 lg:p-12">
           <div className="w-full max-w-md relative z-10">
-            <div className="bg-white rounded-3xl shadow-[0_8px_24px_rgba(10,10,10,0.04)] border border-[#EDEDED] p-8 sm:p-10 mb-8">
+            <div className="mb-8 rounded-3xl border border-[#EDEDED] bg-white p-6 shadow-[0_8px_24px_rgba(10,10,10,0.04)] sm:p-10">
               <div className="mb-8 space-y-3 text-center lg:text-left">
                 <div className="inline-flex lg:hidden items-center gap-2 bg-[#EAF9B8] text-[#0A0A0A] px-3 py-1.5 rounded-full mb-2 border border-[#C6F24E]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#0A0A0A] pulse-heartbeat" />
