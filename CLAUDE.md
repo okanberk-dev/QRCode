@@ -776,11 +776,12 @@ Hiçbir post-phase PR bu bölümü etkilemedi:
 
 ### 17.10 Bilinen açık gap'ler (production öncesi)
 
-`design.md` "Backend açıkları" tablosunda detaylı — özet:
+`design.md` "Backend açıkları" tablosunda detaylı — özet (2026-04 beşinci dalga'dan sonra güncel durum):
 
-1. **Sektör bespoke content** — 6 sektör (hotel/healthcare/law-firms/beauty-salon/retail/gym) `SolutionPageLayout` template'i kullanıyor; design canvas per-sektör özel içerik ister. `CaseStudy` veya sektör CMS Prisma modeli bağlandığında DB'den beslenecek.
-2. **501 scaffold'larının gerçek backend'i** — yukarıda §17.4 tablosundaki 9 endpoint production'a çıkmadan gerçek Prisma + provider (Stripe, Resend, Mailchimp vb.) ile değiştirilmeli.
-3. **Mobile QA cihazda** — dev server 200/307 doğruladı, ama 375/768/1280 breakpoint'lerde görsel QA gerçek cihazda yapılmalı.
+1. ~~**Sektör bespoke content** — CaseStudy modeli ve CMS bağlantısı.~~ **§18.1'de kısmen kapatıldı** (CaseStudy modeli + seed + DB-backed `/case-study/[slug]`). SolutionPageLayout ↔ CaseStudy `sector` alanı ile "Related" bağlama henüz yapılmadı.
+2. ~~**501 scaffold'larının gerçek backend'i**~~ — **§18'de 7/9 kapatıldı**. 9 scaffolddan 7'si artık Prisma + mevcut provider'lara bağlı (Resend, Supabase Storage). Sadece billing tarafı yarım kaldı (POS entegrasyonu yok).
+3. **Sanal POS entegrasyonu** — Billing read-side (§18.3) canlı ama `POST /api/billing/checkout` ve `POST /api/billing/webhook/iyzico` henüz yok. Iyzico/Stripe seçimi + provider hesabı + webhook secret'ı gerekiyor.
+4. **Mobile QA cihazda** — dev server 200/307 doğruladı, ama 375/768/1280 breakpoint'lerde görsel QA gerçek cihazda yapılmalı.
 
 ### 17.11 Design handoff referans dosyaları
 
@@ -796,5 +797,109 @@ Hiçbir post-phase PR bu bölümü etkilemedi:
 
 ---
 
-_Son güncelleme: 2026-04 (dördüncü dalga) — §17 Pulse Redesign Wave eklendi (15 draft PR #39→#53, yeni component + util + scaffold + IA + imagery + logo fixes). Daha önceki güncelleme §15 AI Co-Pilot idi._
+## 18. Backend Wiring Wave — §17.10 kapanışı (2026-04)
+
+Session özeti: CLAUDE.md §17.10'daki üç gap'ten ikisi (CaseStudy + 9 scaffold) dalga dalga bağlandı. Branch: `claude/connect-prisma-providers-3ytkP`. Üç commit:
+
+| Commit | Kapsam |
+|---|---|
+| `6f1a05a` | Wave 1 — CaseStudy + Onboarding + Newsletter + ROI |
+| `a048615` | Wave 2 — HelpArticle + Admin Analytics CSV + Careers |
+| `f8a8f1c` | Wave 3 kısmi — Billing read-side (POS YOK) |
+
+**Stratejik karar:** Hiçbir yeni external provider eklenmedi. Zaten kurulu olan Resend (mail) + Supabase Storage (dosya) + OpenAI (AI Co-Pilot) yeterli. POS (Iyzico/Stripe) kasıtlı olarak ertelendi (§18.3'e bak).
+
+### 18.1 Wave 1 — Hızlı win'ler (commit `6f1a05a`)
+
+Tek dış bağımlılık yok; sadece Prisma + mevcut helper'lar.
+
+**Yeni Prisma modelleri:**
+- `CaseStudy` — `slug @unique, brand, sector, sectorEn, location, heroImage, heroTr/En, subtitleTr/En, stats Json, highlights Json, quoteTr/En, personName, personRole Json, isPublished, publishedAt`
+- `OnboardingProgress` — `userId @id, step Int, data Json?, completedAt` (UI kontratına hizalandı; scaffolding'deki 4 boolean kolon bu wizard'a uymuyordu)
+- `NewsletterSubscriber` — `email @unique, locale, source, ip, createdAt, unsubscribedAt`
+- `ROIRequest` — `email, restaurantName, tables, avgTicket Decimal, noShowRate, projection Json, ip, createdAt`
+
+**Yeni/değişen endpoint'ler:**
+- `GET /api/case-studies[?slug=]` — list veya tek kayıt; `isPublished=true` filtresi.
+- `src/app/[locale]/case-study/[slug]/page.tsx` — inline `STUDIES` array silindi, `prisma.caseStudy.findUnique` + `notFound()`; JSX 1:1 korundu.
+- `prisma/seed-case-studies.ts` — 3 mock (`kadikoy-bistro`, `hotel-nora`, `derma-klinik`) idempotent `upsert`. **Manuel çalıştır:** `npx ts-node prisma/seed-case-studies.ts` (migration file kullanılmaz).
+- `GET/PATCH /api/onboarding/state` — `getPanelActorFromRequest` ile scoped; `prisma.onboardingProgress.upsert` pattern.
+- `POST /api/onboarding/complete` — `completedAt = new Date()`; actor email varsa Resend ile welcome mail (`sendMail`).
+- `POST /api/newsletter` — `prisma.newsletterSubscriber.upsert(email)` (duplicate-safe, unsubscribed olanı yeniden aktifleştirir); mevcut `rateLimit()` korundu.
+- `POST /api/roi/save` — insert + `NOTIFICATION_EMAIL` env set ise sales inbox'a mail; `Prisma.Decimal` ile fiyat alanı.
+
+### 18.2 Wave 2 — Orta karmaşıklık (commit `a048615`)
+
+**Yeni Prisma modelleri:**
+- `HelpArticle` — `slug + locale @@unique, category, title, excerpt, body Text, searchTags String[], isPublished, order`
+- `CareerApplication` — `name, email, roleSlug, message, portfolio, attachment, locale, ip, status, createdAt`
+
+**Yeni/değişen endpoint'ler:**
+- `GET /api/help/articles?locale=&category=&slug=` — kategoriye göre gruplu liste VEYA tek makale (`slug` + `locale` bileşik key ile). Seed yok — mevcut `/help` sayfası statik hub. Admin CRUD sonra.
+- `GET /api/admin/analytics/export?format=csv&range=7d|30d|90d|all` — **stream-only CSV** (`AnalyticsExport` model eklenmedi, premature). `getScopedRestaurantIds` ile IDOR; restoran başına toplam/ort./düşük/yüksek + 4 platform dağılımı. UTF-8 BOM + `attachment` Content-Disposition.
+- `POST /api/careers/apply` — JSON body (multipart değil; frontend henüz form göndermemiş durumda). Data URL attachment varsa (`^data:mime;base64,...`) → `uploadToStorage('careers/...')` ile Supabase Storage'a kaydeder, URL döner. 5 MB limit; PDF/DOC/DOCX/PNG/JPG. `isStorageConfigured()` false ise 503. `CAREERS_INBOX_EMAIL` (fallback `NOTIFICATION_EMAIL`) ile HR mail'i.
+
+**Dikkat:** `HelpArticle` arrayField (`searchTags String[]`) sadece PostgreSQL'de native destek alır — Supabase Postgres kullanıldığı için sorun yok.
+
+### 18.3 Wave 3 — Billing read-side (commit `f8a8f1c`, POS YOK)
+
+Kullanıcı sanal POS entegrasyonunu bilinçli ertelemek istedi. Read-side canlı — POS bağlanınca webhook bu tablolara yazacak, UI değişmeden çalışacak.
+
+**Yeni Prisma modelleri:**
+- `BillingSubscription` — `userId @id, plan, status, trialEndsAt, renewsAt, providerRef @unique, paymentBrand, paymentLast4`. `providerRef @unique` webhook idempotency için.
+- `BillingInvoice` — `id, userId, amount Decimal(10,2), currency @default("TRY"), status, providerRef @unique, pdfUrl, issuedAt`.
+
+**Yeni sabitler (`src/lib/constants.ts`):**
+- `PLAN_QUOTA: Record<string, number>` — `trial: 500, monthly: 2000, yearly: 50000, enterprise: 999999` (Infinity UI progress bar için kötü; sabit yüksek tavan).
+- `PLAN_LABELS: Record<string, {tr, en}>` — UI rozetleri için.
+
+**Değişen endpoint'ler:**
+- `GET /api/billing/summary` — `resolveOwnerUserId(actor)` ile owner userId çözer (user → actor.id; manager → `restaurant.userId`). `BillingSubscription` source-of-truth; yoksa `User.plan` + `trialEndsAt` fallback (trial user). Quota: ay başından beri owner'ın tüm restoranlarındaki `Feedback.count`. Response shape admin UI'ın beklediği `{ plan, planLabel, status, trialDaysLeft, renewsAt, quota, paymentMethod }`.
+- `GET /api/billing/invoices` — `userId`-scoped `findMany`; response'u admin UI'ın beklediği `{date, amount, status, url}` shape'ine map eder (`issuedAt → date`, `pdfUrl → url`).
+
+**Henüz YOK (POS geldiğinde):**
+- `POST /api/billing/checkout` — Iyzico subscription create + redirect URL.
+- `POST /api/billing/webhook/iyzico` — imza doğrula → `subscription + invoice` `upsert` (`providerRef @unique` ile idempotent).
+- Env: `IYZICO_API_KEY`, `IYZICO_SECRET_KEY`, `IYZICO_BASE_URL` (sandbox/prod), `IYZICO_WEBHOOK_SECRET`. Stripe parite ikinci iterasyon.
+
+### 18.4 Schema sync & dağıtım
+
+- 4 wave'in tamamı `prisma/schema.prisma`'ya toplam **10 yeni model** ekledi: `CaseStudy`, `OnboardingProgress`, `NewsletterSubscriber`, `ROIRequest`, `HelpArticle`, `CareerApplication`, `BillingSubscription`, `BillingInvoice`.
+- Migration dosyası **üretilmedi** (CLAUDE.md §7 kuralı) — deploy sırasında `package.json::build` scripti `prisma db push --accept-data-loss` çalıştırır, Supabase'teki şema otomatik senkronize olur.
+- Local dev için: `npx prisma generate` yeterli (bu session'da yapıldı, TypeScript tipleri hazır).
+- Case study seed **manuel çalıştırılmalı:** `npx ts-node prisma/seed-case-studies.ts` (veya `tsx prisma/seed-case-studies.ts`). Deploy akışına eklenmedi — 3 kayıt küçük, bir kere çalışır.
+
+### 18.5 Kasten atlanmış kararlar (scope disiplini)
+
+Aşağıdakilerin hiçbiri **eklenmedi** — her biri ayrı iş kalemi:
+
+- Admin CRUD (CaseStudy, HelpArticle, CareerApplication için) — mevcut seed/scaffolded read yeterli
+- `AnalyticsExport` modeli + Supabase Storage job path — stream-only ilk sürüm
+- Resend Audiences sync (newsletter subs) — DB source of truth; Wave 2.4 opsiyonel katmanı yapılmadı
+- `shared helper` dört DB-insert endpoint için — benzer görünse de şemalar farklı, 3+ tekrar kuralına henüz ulaşılmadı
+- `zod` / `shadcn/ui` — proje kararına sadık, manuel validation + Tailwind arbitrary values
+- Stripe parite — Iyzico TR öncelik, Stripe ikinci iterasyon
+- Plan enforcement (quota aşımı durumunda feedback POST'u reddet) — şu an read-only yerinde; write-time enforcement ayrı scope
+
+### 18.6 Yeni env var'ları (hiçbiri zorunlu değil, hepsi opsiyonel)
+
+- `CAREERS_INBOX_EMAIL` — HR başvuru maili için; yoksa `NOTIFICATION_EMAIL` fallback.
+- `NOTIFICATION_EMAIL` — zaten mevcut; ROI save ve Careers apply kullanır.
+- `RESEND_API_KEY` — zaten mevcut; newsletter/welcome/ROI/careers mail gönderimleri bunu kullanır.
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET` — zaten mevcut; careers attachment upload bunu kullanır.
+
+POS için gerekli env'ler (Wave 3.5+): yukarıda §18.3'te listelendi.
+
+### 18.7 Verification checklist
+
+POS'suz halde çalıştığı doğrulandı:
+- [x] `npx tsc --noEmit` — sadece 2 pre-existing hata (globals.css + menu analytics JSON tip), yeni kod temiz
+- [x] `npx prisma generate` — 10 yeni model tipli
+- [ ] `prisma db push` — local DB'de çalışmadı (bu sandbox'ta Supabase bağlantısı yok); Vercel deploy'da otomatik uygulanır
+- [ ] Seed — deploy sonrası `npx ts-node prisma/seed-case-studies.ts` manuel çalıştırılmalı
+- [ ] Mobile QA — dev server'da 375/768/1280 breakpoint'leri kontrol edilmeli
+
+---
+
+_Son güncelleme: 2026-04 (beşinci dalga) — §18 Backend Wiring Wave eklendi (3 commit, 10 yeni Prisma model, 9'dan 7 scaffold bağlandı, POS kasıtlı ertelendi). §17.10 gap listesi güncellendi. Daha önceki güncelleme §17 Pulse Redesign idi._
 
