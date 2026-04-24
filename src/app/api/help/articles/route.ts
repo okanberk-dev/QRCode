@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
   const locale = localeParam === 'en' ? 'en' : 'tr';
   const category = searchParams.get('category')?.trim() || undefined;
   const slug = searchParams.get('slug')?.trim() || undefined;
+  const search = searchParams.get('search')?.trim() || undefined;
 
   if (slug) {
     const article = await prisma.helpArticle.findUnique({
@@ -18,6 +19,34 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
     return NextResponse.json({ data: article });
+  }
+
+  // Search mode — return a flat result list, not grouped-by-category.
+  if (search) {
+    const q = search.toLowerCase();
+    const results = await prisma.helpArticle.findMany({
+      where: {
+        isPublished: true,
+        locale,
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { excerpt: { contains: search, mode: 'insensitive' } },
+          { searchTags: { has: q } },
+        ],
+      },
+      orderBy: [{ order: 'asc' }, { updatedAt: 'desc' }],
+      take: 30,
+      select: {
+        id: true,
+        slug: true,
+        locale: true,
+        category: true,
+        title: true,
+        excerpt: true,
+        updatedAt: true,
+      },
+    });
+    return NextResponse.json({ query: search, count: results.length, results });
   }
 
   const articles = await prisma.helpArticle.findMany({
