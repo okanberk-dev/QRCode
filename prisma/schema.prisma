@@ -297,3 +297,40 @@ model ROIRequest {
   @@index([email, createdAt])
   @@map("roi_requests")
 }
+
+model HelpArticle {
+  id          String   @id @default(cuid())
+  slug        String
+  locale      String   @default("tr") // tr | en
+  category    String
+  title       String
+  excerpt     String?  @db.Text
+  body        String   @db.Text
+  searchTags  String[] @default([]) @map("search_tags")
+  isPublished Boolean  @default(true) @map("is_published")
+  order       Int      @default(0)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@unique([slug, locale])
+  @@index([locale, category, order])
+  @@index([isPublished, updatedAt])
+  @@map("help_articles")
+}
+
+model CareerApplication {
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  roleSlug   String?  @map("role_slug")
+  message    String?  @db.Text
+  portfolio  String?
+  attachment String?
+  locale     String   @default("tr")
+  ip         String?
+  status     String   @default("new")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([roleSlug, createdAt])
+  @@index([status, createdAt])
+  @@map("career_applications")
+}
