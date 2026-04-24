@@ -3,8 +3,17 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export function ContactFloat({ locale }: { locale: string }) {
+  const pathname = usePathname();
+  const base = `/${locale}`;
+  const current = pathname.replace(/\/+$/, '') || '/';
+
+  if (current === base || current.startsWith(`${base}/auth`) || current === `${base}/onboarding`) {
+    return null;
+  }
+
   return (
     <Link
       href={`/${locale}/contact`}

@@ -31,7 +31,6 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Locale } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
-import MobileBottomNav from './MobileBottomNav';
 import WatchDemoButton from './WatchDemoButton';
 
 interface MarketingNavbarProps {
@@ -70,6 +69,7 @@ export default function MarketingNavbarClient({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSection, setMobileSection] = useState<DropdownId>(null);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enter = (id: DropdownId) => {
@@ -91,6 +91,13 @@ export default function MarketingNavbarClient({
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   // Lock body scroll when mobile drawer is open
@@ -311,11 +318,15 @@ export default function MarketingNavbarClient({
 
   return (
     <>
-      <MobileBottomNav locale={locale} isLoggedIn={isLoggedIn} />
-
-      <nav className="fixed inset-x-0 top-0 z-40 h-[64px] border-b border-[#EDEDED]/60 bg-white/90 backdrop-blur-lg">
+      <nav
+        className={`fixed inset-x-0 top-0 z-40 h-[64px] border-b backdrop-blur-2xl transition-all duration-300 ${
+          scrolled
+            ? 'border-[#E5E5E5] bg-white/95 shadow-[0_4px_24px_rgba(10,10,10,0.05)]'
+            : 'border-[#EDEDED] bg-white/88'
+        }`}
+      >
         <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between gap-4 px-5 sm:px-8">
-          {/* Logo + trust chip */}
+          {/* Logo */}
           <div className="flex items-center gap-3">
             <Link href={base} className="flex items-center gap-2 group">
               <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
@@ -326,16 +337,6 @@ export default function MarketingNavbarClient({
                 buaze<span className="text-[#C6F24E]">.</span>
               </span>
             </Link>
-            {/* Trust chip — desktop only */}
-            <span className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/60 bg-[#EAF9B8] px-2.5 py-0.5">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
-              </span>
-              <span className="pulse-eyebrow text-[#0A0A0A]">
-                {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
-              </span>
-            </span>
           </div>
 
           {/* Desktop links */}
@@ -456,6 +457,13 @@ export default function MarketingNavbarClient({
               </div>
             </DesktopDropdown>
 
+            <Link
+              href={`${base}/pricing`}
+              className="rounded-full px-3 py-1.5 text-[13px] font-medium text-[#1A1A1A] transition-colors hover:text-[#0A0A0A]"
+            >
+              {isTr ? 'Fiyatlar' : 'Pricing'}
+            </Link>
+
             {/* Customers */}
             <DesktopDropdown
               label={isTr ? 'Müşteriler' : 'Customers'}
@@ -471,51 +479,11 @@ export default function MarketingNavbarClient({
               </div>
             </DesktopDropdown>
 
-            {/* Resources */}
-            <DesktopDropdown
-              label={isTr ? 'Kaynaklar' : 'Resources'}
-              isOpen={open === 'resources'}
-              onEnter={() => enter('resources')}
-              onLeave={leave}
-              widthClass="w-[520px]"
-            >
-              <div className="grid grid-cols-2 gap-4 p-4">
-                <div>
-                  <p className="pulse-eyebrow mb-2 px-3 text-[#737373]">
-                    {isTr ? 'ÖĞREN' : 'LEARN'}
-                  </p>
-                  <div className="space-y-0.5">
-                    {resourcesLearn.map((it) => (
-                      <NavLink key={it.label} item={it} onClick={() => setOpen(null)} />
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="pulse-eyebrow mb-2 px-3 text-[#737373]">
-                    {isTr ? 'YARDIM' : 'HELP'}
-                  </p>
-                  <div className="space-y-0.5">
-                    {resourcesHelp.map((it) => (
-                      <NavLink key={it.label} item={it} onClick={() => setOpen(null)} />
-                    ))}
-                  </div>
-                  <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 text-[11px] text-[#525252]">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
-                    </span>
-                    {isTr ? 'Tüm sistemler çalışıyor' : 'All systems operational'}
-                  </div>
-                </div>
-              </div>
-            </DesktopDropdown>
-
-            {/* Pricing — flat */}
             <Link
-              href={`${base}/pricing`}
+              href={`${base}/blog`}
               className="rounded-full px-3 py-1.5 text-[13px] font-medium text-[#1A1A1A] transition-colors hover:text-[#0A0A0A]"
             >
-              {isTr ? 'Fiyatlandırma' : 'Pricing'}
+              Blog
             </Link>
           </div>
 
@@ -548,7 +516,7 @@ export default function MarketingNavbarClient({
                 </Link>
                 <Link
                   href={`${base}/auth/register`}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-2 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E]"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#1A1A1A]"
                 >
                   {isTr ? 'Ücretsiz başla' : 'Start free'} →
                 </Link>

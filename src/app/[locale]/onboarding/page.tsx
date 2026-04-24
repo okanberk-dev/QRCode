@@ -65,6 +65,67 @@ export default function OnboardingPage({ params }: Props) {
   const currentIdx = steps.findIndex((s) => s.id === step);
   const isLast = currentIdx === steps.length - 1;
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [stateRes, restaurantsRes, profileRes] = await Promise.all([
+          fetch('/api/onboarding/state'),
+          fetch('/api/restaurants'),
+          fetch('/api/user/profile'),
+        ]);
+
+        if (cancelled) return;
+
+        const next: OnboardingState = { ...INITIAL };
+
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          if (typeof profile?.name === 'string') next.contactName = profile.name;
+        }
+
+        if (restaurantsRes.ok) {
+          const restaurantsPayload = await restaurantsRes.json();
+          const restaurants = Array.isArray(restaurantsPayload)
+            ? restaurantsPayload
+            : Array.isArray(restaurantsPayload?.data)
+              ? restaurantsPayload.data
+              : [];
+          const first = restaurants[0] ?? null;
+          if (first) {
+            if (typeof first.name === 'string') next.bizName = first.name;
+            if (typeof first.phone === 'string') next.phone = first.phone;
+            if (typeof first.category === 'string') next.sector = first.category.toLowerCase();
+            if (typeof first.address === 'string') {
+              next.locationName = first.name ?? '';
+              next.city = first.address;
+            }
+          }
+        }
+
+        if (stateRes.ok) {
+          const saved = await stateRes.json();
+          const savedData = saved?.data && typeof saved.data === 'object' ? saved.data : null;
+          if (savedData) Object.assign(next, savedData);
+          if (typeof saved?.step === 'number') {
+            const savedIdx = Math.min(Math.max(saved.step - 1, 0), steps.length - 1);
+            setStep(steps[savedIdx].id);
+          }
+        }
+
+        setData(next);
+      } catch {
+        // Keep the empty wizard usable even if prefill endpoints fail.
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const update = <K extends keyof OnboardingState>(key: K, value: OnboardingState[K]) =>
     setData((prev) => ({ ...prev, [key]: value }));
 
@@ -98,128 +159,191 @@ export default function OnboardingPage({ params }: Props) {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#FAFAFA]">
-      {/* Top bar — logo + skip */}
-      <header className="border-b border-[#EDEDED] bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">
-          <Link href={`/${locale}`} className="flex items-center gap-2">
-            <BuazeLogo size={28} />
+    <div className="min-h-screen bg-white lg:grid lg:grid-cols-[44%_1fr]">
+      <aside className="relative hidden overflow-hidden bg-[#0A0A0A] px-12 py-12 text-white lg:flex lg:flex-col lg:justify-between xl:px-16">
+        <div className="relative z-10">
+          <Link href={`/${locale}`} className="inline-flex items-center gap-3">
+            <BuazeLogo size={48} variant="on-dark" />
             <span
-              className="text-[17px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+              className="text-[22px] font-medium tracking-[-0.03em] text-white"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               buaze<span className="text-[#C6F24E]">.</span>
             </span>
           </Link>
-          <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-[13px] text-[#A3A3A3]">
-              {isTr ? 'Adım' : 'Step'} {currentIdx + 1} / {steps.length}
+          <div className="mt-12 inline-flex items-center gap-2 rounded-full border border-[#C6F24E]/30 bg-white/5 px-4 py-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat" />
+            <span className="pulse-eyebrow text-[#C6F24E]">
+              {isTr ? 'KURULUM SİHİRBAZI' : 'SETUP WIZARD'}
             </span>
-            <button
-              onClick={finish}
-              className="text-[12px] font-semibold text-[#0A0A0A] hover:text-[#525252]"
-            >
-              {isTr ? 'Sonra tamamla' : 'Finish later'}
-            </button>
           </div>
+          <h1
+            className="mt-6 text-[48px] font-medium leading-[0.95] tracking-[-0.04em] text-white xl:text-[60px]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {isTr ? (
+              <>
+                Nabzını
+                <br />
+                ölçmeye
+                <br />
+                <span className="text-[#C6F24E]">başlayalım.</span>
+              </>
+            ) : (
+              <>
+                Let&apos;s start
+                <br />
+                reading your
+                <br />
+                <span className="text-[#C6F24E]">pulse.</span>
+              </>
+            )}
+          </h1>
+          <p className="mt-5 max-w-[420px] text-[15px] leading-[1.7] text-white/65">
+            {isTr
+              ? 'Kayıt akışının devamı: işletmeni tanımla, platformlarını seç ve ilk QR kodunu hazırla.'
+              : 'The continuation of signup: define your business, pick platforms and prepare your first QR.'}
+          </p>
         </div>
-      </header>
-
-      {/* Progress rail — big 40px circles with labels (matches design v2) */}
-      <div className="border-b border-[#EDEDED] bg-white px-4 py-5 sm:px-8 sm:py-6">
-        <div className="mx-auto flex max-w-[680px] items-start">
-          {steps.map((s, i) => {
-            const done = i < currentIdx;
-            const active = i === currentIdx;
-            return (
-              <div key={s.id} className="flex min-w-0 flex-1 items-start">
-                <div className="flex min-w-0 flex-col items-center gap-2 flex-shrink-0">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-semibold transition-all ${
+        <div className="relative z-10 rounded-2xl border border-white/10 bg-white/5 p-6">
+          <p className="pulse-eyebrow text-[#C6F24E]">{isTr ? 'İLERLEME' : 'PROGRESS'}</p>
+          <div className="mt-4 space-y-3">
+            {steps.map((s, i) => {
+              const done = i < currentIdx;
+              const active = i === currentIdx;
+              const Icon = s.icon;
+              return (
+                <div key={s.id} className="flex items-center gap-3">
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center rounded-full ${
                       done
                         ? 'bg-[#C6F24E] text-[#0A0A0A]'
                         : active
-                          ? 'bg-[#0A0A0A] text-[#C6F24E] ring-[6px] ring-[#C6F24E]/25'
-                          : 'border-2 border-[#EDEDED] bg-[#F5F5F5] text-[#A3A3A3]'
-                    }`}
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
-                    {done ? <Check size={16} strokeWidth={2.5} /> : i + 1}
-                  </div>
-                  <span
-                    className={`pulse-eyebrow whitespace-nowrap ${
-                      active
-                        ? 'text-[#0A0A0A]'
-                        : done
-                          ? 'text-[#16A34A]'
-                          : 'text-[#A3A3A3]'
+                          ? 'bg-white text-[#0A0A0A]'
+                          : 'bg-white/10 text-white/50'
                     }`}
                   >
+                    {done ? <Check size={14} strokeWidth={3} /> : <Icon size={14} />}
+                  </span>
+                  <span className={`text-[13px] font-medium ${active || done ? 'text-white' : 'text-white/45'}`}>
                     {s.label[isTr ? 'tr' : 'en']}
                   </span>
                 </div>
-                {i < steps.length - 1 && (
-                  <div
-                    className={`mt-[18px] h-0.5 flex-1 transition-colors ${
-                      done ? 'bg-[#C6F24E]' : 'bg-[#EDEDED]'
-                    }`}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Step body */}
-      <main className="flex-1 px-4 py-10 sm:px-8 sm:py-14 pb-32">
-        <div className="mx-auto max-w-3xl">
-          <h1
-            className="text-[32px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A] sm:text-[42px]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            {step === 'profile' && (isTr ? 'İşletmenizi tanıyalım.' : "Tell us about your business.")}
-            {step === 'sector' && (isTr ? 'Hangi sektördesiniz?' : 'Which sector?')}
-            {step === 'location' && (isTr ? 'İlk konumunuzu ekleyin.' : 'Add your first location.')}
-            {step === 'platforms' && (isTr ? 'Hangi platformlar?' : 'Which platforms?')}
-            {step === 'qr' && (isTr ? 'İlk QR kodunuz.' : 'Your first QR code.')}
-          </h1>
-
-          <div className="mt-8 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-8">
-            {step === 'profile' && <ProfileStep isTr={isTr} data={data} update={update} />}
-            {step === 'sector' && <SectorStep isTr={isTr} data={data} update={update} />}
-            {step === 'location' && <LocationStep isTr={isTr} data={data} update={update} />}
-            {step === 'platforms' && <PlatformStep isTr={isTr} data={data} update={update} />}
-            {step === 'qr' && <QrStep isTr={isTr} data={data} update={update} />}
+              );
+            })}
           </div>
         </div>
-      </main>
+        <div className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-[#C6F24E]/10 blur-[120px]" />
+      </aside>
 
-      {/* Sticky bottom nav — Geri + Devam/Yayınla */}
-      <div className="sticky bottom-0 border-t border-[#EDEDED] bg-white px-4 py-4 sm:px-8">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
-          <button
-            onClick={() => currentIdx > 0 && setStep(steps[currentIdx - 1].id)}
-            disabled={currentIdx === 0}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E5E5] px-5 py-2.5 text-[13px] font-medium text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <ArrowLeft size={14} /> {isTr ? 'Geri' : 'Back'}
-          </button>
-          {isLast ? (
-            <FinishButton isTr={isTr} onFinish={finish} saving={saving} />
-          ) : (
-            <button
-              onClick={goNext}
-              disabled={saving}
-              className="pulse-btn-dark inline-flex items-center gap-1.5 rounded-full disabled:opacity-50"
-            >
-              {saving && <Loader2 size={13} className="animate-spin" />}
-              {isTr ? 'Devam' : 'Continue'}
-              {!saving && <ArrowRight size={13} />}
+      <main className="flex min-h-screen flex-col bg-[#FFFFFF]">
+        <header className="border-b border-[#EDEDED] bg-white px-4 py-4 sm:px-8 lg:hidden">
+          <div className="flex items-center justify-between">
+            <Link href={`/${locale}`} className="flex items-center gap-2">
+              <BuazeLogo size={28} />
+              <span
+                className="text-[17px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                buaze<span className="text-[#C6F24E]">.</span>
+              </span>
+            </Link>
+            <button onClick={finish} className="text-[12px] font-semibold text-[#0A0A0A]">
+              {isTr ? 'Sonra tamamla' : 'Finish later'}
             </button>
-          )}
-        </div>
-      </div>
+          </div>
+        </header>
+
+        <section className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8 lg:px-12 lg:py-12">
+          <div className="w-full max-w-[760px]">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <p className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'ADIM' : 'STEP'} {currentIdx + 1} / {steps.length}
+                </p>
+                <h1
+                  className="mt-2 text-[32px] font-medium leading-[1.08] tracking-[-0.035em] text-[#0A0A0A] sm:text-[44px]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {step === 'profile' && (isTr ? 'İşletmenizi tanıyalım.' : "Tell us about your business.")}
+                  {step === 'sector' && (isTr ? 'Hangi sektördesiniz?' : 'Which sector?')}
+                  {step === 'location' && (isTr ? 'İlk konumunuzu ekleyin.' : 'Add your first location.')}
+                  {step === 'platforms' && (isTr ? 'Hangi platformlar?' : 'Which platforms?')}
+                  {step === 'qr' && (isTr ? 'İlk QR kodunuz.' : 'Your first QR code.')}
+                </h1>
+              </div>
+              <button
+                onClick={finish}
+                className="hidden rounded-full border border-[#EDEDED] px-4 py-2 text-[12px] font-semibold text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A] lg:inline-flex"
+              >
+                {isTr ? 'Sonra tamamla' : 'Finish later'}
+              </button>
+            </div>
+
+            <div className="mb-6 flex items-start">
+              {steps.map((s, i) => {
+                const done = i < currentIdx;
+                const active = i === currentIdx;
+                return (
+                  <div key={s.id} className="flex min-w-0 flex-1 items-start">
+                    <div className="flex min-w-0 flex-col items-center gap-2">
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-semibold transition-all ${
+                          done
+                            ? 'bg-[#C6F24E] text-[#0A0A0A]'
+                            : active
+                              ? 'bg-[#0A0A0A] text-[#C6F24E] ring-[6px] ring-[#C6F24E]/25'
+                              : 'border-2 border-[#EDEDED] bg-[#F5F5F5] text-[#A3A3A3]'
+                        }`}
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                      >
+                        {done ? <Check size={16} strokeWidth={2.5} /> : i + 1}
+                      </div>
+                      <span className={`pulse-eyebrow hidden whitespace-nowrap sm:inline ${active ? 'text-[#0A0A0A]' : done ? 'text-[#16A34A]' : 'text-[#A3A3A3]'}`}>
+                        {s.label[isTr ? 'tr' : 'en']}
+                      </span>
+                    </div>
+                    {i < steps.length - 1 && (
+                      <div className={`mt-[18px] h-0.5 flex-1 ${done ? 'bg-[#C6F24E]' : 'bg-[#EDEDED]'}`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="rounded-3xl border border-[#EDEDED] bg-white p-5 shadow-[0_8px_24px_rgba(10,10,10,0.04)] sm:p-8">
+              {step === 'profile' && <ProfileStep isTr={isTr} data={data} update={update} />}
+              {step === 'sector' && <SectorStep isTr={isTr} data={data} update={update} />}
+              {step === 'location' && <LocationStep isTr={isTr} data={data} update={update} />}
+              {step === 'platforms' && <PlatformStep isTr={isTr} data={data} update={update} />}
+              {step === 'qr' && <QrStep isTr={isTr} data={data} update={update} />}
+            </div>
+
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <button
+                onClick={() => currentIdx > 0 && setStep(steps[currentIdx - 1].id)}
+                disabled={currentIdx === 0}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E5E5] px-5 py-2.5 text-[13px] font-medium text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ArrowLeft size={14} /> {isTr ? 'Geri' : 'Back'}
+              </button>
+              {isLast ? (
+                <FinishButton isTr={isTr} onFinish={finish} saving={saving} />
+              ) : (
+                <button
+                  onClick={goNext}
+                  disabled={saving}
+                  className="pulse-btn-dark inline-flex items-center gap-1.5 rounded-full disabled:opacity-50"
+                >
+                  {saving && <Loader2 size={13} className="animate-spin" />}
+                  {isTr ? 'Devam' : 'Continue'}
+                  {!saving && <ArrowRight size={13} />}
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

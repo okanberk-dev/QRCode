@@ -30,7 +30,7 @@ export default function AnimatedCounter({
   className,
   locale = 'tr-TR',
 }: Props) {
-  const [value, setValue] = useState(0);
+  const [value, setValue] = useState(to);
   const ref = useRef<HTMLSpanElement | null>(null);
 
   useEffect(() => {
@@ -44,24 +44,44 @@ export default function AnimatedCounter({
       return;
     }
 
-    const observer = new IntersectionObserver(
+    let started = false;
+    let observer: IntersectionObserver | null = null;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const startCounter = () => {
+      if (started) return;
+      started = true;
+      observer?.disconnect();
+      setValue(0);
+      const start = performance.now();
+      const tick = (now: number) => {
+        const p = Math.min((now - start) / durationMs, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        setValue(Number((eased * to).toFixed(decimals)));
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+
+    observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
         if (!entry?.isIntersecting) return;
-        observer.disconnect();
-        const start = performance.now();
-        const tick = (now: number) => {
-          const p = Math.min((now - start) / durationMs, 1);
-          const eased = 1 - Math.pow(1 - p, 3);
-          setValue(Number((eased * to).toFixed(decimals)));
-          if (p < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
+        startCounter();
       },
       { threshold: 0.4 },
     );
     observer.observe(el);
-    return () => observer.disconnect();
+
+    fallbackTimer = setTimeout(() => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) startCounter();
+    }, 150);
+
+    return () => {
+      observer?.disconnect();
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+    };
   }, [to, decimals, durationMs]);
 
   const formatted = value.toLocaleString(locale, {

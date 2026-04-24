@@ -131,14 +131,28 @@ export default async function LandingPage({
   // ── Section content (inline locale, keeps translations.ts untouched) ──
   const heroHeadline = isTr ? (
     <>
-      İtibarınızı bir{' '}
-      <span className="inline-block bg-[#C6F24E] rounded-lg px-3 py-0.5 -skew-y-1">nabız</span>{' '}
-      gibi izleyin.
+      İtibarınızı
+      <br />
+      <span className="relative inline-block">
+        bir{' '}
+        <span className="inline-block rounded-[10px] bg-[#C6F24E] px-3.5 pb-0.5 -rotate-[0.5deg]">
+          nabız
+        </span>{' '}
+        gibi
+      </span>
+      <br />
+      izleyin.
     </>
   ) : (
     <>
-      Track your reputation like a{' '}
-      <span className="inline-block bg-[#C6F24E] rounded-lg px-3 py-0.5 -skew-y-1">pulse</span>.
+      Track your
+      <br />
+      reputation like
+      <br />a{' '}
+      <span className="inline-block rounded-[10px] bg-[#C6F24E] px-3.5 pb-0.5 -rotate-[0.5deg]">
+        pulse
+      </span>
+      .
     </>
   );
 
@@ -227,71 +241,48 @@ export default async function LandingPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ═══════════════════════════════════════════════════════════
-          1. HERO — grid bg + lighthouse + lime-highlighted word
+          1. HERO — Homepage v2 design
       ═══════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-10 sm:pt-16 lg:pt-20 pb-14 sm:pb-20">
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
-          width="100%"
-          height="100%"
-        >
-          <defs>
-            <pattern id="pulseGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#pulseGrid)" />
-        </svg>
-
-        <div className="relative max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-10 lg:gap-14 items-center">
-          <div className="space-y-7 sm:space-y-8">
-            <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] rounded-full pl-2 pr-4 py-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#16A34A] pulse-heartbeat" />
+      <section className="px-5 pb-16 pt-16 sm:px-8 sm:pb-20 sm:pt-20 lg:px-16 lg:pb-20 lg:pt-24">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-12 md:grid-cols-2 lg:gap-16">
+          <div className="flex flex-col gap-6 sm:gap-7">
+            <div className="bz-fade-up inline-flex items-center gap-2 self-start rounded-full bg-[#EAF9B8] px-3.5 py-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#16A34A] pulse-heartbeat" />
               <span className="pulse-eyebrow text-[#0A0A0A]">
                 <AnimatedCounter to={2400} suffix="+" locale={isTr ? 'tr-TR' : 'en-US'} />{' '}
-                {isTr ? 'işletme kullanıyor' : 'businesses using it'}
+                {isTr ? 'işletme güveniyor' : 'businesses trust Buaze'}
               </span>
             </div>
 
-            <h1 className="text-[40px] sm:text-[56px] lg:text-[80px] font-medium leading-[0.95] tracking-[-0.04em] text-[#0A0A0A] text-balance">
+            <h1 className="bz-fade-up bz-d1 text-[44px] font-medium leading-[0.92] tracking-[-0.04em] text-[#0A0A0A] text-balance sm:text-[64px] lg:text-[76px]">
               {heroHeadline}
             </h1>
 
-            <p className="text-[17px] sm:text-[18px] text-[#525252] font-normal leading-[1.55] max-w-[540px]">
+            <p className="bz-fade-up bz-d2 max-w-[500px] text-[17px] font-normal leading-[1.6] text-[#525252] sm:text-[18px]">
               {heroSub}
             </p>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+            <div className="bz-fade-up bz-d3 flex flex-col items-stretch gap-3 pt-1 sm:flex-row sm:items-center">
               <Link
                 href={`${base}/auth/register`}
-                className="pulse-btn-dark inline-flex items-center justify-center gap-2 rounded-full"
+                className="bz-btn-primary inline-flex items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-7 py-4 text-[16px] font-semibold text-white transition-all hover:bg-[#1A1A1A]"
               >
                 {isTr ? '14 gün ücretsiz başla' : 'Start 14-day free trial'}
                 <span aria-hidden>→</span>
               </Link>
               <WatchDemoButton locale={locale} />
-              <Link
-                href={`${base}/how-it-works`}
-                className="inline-flex items-center justify-center gap-2 text-[#525252] underline-offset-4 hover:text-[#0A0A0A] hover:underline text-[14px] font-medium"
-              >
-                {isTr ? 'Nasıl çalışır?' : 'How it works?'} →
-              </Link>
             </div>
 
-            <ul className="flex flex-wrap gap-x-6 gap-y-2 pt-2">
+            <ul className="bz-fade-up bz-d4 flex flex-wrap gap-x-5 gap-y-2 pt-1">
               {trustTicks.map((tick) => (
-                <li key={tick} className="flex items-center gap-2 text-[14px] text-[#525252]">
-                  <span className="w-4 h-4 rounded-full bg-[#C6F24E] flex items-center justify-center text-[#0A0A0A] text-[10px] font-bold">
-                    ✓
-                  </span>
-                  {tick}
+                <li key={tick} className="text-[13px] text-[#737373]">
+                  ✓ {tick}
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="w-full pr-3 md:pr-6">
+          <div className="bz-scale-in w-full pr-3 md:pr-4">
             <HomeHeroDashboard locale={locale} />
           </div>
         </div>

@@ -29,7 +29,7 @@ export default function WatchDemoButton({
         onClick={() => setOpen(true)}
         className={
           className ??
-          'inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors'
+          'inline-flex items-center justify-center gap-2 rounded-full border border-[#E5E5E5] bg-[#FAFAFA] px-6 py-4 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#F5F5F5]'
         }
       >
         <span
@@ -38,7 +38,10 @@ export default function WatchDemoButton({
         >
           ▶
         </span>
-        {isTr ? 'Demo izle (2 dk)' : 'Watch demo (2 min)'}
+        {isTr ? 'Demo izle' : 'Watch demo'}
+        <span className="font-mono text-[10px] text-[#737373]">
+          {isTr ? '2 dk' : '2 min'}
+        </span>
       </button>
       <VideoModal
         open={open}

@@ -68,7 +68,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         return;
       }
 
-      router.push(`/${locale}/dashboard`);
+      router.push(`/${locale}/onboarding`);
       router.refresh();
     } catch {
       setError(locale === 'tr' ? 'Bağlantı hatası. Lütfen tekrar deneyin.' : 'Connection error. Please try again.');
