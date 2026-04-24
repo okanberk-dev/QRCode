@@ -47,9 +47,10 @@ export default async function DashboardLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
+  const { locale: rawLocale } = await params;
+  const locale: Locale = rawLocale === 'en' ? 'en' : 'tr';
   const cookieStore = await cookies();
 
   // Admin bypass: superadmin/manager reach the menu builder and other owner

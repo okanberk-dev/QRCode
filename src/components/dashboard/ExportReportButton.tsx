@@ -18,11 +18,6 @@ export default function ExportReportButton({ label, format = 'csv', range = '90d
     setErr(null);
     try {
       const res = await fetch(`/api/analytics/export?format=${format}&range=${range}`);
-      if (res.status === 501) {
-        setErr('soon');
-        setTimeout(() => setErr(null), 3000);
-        return;
-      }
       if (!res.ok) throw new Error(String(res.status));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

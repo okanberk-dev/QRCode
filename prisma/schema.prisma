@@ -60,6 +60,7 @@ model Restaurant {
   menuCategories    MenuCategory[]
   menuItems         MenuItem[]
   analyticsEvents   MenuAnalyticsEvent[]
+  brandSettings     BrandSettings?
 
   @@map("restaurants")
 }
@@ -110,6 +111,7 @@ model Feedback {
   replies             FeedbackReply[]
   flag                FeedbackFlag?
   assignment          FeedbackAssignment?
+  tags                FeedbackTag[]
 
   @@index([restaurantId, createdAt])
   @@index([ipAddress, createdAt])
@@ -150,6 +152,78 @@ model FeedbackAssignment {
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("feedback_assignments")
+}
+
+model FeedbackTag {
+  id         String   @id @default(cuid())
+  feedbackId String   @map("feedback_id")
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  label      String
+  score      Int?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([feedbackId, label])
+  @@index([feedbackId])
+  @@map("feedback_tags")
+}
+
+model AutomationRule {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  restaurantId String?  @map("restaurant_id")
+  trigger      String
+  threshold    String?
+  action       String
+  target       String?
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, isActive])
+  @@index([userId, restaurantId])
+  @@map("automation_rules")
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  name       String
+  prefix     String
+  tokenHash  String    @map("token_hash")
+  scopes     String[]  @default([])
+  lastUsedAt DateTime? @map("last_used_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([prefix])
+  @@map("api_keys")
+}
+
+model BrandSettings {
+  restaurantId String     @id @map("restaurant_id")
+  logoUrl      String?    @map("logo_url")
+  accentColor  String?    @map("accent_color")
+  accentFont   String?    @map("accent_font")
+  updatedAt    DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@map("brand_settings")
+}
+
+model GoogleIntegration {
+  id            String   @id @default(cuid())
+  userId        String   @unique @map("user_id")
+  accessToken   String   @map("access_token")
+  refreshToken  String?  @map("refresh_token")
+  expiresAt     DateTime @map("expires_at")
+  accountId     String?  @map("account_id")
+  locationsJson Json?    @map("locations_json")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("google_integrations")
 }
 
 model TeamMember {

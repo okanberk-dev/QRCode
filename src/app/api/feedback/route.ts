@@ -247,6 +247,7 @@ export async function GET(req: NextRequest) {
           restaurant: { select: { name: true, slug: true } },
           flag: { select: { id: true } },
           assignment: { select: { assigneeId: true } },
+          tags: { select: { id: true, label: true, score: true, createdAt: true }, orderBy: { createdAt: 'asc' } },
           _count: { select: { replies: true } },
         },
       });
@@ -275,6 +276,7 @@ export async function GET(req: NextRequest) {
       isFlagged: joinsAvailable ? Boolean(f.flag) : false,
       isAssigned: joinsAvailable ? Boolean(f.assignment) : false,
       assigneeId: joinsAvailable ? f.assignment?.assigneeId ?? null : null,
+      tags: joinsAvailable ? (f.tags ?? []) : [],
     }));
 
     return NextResponse.json({

@@ -14,9 +14,10 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params;
+  const { locale: rawLocale } = await params;
+  const locale: Locale = rawLocale === 'tr' ? 'tr' : 'en';
   const s = await getSiteSettings();
 
   const title = locale === 'tr' ? s.titleDefaultTr : s.titleDefaultEn;
@@ -93,13 +94,14 @@ export default async function LocaleLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
+  const { locale: rawLocale } = await params;
 
-  if (!VALID_LOCALES.includes(locale as typeof VALID_LOCALES[number])) {
+  if (!VALID_LOCALES.includes(rawLocale as typeof VALID_LOCALES[number])) {
     notFound();
   }
+  const locale = rawLocale as Locale;
 
   const t = getTranslations(locale);
   const s = await getSiteSettings();

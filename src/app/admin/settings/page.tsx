@@ -167,11 +167,18 @@ function AdminSettingsBody() {
 async function connect(provider: 'google') {
   try {
     const res = await fetch(`/api/integrations/${provider}/connect`, { method: 'POST' });
-    if (res.status === 501) {
-      alert('Yakında bağlanacak.');
+    const data = await res.json().catch(() => null);
+    if (res.ok && data?.url) {
+      window.location.href = data.url;
+      return;
     }
+    if (data?.configured === false) {
+      alert('Google OAuth env ayarları eksik.');
+      return;
+    }
+    alert('Bağlantı başlatılamadı.');
   } catch {
-    /* noop */
+    alert('Bağlantı hatası.');
   }
 }
 

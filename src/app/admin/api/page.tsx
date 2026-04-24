@@ -8,7 +8,9 @@ import {
   KeyRound,
   Loader2,
   Plus,
+  RotateCw,
   ShieldCheck,
+  Trash2,
   Webhook,
   X,
 } from 'lucide-react';
@@ -39,18 +41,6 @@ interface ActivityRow {
   at: string;
   status: 'ok' | 'fail' | 'pending';
 }
-
-const DEMO_KEYS: ApiKey[] = [
-  {
-    id: 'demo-key-1',
-    name: 'Buaze CLI · local',
-    scopes: ['feedback:read', 'restaurants:read'],
-    prefix: 'buz_live_sk_9f2c…',
-    createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
-    lastUsedAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-    revokedAt: null,
-  },
-];
 
 const DEMO_WEBHOOKS: WebhookRow[] = [
   {
@@ -104,20 +94,22 @@ function AdminApiBody() {
   const [newKeyName, setNewKeyName] = useState('');
   const [creatingKey, setCreatingKey] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [newToken, setNewToken] = useState<string | null>(null);
+
+  const fetchKeys = async () => {
+    const res = await fetch('/api/api-keys');
+    if (!res.ok) throw new Error(String(res.status));
+    const data = await res.json();
+    setKeys((data?.data as ApiKey[]) ?? []);
+  };
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/api-keys');
-        if (res.ok) {
-          const data = await res.json();
-          const rows = (data?.data as ApiKey[]) ?? [];
-          setKeys(rows.length > 0 ? rows : DEMO_KEYS);
-        } else {
-          setKeys(DEMO_KEYS);
-        }
+        await fetchKeys();
       } catch {
-        setKeys(DEMO_KEYS);
+        setKeys([]);
+        flash(isTr ? 'API anahtarları alınamadı' : 'Could not load API keys');
       }
       setWebhooks(DEMO_WEBHOOKS);
       setActivity(DEMO_ACTIVITY);
@@ -139,15 +131,44 @@ function AdminApiBody() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: newKeyName, scopes: ['feedback:read'] }),
       });
-      if (res.status === 501) flash(isTr ? 'Scaffold — key yerelde saklandı' : 'Scaffold — key held locally');
-      else if (res.ok) flash(isTr ? 'Anahtar oluşturuldu' : 'Key created');
-      else flash(isTr ? 'Hata' : 'Error');
+      if (res.ok) {
+        const data = await res.json();
+        setNewToken(typeof data.token === 'string' ? data.token : null);
+        await fetchKeys();
+        flash(isTr ? 'Anahtar oluşturuldu' : 'Key created');
+      } else {
+        flash(isTr ? 'Hata' : 'Error');
+      }
     } catch {
       flash(isTr ? 'Ağ hatası' : 'Network error');
     }
     setCreatingKey(false);
     setShowKey(false);
     setNewKeyName('');
+  };
+
+  const onRevoke = async (id: string) => {
+    try {
+      const res = await fetch(`/api/api-keys/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(String(res.status));
+      await fetchKeys();
+      flash(isTr ? 'Anahtar iptal edildi' : 'Key revoked');
+    } catch {
+      flash(isTr ? 'Hata' : 'Error');
+    }
+  };
+
+  const onRotate = async (id: string) => {
+    try {
+      const res = await fetch(`/api/api-keys/${id}`, { method: 'POST' });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      setNewToken(typeof data.token === 'string' ? data.token : null);
+      await fetchKeys();
+      flash(isTr ? 'Anahtar yenilendi' : 'Key rotated');
+    } catch {
+      flash(isTr ? 'Hata' : 'Error');
+    }
   };
 
   const onCopy = (prefix: string) => {
@@ -180,6 +201,26 @@ function AdminApiBody() {
           <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">{notice}</span>
         )}
       </header>
+
+      {newToken && (
+        <section className="rounded-2xl border border-[#C6F24E] bg-[#F7FFE4] p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="pulse-eyebrow text-[#0A0A0A]">{isTr ? 'YENİ ANAHTAR' : 'NEW TOKEN'}</p>
+              <p className="mt-1 text-[12px] text-[#525252]">
+                {isTr ? 'Bu token sadece bir kez gösterilir.' : 'This token is shown only once.'}
+              </p>
+            </div>
+            <button
+              onClick={() => onCopy(newToken)}
+              className="inline-flex min-w-0 items-center gap-1.5 rounded-lg border border-[#0A0A0A] bg-white px-3 py-2 font-mono text-[11px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+            >
+              <Copy size={11} />
+              <span className="truncate">{newToken}</span>
+            </button>
+          </div>
+        </section>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20 text-[#737373]">
@@ -224,6 +265,22 @@ function AdminApiBody() {
                           <Copy size={10} /> {k.prefix}
                         </button>
                       )}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => onRotate(k.id)}
+                          title={isTr ? 'Yenile' : 'Rotate'}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
+                        >
+                          <RotateCw size={12} />
+                        </button>
+                        <button
+                          onClick={() => onRevoke(k.id)}
+                          title={isTr ? 'İptal et' : 'Revoke'}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#EDEDED] text-red-600 hover:border-red-300 hover:bg-red-50"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
                       <p className="pulse-eyebrow w-full text-[#A3A3A3] sm:w-auto">
                         {k.lastUsedAt
                           ? isTr

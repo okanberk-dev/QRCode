@@ -8,10 +8,8 @@ interface Props {
 }
 
 /**
- * Footer newsletter capture. Posts to `/api/newsletter` which is scaffolded
- * (returns 501 until a provider — Resend / Mailchimp / Brevo — is wired up).
- * UI treats 501 the same as success so the UX stays intact while the
- * backend is under construction; real failures still surface as an error.
+ * Footer newsletter capture. Posts to `/api/newsletter`, which stores the
+ * subscriber locally. A future provider integration can consume saved rows.
  */
 export default function NewsletterSignup({ locale }: Props) {
   const isTr = locale === 'tr';
@@ -28,9 +26,7 @@ export default function NewsletterSignup({ locale }: Props) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email, locale }),
       });
-      // 501 (scaffolded) is treated as "accepted for now" so the UX
-      // doesn't block before the provider is wired up.
-      if (res.ok || res.status === 501) setStatus('done');
+      if (res.ok) setStatus('done');
       else setStatus('error');
     } catch {
       setStatus('error');
