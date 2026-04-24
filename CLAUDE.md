@@ -625,6 +625,21 @@ Kullanıcı "tasarımı geliştirme planına geçeceğiz" dedi. Implementasyon s
 
 Tek bir session'da 15 draft PR üretildi (#39 → #53). Bir sonraki oturum bu bölümü okuyunca ne merge edilmesi gerektiğini, hangi component/util/endpoint'in nereye eklendiğini, neyin hâlâ açık known-gap olduğunu görebilsin.
 
+### 17.0 Nerede ne var — hızlı dosya haritası
+
+| Yol | İçerik |
+|---|---|
+| `.design/` (repo kökü) | **Claude Design handoff bundle** — 21 dosya, JSX prototipleri + canonical site HTML. Git-tracked, referans olarak tutulur. `.design/site/*.jsx` (12 artboard grubu) + `.design/pulse/*.jsx` (token + sembol) + `.design/buaze-site.html` + `.design/chat1.md` (design chat geçmişi). Detaylı dosya haritası §16.1'de. |
+| `design.md` (repo kökü) | **Faz log'u** — her faz için "Kapsam / Değişen dosyalar / Backend etkisi / Verification / Sonraki adım" + "Backend açıkları" tablosu. 15 PR'lık zincirin teknik günlüğü. |
+| `CLAUDE.md` (bu dosya) | Proje referansı + her yeni sessionda önce okunur. §1-16 mevcut mimari, §17 bu Pulse redesign dalgasının özeti. |
+| `src/components/marketing/*` | Yeni marketing component'leri (§17.2) |
+| `src/app/globals.css` | Pulse button utility'leri + 5 motion keyframe (§17.3) |
+| `src/app/api/**` | Mevcut 68 API + 9 yeni 501 scaffold (§17.4) |
+| `src/lib/scaffolding.ts` | Henüz eklenmemiş Prisma modelleri için yorum-önerisi blokları + `scaffoldedResponse()` helper'ı |
+| `src/lib/openai.ts` | AI Co-Pilot OpenAI client (§15) |
+
+**Kritik kural:** `.design/*.jsx` React prototipleridir → `src/`'ye **doğrudan kopyalanmaz**. Yalnız referans olarak okunur; Pulse token'lar zaten `globals.css`'te var, font'lar `layout.tsx`'te yüklü.
+
 ### 17.1 Draft PR zinciri (merge sırası önemli)
 
 Her PR bir önceki branch'in üzerine açıldı — merge sırayla yapılmalı:
