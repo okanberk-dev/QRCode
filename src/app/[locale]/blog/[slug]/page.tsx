@@ -43,6 +43,24 @@ export async function generateMetadata(
   };
 }
 
+function authorInitials(name: string) {
+  return name
+    .split(' ')
+    .map(p => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+/**
+ * 1:1 with .design/site/site-pages4.jsx:BlogPostPage (lines 448-533):
+ * lime hero + eyebrow (read time) + big title + author row, 2-col content grid
+ * (article + sticky TOC/author sidebar), dark CTA box.
+ *
+ * Extension: uploaded coverImage renders as an overlapping editorial card
+ * that bridges the lime hero into the white article column.
+ */
 export default async function BlogPostPage({
   params,
 }: {
@@ -70,87 +88,191 @@ export default async function BlogPostPage({
     datePublished: post.date,
   };
 
+  const hasCover = Boolean(post.coverImage && post.coverImage.trim().length > 0);
+
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
+    <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* Header */}
-      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-10 border-b border-[#EDEDED]">
-        <div className="max-w-[760px] mx-auto">
+      {/* ─── Hero · lime bg + eyebrow + title + author row + ECG decoration ─── */}
+      <section className="relative overflow-hidden bg-[#C6F24E] px-6 sm:px-10 pt-12 sm:pt-16 pb-16 sm:pb-24">
+        <svg
+          aria-hidden
+          viewBox="0 0 300 200"
+          className="pointer-events-none absolute bottom-0 right-6 sm:right-12 w-[260px] sm:w-[400px] opacity-[0.15]"
+        >
+          <path
+            d="M0 150 L40 120 L80 140 L120 90 L160 100 L200 60 L240 80 L280 40 L300 30"
+            fill="none"
+            stroke="#0A0A0A"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx="200" cy="60" r="12" fill="#0A0A0A" />
+          <circle cx="280" cy="40" r="8" fill="#0A0A0A" />
+        </svg>
+
+        <div className="relative max-w-[1200px] mx-auto">
           <Link
             href={`${base}/blog`}
-            className="pulse-eyebrow inline-flex items-center gap-2 text-[#737373] hover:text-[#0A0A0A] mb-8 transition-colors"
+            className="pulse-eyebrow inline-flex items-center gap-2 text-[#0A0A0A]/70 hover:text-[#0A0A0A] mb-7 transition-colors"
           >
             <ArrowLeft size={14} strokeWidth={2} />
             {t.blog_backToBlog.toUpperCase()}
           </Link>
 
-          <div className="pulse-eyebrow text-[#737373] flex items-center gap-3 flex-wrap">
-            <span>{post.date}</span>
-            <span>·</span>
-            <span>{post.readTime}</span>
-            <span>·</span>
-            <span>{post.author}</span>
+          <div className="max-w-[800px]">
+            <div
+              className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-[#0A0A0A]"
+              style={{ fontFamily: 'var(--font-mono)' }}
+            >
+              {(isTr ? 'BUAZE' : 'BUAZE')} · {post.readTime.toUpperCase()}
+            </div>
+            <h1
+              className="mt-3 sm:mt-4 text-[36px] sm:text-[48px] lg:text-[56px] font-medium leading-[1] tracking-[-0.03em] text-[#0A0A0A]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              {post.title}
+            </h1>
+
+            <div className="mt-6 sm:mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]">
+                  {authorInitials(post.author)}
+                </div>
+                <div>
+                  <div className="text-[14px] font-semibold text-[#0A0A0A]">{post.author}</div>
+                  <div className="text-[12px] text-[#0A0A0A]/70">
+                    {isTr ? 'Buaze · Yazar' : 'Buaze · Author'}
+                  </div>
+                </div>
+              </div>
+              <div className="text-[12px] text-[#0A0A0A]/70">{post.date}</div>
+            </div>
           </div>
-
-          <h1 className="mt-5 text-[34px] sm:text-[52px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
-            {post.title}
-          </h1>
-
-          <p className="mt-5 text-[17px] text-[#525252] leading-[1.6] max-w-[640px]">
-            {post.description}
-          </p>
         </div>
       </section>
 
-      {/* Cover */}
-      <section className="px-6 sm:px-10 pt-10">
-        <div className="max-w-[880px] mx-auto aspect-[16/9] overflow-hidden rounded-3xl border border-[#EDEDED]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
-        </div>
-      </section>
+      {/* ─── Cover image · overlaps hero into white column for editorial feel ─── */}
+      {hasCover && (
+        <section className="relative px-6 sm:px-10 -mt-10 sm:-mt-16">
+          <div className="relative max-w-[1040px] mx-auto overflow-hidden rounded-[20px] sm:rounded-[28px] border border-[#0A0A0A]/10 bg-white shadow-[0_20px_60px_-20px_rgba(10,10,10,0.25)]">
+            <div className="aspect-[16/9] sm:aspect-[21/9]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={post.coverImage}
+                alt={post.title}
+                className="h-full w-full object-cover"
+              />
+            </div>
+          </div>
+        </section>
+      )}
 
-      {/* Body */}
-      <main className="px-6 sm:px-10 py-14 max-w-[720px] mx-auto">
-        <article
-          className="prose prose-lg max-w-none
-            prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
-            prose-h2:text-[26px] prose-h2:mt-12 prose-h2:mb-5
-            prose-h3:text-[20px] prose-h3:mt-8 prose-h3:mb-3
-            prose-p:text-[#0A0A0A] prose-p:leading-[1.7] prose-p:mb-6 prose-p:text-[17px]
-            prose-strong:font-medium prose-strong:text-[#0A0A0A]
-            prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4 hover:prose-a:text-[#A8D62E]
-            prose-li:text-[#0A0A0A] prose-li:leading-[1.7]
-            prose-blockquote:border-l-2 prose-blockquote:border-[#C6F24E] prose-blockquote:pl-5 prose-blockquote:text-[#525252] prose-blockquote:not-italic
-            prose-img:rounded-2xl prose-img:border prose-img:border-[#EDEDED]
-            break-words"
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
-      </main>
-
-      {/* CTA */}
-      <section className="px-6 sm:px-10 pb-20">
-        <div className="max-w-[880px] mx-auto bg-[#0A0A0A] rounded-3xl p-8 sm:p-10 text-white flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="text-center sm:text-left">
-            <h3 className="text-[22px] sm:text-[26px] font-medium text-white tracking-[-0.02em] leading-tight">
-              {isTr ? 'Dijitalde rekabeti geride bırakın.' : 'Leave the competition behind.'}
-            </h3>
-            <p className="mt-2 text-[14px] text-white/70">
-              {isTr ? '14 günlük ücretsiz deneme, kredi kartı gerekmez.' : '14-day free trial, no card required.'}
+      {/* ─── Content grid · main article + sticky TOC/author sidebar ─── */}
+      <section className="px-6 sm:px-10 pt-14 sm:pt-20 pb-20">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-10 lg:gap-12">
+          {/* Main column */}
+          <div>
+            {/* Lead (description) */}
+            <p className="text-[18px] sm:text-[20px] leading-[1.6] text-[#0A0A0A]">
+              {post.description}
             </p>
+
+            {/* Body */}
+            <article
+              className="mt-8 prose prose-lg max-w-none
+                prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
+                prose-h2:text-[26px] sm:prose-h2:text-[28px] prose-h2:mt-10 prose-h2:mb-4
+                prose-h3:text-[20px] prose-h3:mt-8 prose-h3:mb-3
+                prose-p:text-[#525252] prose-p:leading-[1.7] prose-p:mb-6 prose-p:text-[16px]
+                prose-strong:font-semibold prose-strong:text-[#0A0A0A]
+                prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4 hover:prose-a:text-[#A8D62E]
+                prose-li:text-[#525252] prose-li:leading-[1.7]
+                prose-blockquote:border-l-2 prose-blockquote:border-[#C6F24E] prose-blockquote:pl-5 prose-blockquote:text-[#525252] prose-blockquote:not-italic
+                prose-img:rounded-2xl prose-img:border prose-img:border-[#EDEDED]
+                break-words"
+              style={{ fontFamily: 'var(--font-body)' }}
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
+
+            {/* CTA box (from design) */}
+            <div className="mt-12 rounded-[18px] bg-[#0A0A0A] text-white p-7 sm:p-9">
+              <h3
+                className="text-[24px] sm:text-[28px] font-medium leading-[1.15] tracking-[-0.02em]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {isTr
+                  ? 'Google politikalarına uyumlu büyümeye hazır mısınız?'
+                  : 'Ready to grow in a Google-policy-safe way?'}
+              </h3>
+              <p className="mt-2 text-[14px] text-white/70">
+                {isTr
+                  ? 'Buaze, akışın her adımını denetler. 14 gün ücretsiz başlayın.'
+                  : 'Buaze monitors every step of the flow. Start free for 14 days.'}
+              </p>
+              <Link
+                href={`${base}/auth/register`}
+                className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#C6F24E] px-5 py-3 text-[14px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
+              >
+                {isTr ? 'Ücretsiz başla' : 'Start free'}
+                <span aria-hidden>→</span>
+              </Link>
+            </div>
           </div>
-          <Link
-            href={`${base}/auth/register`}
-            className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#A8D62E] transition-colors shrink-0"
-          >
-            {isTr ? 'Ücretsiz başla' : 'Start for free'}
-            <span aria-hidden>→</span>
-          </Link>
+
+          {/* Sidebar · meta + author (sticky on desktop) */}
+          <aside className="lg:pl-2">
+            <div className="lg:sticky lg:top-24 flex flex-col gap-5">
+              <div className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] p-5">
+                <div
+                  className="text-[10px] font-semibold tracking-[0.14em] text-[#737373]"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {isTr ? 'BU YAZI' : 'THIS POST'}
+                </div>
+                <dl className="mt-3 grid grid-cols-1 gap-2 text-[13px]">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-[#737373]">{isTr ? 'Tarih' : 'Date'}</dt>
+                    <dd className="text-[#0A0A0A] text-right">{post.date}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-[#737373]">{isTr ? 'Okuma' : 'Read'}</dt>
+                    <dd className="text-[#0A0A0A] text-right">{post.readTime}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-[#737373]">{isTr ? 'Dil' : 'Lang'}</dt>
+                    <dd className="text-[#0A0A0A] text-right uppercase">{locale}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="rounded-[14px] bg-[#EAF9B8] p-5">
+                <div
+                  className="text-[10px] font-semibold tracking-[0.14em] text-[#737373]"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {isTr ? 'YAZAR' : 'AUTHOR'}
+                </div>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]">
+                    {authorInitials(post.author)}
+                  </div>
+                  <div>
+                    <div className="text-[14px] font-semibold text-[#0A0A0A]">{post.author}</div>
+                    <div className="text-[12px] text-[#525252]">
+                      {isTr ? 'Buaze · Yazar' : 'Buaze · Author'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
         </div>
       </section>
 

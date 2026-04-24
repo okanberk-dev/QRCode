@@ -162,7 +162,7 @@ export default function MarketingNavbarClient({
     {
       href: `${base}/how-it-works`,
       label: isTr ? 'Nasıl Çalışır?' : 'How It Works',
-      sub: isTr ? '3 adımda kurulum' : '3-step setup',
+      sub: isTr ? 'Kurulum rehberi' : 'Setup guide',
       icon: <Compass size={16} />,
     },
     {

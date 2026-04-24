@@ -109,7 +109,7 @@ export default async function BlogIndexPage({
         </section>
       ) : (
         <>
-          {/* Featured post — 1.5fr / 1fr split */}
+          {/* Featured post — 1.5fr / 1fr split · cover image if uploaded, else lime pad with chart */}
           {featured && (
             <section className="px-6 sm:px-10 pt-5">
               <div className="max-w-[1200px] mx-auto">
@@ -117,30 +117,56 @@ export default async function BlogIndexPage({
                   href={`${base}/blog/${featured.slug}`}
                   className="group grid grid-cols-1 overflow-hidden rounded-[18px] border border-[#EDEDED] bg-[#FAFAFA] md:grid-cols-[1.5fr_1fr]"
                 >
-                  {/* Left pad with chart illustration */}
-                  <div className="relative aspect-[16/10] bg-[#C6F24E] p-10 md:aspect-auto md:min-h-[320px]">
-                    <span
-                      className="absolute left-6 top-6 text-[10px] font-semibold tracking-[0.14em] text-[#0A0A0A]"
-                      style={{ fontFamily: 'var(--font-mono)' }}
-                    >
-                      {isTr ? 'ÖNE ÇIKAN' : 'FEATURED'}
-                    </span>
-                    <svg
-                      viewBox="0 0 200 120"
-                      className="absolute bottom-8 right-8 w-[70%] max-w-[280px]"
-                      aria-hidden
-                    >
-                      <path
-                        d="M0 90 L30 80 L60 85 L90 50 L120 60 L150 20 L200 30"
-                        fill="none"
-                        stroke="#0A0A0A"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <circle cx="90" cy="50" r="5" fill="#0A0A0A" />
-                      <circle cx="150" cy="20" r="6" fill="#0A0A0A" />
-                    </svg>
+                  {/* Left pad — cover image overlay or lime fallback */}
+                  <div className="relative aspect-[16/10] overflow-hidden bg-[#C6F24E] md:aspect-auto md:min-h-[340px]">
+                    {featured.coverImage ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={featured.coverImage}
+                          alt={featured.title}
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-[600ms] group-hover:scale-[1.03]"
+                        />
+                        {/* Graphite gradient to keep FEATURED eyebrow readable */}
+                        <div
+                          aria-hidden
+                          className="absolute inset-0 bg-gradient-to-b from-[#0A0A0A]/55 via-[#0A0A0A]/10 to-transparent"
+                        />
+                        {/* Lime accent corner chip */}
+                        <span
+                          className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-3 py-1.5 text-[10px] font-semibold tracking-[0.14em] text-[#0A0A0A]"
+                          style={{ fontFamily: 'var(--font-mono)' }}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#0A0A0A]" />
+                          {isTr ? 'ÖNE ÇIKAN' : 'FEATURED'}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          className="absolute left-6 top-6 text-[10px] font-semibold tracking-[0.14em] text-[#0A0A0A]"
+                          style={{ fontFamily: 'var(--font-mono)' }}
+                        >
+                          {isTr ? 'ÖNE ÇIKAN' : 'FEATURED'}
+                        </span>
+                        <svg
+                          viewBox="0 0 200 120"
+                          className="absolute bottom-8 right-8 w-[70%] max-w-[280px]"
+                          aria-hidden
+                        >
+                          <path
+                            d="M0 90 L30 80 L60 85 L90 50 L120 60 L150 20 L200 30"
+                            fill="none"
+                            stroke="#0A0A0A"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <circle cx="90" cy="50" r="5" fill="#0A0A0A" />
+                          <circle cx="150" cy="20" r="6" fill="#0A0A0A" />
+                        </svg>
+                      </>
+                    )}
                   </div>
 
                   {/* Right text */}
@@ -166,7 +192,7 @@ export default async function BlogIndexPage({
             </section>
           )}
 
-          {/* Rest grid — 3-col */}
+          {/* Rest grid — 3-col · cover image if uploaded, else colored pad fallback */}
           {rest.length > 0 && (
             <section className="px-6 sm:px-10 pt-8 pb-20 sm:pb-24">
               <div className="max-w-[1200px] mx-auto grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -176,17 +202,31 @@ export default async function BlogIndexPage({
                     href={`${base}/blog/${p.slug}`}
                     className="group flex flex-col"
                   >
-                    {/* Colored pad with oversized numeric backdrop */}
                     <div
-                      className="relative aspect-[4/3] overflow-hidden rounded-xl p-6 transition-transform duration-300 group-hover:-translate-y-1"
+                      className="relative aspect-[4/3] overflow-hidden rounded-xl transition-transform duration-300 group-hover:-translate-y-1"
                       style={{ background: padColor(i) }}
                     >
-                      <span
-                        className="absolute bottom-3 left-5 text-[72px] font-medium leading-none tracking-[-0.04em] text-[#0A0A0A] opacity-[0.12]"
-                        style={{ fontFamily: 'var(--font-heading)' }}
-                      >
-                        0{i + 2}
-                      </span>
+                      {p.coverImage ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={p.coverImage}
+                            alt={p.title}
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-[600ms] group-hover:scale-[1.04]"
+                          />
+                          <div
+                            aria-hidden
+                            className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/40 via-transparent to-transparent"
+                          />
+                        </>
+                      ) : (
+                        <span
+                          className="absolute bottom-3 left-5 text-[72px] font-medium leading-none tracking-[-0.04em] text-[#0A0A0A] opacity-[0.12]"
+                          style={{ fontFamily: 'var(--font-heading)' }}
+                        >
+                          0{i + 2}
+                        </span>
+                      )}
                     </div>
                     <div className="mt-3.5">
                       <span
