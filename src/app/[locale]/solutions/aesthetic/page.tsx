@@ -1,5 +1,6 @@
 import { Sparkles, Star, ShieldCheck, TrendingUp, QrCode, Lock, Heart, BarChart3 } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
+import { IllusAesthetic } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import type { Metadata } from 'next';
@@ -116,6 +117,7 @@ export default async function AestheticSolutionPage({ params }: { params: Promis
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      illustration={<IllusAesthetic />}
     />
   );
 }

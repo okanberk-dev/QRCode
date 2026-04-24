@@ -1,14 +1,12 @@
 import type { Metadata } from 'next';
-import { Check } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import PricingFaq from '@/components/marketing/PricingFaq';
-import Link from 'next/link';
+import PricingPlans from '@/components/marketing/PricingPlans';
 
 export const dynamic = 'force-dynamic';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import { RoiCalculator } from '@/components/roi-calculator/RoiCalculator';
 
 export async function generateMetadata({
   params,
@@ -174,183 +172,15 @@ export default async function PricingPage({
         </div>
       </section>
 
-      {/* ─── Pricing Cards ─── */}
+      {/* ─── Pricing Cards (client component with monthly/yearly toggle) ─── */}
       <section className="px-6 sm:px-10 pb-20 sm:pb-28">
         <div className="max-w-[1200px] mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            {/* Starter */}
-            <div className="bg-white p-8 lg:p-10 rounded-3xl border border-[#EDEDED] flex flex-col">
-              <div className="mb-6">
-                <h2 className="text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] mb-2">
-                  {isTr ? 'Başlangıç' : 'Starter'}
-                </h2>
-                <p className="text-[13px] text-[#525252] leading-snug">
-                  {isTr ? 'Küçük işletmeler için ideal başlangıç.' : 'Ideal start for small businesses.'}
-                </p>
-              </div>
-              <div className="mb-8 pb-8 border-b border-[#EDEDED]">
-                <div className="flex items-baseline gap-1">
-                  <span
-                    className="text-[52px] font-medium leading-none text-[#0A0A0A] tracking-[-0.03em]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
-                    {isTr ? '₺500' : '$10'}
-                  </span>
-                  <span className="pulse-eyebrow text-[#737373]">{t.pricing_monthly_period}</span>
-                </div>
-              </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                {[
-                  t.pricing_feature_unlimited_qr,
-                  t.pricing_feature_feedback,
-                  isTr ? 'Akıllı filtreleme' : 'Smart filtering',
-                  isTr ? 'E-posta desteği' : 'Email support',
-                ].map((feat) => (
-                  <li key={feat} className="flex items-start gap-3 text-[14px] text-[#0A0A0A] font-medium">
-                    <span className="mt-0.5 w-5 h-5 rounded-full bg-[#EAF9B8] flex items-center justify-center shrink-0">
-                      <Check size={12} className="text-[#0A0A0A]" strokeWidth={2.5} />
-                    </span>
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 border border-[#0A0A0A] text-[#0A0A0A] font-medium text-[14px] rounded-full hover:bg-[#0A0A0A] hover:text-white transition-colors"
-              >
-                {t.pricing_monthly_cta}
-              </Link>
-            </div>
-
-            {/* Growth — featured */}
-            <div className="bg-[#0A0A0A] p-8 lg:p-10 rounded-3xl relative md:scale-[1.03] flex flex-col text-white z-10 shadow-[0_20px_60px_rgba(10,10,10,0.15)]">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="pulse-eyebrow bg-[#C6F24E] text-[#0A0A0A] px-4 py-1.5 rounded-full whitespace-nowrap">
-                  {isTr ? 'EN POPÜLER' : 'MOST POPULAR'}
-                </span>
-              </div>
-              <div className="mb-6 pt-2">
-                <h2 className="text-[22px] font-medium text-white tracking-[-0.02em] mb-2">
-                  {isTr ? 'Büyüme' : 'Growth'}
-                </h2>
-                <p className="text-[13px] text-white/70 leading-snug">
-                  {isTr ? 'Hızlı büyüyen ve çok şubeli işletmeler için.' : 'For fast-growing and multi-location businesses.'}
-                </p>
-              </div>
-              <div className="mb-8 pb-8 border-b border-white/10">
-                <div className="flex items-baseline gap-1">
-                  <span
-                    className="text-[52px] font-medium leading-none text-[#C6F24E] tracking-[-0.03em]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
-                    {isTr ? '₺1.200' : '$20'}
-                  </span>
-                  <span className="pulse-eyebrow text-white/60">{t.pricing_monthly_period}</span>
-                </div>
-              </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                {[
-                  isTr ? "Starter'daki her şey" : 'Everything in Starter',
-                  isTr ? "Çoklu lokasyon (3'e kadar)" : 'Multi-location (up to 3)',
-                  isTr ? 'Öncelikli destek' : 'Priority support',
-                  isTr ? 'Gelişmiş analitik' : 'Advanced analytics',
-                ].map((feat) => (
-                  <li key={feat} className="flex items-start gap-3 text-[14px] text-white font-medium">
-                    <span className="mt-0.5 w-5 h-5 rounded-full bg-[#C6F24E] flex items-center justify-center shrink-0">
-                      <Check size={12} className="text-[#0A0A0A]" strokeWidth={2.5} />
-                    </span>
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-[#C6F24E] text-[#0A0A0A] font-medium text-[14px] rounded-full hover:bg-[#A8D62E] transition-colors"
-              >
-                {t.pricing_monthly_cta}
-              </Link>
-            </div>
-
-            {/* Annual Pro */}
-            <div className="bg-white p-8 lg:p-10 rounded-3xl border border-[#EDEDED] flex flex-col">
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em]">
-                    {isTr ? 'Yıllık Pro' : 'Annual Pro'}
-                  </h2>
-                  <span className="pulse-eyebrow bg-[#EAF9B8] text-[#0A0A0A] px-2 py-0.5 rounded-full">
-                    {isTr ? '%17 TASARRUF' : '17% OFF'}
-                  </span>
-                </div>
-                <p className="text-[13px] text-[#525252] leading-snug">
-                  {isTr ? 'En iyi değer, tam kapasite yönetim.' : 'Best value, full capacity management.'}
-                </p>
-              </div>
-              <div className="mb-8 pb-8 border-b border-[#EDEDED]">
-                <div className="flex flex-col">
-                  <div className="flex items-baseline gap-1">
-                    <span
-                      className="text-[52px] font-medium leading-none text-[#0A0A0A] tracking-[-0.03em]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
-                    >
-                      {isTr ? '₺416' : '$7.99'}
-                    </span>
-                    <span className="pulse-eyebrow text-[#737373]">{t.pricing_monthly_period}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 text-[12px]">
-                    <span className="text-[#A3A3A3] line-through">{isTr ? '₺500/ay' : '$10/mo'}</span>
-                    <span className="text-[#525252]">·</span>
-                    <span className="text-[#525252]">{isTr ? '₺5.000/yıl' : '$96/year'}</span>
-                  </div>
-                </div>
-              </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                {[
-                  isTr ? 'Büyüme planındaki her şey' : 'Everything in Growth',
-                  isTr ? 'Sınırsız şube' : 'Unlimited locations',
-                  isTr ? '7/24 öncelikli destek' : '24/7 priority support',
-                  isTr ? 'API erişimi' : 'API access',
-                ].map((feat) => (
-                  <li key={feat} className="flex items-start gap-3 text-[14px] text-[#0A0A0A] font-medium">
-                    <span className="mt-0.5 w-5 h-5 rounded-full bg-[#EAF9B8] flex items-center justify-center shrink-0">
-                      <Check size={12} className="text-[#0A0A0A]" strokeWidth={2.5} />
-                    </span>
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={`${base}/auth/register`}
-                className="block w-full text-center py-3.5 bg-[#0A0A0A] text-white font-medium text-[14px] rounded-full hover:bg-[#1A1A1A] transition-colors"
-              >
-                {t.pricing_yearly_cta}
-              </Link>
-            </div>
-          </div>
-
-          <p className="pulse-eyebrow text-center text-[#737373] mt-10">
-            {isTr ? 'GÜVENLİ ÖDEME · İSTEDİĞİNDE İPTAL · TAAHHÜTSÜZ' : 'SECURE PAYMENT · CANCEL ANYTIME · NO COMMITMENT'}
-          </p>
-        </div>
-      </section>
-
-      {/* ─── ROI Calculator ─── */}
-      <section id="roi-calculator" className="bg-[#FAFAFA] border-y border-[#EDEDED] py-20 sm:py-28 px-6 sm:px-10">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-12 max-w-[720px] mx-auto">
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Yatırım getirisi' : 'Return on investment'}
-            </span>
-            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
-              {isTr ? 'Rakamlarla görün. Buaze size ne kazandırır?' : 'See the numbers. What Buaze delivers.'}
-            </h2>
-            <p className="mt-5 text-[16px] text-[#525252] leading-[1.6]">
-              {isTr
-                ? 'Kendi işletme verilerinizi girin; aylık ek müşteri, tahmini ek ciro ve amortisman süresini sektör benchmark\'ları üzerinden şeffafça görün.'
-                : 'Enter your own business data and see your monthly new customers, estimated extra revenue and payback period against industry benchmarks.'}
-            </p>
-          </div>
-          <RoiCalculator locale={locale} />
+          <PricingPlans
+            locale={locale}
+            monthlyCta={t.pricing_monthly_cta}
+            yearlyCta={t.pricing_yearly_cta}
+            monthlyPeriod={t.pricing_monthly_period}
+          />
         </div>
       </section>
 

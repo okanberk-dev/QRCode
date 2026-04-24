@@ -310,8 +310,8 @@ export default function UsersPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6">
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-end justify-center p-0 sm:items-center sm:p-6">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col pb-[env(safe-area-inset-bottom)] sm:pb-0">
             <div className="p-5 sm:p-8 md:p-10 border-b border-[#EDEDED] bg-[#FFFFFF] relative">
               <h2 className="text-xl sm:text-3xl font-semibold text-[#0A0A0A] tracking-tight uppercase pr-10">
                 {editingId ? 'Hesabı Düzenle' : 'Yeni Yetkili Ekle'}

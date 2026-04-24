@@ -144,6 +144,8 @@ export default function OnboardingPage({ params }: Props) {
     if (currentIdx < steps.length - 1) setStep(steps[currentIdx + 1].id);
   };
 
+  // "Tamamla" — user finished the wizard. Backend creates a restaurant only
+  // if bizName is filled (see /api/onboarding/complete).
   const finish = async () => {
     setSaving(true);
     try {
@@ -158,127 +160,81 @@ export default function OnboardingPage({ params }: Props) {
     router.push(`/${locale}/dashboard`);
   };
 
+  // "Sonra tamamla" — user skipped the wizard. ONLY persist progress state;
+  // do NOT create a restaurant (even if partial data was typed in).
+  const skipLater = async () => {
+    setSaving(true);
+    try {
+      await fetch('/api/onboarding/state', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ step: currentIdx + 1, data }),
+      });
+    } catch {
+      /* ignore */
+    }
+    router.push(`/${locale}/dashboard`);
+  };
+
   return (
-    <div className="min-h-screen bg-white lg:grid lg:grid-cols-[44%_1fr]">
-      <aside className="relative hidden overflow-hidden bg-[#0A0A0A] px-12 py-12 text-white lg:flex lg:flex-col lg:justify-between xl:px-16">
-        <div className="relative z-10">
-          <Link href={`/${locale}`} className="inline-flex items-center gap-3">
-            <BuazeLogo size={48} variant="on-dark" />
+    <div className="flex min-h-screen flex-col bg-[#FAFAFA]">
+      <header className="sticky top-0 z-20 border-b border-[#EDEDED] bg-white px-4 py-4 sm:px-10">
+        <div className="mx-auto flex w-full max-w-[1040px] items-center justify-between">
+          <Link href={`/${locale}`} className="flex items-center gap-2.5">
+            <BuazeLogo size={32} />
             <span
-              className="text-[22px] font-medium tracking-[-0.03em] text-white"
+              className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               buaze<span className="text-[#C6F24E]">.</span>
             </span>
           </Link>
-          <div className="mt-12 inline-flex items-center gap-2 rounded-full border border-[#C6F24E]/30 bg-white/5 px-4 py-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat" />
-            <span className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'KURULUM SİHİRBAZI' : 'SETUP WIZARD'}
-            </span>
-          </div>
-          <h1
-            className="mt-6 text-[48px] font-medium leading-[0.95] tracking-[-0.04em] text-white xl:text-[60px]"
-            style={{ fontFamily: 'var(--font-heading)' }}
+          <button
+            onClick={skipLater}
+            disabled={saving}
+            className="text-[13px] font-semibold text-[#0A0A0A] transition-opacity hover:opacity-70 disabled:opacity-50"
           >
-            {isTr ? (
-              <>
-                Nabzını
-                <br />
-                ölçmeye
-                <br />
-                <span className="text-[#C6F24E]">başlayalım.</span>
-              </>
-            ) : (
-              <>
-                Let&apos;s start
-                <br />
-                reading your
-                <br />
-                <span className="text-[#C6F24E]">pulse.</span>
-              </>
-            )}
-          </h1>
-          <p className="mt-5 max-w-[420px] text-[15px] leading-[1.7] text-white/65">
-            {isTr
-              ? 'Kayıt akışının devamı: işletmeni tanımla, platformlarını seç ve ilk QR kodunu hazırla.'
-              : 'The continuation of signup: define your business, pick platforms and prepare your first QR.'}
-          </p>
+            {isTr ? 'Sonra tamamla' : 'Finish later'}
+          </button>
         </div>
-        <div className="relative z-10 rounded-2xl border border-white/10 bg-white/5 p-6">
-          <p className="pulse-eyebrow text-[#C6F24E]">{isTr ? 'İLERLEME' : 'PROGRESS'}</p>
-          <div className="mt-4 space-y-3">
-            {steps.map((s, i) => {
-              const done = i < currentIdx;
-              const active = i === currentIdx;
-              const Icon = s.icon;
-              return (
-                <div key={s.id} className="flex items-center gap-3">
-                  <span
-                    className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                      done
-                        ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                        : active
-                          ? 'bg-white text-[#0A0A0A]'
-                          : 'bg-white/10 text-white/50'
-                    }`}
-                  >
-                    {done ? <Check size={14} strokeWidth={3} /> : <Icon size={14} />}
-                  </span>
-                  <span className={`text-[13px] font-medium ${active || done ? 'text-white' : 'text-white/45'}`}>
-                    {s.label[isTr ? 'tr' : 'en']}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <div className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-[#C6F24E]/10 blur-[120px]" />
-      </aside>
+      </header>
 
-      <main className="flex min-h-screen flex-col bg-[#FFFFFF]">
-        <header className="border-b border-[#EDEDED] bg-white px-4 py-4 sm:px-8 lg:hidden">
-          <div className="flex items-center justify-between">
-            <Link href={`/${locale}`} className="flex items-center gap-2">
-              <BuazeLogo size={28} />
-              <span
-                className="text-[17px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+      <main className="flex flex-1 flex-col">
+        <section className="mx-auto w-full max-w-[1040px] flex-1 px-4 py-8 sm:px-10 sm:py-12">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div>
+              <p className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'ADIM' : 'STEP'} {currentIdx + 1} / {steps.length}
+              </p>
+              <h1
+                className="mt-2 text-[32px] font-medium leading-[1.08] tracking-[-0.035em] text-[#0A0A0A] sm:text-[44px]"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
-                buaze<span className="text-[#C6F24E]">.</span>
-              </span>
-            </Link>
-            <button onClick={finish} className="text-[12px] font-semibold text-[#0A0A0A]">
-              {isTr ? 'Sonra tamamla' : 'Finish later'}
-            </button>
-          </div>
-        </header>
-
-        <section className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8 lg:px-12 lg:py-12">
-          <div className="w-full max-w-[760px]">
-            <div className="mb-6 flex items-center justify-between gap-4">
-              <div>
-                <p className="pulse-eyebrow text-[#737373]">
-                  {isTr ? 'ADIM' : 'STEP'} {currentIdx + 1} / {steps.length}
-                </p>
-                <h1
-                  className="mt-2 text-[32px] font-medium leading-[1.08] tracking-[-0.035em] text-[#0A0A0A] sm:text-[44px]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {step === 'profile' && (isTr ? 'İşletmenizi tanıyalım.' : "Tell us about your business.")}
-                  {step === 'sector' && (isTr ? 'Hangi sektördesiniz?' : 'Which sector?')}
-                  {step === 'location' && (isTr ? 'İlk konumunuzu ekleyin.' : 'Add your first location.')}
-                  {step === 'platforms' && (isTr ? 'Hangi platformlar?' : 'Which platforms?')}
-                  {step === 'qr' && (isTr ? 'İlk QR kodunuz.' : 'Your first QR code.')}
-                </h1>
-              </div>
-              <button
-                onClick={finish}
-                className="hidden rounded-full border border-[#EDEDED] px-4 py-2 text-[12px] font-semibold text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A] lg:inline-flex"
-              >
-                {isTr ? 'Sonra tamamla' : 'Finish later'}
-              </button>
+                {step === 'profile' && (isTr ? 'İşletmenizi tanıyalım.' : "Tell us about your business.")}
+                {step === 'sector' && (isTr ? 'Hangi sektördesiniz?' : 'Which sector?')}
+                {step === 'location' && (isTr ? 'İlk konumunuzu ekleyin.' : 'Add your first location.')}
+                {step === 'platforms' && (isTr ? 'Hangi platformlar?' : 'Which platforms?')}
+                {step === 'qr' && (isTr ? 'İlk QR kodunuz.' : 'Your first QR code.')}
+              </h1>
+              <p className="mt-2 max-w-[560px] text-[14px] text-[#737373]">
+                {step === 'profile' && (isTr
+                  ? 'Bu bilgiler QR kartlarında ve müşteri ekranında görünecek.'
+                  : 'These details will appear on your QR cards and customer-facing screens.')}
+                {step === 'sector' && (isTr
+                  ? 'Sektörünüze göre akış ve entegrasyon önerilerini özelleştiriyoruz.'
+                  : 'We tailor the flow and integration suggestions based on your sector.')}
+                {step === 'location' && (isTr
+                  ? 'Her konum için ayrı QR kodları, ayrı analitik. Sonra şube ekleyebilirsiniz.'
+                  : 'Separate QRs and analytics per location. Add more branches later.')}
+                {step === 'platforms' && (isTr
+                  ? 'Müşteriler 4★ ve üstü verirse seçtiğiniz platforma yönlendirilir.'
+                  : 'Customers giving 4★+ are redirected to the platform you select.')}
+                {step === 'qr' && (isTr
+                  ? 'Tasarımı seçin, indirin ve masanıza yapıştırın. Kurulum tamamlandı.'
+                  : 'Pick a design, download, stick to your table. Setup complete.')}
+              </p>
             </div>
+          </div>
 
             <div className="mb-6 flex items-start">
               {steps.map((s, i) => {
@@ -327,20 +283,19 @@ export default function OnboardingPage({ params }: Props) {
               >
                 <ArrowLeft size={14} /> {isTr ? 'Geri' : 'Back'}
               </button>
-              {isLast ? (
-                <FinishButton isTr={isTr} onFinish={finish} saving={saving} />
-              ) : (
-                <button
-                  onClick={goNext}
-                  disabled={saving}
-                  className="pulse-btn-dark inline-flex items-center gap-1.5 rounded-full disabled:opacity-50"
-                >
-                  {saving && <Loader2 size={13} className="animate-spin" />}
-                  {isTr ? 'Devam' : 'Continue'}
-                  {!saving && <ArrowRight size={13} />}
-                </button>
-              )}
-            </div>
+            {isLast ? (
+              <FinishButton isTr={isTr} onFinish={finish} saving={saving} />
+            ) : (
+              <button
+                onClick={goNext}
+                disabled={saving}
+                className="pulse-btn-dark inline-flex items-center gap-1.5 rounded-full disabled:opacity-50"
+              >
+                {saving && <Loader2 size={13} className="animate-spin" />}
+                {isTr ? 'Devam' : 'Continue'}
+                {!saving && <ArrowRight size={13} />}
+              </button>
+            )}
           </div>
         </section>
       </main>
@@ -589,7 +544,7 @@ function QrStep({
     <div className="grid gap-6 sm:grid-cols-2">
       <div>
         <FormRow label={isTr ? 'Şablon' : 'Template'}>
-          <div className="mt-1 grid grid-cols-4 gap-2">
+          <div className="mt-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
             {templates.map((tp) => {
               const on = data.qrTemplate === tp.id;
               return (

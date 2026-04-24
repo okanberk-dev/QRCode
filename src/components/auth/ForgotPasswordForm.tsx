@@ -73,7 +73,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
               router.push(`/${locale}/auth/reset-password`);
             }
           }}
-          className="w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors"
+          className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors"
         >
           {locale === 'tr' ? 'Kodu gir' : 'Enter code'}
           <ArrowRight size={18} strokeWidth={2} />
@@ -116,7 +116,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="can@sirket.com"
-            className="w-full pl-11 pr-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
+            className="min-h-[44px] w-full pl-11 pr-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
           />
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+        className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}
         {loading

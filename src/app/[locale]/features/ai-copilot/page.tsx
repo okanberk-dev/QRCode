@@ -109,62 +109,69 @@ export default async function AiCoPilotPage({
     <div className="min-h-screen bg-white pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* Hero */}
-      <section className="px-6 sm:px-10 py-20 sm:py-24">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-14 lg:items-center">
+      {/* Hero — dark, dual CTA, live draft mockup (1:1 with .design/site/site-pages4.jsx:FeatureAIPage) */}
+      <section className="relative overflow-hidden bg-[#0A0A0A] px-6 sm:px-10 py-20 sm:py-24 text-white">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-40 -right-40 h-[620px] w-[620px] rounded-full bg-[#C6F24E]/10 blur-[140px]"
+        />
+        <div className="relative mx-auto max-w-[1200px] grid grid-cols-1 gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-14 lg:items-center">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#C6F24E] bg-[#EAF9B8] px-3 py-1.5">
-              <Sparkles size={12} className="text-[#0A0A0A]" />
-              <span className="pulse-eyebrow text-[#0A0A0A]">
-                {isTr ? 'AI CO-PILOT · CANLI' : 'AI CO-PILOT · LIVE'}
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#C6F24E]/30 bg-[#C6F24E]/10 px-3 py-1.5">
+              <Sparkles size={12} className="text-[#C6F24E]" />
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'YENİ · AI CO-PILOT v2.4' : 'NEW · AI CO-PILOT v2.4'}
               </span>
             </div>
-            <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+            <h1
+              className="mt-5 text-[40px] sm:text-[60px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-white"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
               {isTr ? (
                 <>
-                  Yanıtı{' '}
-                  <span className="inline-block -skew-y-1 bg-[#C6F24E] px-3 py-0.5 rounded-lg">
-                    saniyede
+                  Her yoruma{' '}
+                  <span className="inline-block -skew-y-1 rounded-lg bg-[#C6F24E] px-3 py-0.5 text-[#0A0A0A]">
+                    30 sn&apos;de
                   </span>{' '}
-                  yaz.
+                  mükemmel yanıt.
                 </>
               ) : (
                 <>
-                  Draft in{' '}
-                  <span className="inline-block -skew-y-1 bg-[#C6F24E] px-3 py-0.5 rounded-lg">
-                    seconds
+                  Perfect reply to every review in{' '}
+                  <span className="inline-block -skew-y-1 rounded-lg bg-[#C6F24E] px-3 py-0.5 text-[#0A0A0A]">
+                    30s
                   </span>
                   .
                 </>
               )}
             </h1>
-            <p className="mt-6 max-w-[560px] text-[17px] leading-[1.6] text-[#525252] sm:text-[18px]">
+            <p className="mt-6 max-w-[560px] text-[17px] leading-[1.6] text-white/70 sm:text-[18px]">
               {isTr
-                ? 'OpenAI gpt-4o-mini üzerine kurulu. Her yorum için puan ve müşteriye göre kişiselleştirilmiş Türkçe taslak. Onay sende, hız Buaze\'de.'
-                : "Built on OpenAI's gpt-4o-mini. Every draft is personalised for the rating, the review and the customer. You approve, we speed up the work."}
+                ? 'GPT-4 tabanlı AI Co-Pilot markanızın sesini öğrenir; puanı, yorum tonunu ve geçmiş siparişi dikkate alarak 30 saniye içinde kişiselleştirilmiş bir yanıt taslağı üretir. Onay sizde kalır.'
+                : 'GPT-4 powered AI Co-Pilot learns your brand voice; it reads the rating, tone and order history to draft a personalised reply in 30 seconds. You stay in control.'}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href={`${base}/auth/register`}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-6 py-3 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E]"
               >
-                {isTr ? '14 gün ücretsiz dene' : 'Start 14-day free trial'}
+                {isTr ? 'Co-Pilot\'u dene' : 'Try Co-Pilot'}
                 <ArrowRight size={16} />
               </Link>
               <Link
-                href={`${base}/pricing`}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white"
+                href={`${base}/how-it-works`}
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/20 bg-transparent px-6 py-3 text-[15px] font-medium text-white transition-colors hover:border-white/60 hover:bg-white/5"
               >
-                {isTr ? 'Fiyatları gör' : 'See pricing'}
+                {isTr ? 'Nasıl çalışır?' : 'How it works?'}
               </Link>
             </div>
-            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-[#525252]">
+            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/60">
               {(isTr
                 ? ['Growth planda dahil', 'Aylık 1.000 öneri', 'TR + EN dil desteği']
                 : ['Included on Growth', '1,000 drafts / mo', 'TR + EN output']
               ).map((item) => (
                 <li key={item} className="flex items-center gap-1.5">
-                  <Check size={13} className="text-[#16A34A]" strokeWidth={2.5} />
+                  <Check size={13} className="text-[#C6F24E]" strokeWidth={2.5} />
                   {item}
                 </li>
               ))}
@@ -285,7 +292,7 @@ export default async function AiCoPilotPage({
             <div key={k.l} className="rounded-2xl border border-[#EDEDED] bg-white p-6">
               <p className="pulse-eyebrow text-[#737373]">{k.l}</p>
               <p
-                className="mt-2 text-[36px] font-medium leading-none tracking-tight text-[#0A0A0A]"
+                className="mt-2 text-[28px] sm:text-[36px] font-medium leading-none tracking-tight text-[#0A0A0A]"
                 style={{ fontFamily: 'var(--font-space-grotesk)' }}
               >
                 {k.v}

@@ -1,5 +1,6 @@
 import { Dumbbell, Star, ShieldCheck, TrendingUp, QrCode, Users, BarChart3, Zap, Timer } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
+import { IllusGym } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import type { Metadata } from 'next';
@@ -114,6 +115,7 @@ export default async function GymSolutionPage({ params }: { params: Promise<{ lo
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      illustration={<IllusGym />}
     />
   );
 }

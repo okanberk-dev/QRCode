@@ -176,8 +176,8 @@ function AdminTeamBody() {
       )}
 
       {showInvite && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowInvite(false)}>
-          <div className="w-full max-w-md rounded-2xl border border-[#EDEDED] bg-white p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={() => setShowInvite(false)}>
+          <div className="w-full max-w-md rounded-t-2xl border border-[#EDEDED] bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-2xl sm:pb-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2">
               <Mail size={18} className="text-[#0A0A0A]" />
               <h3 className="text-[18px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>

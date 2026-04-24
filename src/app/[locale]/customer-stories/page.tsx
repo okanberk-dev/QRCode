@@ -49,117 +49,25 @@ export default async function CustomerStoriesPage({
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
-  // Real venue photos (Unsplash CC0) per story — gives the customer-stories
-  // grid actual texture instead of the previous flat colored stat block.
-  const photos = {
-    bistro: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1100&q=80',
-    hotel: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1100&q=80',
-    clinic: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1100&q=80',
-    cafe: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1100&q=80',
-    legal: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1100&q=80',
-    spa: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1100&q=80',
-  };
-
+  // 1:1 with .design/site/site-pages3.jsx:CustomerStoriesPage — flat colored
+  // stat block on top (accent color per story), pull-quote below, "read full
+  // story" + zero-padded index. First two cards use lime tones, rest neutral.
   const stories = isTr
     ? [
-        {
-          img: photos.bistro,
-          b: 'Ark Bistro',
-          s: 'Restoran · Kadıköy',
-          m: '+184%',
-          ml: 'yorum · 90 gün',
-          q: 'Google puanımız 4.2\'den 4.8\'e çıktı.',
-        },
-        {
-          img: photos.hotel,
-          b: 'Hotel Nora',
-          s: 'Otel · Bodrum',
-          m: '4.9/5',
-          ml: 'Booking',
-          q: 'Oda QR\'ları ile her misafir Booking\'e yönleniyor.',
-        },
-        {
-          img: photos.clinic,
-          b: 'Derma+',
-          s: 'Klinik · Ankara',
-          m: '+62%',
-          ml: 'aylık randevu',
-          q: 'Düşük puanlar halka açık platforma gitmiyor artık.',
-        },
-        {
-          img: photos.cafe,
-          b: 'Kahve Dükkan',
-          s: 'Kafe · Çeşme · 4 şube',
-          m: '3.8 → 4.7',
-          ml: 'Google',
-          q: 'Tüm şubelerin performansını tek panelde görüyorum.',
-        },
-        {
-          img: photos.legal,
-          b: 'Law&Co',
-          s: 'Hukuk ofisi · İstanbul',
-          m: '+90',
-          ml: 'net yorum',
-          q: 'Danışma sonrası her müvekkilden yorum alıyoruz.',
-        },
-        {
-          img: photos.spa,
-          b: 'Spa Ren',
-          s: 'Güzellik · Nişantaşı',
-          m: '4.95',
-          ml: 'ort. puan',
-          q: 'Instagram + Google + Foursquare üçgeninde zirve.',
-        },
+        { c: '#C6F24E', b: 'Ark Bistro', s: 'Restoran · Kadıköy', m: '+184%', ml: 'yorum · 90 gün', q: 'Google puanımız 4.2\'den 4.8\'e çıktı.' },
+        { c: '#EAF9B8', b: 'Hotel Nora', s: 'Otel · Bodrum', m: '4.9/5', ml: 'Booking', q: 'Oda QR\'ları ile her misafir Booking\'e yönleniyor.' },
+        { c: '#F5F5F5', b: 'Derma+', s: 'Klinik · Ankara', m: '+62%', ml: 'aylık randevu', q: 'Düşük puanlar halka açık platforma gitmiyor artık.' },
+        { c: '#F5F5F5', b: 'Kahve Dükkan', s: 'Kafe · Çeşme · 4 şube', m: '3.8→4.7', ml: 'Google', q: 'Tüm şubelerin performansını tek panelde görüyorum.' },
+        { c: '#F5F5F5', b: 'Law&Co', s: 'Hukuk ofisi · İstanbul', m: '+90', ml: 'net yorum', q: 'Danışma sonrası her müvekkilden yorum alıyoruz.' },
+        { c: '#F5F5F5', b: 'Spa Ren', s: 'Güzellik · Nişantaşı', m: '4.95', ml: 'ort. puan', q: 'Instagram + Google + Foursquare üçgeninde zirve.' },
       ]
     : [
-        {
-          img: photos.bistro,
-          b: 'Ark Bistro',
-          s: 'Restaurant · Kadıköy',
-          m: '+184%',
-          ml: 'reviews · 90 days',
-          q: 'Our Google rating climbed from 4.2 to 4.8.',
-        },
-        {
-          img: photos.hotel,
-          b: 'Hotel Nora',
-          s: 'Hotel · Bodrum',
-          m: '4.9/5',
-          ml: 'Booking',
-          q: 'Room QR codes route every guest to Booking.',
-        },
-        {
-          img: photos.clinic,
-          b: 'Derma+',
-          s: 'Clinic · Ankara',
-          m: '+62%',
-          ml: 'monthly bookings',
-          q: 'Low scores no longer end up on public platforms.',
-        },
-        {
-          img: photos.cafe,
-          b: 'Kahve Dükkan',
-          s: 'Café · Çeşme · 4 branches',
-          m: '3.8 → 4.7',
-          ml: 'Google',
-          q: 'I see the performance of every branch on one dashboard.',
-        },
-        {
-          img: photos.legal,
-          b: 'Law&Co',
-          s: 'Legal · Istanbul',
-          m: '+90',
-          ml: 'net reviews',
-          q: 'Every consultation ends with a review request.',
-        },
-        {
-          img: photos.spa,
-          b: 'Spa Ren',
-          s: 'Beauty · Nişantaşı',
-          m: '4.95',
-          ml: 'avg. rating',
-          q: 'Top of the Instagram + Google + Foursquare triangle.',
-        },
+        { c: '#C6F24E', b: 'Ark Bistro', s: 'Restaurant · Kadıköy', m: '+184%', ml: 'reviews · 90 days', q: 'Our Google rating climbed from 4.2 to 4.8.' },
+        { c: '#EAF9B8', b: 'Hotel Nora', s: 'Hotel · Bodrum', m: '4.9/5', ml: 'Booking', q: 'Room QR codes route every guest to Booking.' },
+        { c: '#F5F5F5', b: 'Derma+', s: 'Clinic · Ankara', m: '+62%', ml: 'monthly bookings', q: 'Low scores no longer end up on public platforms.' },
+        { c: '#F5F5F5', b: 'Kahve Dükkan', s: 'Café · Çeşme · 4 branches', m: '3.8→4.7', ml: 'Google', q: 'I see the performance of every branch on one dashboard.' },
+        { c: '#F5F5F5', b: 'Law&Co', s: 'Legal · Istanbul', m: '+90', ml: 'net reviews', q: 'Every consultation ends with a review request.' },
+        { c: '#F5F5F5', b: 'Spa Ren', s: 'Beauty · Nişantaşı', m: '4.95', ml: 'avg. rating', q: 'Top of the Instagram + Google + Foursquare triangle.' },
       ];
 
   return (
@@ -171,10 +79,13 @@ export default async function CustomerStoriesPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Başarı hikayeleri' : 'Customer stories'}
           </span>
-          <h1 className="mt-4 text-[40px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
+          <h1
+            className="mt-3 text-[40px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
             {isTr ? 'Rakam konuşur.' : 'Numbers do the talking.'}
           </h1>
-          <p className="mt-5 text-[16px] text-[#525252] max-w-[560px] leading-[1.6]">
+          <p className="mt-4 text-[16px] text-[#525252] max-w-[560px] leading-[1.6]">
             {isTr
               ? '2.400\'den fazla işletme Buaze ile nabzını dinliyor. İşte bir kısmı.'
               : 'More than 2,400 businesses are listening to their pulse with Buaze. Here are a few.'}
@@ -184,56 +95,67 @@ export default async function CustomerStoriesPage({
 
       <section className="px-6 sm:px-10 pb-20">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {stories.map((st) => (
-            <div
+          {stories.map((st, i) => (
+            <article
               key={st.b}
-              className="pulse-card-hover overflow-hidden rounded-2xl border border-[#EDEDED] bg-white flex flex-col"
+              className="overflow-hidden rounded-[18px] border border-[#EDEDED] bg-[#FAFAFA] transition-transform duration-300 hover:-translate-y-1"
             >
-              {/* Photo header — real venue image with dark-to-transparent
-                  gradient + stat block bottom-left for a magazine feel. */}
-              <div className="relative aspect-[16/9] bg-[#F5F5F5] overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={st.img}
-                  alt={st.b}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.04]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute bottom-4 left-5 text-white">
-                  <p
-                    className="text-[34px] sm:text-[40px] font-medium leading-none tracking-[-0.03em]"
+              {/* Top: flat accent stat block */}
+              <div
+                className="px-7 py-8 sm:px-8 sm:py-9 min-h-[220px] flex flex-col"
+                style={{ background: st.c }}
+              >
+                <span className="pulse-eyebrow text-[#0A0A0A]/70">
+                  {st.s.toUpperCase()}
+                </span>
+                <h3
+                  className="mt-2 text-[28px] sm:text-[30px] font-medium leading-none tracking-[-0.02em] text-[#0A0A0A]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {st.b}
+                </h3>
+                <div className="mt-auto flex items-baseline gap-2.5 pt-6">
+                  <span
+                    className="text-[48px] sm:text-[56px] font-medium leading-none tracking-[-0.035em] text-[#0A0A0A]"
                     style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     {st.m}
-                  </p>
-                  <p className="pulse-eyebrow mt-1 text-[#C6F24E]">{st.ml}</p>
+                  </span>
+                  <span className="text-[12px] text-[#0A0A0A]/70">{st.ml}</span>
                 </div>
               </div>
-              <div className="p-6 flex flex-col gap-3 flex-1">
-                <div>
-                  <div className="text-[18px] font-semibold">{st.b}</div>
-                  <div className="pulse-eyebrow text-[#737373] mt-1">{st.s}</div>
-                </div>
-                <p className="text-[14px] text-[#525252] leading-[1.55] flex-1">
+
+              {/* Bottom: pull-quote + index row */}
+              <div className="p-6">
+                <p
+                  className="text-[16px] sm:text-[17px] font-medium leading-[1.35] tracking-[-0.01em] text-[#0A0A0A]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
                   &ldquo;{st.q}&rdquo;
                 </p>
-                <Link
-                  href={`${base}/contact`}
-                  className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
-                >
-                  {isTr ? 'Benzer sonuçlar al' : 'Get similar results'}
-                  <span aria-hidden>→</span>
-                </Link>
+                <div className="mt-5 flex items-center justify-between text-[12px] text-[#737373]">
+                  <Link
+                    href={`${base}/contact`}
+                    className="inline-flex items-center gap-1 hover:text-[#0A0A0A] transition-colors"
+                  >
+                    {isTr ? 'Tam hikayeyi oku' : 'Read full story'} →
+                  </Link>
+                  <span className="font-mono tracking-[0.1em]">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </section>
 
       <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-24">
         <div className="max-w-[900px] mx-auto text-center">
-          <h2 className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]">
+          <h2
+            className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
             {isTr
               ? 'Bir sonraki başarı hikayesi sizinki olsun.'
               : 'Let the next story be yours.'}

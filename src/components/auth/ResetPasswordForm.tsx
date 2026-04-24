@@ -100,7 +100,7 @@ export default function ResetPasswordForm({ locale }: Props) {
             value={token}
             onChange={(e) => setToken(e.target.value.trim())}
             placeholder={locale === 'tr' ? 'E-postanızdaki bağlantıyı kullanın' : 'Use the link from your email'}
-            className="w-full px-4 py-3 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all font-mono text-[11px] text-[#0A0A0A] placeholder:text-[#A3A3A3] truncate"
+            className="min-h-[44px] w-full px-4 py-3 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all font-mono text-[11px] text-[#0A0A0A] placeholder:text-[#A3A3A3] truncate"
           />
           <p className="text-[12px] text-[#737373] ml-1">
             {locale === 'tr'
@@ -125,7 +125,7 @@ export default function ResetPasswordForm({ locale }: Props) {
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
           placeholder="••••••"
-          className="w-full px-4 py-4 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all font-medium text-2xl text-center tracking-[0.5em] font-mono text-[#0A0A0A] placeholder:text-[#A3A3A3]"
+          className="min-h-[56px] w-full px-4 py-4 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all font-medium text-2xl text-center tracking-[0.5em] font-mono text-[#0A0A0A] placeholder:text-[#A3A3A3]"
         />
       </div>
 
@@ -143,12 +143,12 @@ export default function ResetPasswordForm({ locale }: Props) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={locale === 'tr' ? 'En az 8 karakter' : 'At least 8 characters'}
-            className="w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
+            className="min-h-[44px] w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#737373] hover:text-[#0A0A0A] transition-colors"
+            className="absolute right-2 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-[#737373] hover:text-[#0A0A0A] transition-colors"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
@@ -159,7 +159,7 @@ export default function ResetPasswordForm({ locale }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+        className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}
         {loading

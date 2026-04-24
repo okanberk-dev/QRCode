@@ -60,12 +60,12 @@ export default function NewsletterSignup({ locale }: Props) {
         onChange={(e) => setEmail(e.target.value)}
         placeholder={isTr ? 'e-posta@işletme.com' : 'your@email.com'}
         aria-label={isTr ? 'E-posta adresi' : 'Email address'}
-        className="flex-1 rounded-full border border-[#333] bg-[#1A1A1A] px-4 py-3 text-[14px] text-white outline-none placeholder:text-[#737373] focus:border-[#C6F24E] sm:px-5"
+        className="min-h-[44px] flex-1 rounded-full border border-[#333] bg-[#1A1A1A] px-4 py-3 text-[16px] text-white outline-none placeholder:text-[#737373] focus:border-[#C6F24E] sm:px-5 sm:text-[14px]"
       />
       <button
         type="submit"
         disabled={status === 'loading'}
-        className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-5 py-3 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] disabled:opacity-60"
+        className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-5 py-3 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] disabled:opacity-60 sm:w-auto"
       >
         {status === 'loading' ? <Loader2 size={14} className="animate-spin" /> : null}
         {isTr ? 'Abone ol' : 'Subscribe'} →

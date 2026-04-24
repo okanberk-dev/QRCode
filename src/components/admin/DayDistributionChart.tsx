@@ -11,7 +11,7 @@ interface DayDistributionChartProps {
 
 export default function DayDistributionChart({ data }: DayDistributionChartProps) {
   return (
-    <div className="flex flex-col h-[350px] w-full">
+    <div className="flex flex-col h-[260px] sm:h-[320px] md:h-[350px] w-full">
       <div className="flex-1 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>

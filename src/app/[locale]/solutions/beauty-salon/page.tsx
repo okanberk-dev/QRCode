@@ -1,121 +1,248 @@
-import { Scissors, Star, TrendingUp, QrCode, Users, Heart, Sparkles, BarChart3 } from 'lucide-react';
-import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import MarketingNavbar from '@/components/marketing/MarketingNavbar';
+import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
-  const title = locale === 'tr'
-    ? 'Güzellik Salonu & Kuaför İtibar Yönetimi — Buaze'
-    : 'Beauty Salon & Hair Salon Reputation Management — Buaze';
-  const description = locale === 'tr'
-    ? 'Güzellik salonunuzu öne çıkarın. Müşterilerinizin yorumlarını Google\'da artırın ve sadık müşteri kitlesi oluşturun.'
-    : 'Make your beauty salon stand out. Increase your customers\' Google reviews and build a loyal customer base.';
+  const title =
+    locale === 'tr'
+      ? 'Güzellik & Spa İtibar Yönetimi — Buaze'
+      : 'Beauty & Spa Reputation Management — Buaze';
+  const description =
+    locale === 'tr'
+      ? "Hizmet biter bitmez müşteriniz QR'ı tarar. Instagram, Google ve Foursquare'de puanınız organik büyür."
+      : "The moment service ends, your customer scans the QR. Ratings grow organically on Instagram, Google and Foursquare.";
   return {
     title,
     description,
-    keywords: locale === 'tr'
-      ? ['güzellik salonu itibar', 'kuaför google yorumları', 'salon müşteri memnuniyeti', 'berber feedback']
-      : ['beauty salon reputation', 'hair salon google reviews', 'salon customer satisfaction'],
     alternates: {
       canonical: `https://buaze.com/${locale}/solutions/beauty-salon`,
-      languages: { tr: 'https://buaze.com/tr/solutions/beauty-salon', en: 'https://buaze.com/en/solutions/beauty-salon' },
+      languages: {
+        tr: 'https://buaze.com/tr/solutions/beauty-salon',
+        en: 'https://buaze.com/en/solutions/beauty-salon',
+      },
     },
     openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/beauty-salon` },
   };
 }
 
+/**
+ * 1:1 with .design/site/site-pages4.jsx:SpaSolutionPage (lines 200-241).
+ * Light gray hero + mountain illustration + 4-stat grid + 3-feature grid.
+ */
 export default async function BeautySalonSolutionPage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
+  const base = `/${locale}`;
 
-  const stats = [
-    { num: '%85', label: isTr ? 'MÜŞTERİ DÖNÜŞÜ' : 'CUSTOMER RETURN', context: isTr ? 'Takip sonrası' : 'After follow-up' },
-    { num: '+%200', label: isTr ? 'GOOGLE YORUMU' : 'GOOGLE REVIEWS', context: isTr ? '3 ayda' : 'In 3 months' },
-    { num: '%73', label: isTr ? 'TAVSİYE ORANI' : 'REFERRAL RATE', context: isTr ? 'Aktif müşteri' : 'Active customers' },
-    { num: '<4dk', label: isTr ? 'KURULUM' : 'SETUP', context: isTr ? 'Hazır şablonlar' : 'Ready templates' },
-  ];
+  const stats = isTr
+    ? [
+        { value: '4.9', label: 'Usta bazlı müşteri skoru' },
+        { value: '+148%', label: 'Instagram yorum artışı' },
+        { value: '%72', label: 'Tekrar randevu oranı' },
+        { value: '%18', label: 'Yorum→randevu dönüşüm' },
+      ]
+    : [
+        { value: '4.9', label: 'Per-stylist customer score' },
+        { value: '+148%', label: 'Instagram review growth' },
+        { value: '72%', label: 'Repeat booking rate' },
+        { value: '18%', label: 'Review → booking conversion' },
+      ];
 
-  const steps = [
-    {
-      icon: <QrCode size={24} />,
-      title: isTr ? 'Aynaya veya Kasaya Yapıştır' : 'Place on Mirror or Counter',
-      desc: isTr
-        ? 'Şık tasarımlı QR kodu aynaya, kasaya veya kartvizite yerleştirin. Müşteri hizmet alırken kolayca fark eder.'
-        : 'Place the stylishly designed QR code on the mirror, counter, or business card. Customers easily notice it while receiving service.',
-    },
-    {
-      icon: <Sparkles size={24} />,
-      title: isTr ? 'Servis Sonrası Yönlendir' : 'Direct After Service',
-      desc: isTr
-        ? 'Servis tamamlanınca müşterinize QR\'ı gösterin. Birkaç saniyede deneyimini paylaşır, memnunlarsa Google\'a gönderilir.'
-        : 'After service is complete, show the QR to your customer. They share their experience in seconds and happy ones are sent to Google.',
-    },
-    {
-      icon: <Heart size={24} />,
-      title: isTr ? 'Sadık Müşteri Kitlesi Oluştur' : 'Build Loyal Customer Base',
-      desc: isTr
-        ? 'Geri bildirim veren müşteri salonunuza bağlılık hisseder. Tekrar randevu oranı %85\'e kadar çıkar.'
-        : 'Customers who give feedback feel connected to your salon. Repeat appointment rate increases up to 85%.',
-    },
-  ];
-
-  const benefits = [
-    {
-      title: isTr ? 'Stilist Bazlı Performans' : 'Stylist-Based Performance',
-      desc: isTr ? 'Her stilist için ayrı metrikler. Hangi çalışanın en iyi değerlendirme aldığını görün, ödüllendirin.' : 'Separate metrics for each stylist. See which employee gets the best reviews and reward them.',
-      icon: <Star size={20} className="text-[#C6F24E]" />,
-    },
-    {
-      title: isTr ? 'Müşteri Sadakati' : 'Customer Loyalty',
-      desc: isTr ? 'Geri bildirim alan müşteri salonunuza daha bağlı hisseder. Yıllık müşteri kaybı %40 azalır.' : 'Customers who receive feedback feel more connected to your salon. Annual customer loss decreases by 40%.',
-      icon: <Heart size={20} className="text-[#ec4899]" />,
-    },
-    {
-      title: isTr ? 'Google\'da Öne Çık' : 'Stand Out on Google',
-      desc: isTr ? '"Yakınımdaki kuaför" aramasında üst sıralara çıkın. Daha fazla yorum daha fazla müşteri demek.' : 'Rise to the top for "hair salon near me" searches. More reviews means more customers.',
-      icon: <TrendingUp size={20} className="text-[#ec4899]" />,
-    },
-    {
-      title: isTr ? 'Rakiplerden Farklılaşma' : 'Differentiation from Competitors',
-      desc: isTr ? 'Profesyonel geri bildirim sistemi sizi sektörde öne çıkarır. Yeni müşteriler güvenle tercih eder.' : 'A professional feedback system distinguishes you in the industry. New customers choose with confidence.',
-      icon: <Sparkles size={20} className="text-[#ec4899]" />,
-    },
-  ];
-
-  const faqs = [
-    {
-      q: isTr ? 'Her stilist için ayrı QR kodu yapabilir miyim?' : 'Can I create separate QR codes for each stylist?',
-      a: isTr ? 'Evet. Her stilist için ayrı QR kodu oluşturabilirsiniz. Bu sayede hangi stilistin nasıl değerlendirildiğini ayrı ayrı takip edebilir, en başarılı çalışanlarınızı tespit edebilirsiniz.' : 'Yes. You can create separate QR codes for each stylist. This allows you to track how each stylist is evaluated separately and identify your most successful employees.',
-    },
-    {
-      q: isTr ? 'Randevu sistemiyle entegre olabilir mi?' : 'Can it integrate with an appointment system?',
-      a: isTr ? 'Buaze herhangi bir entegrasyon gerektirmez. QR kodu aracılığıyla çalıştığı için mevcut randevu sisteminizin yanında bağımsız olarak kullanılabilir.' : 'Buaze requires no integration. Since it works through QR codes, it can be used independently alongside your existing appointment system.',
-    },
-  ];
+  const features = isTr
+    ? [
+        { t: 'Usta bazlı QR', d: 'Her ustanın masa/bölümüne özel QR. Kim hangi yorumu aldı, tek bakışta.' },
+        { t: 'Instagram entegrasyonu', d: "Güzellik sektörünün önde gelen platformu. DM yorumlarını inbox'a çek." },
+        { t: 'Randevu tetikleyici', d: 'Randevu yazılımınızla bağlan — hizmet bitince otomatik yorum daveti.' },
+      ]
+    : [
+        { t: 'Per-stylist QR', d: 'Each stylist has their own station QR. Who received which review — at a glance.' },
+        { t: 'Instagram integration', d: 'The leading platform for beauty. Pull DM reviews into your inbox.' },
+        { t: 'Booking trigger', d: 'Connect to your booking software — auto-send review invites when service ends.' },
+      ];
 
   return (
-    <SolutionPageLayout
-      locale={locale}
-      t={t}
-      industryKey="bsa"
-      icon={<Scissors size={14} />}
-      industryBadge={isTr ? 'GÜZELLİK SALONU İÇİN' : 'FOR BEAUTY SALONS'}
-      h1Prefix={isTr ? 'Salonu Farkı Yaratan' : 'The Salon That Makes'}
-      h1Suffix={isTr ? 'İtibar' : 'A Difference'}
-      description={isTr
-        ? 'Müşteri memnuniyetini online görünürlüğe dönüştürün. Güzellik salonunuzun dijital itibarını Buaze ile profesyonelleştirin.'
-        : "Turn customer satisfaction into online visibility. Professionalize your beauty salon's digital reputation with Buaze."}
-      accentColor="#ec4899"
-      stats={stats}
-      steps={steps}
-      benefits={benefits}
-      faqs={faqs}
-    />
+    <div className="min-h-screen bg-white pt-[64px]">
+      <MarketingNavbar locale={locale} t={t} />
+
+      {/* Hero — light gray bg */}
+      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-16 sm:py-20">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-12">
+          <div>
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'SEKTÖR · GÜZELLİK & SPA' : 'SECTOR · BEAUTY & SPA'}
+            </span>
+            <h1
+              className="mt-3 text-[40px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              {isTr ? (
+                <>
+                  Randevu sonrası
+                  <br />
+                  en güçlü
+                  <br />
+                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5">an.</span>
+                </>
+              ) : (
+                <>
+                  The strongest
+                  <br />
+                  moment is right
+                  <br />
+                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5">after.</span>
+                </>
+              )}
+            </h1>
+            <p className="mt-5 max-w-[500px] text-[16px] leading-[1.6] text-[#525252]">
+              {isTr
+                ? "Hizmet biter bitmez müşteriniz QR'ı tarar. Instagram, Google ve Foursquare'de puanınız organik büyür. Usta bazlı performans raporları."
+                : 'The moment service ends, your customer scans the QR. Ratings grow organically on Instagram, Google and Foursquare. Per-stylist performance reports.'}
+            </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href={`${base}/auth/register`}
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
+              >
+                {isTr ? 'Ücretsiz başla' : 'Start free'}
+                <ArrowRight size={16} />
+              </Link>
+              <Link
+                href={`${base}/contact`}
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white"
+              >
+                {isTr ? 'Demo iste' : 'Request demo'}
+              </Link>
+            </div>
+          </div>
+
+          {/* IllusMountain — exact SVG from .design/site/site-shared.jsx:143-165 */}
+          <div className="flex justify-center lg:justify-end">
+            <svg viewBox="0 0 240 220" className="h-auto w-full max-w-[280px]" aria-hidden>
+              {/* Back mountain */}
+              <path d="M0 200 L70 80 L130 150 L180 100 L240 200 Z" fill="#E4E4E4" />
+              {/* Snow caps */}
+              <path
+                d="M60 95 L70 80 L82 98 L75 100 L70 95 L65 100 Z"
+                fill="#FFFFFF"
+                stroke="#0A0A0A"
+                strokeWidth="1.2"
+              />
+              <path
+                d="M170 110 L180 100 L192 115 L185 117 L180 113 L175 117 Z"
+                fill="#FFFFFF"
+                stroke="#0A0A0A"
+                strokeWidth="1.2"
+              />
+              {/* Front mountain */}
+              <path d="M20 200 L90 110 L130 165 L200 200 Z" fill="#0A0A0A" />
+              {/* Flag */}
+              <path
+                d="M90 110 L90 55"
+                stroke="#0A0A0A"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+              <path
+                d="M90 55 L130 62 L122 70 L130 78 L90 72 Z"
+                fill="#C6F24E"
+                stroke="#0A0A0A"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              {/* Trail with pulse dots */}
+              <path
+                d="M20 200 Q50 180 70 170 Q85 160 90 110"
+                fill="none"
+                stroke="#C6F24E"
+                strokeWidth="2.5"
+                strokeDasharray="3 4"
+              />
+              <circle cx="50" cy="185" r="3" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
+              <circle cx="72" cy="165" r="3" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
+              <circle cx="88" cy="130" r="3" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
+              {/* Sun */}
+              <circle cx="195" cy="60" r="18" fill="#C6F24E" />
+              {/* Cloud */}
+              <path
+                d="M30 60 Q25 50 35 48 Q38 38 50 42 Q58 38 62 48 Q72 50 68 58 Q65 65 50 64 Q40 65 30 60 Z"
+                fill="#FFFFFF"
+                stroke="#0A0A0A"
+                strokeWidth="1.5"
+              />
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      {/* 4-stat grid */}
+      <section className="px-6 sm:px-10 py-14 sm:py-16">
+        <div className="mx-auto max-w-[1200px] grid grid-cols-2 gap-5 md:grid-cols-4">
+          {stats.map((s) => (
+            <div key={s.label} className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+              <div
+                className="text-[32px] sm:text-[36px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {s.value}
+              </div>
+              <div className="pulse-eyebrow mt-2 text-[#737373]">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 3-feature grid */}
+      <section className="px-6 sm:px-10 pb-20 sm:pb-24">
+        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 md:grid-cols-3">
+          {features.map((f) => (
+            <div key={f.t} className="rounded-[14px] border border-[#EDEDED] bg-white p-6">
+              <h3
+                className="text-[20px] font-semibold tracking-[-0.015em] text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {f.t}
+              </h3>
+              <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">{f.d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Dark CTA band */}
+      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-24">
+        <div className="mx-auto max-w-[900px] text-center">
+          <h2
+            className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {isTr ? 'Her randevu, bir yıldız.' : 'Every appointment, a star.'}
+          </h2>
+          <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
+            {isTr
+              ? '14 gün ücretsiz · Kredi kartı istemiyoruz · 5 dakikada kurulum'
+              : '14-day free · No credit card · 5-minute setup'}
+          </p>
+          <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
+            <Link
+              href={`${base}/auth/register`}
+              className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors"
+            >
+              {isTr ? 'Ücretsiz başla' : 'Start free'}
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <MarketingFooter locale={locale} t={t} />
+    </div>
   );
 }

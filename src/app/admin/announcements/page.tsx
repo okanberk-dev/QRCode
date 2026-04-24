@@ -400,7 +400,7 @@ export default function AdminAnnouncementsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">ÖNEM DERECESİ</label>
-                  <div className="grid grid-cols-4 gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
                     {(Object.keys(SEVERITY_META) as Severity[]).map(s => (
                       <button
                         key={s}

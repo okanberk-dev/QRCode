@@ -1,5 +1,6 @@
 import { Home, Star, ShieldCheck, TrendingUp, QrCode, Users, Building2, BarChart3 } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
+import { IllusRealEstate } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import type { Metadata } from 'next';
@@ -116,6 +117,7 @@ export default async function RealEstateSolutionPage({ params }: { params: Promi
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      illustration={<IllusRealEstate />}
     />
   );
 }

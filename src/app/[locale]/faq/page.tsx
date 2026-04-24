@@ -3,7 +3,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import PricingFaq from '@/components/marketing/PricingFaq';
+import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
 import Link from 'next/link';
 
 export async function generateMetadata({
@@ -21,9 +21,6 @@ export async function generateMetadata({
   return {
     title: { absolute: title },
     description,
-    keywords: isTr
-      ? ['buaze sık sorulan sorular', 'dijital itibar yönetimi SSS', 'QR yorum sistemi sorular', 'itibar yönetimi nasıl çalışır']
-      : ['buaze FAQ', 'digital reputation management questions', 'QR review system FAQ', 'reputation management how it works'],
     alternates: {
       canonical: `https://buaze.com/${locale}/faq`,
       languages: { tr: 'https://buaze.com/tr/faq', en: 'https://buaze.com/en/faq', 'x-default': 'https://buaze.com/en/faq' },
@@ -34,6 +31,11 @@ export async function generateMetadata({
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * 1:1 with .design/site/site-pages3.jsx:FAQPage (lines 431-471).
+ * 2-column grid: left = eyebrow + "Cevaplar." + support email; right = 8 Q/A
+ * accordion (first two open by default).
+ */
 export default async function FaqPage({
   params,
 }: {
@@ -44,14 +46,75 @@ export default async function FaqPage({
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
-  const faqs = [
-    { q: t.faq_q1, a: t.faq_a1 },
-    { q: t.faq_q2, a: t.faq_a2 },
-    { q: t.faq_q3, a: t.faq_a3 },
-    { q: t.faq_q4, a: t.faq_a4 },
-    { q: t.faq_q5, a: t.faq_a5 },
-    { q: t.faq_q6, a: t.faq_a6 },
-  ];
+  const faqs: FaqItem[] = isTr
+    ? [
+        {
+          q: "Buaze Google'ın politikalarına uyumlu mu?",
+          a: 'Evet. Gatekeeping yapmıyoruz — her müşteri istediği yere yorum bırakabilir. Sadece memnun müşterilere kolay bir yol gösteriyoruz.',
+        },
+        {
+          q: 'Kurulum ne kadar sürer?',
+          a: 'Ortalama 5 dakika. İşletme bilgileri, Google Business Profile bağlantısı, ilk QR — tek oturumda bitiyor.',
+        },
+        {
+          q: 'Hangi cihazlarda çalışır?',
+          a: 'Müşteri tarafında sadece kamera var — her QR okuyan telefonda çalışır. Sizin panel web tabanlı, iOS ve Android uygulamamız da var.',
+        },
+        {
+          q: 'Kredi kartı vermem gerekiyor mu?',
+          a: 'Hayır. 14 gün tamamen ücretsiz. Beğenirseniz kart bilgisi eklersiniz.',
+        },
+        {
+          q: 'Yemeksepeti ve Getir entegrasyonu nasıl çalışıyor?',
+          a: "Sipariş numarası üzerinden eşleştirme. QR'ı tarayan müşteri otomatik olarak doğru platforma yönlendirilir.",
+        },
+        {
+          q: 'Fiyatlandırma nasıl?',
+          a: 'Konum başına aylık sabit fiyat. Yıllık ödemede %20 indirim. Küçük işletme için ücretsiz plan da var.',
+        },
+        {
+          q: 'Ekip üyelerimi nasıl ekleyebilirim?',
+          a: 'Panel → Ekip → Davet et. Rol bazlı yetkilendirme: Admin, Manager, Staff, Viewer.',
+        },
+        {
+          q: 'Veri güvenliği?',
+          a: "Tüm veriler Türkiye'de (AWS eu-central-1) saklanır. KVKK + GDPR uyumlu. Uygun sektörler için ISO 27001 süreci devam ediyor.",
+        },
+      ]
+    : [
+        {
+          q: "Is Buaze compliant with Google's policies?",
+          a: "Yes. We don't gatekeep — every customer can leave a review anywhere they want. We just show satisfied customers an easy path.",
+        },
+        {
+          q: 'How long does setup take?',
+          a: 'Roughly 5 minutes. Business details, Google Business Profile connection, your first QR — all in one session.',
+        },
+        {
+          q: 'Which devices does it work on?',
+          a: 'The customer only needs a camera — any phone that scans a QR works. Your panel is web-based and we also have iOS and Android apps.',
+        },
+        {
+          q: 'Do I need a credit card?',
+          a: 'No. 14 days completely free. Add card info later if you want to continue.',
+        },
+        {
+          q: 'How does the Yemeksepeti / Getir integration work?',
+          a: 'Matched via order ID. Customers who scan the QR are auto-routed to the right platform.',
+        },
+        {
+          q: 'How is pricing?',
+          a: 'A flat monthly rate per location. 20% off on annual billing. We also offer a free tier for very small businesses.',
+        },
+        {
+          q: 'How do I add team members?',
+          a: 'Panel → Team → Invite. Role-based access: Admin, Manager, Staff, Viewer.',
+        },
+        {
+          q: 'What about data security?',
+          a: 'All data is stored in Turkey (AWS eu-central-1). KVKK + GDPR compliant. ISO 27001 is in progress for relevant sectors.',
+        },
+      ];
 
   const faqSchema = {
     '@context': 'https://schema.org',
@@ -64,62 +127,64 @@ export default async function FaqPage({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
+    <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-24 pb-10">
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
-          width="100%"
-          height="100%"
-        >
-          <defs>
-            <pattern id="faqGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#faqGrid)" />
-        </svg>
-        <div className="relative max-w-[800px] mx-auto text-center">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'Sıkça sorulan sorular' : 'Frequently asked'}
-          </span>
-          <h1 className="mt-5 text-[40px] sm:text-[56px] lg:text-[64px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
-            {t.faq_title}
-          </h1>
-          <p className="mt-5 text-[17px] text-[#525252] leading-[1.55] max-w-[520px] mx-auto">
-            {t.faq_subtitle}
-          </p>
+      {/* Hero + FAQ — 2-col grid (1fr 2fr) */}
+      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-10">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-10 lg:grid-cols-[1fr_2fr] lg:gap-12">
+          <div>
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'SSS' : 'FAQ'}
+            </span>
+            <h1
+              className="mt-3 text-[44px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              {isTr ? 'Cevaplar.' : 'Answers.'}
+            </h1>
+            <p className="mt-4 max-w-[320px] text-[15px] leading-[1.55] text-[#525252]">
+              {isTr ? 'Başka sorun var mı? ' : 'More questions? '}
+              <a
+                href="mailto:destek@buaze.com"
+                className="font-semibold text-[#0A0A0A] border-b border-[#0A0A0A] hover:text-[#A8D62E] hover:border-[#A8D62E] transition-colors"
+              >
+                destek@buaze.com
+              </a>
+            </p>
+          </div>
+
+          <div>
+            <FaqAccordion faqs={faqs} />
+          </div>
         </div>
       </section>
 
-      <main className="flex-1">
-        <PricingFaq title="" subtitle="" faqs={faqs} />
-
-        <section className="border-t border-[#EDEDED] px-6 sm:px-10 py-16">
-          <div className="max-w-[720px] mx-auto text-center">
-            <h2 className="text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-tight">
-              {isTr ? 'Cevabını bulamadığın bir soru mu var?' : "Can't find what you're looking for?"}
-            </h2>
-            <p className="mt-3 text-[15px] text-[#525252]">
-              {isTr ? 'Ekibimize yaz, 2 saat içinde dönelim.' : 'Write to our team — we reply within 2 hours.'}
-            </p>
-            <Link
-              href={`${base}/contact`}
-              className="inline-flex items-center justify-center gap-2 mt-6 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#1A1A1A] transition-colors"
-            >
-              {isTr ? 'İletişime geç' : 'Contact us'}
-              <span aria-hidden>→</span>
-            </Link>
-          </div>
-        </section>
-      </main>
+      {/* Contact CTA */}
+      <section className="border-t border-[#EDEDED] px-6 sm:px-10 py-16">
+        <div className="max-w-[720px] mx-auto text-center">
+          <h2
+            className="text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-tight"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {isTr ? 'Cevabını bulamadığın bir soru mu var?' : "Can't find what you're looking for?"}
+          </h2>
+          <p className="mt-3 text-[15px] text-[#525252]">
+            {isTr ? 'Ekibimize yaz, 2 saat içinde dönelim.' : 'Write to our team — we reply within 2 hours.'}
+          </p>
+          <Link
+            href={`${base}/contact`}
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[14px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
+          >
+            {isTr ? 'İletişime geç' : 'Contact us'}
+            <span aria-hidden>→</span>
+          </Link>
+        </div>
+      </section>
 
       <MarketingFooter locale={locale} t={t} />
     </div>

@@ -1,5 +1,6 @@
 import { Car, Star, ShieldCheck, TrendingUp, QrCode, Users, Wrench, BarChart3 } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
+import { IllusAuto } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import type { Metadata } from 'next';
@@ -116,6 +117,7 @@ export default async function AutoServiceSolutionPage({ params }: { params: Prom
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      illustration={<IllusAuto />}
     />
   );
 }

@@ -269,7 +269,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
 
               <div className="p-8">
                 {/* Top strip with metrics */}
-                <div className="grid grid-cols-4 gap-5 mb-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 mb-6 md:mb-8">
                   {[
                     {
                       label: isTr ? 'Toplam Yorum' : 'Total Reviews',
@@ -320,9 +320,9 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                   {/* Chart area */}
-                  <div className="col-span-2 bg-[#FFFFFF] rounded-xl border border-[#0A0A0A] p-5">
+                  <div className="md:col-span-2 bg-[#FFFFFF] rounded-xl border border-[#0A0A0A] p-5">
                     <div className="flex items-center justify-between mb-5">
                       <div>
                         <h4 className="text-[14px] font-extrabold text-[#0A0A0A]">
@@ -447,7 +447,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
         </div>
 
         {/* Feature highlights strip */}
-        <div className="mt-16 grid grid-cols-4 gap-4">
+        <div className="mt-12 md:mt-16 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
             {
               Icon: Zap,

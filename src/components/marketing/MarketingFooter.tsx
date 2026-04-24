@@ -47,7 +47,6 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
         { label: isTr ? 'Yorum Yönetimi' : 'Review Management', href: `${base}/features` },
         { label: isTr ? 'Analitik & Raporlar' : 'Analytics & Reports', href: `${base}/features` },
         { label: isTr ? 'Entegrasyonlar' : 'Integrations', href: `${base}/integrations` },
-        { label: 'API & Webhook', href: '/admin/api' },
       ],
     },
     {
@@ -67,7 +66,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
       items: [
         { label: isTr ? 'Hakkımızda' : 'About', href: `${base}/about` },
         { label: isTr ? 'Müşteri hikayeleri' : 'Customer stories', href: `${base}/customer-stories` },
-        { label: isTr ? 'Vaka çalışmaları' : 'Case studies', href: `${base}/case-study/kadikoy-bistro` },
+        { label: isTr ? 'Vaka çalışmaları' : 'Case studies', href: `${base}/customer-stories` },
         { label: 'Blog', href: `${base}/blog` },
         { label: isTr ? 'Kariyer' : 'Careers', href: `${base}/careers`, badge: isTr ? '5 POZİSYON' : '5 ROLES' },
         { label: isTr ? 'İletişim' : 'Contact', href: `${base}/contact` },
@@ -175,9 +174,6 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 <span className="pulse-eyebrow text-[#C6F24E]">
                   {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
                 </span>
-              </span>
-              <span className="pulse-eyebrow rounded-full border border-[#1F1F1F] px-2.5 py-1 text-[#A3A3A3]">
-                KVKK · GDPR
               </span>
             </div>
           </div>

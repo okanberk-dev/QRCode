@@ -3,7 +3,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import RegisterForm from '@/components/auth/RegisterForm';
 import Link from 'next/link';
-import { CheckCircle2, Shield } from 'lucide-react';
+import { Check } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { cookies } from 'next/headers';
@@ -51,40 +51,78 @@ export default async function RegisterPage({
   const t = getTranslations(locale);
   const { logoUrl } = await getSiteSettings();
 
-  const trialFeatures = locale === 'tr'
-    ? ['5 dakikada kurulum', 'Kredi kartı gerekmez', 'İstediğin zaman iptal et']
-    : ['5-minute setup', 'No credit card required', 'Cancel anytime'];
+  const benefits = locale === 'tr'
+    ? ['5 dakikada kurulum', 'Kredi kartı gerekmez', 'İstediğin zaman iptal et', 'Türkçe destek']
+    : ['5-minute setup', 'No credit card required', 'Cancel anytime', 'Turkish support'];
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] flex flex-col font-sans">
       <MarketingNavbar locale={locale} t={t} />
 
-      <main className="flex min-h-[calc(100dvh-64px)] flex-1 pt-[64px]">
-        {/* Left Panel - Hidden on mobile */}
-        <div className="hidden lg:flex w-[44%] bg-[#0A0A0A] text-white flex-col justify-center px-12 xl:px-16 py-16 relative overflow-hidden">
-          <div className="relative z-10 max-w-lg">
-            <Link href={`/${locale}`} className="inline-flex items-center gap-3 mb-10 group">
-              <BuazeLogo size={48} variant="on-dark" imageUrl={logoUrl} />
+      <main className="flex flex-1 flex-col pt-[64px] lg:min-h-[calc(100dvh-64px)] lg:grid lg:grid-cols-2">
+        {/* LEFT Panel — Form (white) */}
+        <div className="relative flex flex-1 items-center justify-center bg-white px-5 py-10 sm:px-8 sm:py-14 lg:px-16 lg:py-16">
+          <div className="flex w-full max-w-md flex-col">
+            <Link href={`/${locale}`} className="mb-10 inline-flex items-center gap-2.5 self-start group">
+              <BuazeLogo size={36} imageUrl={logoUrl} />
               <span
-                className="text-[22px] font-medium tracking-[-0.03em] text-white"
+                className="text-[20px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
                 buaze<span className="text-[#C6F24E]">.</span>
               </span>
             </Link>
-            <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] text-[#0A0A0A] px-4 py-1.5 rounded-full mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0A0A0A] pulse-heartbeat" />
-              <span className="pulse-eyebrow text-[#0A0A0A]">{t.auth_trial_badge}</span>
+
+            <div className="mb-8 space-y-3">
+              <h1
+                className="text-[32px] sm:text-[38px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {t.auth_register_title}
+              </h1>
+              <p className="text-[14px] text-[#737373]">
+                {locale === 'tr' ? 'Kredi kartı gerekmez. 2 dakikada başla.' : 'No credit card. Start in 2 minutes.'}
+              </p>
             </div>
 
-            <h2 className="text-[48px] xl:text-[60px] leading-[0.95] mb-6 tracking-[-0.035em] text-white">
+            <RegisterForm locale={locale} t={t} />
+
+            <p className="mt-6 text-center text-[13px] text-[#737373] lg:text-left">
+              {locale === 'tr' ? 'Hesabın var mı?' : 'Already have an account?'}{' '}
+              <Link href={`/${locale}/auth/login`} className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors">
+                {locale === 'tr' ? 'Giriş yap' : 'Sign in'}
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* RIGHT Panel — Lime hero */}
+        <div className="relative flex min-h-[420px] flex-col justify-between bg-[#C6F24E] px-5 py-12 sm:px-8 sm:py-14 lg:px-14 lg:py-16">
+          <div className="inline-flex items-center gap-2 self-start">
+            <BuazeLogo size={32} variant="on-lime" imageUrl={logoUrl} />
+            <span
+              className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              buaze<span>.</span>
+            </span>
+          </div>
+
+          <div className="max-w-lg">
+            <span className="pulse-eyebrow mb-5 inline-block text-[#0A0A0A]">
+              {locale === 'tr' ? '14 GÜN ÜCRETSİZ' : '14 DAYS FREE'}
+            </span>
+            <h2
+              className="text-[44px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
               {locale === 'tr' ? (
                 <>
                   Nabzını
                   <br />
                   duymaya
                   <br />
-                  <span className="text-[#C6F24E]">başla.</span>
+                  başla.
                 </>
               ) : (
                 <>
@@ -92,60 +130,24 @@ export default async function RegisterPage({
                   <br />
                   to your
                   <br />
-                  <span className="text-[#C6F24E]">pulse.</span>
+                  pulse.
                 </>
               )}
             </h2>
-            <p className="text-white/70 text-[16px] leading-[1.6] mb-10">
-              {locale === 'tr'
-                ? '14 gün boyunca tüm özellikleri ücretsiz kullanın. Dilediğiniz zaman iptal edin.'
-                : 'Use all features free for 14 days. Cancel anytime.'}
-            </p>
 
-            <ul className="space-y-3.5 bg-white/5 p-7 rounded-2xl border border-white/10">
-              {trialFeatures.map(feat => (
-                <li key={feat} className="flex items-center gap-3 font-medium text-white/90 text-sm">
-                  <div className="w-6 h-6 rounded-full bg-[#C6F24E] flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 size={14} className="text-[#0A0A0A]" />
-                  </div>
+            <ul className="mt-8 space-y-2.5">
+              {benefits.map((feat) => (
+                <li key={feat} className="flex items-center gap-2.5 text-[14px] font-medium text-[#0A0A0A]">
+                  <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+                    <Check size={11} strokeWidth={3} />
+                  </span>
                   {feat}
                 </li>
               ))}
             </ul>
-
-            <div className="flex items-center gap-3 text-white/70 text-[12px] font-medium mt-12 bg-white/5 py-4 px-5 rounded-2xl border border-white/10 inline-flex">
-              <Shield size={16} className="text-[#C6F24E]" />
-              {locale === 'tr' ? 'KVKK uyumlu & Endüstriyel Şifreleme' : 'GDPR compliant & Industry-standard Encryption'}
-            </div>
           </div>
 
-          {/* Decoration */}
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#C6F24E]/10 blur-[130px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-        </div>
-
-        {/* Right Panel - Form */}
-        <div className="relative flex flex-1 items-center justify-center bg-[#FFFFFF] p-4 sm:p-6 lg:p-12">
-          <div className="w-full max-w-md relative z-10">
-            <div className="mb-8 rounded-3xl border border-[#EDEDED] bg-white p-6 shadow-[0_8px_24px_rgba(10,10,10,0.04)] sm:p-10">
-              <div className="mb-8 space-y-3 text-center lg:text-left">
-                <div className="inline-flex lg:hidden items-center gap-2 bg-[#EAF9B8] text-[#0A0A0A] px-3 py-1.5 rounded-full mb-2 border border-[#C6F24E]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0A0A0A] pulse-heartbeat" />
-                  <span className="pulse-eyebrow">{t.auth_trial_badge} · {t.auth_no_cc}</span>
-                </div>
-                <h1 className="text-[32px] text-[#0A0A0A] tracking-[-0.025em] leading-tight">{t.auth_register_title}</h1>
-                <p className="text-[#525252] text-[14px]">{t.auth_register_subtitle}</p>
-              </div>
-
-              <RegisterForm locale={locale} t={t} />
-            </div>
-
-            <p className="text-center text-sm text-[#525252]">
-              {locale === 'tr' ? 'Zaten hesabınız var mı?' : "Already have an account?"}{' '}
-              <Link href={`/${locale}/auth/login`} className="text-[#0A0A0A] font-medium hover:text-[#A8D62E] transition-colors">
-                {locale === 'tr' ? 'Giriş yapın →' : 'Log in here →'}
-              </Link>
-            </p>
-          </div>
+          <p className="pulse-eyebrow text-[#0A0A0A]/60">© {new Date().getFullYear()} BUAZE</p>
         </div>
       </main>
 

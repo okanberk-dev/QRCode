@@ -296,9 +296,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   };
 
   return (
-    <div className="flex h-[calc(100vh-140px)] flex-col lg:flex-row" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="flex min-h-[calc(100vh-140px)] flex-col lg:h-[calc(100vh-140px)] lg:flex-row" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* ============ LEFT — review list ============ */}
-      <aside className="flex w-full lg:w-[340px] flex-shrink-0 flex-col border-b border-[#EDEDED] bg-white lg:border-b-0 lg:border-r">
+      <aside className="flex max-h-[55vh] w-full flex-shrink-0 flex-col border-b border-[#EDEDED] bg-white lg:max-h-none lg:w-[340px] lg:border-b-0 lg:border-r">
         <div className="border-b border-[#EDEDED] p-4">
           <div className="flex flex-wrap gap-1.5">
             {tabs.map((tab) => (

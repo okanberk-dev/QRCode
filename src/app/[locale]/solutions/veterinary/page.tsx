@@ -1,5 +1,6 @@
 import { PawPrint, Star, ShieldCheck, TrendingUp, QrCode, Users, Heart } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
+import { IllusVet } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import type { Metadata } from 'next';
@@ -116,6 +117,7 @@ export default async function VeterinarySolutionPage({ params }: { params: Promi
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      illustration={<IllusVet />}
     />
   );
 }

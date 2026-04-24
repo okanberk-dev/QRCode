@@ -62,9 +62,127 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#EDEDED] bg-white">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-[13px] text-[#0A0A0A]">
+    <>
+      {/* Mobile: card list */}
+      <div className="space-y-2 md:hidden">
+        {feedbacks.map((f) => {
+          const platformBadge = getPlatformBadge(f.platform);
+          const isLow = f.rating <= 2;
+          const hasSubRatings = f.foodRating || f.serviceRating || f.atmosphereRating;
+          return (
+            <article
+              key={f.id}
+              className={`rounded-2xl border bg-white p-4 ${
+                isLow ? 'border-red-200 bg-red-50/30' : 'border-[#EDEDED]'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 pulse-eyebrow ${
+                    f.rating >= 4
+                      ? 'bg-[#EAF9B8] text-[#0A0A0A]'
+                      : f.rating === 3
+                        ? 'bg-[#F5F5F5] text-[#525252]'
+                        : 'bg-red-50 text-red-600'
+                  }`}
+                >
+                  {'★'.repeat(f.rating)}
+                  <span className="text-[10px] ml-0.5">{f.rating}</span>
+                </span>
+                <time className="font-mono text-[11px] text-[#737373]">
+                  {format(new Date(f.createdAt), 'dd MMM · HH:mm', {
+                    locale: isTr ? tr : undefined,
+                  })}
+                </time>
+              </div>
+
+              {f.name && (
+                <div className="mt-2">
+                  <div
+                    className="truncate text-[14px] font-semibold text-[#0A0A0A] tracking-[-0.01em]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {f.name}
+                  </div>
+                  {(f.phone || f.email) && (
+                    <div className="pulse-eyebrow text-[#737373] mt-0.5 truncate">
+                      {f.phone || f.email}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {f.comment && f.comment !== SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT && (
+                <p className="mt-2 text-[13px] text-[#0A0A0A] leading-[1.5] line-clamp-3">
+                  &ldquo;{f.comment}&rdquo;
+                </p>
+              )}
+
+              {hasSubRatings && (
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                  {f.foodRating && (
+                    <span className="inline-flex items-center gap-1 pulse-eyebrow text-[#737373]">
+                      {isTr ? 'YEMEK' : 'FOOD'}
+                      <span className="font-mono text-[11px] text-[#0A0A0A] normal-case tracking-normal">
+                        {f.foodRating}/5
+                      </span>
+                    </span>
+                  )}
+                  {f.serviceRating && (
+                    <span className="inline-flex items-center gap-1 pulse-eyebrow text-[#737373]">
+                      {isTr ? 'SERVİS' : 'SERVICE'}
+                      <span className="font-mono text-[11px] text-[#0A0A0A] normal-case tracking-normal">
+                        {f.serviceRating}/5
+                      </span>
+                    </span>
+                  )}
+                  {f.atmosphereRating && (
+                    <span className="inline-flex items-center gap-1 pulse-eyebrow text-[#737373]">
+                      {isTr ? 'ATMOSFER' : 'ATMOS'}
+                      <span className="font-mono text-[11px] text-[#0A0A0A] normal-case tracking-normal">
+                        {f.atmosphereRating}/5
+                      </span>
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[#F5F5F5] pt-3">
+                {platformBadge && (
+                  <span
+                    className={`inline-flex items-center rounded pulse-eyebrow ${platformBadge.bg} ${platformBadge.color} px-1.5 py-0.5`}
+                  >
+                    {platformBadge.label}
+                  </span>
+                )}
+                {f.hasKvkkConsent ? (
+                  <span className="inline-flex items-center rounded pulse-eyebrow bg-[#EAF9B8] text-[#0A0A0A] px-1.5 py-0.5">
+                    KVKK ✓
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded pulse-eyebrow bg-[#F5F5F5] text-[#737373] px-1.5 py-0.5">
+                    KVKK —
+                  </span>
+                )}
+                {f.hasMarketingConsent && (
+                  <span className="inline-flex items-center rounded pulse-eyebrow bg-blue-50 text-blue-600 px-1.5 py-0.5">
+                    {isTr ? 'İLETİŞİM' : 'CONTACT'}
+                  </span>
+                )}
+                <span className="ml-auto inline-flex items-center gap-1 pulse-eyebrow text-[#737373]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]" />
+                  {f.branch || '—'} · {isTr ? 'MASA' : 'TABLE'} {f.tableNumber || '—'}
+                </span>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden md:block overflow-hidden rounded-2xl border border-[#EDEDED] bg-white">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-[13px] text-[#0A0A0A]">
           <thead className="bg-[#FAFAFA] border-b border-[#EDEDED]">
             <tr>
               <th className="pulse-eyebrow text-[#737373] px-4 py-3 font-medium sm:px-6">{isTr ? 'TARİH' : 'DATE'}</th>
@@ -199,9 +317,10 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                 </tr>
               );
             })}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
