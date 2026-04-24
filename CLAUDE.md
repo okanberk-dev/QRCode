@@ -619,3 +619,167 @@ Kullanıcı "tasarımı geliştirme planına geçeceğiz" dedi. Implementasyon s
 - Logo SVG → `src/components/marketing/BuazeLogo.tsx` zaten güncel
 - Font'lar zaten yüklü (`src/app/layout.tsx`)
 
+---
+
+## 17. 2026-04 Pulse Redesign Wave — Session Wrap-Up
+
+Tek bir session'da 15 draft PR üretildi (#39 → #53). Bir sonraki oturum bu bölümü okuyunca ne merge edilmesi gerektiğini, hangi component/util/endpoint'in nereye eklendiğini, neyin hâlâ açık known-gap olduğunu görebilsin.
+
+### 17.1 Draft PR zinciri (merge sırası önemli)
+
+Her PR bir önceki branch'in üzerine açıldı — merge sırayla yapılmalı:
+
+| PR | Başlık | Branch |
+|---|---|---|
+| #39 | docs(design): Phase 0 — baseline + .design bundle + design.md | `claude/design-phase-0-baseline` |
+| #40 | feat(design): Phase 1 — chrome + homepage v3 conversion layer | `claude/design-phase-1-home` |
+| #41 | fix(owner): restaurants list vanished after clicking the mini map | `claude/fix-owner-restaurants-accidental-toggle` |
+| #42 | feat(design): Phase 2 — onboarding 5-step + confetti + 404 | `claude/design-phase-2-auth-onboarding` |
+| #43 | feat(design): Phase 3 — AI Co-Pilot + dynamic case studies + ROI | `claude/design-phase-3-marketing` |
+| #44 | feat(design): Phase 4 — retail sector + TR/design slug aliases + footer | `claude/design-phase-4-solutions` |
+| #45 | feat(design): Phase 5 — content APIs scaffolded | `claude/design-phase-5-content` |
+| #46 | feat(design): Phase 6 — admin core header consistency | `claude/design-phase-6-admin-core` |
+| #47 | feat(design): Phase 7 — API & Webhook page + admin headers | `claude/design-phase-7-admin-advanced` |
+| #48 | feat(design): Phase 8 — public Pulse sweep + design-intent gap fixes | `claude/design-phase-8-public-polish` |
+| #49 | feat(admin): QR page 4-step visual wizard | `claude/post-phase-qr-wizard` |
+| #50 | feat(home): animated v2 hero dashboard | `claude/post-phase-hero-v2` |
+| #51 | feat(chrome): conversion-led IA redesign for header + footer | `claude/post-phase-nav-footer-ia` |
+| #52 | feat(polish): pulse button system + real Unsplash imagery | `claude/post-phase-buttons-imagery` |
+| #53 | fix(ux): onboarding polish + QR pages cleanup + api entry scoped | `claude/post-phase-onboarding-qr-fix` |
+
+**Takip dosyası:** Repo kökünde `design.md` — her faz için "Kapsam / Değişen dosyalar / Backend etkisi / Verification / Sonraki faz" kayıtları + "Backend açıkları" tablosu.
+
+### 17.2 Yeni eklenen marketing component'leri (hepsi client-side)
+
+`src/components/marketing/`:
+
+- `AnimatedCounter.tsx` — IntersectionObserver ile 0→hedefe easeOut tween. `locale` prop'u TR `1.284` / EN `1,284` ayrımı yapar. Phase 1.
+- `MarqueeRow.tsx` — CSS-only horizontal logo marquee + edge mask. Phase 1.
+- `StickyCtaBar.tsx` — 600px scroll sonrası altta koyu "Bugün başla" CTA + session-dismiss. Phase 1.
+- `SocialProofToast.tsx` — 3s → 8s döngüyle TR/EN 5 toast gösterir. Phase 1.
+- `VideoModal.tsx` — sandboxed iframe + ESC/backdrop close + body-scroll lock. Phase 1.
+- `WatchDemoButton.tsx` — hero'daki "Demo izle" client sarıcısı (VideoModal'ı açar). Phase 1.
+- `HomeIndustryTabs.tsx` — 8 sektör tab'ı + per-sektör body copy. Phase 1.
+- `NewsletterSignup.tsx` — footer email capture, 501'i "başarı" sayar. Phase 1.
+- `LiveReviewTicker.tsx` — homepage dark panel'de 4 review 2.8s rotate. Phase 8.
+- `HomeHeroDashboard.tsx` — v2 hero'daki animasyonlu canlı dashboard kartı (chart stroke-dashoffset reveal + AnimCounter + floating +184% badge + staggered review rows). Post-phase #50.
+
+`src/components/admin/`:
+
+- `SuperadminBlock.tsx` — workspace-scoped admin sayfalarını (`/admin/{billing,campaigns,team,notifications,settings}`) superadmin için "Yönetici için değil" kartıyla gate'ler. Phase 5.
+
+### 17.3 Yeni Pulse utility class'ları (`src/app/globals.css`)
+
+**Button system** (Post-phase #52):
+- `.pulse-btn-primary` — lime `#C6F24E`, hover `#A8D62E`, active scale 0.98
+- `.pulse-btn-dark` — graphite `#0A0A0A`, hover `#1A1A1A`
+- `.pulse-btn-ghost` — transparent, hover border `#0A0A0A`
+- `.pulse-card-hover` — `translateY(-3px)` lift + soft shadow + border highlight
+
+**Motion keyframes:**
+- `@keyframes slideIn` + `.animate-slide-in` — sticky CTA / toast giriş (Phase 0)
+- `@keyframes marqueeSlide` + `.animate-marquee` — logo strip (Phase 0)
+- `@keyframes ecgDraw` — footer lime heartbeat line reveal (Phase 1)
+- `@keyframes confettiFly` — onboarding finish burst, `--cf-x/y/rot` per-particle custom properties (Phase 2)
+- `@keyframes bzFloat` + `.bz-float` — hero +184% badge ±6px Y oscillation (Post-phase #50)
+
+Tüm animasyonlar `prefers-reduced-motion: reduce` altında devre dışı (tek bir `@media` bloğu hepsini kapsar).
+
+### 17.4 Yeni scaffolded API endpoint'leri (501 döner)
+
+Hepsi `scaffolding.ts` helper'ını kullanır. Prisma model önerileri scaffolding.ts başındaki yorum bloğunda tanımlı.
+
+| Endpoint | Method | Prisma model (öneri) | Faz |
+|---|---|---|---|
+| `/api/newsletter` | POST | `NewsletterSubscriber` | Phase 1 |
+| `/api/admin/analytics/export` | GET | `AnalyticsExport` | Phase 5 |
+| `/api/roi/save` | POST | `ROIRequest` | Phase 3 |
+| `/api/help/articles` | GET | `HelpArticle` | Phase 5 |
+| `/api/careers/apply` | POST | `CareerApplication` | Phase 5 |
+| `/api/billing/summary` | GET | `BillingSubscription` | Phase 5 |
+| `/api/billing/invoices` | GET | `BillingInvoice` | Phase 5 |
+| `/api/onboarding/state` | GET/PATCH | `OnboardingProgress` | Phase 5 |
+| `/api/onboarding/complete` | POST | `OnboardingProgress` | Phase 5 |
+
+**OpenAI / AI Co-Pilot canlı:** `POST /api/feedback/[id]/suggest-reply` gerçek OpenAI gpt-4o-mini'ye bağlı (rate-limit 30/dk/actor + IDOR koruması + template fallback). §15'e bak.
+
+### 17.5 Yeni UI route'ları
+
+**Public:**
+- `/features/ai-copilot` — AI Co-Pilot ürün sayfası (Phase 3)
+- `/case-study/[slug]` — dinamik vaka çalışmaları (3 mock: `kadikoy-bistro`, `hotel-nora`, `derma-klinik`) (Phase 3)
+- `/[locale]/onboarding` — 5-step wizard + confetti (Phase 2, polished Post-phase #53)
+
+**Solutions aliasları (7 redirect + 1 yeni):**
+- `/solutions/retail` yeni sektör sayfası
+- `/solutions/{hotel,clinic,legal,spa,otel,klinik,hukuk,perakende}` → kanonik slug'lara redirect
+
+**Admin workspace-scoped (SuperadminBlock'lu):**
+- `/admin/reviews`, `/admin/analytics`, `/admin/settings`, `/admin/campaigns`, `/admin/team`, `/admin/billing`, `/admin/notifications`, `/admin/api`
+
+### 17.6 IA değişiklikleri
+
+**Header (`MarketingNavbarClient.tsx`, tamamen yeniden yazıldı Post-phase #51):**
+- 5 top entry: Ürün / Çözümler / Müşteriler / Kaynaklar / Fiyatlandırma
+- 3 mega-dropdown (Ürün + Çözümler + Kaynaklar) + 1 mini dropdown (Müşteriler)
+- Logo yanında "2.400+ işletme" trust chip
+- Ürün dropdown'unda AI Co-Pilot lime featured card + inline Demo izle
+
+**Footer (`MarketingFooter.tsx`, 4 → 5 kolon):**
+- Yeni **Resources** kolonu (Help / FAQ / ROI / Compare / Ücretsiz QR / Pricing)
+- Ürün kolonuna "Review Management" + "API & Webhook" eklendi
+- Company kolonuna "Vaka çalışmaları" + "Kariyer · 5 POZİSYON" badge
+- Brand kolonuna "★ 2.400+ işletme" + "KVKK · GDPR" trust pill'leri
+- Bottom rail: 7-link legal mini-strip (Gizlilik / KVKK / Şartlar / Çerez / Açık-Rıza / Ticari-İleti / Google Uyumu)
+
+### 17.7 Gerçek görseller (Post-phase #52)
+
+Unsplash CC0 fotoğrafları 3 stratejik yerde:
+- **About → Takım**: 4 inisiyal placeholder → portrait fotoğraflar (CEO/CTO/Product/Growth), hover scale 1.02
+- **Customer Stories grid**: 6 düz renkli stat bloğu → gerçek mekan fotoğrafları + dark gradient + metric overlay + `pulse-card-hover`
+- **Case Study `/[slug]`**: 3 mock için magazine-style cover photo (16:9 → 21:9 → 3:1 responsive) + sektör eyebrow + brand h1
+
+`next.config.ts` zaten `remotePatterns: [{ hostname: '**' }]` — Unsplash config eklemedi. `<img>` tag kullanıldı (next/image değil) — external CC0 asset'ler için optimizer hop'unu atlamak için.
+
+### 17.8 PlatformLogo iyileştirmeleri (Post-phase #53)
+
+`src/components/marketing/PlatformLogo.tsx`:
+- **Yemeksepeti**: abstract üçgenler → "ys" monogram (brand kırmızı)
+- **Trendyol GO**: jenerik T + nokta → "ty" + beyaz "GO" puck (brand turuncu)
+- Diğer 14 platform (Google, Getir, Migros Hemen, Yelp, Tripadvisor, Booking, Trustpilot, Facebook, Foursquare, OpenTable, Uber Eats, DoorDash, Instagram, Zomato) dokunulmadı
+
+### 17.9 Backend güvenliği (dokunulmayan)
+
+Hiçbir post-phase PR bu bölümü etkilemedi:
+- **68 API route** (`src/app/api/**` mevcut) — sadece yeni scaffold'lar eklendi
+- **Prisma schema** — sıfır değişiklik; tüm yeni modeller `scaffolding.ts` yorum bloğunda önerilir
+- **Auth helpers** (`src/lib/auth.ts`, `panel-access.ts`) — dokunulmadı
+- **IDOR**: `getScopedRestaurantIds` + `canAccessRestaurant` her yeni API'de uygulanıyor
+- **Rate-limit**: `rateLimit()` helper'ı newsletter/careers/roi'de per-IP, openai'de per-actor
+- **JWT cookie flow**: `MarketingNavbar.tsx` server wrapper'da `verifyJwt` korundu
+- **OpenAI anahtarı**: `src/lib/openai.ts` + `process.env.OPENAI_API_KEY`, client bundle'a sızmıyor
+
+### 17.10 Bilinen açık gap'ler (production öncesi)
+
+`design.md` "Backend açıkları" tablosunda detaylı — özet:
+
+1. **Sektör bespoke content** — 6 sektör (hotel/healthcare/law-firms/beauty-salon/retail/gym) `SolutionPageLayout` template'i kullanıyor; design canvas per-sektör özel içerik ister. `CaseStudy` veya sektör CMS Prisma modeli bağlandığında DB'den beslenecek.
+2. **501 scaffold'larının gerçek backend'i** — yukarıda §17.4 tablosundaki 9 endpoint production'a çıkmadan gerçek Prisma + provider (Stripe, Resend, Mailchimp vb.) ile değiştirilmeli.
+3. **Mobile QA cihazda** — dev server 200/307 doğruladı, ama 375/768/1280 breakpoint'lerde görsel QA gerçek cihazda yapılmalı.
+
+### 17.11 Design handoff referans dosyaları
+
+`.design/` klasörü (21 dosya, branch `save-design-files-moe8c`'den Phase 0'da alındı, §16'da dosya haritası):
+- `site/site-homepage-v2.jsx` — hero dashboard animasyon referansı (HeroDashboard, AnimCounter, LiveTicker)
+- `site/site-homepage-v3.jsx` — canonical copy (trust tickler, 3-step, ticker)
+- `site/site-premium.jsx` — PremiumNav / PremiumFooter / ConversionLayer (sticky CTA + toast)
+- `site/site-onboarding-v2.jsx` — 5-step canonical + OnboardingProgress + Confetti
+- `site/site-admin.jsx` — AdminShell, AdminDashboard, AdminReviews, AdminQRBuilder, AdminAnalytics, AdminLocations, AdminSettings
+- `site/site-pages3.jsx`, `site-pages4.jsx` — sektör + legal + admin advanced
+
+**Dikkat:** `.design/*.jsx` React prototipleridir, `src/`'ye direkt kopyalanmaz — yalnız referans olarak okunur.
+
+---
+
+_Son güncelleme: 2026-04 (dördüncü dalga) — §17 Pulse Redesign Wave eklendi (15 draft PR #39→#53, yeni component + util + scaffold + IA + imagery + logo fixes). Daha önceki güncelleme §15 AI Co-Pilot idi._
+
