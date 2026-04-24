@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Check, Loader2, Mail } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, Check, Loader2 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 
 interface Props {
@@ -49,18 +50,18 @@ export default function ForgotPasswordForm({ locale }: Props) {
 
   if (sent) {
     return (
-      <div className="space-y-5">
-        <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8] p-5 text-center">
+      <div className="flex flex-col gap-3.5">
+        <div className="rounded-[14px] border border-[#C6F24E] bg-[#EAF9B8] p-5 text-center">
           <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
             <Check size={20} strokeWidth={2.5} />
           </div>
           <p className="text-[14px] font-medium text-[#0A0A0A]">
-            {locale === 'tr' ? 'Kod gönderildi.' : 'Code sent.'}
+            {locale === 'tr' ? 'Bağlantı gönderildi.' : 'Link sent.'}
           </p>
           <p className="mt-2 text-[12px] text-[#525252] leading-relaxed">
             {locale === 'tr'
-              ? 'E-postanıza 6 haneli bir kod gönderdik. Spam klasörünüzü de kontrol edin. Kod 30 dakika geçerlidir.'
-              : 'We sent a 6-digit code to your email. Check your spam folder too. The code is valid for 30 minutes.'}
+              ? 'E-postanıza sıfırlama bağlantısını ve 6 haneli kodu gönderdik. Spam klasörünü de kontrol edin. 30 dakika geçerlidir.'
+              : 'We sent a reset link and a 6-digit code to your email. Check your spam folder too. Valid for 30 minutes.'}
           </p>
         </div>
 
@@ -86,39 +87,46 @@ export default function ForgotPasswordForm({ locale }: Props) {
             setToken('');
             setEmail('');
           }}
-          className="pulse-eyebrow w-full text-[#737373] hover:text-[#0A0A0A] transition-colors"
+          className="pulse-eyebrow w-full text-[#737373] hover:text-[#0A0A0A] transition-colors py-1"
         >
           {locale === 'tr' ? 'FARKLI BİR E-POSTA DENE' : 'TRY A DIFFERENT EMAIL'}
         </button>
+
+        <p className="text-center text-[13px] text-[#737373] mt-1">
+          {locale === 'tr' ? 'Hatırladın mı?' : 'Remembered it?'}{' '}
+          <Link
+            href={`/${locale}/auth/login`}
+            className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+          >
+            {locale === 'tr' ? 'Giriş yap' : 'Sign in'}
+          </Link>
+        </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
       {error && (
         <div className="bg-[#FEF2F2] text-[#B91C1C] p-4 rounded-xl text-[13px] font-medium border border-[#FECACA] text-center">
           {error}
         </div>
       )}
 
-      <div className="space-y-2">
-        <label htmlFor="forgot-email" className="pulse-eyebrow text-[#737373] ml-1 block">
-          {locale === 'tr' ? 'E-posta Adresiniz' : 'Your Email'}
+      <div className="space-y-1.5">
+        <label htmlFor="forgot-email" className="pulse-eyebrow text-[#737373] block">
+          {locale === 'tr' ? 'E-POSTA' : 'EMAIL'}
         </label>
-        <div className="relative">
-          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#737373]" size={16} strokeWidth={2} />
-          <input
-            id="forgot-email"
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="can@sirket.com"
-            className="min-h-[44px] w-full pl-11 pr-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
-          />
-        </div>
+        <input
+          id="forgot-email"
+          type="email"
+          required
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="emre@arkbistro.com"
+          className="min-h-[48px] w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
+        />
       </div>
 
       <button
@@ -129,9 +137,19 @@ export default function ForgotPasswordForm({ locale }: Props) {
         {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}
         {loading
           ? (locale === 'tr' ? 'Gönderiliyor…' : 'Sending…')
-          : (locale === 'tr' ? 'Sıfırlama kodu gönder' : 'Send reset code')}
+          : (locale === 'tr' ? 'Bağlantı gönder' : 'Send reset link')}
         {!loading && <ArrowRight size={18} strokeWidth={2} />}
       </button>
+
+      <p className="text-center text-[13px] text-[#737373] mt-1">
+        {locale === 'tr' ? 'Hatırladın mı?' : 'Remembered it?'}{' '}
+        <Link
+          href={`/${locale}/auth/login`}
+          className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+        >
+          {locale === 'tr' ? 'Giriş yap' : 'Sign in'}
+        </Link>
+      </p>
     </form>
   );
 }

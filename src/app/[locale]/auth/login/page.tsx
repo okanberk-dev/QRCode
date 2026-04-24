@@ -4,8 +4,6 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import LoginForm from '@/components/auth/LoginForm';
 import Link from 'next/link';
-import { Shield } from 'lucide-react';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
@@ -30,14 +28,13 @@ export async function generateMetadata({
   };
 }
 
-
 export default async function LoginPage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
-  
+
   // Auth check: Redirect to dashboard if already logged in
   const cookieStore = await cookies();
   const token = cookieStore.get('user_token')?.value;
@@ -59,132 +56,104 @@ export default async function LoginPage({
   ];
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] flex flex-col font-sans">
-      <MarketingNavbar locale={locale} t={t} />
+    <div className="min-h-screen bg-white font-sans lg:grid lg:grid-cols-2">
+      {/* LEFT — Form */}
+      <div className="flex min-h-screen flex-col justify-between bg-white px-6 py-10 sm:px-10 sm:py-12 lg:px-16 lg:py-12">
+        <Link href={`/${locale}`} className="inline-flex items-center gap-2 self-start group">
+          <BuazeLogo size={32} imageUrl={logoUrl} />
+          <span
+            className="text-[20px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            buaze<span className="text-[#C6F24E]">.</span>
+          </span>
+        </Link>
 
-      <main className="flex min-h-[calc(100dvh-64px)] flex-1 pt-[64px]">
-        {/* Left Panel */}
-        <div className="hidden lg:flex w-[44%] bg-[#0A0A0A] text-white flex-col justify-between px-12 xl:px-16 py-16 relative overflow-hidden">
-          {/* Grid overlay */}
-          <svg aria-hidden className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.08]">
-            <defs>
-              <pattern id="loginGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#FFFFFF" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#loginGrid)" />
-          </svg>
+        <div className="mx-auto w-full max-w-[400px] py-10">
+          <h1
+            className="text-[40px] sm:text-[42px] font-medium leading-[1] tracking-[-0.03em] text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {isTr ? (
+              <>Tekrar<br />hoş geldin.</>
+            ) : (
+              <>Welcome<br />back.</>
+            )}
+          </h1>
+          <p className="mt-2.5 text-[14px] text-[#737373]">
+            {isTr ? 'Panele giriş yap ve nabzını dinle.' : 'Sign in to your panel and feel the pulse.'}
+          </p>
 
-          <div className="relative z-10 flex items-start justify-between">
-            <Link href={`/${locale}`} className="inline-flex items-center gap-3 group">
-              <BuazeLogo size={36} variant="on-dark" imageUrl={logoUrl} />
-              <span
-                className="text-[20px] font-medium tracking-[-0.03em] text-white"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                buaze<span className="text-[#C6F24E]">.</span>
-              </span>
-            </Link>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#C6F24E]/15 border border-[#C6F24E]/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat" />
-              <span className="pulse-eyebrow text-[#C6F24E]">
-                {isTr ? 'CANLI · 340K+ YORUM' : 'LIVE · 340K+ REVIEWS'}
-              </span>
-            </div>
+          <div className="mt-8">
+            <Suspense fallback={<div className="h-80 animate-pulse bg-white rounded-lg" />}>
+              <LoginForm locale={locale} t={t} />
+            </Suspense>
           </div>
+        </div>
 
-          <div className="relative z-10 max-w-[460px]">
-            <blockquote
-              className="text-[36px] xl:text-[44px] font-medium leading-[1.05] tracking-[-0.03em] text-white"
+        <p className="pulse-eyebrow text-[#A3A3A3]">© {new Date().getFullYear()} BUAZE</p>
+      </div>
+
+      {/* RIGHT — Dark hero */}
+      <div className="relative hidden lg:flex flex-col justify-between bg-[#0A0A0A] text-white px-12 xl:px-14 py-12 overflow-hidden">
+        <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.08]">
+          <defs>
+            <pattern id="loginGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#FFFFFF" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#loginGrid)" />
+        </svg>
+
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#C6F24E]/10 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[#C6F24E]/5 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2 pointer-events-none" />
+
+        <div className="relative z-10 inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-[#C6F24E]/15 border border-[#C6F24E]/30">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat" />
+          <span className="pulse-eyebrow text-[#C6F24E]">
+            {isTr ? 'CANLI · 340K+ YORUM' : 'LIVE · 340K+ REVIEWS'}
+          </span>
+        </div>
+
+        <div className="relative z-10 max-w-[520px]">
+          <blockquote
+            className="text-[40px] xl:text-[52px] font-medium leading-[0.95] tracking-[-0.03em] text-white"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {isTr
+              ? '"İlk ay içinde Google ortalamamız 4.2\'den 4.8\'e çıktı."'
+              : '"Within the first month, our Google average climbed from 4.2 to 4.8."'}
+          </blockquote>
+          <div className="mt-6 flex items-center gap-3">
+            <div
+              className="w-11 h-11 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[14px] font-semibold"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
-              {isTr
-                ? '"İlk ay içinde Google ortalamamız 4.2\'den 4.8\'e çıktı."'
-                : '"Within the first month, our Google average climbed from 4.2 to 4.8."'}
-            </blockquote>
-            <div className="mt-6 flex items-center gap-3">
+              EK
+            </div>
+            <div>
+              <div className="text-[14px] font-semibold text-white">Emre Kaya</div>
+              <div className="text-[12px] text-white/60 mt-0.5">
+                {isTr ? 'Kadıköy Bistro · Kurucu' : 'Kadıköy Bistro · Founder'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex items-end gap-10">
+          {bottomStats.map((s) => (
+            <div key={s.l}>
               <div
-                className="w-11 h-11 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[14px] font-semibold"
+                className="text-[30px] font-medium text-white leading-none tracking-[-0.02em]"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
-                EK
+                {s.k}
               </div>
-              <div>
-                <div className="text-[14px] font-medium text-white">Emre Kaya</div>
-                <div className="pulse-eyebrow text-white/60 mt-0.5">
-                  {isTr ? 'Kadıköy Bistro · Kurucu' : 'Kadıköy Bistro · Founder'}
-                </div>
-              </div>
+              <div className="pulse-eyebrow text-white/60 mt-2">{s.l}</div>
             </div>
-          </div>
-
-          <div className="relative z-10 space-y-5">
-            <div className="flex items-center gap-8">
-              {bottomStats.map((s) => (
-                <div key={s.l}>
-                  <div
-                    className="text-[26px] font-medium text-white leading-none tracking-[-0.02em]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
-                    {s.k}
-                  </div>
-                  <div className="pulse-eyebrow text-white/60 mt-2">{s.l}</div>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-2.5 text-white/70 text-[12px] font-medium">
-              <Shield size={14} className="text-[#C6F24E] flex-shrink-0" />
-              {isTr ? 'KVKK uyumlu · Endüstriyel şifreleme' : 'GDPR compliant · Industry-standard encryption'}
-            </div>
-          </div>
-
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#C6F24E]/10 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[#C6F24E]/5 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2 pointer-events-none" />
+          ))}
         </div>
-
-        {/* Right Panel - Form */}
-        <div className="flex-1 flex flex-col items-center justify-center bg-[#FFFFFF] p-4 sm:p-8 lg:p-10">
-
-          {/* Header/Logo for mobile */}
-          <div className="flex lg:hidden justify-center mb-8">
-            <Link href={`/${locale}`} className="flex items-center gap-3 group">
-              <BuazeLogo size={36} variant="default" imageUrl={logoUrl} />
-              <span
-                className="text-[22px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                buaze<span className="text-[#C6F24E]">.</span>
-              </span>
-            </Link>
-          </div>
-
-          <div className="w-full max-w-sm mx-auto">
-            <div className="mb-5 rounded-3xl border border-[#EDEDED] bg-white p-6 shadow-[0_8px_24px_rgba(10,10,10,0.04)] sm:p-10">
-              <div className="mb-8 text-center lg:text-left">
-                <h1 className="text-[28px] text-[#0A0A0A] tracking-[-0.02em] leading-tight">{t.auth_login_title}</h1>
-                <p className="text-[14px] text-[#525252] mt-2">{t.auth_login_subtitle}</p>
-              </div>
-
-              <Suspense fallback={<div className="h-52 animate-pulse bg-[#FFFFFF] rounded-lg" />}>
-                <LoginForm locale={locale} t={t} />
-              </Suspense>
-            </div>
-
-            <div className="text-center mt-8">
-              <p className="text-[13px] text-[#525252]">
-                {locale === 'tr' ? 'Hesabınız yok mu?' : "Don't have an account?"}
-              </p>
-              <Link
-                href={`/${locale}/auth/register`}
-                className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] mt-2 transition-colors"
-              >
-                {locale === 'tr' ? '14 gün ücretsiz dene' : 'Try free for 14 days'}
-                <span aria-hidden>→</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
