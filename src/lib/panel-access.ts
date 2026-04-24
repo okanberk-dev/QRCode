@@ -38,3 +38,24 @@ export async function canAccessRestaurant(actor: PanelActor, restaurantId: strin
 
   return false;
 }
+
+/**
+ * Resolves the owning User.id for workspace-scoped features
+ * (billing, team, campaigns, notification prefs).
+ *
+ * - `actor.source === 'user'` → the actor itself owns the workspace.
+ * - `manager` → resolve via their scoped restaurant's owner.
+ * - `superadmin` (admin source, no restaurant scope) → null; callers
+ *   should 403 since superadmin doesn't have a personal workspace.
+ */
+export async function resolveOwnerUserId(actor: PanelActor): Promise<string | null> {
+  if (actor.source === 'user') return actor.id;
+  if (actor.role === 'manager' && actor.restaurantId) {
+    const r = await prisma.restaurant.findUnique({
+      where: { id: actor.restaurantId },
+      select: { userId: true },
+    });
+    return r?.userId ?? null;
+  }
+  return null;
+}

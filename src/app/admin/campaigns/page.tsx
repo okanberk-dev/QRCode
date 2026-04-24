@@ -17,42 +17,6 @@ interface Campaign {
   createdAt: string;
 }
 
-const DEMO_CAMPAIGNS: Campaign[] = [
-  {
-    id: 'demo-1',
-    name: 'Masa QR · Pulse',
-    placement: 'table',
-    count: 24,
-    template: 'lime',
-    color: '#C6F24E',
-    status: 'live',
-    restaurantName: 'Kadıköy Bistro',
-    createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-  },
-  {
-    id: 'demo-2',
-    name: 'Fatura QR',
-    placement: 'receipt',
-    count: 1,
-    template: 'white',
-    color: '#0A0A0A',
-    status: 'draft',
-    restaurantName: 'Kadıköy Bistro',
-    createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
-  },
-  {
-    id: 'demo-3',
-    name: 'Kapıda veda',
-    placement: 'door',
-    count: 4,
-    template: 'dark',
-    color: '#0A0A0A',
-    status: 'archived',
-    restaurantName: 'Moda Kahve',
-    createdAt: new Date(Date.now() - 86400000 * 14).toISOString(),
-  },
-];
-
 const PLACEMENT_LABEL: Record<Campaign['placement'], { tr: string; en: string }> = {
   table: { tr: 'Masa', en: 'Table' },
   receipt: { tr: 'Fatura', en: 'Receipt' },
@@ -79,6 +43,7 @@ function AdminCampaignsBody() {
   const isTr = locale === 'tr';
   const [items, setItems] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -87,25 +52,40 @@ function AdminCampaignsBody() {
         const res = await fetch('/api/campaigns');
         if (res.ok) {
           const data = await res.json();
-          setItems((data.data as Campaign[]) ?? DEMO_CAMPAIGNS);
-        } else {
-          setItems(DEMO_CAMPAIGNS);
+          setItems((data.data as Campaign[]) ?? []);
         }
       } catch {
-        setItems(DEMO_CAMPAIGNS);
+        /* empty state will show */
       }
       setLoading(false);
     })();
   }, []);
 
-  const onCreate = async () => {
-    const res = await fetch('/api/campaigns', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name: 'Yeni kampanya', placement: 'table', template: 'lime' }),
-    });
-    setNotice(res.status === 501 ? (isTr ? 'Yakında bağlanacak' : 'Coming soon') : isTr ? 'Oluşturuldu' : 'Created');
+  const flash = (m: string) => {
+    setNotice(m);
     setTimeout(() => setNotice(null), 2500);
+  };
+
+  const onCreate = async () => {
+    setCreating(true);
+    try {
+      const res = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: isTr ? 'Yeni kampanya' : 'New campaign', placement: 'table', template: 'lime' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.campaign) setItems((list) => [data.campaign, ...list]);
+        flash(isTr ? 'Kampanya oluşturuldu' : 'Campaign created');
+      } else {
+        const body = await res.json().catch(() => ({}));
+        flash(isTr ? `Hata: ${body.error ?? res.status}` : `Error: ${body.error ?? res.status}`);
+      }
+    } catch {
+      flash(isTr ? 'Ağ hatası' : 'Network error');
+    }
+    setCreating(false);
   };
 
   return (
@@ -121,9 +101,11 @@ function AdminCampaignsBody() {
           {notice && <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">{notice}</span>}
           <button
             onClick={onCreate}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E]"
+            disabled={creating}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-50"
           >
-            <Plus size={12} /> {isTr ? 'Yeni kampanya' : 'New campaign'}
+            {creating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+            {isTr ? 'Yeni kampanya' : 'New campaign'}
           </button>
         </div>
       </header>

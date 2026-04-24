@@ -1,26 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
+import { resolveOwnerUserId } from '@/lib/panel-access';
 import { PLAN_QUOTA, PLAN_LABELS } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
-
-async function resolveOwnerUserId(actor: {
-  id: string;
-  role: string;
-  restaurantId: string | null;
-  source: 'admin' | 'user';
-}): Promise<string | null> {
-  if (actor.source === 'user') return actor.id;
-  if (actor.role === 'manager' && actor.restaurantId) {
-    const r = await prisma.restaurant.findUnique({
-      where: { id: actor.restaurantId },
-      select: { userId: true },
-    });
-    return r?.userId ?? null;
-  }
-  return null;
-}
 
 function trialDaysLeft(trialEndsAt: Date | null | undefined): number | null {
   if (!trialEndsAt) return null;

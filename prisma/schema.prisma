@@ -152,6 +152,51 @@ model FeedbackAssignment {
   @@map("feedback_assignments")
 }
 
+model TeamMember {
+  id         String   @id @default(cuid())
+  ownerId    String   @map("owner_user_id")
+  email      String
+  name       String?
+  role       String   @default("manager")  // owner | manager | staff | viewer
+  locations  Json?    // string[] — restaurant ids
+  status     String   @default("invited")  // invited | active | revoked
+  lastSeenAt DateTime? @map("last_seen_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([ownerId, email])
+  @@index([ownerId, status])
+  @@map("team_members")
+}
+
+model Campaign {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  restaurantId   String?  @map("restaurant_id")
+  name           String
+  placement      String   // table | receipt | door | pack
+  count          Int      @default(1)
+  template       String   @default("lime") // lime | white | dark | minimal
+  color          String   @default("#C6F24E")
+  status         String   @default("draft") // draft | live | archived
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@index([userId, restaurantId])
+  @@map("campaigns")
+}
+
+model NotificationPreference {
+  userId           String   @id @map("user_id")
+  lowRatingEmail   Boolean  @default(true)  @map("low_rating_email")
+  dailyDigestEmail Boolean  @default(false) @map("daily_digest_email")
+  weeklyReport     Boolean  @default(true)  @map("weekly_report")
+  slackWebhook     String?  @map("slack_webhook")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("notification_preferences")
+}
+
 model AdminUser {
   id           String      @id @default(cuid())
   username     String      @unique
