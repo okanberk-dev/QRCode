@@ -240,8 +240,8 @@ export default async function CustomerStoriesPage({
           </h2>
           <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
             {isTr
-              ? '14 gün ücretsiz · Kredi kartı istemiyoruz · Türkçe destek'
-              : '14-day free trial · No credit card · Turkish & English support'}
+              ? '14 gün ücretsiz · Kredi kartı istemiyoruz · Hızlı kurulum'
+              : '14-day free trial · No credit card · Fast setup'}
           </p>
           <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
             <Link

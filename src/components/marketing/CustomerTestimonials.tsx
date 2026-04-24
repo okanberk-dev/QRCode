@@ -20,22 +20,22 @@ function Testimonial({ quote, name, role, company, avatarUrl, initials, link, lo
   return (
     <Wrapper 
       href={link || ''}
-      className={`group relative w-full bg-white p-8 sm:p-10 rounded-2xl border border-[#0A0A0A] shadow-md flex flex-col z-10 transition-transform duration-300 hover:-translate-y-2 ${link ? 'cursor-pointer' : ''}`}
+      className={`group relative z-10 flex w-full flex-col rounded-[28px] border border-[#EDEDED] bg-white p-6 shadow-[0_24px_60px_-32px_rgba(10,10,10,0.24)] transition-transform duration-300 hover:-translate-y-2 sm:p-10 ${link ? 'cursor-pointer' : ''}`}
     >
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex gap-1 text-[#C6F24E]">
+      <div className="mb-5 flex items-center justify-between">
+        <div className="pulse-star-pill">
           {[1, 2, 3, 4, 5].map((i) => (
-            <Star key={i} size={18} fill="currentColor" strokeWidth={0} />
+            <Star key={i} size={14} fill="currentColor" strokeWidth={0} />
           ))}
         </div>
-        <div className="bg-[#0A0A0A] rounded-full p-1 border border-[#0A0A0A] shadow-sm">
-          <div className="bg-white rounded-full p-1 text-[#0A0A0A]">
+        <div className="pulse-icon-badge h-9 w-9">
+          <div className="flex rounded-full bg-white p-1 text-[#0A0A0A]">
             <ShieldCheck size={12} />
           </div>
         </div>
       </div>
       
-      <blockquote className="text-[15px] sm:text-[16px] text-[#0A0A0A] mb-8 leading-relaxed font-bold italic">
+      <blockquote className="mb-8 text-[15px] italic leading-relaxed text-[#0A0A0A] sm:text-[16px]">
         "{quote}"
       </blockquote>
 
@@ -119,4 +119,3 @@ export default function CustomerTestimonials({ locale }: CustomerTestimonialsPro
     </section>
   );
 }
-

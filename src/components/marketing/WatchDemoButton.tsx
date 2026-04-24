@@ -29,13 +29,10 @@ export default function WatchDemoButton({
         onClick={() => setOpen(true)}
         className={
           className ??
-          'inline-flex items-center justify-center gap-2 rounded-full border border-[#E5E5E5] bg-[#FAFAFA] px-6 py-4 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#F5F5F5]'
+          'inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#E5E5E5] bg-[#FAFAFA] px-6 py-4 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#F5F5F5] sm:w-auto'
         }
       >
-        <span
-          aria-hidden
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0A0A0A] text-[11px] text-[#C6F24E]"
-        >
+        <span aria-hidden className="pulse-icon-badge text-[11px]">
           ▶
         </span>
         {isTr ? 'Demo izle' : 'Watch demo'}

@@ -78,6 +78,7 @@ body {
   display: flex;
   flex-direction: column;
   font-family: var(--font-body);
+  overflow-x: clip;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -94,6 +95,65 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 500;
+}
+
+.pulse-chip-soft {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.5rem 0.875rem;
+  background: linear-gradient(180deg, #f7fddb 0%, #eaf9b8 100%);
+  border: 1px solid rgba(168, 214, 46, 0.35);
+  box-shadow: 0 12px 28px -22px rgba(10, 10, 10, 0.3);
+}
+
+.pulse-dark-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #0a0a0a 0%, #171717 100%);
+  border: 1px solid rgba(198, 242, 78, 0.2);
+  color: #eaf9b8;
+  box-shadow:
+    0 18px 36px -24px rgba(10, 10, 10, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.pulse-star-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.24rem;
+  min-height: 2rem;
+  padding: 0.42rem 0.78rem;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #0a0a0a 0%, #181818 100%);
+  border: 1px solid rgba(198, 242, 78, 0.18);
+  color: #c6f24e;
+  box-shadow:
+    0 18px 36px -24px rgba(10, 10, 10, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.pulse-star-pill svg,
+.pulse-star-pill [data-star='true'] {
+  filter: drop-shadow(0 0 6px rgba(198, 242, 78, 0.18));
+}
+
+.pulse-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #0a0a0a 0%, #181818 100%);
+  border: 1px solid rgba(198, 242, 78, 0.18);
+  color: #c6f24e;
+  box-shadow:
+    0 16px 30px -22px rgba(10, 10, 10, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 /* ── Pulse button system ─────────────────────────────────────
@@ -302,6 +362,13 @@ h1, h2, h3, h4, h5, h6 {
   [style*='ecgDraw'] {
     animation: none !important;
     stroke-dashoffset: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .pulse-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.14em;
   }
 }
 
