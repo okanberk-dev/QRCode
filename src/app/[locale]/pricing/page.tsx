@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Check } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import PricingFaq from '@/components/marketing/PricingFaq';
