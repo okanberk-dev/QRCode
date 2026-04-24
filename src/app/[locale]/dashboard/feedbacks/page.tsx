@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Loader2, Search, Flag, UserPlus, Sparkles, RotateCw, Pencil, Send, Plus, Inbox } from 'lucide-react';
+import { Loader2, Search, Flag, Mail, UserPlus, Sparkles, RotateCw, Pencil, Send, Plus, Inbox } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
@@ -59,6 +59,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [replyDraft, setReplyDraft] = useState('');
+  const [sendEmail, setSendEmail] = useState(true);
+  const [sendingReply, setSendingReply] = useState(false);
+  const [replyNotice, setReplyNotice] = useState<{ msg: string; tone: 'success' | 'error' | 'info' } | null>(null);
   const [filterRating, setFilterRating] = useState(searchParams.get('rating') || 'all');
   const [daysFilter, setDaysFilter] = useState(searchParams.get('days') || 'all');
 
@@ -166,6 +169,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       setAiSource(null);
       return;
     }
+    // Default to email delivery when we actually have one on file; high-
+    // rating redirects won't provide an address, so this lands on
+    // internal-only automatically.
+    setSendEmail(Boolean(active.customerEmail));
     // Optimistic local draft — instant, will be replaced by the server
     // response below (OpenAI when OPENAI_API_KEY is set, template otherwise).
     setAiSuggestion(
@@ -211,18 +218,55 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     }
   };
 
+  const flashReply = (msg: string, tone: 'success' | 'error' | 'info' = 'info') => {
+    setReplyNotice({ msg, tone });
+    setTimeout(() => setReplyNotice(null), 2800);
+  };
+
   const sendReply = async () => {
-    if (!active || !replyDraft.trim()) return;
+    if (!active || !replyDraft.trim() || sendingReply) return;
+    setSendingReply(true);
+    const wantsEmail = sendEmail && Boolean(active.customerEmail);
     try {
-      await fetch(`/api/feedback/${active.id}/reply`, {
+      const res = await fetch(`/api/feedback/${active.id}/reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: replyDraft, channel: 'internal' }),
+        body: JSON.stringify({
+          body: replyDraft,
+          channel: wantsEmail ? 'email' : 'internal',
+          sendEmail: wantsEmail,
+          locale,
+        }),
       });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setFeedbacks((list) => list.map((r) => (r.id === active.id ? { ...r, isReplied: true } : r)));
+        setReplyDraft('');
+        const emailStatus = data?.email?.status as 'sent' | 'skipped' | 'failed' | undefined;
+        if (emailStatus === 'sent') {
+          flashReply(
+            isTr ? `E-posta gönderildi: ${active.customerEmail}` : `Email sent to ${active.customerEmail}`,
+            'success',
+          );
+        } else if (emailStatus === 'failed') {
+          flashReply(
+            isTr ? 'Yanıt kaydedildi ama e-posta gönderilemedi' : 'Saved but email delivery failed',
+            'error',
+          );
+        } else {
+          flashReply(isTr ? 'Yanıt kaydedildi (dahili)' : 'Reply saved (internal)', 'success');
+        }
+      } else {
+        const data = await res.json().catch(() => ({}));
+        flashReply(
+          isTr ? `Hata: ${data.error ?? res.status}` : `Error: ${data.error ?? res.status}`,
+          'error',
+        );
+      }
     } catch {
-      /* non-blocking — backend scaffolded, user will wire */
+      flashReply(isTr ? 'Ağ hatası' : 'Network error', 'error');
     }
-    setReplyDraft('');
+    setSendingReply(false);
   };
 
   const flagFeedback = async () => {
@@ -521,17 +565,60 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               </div>
             </div>
 
-            {/* Reply box — frontend only, submit hook TBD */}
+            {/* Reply box — persists via /api/feedback/[id]/reply; when
+                channel=email and the customer left an address, Resend
+                delivers the reply to them. */}
             <div className="mt-4 rounded-xl border border-[#EDEDED] p-4">
-              <p className="pulse-eyebrow text-[#737373] mb-2.5">
-                {isTr ? 'YANIT YAZIN' : 'WRITE A REPLY'}
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'YANIT YAZIN' : 'WRITE A REPLY'}
+                </p>
+                {replyNotice && (
+                  <span
+                    className={`pulse-eyebrow rounded-full px-2.5 py-1 ${
+                      replyNotice.tone === 'success'
+                        ? 'bg-[#EAF9B8] text-[#0A0A0A]'
+                        : replyNotice.tone === 'error'
+                          ? 'bg-red-50 text-red-700'
+                          : 'bg-[#F5F5F5] text-[#525252]'
+                    }`}
+                  >
+                    {replyNotice.msg}
+                  </span>
+                )}
+              </div>
               <textarea
                 value={replyDraft}
                 onChange={(e) => setReplyDraft(e.target.value)}
                 placeholder={isTr ? `Merhaba ${customerName.split(' ')[0]},` : `Hi ${customerName.split(' ')[0]},`}
-                className="w-full min-h-[80px] resize-none bg-transparent text-[13px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none"
+                className="mt-2.5 w-full min-h-[80px] resize-none bg-transparent text-[13px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none"
               />
+
+              <div className="mt-3 rounded-lg bg-[#FAFAFA] p-2.5">
+                {active.customerEmail ? (
+                  <label className="flex cursor-pointer items-center gap-2 text-[12px] text-[#0A0A0A]">
+                    <input
+                      type="checkbox"
+                      checked={sendEmail}
+                      onChange={(e) => setSendEmail(e.target.checked)}
+                      className="h-4 w-4 accent-[#0A0A0A]"
+                    />
+                    <Mail size={12} className="text-[#525252]" />
+                    <span>
+                      {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'}
+                      <span className="ml-1 text-[#737373]">· {active.customerEmail}</span>
+                    </span>
+                  </label>
+                ) : (
+                  <p className="flex items-center gap-2 text-[11px] text-[#737373]">
+                    <Mail size={12} />
+                    {isTr
+                      ? `Müşteri e-posta bırakmamış${active.rating >= 4 ? ' (yüksek puanlılar Google\'a yönlendirildiği için bu beklenir)' : ''} — yanıt sadece dahili kayıt olarak saklanır.`
+                      : `No customer email${active.rating >= 4 ? ' (expected: high ratings are redirected to Google)' : ''} — reply saved internally only.`}
+                  </p>
+                )}
+              </div>
+
               <div className="mt-3 flex items-center justify-between">
                 <div className="flex gap-1.5">
                   {['📝', '✨', '😊', '@'].map((e) => (
@@ -546,11 +633,19 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 <button
                   type="button"
                   onClick={sendReply}
-                  disabled={!replyDraft.trim()}
+                  disabled={!replyDraft.trim() || sendingReply}
                   className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[#1A1A1A] transition-colors disabled:opacity-40"
                 >
-                  {isTr ? 'Gönder' : 'Send'}
-                  <Send size={12} strokeWidth={2} />
+                  {sendingReply ? (
+                    <Loader2 size={12} strokeWidth={2} className="animate-spin" />
+                  ) : sendEmail && active.customerEmail ? (
+                    <Mail size={12} strokeWidth={2} />
+                  ) : (
+                    <Send size={12} strokeWidth={2} />
+                  )}
+                  {sendEmail && active.customerEmail
+                    ? isTr ? 'E-posta ile gönder' : 'Send as email'
+                    : isTr ? 'Dahili kaydet' : 'Save internal'}
                 </button>
               </div>
             </div>

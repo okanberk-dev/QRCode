@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Flag, Inbox, Loader2, Search, Send, Sparkles, Star, UserPlus } from 'lucide-react';
+import { Check, Flag, Inbox, Loader2, Mail, Search, Send, Sparkles, Star, UserPlus } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { buildReplyTemplate } from '@/lib/scaffolding';
 
@@ -67,6 +67,7 @@ export default function AdminReviewsPage() {
   const [suggesting, setSuggesting] = useState(false);
   const [aiSource, setAiSource] = useState<Source>(null);
   const [notice, setNotice] = useState<{ msg: string; tone: Tone } | null>(null);
+  const [sendEmail, setSendEmail] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -107,7 +108,9 @@ export default function AdminReviewsPage() {
   useEffect(() => {
     setDraft('');
     setAiSource(null);
-  }, [active?.id]);
+    // Default: turn on email delivery only if we actually have one on file.
+    setSendEmail(Boolean(active?.customerEmail));
+  }, [active?.id, active?.customerEmail]);
 
   const flash = (msg: string, tone: Tone = 'info') => {
     setNotice({ msg, tone });
@@ -160,19 +163,39 @@ export default function AdminReviewsPage() {
   const onSend = async () => {
     if (!active || !draft.trim()) return;
     setSending(true);
+    const wantsEmail = sendEmail && Boolean(active.customerEmail);
     try {
       const res = await fetch(`/api/feedback/${active.id}/reply`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ body: draft, channel: 'internal' }),
+        body: JSON.stringify({
+          body: draft,
+          channel: wantsEmail ? 'email' : 'internal',
+          sendEmail: wantsEmail,
+          locale,
+        }),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         const wasReplied = active.isReplied;
         updateRow(active.id, { isReplied: true });
         if (!wasReplied) bumpCounts({ new: -1, replied: 1 });
         setDraft('');
         setAiSource(null);
-        flash(isTr ? 'Yanıt gönderildi' : 'Reply sent', 'success');
+        const emailStatus = data?.email?.status as 'sent' | 'skipped' | 'failed' | undefined;
+        if (emailStatus === 'sent') {
+          flash(
+            isTr ? `E-posta gönderildi: ${active.customerEmail}` : `Email sent to ${active.customerEmail}`,
+            'success',
+          );
+        } else if (emailStatus === 'failed') {
+          flash(
+            isTr ? 'Yanıt kaydedildi ama e-posta gönderilemedi' : 'Saved but email delivery failed',
+            'error',
+          );
+        } else {
+          flash(isTr ? 'Yanıt kaydedildi (dahili)' : 'Reply saved (internal)', 'success');
+        }
       } else if (res.status === 401) {
         flash(isTr ? 'Oturum süresi doldu' : 'Session expired', 'error');
       } else if (res.status === 403) {
@@ -480,6 +503,30 @@ export default function AdminReviewsPage() {
                   placeholder={isTr ? 'Yanıtınızı yazın…' : 'Write your reply…'}
                   className="w-full resize-none rounded-t-xl bg-transparent p-4 text-[13px] outline-none"
                 />
+                <div className="border-t border-[#EDEDED] px-3 py-2">
+                  {active.customerEmail ? (
+                    <label className="flex cursor-pointer items-center gap-2 text-[12px] text-[#0A0A0A]">
+                      <input
+                        type="checkbox"
+                        checked={sendEmail}
+                        onChange={(e) => setSendEmail(e.target.checked)}
+                        className="h-4 w-4 accent-[#0A0A0A]"
+                      />
+                      <Mail size={12} className="text-[#525252]" />
+                      <span>
+                        {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'} ·
+                        <span className="ml-1 text-[#737373]">{active.customerEmail}</span>
+                      </span>
+                    </label>
+                  ) : (
+                    <p className="flex items-center gap-2 text-[11px] text-[#737373]">
+                      <Mail size={12} />
+                      {isTr
+                        ? `Müşteri e-posta bırakmamış${active.rating >= 4 ? ' (yüksek puanlılar yönlendirildiği için bu beklenir)' : ''} — yanıt sadece dahili olarak kaydedilir.`
+                        : `No customer email on file${active.rating >= 4 ? ' (expected for high-rating redirects)' : ''} — reply will be saved internally.`}
+                    </p>
+                  )}
+                </div>
                 <div className="flex items-center justify-between border-t border-[#EDEDED] p-3">
                   <span className="text-[11px] text-[#737373]">{draft.length} / 2000</span>
                   <button
@@ -487,8 +534,16 @@ export default function AdminReviewsPage() {
                     disabled={sending || !draft.trim()}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-40"
                   >
-                    {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
-                    {isTr ? 'Gönder' : 'Send'}
+                    {sending ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : sendEmail && active.customerEmail ? (
+                      <Mail size={12} />
+                    ) : (
+                      <Send size={12} />
+                    )}
+                    {sendEmail && active.customerEmail
+                      ? isTr ? 'E-posta ile gönder' : 'Send as email'
+                      : isTr ? 'Dahili kaydet' : 'Save internal'}
                   </button>
                 </div>
               </div>
