@@ -38,48 +38,50 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
   const s = await getSiteSettings();
   const isTr = locale === 'tr';
 
-  const cols: { title: string; items: { label: string; href: string }[] }[] = [
+  const cols: { title: string; items: { label: string; href: string; badge?: string }[] }[] = [
     {
       title: isTr ? 'Ürün' : 'Product',
       items: [
         { label: isTr ? 'QR Stüdyosu' : 'QR Studio', href: `${base}/solutions/qr-generator` },
-        { label: isTr ? 'Özellikler' : 'Features', href: `${base}/features` },
         { label: 'AI Co-Pilot', href: `${base}/features/ai-copilot` },
+        { label: isTr ? 'Yorum Yönetimi' : 'Review Management', href: `${base}/features` },
         { label: isTr ? 'Analitik & Raporlar' : 'Analytics & Reports', href: `${base}/features` },
         { label: isTr ? 'Entegrasyonlar' : 'Integrations', href: `${base}/integrations` },
-        { label: isTr ? 'Fiyatlandırma' : 'Pricing', href: `${base}/pricing` },
+        { label: 'API & Webhook', href: '/admin/api' },
       ],
     },
     {
       title: isTr ? 'Çözümler' : 'Solutions',
       items: [
-        { label: isTr ? 'Restoran & Kafe' : 'Restaurant & Cafe', href: `${base}/solutions/restaurants` },
+        { label: isTr ? 'Restoran & Kafe' : 'Restaurant & Café', href: `${base}/solutions/restaurants` },
         { label: isTr ? 'Paket Servis' : 'Delivery', href: `${base}/solutions/delivery` },
         { label: isTr ? 'Otel' : 'Hotel', href: `${base}/solutions/hotels` },
         { label: isTr ? 'Klinik' : 'Clinic', href: `${base}/solutions/healthcare` },
         { label: isTr ? 'Hukuk Ofisi' : 'Legal', href: `${base}/solutions/law-firms` },
         { label: isTr ? 'Güzellik & Spa' : 'Beauty & Spa', href: `${base}/solutions/beauty-salon` },
+        { label: isTr ? 'Tüm 14 sektör →' : 'All 14 sectors →', href: `${base}/solutions` },
       ],
     },
     {
       title: isTr ? 'Şirket' : 'Company',
       items: [
         { label: isTr ? 'Hakkımızda' : 'About', href: `${base}/about` },
-        { label: isTr ? 'Kariyer' : 'Careers', href: `${base}/careers` },
-        { label: 'Blog', href: `${base}/blog` },
         { label: isTr ? 'Müşteri hikayeleri' : 'Customer stories', href: `${base}/customer-stories` },
+        { label: isTr ? 'Vaka çalışmaları' : 'Case studies', href: `${base}/case-study/kadikoy-bistro` },
+        { label: 'Blog', href: `${base}/blog` },
+        { label: isTr ? 'Kariyer' : 'Careers', href: `${base}/careers`, badge: isTr ? '5 POZİSYON' : '5 ROLES' },
         { label: isTr ? 'İletişim' : 'Contact', href: `${base}/contact` },
       ],
     },
     {
-      title: isTr ? 'Destek' : 'Support',
+      title: isTr ? 'Kaynaklar' : 'Resources',
       items: [
         { label: isTr ? 'Yardım merkezi' : 'Help center', href: `${base}/help` },
         { label: isTr ? 'SSS' : 'FAQ', href: `${base}/faq` },
-        { label: isTr ? 'Gizlilik' : 'Privacy', href: `${base}/privacy` },
-        ...(isTr ? [{ label: 'KVKK', href: `${base}/kvkk` }] : []),
-        { label: isTr ? 'Şartlar' : 'Terms', href: `${base}/terms` },
-        { label: isTr ? 'Google uyumu' : 'Google compliance', href: `${base}/google-compliance` },
+        { label: isTr ? 'ROI hesaplayıcı' : 'ROI calculator', href: `${base}/roi` },
+        { label: isTr ? 'Karşılaştır' : 'Compare', href: `${base}/compare` },
+        { label: isTr ? 'Ücretsiz QR üret' : 'Free QR generator', href: `${base}/solutions/qr-generator`, badge: isTr ? 'ÜCRETSİZ' : 'FREE' },
+        { label: isTr ? 'Fiyatlandırma' : 'Pricing', href: `${base}/pricing` },
       ],
     },
   ];
@@ -128,9 +130,9 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
 
       {/* Link grid */}
       <div className="px-5 py-12 sm:px-10 sm:py-14">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-8 sm:gap-10 md:grid-cols-[1.6fr_repeat(4,1fr)] md:gap-8">
+        <div className="mx-auto grid max-w-[1240px] grid-cols-2 gap-8 sm:gap-10 lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:gap-8">
           {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="col-span-2 lg:col-span-1">
             <Link href={base} className="inline-flex items-center gap-2 group">
               <BuazeLogo
                 size={32}
@@ -166,6 +168,18 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 </a>
               ))}
             </div>
+            {/* Trust micro-row */}
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/40 bg-[#C6F24E]/10 px-2.5 py-1">
+                <span className="text-[#C6F24E]">★</span>
+                <span className="pulse-eyebrow text-[#C6F24E]">
+                  {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
+                </span>
+              </span>
+              <span className="pulse-eyebrow rounded-full border border-[#1F1F1F] px-2.5 py-1 text-[#A3A3A3]">
+                KVKK · GDPR
+              </span>
+            </div>
           </div>
 
           {cols.map((col) => (
@@ -176,9 +190,14 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                   <li key={item.href + item.label}>
                     <Link
                       href={item.href}
-                      className="text-[13px] text-[#A3A3A3] transition-colors hover:text-white"
+                      className="group inline-flex items-center gap-1.5 text-[13px] text-[#A3A3A3] transition-colors hover:text-white"
                     >
-                      {item.label}
+                      <span>{item.label}</span>
+                      {item.badge && (
+                        <span className="pulse-eyebrow rounded-full bg-[#C6F24E] px-1.5 py-0.5 text-[#0A0A0A]">
+                          {item.badge}
+                        </span>
+                      )}
                     </Link>
                   </li>
                 ))}
@@ -188,12 +207,37 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
         </div>
       </div>
 
-      {/* Bottom rail */}
+      {/* Bottom rail — copyright + legal mini-links + status */}
       <div className="border-t border-[#1F1F1F] px-5 py-5 sm:px-10">
-        <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:gap-4 sm:text-left">
+        <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-4 text-center lg:flex-row lg:justify-between lg:gap-6 lg:text-left">
           <p className="pulse-eyebrow text-[#525252]">
-            © {new Date().getFullYear()} BUAZE BİLİŞİM A.Ş. · İSTANBUL · {t.footer_copyright}
+            © {new Date().getFullYear()} BUAZE BİLİŞİM A.Ş. · İSTANBUL
           </p>
+          {/* Legal mini-links — compact bottom-of-funnel surface */}
+          <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            {[
+              { label: isTr ? 'Gizlilik' : 'Privacy', href: `${base}/privacy` },
+              ...(isTr ? [{ label: 'KVKK', href: `${base}/kvkk` }] : []),
+              { label: isTr ? 'Şartlar' : 'Terms', href: `${base}/terms` },
+              { label: isTr ? 'Çerez' : 'Cookies', href: `${base}/cookie` },
+              ...(isTr
+                ? [
+                    { label: 'Açık Rıza', href: `${base}/acik-riza` },
+                    { label: 'Ticari İleti', href: `${base}/ticari-ileti` },
+                  ]
+                : []),
+              { label: isTr ? 'Google Uyumu' : 'Google compliance', href: `${base}/google-compliance` },
+            ].map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="text-[11px] text-[#737373] transition-colors hover:text-white"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />

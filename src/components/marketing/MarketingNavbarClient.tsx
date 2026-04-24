@@ -1,646 +1,810 @@
 'use client';
 
 import {
-  Menu, X, Globe, ChevronDown, Utensils, BedDouble, HeartPulse, BookOpen,
-  Stethoscope, Sparkles, PawPrint, Home, Car, Scissors, Dumbbell, Scale, GraduationCap, Bed, Layers,
-  Zap, TrendingUp, QrCode
+  BarChart3,
+  BookOpen,
+  Briefcase,
+  ChevronDown,
+  Compass,
+  FileQuestion,
+  Globe,
+  HelpCircle,
+  Inbox,
+  KeyRound,
+  Layers,
+  Mail,
+  Menu,
+  Plug,
+  QrCode,
+  Scale,
+  ShoppingBag,
+  Sparkles,
+  Star,
+  Stethoscope,
+  Truck,
+  Utensils,
+  Wand2,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useTransition, useRef, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useRef, useState, useTransition } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import type { Locale } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
 import MobileBottomNav from './MobileBottomNav';
+import WatchDemoButton from './WatchDemoButton';
 
 interface MarketingNavbarProps {
   locale: Locale;
-  t: {
-    nav_howItWorks: string;
-    nav_learn_features: string;
-    nav_learn_blog: string;
-    nav_solutions: string;
-    nav_sol_restaurants: string;
-    nav_sol_hotels: string;
-    nav_sol_healthcare: string;
-    nav_about: string;
-    nav_blog: string;
-    nav_pricing: string;
-    nav_contact: string;
-    nav_login: string;
-    nav_register: string;
-    nav_compare: string;
-    // New solutions labels
-    sol_den_title: string;
-    sol_aes_title: string;
-    sol_vet_title: string;
-    sol_rea_title: string;
-    sol_aut_title: string;
-    sol_be_title: string;
-    sol_gym_title: string;
-    sol_law_title: string;
-    sol_sch_title: string;
-    sol_bou_title: string;
-    nav_dashboard?: string;
-  };
+  // The server wrapper passes the entire `t` object; we keep the signature
+  // permissive and only use a few keys via locale ternaries (mirrors the
+  // pattern in MarketingFooter).
+  t: any;
   isLoggedIn?: boolean;
   logoUrl?: string | null;
 }
 
-export default function MarketingNavbar({ locale, t, isLoggedIn, logoUrl }: MarketingNavbarProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
-  const [solutionsOpen, setSolutionsOpen] = useState(false);
-  const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
-  const [learnOpen, setLearnOpen] = useState(false);
-  const [mobileLearnOpen, setMobileLearnOpen] = useState(false);
-  const [, startTransition] = useTransition();
-  const router = useRouter();
+type DropdownId = 'product' | 'solutions' | 'customers' | 'resources' | null;
+
+interface NavItem {
+  href: string;
+  label: string;
+  sub?: string;
+  icon?: React.ReactNode;
+}
+
+export default function MarketingNavbarClient({
+  locale,
+  t,
+  isLoggedIn,
+  logoUrl,
+}: MarketingNavbarProps) {
+  const isTr = locale === 'tr';
+  const base = `/${locale}`;
+
   const pathname = usePathname();
-  const solutionsRef = useRef<HTMLDivElement>(null);
-  const learnRef = useRef<HTMLDivElement>(null);
-  const solutionsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const learnTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter();
+  const [, startTransition] = useTransition();
 
-  const otherLocale: Locale = locale === 'tr' ? 'en' : 'tr';
+  const [open, setOpen] = useState<DropdownId>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSection, setMobileSection] = useState<DropdownId>(null);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
 
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const enter = (id: DropdownId) => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setOpen(id);
+  };
+  const leave = () => {
+    closeTimer.current = setTimeout(() => setOpen(null), 180);
+  };
+
+  // Esc closes everything
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(null);
+        setMobileOpen(false);
+        setLangMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Lock body scroll when mobile drawer is open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
+  const otherLocale: Locale = isTr ? 'en' : 'tr';
   const switchLocale = () => {
     const newPath = pathname.replace(`/${locale}`, `/${otherLocale}`);
-    document.cookie = `NEXT_LOCALE=${otherLocale};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`;
-    startTransition(() => {
-      router.push(newPath);
-    });
+    document.cookie = `NEXT_LOCALE=${otherLocale};path=/;max-age=${
+      60 * 60 * 24 * 365
+    };samesite=lax`;
+    startTransition(() => router.push(newPath));
     setLangMenuOpen(false);
   };
 
-  const base = `/${locale}`;
-
-  const solutionCategories = [
+  // ── IA Data ─────────────────────────────────────────────────
+  const productCol1: NavItem[] = [
     {
-      title: locale === 'tr' ? 'Hizmet & Turizm' : 'Hospitality',
-      items: [
-        {
-          href: `${base}/solutions/restaurants`,
-          icon: <Utensils size={16} />,
-          label: t.nav_sol_restaurants,
-          color: 'text-[#C6F24E]',
-          bgColor: 'bg-[#C6F24E]/10',
-        },
-        {
-          href: `${base}/solutions/hotels`,
-          icon: <BedDouble size={16} />,
-          label: t.nav_sol_hotels,
-          color: 'text-[#C6F24E]',
-          bgColor: 'bg-[#C6F24E]/10',
-        },
-        {
-          href: `${base}/solutions/boutique-hotels`,
-          icon: <Bed size={16} />,
-          label: t.sol_bou_title,
-          color: 'text-[#C6F24E]',
-          bgColor: 'bg-[#C6F24E]/10',
-        },
-      ]
+      href: `${base}/solutions/qr-generator`,
+      label: isTr ? 'QR Stüdyosu' : 'QR Studio',
+      sub: isTr ? 'Markana özel QR tasarla' : 'Branded QR design',
+      icon: <QrCode size={16} />,
     },
     {
-      title: locale === 'tr' ? 'Sağlık & Bakım' : 'Healthcare',
-      items: [
-        {
-          href: `${base}/solutions/healthcare`,
-          icon: <HeartPulse size={16} />,
-          label: t.nav_sol_healthcare,
-          color: 'text-[#10b981]',
-          bgColor: 'bg-[#10b981]/10',
-        },
-        {
-          href: `${base}/solutions/dentists`,
-          icon: <Stethoscope size={16} />,
-          label: t.sol_den_title,
-          color: 'text-[#3b82f6]',
-          bgColor: 'bg-[#3b82f6]/10',
-        },
-        {
-          href: `${base}/solutions/aesthetic`,
-          icon: <Sparkles size={16} />,
-          label: t.sol_aes_title,
-          color: 'text-[#ec4899]',
-          bgColor: 'bg-[#ec4899]/10',
-        },
-        {
-          href: `${base}/solutions/veterinary`,
-          icon: <PawPrint size={16} />,
-          label: t.sol_vet_title,
-          color: 'text-[#C6F24E]',
-          bgColor: 'bg-[#C6F24E]/10',
-        },
-      ]
+      href: `${base}/features/ai-copilot`,
+      label: 'AI Co-Pilot',
+      sub: isTr ? 'Yanıtı saniyede yaz' : 'Drafts in seconds',
+      icon: <Sparkles size={16} />,
     },
     {
-      title: locale === 'tr' ? 'Profesyonel Hizmetler' : 'Professional',
-      items: [
-        {
-          href: `${base}/solutions/real-estate`,
-          icon: <Home size={16} />,
-          label: t.sol_rea_title,
-          color: 'text-[#6366f1]',
-          bgColor: 'bg-[#6366f1]/10',
-        },
-        {
-          href: `${base}/solutions/law-firms`,
-          icon: <Scale size={16} />,
-          label: t.sol_law_title,
-          color: 'text-[#475569]',
-          bgColor: 'bg-[#475569]/10',
-        },
-        {
-          href: `${base}/solutions/schools`,
-          icon: <GraduationCap size={16} />,
-          label: t.sol_sch_title,
-          color: 'text-[#8b5cf6]',
-          bgColor: 'bg-[#8b5cf6]/10',
-        },
-        {
-          href: `${base}/solutions/auto-service`,
-          icon: <Car size={16} />,
-          label: t.sol_aut_title,
-          color: 'text-[#334155]',
-          bgColor: 'bg-[#334155]/10',
-        },
-        {
-          href: `${base}/solutions/beauty-salon`,
-          icon: <Scissors size={16} />,
-          label: t.sol_be_title,
-          color: 'text-[#db2777]',
-          bgColor: 'bg-[#db2777]/10',
-        },
-        {
-          href: `${base}/solutions/gym`,
-          icon: <Dumbbell size={16} />,
-          label: t.sol_gym_title,
-          color: 'text-[#06b6d4]',
-          bgColor: 'bg-[#06b6d4]/10',
-        },
-      ]
-    }
+      href: `${base}/features`,
+      label: isTr ? 'Yorum Yönetimi' : 'Review Management',
+      sub: isTr ? 'Tek panelde her platform' : 'All platforms in one inbox',
+      icon: <Inbox size={16} />,
+    },
+    {
+      href: `${base}/features`,
+      label: isTr ? 'Analitik & Raporlar' : 'Analytics & Reports',
+      sub: isTr ? 'NPS, trend, konum kırılımı' : 'NPS, trends, breakdowns',
+      icon: <BarChart3 size={16} />,
+    },
+    {
+      href: `${base}/integrations`,
+      label: isTr ? 'Entegrasyonlar' : 'Integrations',
+      sub: isTr ? 'Google · Yemeksepeti · Getir' : 'Google · Yelp · Tripadvisor',
+      icon: <Plug size={16} />,
+    },
+    {
+      href: '/admin/api',
+      label: 'API & Webhook',
+      sub: isTr ? 'Geliştiriciler için' : 'For developers',
+      icon: <KeyRound size={16} />,
+    },
   ];
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (solutionsRef.current && !solutionsRef.current.contains(target)) {
-        setSolutionsOpen(false);
-      }
-      if (learnRef.current && !learnRef.current.contains(target)) {
-        setLearnOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const productCol2: NavItem[] = [
+    {
+      href: `${base}/how-it-works`,
+      label: isTr ? 'Nasıl Çalışır?' : 'How It Works',
+      sub: isTr ? '3 adımda kurulum' : '3-step setup',
+      icon: <Compass size={16} />,
+    },
+    {
+      href: `${base}/compare`,
+      label: isTr ? 'Karşılaştır' : 'Compare',
+      sub: isTr ? 'Diğer çözümlerle yan yana' : 'Side-by-side comparisons',
+      icon: <Layers size={16} />,
+    },
+    {
+      href: `${base}/roi`,
+      label: isTr ? 'ROI Hesaplayıcı' : 'ROI Calculator',
+      sub: isTr ? 'Yatırım dönüşünü hesapla' : 'See your projected return',
+      icon: <Wand2 size={16} />,
+    },
+  ];
 
-  const handleSolutionsEnter = () => {
-    if (solutionsTimeoutRef.current) clearTimeout(solutionsTimeoutRef.current);
-    if (learnTimeoutRef.current) clearTimeout(learnTimeoutRef.current);
-    setLearnOpen(false);
-    setSolutionsOpen(true);
-  };
+  const solutionsTop: NavItem[] = [
+    {
+      href: `${base}/solutions/restaurants`,
+      label: isTr ? 'Restoran & Kafe' : 'Restaurant & Café',
+      sub: isTr ? 'Masa, fatura, paket QR' : 'Table, receipt, pack QR',
+      icon: <Utensils size={16} />,
+    },
+    {
+      href: `${base}/solutions/delivery`,
+      label: isTr ? 'Paket Servis' : 'Delivery',
+      sub: 'Yemeksepeti · Getir · Trendyol',
+      icon: <Truck size={16} />,
+    },
+    {
+      href: `${base}/solutions/hotels`,
+      label: isTr ? 'Otel' : 'Hotel',
+      sub: isTr ? 'Booking + Tripadvisor' : 'Booking + Tripadvisor',
+      icon: <BookOpen size={16} />,
+    },
+    {
+      href: `${base}/solutions/healthcare`,
+      label: isTr ? 'Klinik & Sağlık' : 'Clinic & Health',
+      sub: isTr ? 'KVKK uyumlu akış' : 'KVKK compliant flow',
+      icon: <Stethoscope size={16} />,
+    },
+    {
+      href: `${base}/solutions/law-firms`,
+      label: isTr ? 'Hukuk Ofisi' : 'Legal',
+      sub: isTr ? 'Danışmanlık sonrası' : 'Post-consultation',
+      icon: <Scale size={16} />,
+    },
+    {
+      href: `${base}/solutions/beauty-salon`,
+      label: isTr ? 'Güzellik & Spa' : 'Beauty & Spa',
+      sub: isTr ? 'Randevu sonrası' : 'Post-appointment',
+      icon: <Sparkles size={16} />,
+    },
+  ];
 
-  const handleSolutionsLeave = () => {
-    solutionsTimeoutRef.current = setTimeout(() => {
-      setSolutionsOpen(false);
-    }, 200);
-  };
+  const solutionsRest: NavItem[] = [
+    { href: `${base}/solutions/retail`, label: isTr ? 'Perakende' : 'Retail' },
+    { href: `${base}/solutions/gym`, label: isTr ? 'Spor & Fitness' : 'Sports & Fitness' },
+    { href: `${base}/solutions/dentists`, label: isTr ? 'Diş Hekimi' : 'Dentists' },
+    { href: `${base}/solutions/aesthetic`, label: isTr ? 'Estetik' : 'Aesthetic' },
+    { href: `${base}/solutions/veterinary`, label: isTr ? 'Veteriner' : 'Veterinary' },
+    { href: `${base}/solutions/real-estate`, label: isTr ? 'Emlak' : 'Real Estate' },
+    { href: `${base}/solutions/auto-service`, label: isTr ? 'Oto Servis' : 'Auto Service' },
+    { href: `${base}/solutions/schools`, label: isTr ? 'Eğitim' : 'Education' },
+  ];
 
-  const handleLearnEnter = () => {
-    if (learnTimeoutRef.current) clearTimeout(learnTimeoutRef.current);
-    if (solutionsTimeoutRef.current) clearTimeout(solutionsTimeoutRef.current);
-    setSolutionsOpen(false);
-    setLearnOpen(true);
-  };
+  const customersItems: NavItem[] = [
+    {
+      href: `${base}/customer-stories`,
+      label: isTr ? 'Müşteri Hikayeleri' : 'Customer Stories',
+      sub: isTr ? 'Buaze ile büyüyen markalar' : 'Brands growing with Buaze',
+      icon: <Star size={16} />,
+    },
+    {
+      href: `${base}/case-study/kadikoy-bistro`,
+      label: isTr ? 'Vaka Çalışmaları' : 'Case Studies',
+      sub: isTr ? '+184% yorum, 3 sektör' : '+184% reviews, 3 sectors',
+      icon: <ShoppingBag size={16} />,
+    },
+    {
+      href: `${base}/roi`,
+      label: isTr ? 'ROI Hesapla' : 'Calculate ROI',
+      sub: isTr ? 'Senin için ne kazandırır?' : 'What it would earn you',
+      icon: <Wand2 size={16} />,
+    },
+  ];
 
-  const handleLearnLeave = () => {
-    learnTimeoutRef.current = setTimeout(() => {
-      setLearnOpen(false);
-    }, 200);
-  };
+  const resourcesLearn: NavItem[] = [
+    {
+      href: `${base}/blog`,
+      label: 'Blog',
+      sub: isTr ? 'İtibar rehberleri' : 'Reputation playbooks',
+      icon: <BookOpen size={16} />,
+    },
+    {
+      href: `${base}/about`,
+      label: isTr ? 'Hakkımızda' : 'About',
+      sub: isTr ? 'Buaze ekibi' : 'The Buaze team',
+      icon: <Briefcase size={16} />,
+    },
+    {
+      href: `${base}/careers`,
+      label: isTr ? 'Kariyer' : 'Careers',
+      sub: isTr ? 'Açık 5 pozisyon' : '5 open roles',
+      icon: <Sparkles size={16} />,
+    },
+  ];
+
+  const resourcesHelp: NavItem[] = [
+    {
+      href: `${base}/help`,
+      label: isTr ? 'Yardım Merkezi' : 'Help Center',
+      sub: isTr ? 'Adım adım kılavuzlar' : 'Step-by-step guides',
+      icon: <HelpCircle size={16} />,
+    },
+    {
+      href: `${base}/faq`,
+      label: 'SSS / FAQ',
+      sub: isTr ? 'Sık sorulan sorular' : 'Frequent questions',
+      icon: <FileQuestion size={16} />,
+    },
+    {
+      href: `${base}/contact`,
+      label: isTr ? 'İletişim' : 'Contact',
+      sub: isTr ? 'Satış + destek' : 'Sales + support',
+      icon: <Mail size={16} />,
+    },
+  ];
+
+  // ── Render helpers ─────────────────────────────────────────
+  const NavLink = ({ item, onClick }: { item: NavItem; onClick?: () => void }) => (
+    <Link
+      href={item.href}
+      onClick={onClick}
+      className="flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-[#FAFAFA]"
+    >
+      {item.icon && (
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]">
+          {item.icon}
+        </span>
+      )}
+      <span className="min-w-0">
+        <span
+          className="block text-[13px] font-semibold text-[#0A0A0A]"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >
+          {item.label}
+        </span>
+        {item.sub && <span className="mt-0.5 block text-[11px] text-[#737373]">{item.sub}</span>}
+      </span>
+    </Link>
+  );
 
   return (
     <>
-    <MobileBottomNav locale={locale} isLoggedIn={isLoggedIn} />
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-lg border-b border-[#EDEDED]/60 h-[64px]">
-      <div className="max-w-[1200px] mx-auto px-5 sm:px-8 h-full flex items-center justify-between">
-        {/* Logo */}
-        <Link href={`${base}`} className="flex items-center gap-2 group">
-          <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
-          <span
-            className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            buaze<span className="text-[#C6F24E]">.</span>
-          </span>
-        </Link>
+      <MobileBottomNav locale={locale} isLoggedIn={isLoggedIn} />
 
-        {/* Desktop Links */}
-        <div className="hidden md:flex items-center gap-7">
-          
-          {/* Learn Dropdown */}
-          <div
-            ref={learnRef}
-            className="relative"
-            onMouseEnter={handleLearnEnter}
-            onMouseLeave={handleLearnLeave}
-          >
-            <button
-              className="flex items-center gap-1 text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
-              onClick={() => setLearnOpen(!learnOpen)}
+      <nav className="fixed inset-x-0 top-0 z-40 h-[64px] border-b border-[#EDEDED]/60 bg-white/90 backdrop-blur-lg">
+        <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between gap-4 px-5 sm:px-8">
+          {/* Logo + trust chip */}
+          <div className="flex items-center gap-3">
+            <Link href={base} className="flex items-center gap-2 group">
+              <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
+              <span
+                className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                buaze<span className="text-[#C6F24E]">.</span>
+              </span>
+            </Link>
+            {/* Trust chip — desktop only */}
+            <span className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/60 bg-[#EAF9B8] px-2.5 py-0.5">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
+              </span>
+              <span className="pulse-eyebrow text-[#0A0A0A]">
+                {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
+              </span>
+            </span>
+          </div>
+
+          {/* Desktop links */}
+          <div className="hidden md:flex items-center gap-1">
+            {/* Product */}
+            <DesktopDropdown
+              label={isTr ? 'Ürün' : 'Product'}
+              isOpen={open === 'product'}
+              onEnter={() => enter('product')}
+              onLeave={leave}
+              widthClass="w-[680px]"
             >
-              {t.nav_howItWorks}
-              <ChevronDown
-                size={14}
-                className={`transition-transform duration-200 ${learnOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
+              <div className="grid grid-cols-[1.2fr_1fr_1fr] gap-4 p-4">
+                <div>
+                  <p className="pulse-eyebrow mb-2 px-3 text-[#737373]">
+                    {isTr ? 'ÖZELLİKLER' : 'FEATURES'}
+                  </p>
+                  <div className="space-y-0.5">
+                    {productCol1.map((it) => (
+                      <NavLink key={it.label} item={it} onClick={() => setOpen(null)} />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="pulse-eyebrow mb-2 px-3 text-[#737373]">
+                    {isTr ? 'ARAÇLAR' : 'TOOLS'}
+                  </p>
+                  <div className="space-y-0.5">
+                    {productCol2.map((it) => (
+                      <NavLink key={it.label} item={it} onClick={() => setOpen(null)} />
+                    ))}
+                  </div>
+                </div>
+                {/* Featured rail */}
+                <div className="rounded-2xl bg-[#0A0A0A] p-4 text-white flex flex-col">
+                  <span className="pulse-eyebrow text-[#C6F24E]">{isTr ? 'ÖNE ÇIKAN' : 'FEATURED'}</span>
+                  <p
+                    className="mt-2 text-[16px] font-semibold leading-snug"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {isTr ? 'AI Co-Pilot' : 'AI Co-Pilot'}
+                  </p>
+                  <p className="mt-1 text-[12px] text-white/70">
+                    {isTr
+                      ? 'Her yorum için OpenAI destekli yanıt taslağı.'
+                      : 'OpenAI-backed reply drafts for every review.'}
+                  </p>
+                  <Link
+                    href={`${base}/features/ai-copilot`}
+                    onClick={() => setOpen(null)}
+                    className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-3 py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E]"
+                  >
+                    {isTr ? 'Keşfet →' : 'Explore →'}
+                  </Link>
+                  <div className="mt-3" onClick={() => setOpen(null)}>
+                    <WatchDemoButton
+                      locale={locale}
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-white/20 bg-transparent px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-white/5"
+                    />
+                  </div>
+                </div>
+              </div>
+            </DesktopDropdown>
 
-            {/* Dropdown Panel */}
-            <div
-              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[260px] bg-white border border-[#EDEDED] rounded-2xl shadow-[0_8px_24px_rgba(10,10,10,0.08)] overflow-hidden transition-all duration-200 origin-top ${
-                learnOpen
-                  ? 'opacity-100 scale-100 pointer-events-auto'
-                  : 'opacity-0 scale-95 pointer-events-none'
-              }`}
+            {/* Solutions */}
+            <DesktopDropdown
+              label={isTr ? 'Çözümler' : 'Solutions'}
+              isOpen={open === 'solutions'}
+              onEnter={() => enter('solutions')}
+              onLeave={leave}
+              widthClass="w-[640px]"
             >
-              <div className="p-2 space-y-1">
+              <div className="grid grid-cols-2 gap-4 p-4">
+                <div>
+                  <p className="pulse-eyebrow mb-2 px-3 text-[#737373]">
+                    {isTr ? 'EN ÇOK KULLANILAN' : 'MOST POPULAR'}
+                  </p>
+                  <div className="space-y-0.5">
+                    {solutionsTop.map((it) => (
+                      <NavLink key={it.label} item={it} onClick={() => setOpen(null)} />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="pulse-eyebrow mb-2 px-3 text-[#737373]">
+                    {isTr ? 'TÜM SEKTÖRLER' : 'ALL SECTORS'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {solutionsRest.map((it) => (
+                      <Link
+                        key={it.label}
+                        href={it.href}
+                        onClick={() => setOpen(null)}
+                        className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
+                      >
+                        {it.label}
+                      </Link>
+                    ))}
+                  </div>
+                  <Link
+                    href={`${base}/solutions`}
+                    onClick={() => setOpen(null)}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1A1A1A]"
+                  >
+                    {isTr ? 'Tüm 14 sektörü gör' : 'See all 14 sectors'} →
+                  </Link>
+                </div>
+              </div>
+              <div className="border-t border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-[12px] text-[#525252]">
+                {isTr ? 'Sektörünü göremiyor musun?' : "Don't see your sector?"}{' '}
                 <Link
-                  href={`${base}/features`}
-                  onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
+                  href={`${base}/contact`}
+                  onClick={() => setOpen(null)}
+                  className="font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-2"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <Zap size={15} />
-                  </div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Özellikler' : 'Features'}</div>
-                </Link>
-
-                <Link
-                  href={`${base}/how-it-works`}
-                  onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
-                >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <Utensils size={15} />
-                  </div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_features}</div>
-                </Link>
-
-                <Link
-                  href={`${base}/solutions/qr-generator`}
-                  onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
-                >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <QrCode size={15} />
-                  </div>
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-[14px] font-medium text-[#0A0A0A]">
-                      {locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}
-                    </span>
-                    <span className="pulse-eyebrow bg-[#C6F24E] text-[#0A0A0A] px-1.5 py-0.5 rounded">
-                      {locale === 'tr' ? 'YENİ' : 'NEW'}
-                    </span>
-                  </div>
-                </Link>
-
-                <Link
-                  href={`${base}/customer-stories`}
-                  onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
-                >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <TrendingUp size={15} />
-                  </div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Başarı Hikayeleri' : 'Customer Stories'}</div>
-                </Link>
-
-                <Link
-                  href={`${base}/blog`}
-                  onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
-                >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <BookOpen size={15} />
-                  </div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_blog}</div>
-                </Link>
-
-                <Link
-                  href={`${base}/compare`}
-                  onClick={() => setLearnOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#EAF9B8] transition-colors"
-                >
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <Layers size={15} />
-                  </div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_compare}</div>
+                  {isTr ? 'Bize yaz →' : 'Talk to us →'}
                 </Link>
               </div>
-            </div>
-          </div>
-          
-          {/* Çözümler — solutions overview link */}
-          <Link
-            href={`${base}/solutions`}
-            className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
-          >
-            {t.nav_solutions}
-          </Link>
+            </DesktopDropdown>
 
-          {/* Sektörler — industry sectors dropdown */}
-          <div
-            ref={solutionsRef}
-            className="relative"
-            onMouseEnter={handleSolutionsEnter}
-            onMouseLeave={handleSolutionsLeave}
-          >
-            <button
-              className="flex items-center gap-1 text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
-              onClick={() => setSolutionsOpen(!solutionsOpen)}
+            {/* Customers */}
+            <DesktopDropdown
+              label={isTr ? 'Müşteriler' : 'Customers'}
+              isOpen={open === 'customers'}
+              onEnter={() => enter('customers')}
+              onLeave={leave}
+              widthClass="w-[300px]"
             >
-              {locale === 'tr' ? 'Sektörler' : 'Industries'}
-              <ChevronDown
-                size={14}
-                className={`transition-transform duration-200 ${solutionsOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
-
-            {/* Dropdown Panel (Mega Menu) */}
-            <div
-              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[720px] bg-white border border-[#EDEDED] rounded-2xl shadow-[0_8px_24px_rgba(10,10,10,0.08)] overflow-hidden transition-all duration-200 origin-top ${
-                solutionsOpen
-                  ? 'opacity-100 scale-100 pointer-events-auto'
-                  : 'opacity-0 scale-95 pointer-events-none'
-              }`}
-            >
-              <div className="p-6 grid grid-cols-3 gap-8">
-                {solutionCategories.map((category, idx) => (
-                  <div key={idx} className="space-y-4">
-                    <h5 className="pulse-eyebrow text-[#737373] px-2">
-                      {category.title}
-                    </h5>
-                    <div className="space-y-1">
-                      {category.items.map((item, i) => (
-                        <Link
-                          key={i}
-                          href={item.href}
-                          onClick={() => setSolutionsOpen(false)}
-                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#EAF9B8] transition-colors"
-                        >
-                          <div className="flex-shrink-0 w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                            {item.icon}
-                          </div>
-                          <div className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
-                            {item.label}
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
+              <div className="p-3 space-y-0.5">
+                {customersItems.map((it) => (
+                  <NavLink key={it.label} item={it} onClick={() => setOpen(null)} />
                 ))}
               </div>
-              <div className="border-t border-[#EDEDED] px-6 py-4 bg-[#FAFAFA] flex items-center justify-between">
-                <Link
-                  href={`${base}/pricing`}
-                  onClick={() => setSolutionsOpen(false)}
-                  className="pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
-                >
-                  {locale === 'tr' ? 'TÜM PLANLARI GÖRÜNTÜLE →' : 'VIEW ALL PLANS →'}
-                </Link>
+            </DesktopDropdown>
+
+            {/* Resources */}
+            <DesktopDropdown
+              label={isTr ? 'Kaynaklar' : 'Resources'}
+              isOpen={open === 'resources'}
+              onEnter={() => enter('resources')}
+              onLeave={leave}
+              widthClass="w-[520px]"
+            >
+              <div className="grid grid-cols-2 gap-4 p-4">
+                <div>
+                  <p className="pulse-eyebrow mb-2 px-3 text-[#737373]">
+                    {isTr ? 'ÖĞREN' : 'LEARN'}
+                  </p>
+                  <div className="space-y-0.5">
+                    {resourcesLearn.map((it) => (
+                      <NavLink key={it.label} item={it} onClick={() => setOpen(null)} />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="pulse-eyebrow mb-2 px-3 text-[#737373]">
+                    {isTr ? 'YARDIM' : 'HELP'}
+                  </p>
+                  <div className="space-y-0.5">
+                    {resourcesHelp.map((it) => (
+                      <NavLink key={it.label} item={it} onClick={() => setOpen(null)} />
+                    ))}
+                  </div>
+                  <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 text-[11px] text-[#525252]">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
+                    </span>
+                    {isTr ? 'Tüm sistemler çalışıyor' : 'All systems operational'}
+                  </div>
+                </div>
               </div>
-            </div>
+            </DesktopDropdown>
+
+            {/* Pricing — flat */}
+            <Link
+              href={`${base}/pricing`}
+              className="rounded-full px-3 py-1.5 text-[13px] font-medium text-[#1A1A1A] transition-colors hover:text-[#0A0A0A]"
+            >
+              {isTr ? 'Fiyatlandırma' : 'Pricing'}
+            </Link>
           </div>
 
-          <Link href={`${base}/pricing`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_pricing}</Link>
-          <Link href={`${base}/about`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_about}</Link>
-          <Link href={`${base}/contact`} className="text-[13px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors">{t.nav_contact}</Link>
-        </div>
-
-        {/* Right side actions */}
-        <div className="flex items-center gap-1">
-          {/* Language */}
-          <div className="relative">
+          {/* Right cluster */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Locale toggle */}
             <button
-              onClick={() => setLangMenuOpen(!langMenuOpen)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[12px] font-medium text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#FFFFFF] transition-all"
-              aria-label="Switch language"
+              onClick={switchLocale}
+              aria-label="Toggle language"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] px-2.5 py-1 text-[11px] font-semibold text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
             >
-              <Globe size={13} />
-              <span>{locale.toUpperCase()}</span>
+              <Globe size={12} />
+              <span>{otherLocale.toUpperCase()}</span>
             </button>
-            {langMenuOpen && (
+
+            {isLoggedIn ? (
+              <Link
+                href={`${base}/dashboard`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#1A1A1A]"
+              >
+                {isTr ? 'Panel' : 'Dashboard'} →
+              </Link>
+            ) : (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setLangMenuOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 bg-white border border-[#EDEDED] rounded-lg shadow-[0_8px_24px_rgba(10,10,10,0.08)] p-1 min-w-[110px] z-50">
-                  <button
-                    onClick={switchLocale}
-                    className="w-full text-left px-3.5 py-2.5 rounded-md text-[13px] font-medium hover:bg-[#EAF9B8] transition-colors"
-                  >
-                    {otherLocale === 'tr' ? 'Türkçe' : 'English'}
-                  </button>
-                </div>
+                <Link
+                  href={`${base}/auth/login`}
+                  className="hidden sm:inline-flex text-[13px] font-medium text-[#525252] hover:text-[#0A0A0A]"
+                >
+                  {isTr ? 'Giriş yap' : 'Sign in'}
+                </Link>
+                <Link
+                  href={`${base}/auth/register`}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-2 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E]"
+                >
+                  {isTr ? 'Ücretsiz başla' : 'Start free'} →
+                </Link>
               </>
             )}
-          </div>
 
-          {isLoggedIn ? (
-            <Link
-              href={`${base}/dashboard`}
-              className="px-5 py-2 text-[14px] font-medium bg-[#0A0A0A] text-white rounded-full hover:bg-[#1A1A1A] transition-colors"
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-full text-[#0A0A0A] hover:bg-[#F5F5F5]"
             >
-              {t.nav_dashboard || (locale === 'tr' ? 'Panele git' : 'Dashboard')}
-            </Link>
-          ) : (
-            <>
-              <Link
-                href={`${base}/auth/login`}
-                className="hidden sm:inline-flex px-4 py-2 text-[14px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
-              >
-                {t.nav_login}
-              </Link>
-              <Link
-                href={`${base}/auth/register`}
-                className="px-5 py-2 text-[14px] font-medium bg-[#C6F24E] text-[#0A0A0A] rounded-full hover:bg-[#A8D62E] transition-colors"
-              >
-                {t.nav_register}
-              </Link>
-            </>
-          )}
-          <button
-            className="md:hidden p-2 text-[#0A0A0A] hover:bg-[#FFFFFF] rounded-md transition-colors ml-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
-      </div>
+      </nav>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <>
-          <div className="fixed inset-0 bg-black/10 z-50" onClick={() => setMobileMenuOpen(false)} />
-          <div className="md:hidden absolute top-[64px] left-0 right-0 bg-white border-b border-[#EDEDED] p-5 flex flex-col gap-0.5 z-50 shadow-lg max-h-[calc(100vh-64px)] overflow-y-auto">
-            
-            {/* Mobile Learn Accordion */}
-            <button
-              onClick={() => setMobileLearnOpen(!mobileLearnOpen)}
-              className="flex items-center justify-between text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors w-full text-left"
-            >
-              {t.nav_howItWorks}
-              <ChevronDown
-                size={16}
-                className={`transition-transform duration-200 text-[#6B7280] ${mobileLearnOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
-            {mobileLearnOpen && (
-              <div className="pl-3 space-y-0.5 pb-1">
-                <Link
-                  href={`${base}/features`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
-                >
-                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <Zap size={15} />
-                  </div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Özellikler' : 'Features'}</div>
-                </Link>
-                <Link
-                  href={`${base}/how-it-works`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
-                >
-                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <Utensils size={15} />
-                  </div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_features}</div>
-                </Link>
-                <Link
-                  href={`${base}/solutions/qr-generator`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
-                >
-                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <QrCode size={15} />
-                  </div>
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-[14px] font-medium text-[#0A0A0A]">
-                      {locale === 'tr' ? 'QR Oluşturucu' : 'QR Generator'}
-                    </span>
-                    <span className="pulse-eyebrow bg-[#C6F24E] text-[#0A0A0A] px-1.5 py-0.5 rounded">
-                      {locale === 'tr' ? 'YENİ' : 'NEW'}
-                    </span>
-                  </div>
-                </Link>
-                <Link
-                  href={`${base}/customer-stories`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
-                >
-                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <TrendingUp size={15} />
-                  </div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">{locale === 'tr' ? 'Başarı Hikayeleri' : 'Customer Stories'}</div>
-                </Link>
-                <Link
-                  href={`${base}/blog`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
-                >
-                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <BookOpen size={15} />
-                  </div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_learn_blog}</div>
-                </Link>
-                <Link
-                  href={`${base}/compare`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
-                >
-                  <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <Layers size={15} />
-                  </div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">{t.nav_compare}</div>
-                </Link>
-              </div>
-            )}
-            
-            {/* Mobile Çözümler link */}
-            <Link
-              href={`${base}/solutions`}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
-            >
-              {t.nav_solutions}
-            </Link>
-
-            {/* Mobile Sektörler accordion */}
-            <button
-              onClick={() => setMobileSolutionsOpen(!mobileSolutionsOpen)}
-              className="flex items-center justify-between text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors w-full text-left"
-            >
-              {locale === 'tr' ? 'Sektörler' : 'Industries'}
-              <ChevronDown
-                size={16}
-                className={`transition-transform duration-200 text-[#6B7280] ${mobileSolutionsOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
-            {mobileSolutionsOpen && (
-              <div className="pl-3 space-y-4 pb-4">
-                {solutionCategories.map((category, idx) => (
-                  <div key={idx} className="space-y-2">
-                    <h5 className="pulse-eyebrow text-[#737373] px-3 mt-2">
-                      {category.title}
-                    </h5>
-                    <div className="space-y-0.5">
-                      {category.items.map((item, i) => (
-                        <Link
-                          key={i}
-                          href={item.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors"
-                        >
-                          <div className="w-8 h-8 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                            {item.icon}
-                          </div>
-                          <div className="text-[14px] font-medium text-[#0A0A0A]">{item.label}</div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 top-[64px] z-40 md:hidden">
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setMobileOpen(false)}
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+          />
+          <div
+            className="relative ml-auto h-[calc(100dvh-64px)] w-full max-w-md overflow-y-auto bg-white shadow-2xl"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          >
+            <nav className="flex flex-col p-4">
+              <MobileSection
+                id="product"
+                label={isTr ? 'Ürün' : 'Product'}
+                tagline={isTr ? 'Özellikler + araçlar' : 'Features + tools'}
+                open={mobileSection === 'product'}
+                onToggle={() =>
+                  setMobileSection(mobileSection === 'product' ? null : 'product')
+                }
+              >
+                {[...productCol1, ...productCol2].map((it) => (
+                  <NavLink key={it.label} item={it} onClick={() => setMobileOpen(false)} />
                 ))}
-              </div>
-            )}
+              </MobileSection>
 
-            <Link href={`${base}/about`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_about}</Link>
-            <Link href={`${base}/pricing`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_pricing}</Link>
-            <Link href={`${base}/contact`} onClick={() => setMobileMenuOpen(false)} className="text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#FFFFFF] transition-colors">{t.nav_contact}</Link>
-            <div className="pt-3 mt-2 border-t border-[#EDEDED] space-y-0.5">
-              {isLoggedIn ? (
-                <Link href={`${base}/dashboard`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors">
-                  {t.nav_dashboard || (locale === 'tr' ? 'Panele git' : 'Dashboard')}
+              <MobileSection
+                id="solutions"
+                label={isTr ? 'Çözümler' : 'Solutions'}
+                tagline={isTr ? '14 sektör' : '14 sectors'}
+                open={mobileSection === 'solutions'}
+                onToggle={() =>
+                  setMobileSection(mobileSection === 'solutions' ? null : 'solutions')
+                }
+              >
+                {solutionsTop.map((it) => (
+                  <NavLink key={it.label} item={it} onClick={() => setMobileOpen(false)} />
+                ))}
+                <div className="grid grid-cols-2 gap-1 pt-2">
+                  {solutionsRest.map((it) => (
+                    <Link
+                      key={it.label}
+                      href={it.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="rounded-lg px-3 py-2 text-[13px] font-medium text-[#525252] hover:bg-[#FAFAFA]"
+                    >
+                      {it.label}
+                    </Link>
+                  ))}
+                </div>
+                <Link
+                  href={`${base}/solutions`}
+                  onClick={() => setMobileOpen(false)}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-3 py-2 text-[12px] font-semibold text-white"
+                >
+                  {isTr ? 'Tüm sektörler' : 'All sectors'} →
                 </Link>
-              ) : (
-                <Link href={`${base}/auth/login`} onClick={() => setMobileMenuOpen(false)} className="block text-[15px] font-medium text-[#0A0A0A] py-3 px-3 rounded-lg hover:bg-[#EAF9B8] transition-colors">{t.nav_login}</Link>
-              )}
-            </div>
-            <button
-              onClick={() => { switchLocale(); setMobileMenuOpen(false); }}
-              className="flex items-center gap-2 text-[13px] font-medium text-[#737373] hover:text-[#0A0A0A] py-3 px-3 mt-1"
-            >
-              <Globe size={14} />
-              {otherLocale === 'tr' ? 'Türkçe' : 'English'}
-            </button>
+              </MobileSection>
+
+              <MobileSection
+                id="customers"
+                label={isTr ? 'Müşteriler' : 'Customers'}
+                tagline={isTr ? 'Kanıt + ROI' : 'Proof + ROI'}
+                open={mobileSection === 'customers'}
+                onToggle={() =>
+                  setMobileSection(mobileSection === 'customers' ? null : 'customers')
+                }
+              >
+                {customersItems.map((it) => (
+                  <NavLink key={it.label} item={it} onClick={() => setMobileOpen(false)} />
+                ))}
+              </MobileSection>
+
+              <MobileSection
+                id="resources"
+                label={isTr ? 'Kaynaklar' : 'Resources'}
+                tagline={isTr ? 'Blog · Yardım · İletişim' : 'Blog · Help · Contact'}
+                open={mobileSection === 'resources'}
+                onToggle={() =>
+                  setMobileSection(mobileSection === 'resources' ? null : 'resources')
+                }
+              >
+                {[...resourcesLearn, ...resourcesHelp].map((it) => (
+                  <NavLink key={it.label} item={it} onClick={() => setMobileOpen(false)} />
+                ))}
+              </MobileSection>
+
+              <Link
+                href={`${base}/pricing`}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-between border-b border-[#EDEDED] px-1 py-4 text-[15px] font-semibold text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {isTr ? 'Fiyatlandırma' : 'Pricing'}
+                <span className="text-[#737373]">→</span>
+              </Link>
+
+              {/* Mobile bottom CTAs */}
+              <div className="mt-6 space-y-2">
+                {isLoggedIn ? (
+                  <Link
+                    href={`${base}/dashboard`}
+                    onClick={() => setMobileOpen(false)}
+                    className="block rounded-full bg-[#0A0A0A] px-4 py-3 text-center text-[14px] font-semibold text-white"
+                  >
+                    {isTr ? 'Panele git' : 'Open dashboard'} →
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href={`${base}/auth/register`}
+                      onClick={() => setMobileOpen(false)}
+                      className="block rounded-full bg-[#C6F24E] px-4 py-3 text-center text-[14px] font-semibold text-[#0A0A0A]"
+                    >
+                      {isTr ? 'Ücretsiz başla' : 'Start free'} →
+                    </Link>
+                    <Link
+                      href={`${base}/auth/login`}
+                      onClick={() => setMobileOpen(false)}
+                      className="block rounded-full border border-[#EDEDED] px-4 py-3 text-center text-[14px] font-medium text-[#0A0A0A]"
+                    >
+                      {isTr ? 'Giriş yap' : 'Sign in'}
+                    </Link>
+                  </>
+                )}
+                <button
+                  onClick={() => {
+                    switchLocale();
+                    setMobileOpen(false);
+                  }}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] px-4 py-2.5 text-[12px] font-medium text-[#525252]"
+                >
+                  <Globe size={12} />
+                  {isTr ? 'Switch to English' : 'Türkçe\'ye geç'}
+                </button>
+
+                <div className="mt-4 flex items-center justify-center gap-1.5 rounded-full border border-[#C6F24E]/60 bg-[#EAF9B8] px-3 py-2">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
+                  </span>
+                  <span className="pulse-eyebrow text-[#0A0A0A]">
+                    {isTr ? '2.400+ İŞLETME KULLANIYOR' : '2,400+ BUSINESSES TRUST US'}
+                  </span>
+                </div>
+              </div>
+            </nav>
           </div>
-        </>
+        </div>
       )}
-    </nav>
     </>
+  );
+}
+
+// ── Sub-components ─────────────────────────────────────────────
+
+function DesktopDropdown({
+  label,
+  isOpen,
+  onEnter,
+  onLeave,
+  widthClass,
+  children,
+}: {
+  label: string;
+  isOpen: boolean;
+  onEnter: () => void;
+  onLeave: () => void;
+  widthClass: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
+      <button
+        type="button"
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium text-[#1A1A1A] transition-colors hover:text-[#0A0A0A]"
+      >
+        {label}
+        <ChevronDown
+          size={13}
+          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <div
+        className={`absolute left-1/2 top-full z-50 mt-2 -translate-x-1/2 origin-top overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-[0_24px_60px_-20px_rgba(10,10,10,0.18)] transition-all duration-200 ${widthClass} ${
+          isOpen
+            ? 'pointer-events-auto opacity-100 scale-100 translate-y-0'
+            : 'pointer-events-none opacity-0 scale-95 -translate-y-1'
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function MobileSection({
+  id,
+  label,
+  tagline,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  label: string;
+  tagline: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-b border-[#EDEDED]">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={onToggle}
+        className="flex w-full items-center justify-between px-1 py-4 text-left"
+      >
+        <span>
+          <span
+            className="block text-[15px] font-semibold text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {label}
+          </span>
+          <span className="pulse-eyebrow text-[#A8D62E]">{tagline}</span>
+        </span>
+        <ChevronDown
+          size={16}
+          className={`text-[#737373] transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {open && <div className="space-y-1 pb-3">{children}</div>}
+    </div>
   );
 }
