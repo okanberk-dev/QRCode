@@ -1,8 +1,10 @@
-import { ShoppingBag, Star, ShieldCheck, TrendingUp, QrCode, Tag, Package, BarChart3 } from 'lucide-react';
-import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import MarketingNavbar from '@/components/marketing/MarketingNavbar';
+import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,15 +16,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : 'Retail & Store Reputation Management — Buaze';
   const description =
     locale === 'tr'
-      ? 'Kasa yanında, poşet içinde, e-fatura PDF\'inde tek QR. Çok mağazalı perakende için birleşik dijital itibar.'
-      : 'One QR at the register, in the bag, on the e-receipt. Unified digital reputation for multi-store retail.';
+      ? 'Müşteri kasadan çıkarken fişinin altındaki QR\'ı tarar. Google ve Yandex\'e yönlendirilir. Çok mağaza, tek panel.'
+      : 'Customers scan the QR under the receipt on the way out. Routed to Google and Yandex. Multi-store, one panel.';
   return {
     title,
     description,
-    keywords:
-      locale === 'tr'
-        ? ['perakende itibar yönetimi', 'mağaza google yorumları', 'çok mağazalı itibar', 'kasa QR']
-        : ['retail reputation management', 'store google reviews', 'multi-store reputation', 'register QR'],
     alternates: {
       canonical: `https://buaze.com/${locale}/solutions/retail`,
       languages: {
@@ -34,106 +32,253 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
   };
 }
 
+/**
+ * 1:1 with .design/site/site-pages4.jsx:RetailSolutionPage (lines 246-292).
+ * Dark hero + IllusChart + 4-stat grid + 3-feature grid.
+ */
 export default async function RetailSolutionPage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
+  const base = `/${locale}`;
 
-  const stats = [
-    { num: '260+', label: isTr ? 'MAĞAZA' : 'STORES', context: isTr ? 'Tekil noktalar' : 'Individual stores' },
-    { num: '+142%', label: isTr ? 'YORUM/AY' : 'REVIEWS/MO', context: isTr ? 'İlk 90 gün' : 'First 90 days' },
-    { num: '%88', label: isTr ? 'MÜŞTERİ SADAKATİ' : 'CUSTOMER LOYALTY', context: isTr ? 'Tekrar ziyaret' : 'Return rate' },
-    { num: 'TEK PANEL', label: isTr ? 'ÇOK MAĞAZA' : 'MULTI-STORE', context: isTr ? 'Konum bazlı' : 'Per location' },
-  ];
+  const stats = isTr
+    ? [
+        { value: '+210%', label: 'Yorum artışı (ilk 30 gün)' },
+        { value: 'Sınırsız', label: 'Çok mağaza desteği' },
+        { value: '%88', label: 'Google sıralama iyileşme' },
+        { value: '25sn', label: 'Ortalama yorum süresi' },
+      ]
+    : [
+        { value: '+210%', label: 'Review lift (first 30 days)' },
+        { value: 'Unlimited', label: 'Multi-store support' },
+        { value: '88%', label: 'Google rank improvement' },
+        { value: '25s', label: 'Avg. review time' },
+      ];
 
-  const steps = [
-    {
-      icon: <QrCode size={24} />,
-      title: isTr ? 'Kasada & Poşette QR' : 'QR at Register & Bag',
-      desc: isTr
-        ? 'Her kasaya tek QR, poşet içine küçük kart, e-fatura PDF\'ine otomatik link — müşteri hangi temas noktasından bıraktı, netçe raporlanır.'
-        : 'One QR per register, a small card inside the bag, an auto-link on e-receipts — every touchpoint reports separately.',
-    },
-    {
-      icon: <Tag size={24} />,
-      title: isTr ? 'Kategori & Ürün Bazlı Analiz' : 'Per-Category & Product Insight',
-      desc: isTr
-        ? 'Hangi reyonda, hangi üründen memnuniyet yüksek? Buaze analitiği kategori kırılımıyla gösterir, operasyon kararını objektif veriye dayandırır.'
-        : 'Which aisle, which product drives satisfaction? Buaze analytics breaks it down per category, turning ops decisions into data-driven ones.',
-    },
-    {
-      icon: <Package size={24} />,
-      title: isTr ? 'Çok Mağaza, Tek Yönetim' : 'Multi-Store, One Cockpit',
-      desc: isTr
-        ? '3 mağaza, 30 mağaza — fark etmez. Her şube ayrı rapor alır, merkez tek panelde her şubeyi karşılaştırır.'
-        : '3 stores or 30 — every branch reports separately while HQ sees the whole fleet in one dashboard.',
-    },
-  ];
-
-  const benefits = [
-    {
-      title: isTr ? 'Kasa Hızı' : 'Register Speed',
-      desc: isTr
-        ? 'Müşteri QR\'ı okur, ödeme yaparken saniyede yorum bırakır. Kasa kuyruğunu yavaşlatmaz.'
-        : 'Customers scan while paying and leave a review in seconds — no queue slowdown.',
-      icon: <Star size={20} className="text-[#C6F24E]" />,
-    },
-    {
-      title: isTr ? 'Kategori Sinyali' : 'Category Signal',
-      desc: isTr
-        ? 'Belirli bir reyon/ürün için yorum oranı düştüğünde Buaze uyarı gönderir — mağaza müdürü anında aksiyon alır.'
-        : 'A drop in reviews for a specific aisle/product triggers an alert — store managers act instantly.',
-      icon: <TrendingUp size={20} className="text-[#C6F24E]" />,
-    },
-    {
-      title: isTr ? 'Omnichannel Hazırlığı' : 'Omnichannel-Ready',
-      desc: isTr
-        ? 'Aynı QR online siparişte de çalışır. Fiziksel + online sadık müşteri profili tek yerde birleşir.'
-        : 'The same QR works on online orders too. Physical + online loyal-customer profiles merge in one place.',
-      icon: <BarChart3 size={20} className="text-[#C6F24E]" />,
-    },
-    {
-      title: isTr ? 'Franchise Uyum' : 'Franchise Compliance',
-      desc: isTr
-        ? 'Merkez brand guide\'ını uygular, her şube kendi mağaza adı + Google Place ID ile ayrı rapor verir.'
-        : 'HQ enforces the brand guide; each branch still reports with its own store name + Google Place ID.',
-      icon: <ShieldCheck size={20} className="text-[#C6F24E]" />,
-    },
-  ];
-
-  const faqs = [
-    {
-      q: isTr ? 'Franchise modeline uygun mu?' : 'Does it fit a franchise model?',
-      a: isTr
-        ? 'Evet. Her franchise kendi mağaza adı + Google Place ID ile ayrı kimlikte çalışır; merkez tüm şubeleri tek panelden izleyip brand guide\'ı korur.'
-        : 'Yes. Each franchise operates with its own store name + Google Place ID; HQ monitors all branches from one panel and enforces the brand guide.',
-    },
-    {
-      q: isTr ? 'Online siparişte de aynı QR mı?' : 'Same QR on online orders?',
-      a: isTr
-        ? 'E-fatura PDF\'ine otomatik yerleştirilen link hem tek bir QR\'ın omnichannel eşleniği hem de doğrudan geri bildirim kanalıdır.'
-        : 'The e-receipt PDF auto-embeds the same link — an omnichannel equivalent to one QR + a direct feedback channel.',
-    },
-  ];
+  const features = isTr
+    ? [
+        {
+          title: 'Fiş QR entegrasyonu',
+          desc: 'POS sistemine plug-in veya ERP\'den API ile fiş altına otomatik QR basılır.',
+        },
+        {
+          title: 'Mağaza bazlı analiz',
+          desc: 'Zincir genelinde en iyi/en kötü mağazayı karşılaştır. Bölge yöneticisine haftalık özet.',
+        },
+        {
+          title: 'Sezonsal kampanya',
+          desc: '"Yılbaşı indirimi" gibi dönemsel kampanyalarda anlık yorum takibi.',
+        },
+      ]
+    : [
+        {
+          title: 'Receipt QR integration',
+          desc: 'POS plug-in or ERP API auto-prints the QR at the bottom of every receipt.',
+        },
+        {
+          title: 'Per-store analytics',
+          desc: 'Compare best- and worst-performing stores across the chain. Weekly digest to regional managers.',
+        },
+        {
+          title: 'Seasonal campaigns',
+          desc: 'Real-time review tracking during seasonal pushes like year-end sales.',
+        },
+      ];
 
   return (
-    <SolutionPageLayout
-      locale={locale}
-      t={t}
-      industryKey="ret"
-      icon={<ShoppingBag size={14} />}
-      industryBadge={isTr ? 'PERAKENDE & MAĞAZALAR İÇİN' : 'FOR RETAIL & STORES'}
-      h1Prefix={isTr ? 'Kasadan' : 'From the register'}
-      h1Suffix={isTr ? "Google'a." : 'to Google.'}
-      description={
-        isTr
-          ? 'Kasa yanında, poşet içinde, e-fatura PDF\'inde tek QR. Çok mağaza — tek panel. Perakendenin tüm temas noktalarını birleşik itibar sinyaline çevir.'
-          : "One QR at the register, in the bag, on the e-receipt. Multi-store, single panel. Turn every retail touchpoint into a unified reputation signal."
-      }
-      stats={stats}
-      steps={steps}
-      benefits={benefits}
-      faqs={faqs}
-    />
+    <div className="min-h-screen bg-white pt-[64px]">
+      <MarketingNavbar locale={locale} t={t} />
+
+      {/* Hero — dark */}
+      <section className="relative overflow-hidden bg-[#0A0A0A] px-6 sm:px-10 py-16 sm:py-20 text-white">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-[#C6F24E]/10 blur-[140px]"
+        />
+        <div className="relative mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
+          <div>
+            <span className="pulse-eyebrow text-[#C6F24E]">
+              {isTr ? 'SEKTÖR · PERAKENDE & MAĞAZA' : 'SECTOR · RETAIL & STORE'}
+            </span>
+            <h1
+              className="mt-3 text-[44px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-white"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              {isTr ? (
+                <>
+                  Fiş altına koy,
+                  <br />
+                  yorum
+                  <br />
+                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5 text-[#0A0A0A]">
+                    patlasın.
+                  </span>
+                </>
+              ) : (
+                <>
+                  Put it under the
+                  <br />
+                  receipt —
+                  <br />
+                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5 text-[#0A0A0A]">
+                    reviews boom.
+                  </span>
+                </>
+              )}
+            </h1>
+            <p className="mt-5 max-w-[500px] text-[16px] leading-[1.6] text-white/70">
+              {isTr
+                ? "Müşteri kasadan çıkarken fişinin altındaki QR'ı tarar. Google ve Yandex'e yönlendirilir. Çok mağaza, tek panel."
+                : 'Customers scan the QR under their receipt on the way out — routed to Google and Yandex. Multi-store, one panel.'}
+            </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href={`${base}/auth/register`}
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-6 py-3.5 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E]"
+              >
+                {isTr ? '14 gün ücretsiz başla' : 'Start 14-day free trial'}
+                <ArrowRight size={16} />
+              </Link>
+              <Link
+                href={`${base}/contact`}
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/20 px-6 py-3.5 text-[15px] font-medium text-white transition-colors hover:border-white/60 hover:bg-white/5"
+              >
+                {isTr ? 'Demo iste' : 'Request demo'}
+              </Link>
+            </div>
+          </div>
+
+          {/* IllusChart — minimal bar chart SVG */}
+          <div className="flex justify-center lg:justify-end">
+            <svg
+              viewBox="0 0 260 260"
+              className="h-auto w-full max-w-[260px]"
+              aria-hidden
+            >
+              <rect x="0" y="0" width="260" height="260" rx="24" fill="#141414" />
+              <g>
+                {[
+                  { x: 30, h: 60, c: '#333' },
+                  { x: 65, h: 95, c: '#333' },
+                  { x: 100, h: 130, c: '#333' },
+                  { x: 135, h: 160, c: '#C6F24E' },
+                  { x: 170, h: 185, c: '#C6F24E' },
+                  { x: 205, h: 215, c: '#C6F24E' },
+                ].map((b) => (
+                  <rect
+                    key={b.x}
+                    x={b.x}
+                    y={240 - b.h}
+                    width="24"
+                    height={b.h}
+                    rx="4"
+                    fill={b.c}
+                  />
+                ))}
+                <path
+                  d="M 30 180 L 65 160 L 100 130 L 135 100 L 170 75 L 205 55"
+                  fill="none"
+                  stroke="#C6F24E"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <circle cx="205" cy="55" r="6" fill="#C6F24E" />
+              </g>
+              <text
+                x="30"
+                y="40"
+                fontFamily="JetBrains Mono, monospace"
+                fontSize="10"
+                letterSpacing="2"
+                fill="#A3A3A3"
+              >
+                REVIEWS · 30D
+              </text>
+              <text
+                x="200"
+                y="40"
+                fontFamily="Space Grotesk, sans-serif"
+                fontSize="18"
+                fontWeight="500"
+                fill="#C6F24E"
+                textAnchor="end"
+              >
+                +210%
+              </text>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="px-6 sm:px-10 py-14 sm:py-16">
+        <div className="mx-auto max-w-[1200px] grid grid-cols-2 gap-5 md:grid-cols-4">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6"
+            >
+              <div
+                className="text-[32px] sm:text-[36px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {s.value}
+              </div>
+              <div className="pulse-eyebrow mt-2 text-[#737373]">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 3-feature grid */}
+      <section className="px-6 sm:px-10 pb-20 sm:pb-24">
+        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 md:grid-cols-3">
+          {features.map((f) => (
+            <div
+              key={f.title}
+              className="rounded-[14px] border border-[#EDEDED] bg-white p-6"
+            >
+              <h3
+                className="text-[20px] font-semibold tracking-[-0.015em] text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {f.title}
+              </h3>
+              <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA band */}
+      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-24">
+        <div className="mx-auto max-w-[900px] text-center">
+          <h2
+            className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {isTr ? 'Mağaza ağınızı itibara çevirin.' : 'Turn your store network into reputation.'}
+          </h2>
+          <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
+            {isTr
+              ? '14 gün ücretsiz · Kredi kartı istemiyoruz · 5 dakikada kurulum'
+              : '14-day free · No credit card · 5-minute setup'}
+          </p>
+          <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
+            <Link
+              href={`${base}/auth/register`}
+              className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors"
+            >
+              {isTr ? 'Ücretsiz başla' : 'Start free'}
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <MarketingFooter locale={locale} t={t} />
+    </div>
   );
 }
