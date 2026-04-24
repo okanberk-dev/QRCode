@@ -43,6 +43,10 @@ interface SolutionPageLayoutProps {
   isLoggedIn?: boolean;
   slug?: string;
   overview?: string;
+  /** Optional inline SVG illustration rendered on the right of the hero
+   *  on lg breakpoints. Sits inside a 2-column grid; if omitted, the
+   *  hero stays single-column (legacy layout). */
+  illustration?: ReactNode;
 }
 
 const INDUSTRY_SLUG_MAP: Record<string, string> = {
@@ -93,6 +97,7 @@ export default function SolutionPageLayout({
   faqs,
   slug: slugProp,
   overview,
+  illustration,
 }: SolutionPageLayoutProps) {
   const base = `/${locale}`;
   const isTr = locale === 'tr';
@@ -223,35 +228,47 @@ export default function SolutionPageLayout({
             <span className="text-[#0A0A0A] font-medium">{industryBadge}</span>
           </nav>
 
-          <div className="max-w-[780px] space-y-6">
-            <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] rounded-full pl-2 pr-4 py-1.5">
-              <span className="w-6 h-6 bg-[#C6F24E] rounded-full flex items-center justify-center text-[#0A0A0A]">
-                {icon}
-              </span>
-              <span className="pulse-eyebrow text-[#0A0A0A]">{industryBadge}</span>
+          <div
+            className={
+              illustration
+                ? 'grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-12'
+                : ''
+            }
+          >
+            <div className={illustration ? 'space-y-6' : 'max-w-[780px] space-y-6'}>
+              <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] rounded-full pl-2 pr-4 py-1.5">
+                <span className="w-6 h-6 bg-[#C6F24E] rounded-full flex items-center justify-center text-[#0A0A0A]">
+                  {icon}
+                </span>
+                <span className="pulse-eyebrow text-[#0A0A0A]">{industryBadge}</span>
+              </div>
+              <h1 className="text-[40px] sm:text-[60px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+                {h1Prefix}{' '}
+                <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">{h1Suffix}</span>
+              </h1>
+              <p className="text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[620px]">
+                {description}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <Link
+                  href={`${base}/auth/register`}
+                  className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
+                >
+                  {isTr ? '14 gün ücretsiz dene' : 'Start 14-day free trial'}
+                  <span aria-hidden>→</span>
+                </Link>
+                <Link
+                  href={`${base}/pricing`}
+                  className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
+                >
+                  {isTr ? 'Planları incele' : 'View plans'}
+                </Link>
+              </div>
             </div>
-            <h1 className="text-[40px] sm:text-[60px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
-              {h1Prefix}{' '}
-              <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">{h1Suffix}</span>
-            </h1>
-            <p className="text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[620px]">
-              {description}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Link
-                href={`${base}/auth/register`}
-                className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
-              >
-                {isTr ? '14 gün ücretsiz dene' : 'Start 14-day free trial'}
-                <span aria-hidden>→</span>
-              </Link>
-              <Link
-                href={`${base}/pricing`}
-                className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
-              >
-                {isTr ? 'Planları incele' : 'View plans'}
-              </Link>
-            </div>
+
+            {illustration && (
+              <div className="flex justify-center lg:justify-end">{illustration}</div>
+            )}
           </div>
         </div>
       </section>

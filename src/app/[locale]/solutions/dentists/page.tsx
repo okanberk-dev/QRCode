@@ -1,5 +1,6 @@
 import { Stethoscope, Star, ShieldCheck, TrendingUp, QrCode, Users, BarChart3, Lock, Smile } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
+import { IllusDentist } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import type { Metadata } from 'next';
@@ -114,6 +115,7 @@ export default async function DentistSolutionPage({ params }: { params: Promise<
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      illustration={<IllusDentist />}
     />
   );
 }

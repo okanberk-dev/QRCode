@@ -1,5 +1,6 @@
 import { Bed, Star, ShieldCheck, TrendingUp, QrCode, Users, Heart, BarChart3 } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
+import { IllusBoutique } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import type { Metadata } from 'next';
@@ -116,6 +117,7 @@ export default async function BoutiqueHotelsSolutionPage({ params }: { params: P
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      illustration={<IllusBoutique />}
     />
   );
 }
