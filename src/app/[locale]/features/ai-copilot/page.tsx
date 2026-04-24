@@ -285,7 +285,7 @@ export default async function AiCoPilotPage({
             <div key={k.l} className="rounded-2xl border border-[#EDEDED] bg-white p-6">
               <p className="pulse-eyebrow text-[#737373]">{k.l}</p>
               <p
-                className="mt-2 text-[36px] font-medium leading-none tracking-tight text-[#0A0A0A]"
+                className="mt-2 text-[28px] sm:text-[36px] font-medium leading-none tracking-tight text-[#0A0A0A]"
                 style={{ fontFamily: 'var(--font-space-grotesk)' }}
               >
                 {k.v}

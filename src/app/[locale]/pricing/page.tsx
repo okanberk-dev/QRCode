@@ -191,7 +191,7 @@ export default async function PricingPage({
               <div className="mb-8 pb-8 border-b border-[#EDEDED]">
                 <div className="flex items-baseline gap-1">
                   <span
-                    className="text-[52px] font-medium leading-none text-[#0A0A0A] tracking-[-0.03em]"
+                    className="text-[40px] sm:text-[52px] font-medium leading-none text-[#0A0A0A] tracking-[-0.03em]"
                     style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     {isTr ? '₺500' : '$10'}
@@ -240,7 +240,7 @@ export default async function PricingPage({
               <div className="mb-8 pb-8 border-b border-white/10">
                 <div className="flex items-baseline gap-1">
                   <span
-                    className="text-[52px] font-medium leading-none text-[#C6F24E] tracking-[-0.03em]"
+                    className="text-[40px] sm:text-[52px] font-medium leading-none text-[#C6F24E] tracking-[-0.03em]"
                     style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     {isTr ? '₺1.200' : '$20'}
@@ -290,7 +290,7 @@ export default async function PricingPage({
                 <div className="flex flex-col">
                   <div className="flex items-baseline gap-1">
                     <span
-                      className="text-[52px] font-medium leading-none text-[#0A0A0A] tracking-[-0.03em]"
+                      className="text-[40px] sm:text-[52px] font-medium leading-none text-[#0A0A0A] tracking-[-0.03em]"
                       style={{ fontFamily: 'var(--font-heading)' }}
                     >
                       {isTr ? '₺416' : '$7.99'}
