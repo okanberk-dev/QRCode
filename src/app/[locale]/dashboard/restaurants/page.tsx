@@ -329,7 +329,7 @@ export default function DashboardRestaurantsPage() {
                   </button>
 
                   {/* 4-col stat grid (AdminLocations §727-739) */}
-                  <div className="mt-4 grid grid-cols-4 gap-3">
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
                       { l: locale === 'tr' ? 'PUAN' : 'RATING', v: '—', star: true },
                       { l: locale === 'tr' ? 'YORUM' : 'REVIEWS', v: String(restaurant._count.feedbacks) },

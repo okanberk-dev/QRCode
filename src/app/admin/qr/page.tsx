@@ -746,7 +746,7 @@ function QRPageContent() {
 
                   {batchItems.length > 0 && (
                     <div className="space-y-3">
-                      <div className="grid grid-cols-3 gap-2 max-h-[220px] overflow-auto p-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[220px] overflow-auto p-1">
                         {batchItems.map((it) => (
                           <div key={it.table} className="border border-[#EDEDED] rounded-lg p-2 text-center bg-white">
                             <div className="w-full aspect-square [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: it.svg }} />

@@ -276,7 +276,7 @@ export default async function AnalyticsPage({
                 </div>
               </div>
             </div>
-            <div className="mt-5 grid grid-cols-3 gap-4">
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               {[
                 { k: isTr ? 'Destekçi' : 'Promoters', v: pctPromoter, c: '#C6F24E' },
                 { k: isTr ? 'Nötr' : 'Neutral', v: pctNeutral, c: '#737373' },

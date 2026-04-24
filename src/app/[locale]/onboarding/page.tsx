@@ -589,7 +589,7 @@ function QrStep({
     <div className="grid gap-6 sm:grid-cols-2">
       <div>
         <FormRow label={isTr ? 'Şablon' : 'Template'}>
-          <div className="mt-1 grid grid-cols-4 gap-2">
+          <div className="mt-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
             {templates.map((tp) => {
               const on = data.qrTemplate === tp.id;
               return (
