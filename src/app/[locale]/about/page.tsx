@@ -189,24 +189,28 @@ export default async function AboutPage({
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {(isTr
               ? [
-                  { i: 'EK', n: 'Emre Kaya', r: 'Kurucu · CEO' },
-                  { i: 'ZA', n: 'Zeynep Aydın', r: 'Kurucu · CTO' },
-                  { i: 'MY', n: 'Mert Yılmaz', r: 'Ürün' },
-                  { i: 'SD', n: 'Selin Demir', r: 'Büyüme' },
+                  { n: 'Emre Kaya', r: 'Kurucu · CEO', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80' },
+                  { n: 'Zeynep Aydın', r: 'Kurucu · CTO', img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80' },
+                  { n: 'Mert Yılmaz', r: 'Ürün', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80' },
+                  { n: 'Selin Demir', r: 'Büyüme', img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=600&q=80' },
                 ]
               : [
-                  { i: 'EK', n: 'Emre Kaya', r: 'Founder · CEO' },
-                  { i: 'ZA', n: 'Zeynep Aydın', r: 'Founder · CTO' },
-                  { i: 'MY', n: 'Mert Yılmaz', r: 'Product' },
-                  { i: 'SD', n: 'Selin Demir', r: 'Growth' },
+                  { n: 'Emre Kaya', r: 'Founder · CEO', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80' },
+                  { n: 'Zeynep Aydın', r: 'Founder · CTO', img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80' },
+                  { n: 'Mert Yılmaz', r: 'Product', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80' },
+                  { n: 'Selin Demir', r: 'Growth', img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=600&q=80' },
                 ]
             ).map((p) => (
-              <div key={p.i} className="flex flex-col gap-3">
-                <div
-                  className="aspect-square bg-[#EAF9B8] rounded-2xl flex items-center justify-center text-[#0A0A0A] text-[56px] sm:text-[64px] font-medium leading-none tracking-[-0.04em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {p.i}
+              <div key={p.n} className="flex flex-col gap-3">
+                <div className="aspect-square overflow-hidden rounded-2xl bg-[#EAF9B8]">
+                  {/* Real Unsplash CC0 portrait — replaces initials placeholder for warmer team page */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.img}
+                    alt={p.n}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+                  />
                 </div>
                 <div>
                   <div

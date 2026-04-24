@@ -16,6 +16,9 @@ interface CaseStudy {
   brand: string;
   sector: { tr: string; en: string };
   location: string;
+  /** Real venue photo (Unsplash CC0). Used as the page-top hero
+   *  background — gives each case its own visual identity. */
+  heroImage: string;
   hero: { tr: string; en: string };
   subtitle: { tr: string; en: string };
   stats: { label: { tr: string; en: string }; value: string }[];
@@ -30,6 +33,7 @@ const STUDIES: CaseStudy[] = [
     brand: 'Kadıköy Bistro',
     sector: { tr: 'Restoran & Kafe', en: 'Restaurant & Café' },
     location: 'İstanbul',
+    heroImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1800&q=85',
     hero: {
       tr: 'Buaze ile Google ortalaması 4.2\'den 4.8\'e, ayda 184% daha fazla organik yorum.',
       en: 'Buaze lifted Google rating from 4.2 to 4.8, with 184% more organic reviews per month.',
@@ -69,6 +73,7 @@ const STUDIES: CaseStudy[] = [
     brand: 'Hotel Nora',
     sector: { tr: 'Otel', en: 'Hotel' },
     location: 'Bodrum',
+    heroImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1800&q=85',
     hero: {
       tr: 'Check-out sonrası WhatsApp + oda kartı QR = 6 ayda Booking.com\'da 3.9\'dan 4.7\'ye.',
       en: 'Post-checkout WhatsApp + in-room key-card QR — Booking.com score climbed from 3.9 to 4.7 in six months.',
@@ -108,6 +113,7 @@ const STUDIES: CaseStudy[] = [
     brand: 'Derma+ Klinik',
     sector: { tr: 'Klinik & Sağlık', en: 'Clinic & Health' },
     location: 'Ankara',
+    heroImage: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1800&q=85',
     hero: {
       tr: 'KVKK uyumlu anket akışı + randevu sonrası otomatik mesaj = Google puanı 4.9, yeni hasta akışı %41 arttı.',
       en: 'KVKK-compliant survey flow + automated post-appointment messages — Google rating 4.9, new-patient flow up 41%.',
@@ -202,24 +208,39 @@ export default async function CaseStudyPage({
         </div>
       </div>
 
-      {/* Hero */}
-      <section className="px-6 sm:px-10 py-16 sm:py-24">
-        <div className="mx-auto max-w-[1000px]">
-          <p className="pulse-eyebrow text-[#737373]">
-            {study.sector[isTr ? 'tr' : 'en']} · {study.location}
-          </p>
-          <h1
-            className="mt-3 text-[44px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-space-grotesk)' }}
-          >
-            {study.brand}
-          </h1>
-          <p className="mt-6 max-w-[760px] text-[18px] leading-[1.55] text-[#0A0A0A] sm:text-[22px]">
-            {study.hero[isTr ? 'tr' : 'en']}
-          </p>
-          <p className="mt-4 max-w-[720px] text-[15px] leading-[1.65] text-[#525252]">
-            {study.subtitle[isTr ? 'tr' : 'en']}
-          </p>
+      {/* Hero — magazine-style cover photo with text overlay */}
+      <section className="relative">
+        <div className="relative aspect-[16/9] sm:aspect-[21/9] lg:aspect-[3/1] overflow-hidden bg-[#0A0A0A]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={study.heroImage}
+            alt={study.brand}
+            className="absolute inset-0 h-full w-full object-cover opacity-80"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 px-6 pb-8 sm:px-10 sm:pb-12">
+            <div className="mx-auto max-w-[1000px] text-white">
+              <p className="pulse-eyebrow text-[#C6F24E]">
+                {study.sector[isTr ? 'tr' : 'en']} · {study.location}
+              </p>
+              <h1
+                className="mt-3 text-[40px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em]"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                {study.brand}
+              </h1>
+            </div>
+          </div>
+        </div>
+        <div className="px-6 sm:px-10 py-12 sm:py-16">
+          <div className="mx-auto max-w-[1000px]">
+            <p className="max-w-[760px] text-[18px] leading-[1.55] text-[#0A0A0A] sm:text-[22px]">
+              {study.hero[isTr ? 'tr' : 'en']}
+            </p>
+            <p className="mt-4 max-w-[720px] text-[15px] leading-[1.65] text-[#525252]">
+              {study.subtitle[isTr ? 'tr' : 'en']}
+            </p>
+          </div>
         </div>
       </section>
 

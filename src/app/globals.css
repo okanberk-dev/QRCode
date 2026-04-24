@@ -96,6 +96,76 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
 }
 
+/* ── Pulse button system ─────────────────────────────────────
+ * Three canonical CTA patterns — apply on top of element type
+ * (works on <a>, <Link>, <button>). Pair with rounded-full and
+ * inline-flex / items-center / gap-2 utilities at the call site
+ * so consumers can mix in icons. */
+.pulse-btn-primary {
+  background-color: #C6F24E;
+  color: #0A0A0A;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 22px;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+.pulse-btn-primary:hover {
+  background-color: #A8D62E;
+}
+.pulse-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.pulse-btn-dark {
+  background-color: #0A0A0A;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 22px;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+.pulse-btn-dark:hover {
+  background-color: #1A1A1A;
+}
+.pulse-btn-dark:active {
+  transform: scale(0.98);
+}
+
+.pulse-btn-ghost {
+  background-color: transparent;
+  color: #0A0A0A;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 12px 22px;
+  border: 1px solid #EDEDED;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.pulse-btn-ghost:hover {
+  border-color: #0A0A0A;
+  background-color: #FAFAFA;
+}
+
+/* Card hover lift — gentle Y-axis nudge + shadow ramp.
+ * Used on solution / feature / pricing tiles. */
+.pulse-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.15s ease;
+}
+.pulse-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px -20px rgba(10, 10, 10, 0.18);
+  border-color: #0A0A0A;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-btn-primary:active,
+  .pulse-btn-dark:active,
+  .pulse-card-hover:hover {
+    transform: none !important;
+  }
+}
+
 /* Custom animations for the stars and forms */
 @keyframes starPulse {
   0% { transform: scale(1); }

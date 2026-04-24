@@ -265,7 +265,7 @@ export default async function LandingPage({
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
               <Link
                 href={`${base}/auth/register`}
-                className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
+                className="pulse-btn-dark inline-flex items-center justify-center gap-2 rounded-full"
               >
                 {isTr ? '14 gün ücretsiz başla' : 'Start 14-day free trial'}
                 <span aria-hidden>→</span>
@@ -887,7 +887,7 @@ export default async function LandingPage({
           <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
             <Link
               href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
+              className="pulse-btn-dark inline-flex items-center justify-center gap-2 rounded-full"
             >
               {isTr ? 'Ücretsiz başla' : 'Start free'}
               <span aria-hidden>→</span>
