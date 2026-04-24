@@ -6,6 +6,17 @@ import Link from 'next/link';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 
+function GoogleIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 1 1-3.3-12.9l5.7-5.7A20 20 0 1 0 44 24c0-1.2-.1-2.4-.4-3.5Z"/>
+      <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8A12 12 0 0 1 24 12c3 0 5.8 1.1 8 3l5.7-5.7A20 20 0 0 0 6.3 14.7Z"/>
+      <path fill="#4CAF50" d="M24 44a20 20 0 0 0 13.5-5.2l-6.2-5.3A12 12 0 0 1 12.7 28l-6.6 5.1A20 20 0 0 0 24 44Z"/>
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.5l6.2 5.3A19.4 19.4 0 0 0 44 24c0-1.2-.1-2.4-.4-3.5Z"/>
+    </svg>
+  );
+}
+
 interface RegisterFormProps {
   locale: Locale;
   t: {
@@ -34,12 +45,54 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', businessName: '', password: '', website: '' });
+
+  const handleGoogleSignUp = async () => {
+    setError('');
+    setNotice('');
+    setLoading(true);
+    try {
+      const { signInWithGoogleIdToken } = await import('@/lib/firebase-client');
+      const idToken = await signInWithGoogleIdToken();
+      if (!idToken) {
+        setNotice(
+          locale === 'tr'
+            ? 'Google ile kayıt henüz aktif değil. Lütfen e-posta ile devam edin.'
+            : 'Google sign-up is not active yet. Please continue with email.'
+        );
+        setLoading(false);
+        return;
+      }
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || (locale === 'tr' ? 'Google ile kayıt başarısız oldu.' : 'Google sign-up failed.'));
+        setLoading(false);
+        return;
+      }
+      router.push(`/${locale}/onboarding`);
+      router.refresh();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'POPUP_CLOSED' || msg.includes('popup-closed-by-user')) {
+        setLoading(false);
+        return;
+      }
+      setError(locale === 'tr' ? 'Google ile kayıt başarısız oldu.' : 'Google sign-up failed.');
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setNotice('');
     setLoading(true);
 
     try {
@@ -78,6 +131,28 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           {error}
         </div>
       )}
+
+      {notice && !error && (
+        <div className="bg-[#EAF9B8] text-[#0A0A0A] p-3 rounded-xl text-[12px] font-medium border border-[#C6F24E] text-center">
+          {notice}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleGoogleSignUp}
+        disabled={loading}
+        className="flex items-center gap-2.5 w-full min-h-[46px] px-4 py-3 rounded-[10px] border border-[#E5E5E5] bg-white text-[14px] text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        <GoogleIcon size={16} />
+        {locale === 'tr' ? 'Google ile kayıt ol' : 'Sign up with Google'}
+      </button>
+
+      <div className="flex items-center gap-2.5 my-1 text-[#A3A3A3]">
+        <div className="flex-1 h-px bg-[#EDEDED]" />
+        <span className="pulse-eyebrow text-[#A3A3A3]">{locale === 'tr' ? 'YA DA' : 'OR'}</span>
+        <div className="flex-1 h-px bg-[#EDEDED]" />
+      </div>
 
       {fields.map((f) => (
         <div key={f.key} className="space-y-1.5">

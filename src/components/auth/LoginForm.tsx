@@ -30,14 +30,6 @@ function GoogleIcon({ size = 16 }: { size?: number }) {
   );
 }
 
-function AppleIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden fill="currentColor">
-      <path d="M17.6 12.7a4.7 4.7 0 0 1 2.3-4 4.8 4.8 0 0 0-3.8-2c-1.6-.2-3.1.9-3.9.9-.8 0-2.1-.9-3.4-.9a5 5 0 0 0-4.3 2.6c-1.8 3.2-.5 7.9 1.3 10.5.9 1.3 1.9 2.7 3.3 2.7 1.3-.1 1.8-.9 3.4-.9s2 .9 3.4.8c1.4 0 2.3-1.3 3.2-2.6a11.6 11.6 0 0 0 1.4-3 4.6 4.6 0 0 1-2.9-4.1ZM15.2 4.9a4.3 4.3 0 0 0 1-3.2 4.5 4.5 0 0 0-2.9 1.5 4.2 4.2 0 0 0-1 3.1c1.1.1 2.2-.5 2.9-1.4Z" />
-    </svg>
-  );
-}
-
 export default function LoginForm({ locale, t }: LoginFormProps) {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -46,13 +38,44 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: '', password: '', rememberMe: false });
 
-  const handleSsoPending = (provider: 'Google' | 'Apple') => {
+  const handleGoogleSignIn = async () => {
     setError('');
-    setNotice(
-      locale === 'tr'
-        ? `${provider} ile giriş yakında aktif olacak. Şimdilik e-posta ile devam edin.`
-        : `Sign-in with ${provider} is coming soon. Please continue with email for now.`
-    );
+    setNotice('');
+    setLoading(true);
+    try {
+      const { signInWithGoogleIdToken } = await import('@/lib/firebase-client');
+      const idToken = await signInWithGoogleIdToken();
+      if (!idToken) {
+        setNotice(
+          locale === 'tr'
+            ? 'Google ile giriş henüz aktif değil. Lütfen e-posta ile devam edin.'
+            : 'Google sign-in is not active yet. Please continue with email.'
+        );
+        setLoading(false);
+        return;
+      }
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || (locale === 'tr' ? 'Google ile giriş yapılamadı.' : 'Google sign-in failed.'));
+        setLoading(false);
+        return;
+      }
+      const redirectPath = searchParams.get('redirect') || `/${locale}/dashboard`;
+      window.location.href = redirectPath;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'POPUP_CLOSED' || msg.includes('popup-closed-by-user')) {
+        setLoading(false);
+        return;
+      }
+      setError(locale === 'tr' ? 'Google ile giriş başarısız oldu.' : 'Google sign-in failed.');
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,20 +131,12 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
 
       <button
         type="button"
-        onClick={() => handleSsoPending('Google')}
-        className="flex items-center gap-2.5 w-full min-h-[48px] px-4 py-3 rounded-[10px] border border-[#E5E5E5] bg-white text-[14px] text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
+        onClick={handleGoogleSignIn}
+        disabled={loading}
+        className="flex items-center gap-2.5 w-full min-h-[48px] px-4 py-3 rounded-[10px] border border-[#E5E5E5] bg-white text-[14px] text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       >
         <GoogleIcon size={16} />
         {locale === 'tr' ? 'Google ile devam et' : 'Continue with Google'}
-      </button>
-
-      <button
-        type="button"
-        onClick={() => handleSsoPending('Apple')}
-        className="flex items-center gap-2.5 w-full min-h-[48px] px-4 py-3 rounded-[10px] border border-[#E5E5E5] bg-white text-[14px] text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
-      >
-        <AppleIcon size={16} />
-        {locale === 'tr' ? 'Apple ile devam et' : 'Continue with Apple'}
       </button>
 
       <div className="flex items-center gap-2.5 my-1 text-[#A3A3A3]">
