@@ -19,12 +19,8 @@ export async function generateMetadata({
       absolute: locale === 'tr' ? 'Blog & Rehberler | Buaze' : 'Blog & Guides | Buaze',
     },
     description: locale === 'tr'
-      ? 'Dijital itibar yönetimi ve müşteri deneyimi üzerine güncel içerikler.'
-      : 'Latest articles on digital reputation management and customer experience.',
-    openGraph: {
-      title: locale === 'tr' ? 'Blog & Rehberler | Buaze' : 'Blog & Guides | Buaze',
-      description: locale === 'tr' ? 'İtibar yönetimi rehberleri.' : 'Reputation management guides.',
-    },
+      ? 'Yorum yönetimi, Google politikaları, büyüme taktikleri — haftalık uzman rehberleri.'
+      : 'Review management, Google policies, growth tactics — weekly expert guides.',
     alternates: {
       canonical: `https://buaze.com/${locale}/blog`,
       languages: {
@@ -35,6 +31,12 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * 1:1 with .design/site/site-more.jsx:BlogPage (lines 236-303) —
+ * eyebrow + "İtibar kütüphanesi." + filter chips, then featured post
+ * (1.5fr/1fr split with lime pad + chart line overlay), then 3-col grid
+ * with color-rotating pads and oversized numeric backdrop per card.
+ */
 export default async function BlogIndexPage({
   params,
 }: {
@@ -52,49 +54,44 @@ export default async function BlogIndexPage({
 
   const featured = posts[0];
   const rest = posts.slice(1);
+  // Category color rotation for rest grid: first neutral, then greyscale
+  const padColor = (i: number) => (i === 0 ? '#EAF9B8' : '#F5F5F5');
+
+  const filterChips = isTr
+    ? ['Tümü', 'Strateji', 'Vaka', 'Rehber', 'Ürün', 'Sektör']
+    : ['All', 'Strategy', 'Case', 'Guide', 'Product', 'Industry'];
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
+    <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
 
-      {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-20 pb-12 border-b border-[#EDEDED]">
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
-          width="100%"
-          height="100%"
-        >
-          <defs>
-            <pattern id="blogGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#blogGrid)" />
-        </svg>
-        <div className="relative max-w-[1000px] mx-auto">
+      {/* Header */}
+      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-10">
+        <div className="max-w-[1200px] mx-auto">
           <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'Blog & rehberler' : 'Blog & guides'}
+            {isTr ? 'BLOG' : 'BLOG'}
           </span>
-          <h1 className="mt-4 text-[40px] sm:text-[56px] lg:text-[64px] font-medium tracking-[-0.035em] text-[#0A0A0A] leading-[1]">
-            {t.blog_title}
-            <span className="text-[#C6F24E]">.</span>
+          <h1
+            className="mt-3 text-[44px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {isTr ? 'İtibar kütüphanesi.' : 'The reputation library.'}
           </h1>
-          <p className="mt-5 text-[17px] sm:text-[18px] text-[#525252] font-normal max-w-[620px] leading-relaxed">
-            {t.blog_desc}
+          <p className="mt-4 max-w-[560px] text-[16px] text-[#525252] leading-[1.55]">
+            {isTr
+              ? 'Yorum yönetimi, Google politikaları, büyüme taktikleri — haftalık uzman rehberleri.'
+              : 'Review management, Google policies, growth tactics — weekly expert guides.'}
           </p>
-          {/* Filter chips (visual) */}
-          <div className="mt-8 flex gap-2 flex-wrap">
-            {(isTr
-              ? ['Tümü', 'Strateji', 'Vaka', 'Rehber', 'Ürün', 'Sektör']
-              : ['All', 'Strategy', 'Case', 'Guide', 'Product', 'Industry']
-            ).map((c, i) => (
+
+          {/* Filter chips (visual-only) */}
+          <div className="mt-7 flex flex-wrap gap-2">
+            {filterChips.map((c, i) => (
               <span
                 key={c}
-                className={`px-4 py-2 rounded-full text-[13px] font-medium border transition-colors ${
+                className={`inline-flex items-center rounded-full border px-4 py-2 text-[13px] font-medium ${
                   i === 0
                     ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                    : 'bg-white text-[#0A0A0A] border-[#EDEDED] hover:border-[#C6F24E]'
+                    : 'bg-white text-[#0A0A0A] border-[#EDEDED]'
                 }`}
               >
                 {c}
@@ -104,94 +101,117 @@ export default async function BlogIndexPage({
         </div>
       </section>
 
-      {/* ─── Blog Grid ─── */}
-      <section className="px-6 sm:px-10 py-16 sm:py-20">
-        {posts.length === 0 ? (
-          <div className="text-center py-20 text-[#737373] text-[15px]">
+      {posts.length === 0 ? (
+        <section className="px-6 sm:px-10 pb-20">
+          <div className="max-w-[1200px] mx-auto py-16 text-center text-[15px] text-[#737373]">
             {isTr ? 'Henüz blog yazısı yok.' : 'No blog posts yet.'}
           </div>
-        ) : (
-          <div className="max-w-[1200px] mx-auto space-y-16">
-            {featured && (
-              <Link
-                href={`${base}/blog/${featured.slug}`}
-                className="group block bg-white rounded-3xl border border-[#EDEDED] overflow-hidden md:grid md:grid-cols-[1.1fr_1fr] hover:border-[#C6F24E] transition-colors"
-              >
-                <div className="relative aspect-[16/9] md:aspect-auto md:min-h-[340px] overflow-hidden border-b md:border-b-0 md:border-r border-[#EDEDED]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={featured.coverImage}
-                    alt={featured.title}
-                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                  />
-                </div>
-                <div className="p-8 lg:p-12 flex flex-col justify-center">
-                  <span className="pulse-eyebrow text-[#A8D62E]">
-                    {isTr ? 'ÖNE ÇIKAN' : 'FEATURED'}
-                  </span>
-                  <h2 className="mt-4 text-[28px] lg:text-[36px] font-medium text-[#0A0A0A] tracking-[-0.025em] leading-[1.1]">
-                    {featured.title}
-                  </h2>
-                  <p className="mt-4 text-[15px] text-[#525252] leading-[1.65] line-clamp-3">
-                    {featured.description}
-                  </p>
-                  <div className="mt-6 flex items-center gap-4 text-[12px] text-[#737373]">
-                    <span>{featured.date}</span>
-                    <span>·</span>
-                    <span>{featured.readTime}</span>
-                  </div>
-                  <div className="mt-6 inline-flex items-center gap-1.5 text-[14px] font-medium text-[#0A0A0A] group-hover:text-[#A8D62E] transition-colors">
-                    {t.blog_readMore}
-                    <span aria-hidden className="group-hover:translate-x-0.5 transition-transform">
-                      →
+        </section>
+      ) : (
+        <>
+          {/* Featured post — 1.5fr / 1fr split */}
+          {featured && (
+            <section className="px-6 sm:px-10 pt-5">
+              <div className="max-w-[1200px] mx-auto">
+                <Link
+                  href={`${base}/blog/${featured.slug}`}
+                  className="group grid grid-cols-1 overflow-hidden rounded-[18px] border border-[#EDEDED] bg-[#FAFAFA] md:grid-cols-[1.5fr_1fr]"
+                >
+                  {/* Left pad with chart illustration */}
+                  <div className="relative aspect-[16/10] bg-[#C6F24E] p-10 md:aspect-auto md:min-h-[320px]">
+                    <span
+                      className="absolute left-6 top-6 text-[10px] font-semibold tracking-[0.14em] text-[#0A0A0A]"
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                    >
+                      {isTr ? 'ÖNE ÇIKAN' : 'FEATURED'}
                     </span>
-                  </div>
-                </div>
-              </Link>
-            )}
-
-            {rest.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {rest.map((post) => (
-                  <Link
-                    key={post.id}
-                    href={`${base}/blog/${post.slug}`}
-                    className="group bg-white rounded-3xl border border-[#EDEDED] hover:border-[#C6F24E] transition-colors flex flex-col overflow-hidden"
-                  >
-                    <div className="relative aspect-[16/10] overflow-hidden border-b border-[#EDEDED]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={post.coverImage}
-                        alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                    <svg
+                      viewBox="0 0 200 120"
+                      className="absolute bottom-8 right-8 w-[70%] max-w-[280px]"
+                      aria-hidden
+                    >
+                      <path
+                        d="M0 90 L30 80 L60 85 L90 50 L120 60 L150 20 L200 30"
+                        fill="none"
+                        stroke="#0A0A0A"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       />
+                      <circle cx="90" cy="50" r="5" fill="#0A0A0A" />
+                      <circle cx="150" cy="20" r="6" fill="#0A0A0A" />
+                    </svg>
+                  </div>
+
+                  {/* Right text */}
+                  <div className="flex flex-col justify-center p-7 sm:p-8 lg:p-10">
+                    <span
+                      className="text-[10px] font-semibold tracking-[0.14em] text-[#737373]"
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                    >
+                      {isTr ? 'STRATEJİ' : 'STRATEGY'}
+                    </span>
+                    <h2
+                      className="mt-2.5 text-[24px] sm:text-[28px] lg:text-[32px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] group-hover:text-[#0A0A0A]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      {featured.title}
+                    </h2>
+                    <div className="mt-3.5 text-[12px] text-[#737373]">
+                      {featured.author} · {featured.date} · {featured.readTime}
                     </div>
-                    <div className="p-7 flex flex-col flex-1">
-                      <div className="pulse-eyebrow text-[#737373] flex items-center gap-3">
-                        <span>{post.date}</span>
-                        <span>·</span>
-                        <span>{post.readTime}</span>
-                      </div>
-                      <h2 className="mt-4 text-[20px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-[1.2]">
-                        {post.title}
-                      </h2>
-                      <p className="mt-3 text-[14px] text-[#525252] leading-[1.6] line-clamp-3 flex-1">
-                        {post.description}
-                      </p>
-                      <div className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] group-hover:text-[#A8D62E] transition-colors">
-                        {t.blog_readMore}
-                        <span aria-hidden className="group-hover:translate-x-0.5 transition-transform">
-                          →
-                        </span>
+                  </div>
+                </Link>
+              </div>
+            </section>
+          )}
+
+          {/* Rest grid — 3-col */}
+          {rest.length > 0 && (
+            <section className="px-6 sm:px-10 pt-8 pb-20 sm:pb-24">
+              <div className="max-w-[1200px] mx-auto grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {rest.map((p, i) => (
+                  <Link
+                    key={p.id}
+                    href={`${base}/blog/${p.slug}`}
+                    className="group flex flex-col"
+                  >
+                    {/* Colored pad with oversized numeric backdrop */}
+                    <div
+                      className="relative aspect-[4/3] overflow-hidden rounded-xl p-6 transition-transform duration-300 group-hover:-translate-y-1"
+                      style={{ background: padColor(i) }}
+                    >
+                      <span
+                        className="absolute bottom-3 left-5 text-[72px] font-medium leading-none tracking-[-0.04em] text-[#0A0A0A] opacity-[0.12]"
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                      >
+                        0{i + 2}
+                      </span>
+                    </div>
+                    <div className="mt-3.5">
+                      <span
+                        className="text-[10px] font-semibold tracking-[0.14em] text-[#737373]"
+                        style={{ fontFamily: 'var(--font-mono)' }}
+                      >
+                        {p.readTime}
+                      </span>
+                      <h3
+                        className="mt-1.5 text-[18px] sm:text-[20px] font-medium leading-[1.25] tracking-[-0.02em] text-[#0A0A0A]"
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                      >
+                        {p.title}
+                      </h3>
+                      <div className="mt-2.5 text-[12px] text-[#737373]">
+                        {p.author} · {p.date} · {p.readTime}
                       </div>
                     </div>
                   </Link>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-      </section>
+            </section>
+          )}
+        </>
+      )}
 
       <MarketingFooter locale={locale} t={t} />
     </div>
