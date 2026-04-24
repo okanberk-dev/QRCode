@@ -95,21 +95,61 @@ model Feedback {
   hasKvkkConsent      Boolean     @default(true) @map("has_kvkk_consent")
   hasMarketingConsent Boolean     @default(false) @map("has_marketing_consent")
   platform            String?     @map("platform")   // google | yemeksepeti | getir | trendyol_go
-  
+
   // Rich Feedback Additions
   serviceType         String?     @map("service_type")
   foodRating          Int?        @map("food_rating")
   serviceRating       Int?        @map("service_rating")
   atmosphereRating    Int?        @map("atmosphere_rating")
-  
+
   createdAt           DateTime    @default(now()) @map("created_at")
 
   restaurantId        String?     @map("restaurant_id")
   restaurant          Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
+  replies             FeedbackReply[]
+  flag                FeedbackFlag?
+  assignment          FeedbackAssignment?
+
   @@index([restaurantId, createdAt])
   @@index([ipAddress, createdAt])
   @@map("feedback")
+}
+
+model FeedbackReply {
+  id           String   @id @default(cuid())
+  feedbackId   String   @map("feedback_id")
+  feedback     Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  authorUserId String   @map("author_user_id")
+  body         String   @db.Text
+  channel      String   @default("internal") // internal | google | email
+  status       String   @default("sent")     // draft | sent | failed
+  createdAt    DateTime @default(now())      @map("created_at")
+
+  @@index([feedbackId, createdAt])
+  @@map("feedback_replies")
+}
+
+model FeedbackFlag {
+  id         String   @id @default(cuid())
+  feedbackId String   @unique @map("feedback_id")
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  reason     String?
+  flaggedBy  String   @map("flagged_by_user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("feedback_flags")
+}
+
+model FeedbackAssignment {
+  id           String   @id @default(cuid())
+  feedbackId   String   @unique @map("feedback_id")
+  feedback     Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  assigneeId   String   @map("assignee_user_id")
+  assignedById String   @map("assigned_by_user_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("feedback_assignments")
 }
 
 model AdminUser {

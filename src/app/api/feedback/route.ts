@@ -237,15 +237,28 @@ export async function GET(req: NextRequest) {
       include: {
         restaurant: {
           select: { name: true, slug: true }
-        }
+        },
+        flag: { select: { id: true } },
+        assignment: { select: { assigneeId: true } },
+        _count: { select: { replies: true } },
       }
     });
 
     const total = await prisma.feedback.count({ where });
 
-    return NextResponse.json({ 
-      data: feedbacks, 
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) } 
+    const data = feedbacks.map((f: any) => ({
+      ...f,
+      customerName: f.name,
+      customerEmail: f.email,
+      isReplied: (f._count?.replies ?? 0) > 0,
+      isFlagged: Boolean(f.flag),
+      isAssigned: Boolean(f.assignment),
+      assigneeId: f.assignment?.assigneeId ?? null,
+    }));
+
+    return NextResponse.json({
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
     });
   } catch (error) {
     console.error('Failed to fetch feedback:', error);
