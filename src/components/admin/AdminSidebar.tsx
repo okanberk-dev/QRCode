@@ -92,7 +92,7 @@ export default function AdminSidebar() {
     { href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik', roles: ['superadmin', 'manager', 'restaurant_owner'] },
     // Workspace-scoped features — shown only to restaurant_owner (and
     // managers where it makes sense). Superadmin manages the platform
-    // globally via Üyeler / Kullanıcılar / Müşteriler / Site Ayarları
+    // globally via İşletmeler / Yöneticiler / Müşteriler / Site Ayarları
     // below, so these workspace entries would only clutter that view.
     { href: '/admin/campaigns', icon: Sparkles, label: locale === 'en' ? 'Campaigns' : 'Kampanyalar', roles: ['restaurant_owner'] },
     { href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip', roles: ['restaurant_owner'] },
@@ -103,8 +103,8 @@ export default function AdminSidebar() {
 
   if (role === 'superadmin') {
     menuItems.push(
-      { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Owners' : 'İşletmeciler', roles: ['superadmin'] },
-      { href: '/admin/users', icon: Users, label: t('users'), roles: ['superadmin'] },
+      { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Businesses' : 'İşletmeler', roles: ['superadmin'] },
+      { href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler', roles: ['superadmin'] },
       { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler', roles: ['superadmin'] },
       { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog Yönetimi', roles: ['superadmin'] },
       { href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular', roles: ['superadmin'] },

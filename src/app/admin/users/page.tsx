@@ -150,7 +150,7 @@ export default function UsersPage() {
       const data = await res.json();
       
       if (!res.ok) {
-        setError(data.error || `Kullanıcı ${editingId ? 'güncellenemedi' : 'oluşturulamadı'}`);
+        setError(data.error || `Yönetici ${editingId ? 'güncellenemedi' : 'oluşturulamadı'}`);
       } else {
         setShowModal(false);
         setEditingId(null);
@@ -167,7 +167,7 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bu kullanıcıyı/yöneticiyi silmek istediğinize emin misiniz?')) return;
+    if (!confirm('Bu yöneticiyi silmek istediğinize emin misiniz?')) return;
     
     try {
       const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
@@ -194,15 +194,15 @@ export default function UsersPage() {
     <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
         <div className="space-y-1">
-          <p className="pulse-eyebrow text-[#737373]">PANEL / KULLANICILAR</p>
+          <p className="pulse-eyebrow text-[#737373]">PANEL / YÖNETİCİLER</p>
           <h1
             className="text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
-            Hesap Yönetimi
+            Yöneticiler
           </h1>
           <p className="text-[#525252] text-[13px] sm:text-[14px] max-w-[520px]">
-            Sistem yöneticilerini ve işletme yetkililerini tanımlayın.
+            Buaze sistem yöneticilerini ve restoran yöneticisi hesaplarını tanımlayın.
           </p>
         </div>
         <button
@@ -210,7 +210,7 @@ export default function UsersPage() {
           className="flex items-center justify-center gap-2 sm:gap-3 bg-[#C6F24E] text-[#0A0A0A] px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-xs sm:text-sm font-semibold hover:bg-[#C6F24E] active:scale-95 transition-all group"
         >
           <Plus size={20} strokeWidth={2} className="group-hover:rotate-90 transition-transform" />
-          YENİ HESAP AÇ
+          YENİ YÖNETİCİ
         </button>
       </div>
 
@@ -231,7 +231,7 @@ export default function UsersPage() {
           <table className="w-full text-left border-collapse sm:min-w-[600px]">
             <thead>
               <tr className="bg-[#1f2937] pulse-eyebrow text-[#9ca3af]">
-                <th className="px-3 py-4 sm:px-6">{t('users').toUpperCase()}</th>
+                <th className="px-3 py-4 sm:px-6">YÖNETİCİ</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-6">ROL / YETKİ</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-6">RESTORAN / ŞUBE</th>
                 <th className="px-3 py-4 sm:px-6 text-right">EYLEMLER</th>
@@ -314,10 +314,10 @@ export default function UsersPage() {
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col pb-[env(safe-area-inset-bottom)] sm:pb-0">
             <div className="p-5 sm:p-8 md:p-10 border-b border-[#EDEDED] bg-[#FFFFFF] relative">
               <h2 className="text-xl sm:text-3xl font-semibold text-[#0A0A0A] tracking-tight uppercase pr-10">
-                {editingId ? 'Hesabı Düzenle' : 'Yeni Yetkili Ekle'}
+                {editingId ? 'Yöneticiyi Düzenle' : 'Yeni Yönetici Ekle'}
               </h2>
               <p className="text-[#1A1A1A] text-[13px] sm:text-sm font-bold mt-2">
-                {editingId ? 'Kullanıcı yetkilerini ve bilgilerini güncelleyin.' : 'Sisteme yeni bir yönetici veya işletme sahibi tanımlayın.'}
+                {editingId ? 'Yönetici yetkilerini ve bilgilerini güncelleyin.' : 'Sisteme yeni bir Buaze yöneticisi veya restoran yöneticisi tanımlayın.'}
               </p>
 
               <button
@@ -337,7 +337,7 @@ export default function UsersPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Kullanıcı Adı / Email</label>
+                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Kullanıcı Adı</label>
                   <input
                     type="text"
                     required
@@ -369,8 +369,8 @@ export default function UsersPage() {
                   onChange={(e) => setFormData({...formData, role: e.target.value, restaurantId: ''})}
                   className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-semibold appearance-none cursor-pointer shadow-sm"
                 >
-                  <option value="manager">İŞLETME YÖNETİCİSİ / SAHİBİ</option>
-                  <option value="superadmin">SUPER ADMIN (SİSTEM GENELİ)</option>
+                  <option value="manager">RESTORAN YÖNETİCİSİ</option>
+                  <option value="superadmin">BUAZE YÖNETİCİSİ (SİSTEM GENELİ)</option>
                 </select>
               </div>
 
