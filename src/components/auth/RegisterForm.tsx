@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
@@ -50,14 +50,55 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', businessName: '', password: '', website: '' });
 
+  const finalizeGoogleSignUp = async (idToken: string) => {
+    const recaptchaToken = await getRecaptchaToken('auth_google');
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken, recaptchaToken, locale }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || (locale === 'tr' ? 'Google ile kayıt başarısız oldu.' : 'Google sign-up failed.'));
+      setLoading(false);
+      return;
+    }
+    const target = data.onboardingCompleted && !data.isNewUser
+      ? `/${locale}/dashboard`
+      : `/${locale}/onboarding`;
+    router.push(target);
+    router.refresh();
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { consumeGoogleRedirectIdToken, isGoogleRedirectPending } =
+          await import('@/lib/firebase-client');
+        if (isGoogleRedirectPending()) setLoading(true);
+        const idToken = await consumeGoogleRedirectIdToken();
+        if (cancelled || !idToken) return;
+        await finalizeGoogleSignUp(idToken);
+      } catch (err) {
+        console.error('[google-redirect-result]', err);
+        const { getFirebaseErrorMessage } = await import('@/lib/firebase-client');
+        setError(getFirebaseErrorMessage(err, locale));
+        setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleGoogleSignUp = async () => {
     setError('');
     setNotice('');
     setLoading(true);
     try {
-      const { signInWithGoogleIdToken } = await import('@/lib/firebase-client');
-      const idToken = await signInWithGoogleIdToken();
-      if (!idToken) {
+      const { startGoogleSignInRedirect } = await import('@/lib/firebase-client');
+      const ok = await startGoogleSignInRedirect();
+      if (!ok) {
         setNotice(
           locale === 'tr'
             ? 'Google ile kayıt henüz aktif değil. Lütfen e-posta ile devam edin.'
@@ -66,35 +107,8 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         setLoading(false);
         return;
       }
-      const recaptchaToken = await getRecaptchaToken('auth_google');
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken, recaptchaToken, locale }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || (locale === 'tr' ? 'Google ile kayıt başarısız oldu.' : 'Google sign-up failed.'));
-        setLoading(false);
-        return;
-      }
-      // Zaten onboarding'i bitirmiş kullanıcı kayıt butonuna basmışsa direkt dashboard'a.
-      const target = data.onboardingCompleted && !data.isNewUser
-        ? `/${locale}/dashboard`
-        : `/${locale}/onboarding`;
-      router.push(target);
-      router.refresh();
+      // Browser navigates away; result handled by the mount effect on return.
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg === 'POPUP_CLOSED' || msg.includes('popup-closed-by-user')) {
-        setNotice(
-          locale === 'tr'
-            ? 'Google penceresi kapatıldı. Tekrar denemek için butona basın.'
-            : 'Google window was closed. Tap the button to try again.'
-        );
-        setLoading(false);
-        return;
-      }
       console.error('[google-signup]', err);
       const { getFirebaseErrorMessage } = await import('@/lib/firebase-client');
       setError(getFirebaseErrorMessage(err, locale));

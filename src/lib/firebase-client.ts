@@ -43,6 +43,11 @@ export function getFirebaseErrorMessage(
       ? `Firebase OAuth ayarı eksik. Console → Authentication → Sign-in method → Google sağlayıcısının etkin olduğunu, "Web SDK configuration" altındaki Project public-facing name + support email alanlarının dolu olduğunu doğrulayın. (host: ${host})`
       : `Firebase OAuth setup is incomplete. In Console → Authentication → Sign-in method → Google, ensure the provider is enabled and the Web SDK configuration (project name + support email) is filled in. (host: ${host})`;
   }
+  if (lowerMsg.includes('missing initial state')) {
+    return tr
+      ? `Tarayıcı oturum deposu engellendi (üçüncü taraf çerez/depolama kısıtı). Sayfayı yenileyin; sorun sürerse "Site Verileri"ni temizleyin veya gizli pencereyi kapatın.`
+      : `Browser session storage was blocked (third-party cookie/storage restriction). Refresh the page; if the issue persists, clear site data or exit private browsing.`;
+  }
 
   switch (code) {
     case 'auth/popup-blocked':
@@ -81,28 +86,22 @@ export function getFirebaseErrorMessage(
   }
 }
 
-/**
- * Opens a Google sign-in popup and returns the Firebase ID token.
- * Returns null when Firebase is not configured or the SDK isn't installed.
- * Throws an Error('POPUP_CLOSED') when the user dismisses the popup.
- */
-export async function signInWithGoogleIdToken(): Promise<string | null> {
-  if (!isFirebaseConfigured()) return null;
+type FirebaseAppModule = typeof import('firebase/app');
+type FirebaseAuthModule = typeof import('firebase/auth');
 
-  type FirebaseAppModule = typeof import('firebase/app');
-  type FirebaseAuthModule = typeof import('firebase/auth');
-
-  let appMod: FirebaseAppModule;
-  let authMod: FirebaseAuthModule;
+async function loadFirebase(): Promise<{ appMod: FirebaseAppModule; authMod: FirebaseAuthModule } | null> {
   try {
-    // Use string-literal dynamic imports so bundler treats them as chunks;
-    // if firebase isn't installed, caller gets a null response via catch.
-    appMod = (await import('firebase/app')) as FirebaseAppModule;
-    authMod = (await import('firebase/auth')) as FirebaseAuthModule;
+    const [appMod, authMod] = await Promise.all([
+      import('firebase/app') as Promise<FirebaseAppModule>,
+      import('firebase/auth') as Promise<FirebaseAuthModule>,
+    ]);
+    return { appMod, authMod };
   } catch {
     return null;
   }
+}
 
+function getAuthInstance(appMod: FirebaseAppModule, authMod: FirebaseAuthModule) {
   const cfg = publicConfig();
   const app = appMod.getApps().length
     ? appMod.getApp()
@@ -112,29 +111,76 @@ export async function signInWithGoogleIdToken(): Promise<string | null> {
         projectId: cfg.projectId!,
         appId: cfg.appId!,
       });
+  return { auth: authMod.getAuth(app), cfg };
+}
 
-  const auth = authMod.getAuth(app);
-  const provider = new authMod.GoogleAuthProvider();
+/**
+ * Kicks off the Google sign-in redirect flow. The browser navigates away
+ * to Firebase's OAuth handler; the result is consumed on return by
+ * `consumeGoogleRedirectIdToken()` from the form's mount effect.
+ * Returns false when Firebase is not configured (caller shows a notice).
+ */
+export async function startGoogleSignInRedirect(): Promise<boolean> {
+  if (!isFirebaseConfigured()) return false;
+
+  const mods = await loadFirebase();
+  if (!mods) return false;
+
+  const { auth, cfg } = getAuthInstance(mods.appMod, mods.authMod);
+  const provider = new mods.authMod.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
 
-  // One-line diagnostic so a screenshot of the console reveals any
-  // mismatch between the runtime hostname and the configured authDomain.
   if (typeof window !== 'undefined') {
-    console.info('[firebase] signin attempt', {
+    console.info('[firebase] redirect start', {
       hostname: window.location.hostname,
       authDomain: cfg.authDomain,
       projectId: cfg.projectId,
     });
+    // Mark that we initiated a redirect so the consumer hook can show a
+    // brief loading state instead of flashing the empty form.
+    try {
+      window.sessionStorage.setItem('buaze.google.redirect', '1');
+    } catch {
+      // sessionStorage might be blocked in private mode; non-fatal.
+    }
   }
 
+  await mods.authMod.signInWithRedirect(auth, provider);
+  return true;
+}
+
+/**
+ * Call from a useEffect on the login/register page mount. Returns the
+ * Firebase ID token if a redirect just completed; null otherwise.
+ * Always clears the "redirect in progress" sentinel.
+ */
+export async function consumeGoogleRedirectIdToken(): Promise<string | null> {
+  if (!isFirebaseConfigured()) return null;
+  if (typeof window === 'undefined') return null;
+
+  const mods = await loadFirebase();
+  if (!mods) return null;
+
+  const { auth } = getAuthInstance(mods.appMod, mods.authMod);
   try {
-    const cred = await authMod.signInWithPopup(auth, provider);
-    return await cred.user.getIdToken();
-  } catch (err: unknown) {
-    const code = (err as { code?: string })?.code ?? '';
-    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-      throw new Error('POPUP_CLOSED');
+    const result = await mods.authMod.getRedirectResult(auth);
+    if (!result) return null;
+    return await result.user.getIdToken();
+  } finally {
+    try {
+      window.sessionStorage.removeItem('buaze.google.redirect');
+    } catch {
+      // ignore
     }
-    throw err;
+  }
+}
+
+/** True if `startGoogleSignInRedirect` was called and we haven't returned yet. */
+export function isGoogleRedirectPending(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.sessionStorage.getItem('buaze.google.redirect') === '1';
+  } catch {
+    return false;
   }
 }
