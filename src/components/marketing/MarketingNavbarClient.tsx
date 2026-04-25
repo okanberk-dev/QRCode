@@ -485,6 +485,12 @@ export default function MarketingNavbarClient({
             >
               Blog
             </Link>
+            <Link
+              href={`${base}/contact`}
+              className="rounded-full px-3 py-1.5 text-[13px] font-medium text-[#1A1A1A] transition-colors hover:text-[#0A0A0A]"
+            >
+              {isTr ? 'İletişim' : 'Contact'}
+            </Link>
           </div>
 
           {/* Right cluster */}
@@ -635,6 +641,16 @@ export default function MarketingNavbarClient({
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? 'Fiyatlandırma' : 'Pricing'}
+                <span className="text-[#737373]">→</span>
+              </Link>
+
+              <Link
+                href={`${base}/contact`}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-between border-b border-[#EDEDED] px-1 py-4 text-[15px] font-semibold text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {isTr ? 'İletişim' : 'Contact'}
                 <span className="text-[#737373]">→</span>
               </Link>
 
