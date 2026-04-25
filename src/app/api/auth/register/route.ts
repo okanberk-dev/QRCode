@@ -20,7 +20,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password, name, website, recaptchaToken } = await req.json();
+    const { email, password, name, website, recaptchaToken, locale } = await req.json();
+    const captchaLocale = locale === 'en' ? 'en' : 'tr';
 
     // Honeypot check
     if (website) {
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Registration received' }, { status: 201 });
     }
 
-    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_register');
+    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_register', captchaLocale);
     if (!captcha.ok) {
       return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }

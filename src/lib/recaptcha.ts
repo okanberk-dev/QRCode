@@ -24,6 +24,34 @@ type RecaptchaFailure = {
   status: number;
 };
 
+type RecaptchaLocale = 'tr' | 'en';
+
+const MESSAGES = {
+  missing: {
+    tr: 'Güvenlik doğrulaması eksik.',
+    en: 'Security check is missing.',
+  },
+  invalid: {
+    tr: 'Güvenlik doğrulaması geçersiz.',
+    en: 'Security check is invalid.',
+  },
+  mismatch: {
+    tr: 'Güvenlik doğrulaması eşleşmedi.',
+    en: 'Security check did not match.',
+  },
+  lowScore: {
+    tr: 'İstek güvenli görünmüyor. Lütfen tekrar deneyin.',
+    en: 'This request looks suspicious. Please try again.',
+  },
+  failure: {
+    tr: 'Güvenlik doğrulaması sırasında hata oluştu.',
+    en: 'Security check failed unexpectedly.',
+  },
+} as const;
+
+const msg = (key: keyof typeof MESSAGES, locale: RecaptchaLocale) =>
+  MESSAGES[key][locale];
+
 let clientSingleton: RecaptchaEnterpriseServiceClient | null = null;
 
 function parseServiceAccountJson() {
@@ -61,11 +89,12 @@ export async function verifyRecaptchaToken(
   req: NextRequest,
   token: unknown,
   expectedAction: string,
+  locale: RecaptchaLocale = 'tr',
 ): Promise<RecaptchaSuccess | RecaptchaFailure> {
   if (!isRecaptchaServerConfigured()) return { ok: true, skipped: true };
 
   if (typeof token !== 'string' || token.length < 20 || token.length > 4096) {
-    return { ok: false, error: 'Güvenlik doğrulaması eksik.', status: 400 };
+    return { ok: false, error: msg('missing', locale), status: 400 };
   }
 
   try {
@@ -86,7 +115,7 @@ export async function verifyRecaptchaToken(
 
     if (!response.tokenProperties?.valid) {
       console.warn('[recaptcha] invalid token', response.tokenProperties?.invalidReason);
-      return { ok: false, error: 'Güvenlik doğrulaması geçersiz.', status: 403 };
+      return { ok: false, error: msg('invalid', locale), status: 403 };
     }
 
     if (response.tokenProperties.action !== expectedAction) {
@@ -94,7 +123,7 @@ export async function verifyRecaptchaToken(
         expectedAction,
         action: response.tokenProperties.action,
       });
-      return { ok: false, error: 'Güvenlik doğrulaması eşleşmedi.', status: 403 };
+      return { ok: false, error: msg('mismatch', locale), status: 403 };
     }
 
     const score = response.riskAnalysis?.score ?? 0;
@@ -102,7 +131,7 @@ export async function verifyRecaptchaToken(
 
     if (score < MIN_SCORE) {
       console.warn('[recaptcha] low score', { score, reasons });
-      return { ok: false, error: 'İstek güvenli görünmüyor. Lütfen tekrar deneyin.', status: 403 };
+      return { ok: false, error: msg('lowScore', locale), status: 403 };
     }
 
     return {
@@ -113,7 +142,7 @@ export async function verifyRecaptchaToken(
     };
   } catch (error) {
     console.error('[recaptcha] assessment error', error);
-    return { ok: false, error: 'Güvenlik doğrulaması sırasında hata oluştu.', status: 502 };
+    return { ok: false, error: msg('failure', locale), status: 502 };
   }
 }
 

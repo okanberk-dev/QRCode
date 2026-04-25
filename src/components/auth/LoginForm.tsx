@@ -59,7 +59,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken, recaptchaToken }),
+        body: JSON.stringify({ idToken, recaptchaToken, locale }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -77,6 +77,11 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
       if (msg === 'POPUP_CLOSED' || msg.includes('popup-closed-by-user')) {
+        setNotice(
+          locale === 'tr'
+            ? 'Google penceresi kapatıldı. Tekrar denemek için butona basın.'
+            : 'Google window was closed. Tap the button to try again.'
+        );
         setLoading(false);
         return;
       }
@@ -96,7 +101,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, recaptchaToken }),
+        body: JSON.stringify({ ...form, recaptchaToken, locale }),
       });
 
       const data = await res.json();
