@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { signJwt } from '@/lib/auth';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
-import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,6 +45,9 @@ export async function POST(req: NextRequest) {
     if (!user) {
       // Use constant-time comparison to prevent timing attacks
       await bcrypt.compare(password, '$2b$12$dummyhashfortimingatackprevention');
+      if (captcha.assessmentName) {
+        await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_INCORRECT');
+      }
       return NextResponse.json(
         { error: 'E-posta veya şifre hatalı.' },
         { status: 401 }
@@ -54,6 +57,9 @@ export async function POST(req: NextRequest) {
     // Verify password
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
+      if (captcha.assessmentName) {
+        await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_INCORRECT');
+      }
       return NextResponse.json(
         { error: 'E-posta veya şifre hatalı.' },
         { status: 401 }
@@ -85,6 +91,9 @@ export async function POST(req: NextRequest) {
     // Successful auth — clear brute-force counters.
     resetRateLimit(`user-login:ip:${ip}`);
     resetRateLimit(`user-login:email:${email.toLowerCase()}`);
+    if (captcha.assessmentName) {
+      await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_CORRECT');
+    }
 
     // Sign user JWT — restaurantId is intentionally omitted; owners can have
     // multiple restaurants and scoping is resolved per-request via getScopedRestaurantIds().

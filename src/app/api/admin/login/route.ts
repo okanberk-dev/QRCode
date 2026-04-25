@@ -3,7 +3,7 @@ import { signJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
-import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export async function POST(req: NextRequest) {
   try {
@@ -103,6 +103,9 @@ export async function POST(req: NextRequest) {
       // Clear the brute-force counters for this IP/username on success.
       resetRateLimit(`admin-login:ip:${ip}`);
       resetRateLimit(`admin-login:user:${username.toLowerCase()}`);
+      if (captcha.assessmentName) {
+        await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_CORRECT');
+      }
 
       let payloadRole: 'superadmin' | 'manager' = 'superadmin';
       let payloadRestaurantId = null;
@@ -150,6 +153,10 @@ export async function POST(req: NextRequest) {
       });
 
       return response;
+    }
+
+    if (captcha.assessmentName) {
+      await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_INCORRECT');
     }
 
     return NextResponse.json({ error: 'Kullanıcı adı veya şifre hatalı' }, { status: 401 });
