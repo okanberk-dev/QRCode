@@ -9,6 +9,7 @@ const PROJECT_ID =
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const MIN_SCORE = Number(process.env.RECAPTCHA_ENTERPRISE_MIN_SCORE || '0.5');
 const SERVICE_ACCOUNT_JSON = process.env.RECAPTCHA_ENTERPRISE_SERVICE_ACCOUNT_JSON?.trim();
+const API_KEY = process.env.RECAPTCHA_ENTERPRISE_API_KEY?.trim();
 // Monitor mode (default): never block users on reCAPTCHA failures, just log
 // the reason. Flip RECAPTCHA_ENFORCE=true once dashboards confirm scores
 // are healthy. Mirrors Stripe Radar / Cloudflare Turnstile rollout pattern.
@@ -89,7 +90,9 @@ const msg = (key: keyof typeof MESSAGES, locale: RecaptchaLocale) =>
 
 let clientSingleton: RecaptchaEnterpriseServiceClient | null = null;
 
-function parseServiceAccountJson() {
+type RecaptchaClientOptions = ConstructorParameters<typeof RecaptchaEnterpriseServiceClient>[0];
+
+function parseServiceAccountJson(): RecaptchaClientOptions | undefined {
   if (!SERVICE_ACCOUNT_JSON) return undefined;
   try {
     const parsed = JSON.parse(SERVICE_ACCOUNT_JSON) as {
@@ -103,16 +106,23 @@ function parseServiceAccountJson() {
         client_email: parsed.client_email,
         private_key: parsed.private_key,
       },
-    };
+    } as RecaptchaClientOptions;
   } catch (error) {
     console.error('[recaptcha] invalid service account json', error);
     return undefined;
   }
 }
 
+function getRecaptchaClientOptions(): RecaptchaClientOptions | undefined {
+  const serviceAccountOptions = parseServiceAccountJson();
+  if (serviceAccountOptions) return serviceAccountOptions;
+  if (API_KEY) return { apiKey: API_KEY } as RecaptchaClientOptions;
+  return undefined;
+}
+
 function getRecaptchaClient() {
   if (clientSingleton) return clientSingleton;
-  clientSingleton = new RecaptchaEnterpriseServiceClient(parseServiceAccountJson());
+  clientSingleton = new RecaptchaEnterpriseServiceClient(getRecaptchaClientOptions());
   return clientSingleton;
 }
 

@@ -77,12 +77,12 @@ export default async function HowItWorksPage({
       id: '03',
       title: isTr ? 'Panelden yönet' : 'Manage from the panel',
       desc: isTr
-        ? 'Tüm yorumları tek panelde topla. AI etiketleme, olumsuzları otomatik atar. Yanıt şablonları ile saniyeler içinde cevap ver.'
-        : 'Collect every review in one panel. AI tags route negatives automatically. Reply in seconds with response templates.',
+        ? 'Tüm yorumları tek panelde topla. Buaze Pulse AI olumsuzları otomatik etiketler. Yanıt şablonları ile saniyeler içinde cevap ver.'
+        : 'Collect every review in one panel. Buaze Pulse AI tags negatives automatically. Reply in seconds with response templates.',
       Ill: IllusShield,
       perks: isTr
-        ? ['Otomatik etiketleme', 'Ekip atama', 'AI yanıt şablonu', 'Mobil yönetim']
-        : ['Auto-tagging', 'Team assignment', 'AI reply templates', 'Mobile admin'],
+        ? ['Otomatik etiketleme', 'Ekip atama', 'Pulse AI yanıt şablonu', 'Mobil yönetim']
+        : ['Auto-tagging', 'Team assignment', 'Pulse AI reply templates', 'Mobile admin'],
     },
     {
       id: '04',

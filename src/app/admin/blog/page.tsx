@@ -171,7 +171,7 @@ export default function AdminBlogPage() {
         <div className="flex items-center gap-3 self-start md:self-center relative z-10">
           <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/10 text-center">
             <p className="text-2xl font-semibold text-white">{posts.length}</p>
-            <p className="text-[10px] pulse-eyebrow text-[#737373] mt-1">Toplam Yazı</p>
+            <p className="text-[10px] pulse-eyebrow text-white/60 mt-1">Toplam Yazı</p>
           </div>
         </div>
       </div>

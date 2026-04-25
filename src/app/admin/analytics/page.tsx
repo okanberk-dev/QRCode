@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Loader2, Star, TrendingUp } from 'lucide-react';
+import { BarChart3, HelpCircle, Loader2, Star, TrendingUp } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import ExportReportButton from '@/components/dashboard/ExportReportButton';
 
@@ -66,9 +66,9 @@ export default function AdminAnalyticsPage() {
 
   const distribution = stats?.distribution ?? {};
   const distSum = Object.values(distribution).reduce((a, b) => a + b, 0) || 1;
-  const promoters = (Number(distribution['5']) || 0) + (Number(distribution['4']) || 0);
+  const promoters = Number(distribution['5']) || 0;
   const detractors = (Number(distribution['1']) || 0) + (Number(distribution['2']) || 0);
-  const passives = Number(distribution['3']) || 0;
+  const passives = (Number(distribution['3']) || 0) + (Number(distribution['4']) || 0);
   const promoterPct = Math.round((promoters / distSum) * 100);
   const detractorPct = Math.round((detractors / distSum) * 100);
   const passivePct = Math.max(0, 100 - promoterPct - detractorPct);
@@ -109,16 +109,16 @@ export default function AdminAnalyticsPage() {
   const maxWordValue = wordCloud.length > 0 ? wordCloud[0].value : 1;
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
+    <div className="space-y-4 overflow-hidden">
+      <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
           <p className="pulse-eyebrow text-[#737373]">{isTr ? 'PANEL / ANALİZ' : 'PANEL / ANALYTICS'}</p>
-          <h1 className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+          <h1 className="mt-1 text-[22px] font-medium leading-tight tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
             {isTr ? 'Analitik & raporlama' : 'Analytics & reporting'}
           </h1>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-lg border border-[#EDEDED] bg-white p-0.5">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
+          <div className="grid grid-cols-3 rounded-lg border border-[#EDEDED] bg-white p-0.5 sm:inline-flex">
             {(['7d', '30d', '90d'] as const).map((r) => (
               <button
                 key={r}
@@ -146,7 +146,7 @@ export default function AdminAnalyticsPage() {
       ) : (
         <>
           {/* ─── KPI ROW ─── */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label={isTr ? 'TOPLAM YORUM' : 'TOTAL REVIEWS'}
               value={total.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
@@ -171,19 +171,19 @@ export default function AdminAnalyticsPage() {
           </div>
 
           {/* ─── DARK NPS SCOREBOARD ─── */}
-          <section className="rounded-2xl bg-[#0A0A0A] p-6 text-white shadow-lg sm:p-8">
-            <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-              <div>
+          <section className="overflow-hidden rounded-xl bg-[#0A0A0A] p-5 text-white shadow-lg sm:p-7">
+            <div className="grid min-w-0 gap-6 xl:grid-cols-[1.35fr_1fr]">
+              <div className="min-w-0">
                 <p className="pulse-eyebrow text-white/60">
                   {isTr ? `NPS SKORU · ${range.toUpperCase()}` : `NPS SCORE · ${range.toUpperCase()}`}
                 </p>
                 <p
-                  className="mt-3 text-[80px] font-medium leading-none tracking-tight text-[#C6F24E] sm:text-[120px]"
+                  className="mt-3 text-[72px] font-medium leading-none tracking-tight text-[#C6F24E] sm:text-[104px]"
                   style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {nps}
                 </p>
-                <p className="mt-3 text-[14px] text-white/75">
+                <p className="mt-3 max-w-[680px] text-[14px] leading-relaxed text-white/75">
                   {npsLabel}
                   {trends.length >= 2 && (() => {
                     const first = trends[0].count;
@@ -206,14 +206,14 @@ export default function AdminAnalyticsPage() {
 
                 <div className="mt-6 space-y-2.5">
                   <NpsBar
-                    label={isTr ? 'Destekçi (4-5★)' : 'Promoters (4-5★)'}
+                    label={isTr ? 'Destekçi (5★)' : 'Promoters (5★)'}
                     pct={promoterPct}
                     color="#C6F24E"
                     textColor="text-[#0A0A0A]"
                     badgeBg="bg-[#C6F24E]"
                   />
                   <NpsBar
-                    label={isTr ? 'Nötr (3★)' : 'Passives (3★)'}
+                    label={isTr ? 'Nötr (3-4★)' : 'Passives (3-4★)'}
                     pct={passivePct}
                     color="#F5F5F5"
                     textColor="text-[#0A0A0A]"
@@ -229,12 +229,12 @@ export default function AdminAnalyticsPage() {
                 </div>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <p className="pulse-eyebrow text-white/60">{isTr ? 'TREND · SON 7 GÜN' : 'TREND · LAST 7 DAYS'}</p>
                 {trends.length === 0 ? (
                   <p className="mt-8 text-[13px] text-white/60">{isTr ? 'Trend verisi yok' : 'No trend data'}</p>
                 ) : (
-                  <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                  <div className="mt-4 overflow-hidden rounded-lg border border-white/10 bg-white/5 p-4">
                     <svg viewBox="0 0 280 100" className="h-24 w-full" preserveAspectRatio="none">
                       <path d={trendPath.fill} fill="rgba(198, 242, 78, 0.18)" />
                       <path d={trendPath.stroke} stroke="#C6F24E" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
@@ -242,9 +242,9 @@ export default function AdminAnalyticsPage() {
                         <circle key={i} cx={pt.x} cy={pt.y} r="2.5" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
                       ))}
                     </svg>
-                    <div className="mt-2 flex items-center justify-between text-[10px] text-white/50">
-                      <span>{trends[0]?.date}</span>
-                      <span>{trends[trends.length - 1]?.date}</span>
+                    <div className="mt-2 flex min-w-0 items-center justify-between gap-3 text-[10px] text-white/50">
+                      <span className="truncate">{trends[0]?.date}</span>
+                      <span className="truncate text-right">{trends[trends.length - 1]?.date}</span>
                     </div>
                   </div>
                 )}
@@ -252,14 +252,30 @@ export default function AdminAnalyticsPage() {
             </div>
           </section>
 
+          <section className="grid gap-3 rounded-xl border border-[#EDEDED] bg-white p-4 sm:grid-cols-[auto_1fr] sm:p-5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]">
+              <HelpCircle size={17} />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-[15px] font-semibold text-[#0A0A0A]">
+                {isTr ? 'NPS skoru nedir?' : 'What is NPS?'}
+              </h2>
+              <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">
+                {isTr
+                  ? 'NPS, müşterilerin işletmeyi tavsiye etme eğilimini ölçer. Bu panelde 5 yıldız destekçi, 3-4 yıldız nötr, 1-2 yıldız eleştiren kabul edilir; skor destekçi yüzdesinden eleştiren yüzdesi çıkarılarak hesaplanır.'
+                  : 'NPS measures how likely customers are to recommend the business. In this panel, 5 stars count as promoters, 3-4 stars as passive, and 1-2 stars as detractors; the score is promoter percentage minus detractor percentage.'}
+              </p>
+            </div>
+          </section>
+
           {/* ─── RATING + PLATFORM ─── */}
           <div className="grid gap-4 lg:grid-cols-2">
-            <section className="rounded-2xl border border-[#EDEDED] bg-white p-5">
+            <section className="min-w-0 rounded-xl border border-[#EDEDED] bg-white p-5">
               <h2 className="pulse-eyebrow text-[#737373]">{isTr ? 'PUAN DAĞILIMI' : 'RATING DISTRIBUTION'}</h2>
               <div className="mt-4 space-y-2">
                 {ratingRows.map((row) => (
-                  <div key={row.r} className="flex items-center gap-3">
-                    <span className="w-10 text-[13px] font-medium text-[#0A0A0A]">{row.r} ★</span>
+                  <div key={row.r} className="grid grid-cols-[40px_minmax(0,1fr)_72px] items-center gap-2 sm:gap-3">
+                    <span className="text-[13px] font-medium text-[#0A0A0A]">{row.r} ★</span>
                     <div className="relative h-7 flex-1 overflow-hidden rounded-lg bg-[#F5F5F5]">
                       <div
                         className="absolute inset-y-0 left-0 rounded-lg"
@@ -269,13 +285,13 @@ export default function AdminAnalyticsPage() {
                         }}
                       />
                     </div>
-                    <span className="w-16 text-right text-[12px] text-[#525252]">{row.count} · {row.pct}%</span>
+                    <span className="text-right text-[12px] text-[#525252] tabular-nums">{row.count} · {row.pct}%</span>
                   </div>
                 ))}
               </div>
             </section>
 
-            <section className="rounded-2xl border border-[#EDEDED] bg-white p-5">
+            <section className="min-w-0 rounded-xl border border-[#EDEDED] bg-white p-5">
               <h2 className="pulse-eyebrow text-[#737373]">{isTr ? 'PLATFORM DAĞILIMI' : 'PLATFORM SPLIT'}</h2>
               {platformRows.length === 0 ? (
                 <p className="mt-6 text-[13px] text-[#737373]">{isTr ? 'Veri yok' : 'No data'}</p>
@@ -284,15 +300,15 @@ export default function AdminAnalyticsPage() {
                   {platformRows.map((p) => {
                     const pct = total === 0 ? 0 : Math.round((p.count / total) * 100);
                     return (
-                      <div key={p.key} className="flex items-center gap-3">
-                        <span className="w-28 truncate text-[13px] font-medium text-[#0A0A0A]">{p.label}</span>
+                      <div key={p.key} className="grid grid-cols-[88px_minmax(0,1fr)_72px] items-center gap-2 sm:grid-cols-[112px_minmax(0,1fr)_72px] sm:gap-3">
+                        <span className="truncate text-[13px] font-medium text-[#0A0A0A]">{p.label}</span>
                         <div className="relative h-7 flex-1 overflow-hidden rounded-lg bg-[#F5F5F5]">
                           <div
                             className="absolute inset-y-0 left-0 rounded-lg"
                             style={{ width: `${pct}%`, backgroundColor: p.color }}
                           />
                         </div>
-                        <span className="w-16 text-right text-[12px] text-[#525252]">{p.count} · {pct}%</span>
+                        <span className="text-right text-[12px] text-[#525252] tabular-nums">{p.count} · {pct}%</span>
                       </div>
                     );
                   })}
@@ -302,7 +318,7 @@ export default function AdminAnalyticsPage() {
           </div>
 
           {/* ─── TAG CLOUD ─── */}
-          <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+          <section className="min-w-0 rounded-xl border border-[#EDEDED] bg-white p-5 sm:p-6">
             <h2 className="pulse-eyebrow text-[#737373]">
               {isTr ? 'YORUMLARDAN ÖNE ÇIKAN KELİMELER' : 'TOP KEYWORDS FROM REVIEWS'}
             </h2>
@@ -348,9 +364,9 @@ function NpsBar({
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between text-[12px]">
-        <span className="text-white/75">{label}</span>
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${badgeBg} ${textColor}`}>{pct}%</span>
+      <div className="flex min-w-0 items-center justify-between gap-3 text-[12px]">
+        <span className="min-w-0 truncate text-white/75">{label}</span>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${badgeBg} ${textColor}`}>{pct}%</span>
       </div>
       <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/10">
         <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
@@ -397,12 +413,12 @@ function StatCard({
       ? 'bg-red-50 text-red-700'
       : 'bg-[#F5F5F5] text-[#0A0A0A]';
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-4">
-      <div className="flex items-center justify-between">
-        <p className="pulse-eyebrow text-[#737373]">{label}</p>
-        {icon && <span className={`flex h-7 w-7 items-center justify-center rounded-full ${tone}`}>{icon}</span>}
+    <div className="min-w-0 rounded-xl border border-[#EDEDED] bg-white p-4">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <p className="pulse-eyebrow min-w-0 truncate text-[#737373]">{label}</p>
+        {icon && <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${tone}`}>{icon}</span>}
       </div>
-      <p className="mt-3 text-[28px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+      <p className="mt-3 truncate text-[28px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
         {value}
       </p>
     </div>

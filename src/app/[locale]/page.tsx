@@ -195,13 +195,13 @@ export default async function LandingPage({
   const darkFeatures = isTr
     ? [
         { t: 'Otomatik etiketleme', d: 'Anahtar kelime ve duyguya göre.' },
-        { t: 'Duygu analizi (AI)', d: 'AI ile pozitif / nötr / negatif.' },
+        { t: 'Buaze Pulse AI duygu analizi', d: 'Pozitif / nötr / negatif sinyalleri otomatik ayırır.' },
         { t: 'Takım atama', d: 'Yorum doğru kişiye düşer.' },
         { t: 'SLA takibi', d: 'Yanıt süresi hedefleri tutulsun.' },
       ]
     : [
         { t: 'Auto-tagging', d: 'By keyword and sentiment.' },
-        { t: 'Sentiment analysis (AI)', d: 'AI: positive / neutral / negative.' },
+        { t: 'Buaze Pulse AI sentiment', d: 'Automatically separates positive, neutral and negative signals.' },
         { t: 'Team assignment', d: 'Reviews land on the right person.' },
         { t: 'SLA tracking', d: 'Hit your response-time targets.' },
       ];
@@ -445,7 +445,7 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
-          5.5 BENTO GRID — QR Studio / AI Co-Pilot / Analytics / Platforms
+          5.5 BENTO GRID — QR Studio / Buaze Pulse AI / Analytics / Platforms
       ═══════════════════════════════════════════════════════════ */}
       <section className="px-6 sm:px-10 py-20 sm:py-24">
         <div className="max-w-[1200px] mx-auto">
@@ -504,9 +504,9 @@ export default async function LandingPage({
               </div>
             </div>
 
-            {/* AI Co-Pilot */}
+            {/* Buaze Pulse AI */}
             <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8]/40 p-6">
-              <span className="pulse-eyebrow text-[#0A0A0A]">AI CO-PILOT</span>
+              <span className="pulse-eyebrow text-[#0A0A0A]">BUAZE PULSE AI</span>
               <h3
                 className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
                 style={{ fontFamily: 'var(--font-space-grotesk)' }}
@@ -515,8 +515,8 @@ export default async function LandingPage({
               </h3>
               <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">
                 {isTr
-                  ? 'Her yorum için OpenAI destekli Türkçe yanıt taslağı.'
-                  : 'OpenAI-backed Turkish/English reply drafts per review.'}
+                  ? 'Her yorum için Buaze Pulse AI ile Türkçe yanıt taslağı.'
+                  : 'Turkish/English reply drafts with Buaze Pulse AI.'}
               </p>
               <div className="mt-4 rounded-xl bg-[#0A0A0A] px-3 py-2 text-[11px] text-white">
                 <span className="pulse-eyebrow text-[#C6F24E]">DRAFT</span>

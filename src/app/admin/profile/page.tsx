@@ -110,7 +110,7 @@ export default function AdminProfilePage() {
             </div>
             <div className="space-y-2">
               <h4 className="text-white font-semibold uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
-              <p className="text-[#6B7280] text-xs font-bold leading-relaxed">
+              <p className="text-white/70 text-xs font-bold leading-relaxed">
                 Şifrenizi düzenli aralıklarla değiştirmek hesabınızın güvenliğini artırır. Güçlü bir şifre en az 8 karakter, rakam ve sembol içermelidir.
               </p>
             </div>

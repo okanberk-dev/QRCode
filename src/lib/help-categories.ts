@@ -30,8 +30,8 @@ export const HELP_CATEGORIES: readonly HelpCategoryMeta[] = [
   {
     slug: 'review-management',
     symbol: '✦',
-    tr: { title: 'Yorum Yönetimi', desc: 'Yorumları yanıtlama, filtreleme ve AI Co-Pilot kullanımı.' },
-    en: { title: 'Review management', desc: 'Replying, filtering and using AI Co-Pilot.' },
+    tr: { title: 'Yorum Yönetimi', desc: 'Yorumları yanıtlama, filtreleme ve Buaze Pulse AI kullanımı.' },
+    en: { title: 'Review management', desc: 'Replying, filtering and using Buaze Pulse AI.' },
   },
   {
     slug: 'integrations',

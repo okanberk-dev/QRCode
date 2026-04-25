@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Store, Loader2, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, ArrowRight } from 'lucide-react';
-import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import { Plus, Store, Loader2, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, ArrowRight, Crown, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 
@@ -17,7 +16,16 @@ interface Restaurant {
   menuEnabled: boolean;
   menuPublished: boolean;
   createdAt: string;
-  _count: { feedbacks: number; menuItems: number };
+  user: { id: string; email: string; name: string | null; plan: string; isActive: boolean } | null;
+  _count: { feedbacks: number; menuItems: number; qrGenerations?: number; adminUsers?: number };
+}
+
+interface Owner {
+  id: string;
+  email: string;
+  name: string | null;
+  plan: string;
+  isActive: boolean;
 }
 
 function menuStatus(r: Pick<Restaurant, 'menuEnabled' | 'menuPublished'>) {
@@ -27,8 +35,8 @@ function menuStatus(r: Pick<Restaurant, 'menuEnabled' | 'menuPublished'>) {
 }
 
 export default function RestaurantsPage() {
-  const { t } = useAdminTranslation();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [owners, setOwners] = useState<Owner[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'active' | 'passive' | 'all'>('active');
   const [loading, setLoading] = useState(true);
@@ -44,6 +52,7 @@ export default function RestaurantsPage() {
     address: '',
     phone: '',
     primaryColor: '#C6F24E',
+    userId: '',
   });
   const [isManualSlug, setIsManualSlug] = useState(false);
   const [showGoogleInfo, setShowGoogleInfo] = useState(false);
@@ -70,9 +79,26 @@ export default function RestaurantsPage() {
     setLoading(false);
   };
 
+  const fetchOwners = async () => {
+    try {
+      const res = await fetch('/api/admin/members');
+      if (res.ok) {
+        const data = await res.json();
+        setOwners(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      // Restaurant owners are only available to superadmin. Other roles can
+      // create/manage their own scoped businesses without this selector.
+    }
+  };
+
   useEffect(() => {
     fetchRestaurants();
   }, [statusFilter]);
+
+  useEffect(() => {
+    fetchOwners();
+  }, []);
 
   // Auto-generate slug from name
   const handleNameChange = (name: string) => {
@@ -112,13 +138,13 @@ export default function RestaurantsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Restoran oluşturulamadı');
+        setError(data.error || 'İşletme oluşturulamadı');
         setCreating(false);
         return;
       }
 
       setShowCreateModal(false);
-      setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googlePlaceId: '', address: '', phone: '', primaryColor: '#C6F24E' });
+      setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googlePlaceId: '', address: '', phone: '', primaryColor: '#C6F24E', userId: '' });
       setIsManualSlug(false);
       fetchRestaurants();
     } catch (err) {
@@ -145,7 +171,10 @@ export default function RestaurantsPage() {
       restaurants.filter(
         (r) =>
           r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          r.category.toLowerCase().includes(searchTerm.toLowerCase()),
+          r.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          r.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (r.user?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (r.user?.name || '').toLowerCase().includes(searchTerm.toLowerCase()),
       ),
     [restaurants, searchTerm],
   );
@@ -172,7 +201,7 @@ export default function RestaurantsPage() {
               İşletmeler
             </h1>
             <p className="max-w-[540px] text-[13px] leading-relaxed text-[#525252] sm:text-[14px]">
-              Platformdaki tüm restoranları ve şubeleri tek panelden yönetin. Aktif/pasif durumu, menü yayını ve müşteri yorumlarını buradan takip edin.
+              Restoran, kafe, otel, klinik veya mağaza fark etmeden tüm işletmeleri tek panelden yönetin. Sahip ataması, aktiflik, menü yayını ve QR akışları burada görünür.
             </p>
           </div>
           <button
@@ -211,7 +240,7 @@ export default function RestaurantsPage() {
           <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3]" size={16} strokeWidth={2} />
           <input
             type="text"
-            placeholder={t('search_placeholder')}
+            placeholder="İşletme, URL, kategori veya sahip ara..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full rounded-full border border-[#EDEDED] bg-white py-2.5 pl-11 pr-4 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
@@ -238,7 +267,7 @@ export default function RestaurantsPage() {
             Henüz işletme yok
           </h3>
           <p className="mx-auto mt-2 max-w-[420px] text-[13px] leading-relaxed text-[#525252]">
-            İlk restoranınızı ekleyin — QR kodu, menüsü ve geri bildirim akışı dakikalar içinde hazır olur.
+            İlk işletmenizi ekleyin — QR kodu, menüsü ve geri bildirim akışı dakikalar içinde hazır olur.
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -251,7 +280,7 @@ export default function RestaurantsPage() {
       ) : filteredRestaurants.length === 0 ? (
         <div className="rounded-3xl border border-[#EDEDED] bg-white p-10 text-center shadow-sm">
           <p className="text-[14px] text-[#525252]">
-            "<span className="font-medium text-[#0A0A0A]">{searchTerm}</span>" için sonuç bulunamadı.
+            "<span className="font-medium text-[#0A0A0A]">{searchTerm}</span>" için işletme bulunamadı.
           </p>
         </div>
       ) : (
@@ -308,7 +337,7 @@ export default function RestaurantsPage() {
                   </div>
 
                   {/* Stats strip */}
-                  <div className="grid grid-cols-3 gap-3 rounded-2xl bg-[#FAFAFA] p-3 ring-1 ring-[#EDEDED]">
+                  <div className="grid grid-cols-2 gap-3 rounded-2xl bg-[#FAFAFA] p-3 ring-1 ring-[#EDEDED] sm:grid-cols-4">
                     <div className="min-w-0">
                       <p className="pulse-eyebrow text-[#737373]">Kategori</p>
                       <p className="mt-1 truncate text-[13px] font-medium text-[#0A0A0A]" title={r.category}>
@@ -322,6 +351,12 @@ export default function RestaurantsPage() {
                       </p>
                     </div>
                     <div className="min-w-0">
+                      <p className="pulse-eyebrow text-[#737373]">QR</p>
+                      <p className="mt-1 text-[15px] font-medium tabular-nums text-[#0A0A0A]" style={{ fontFamily: 'var(--font-mono)' }}>
+                        {r._count.qrGenerations ?? 0}
+                      </p>
+                    </div>
+                    <div className="min-w-0 border-l border-[#EDEDED] pl-3">
                       <p className="pulse-eyebrow text-[#737373]">Menü</p>
                       <div className="mt-1 flex items-center gap-1.5">
                         <span className={`inline-flex items-center gap-1 text-[12px] font-medium ${ms.text}`}>
@@ -333,13 +368,26 @@ export default function RestaurantsPage() {
                     </div>
                   </div>
 
+                  <div className="rounded-2xl border border-[#EDEDED] bg-white p-3">
+                    <p className="pulse-eyebrow text-[#737373]">İşletme Sahibi</p>
+                    <div className="mt-2 flex min-w-0 items-center gap-2">
+                      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${r.user ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'bg-[#F5F5F5] text-[#737373]'}`}>
+                        <Crown size={13} strokeWidth={2} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-medium text-[#0A0A0A]">{r.user?.name || r.user?.email || 'Sahip atanmamış'}</p>
+                        <p className="truncate text-[11px] text-[#737373]">{r.user?.email || 'Detay sayfasından işletme sahibi seçilebilir.'}</p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Actions */}
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/admin/restaurants/${r.id}`}
                       className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95"
                     >
-                      Yönet
+                      Düzenle
                       <ArrowRight size={13} strokeWidth={2.25} className="transition-transform group-hover:translate-x-0.5" />
                     </Link>
                     <Link
@@ -355,7 +403,7 @@ export default function RestaurantsPage() {
                       title="QR Kod"
                       aria-label="QR Kod"
                     >
-                      <ExternalLink size={14} strokeWidth={2} />
+                      <Link2 size={14} strokeWidth={2} />
                     </Link>
                   </div>
                 </div>
@@ -375,7 +423,7 @@ export default function RestaurantsPage() {
                 İşletme Ekle
               </h2>
               <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">
-                Sisteme yeni bir restoran veya şube tanımlayın.
+                Sisteme restoran, otel, kafe, klinik veya mağaza gibi yeni bir işletme tanımlayın.
               </p>
               <button
                 onClick={() => { setShowCreateModal(false); setError(''); }}
@@ -484,6 +532,23 @@ export default function RestaurantsPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {owners.length > 0 && (
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="pulse-eyebrow text-[#737373]">İşletme Sahibi</label>
+                    <select
+                      value={formData.userId}
+                      onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))}
+                      className="w-full cursor-pointer rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                    >
+                      <option value="">Sahipsiz oluştur</option>
+                      {owners.map((owner) => (
+                        <option key={owner.id} value={owner.id}>
+                          {(owner.name || owner.email)} · {owner.plan}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <label className="pulse-eyebrow text-[#737373]">Kategori</label>
                   <select
@@ -493,6 +558,10 @@ export default function RestaurantsPage() {
                   >
                     <option>Restoran</option>
                     <option>Kafe</option>
+                    <option>Otel</option>
+                    <option>Klinik</option>
+                    <option>Güzellik Merkezi</option>
+                    <option>Mağaza</option>
                     <option>Fast Food</option>
                     <option>Fine Dining</option>
                     <option>Meyhane</option>

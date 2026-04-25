@@ -188,18 +188,18 @@ export default function AdminAnnouncementsPage() {
           </div>
           <h1 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight leading-tight">Duyurular</h1>
           <p className="text-white/80 text-sm sm:text-base font-medium max-w-md">
-            Restoran panellerinin üstünde tüm müşterilerinize duyurular gösterin.
+            İşletme panellerinin üstünde tüm müşterilerinize duyurular gösterin.
           </p>
         </div>
 
         <div className="flex items-center gap-3 self-start md:self-center relative z-10">
           <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/10 text-center">
             <p className="text-2xl font-semibold text-white">{announcements.filter(a => a.status === 'published').length}</p>
-            <p className="text-[10px] pulse-eyebrow text-[#737373] mt-1">Yayında</p>
+            <p className="text-[10px] pulse-eyebrow text-white/60 mt-1">Yayında</p>
           </div>
           <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/10 text-center">
             <p className="text-2xl font-semibold text-white">{announcements.length}</p>
-            <p className="text-[10px] pulse-eyebrow text-[#737373] mt-1">Toplam</p>
+            <p className="text-[10px] pulse-eyebrow text-white/60 mt-1">Toplam</p>
           </div>
         </div>
       </div>
@@ -264,7 +264,7 @@ export default function AdminAnnouncementsPage() {
           </div>
           <p className="text-xl font-semibold text-[#0A0A0A]">Henüz duyuru bulunamadı</p>
           <p className="text-[#6B7280] text-sm max-w-sm mx-auto font-medium">
-            Restoran panellerinin üstünde görünecek ilk duyurunuzu oluşturun.
+            İşletme panellerinin üstünde görünecek ilk duyurunuzu oluşturun.
           </p>
         </div>
       ) : (
@@ -356,7 +356,7 @@ export default function AdminAnnouncementsPage() {
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-lg sm:text-xl font-semibold text-[#0A0A0A] truncate">{editing ? 'Duyuruyu Düzenle' : 'Yeni Duyuru'}</h2>
-                  <p className="text-[#6B7280] text-[10px] sm:text-xs font-semibold mt-0.5">Restoran panellerinde gösterilecek</p>
+                  <p className="text-[#6B7280] text-[10px] sm:text-xs font-semibold mt-0.5">İşletme panellerinde gösterilecek</p>
                 </div>
               </div>
               <button

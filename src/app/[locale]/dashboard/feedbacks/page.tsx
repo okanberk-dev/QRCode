@@ -174,7 +174,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     // internal-only automatically.
     setSendEmail(Boolean(active.customerEmail));
     // Optimistic local draft — instant, will be replaced by the server
-    // response below (OpenAI when OPENAI_API_KEY is set, template otherwise).
+    // response below (AI provider when OPENAI_API_KEY is set, template otherwise).
     setAiSuggestion(
       buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }),
     );
@@ -509,8 +509,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               </div>
             )}
 
-            {/* AI Co-Pilot suggestion — wired to /api/feedback/[id]/suggest-reply.
-                Uses OpenAI when OPENAI_API_KEY is set; falls back to the
+            {/* Buaze Pulse AI suggestion — wired to /api/feedback/[id]/suggest-reply.
+                Uses the configured AI provider when OPENAI_API_KEY is set; falls back to the
                 deterministic template otherwise. The badge reflects which
                 source produced the current draft. */}
             <div className="mt-6 rounded-xl bg-[#0A0A0A] p-5 text-white">
@@ -522,7 +522,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                   AI
                 </span>
                 <span className="pulse-eyebrow text-[#C6F24E]">
-                  {isTr ? 'BUAZE CO-PILOT ÖNERİSİ' : 'BUAZE CO-PILOT SUGGESTION'}
+                  {isTr ? 'BUAZE PULSE AI ÖNERİSİ' : 'BUAZE PULSE AI SUGGESTION'}
                 </span>
                 {aiSource === 'openai' && (
                   <span className="pulse-eyebrow rounded-full bg-[#C6F24E] px-2 py-0.5 text-[#0A0A0A]">

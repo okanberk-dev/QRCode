@@ -71,7 +71,7 @@ export default function GoogleConversionPanel({
         rate: 'Dönüşüm Oranı',
         missed: 'Kaçırılan Fırsatlar',
         missedSub: 'Google bağlantısı olmayan restoranlardaki yüksek puanlı geri bildirimler.',
-        leaderboardTitle: 'Restoranlara Göre',
+        leaderboardTitle: 'İşletmelere Göre',
         leaderboardSub: 'En yüksek hacim önde. Kaybolan yorumları kazanmak için Google bağlantısı ekleyin.',
         noData: 'Bu dönemde henüz geri bildirim yok.',
         noGoogleLink: 'Google bağlantısı yok',

@@ -304,7 +304,7 @@ export default function AdminCustomersPage() {
                   <tr className="pulse-eyebrow text-[#737373]">
                     <th className="px-5 py-3">Müşteri</th>
                     <th className="px-5 py-3">İletişim</th>
-                    <th className="px-5 py-3">Restoran</th>
+                    <th className="px-5 py-3">İşletme</th>
                     <th className="px-5 py-3 text-right">Son Puan</th>
                     <th className="px-5 py-3 text-right">Feedback</th>
                     <th className="px-5 py-3">Son Tarih</th>

@@ -83,7 +83,7 @@ function AdminSettingsBody() {
               title={isTr ? 'Marka kimliği' : 'Brand identity'}
               body={
                 isTr
-                  ? 'Logo, renk, yazı tipi ve QR şablonu burada yönetilecek. Restoran seviyesinde marka ayarı için İşletmeler → Detay → Menü tema paneline bakabilirsin.'
+                  ? 'Logo, renk, yazı tipi ve QR şablonu burada yönetilecek. İşletme seviyesinde marka ayarı için İşletmeler → Detay → Menü tema paneline bakabilirsin.'
                   : 'Logo, color, font and QR template settings land here. Restaurant-level brand config is in Restaurants → Detail → Menu theme panel.'
               }
             />

@@ -165,7 +165,7 @@ export default function AdminDashboard() {
     <div className="p-3 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-8 sm:space-y-10 pb-32">
 
       {/* ─── Welcome Banner ─── */}
-      <div className="bg-[#0A0A0A] rounded-2xl sm:rounded-2xl border border-white/10 p-4 sm:p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden shadow-2xl">
+      <div className="bg-[#0A0A0A] text-white rounded-2xl sm:rounded-2xl border border-white/10 p-4 sm:p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-3 sm:space-y-4 min-w-0">
           <div className="inline-flex items-center gap-2 bg-[#C6F24E]/10 text-[#C6F24E] px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:pulse-eyebrow">
             ✦ CANLI PANEL
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
           <h1 className="text-xl sm:text-4xl font-semibold text-white tracking-tight leading-tight break-words">
             {t('welcome')}, {displayName} 👋
           </h1>
-          <p className="text-white/80 text-sm sm:text-[17px] font-medium max-w-md">Gerçek zamanlı verilerle işletmenizin nabzını tutun.</p>
+          <p className="text-white/85 text-sm sm:text-[17px] font-medium max-w-md">Gerçek zamanlı verilerle işletmenizin nabzını tutun.</p>
         </div>
 
         {/* Satisfaction Rate Badge */}
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
             onChange={(e) => { setSelectedRestaurant(e.target.value); setPage(1); }}
             className="w-full md:w-auto md:flex-1 md:max-w-[240px] px-4 py-3 text-[11px] sm:text-xs rounded-xl border border-[#EDEDED] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:border-transparent bg-white font-semibold transition-all text-[#1A1A1A] cursor-pointer"
           >
-            <option value="all">TÜM RESTORANLAR</option>
+            <option value="all">TÜM İŞLETMELER</option>
             {restaurants.map((r) => (
               <option key={r.id} value={r.id}>{r.name.toUpperCase()}</option>
             ))}

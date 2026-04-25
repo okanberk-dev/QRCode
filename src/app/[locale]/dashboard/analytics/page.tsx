@@ -339,7 +339,7 @@ export default async function AnalyticsPage({
           <p className="pulse-eyebrow text-[#737373] mt-1">
             {themes.length >= 5
               ? isTr ? 'Yorum içeriklerinden otomatik' : 'Auto-extracted from comments'
-              : isTr ? 'Demo · yeterli yorum olunca AI ile güncellenecek' : 'Demo · AI updates with more reviews'}
+              : isTr ? 'Demo · yeterli yorum olunca Pulse AI ile güncellenecek' : 'Demo · Pulse AI updates with more reviews'}
           </p>
           <div className="mt-5 flex flex-wrap gap-2 items-center">
             {displayThemes.map((tag) => {

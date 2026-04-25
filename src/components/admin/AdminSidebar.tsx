@@ -103,7 +103,7 @@ export default function AdminSidebar() {
 
   if (role === 'superadmin') {
     menuItems.push(
-      { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Businesses' : 'İşletmeler', roles: ['superadmin'] },
+      { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri', roles: ['superadmin'] },
       { href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler', roles: ['superadmin'] },
       { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler', roles: ['superadmin'] },
       { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog Yönetimi', roles: ['superadmin'] },
@@ -127,10 +127,10 @@ export default function AdminSidebar() {
       : role === 'restaurant_owner'
         ? locale === 'en'
           ? 'Owner'
-          : 'Restoran Sahibi'
+          : 'İşletme Sahibi'
         : locale === 'en'
           ? 'Manager'
-          : 'Restoran Yetkilisi';
+          : 'İşletme Yetkilisi';
   const displayName = profile?.name || profile?.username || profile?.email?.split('@')[0] || 'Kullanıcı';
   const initial = displayName.charAt(0).toUpperCase();
   const trialInfo = profile?.plan === 'trial' ? getTrialInfo(profile?.trialEndsAt) : null;

@@ -469,7 +469,7 @@ export default function AdminReviewsPage() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Sparkles size={14} className="text-[#0A0A0A]" />
-                    <p className="pulse-eyebrow text-[#0A0A0A]">{isTr ? 'AI YARDIMCI' : 'AI CO-PILOT'}</p>
+                    <p className="pulse-eyebrow text-[#0A0A0A]">BUAZE PULSE AI</p>
                     {aiSource === 'openai' && (
                       <span className="pulse-eyebrow rounded-full bg-[#0A0A0A] px-2 py-0.5 text-white">AI</span>
                     )}
@@ -490,8 +490,8 @@ export default function AdminReviewsPage() {
                 </div>
                 <p className="mt-2 text-[12px] text-[#525252]">
                   {isTr
-                    ? 'OpenAI ile puan, yorum ve müşteriye göre kişiselleştirilmiş Türkçe yanıt üretir. Anahtar yoksa şablona düşer.'
-                    : 'Generates a personalized reply via OpenAI based on the rating, comment and customer. Falls back to template without the key.'}
+                    ? 'Puan, yorum ve müşteri bağlamına göre Buaze tonunda kişiselleştirilmiş Türkçe yanıt üretir. Pulse AI yanıt vermezse güvenli şablona düşer.'
+                    : 'Generates a personalized reply in your Buaze voice based on rating, comment and customer context. Falls back to a safe template when Pulse AI is unavailable.'}
                 </p>
               </div>
 
