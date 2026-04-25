@@ -54,6 +54,10 @@ export function getFirebaseErrorMessage(
       return tr
         ? 'Tarayıcınız Google penceresini engelledi. Pop-up\'lara izin verip tekrar deneyin.'
         : 'Your browser blocked the Google popup. Allow pop-ups and try again.';
+    case 'auth/popup-closed-by-user':
+      return tr
+        ? 'Google penceresi kapatıldı. Devam etmek için tekrar deneyin.'
+        : 'Google sign-in window was closed. Try again to continue.';
     case 'auth/unauthorized-domain':
       return tr
         ? `Bu alan adı (${host}) Firebase'de yetkili değil. Console → Authentication → Settings → Authorized domains listesine "${host}" değerini protokolsüz / yol-suz / tam olarak ekleyin.`
@@ -114,39 +118,71 @@ function getAuthInstance(appMod: FirebaseAppModule, authMod: FirebaseAuthModule)
   return { auth: authMod.getAuth(app), cfg };
 }
 
+type GoogleSignInResult =
+  | { status: 'unconfigured' }
+  | { status: 'idToken'; idToken: string }
+  | { status: 'redirecting' };
+
 /**
- * Kicks off the Google sign-in redirect flow. The browser navigates away
- * to Firebase's OAuth handler; the result is consumed on return by
- * `consumeGoogleRedirectIdToken()` from the form's mount effect.
- * Returns false when Firebase is not configured (caller shows a notice).
+ * Triggers Google sign-in. Prefers a popup window because:
+ *  - It avoids the bounce through `<project>.firebaseapp.com`, which Chrome's
+ *    bounce-tracking mitigation may strip storage from (causing
+ *    getRedirectResult to lose state on return).
+ *  - It avoids Firebase's auth iframe CSP issues (the iframe uses eval which
+ *    Chrome flags under strict CSP).
+ *
+ * Falls back to redirect when the popup is blocked or otherwise refused, so
+ * users on aggressive popup blockers still get a working flow. The redirect
+ * result is consumed by `consumeGoogleRedirectIdToken()` on page mount.
+ *
+ * Returns:
+ *  - { status: 'unconfigured' } — Firebase env vars / package missing.
+ *  - { status: 'idToken', idToken } — popup succeeded; pass token to backend.
+ *  - { status: 'redirecting' } — browser navigating away; mount effect will
+ *    consume the result on return.
  */
-export async function startGoogleSignInRedirect(): Promise<boolean> {
-  if (!isFirebaseConfigured()) return false;
+export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
+  if (!isFirebaseConfigured()) return { status: 'unconfigured' };
 
   const mods = await loadFirebase();
-  if (!mods) return false;
+  if (!mods) return { status: 'unconfigured' };
 
   const { auth, cfg } = getAuthInstance(mods.appMod, mods.authMod);
   const provider = new mods.authMod.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
 
   if (typeof window !== 'undefined') {
-    console.info('[firebase] redirect start', {
+    console.info('[firebase] sign-in start', {
       hostname: window.location.hostname,
       authDomain: cfg.authDomain,
       projectId: cfg.projectId,
     });
-    // Mark that we initiated a redirect so the consumer hook can show a
-    // brief loading state instead of flashing the empty form.
-    try {
-      window.sessionStorage.setItem('buaze.google.redirect', '1');
-    } catch {
-      // sessionStorage might be blocked in private mode; non-fatal.
-    }
   }
 
-  await mods.authMod.signInWithRedirect(auth, provider);
-  return true;
+  try {
+    const result = await mods.authMod.signInWithPopup(auth, provider);
+    const idToken = await result.user.getIdToken();
+    return { status: 'idToken', idToken };
+  } catch (err) {
+    const code = (err as { code?: string })?.code ?? '';
+    const popupFailed =
+      code === 'auth/popup-blocked' ||
+      code === 'auth/operation-not-supported-in-this-environment' ||
+      code === 'auth/cancelled-popup-request' ||
+      code === 'auth/web-storage-unsupported';
+
+    if (!popupFailed) throw err;
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.sessionStorage.setItem('buaze.google.redirect', '1');
+      } catch {
+        // sessionStorage might be blocked in private mode; non-fatal.
+      }
+    }
+    await mods.authMod.signInWithRedirect(auth, provider);
+    return { status: 'redirecting' };
+  }
 }
 
 /**
@@ -175,7 +211,7 @@ export async function consumeGoogleRedirectIdToken(): Promise<string | null> {
   }
 }
 
-/** True if `startGoogleSignInRedirect` was called and we haven't returned yet. */
+/** True if a redirect-fallback was initiated and we haven't returned yet. */
 export function isGoogleRedirectPending(): boolean {
   if (typeof window === 'undefined') return false;
   try {
