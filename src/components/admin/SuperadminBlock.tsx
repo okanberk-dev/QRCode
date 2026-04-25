@@ -57,8 +57,8 @@ export default function SuperadminBlock({ children }: { children: React.ReactNod
           </h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[#525252]">
             {isTr
-              ? 'Bu sayfa işletme hesapları için çalışma-alanı özelliğidir. Superadmin için ilgili ayarlar Site Ayarları, İşletmeciler ve Kullanıcılar sayfalarında.'
-              : 'This page is a workspace feature for business accounts. Superadmin controls live under Site Settings, Owners and Users.'}
+              ? 'Bu sayfa işletme hesapları için çalışma-alanı özelliğidir. Superadmin için ilgili ayarlar Site Ayarları, İşletmeler ve Yöneticiler sayfalarında.'
+              : 'This page is a workspace feature for business accounts. Superadmin controls live under Site Settings, Businesses and Admins.'}
           </p>
           <div className="mt-5 flex items-center justify-center gap-2">
             <Link

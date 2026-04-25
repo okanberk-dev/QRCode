@@ -9,7 +9,8 @@ export async function POST(req: NextRequest) {
   try {
     maybeSweep();
     const ip = getClientIp(req.headers);
-    const { email, password, rememberMe, recaptchaToken } = await req.json();
+    const { email, password, rememberMe, recaptchaToken, locale } = await req.json();
+    const captchaLocale = locale === 'en' ? 'en' : 'tr';
 
     if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
       return NextResponse.json(
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
     }
 
-    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_login');
+    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_login', captchaLocale);
     if (!captcha.ok) {
       return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }

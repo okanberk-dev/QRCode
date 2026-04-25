@@ -89,23 +89,36 @@ where.restaurantId = { in: scopedIds };
 
 ---
 
-## 4.5 Admin "Müşteriler" vs "İşletmeciler" ayrımı (2026-04)
+## 4.5 Admin "İşletmeler / Yöneticiler / Müşteriler" terminolojisi (2026-04 yedinci dalga)
 
-İki benzer isimli sayfa var, **farklı veri kaynakları:**
+Süperadmin paneli üç ayrı user-ish sayfa barındırıyor; her biri farklı veri tablosundan beslendiği için **kanonik terminoloji** zorunlu (Stripe / Linear / Vercel disiplini). Eskiden "Üyeler / Üye / Kullanıcı / İşletmeci" karışık kullanılıyordu — §20'de tamamen normalize edildi.
 
-| Sayfa | Kaynak | Amaç |
-|---|---|---|
-| `/admin/members` ("İşletmeciler") | `User` tablosu (`role='restaurant_owner'`) | SaaS hesap yönetimi — plan, trial, aktiflik |
-| `/admin/customers` ("Müşteriler") | `Feedback` tablosu (groupBy email/phone) | Restoran son-müşterileri — QR ile feedback bırakanlar |
+| Sidebar | URL | Kaynak tablo | Anlam |
+|---|---|---|---|
+| **İşletmeler** (Businesses) | `/admin/members` | `User` (`role='restaurant_owner'`) | Buaze'ye kayıtlı SaaS müşterileri (paying/trial restaurant owners) |
+| **Yöneticiler** (Admins) | `/admin/users` | `AdminUser` (`role='manager'\|'superadmin'`) | Buaze iç ekibi + restoran yöneticisi hesapları (operatör erişim) |
+| **Müşteriler** (Customers) | `/admin/customers` | `Feedback` (groupBy email/phone, KVKK-onaylı) | İşletmelerin son-müşterileri — QR'dan form dolduranlar |
 
-**API'ler:**
-- `GET /api/admin/members` → User listesi (dokunulmadı, SaaS tarafı)
-- `GET /api/admin/customers` → Feedback-derived customer list (2026-04'te yeniden yazıldı). Query: `restaurantId`, `range`, `search`, `hasEmail`, `hasPhone`, `hasComment`, `page`, `limit`. Response: `{ data, meta, summary }`. **Sadece KVKK onaylı satırlar**, IDOR `getScopedRestaurantIds` ile.
+> **Owner panelindeki `/admin/team`** ayrı bir scope: bir işletme sahibinin kendi ekibini (`TeamMember` tablosu) yönetir. Sidebar label'ı **Ekip** olarak korunur, "Üye davet et" butonu owner-side workspace member'lar için doğru terim.
+
+**Neden "Üyeler" terimi terk edildi?** Hem User (SaaS müşterisi) hem TeamMember (workspace üyesi) hem de AdminUser (sistem yetkilisi) için kullanılıyordu — anlamı bağlama göre değişiyordu. Stripe, Linear, Vercel benzeri SaaS'lar her entity için ayrı terim kullanır:
+- "Customers" / "Accounts" → ödeme yapan müşteriler (= **İşletmeler**)
+- "Admins" / "Team" → operatör/iç ekip (= **Yöneticiler**)
+- "End-users" / "Customers" → ürünün son tüketicileri (= **Müşteriler**)
+
+**API'ler değişmedi** (URL stability):
+- `GET/PUT /api/admin/members` → User CRUD (SaaS hesapları)
+- `GET/POST/PUT/DELETE /api/admin/users` → AdminUser CRUD (operatör hesaplar)
+- `GET /api/admin/customers` → Feedback-derived customer list. Query: `restaurantId`, `range`, `search`, `hasEmail`, `hasPhone`, `hasComment`, `page`, `limit`. Response: `{ data, meta, summary }`. **Sadece KVKK onaylı satırlar**, IDOR `getScopedRestaurantIds` ile.
 - `GET /api/admin/customers/export` → aynı filtrelerle tüm set CSV (UTF-8 BOM).
 
-**Dedupe mantığı:** `(restaurant_id, COALESCE(lower(email), phone))` → aynı müşteri aynı restorana birden fazla feedback bıraksa bile tek satır; email+phone ikisi de boş olan anonim feedback listede yer almaz.
+**Dedupe mantığı (Müşteriler):** `(restaurant_id, COALESCE(lower(email), phone))` → aynı müşteri aynı restorana birden fazla feedback bıraksa bile tek satır; email+phone ikisi de boş olan anonim feedback listede yer almaz.
 
-**Sidebar label'ları:** "Üyeler" → "İşletmeciler" olarak değiştirildi; "Müşteriler" label'ı aynı ama anlamı farklılaştı.
+**translations.ts** key'leri:
+- `users` (legacy "Kullanıcılar") — backward-compat, kaldırılmadı
+- `businesses` → "İşletmeler" / "Businesses" (2026-04 §20'de eklendi)
+- `admins` → "Yöneticiler" / "Admins" (2026-04 §20'de eklendi)
+- `customers` → "Müşteriler" / "Customers" (zaten vardı)
 
 ---
 
@@ -1033,4 +1046,46 @@ Deploy sonrası kontrol:
 ---
 
 _Son güncelleme: 2026-04 (altıncı dalga) — §19 Admin & Owner Panel Alignment eklendi (5 commit: analytics fix + reviews actions + admin forms + AI/email fix + resilience). §18'in üstüne 6 yeni Prisma modeli, 8 yeni endpoint canlı, feedback list join'siz fallback. §17.10 gap listesi §17.4 scaffoldları dahil kapatıldı (geriye sadece sanal POS kaldı)._
+
+---
+
+## 20. Admin Terminoloji Normalizasyonu (2026-04 yedinci dalga)
+
+Kullanıcı şikayeti: süperadmin paneli "Üyeler / İşletmeciler / Müşteriler / Kullanıcılar" gibi karışık terimler kullanıyordu. Bir sayfanın breadcrumb'ı "İŞLETMECİLER", h1'i "İşletmeci Yönetimi", boş durumu "Henüz kayıtlı üye yok", modal'ı "Üye Düzenle", sütunu "KULLANICI" diyordu. Aynı sayfada 4 farklı terim → kullanıcı için anlam çözümlenemez.
+
+**Karar:** Stripe / Linear / Vercel disiplini — her data entity'si için tek kanonik terim. URL'ler değişmez, sadece görünen etiketler.
+
+| Sayfa | Eski (karışık) | Yeni (kanonik) | Veri kaynağı |
+|---|---|---|---|
+| `/admin/members` | "İşletmeciler" + "Üye" + "Kullanıcı" | **İşletmeler** | `User` (`role='restaurant_owner'`) |
+| `/admin/users` | "Hesap Yönetimi" + "Kullanıcı" + "Yetkili" | **Yöneticiler** | `AdminUser` (`role='manager'\|'superadmin'`) |
+| `/admin/customers` | (zaten "Müşteriler") | **Müşteriler** | `Feedback` derived |
+| `/admin/team` | (zaten "Ekip" + "Üye") | **Ekip** | `TeamMember` (owner-scoped, dokunulmadı) |
+
+**Değişen dosyalar:**
+- `src/components/admin/AdminSidebar.tsx:106-108` — sidebar label'ları "İşletmeler / Yöneticiler / Müşteriler" oldu
+- `src/app/admin/members/page.tsx` — breadcrumb, h1, description, sütun başlıkları (`KULLANICI` → `İŞLETME SAHİBİ`, `İŞLETME` → `RESTORAN`), boş durum, modal başlığı, success message
+- `src/app/admin/users/page.tsx` — breadcrumb (`KULLANICILAR` → `YÖNETİCİLER`), h1 (`Hesap Yönetimi` → `Yöneticiler`), description, button (`YENİ HESAP AÇ` → `YENİ YÖNETİCİ`), tablo başlığı, modal, role select labels (`İŞLETME YÖNETİCİSİ` → `RESTORAN YÖNETİCİSİ`, `SUPER ADMIN` → `BUAZE YÖNETİCİSİ`), error/confirm mesajları
+- `src/components/admin/SuperadminBlock.tsx:60-61` — TR + EN mesajları yeni terminolojiye geçti
+- `src/lib/translations.ts` — `businesses` / `admins` key'leri eklendi (TR + EN); legacy `users` key korundu
+- `CLAUDE.md` §4.5 baştan yazıldı, §20 (bu) eklendi
+
+**Dokunulmayanlar (kasten):**
+- URL'ler, route handler'ları, API yolları → backward compat (link bozulmasın)
+- Prisma model isimleri (`User`, `AdminUser`) → DB seviyesinde kalıcı
+- Owner panelindeki `/admin/team` → ayrı scope, "Ekip / Üye davet et" doğru terim
+- Internal değişken isimleri (`Member`, `members`, `editingMember`) → kod kalitesi için, kullanıcıya görünmez
+- Dashboard greeting'deki "İşletmeci" (kişi olarak hitap) → "İşletme sahibi" anlamında, leksikal olarak doğru
+
+**Neden bu standart?**
+- "Üyeler" muğlak: hem ödeyen müşteriler (User) hem ekip üyeleri (TeamMember) hem operatör (AdminUser) için kullanılabilir
+- "İşletmeler" net: SaaS müşterimiz olan restoran sahipleri = Buaze'nin işletmeleri
+- "Yöneticiler" net: panel yetkisi olan operatör hesaplar (kendi ekibimiz + restoran tarafındaki manager rolleri)
+- "Müşteriler" net: ürünün son tüketicileri (form dolduran restoran müşterileri)
+
+**Önemli:** Yeni bir sayfa eklerken terminoloji haritasına uyun. "Üyeler" terimini sadece owner panelindeki `/admin/team` bağlamında (TeamMember) kullanın. Süperadmin tarafında **asla**.
+
+---
+
+_Son güncelleme: 2026-04 (yedinci dalga) — §20 Admin Terminoloji Normalizasyonu eklendi. Süperadmin panelinde "Üyeler / Üye / Kullanıcı / İşletmeci / Hesap" karışıklığı temizlendi: kanonik terimler **İşletmeler** (User) / **Yöneticiler** (AdminUser) / **Müşteriler** (Feedback). §4.5 baştan yazıldı. URL'ler ve API kontratları değişmedi._
 

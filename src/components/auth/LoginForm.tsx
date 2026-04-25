@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
@@ -39,48 +39,68 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: '', password: '', rememberMe: false });
 
+  const finalizeGoogleSignIn = async (idToken: string) => {
+    const recaptchaToken = await getRecaptchaToken('auth_google');
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken, recaptchaToken, locale }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || (locale === 'tr' ? 'Google ile giriş yapılamadı.' : 'Google sign-in failed.'));
+      setLoading(false);
+      return;
+    }
+    const needsOnboarding = data.isNewUser || data.onboardingCompleted === false;
+    const redirectPath = needsOnboarding
+      ? `/${locale}/onboarding`
+      : (searchParams.get('redirect') || `/${locale}/dashboard`);
+    window.location.href = redirectPath;
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { consumeGoogleRedirectIdToken, isGoogleRedirectPending } =
+          await import('@/lib/firebase-client');
+        if (isGoogleRedirectPending()) setLoading(true);
+        const idToken = await consumeGoogleRedirectIdToken();
+        if (cancelled || !idToken) return;
+        await finalizeGoogleSignIn(idToken);
+      } catch (err) {
+        console.error('[google-redirect-result]', err);
+        const { getFirebaseErrorMessage } = await import('@/lib/firebase-client');
+        setError(getFirebaseErrorMessage(err, locale));
+        setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleGoogleSignIn = async () => {
     setError('');
     setNotice('');
     setLoading(true);
     try {
-      const { signInWithGoogleIdToken } = await import('@/lib/firebase-client');
-      const idToken = await signInWithGoogleIdToken();
-      if (!idToken) {
+      const { startGoogleSignInRedirect } = await import('@/lib/firebase-client');
+      const ok = await startGoogleSignInRedirect();
+      if (!ok) {
         setNotice(
           locale === 'tr'
             ? 'Google ile giriş henüz aktif değil. Lütfen e-posta ile devam edin.'
             : 'Google sign-in is not active yet. Please continue with email.'
         );
         setLoading(false);
-          return;
-      }
-      const recaptchaToken = await getRecaptchaToken('auth_google');
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken, recaptchaToken }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || (locale === 'tr' ? 'Google ile giriş yapılamadı.' : 'Google sign-in failed.'));
-        setLoading(false);
         return;
       }
-      // Yeni kullanıcı veya onboarding tamamlamamış kullanıcı → onboarding'e.
-      // Onboarding'i bitirmiş → ?redirect veya dashboard.
-      const needsOnboarding = data.isNewUser || data.onboardingCompleted === false;
-      const redirectPath = needsOnboarding
-        ? `/${locale}/onboarding`
-        : (searchParams.get('redirect') || `/${locale}/dashboard`);
-      window.location.href = redirectPath;
+      // Browser navigates away; result handled by the mount effect on return.
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg === 'POPUP_CLOSED' || msg.includes('popup-closed-by-user')) {
-        setLoading(false);
-        return;
-      }
-      setError(locale === 'tr' ? 'Google ile giriş başarısız oldu.' : 'Google sign-in failed.');
+      console.error('[google-signin]', err);
+      const { getFirebaseErrorMessage } = await import('@/lib/firebase-client');
+      setError(getFirebaseErrorMessage(err, locale));
       setLoading(false);
     }
   };
@@ -96,7 +116,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, recaptchaToken }),
+        body: JSON.stringify({ ...form, recaptchaToken, locale }),
       });
 
       const data = await res.json();

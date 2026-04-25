@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { RecaptchaEnterpriseServiceClient } from '@google-cloud/recaptcha-enterprise';
-import { getClientIp } from '@/lib/rate-limit';
+import { getClientIp, blockKey, isBlocked } from '@/lib/rate-limit';
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY;
 const PROJECT_ID =
@@ -9,6 +9,10 @@ const PROJECT_ID =
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const MIN_SCORE = Number(process.env.RECAPTCHA_ENTERPRISE_MIN_SCORE || '0.5');
 const SERVICE_ACCOUNT_JSON = process.env.RECAPTCHA_ENTERPRISE_SERVICE_ACCOUNT_JSON?.trim();
+// Monitor mode (default): never block users on reCAPTCHA failures, just log
+// the reason. Flip RECAPTCHA_ENFORCE=true once dashboards confirm scores
+// are healthy. Mirrors Stripe Radar / Cloudflare Turnstile rollout pattern.
+const ENFORCE = (process.env.RECAPTCHA_ENFORCE ?? 'false').toLowerCase() === 'true';
 
 type RecaptchaSuccess = {
   ok: true;
@@ -23,6 +27,65 @@ type RecaptchaFailure = {
   error: string;
   status: number;
 };
+
+type RecaptchaLocale = 'tr' | 'en';
+
+const MESSAGES = {
+  missing: {
+    tr: 'Güvenlik doğrulaması eksik.',
+    en: 'Security check is missing.',
+  },
+  invalid: {
+    tr: 'Güvenlik doğrulaması geçersiz.',
+    en: 'Security check is invalid.',
+  },
+  mismatch: {
+    tr: 'Güvenlik doğrulaması eşleşmedi.',
+    en: 'Security check did not match.',
+  },
+  lowScore: {
+    tr: 'İstek güvenli görünmüyor. Lütfen tekrar deneyin.',
+    en: 'This request looks suspicious. Please try again.',
+  },
+  failure: {
+    tr: 'Güvenlik doğrulaması sırasında hata oluştu.',
+    en: 'Security check failed unexpectedly.',
+  },
+  botBlocked: {
+    tr: 'Bot davranışı saptandı. Erişiminiz geçici olarak engellendi.',
+    en: 'Automated/bot behaviour detected. Access is temporarily blocked.',
+  },
+} as const;
+
+// Risk reasons that reCAPTCHA Enterprise emits when it is highly confident
+// the request is automated. These ALWAYS block, regardless of monitor mode.
+// Reference: https://cloud.google.com/recaptcha-enterprise/docs/reference/rest/v1/projects.assessments#ClassificationReason
+const HARD_BLOCK_REASONS = new Set([
+  'AUTOMATION',
+  'MALWARE',
+  'SCRAPING',
+  'SUSPICIOUS_NETWORK',
+  'UNEXPECTED_ENVIRONMENT',
+]);
+
+// Score threshold below which we treat the request as a clear bot regardless
+// of explicit reasons. Tuned conservatively — 0.1 = "we're sure this is a bot".
+const HARD_BLOCK_SCORE = 0.1;
+
+// How long a hard-blocked IP stays banned (1 hour). Bypasses ENFORCE flag.
+const BOT_BAN_WINDOW_MS = 60 * 60 * 1000;
+
+function botBanKey(ip: string) {
+  return `recaptcha-bot-ban:${ip}`;
+}
+
+function hasCriticalBotSignal(score: number, reasons: string[]): boolean {
+  if (score <= HARD_BLOCK_SCORE) return true;
+  return reasons.some((r) => HARD_BLOCK_REASONS.has(r));
+}
+
+const msg = (key: keyof typeof MESSAGES, locale: RecaptchaLocale) =>
+  MESSAGES[key][locale];
 
 let clientSingleton: RecaptchaEnterpriseServiceClient | null = null;
 
@@ -57,15 +120,42 @@ export function isRecaptchaServerConfigured(): boolean {
   return Boolean(SITE_KEY && PROJECT_ID);
 }
 
+function softFail(
+  reason: string,
+  detail: Record<string, unknown>,
+  failure: RecaptchaFailure,
+): RecaptchaSuccess | RecaptchaFailure {
+  if (ENFORCE) return failure;
+  console.warn(`[recaptcha] ${reason} — soft-pass (set RECAPTCHA_ENFORCE=true to block)`, detail);
+  return { ok: true, skipped: true };
+}
+
 export async function verifyRecaptchaToken(
   req: NextRequest,
   token: unknown,
   expectedAction: string,
+  locale: RecaptchaLocale = 'tr',
 ): Promise<RecaptchaSuccess | RecaptchaFailure> {
-  if (!isRecaptchaServerConfigured()) return { ok: true, skipped: true };
+  // Hard block IPs we previously flagged as bots — bypasses monitor mode
+  // because the signal was already high-confidence at flag-time.
+  const ip = getClientIp(req.headers);
+  if (isBlocked(botBanKey(ip))) {
+    console.warn('[recaptcha] hard-blocked IP retried', { ip, action: expectedAction });
+    return { ok: false, error: msg('botBlocked', locale), status: 429 };
+  }
+
+  if (!isRecaptchaServerConfigured()) {
+    if (!SITE_KEY) console.warn('[recaptcha] NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY not set — skipped');
+    if (!PROJECT_ID) console.warn('[recaptcha] RECAPTCHA_ENTERPRISE_PROJECT_ID not set — skipped');
+    return { ok: true, skipped: true };
+  }
 
   if (typeof token !== 'string' || token.length < 20 || token.length > 4096) {
-    return { ok: false, error: 'Güvenlik doğrulaması eksik.', status: 400 };
+    return softFail('client did not send a valid token', { tokenType: typeof token, action: expectedAction }, {
+      ok: false,
+      error: msg('missing', locale),
+      status: 400,
+    });
   }
 
   try {
@@ -85,24 +175,45 @@ export async function verifyRecaptchaToken(
     });
 
     if (!response.tokenProperties?.valid) {
-      console.warn('[recaptcha] invalid token', response.tokenProperties?.invalidReason);
-      return { ok: false, error: 'Güvenlik doğrulaması geçersiz.', status: 403 };
+      return softFail('token invalid', { invalidReason: response.tokenProperties?.invalidReason, action: expectedAction }, {
+        ok: false,
+        error: msg('invalid', locale),
+        status: 403,
+      });
     }
 
     if (response.tokenProperties.action !== expectedAction) {
-      console.warn('[recaptcha] action mismatch', {
-        expectedAction,
-        action: response.tokenProperties.action,
+      return softFail('action mismatch', { expectedAction, action: response.tokenProperties.action }, {
+        ok: false,
+        error: msg('mismatch', locale),
+        status: 403,
       });
-      return { ok: false, error: 'Güvenlik doğrulaması eşleşmedi.', status: 403 };
     }
 
     const score = response.riskAnalysis?.score ?? 0;
     const reasons = (response.riskAnalysis?.reasons ?? []).map((reason) => String(reason));
 
+    // High-confidence bot signal → ban this IP for an hour and ALWAYS block,
+    // regardless of monitor mode. Monitor mode is for tuning grey-zone scores;
+    // confirmed automation should never get a free pass.
+    if (hasCriticalBotSignal(score, reasons)) {
+      blockKey(botBanKey(ip), BOT_BAN_WINDOW_MS);
+      console.error('[recaptcha] HARD BLOCK — bot signal confirmed', {
+        ip,
+        score,
+        reasons,
+        action: expectedAction,
+        banWindowMs: BOT_BAN_WINDOW_MS,
+      });
+      return { ok: false, error: msg('botBlocked', locale), status: 403 };
+    }
+
     if (score < MIN_SCORE) {
-      console.warn('[recaptcha] low score', { score, reasons });
-      return { ok: false, error: 'İstek güvenli görünmüyor. Lütfen tekrar deneyin.', status: 403 };
+      return softFail('low score', { score, reasons, action: expectedAction }, {
+        ok: false,
+        error: msg('lowScore', locale),
+        status: 403,
+      });
     }
 
     return {
@@ -112,8 +223,11 @@ export async function verifyRecaptchaToken(
       assessmentName: response.name || undefined,
     };
   } catch (error) {
-    console.error('[recaptcha] assessment error', error);
-    return { ok: false, error: 'Güvenlik doğrulaması sırasında hata oluştu.', status: 502 };
+    return softFail('assessment api error', { error: String(error), action: expectedAction }, {
+      ok: false,
+      error: msg('failure', locale),
+      status: 502,
+    });
   }
 }
 

@@ -485,6 +485,12 @@ export default function MarketingNavbarClient({
             >
               Blog
             </Link>
+            <Link
+              href={`${base}/contact`}
+              className="rounded-full px-3 py-1.5 text-[13px] font-medium text-[#1A1A1A] transition-colors hover:text-[#0A0A0A]"
+            >
+              {isTr ? 'İletişim' : 'Contact'}
+            </Link>
           </div>
 
           {/* Right cluster */}
@@ -546,7 +552,11 @@ export default function MarketingNavbarClient({
           />
           <div
             className="relative ml-auto h-[calc(100dvh-64px)] w-full max-w-md overflow-y-auto rounded-tl-[28px] border-l border-[#EDEDED] bg-white shadow-2xl"
-            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+            style={{
+              paddingBottom: 'env(safe-area-inset-bottom)',
+              paddingLeft: 'env(safe-area-inset-left)',
+              paddingRight: 'env(safe-area-inset-right)',
+            }}
           >
             <nav className="flex flex-col p-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]">
               <MobileSection
@@ -631,6 +641,16 @@ export default function MarketingNavbarClient({
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? 'Fiyatlandırma' : 'Pricing'}
+                <span className="text-[#737373]">→</span>
+              </Link>
+
+              <Link
+                href={`${base}/contact`}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-between border-b border-[#EDEDED] px-1 py-4 text-[15px] font-semibold text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {isTr ? 'İletişim' : 'Contact'}
                 <span className="text-[#737373]">→</span>
               </Link>
 

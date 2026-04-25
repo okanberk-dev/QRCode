@@ -231,7 +231,7 @@ export default async function LandingPage({
       ];
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#FFFFFF] text-[#0A0A0A] selection:bg-[#C6F24E]/40 selection:text-[#0A0A0A] pt-[64px]">
+    <div className="min-h-[100dvh] overflow-x-hidden bg-[#FFFFFF] text-[#0A0A0A] selection:bg-[#C6F24E]/40 selection:text-[#0A0A0A] pt-[64px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -243,13 +243,13 @@ export default async function LandingPage({
           1. HERO — Homepage v2 design
       ═══════════════════════════════════════════════════════════ */}
       <section className="px-5 pb-16 pt-16 sm:px-8 sm:pb-20 sm:pt-20 lg:px-16 lg:pb-20 lg:pt-24">
-        <div className="mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-12 md:grid-cols-2 lg:gap-16">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-8 sm:gap-12 md:grid-cols-2 lg:gap-16">
           <div className="flex flex-col gap-5 sm:gap-7">
-            <h1 className="bz-fade-up bz-d1 text-[44px] font-medium leading-[0.92] tracking-[-0.04em] text-[#0A0A0A] text-balance sm:text-[64px] lg:text-[76px]">
+            <h1 className="bz-fade-up bz-d1 text-[40px] font-medium leading-[1.05] tracking-[-0.04em] text-[#0A0A0A] text-balance sm:text-[64px] sm:leading-[0.96] lg:text-[76px] lg:leading-[0.92]">
               {heroHeadline}
             </h1>
 
-            <p className="bz-fade-up bz-d2 max-w-[500px] text-[16px] font-normal leading-[1.65] text-[#525252] sm:text-[18px]">
+            <p className="bz-fade-up bz-d2 max-w-[500px] text-[16px] font-normal leading-[1.55] text-[#525252] text-pretty sm:text-[18px] sm:leading-[1.65]">
               {heroSub}
             </p>
 
@@ -307,7 +307,7 @@ export default async function LandingPage({
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Nasıl çalışır' : 'How it works'}
             </span>
-            <h2 className="mt-4 text-[36px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.1] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] text-balance">
               {isTr ? 'Üç adım, üç saniye.' : 'Three steps, three seconds.'}
             </h2>
           </div>
@@ -324,10 +324,10 @@ export default async function LandingPage({
                 <span className="pulse-eyebrow text-[#A8D62E]">
                   {isTr ? 'ADIM' : 'STEP'} {num}
                 </span>
-                <h3 className="mt-3 text-[26px] sm:text-[30px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A]">
+                <h3 className="mt-3 text-[24px] sm:text-[30px] font-medium leading-[1.15] sm:leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] text-balance">
                   {title}
                 </h3>
-                <p className="mt-3 text-[14px] text-[#525252] leading-[1.55]">{body}</p>
+                <p className="mt-3 text-[15px] sm:text-[14px] text-[#525252] leading-[1.55] text-pretty">{body}</p>
               </div>
             ))}
           </div>
@@ -453,12 +453,12 @@ export default async function LandingPage({
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Tek platform' : 'One platform'}
             </span>
-            <h2 className="mt-4 text-[34px] sm:text-[46px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[30px] sm:text-[46px] font-medium leading-[1.1] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] text-balance">
               {isTr ? 'Tek panelde, dört süper güç.' : 'One panel, four superpowers.'}
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2">
             {/* QR Studio — lg:col-span-2 lg:row-span-2 */}
             <div className="relative overflow-hidden rounded-2xl border border-[#EDEDED] bg-[#0A0A0A] p-6 sm:p-7 text-white lg:col-span-2 lg:row-span-2">
               <span className="pulse-eyebrow text-[#C6F24E]">QR STUDIO</span>

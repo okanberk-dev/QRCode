@@ -204,7 +204,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
       </div>
 
       {/* Bottom rail — copyright + legal mini-links + status */}
-      <div className="border-t border-[#1F1F1F] px-5 py-5 sm:px-10">
+      <div className="border-t border-[#1F1F1F] py-5 pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] sm:pl-[max(2.5rem,env(safe-area-inset-left))] sm:pr-[max(2.5rem,env(safe-area-inset-right))]">
         <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-4 text-center lg:flex-row lg:justify-between lg:gap-6 lg:text-left">
           <p className="pulse-eyebrow text-[#525252]">
             © {new Date().getFullYear()} BUAZE BİLİŞİM A.Ş. · İSTANBUL

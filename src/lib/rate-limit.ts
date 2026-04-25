@@ -58,6 +58,27 @@ export function resetRateLimit(key: string) {
   buckets.delete(key);
 }
 
+const BLOCK_SENTINEL = Number.MAX_SAFE_INTEGER;
+
+/**
+ * Hard-block a key for the given window. Subsequent rateLimit() calls
+ * for this key return allowed=false until the window expires. Used by
+ * reCAPTCHA when it detects a clear bot signal.
+ */
+export function blockKey(key: string, windowMs: number) {
+  buckets.set(key, { count: BLOCK_SENTINEL, resetAt: Date.now() + windowMs });
+}
+
+/**
+ * Returns true if the key has been hard-blocked (and the block hasn't
+ * expired yet). Cheaper than rateLimit() because it doesn't increment.
+ */
+export function isBlocked(key: string): boolean {
+  const bucket = buckets.get(key);
+  if (!bucket || bucket.resetAt <= Date.now()) return false;
+  return bucket.count >= BLOCK_SENTINEL;
+}
+
 /**
  * Extract a best-effort client IP from a request object.
  */

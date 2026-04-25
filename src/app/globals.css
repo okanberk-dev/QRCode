@@ -78,7 +78,7 @@ body {
   display: flex;
   flex-direction: column;
   font-family: var(--font-body);
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -367,8 +367,16 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (max-width: 640px) {
   .pulse-eyebrow {
-    font-size: 10px;
-    letter-spacing: 0.14em;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+  }
+  /* Slow long-running animations on small screens to save battery and
+   * reduce visual noise (low-power mode users + scroll context). */
+  .animate-marquee {
+    animation-duration: 28s;
+  }
+  .bz-float {
+    animation-duration: 4s;
   }
 }
 

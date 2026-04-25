@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { signJwt } from '@/lib/auth';
-import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
+import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { verifyFirebaseIdToken, getFirebaseProjectId } from '@/lib/firebase-admin';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
@@ -26,12 +26,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { idToken, recaptchaToken } = await req.json();
+    const { idToken, recaptchaToken, locale } = await req.json();
+    const captchaLocale = locale === 'en' ? 'en' : 'tr';
     if (!idToken || typeof idToken !== 'string') {
       return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
     }
 
-    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_google');
+    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_google', captchaLocale);
     if (!captcha.ok) {
       return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
@@ -94,6 +95,8 @@ export async function POST(req: NextRequest) {
         { status: 402 },
       );
     }
+
+    resetRateLimit(`google-auth:ip:${ip}`);
 
     const token = await signJwt({
       userId: user.id,
