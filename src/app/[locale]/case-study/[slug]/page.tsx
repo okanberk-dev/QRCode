@@ -182,7 +182,7 @@ export default async function CaseStudyPage({
 
       {/* Quote */}
       {quoteText && (
-        <section className="bg-[#0A0A0A] px-6 sm:px-10 py-20 sm:py-24">
+        <section className="bg-[#0A0A0A] px-6 sm:px-10 py-20 sm:py-24 text-white">
           <div className="mx-auto max-w-[900px]">
             <Quote size={32} className="text-[#C6F24E]" />
             <blockquote

@@ -19,12 +19,12 @@ export async function generateMetadata({
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'AI Co-Pilot — Yanıtları saniyelerde yaz | Buaze'
-      : 'AI Co-Pilot — Draft replies in seconds | Buaze';
+      ? 'Buaze Pulse AI — Yanıtları saniyelerde yaz | Buaze'
+      : 'Buaze Pulse AI — Draft replies in seconds | Buaze';
   const description =
     locale === 'tr'
-      ? 'Buaze AI Co-Pilot, her yoruma puan ve tonuna göre özel Türkçe yanıt taslağı üretir. OpenAI destekli, Google politikalarına uyumlu.'
-      : 'Buaze AI Co-Pilot drafts rating-aware replies for every review. Powered by OpenAI, compliant with Google policies.';
+      ? 'Buaze Pulse AI, her yoruma puan ve tonuna göre özel Türkçe yanıt taslağı üretir. Google politikalarına uyumlu, onay kontrollü çalışır.'
+      : 'Buaze Pulse AI drafts rating-aware replies for every review. It is approval-led and designed around Google policy compliance.';
   return {
     title,
     description,
@@ -57,15 +57,15 @@ export default async function AiCoPilotPage({
         },
         {
           title: 'TR ve EN, saniyeler içinde',
-          body: 'Restoran adı, konum, yorum metni ve geçmiş sipariş bilgisi Prisma\'dan çekilir; ChatGPT gpt-4o-mini\'ye göndermek ortalama 1-2 saniye sürer.',
+          body: 'Restoran adı, konum, yorum metni ve geçmiş sipariş bağlamı birlikte okunur; Buaze Pulse AI ortalama 1-2 saniyede taslak üretir.',
         },
         {
           title: 'Düzenle & gönder',
-          body: 'Taslak doldurulur, sen onaylarsın. İstersen tek tıkla gönder, istersen ayarla. AI Co-Pilot hiçbir zaman senin yerine publish yapmaz.',
+          body: 'Taslak doldurulur, sen onaylarsın. İstersen tek tıkla gönder, istersen ayarla. Buaze Pulse AI hiçbir zaman senin yerine publish yapmaz.',
         },
         {
           title: 'Fallback ile güvende',
-          body: 'OpenAI anahtarı yok veya API düşerse sistem otomatik olarak deterministik şablona düşer — yanıt kutun asla boş kalmaz.',
+          body: 'Pulse AI geçici olarak yanıt vermezse sistem otomatik olarak deterministik şablona düşer — yanıt kutun asla boş kalmaz.',
         },
       ]
     : [
@@ -75,15 +75,15 @@ export default async function AiCoPilotPage({
         },
         {
           title: 'TR and EN, in seconds',
-          body: 'Business name, location, review text and order history are pulled from Prisma; gpt-4o-mini round-trip averages 1–2 seconds.',
+          body: 'Business name, location, review text and order context are read together; Buaze Pulse AI drafts a reply in 1-2 seconds on average.',
         },
         {
           title: 'Edit & send',
-          body: 'The draft fills in; you approve. One-click send, or tweak first. AI Co-Pilot never publishes without you.',
+          body: 'The draft fills in; you approve. One-click send, or tweak first. Buaze Pulse AI never publishes without you.',
         },
         {
           title: 'Safe fallback',
-          body: 'Missing OpenAI key or API hiccup? The system falls back to a deterministic template — your reply box never stays empty.',
+          body: 'Temporary Pulse AI hiccup? The system falls back to a deterministic template — your reply box never stays empty.',
         },
       ];
 
@@ -120,7 +120,7 @@ export default async function AiCoPilotPage({
             <div className="inline-flex items-center gap-2 rounded-full border border-[#C6F24E]/30 bg-[#C6F24E]/10 px-3 py-1.5">
               <Sparkles size={12} className="text-[#C6F24E]" />
               <span className="pulse-eyebrow text-[#C6F24E]">
-                {isTr ? 'YENİ · AI CO-PILOT v2.4' : 'NEW · AI CO-PILOT v2.4'}
+                {isTr ? 'YENİ · BUAZE PULSE AI v2.4' : 'NEW · BUAZE PULSE AI v2.4'}
               </span>
             </div>
             <h1
@@ -147,15 +147,15 @@ export default async function AiCoPilotPage({
             </h1>
             <p className="mt-6 max-w-[560px] text-[17px] leading-[1.6] text-white/70 sm:text-[18px]">
               {isTr
-                ? 'GPT-4 tabanlı AI Co-Pilot markanızın sesini öğrenir; puanı, yorum tonunu ve geçmiş siparişi dikkate alarak 30 saniye içinde kişiselleştirilmiş bir yanıt taslağı üretir. Onay sizde kalır.'
-                : 'GPT-4 powered AI Co-Pilot learns your brand voice; it reads the rating, tone and order history to draft a personalised reply in 30 seconds. You stay in control.'}
+                ? 'Buaze Pulse AI markanızın sesini öğrenir; puanı, yorum tonunu ve geçmiş sipariş bağlamını dikkate alarak 30 saniye içinde kişiselleştirilmiş bir yanıt taslağı üretir. Onay sizde kalır.'
+                : 'Buaze Pulse AI learns your brand voice; it reads the rating, tone and order context to draft a personalised reply in 30 seconds. You stay in control.'}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href={`${base}/auth/register`}
                 className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-6 py-3 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E]"
               >
-                {isTr ? 'Co-Pilot\'u dene' : 'Try Co-Pilot'}
+                {isTr ? 'Pulse AI\'ı dene' : 'Try Pulse AI'}
                 <ArrowRight size={16} />
               </Link>
               <Link
@@ -201,12 +201,12 @@ export default async function AiCoPilotPage({
                 <p className="mt-3 text-[13px] leading-[1.6] text-[#525252]">{exampleReview.text}</p>
               </div>
 
-              {/* AI Co-Pilot response */}
+              {/* Buaze Pulse AI response */}
               <div className="mt-3 rounded-xl border border-[#C6F24E] bg-[#0A0A0A] p-4 text-white">
                 <div className="flex items-center gap-2">
                   <Sparkles size={12} className="text-[#C6F24E]" />
                   <p className="pulse-eyebrow text-[#C6F24E]">
-                    {isTr ? 'AI CO-PILOT ÖNERİSİ' : 'AI CO-PILOT DRAFT'}
+                    {isTr ? 'BUAZE PULSE AI ÖNERİSİ' : 'BUAZE PULSE AI DRAFT'}
                   </p>
                   <span className="pulse-eyebrow ml-auto rounded-full bg-[#C6F24E] px-2 py-0.5 text-[#0A0A0A]">
                     {isTr ? 'CANLI' : 'LIVE'}
@@ -275,8 +275,8 @@ export default async function AiCoPilotPage({
           {[
             {
               l: isTr ? 'MODEL' : 'MODEL',
-              v: 'gpt-4o-mini',
-              sub: isTr ? 'Hızlı + ekonomik' : 'Fast + cost-effective',
+              v: 'Pulse AI',
+              sub: isTr ? 'Buaze yanıt motoru' : 'Buaze reply engine',
             },
             {
               l: isTr ? 'ORTALAMA SÜRE' : 'AVG LATENCY',
@@ -311,8 +311,8 @@ export default async function AiCoPilotPage({
           </h2>
           <p className="mt-3 text-[15px] text-[#0A0A0A]/80 sm:text-[17px]">
             {isTr
-              ? 'AI Co-Pilot Growth planın bir parçası — 14 gün ücretsiz dene.'
-              : 'AI Co-Pilot is part of the Growth plan — free for 14 days.'}
+              ? 'Buaze Pulse AI Growth planın bir parçası — 14 gün ücretsiz dene.'
+              : 'Buaze Pulse AI is part of the Growth plan — free for 14 days.'}
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link

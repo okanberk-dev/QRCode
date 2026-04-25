@@ -103,7 +103,7 @@ export default function AdminSidebar() {
 
   if (role === 'superadmin') {
     menuItems.push(
-      { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Businesses' : 'İşletmeler', roles: ['superadmin'] },
+      { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri', roles: ['superadmin'] },
       { href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler', roles: ['superadmin'] },
       { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler', roles: ['superadmin'] },
       { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog Yönetimi', roles: ['superadmin'] },
@@ -127,10 +127,10 @@ export default function AdminSidebar() {
       : role === 'restaurant_owner'
         ? locale === 'en'
           ? 'Owner'
-          : 'Restoran Sahibi'
+          : 'İşletme Sahibi'
         : locale === 'en'
           ? 'Manager'
-          : 'Restoran Yetkilisi';
+          : 'İşletme Yetkilisi';
   const displayName = profile?.name || profile?.username || profile?.email?.split('@')[0] || 'Kullanıcı';
   const initial = displayName.charAt(0).toUpperCase();
   const trialInfo = profile?.plan === 'trial' ? getTrialInfo(profile?.trialEndsAt) : null;
@@ -168,7 +168,7 @@ export default function AdminSidebar() {
   })();
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-[#0A0A0A]" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="flex flex-col h-full bg-[#0A0A0A] text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
         <Link href="/admin/dashboard" className="flex items-center gap-2.5">
@@ -297,13 +297,13 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-64 bg-[#0A0A0A] border-r border-white/5 flex-col h-full z-30">
+      <aside className="hidden lg:flex w-64 bg-[#0A0A0A] border-r border-white/5 flex-col h-full z-30 text-white">
         <SidebarContent />
       </aside>
 
       {/* Mobile top bar */}
       <div
-        className="lg:hidden sticky top-0 z-40 flex items-center justify-between bg-[#0A0A0A] border-b border-white/10 px-4 py-3"
+        className="lg:hidden sticky top-0 z-40 flex items-center justify-between bg-[#0A0A0A] border-b border-white/10 px-4 py-3 text-white"
         style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
       >
         <Link href="/admin/dashboard" className="flex items-center gap-2">
@@ -339,7 +339,7 @@ export default function AdminSidebar() {
           aria-label="Admin navigation"
         >
           <div
-            className="w-[280px] max-w-[85vw] h-full bg-[#0A0A0A] border-r border-white/10 shadow-2xl flex flex-col"
+            className="w-[280px] max-w-[85vw] h-full bg-[#0A0A0A] border-r border-white/10 shadow-2xl flex flex-col text-white"
             style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
             <SidebarContent />

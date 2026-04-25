@@ -1,10 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users } from 'lucide-react';
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
+import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
+
+interface Owner {
+  id: string;
+  email: string;
+  name: string | null;
+  plan: string;
+  isActive: boolean;
+}
+
+interface RestaurantMeta {
+  createdAt: string;
+  updatedAt: string;
+  user: Owner | null;
+  _count: {
+    feedbacks: number;
+    menuItems: number;
+    qrGenerations: number;
+    adminUsers: number;
+  };
+}
 
 export default function RestaurantDetailPage() {
   const params = useParams();
@@ -29,10 +50,13 @@ export default function RestaurantDetailPage() {
     notificationEmail: '',
     primaryColor: '#C6F24E',
     isActive: true,
+    userId: '',
   });
   const [menuEnabled, setMenuEnabled] = useState(true);
   const [menuPublished, setMenuPublished] = useState(false);
   const [menuSaving, setMenuSaving] = useState<null | 'enabled' | 'published'>(null);
+  const [owners, setOwners] = useState<Owner[]>([]);
+  const [meta, setMeta] = useState<RestaurantMeta | null>(null);
 
   useEffect(() => {
     const fetchRestaurant = async () => {
@@ -43,7 +67,7 @@ export default function RestaurantDetailPage() {
           return;
         }
         if (res.status === 404) {
-          setError('Restoran bulunamadı');
+          setError('İşletme bulunamadı');
           setLoading(false);
           return;
         }
@@ -62,6 +86,18 @@ export default function RestaurantDetailPage() {
             notificationEmail: data.notificationEmail || '',
             primaryColor: data.primaryColor || '#C6F24E',
             isActive: data.isActive ?? true,
+            userId: data.userId || '',
+          });
+          setMeta({
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
+            user: data.user || null,
+            _count: {
+              feedbacks: data._count?.feedbacks ?? 0,
+              menuItems: data._count?.menuItems ?? 0,
+              qrGenerations: data._count?.qrGenerations ?? 0,
+              adminUsers: data._count?.adminUsers ?? 0,
+            },
           });
           setMenuEnabled(data.menuEnabled ?? true);
           setMenuPublished(data.menuPublished ?? false);
@@ -77,17 +113,33 @@ export default function RestaurantDetailPage() {
     fetchRestaurant();
   }, [id, router]);
 
-  const handleSave = async (e: React.FormEvent) => {
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/members');
+        if (res.ok) {
+          const data = await res.json();
+          setOwners(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        // Only superadmin can list owners; scoped users simply don't see the selector.
+      }
+    })();
+  }, []);
+
+  const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
     setSaving(true);
 
     try {
+      const { userId, ...rest } = formData;
+      const payload = owners.length > 0 ? formData : rest;
       const res = await fetch(`/api/restaurants/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -98,7 +150,7 @@ export default function RestaurantDetailPage() {
         return;
       }
 
-      setSuccess('Restoran başarıyla güncellendi!');
+      setSuccess('İşletme başarıyla güncellendi.');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError('Bağlantı hatası');
@@ -138,7 +190,7 @@ export default function RestaurantDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('DİKKAT: Bu restoran kalıcı olarak silinecek ve geri alınamayacaktır! Tüm verileri (qr, feedback vb.) YOK OLACAKTIR. Onaylıyor musunuz?')) return;
+    if (!confirm('DİKKAT: Bu işletme kalıcı olarak silinecek ve geri alınamayacaktır. QR, yorum, menü ve analitik verileri de silinir. Onaylıyor musunuz?')) return;
     setDeleting(true);
     try {
       await fetch(`/api/restaurants/${id}`, { method: 'DELETE' });
@@ -163,9 +215,14 @@ export default function RestaurantDetailPage() {
     : menuPublished
     ? { dot: 'bg-emerald-500', text: 'text-emerald-700' }
     : { dot: 'bg-amber-500', text: 'text-amber-700' };
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const feedbackUrl = `${origin}/r/${formData.slug}`;
+  const menuUrl = `${origin}/menu/${formData.slug}`;
+  const qrUrl = `${origin}/admin/qr?restaurant=${id}`;
+  const ownerLabel = meta?.user?.name || meta?.user?.email || 'Sahip atanmamış';
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6 md:p-10">
+    <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6 md:p-10">
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
         <div className="absolute inset-x-0 top-0 h-[3px]" style={{ backgroundColor: formData.primaryColor }} aria-hidden />
@@ -178,7 +235,7 @@ export default function RestaurantDetailPage() {
             Tüm İşletmeler
           </Link>
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-4">
               <div
                 className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-[22px] font-semibold text-white shadow-sm ring-1 ring-black/5"
@@ -228,6 +285,40 @@ export default function RestaurantDetailPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+        <section className="rounded-3xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+              <Link2 size={18} strokeWidth={2} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="pulse-eyebrow text-[#737373]">Detay URL'leri</p>
+              <h2 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Müşteri ve yönetim bağlantıları</h2>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <UrlTile label="Geri Bildirim" url={feedbackUrl} href={`/r/${formData.slug}`} />
+            <UrlTile label="Menü" url={menuUrl} href={`/menu/${formData.slug}`} />
+            <UrlTile label="QR Yönetimi" url={qrUrl} href={`/admin/qr?restaurant=${id}`} />
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+          <p className="pulse-eyebrow text-[#737373]">İşletme özeti</p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <Metric icon={<MessageSquare size={15} />} label="Yorum" value={String(meta?._count.feedbacks ?? 0)} />
+            <Metric icon={<QrCode size={15} />} label="QR" value={String(meta?._count.qrGenerations ?? 0)} />
+            <Metric icon={<UtensilsCrossed size={15} />} label="Menü Ürünü" value={String(meta?._count.menuItems ?? 0)} />
+            <Metric icon={<Users size={15} />} label="Yetkili" value={String(meta?._count.adminUsers ?? 0)} />
+          </div>
+          <div className="mt-4 rounded-2xl bg-[#FAFAFA] p-3">
+            <p className="pulse-eyebrow text-[#737373]">İşletme Sahibi</p>
+            <p className="mt-1 truncate text-[13px] font-medium text-[#0A0A0A]">{ownerLabel}</p>
+            {meta?.user?.email && <p className="truncate text-[11px] text-[#737373]">{meta.user.email}</p>}
+          </div>
+        </section>
       </div>
 
       {error && (
@@ -328,7 +419,7 @@ export default function RestaurantDetailPage() {
           <div className="space-y-4 p-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="pulse-eyebrow text-[#737373]">Restoran Adı</label>
+                <label className="pulse-eyebrow text-[#737373]">İşletme Adı</label>
                 <input
                   type="text"
                   required
@@ -356,6 +447,26 @@ export default function RestaurantDetailPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {owners.length > 0 && (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="pulse-eyebrow text-[#737373]">İşletme Sahibi</label>
+                  <select
+                    value={formData.userId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))}
+                    className="w-full cursor-pointer rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                  >
+                    <option value="">Sahip atanmamış</option>
+                    {owners.map((owner) => (
+                      <option key={owner.id} value={owner.id}>
+                        {(owner.name || owner.email)} · {owner.plan}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[12px] leading-relaxed text-[#737373]">
+                    Bu alan işletmenin hangi işletme sahibi hesabına bağlı olduğunu belirler.
+                  </p>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <label className="pulse-eyebrow text-[#737373]">Kategori</label>
                 <select
@@ -364,12 +475,15 @@ export default function RestaurantDetailPage() {
                   className="w-full cursor-pointer rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                 >
                   <option>Restoran</option>
-                  <option>Hamburger Restoranı</option>
-                  <option>Pizza Restoranı</option>
-                  <option>Kebap Restoranı</option>
                   <option>Kafe</option>
+                  <option>Otel</option>
+                  <option>Klinik</option>
+                  <option>Güzellik Merkezi</option>
+                  <option>Mağaza</option>
                   <option>Fast Food</option>
                   <option>Fine Dining</option>
+                  <option>Meyhane</option>
+                  <option>Pastane</option>
                   <option>Diğer</option>
                 </select>
               </div>
@@ -462,7 +576,7 @@ export default function RestaurantDetailPage() {
                 type="email"
                 value={formData.notificationEmail}
                 onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
-                placeholder="restoran@email.com"
+                placeholder="isletme@email.com"
                 className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
               />
               <p className="text-[12px] leading-relaxed text-[#737373]">
@@ -587,6 +701,42 @@ export default function RestaurantDetailPage() {
           </div>
         </div>
       </form>
+    </div>
+  );
+}
+
+function UrlTile({ label, url, href }: { label: string; url: string; href: string }) {
+  return (
+    <div className="min-w-0 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="pulse-eyebrow text-[#737373]">{label}</p>
+        <CopyUrlButton url={url} className="h-7 w-7" />
+      </div>
+      <p className="mt-2 truncate font-mono text-[12px] text-[#0A0A0A]" style={{ fontFamily: 'var(--font-mono)' }}>
+        {url}
+      </p>
+      <Link
+        href={href}
+        target={href.startsWith('/admin') ? undefined : '_blank'}
+        className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+      >
+        Aç
+        <ExternalLink size={12} strokeWidth={2} />
+      </Link>
+    </div>
+  );
+}
+
+function Metric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-[#EDEDED] bg-white p-3">
+      <div className="flex items-center gap-2 text-[#737373]">
+        {icon}
+        <p className="pulse-eyebrow">{label}</p>
+      </div>
+      <p className="mt-2 text-[22px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+        {value}
+      </p>
     </div>
   );
 }

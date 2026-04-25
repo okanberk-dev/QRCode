@@ -82,7 +82,7 @@ export default function MembersPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setSuccess('İşletme güncellendi.');
+        setSuccess('İşletme sahibi güncellendi.');
         setEditingMember(null);
         fetchMembers();
       } else {
@@ -107,15 +107,15 @@ export default function MembersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
         <div className="space-y-1">
-          <p className="pulse-eyebrow text-[#737373]">PANEL / İŞLETMELER</p>
+          <p className="pulse-eyebrow text-[#737373]">PANEL / İŞLETME SAHİPLERİ</p>
           <h1
             className="text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
-            İşletmeler
+            İşletme Sahipleri
           </h1>
           <p className="text-[#525252] text-[13px] sm:text-[14px] max-w-[520px]">
-            Buaze'ye kayıtlı işletmelerin plan, deneme süresi ve erişim durumlarını yönetin.
+            Buaze'ye kayıtlı işletme sahibi hesaplarının plan, deneme süresi, erişim durumu ve bağlı işletme sayısını yönetin.
           </p>
         </div>
         <button
@@ -142,7 +142,7 @@ export default function MembersPage() {
                 <th className="px-3 py-4 sm:px-5">İŞLETME SAHİBİ</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-5">PLAN</th>
                 <th className="hidden lg:table-cell px-3 py-4 sm:px-5">DENEME / BİTİŞ</th>
-                <th className="hidden lg:table-cell px-3 py-4 sm:px-5">RESTORAN</th>
+                    <th className="hidden lg:table-cell px-3 py-4 sm:px-5">İŞLETME</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-5">DURUM</th>
                 <th className="px-3 py-4 sm:px-5 text-right">EYLEM</th>
               </tr>
@@ -151,7 +151,7 @@ export default function MembersPage() {
               {members.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-sm font-bold text-[#6B7280]">
-                    Henüz kayıtlı işletme yok.
+                    Henüz kayıtlı işletme sahibi yok.
                   </td>
                 </tr>
               ) : members.map((m) => {
@@ -246,7 +246,7 @@ export default function MembersPage() {
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-md max-h-[92dvh] overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:pb-0">
             <div className="p-6 border-b border-[#EDEDED] flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-[#0A0A0A] uppercase tracking-tight">İşletme Düzenle</h2>
+                <h2 className="text-xl font-semibold text-[#0A0A0A] uppercase tracking-tight">İşletme Sahibini Düzenle</h2>
                 <p className="text-xs text-[#1A1A1A] font-bold mt-1">{editingMember.email}</p>
               </div>
               <button

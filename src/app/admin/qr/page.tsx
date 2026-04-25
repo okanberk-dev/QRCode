@@ -404,51 +404,65 @@ function QRPageContent() {
   }
 
   const isSingleRestaurant = userProfile?.role === 'manager' || userProfile?.role === 'restaurant_owner';
+  const platformLabel = selectedPlatform ? PLATFORM_BADGE[selectedPlatform]?.label || selectedPlatform : 'Genel';
+  const placementLabel = tableNumber ? `M${tableNumber.padStart(2, '0')}` : 'GENEL';
 
   return (
-    <div className="p-3 sm:p-6 md:p-10 max-w-6xl mx-auto space-y-6 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-5 sm:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
-        <div className="space-y-1">
-          <p className="pulse-eyebrow text-[#737373]">PANEL / QR KOD</p>
-          <h1
-            className="text-[24px] sm:text-[30px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            QR Kod Oluşturucu
-          </h1>
-          <p className="text-[#525252] text-[13px] sm:text-[14px] max-w-[520px]">
-            İşletmenize özel, yüksek çözünürlüklü QR kodlar hazırlayın ve platform bazında dağıtın.
-          </p>
+    <div className="p-3 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-8">
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0A0A0A] p-5 text-white shadow-2xl sm:p-8 md:p-10">
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2">
+            <p className="pulse-eyebrow text-[#C6F24E]">QR OLUŞTUR / YENİ KAMPANYA</p>
+            <h1
+              className="text-[28px] sm:text-[40px] font-medium text-white tracking-[-0.025em]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              QR kodu oluştur
+            </h1>
+            <p className="text-white/75 text-[13px] sm:text-[15px] font-medium leading-relaxed max-w-[640px]">
+              İşletmenize özel QR kartları hazırlayın, platform bazında ölçümleyin ve masa aralıklarını tek yerden yönetin.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 sm:min-w-[360px]">
+            {[
+              { label: 'İşletme', value: selectedRestaurant?.name || 'Seçilmedi' },
+              { label: 'Yerleşim', value: tableNumber ? `Masa ${tableNumber}` : 'Genel' },
+              { label: 'Platform', value: platformLabel },
+            ].map((item) => (
+              <div key={item.label} className="rounded-xl border border-white/10 bg-white/10 px-3 py-3 backdrop-blur">
+                <p className="pulse-eyebrow text-white/45">{item.label}</p>
+                <p className="mt-1 truncate text-[12px] font-semibold text-white" title={item.value}>{item.value}</p>
+              </div>
+            ))}
+          </div>
         </div>
+        <div className="absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#C6F24E]/20 blur-3xl" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.85fr)] gap-6">
 
         {/* ─── Left: Settings ─── */}
-        <div className="lg:col-span-2 space-y-6 sm:space-y-8 order-2 lg:order-1">
+        <div className="space-y-6 order-2 lg:order-1">
 
           {/* ─── Step rail — 4-step progress guide (adm QRBuilder spec,
               .design/site/site-admin.jsx:381). Visual only; form state
               stays in one submit. ─── */}
-          <div className="flex items-center gap-2 overflow-x-auto">
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[#EDEDED] bg-white p-3 shadow-sm sm:grid-cols-4">
             {[
               { n: 1, label: 'Kampanya', sub: 'İşletme + platform' },
               { n: 2, label: 'Akış', sub: 'Müşteri yolu' },
               { n: 3, label: 'Tasarım', sub: 'Boyut + renk' },
               { n: 4, label: 'Yayına al', sub: 'QR üret + indir' },
             ].map((s) => (
-              <div key={s.n} className="flex min-w-0 flex-1 items-center gap-2">
+              <div key={s.n} className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
                 <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[11px] font-semibold text-[#0A0A0A]"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[11px] font-semibold text-[#0A0A0A]"
                   style={{ fontFamily: 'var(--font-heading)' }}
                 >
-                  {String(s.n).padStart(2, '0')}
+                  {s.n}
                 </span>
-                <div className="min-w-0">
-                  <p className="pulse-eyebrow text-[#0A0A0A]">{s.label}</p>
-                  <p className="pulse-eyebrow text-[#737373] hidden sm:block">{s.sub}</p>
-                </div>
-                {s.n < 4 && <span className="h-px flex-1 bg-[#EDEDED]" aria-hidden />}
+                <p className="mt-3 text-[13px] font-semibold text-[#0A0A0A]">{s.label}</p>
+                <p className="mt-0.5 text-[11px] text-[#737373]">{s.sub}</p>
               </div>
             ))}
           </div>
@@ -473,70 +487,76 @@ function QRPageContent() {
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">İşletme Seçimi</label>
+                <label className="pulse-eyebrow text-[#737373]">KAMPANYA ADI</label>
+                <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-[13px] font-semibold text-[#0A0A0A]">
+                  {selectedRestaurant?.name || 'İşletme'} QR {tableNumber ? `- Masa ${tableNumber}` : '- Genel'}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="pulse-eyebrow text-[#737373]">KONUM</label>
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
                   disabled={isSingleRestaurant}
-                  className={`w-full px-5 py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-semibold transition-all appearance-none cursor-pointer ${
+                  className={`w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] font-semibold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E] ${
                     isSingleRestaurant
                     ? 'opacity-50 cursor-not-allowed'
-                    : ''
+                    : 'cursor-pointer'
                   }`}
                 >
-                  <option value="">İşletme Seç...</option>
+                  <option value="">İşletme seç...</option>
                   {restaurants.map((r) => (
-                    <option key={r.id} value={r.id}>{r.name.toUpperCase()}</option>
+                    <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Masa / Konum Numarası</label>
-                <div className="flex items-center gap-3">
+                <label className="pulse-eyebrow text-[#737373]">YERLEŞİM</label>
+                <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] gap-2">
                   <button
                     type="button"
                     onClick={() => setTableNumber(t => t && Number(t) > 1 ? String(Number(t) - 1) : '')}
-                    className="w-14 h-14 rounded-xl border border-[#EDEDED] bg-white text-[#1A1A1A] flex items-center justify-center hover:bg-[#FFFFFF] active:scale-95 transition-all"
+                    className="flex h-11 items-center justify-center rounded-lg border border-[#EDEDED] bg-white text-[#1A1A1A] transition-all hover:bg-[#FAFAFA] active:scale-95"
+                    aria-label="Masa numarasını azalt"
                   >
-                    <Minus size={20} strokeWidth={2} />
+                    <Minus size={16} strokeWidth={2} />
                   </button>
                   <input
                     type="text"
                     value={tableNumber}
                     onChange={(e) => setTableNumber(e.target.value.replace(/\D/g, ''))}
                     placeholder="GENEL"
-                    className="flex-1 px-5 py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-[15px] font-bold text-center transition-all"
+                    className="h-11 rounded-lg border border-[#EDEDED] bg-white px-4 text-center text-[13px] font-semibold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
                   />
                   <button
                     type="button"
                     onClick={() => setTableNumber(t => t ? String(Number(t) + 1) : '1')}
-                    className="w-14 h-14 rounded-xl border border-[#EDEDED] bg-white text-[#1A1A1A] flex items-center justify-center hover:bg-[#FFFFFF] active:scale-95 transition-all"
+                    className="flex h-11 items-center justify-center rounded-lg border border-[#EDEDED] bg-white text-[#1A1A1A] transition-all hover:bg-[#FAFAFA] active:scale-95"
+                    aria-label="Masa numarasını artır"
                   >
-                    <Plus size={20} strokeWidth={2} />
+                    <Plus size={16} strokeWidth={2} />
                   </button>
                 </div>
               </div>
 
               {/* Platform Selector */}
               <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Platform</label>
+                <label className="pulse-eyebrow text-[#737373]">HEDEF PLATFORM</label>
                 <select
                   value={selectedPlatform}
                   onChange={(e) => setSelectedPlatform(e.target.value)}
-                  className="w-full px-5 py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-semibold transition-all appearance-none cursor-pointer shadow-sm"
+                  className="h-11 w-full cursor-pointer rounded-lg border border-[#EDEDED] bg-white px-4 text-[13px] font-semibold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-[#C6F24E]"
                 >
-                  <option value="">GENEL (PLATFORM YOK)</option>
-                  <option value="google">GOOGLE</option>
-                  <option value="yemeksepeti">YEMEKSEPETİ</option>
-                  <option value="getir">GETİR</option>
-                  <option value="trendyol_go">TRENDYOL GO</option>
+                  <option value="">Genel</option>
+                  <option value="google">Google</option>
+                  <option value="yemeksepeti">Yemeksepeti</option>
+                  <option value="getir">Getir</option>
+                  <option value="trendyol_go">Trendyol GO</option>
                 </select>
-                <p className="text-[10px] text-[#6B7280] font-bold pl-1">
-                  Seçilen platforma özel QR oluşturulur. Gelen yorumlar bu platform altında listelenir.
-                </p>
               </div>
             </div>
           </div>
@@ -610,6 +630,31 @@ function QRPageContent() {
                   Tasarım
                 </h3>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { bg: '#C6F24E', fg: '#0A0A0A', label: 'Lime', active: true },
+                { bg: '#FFFFFF', fg: '#0A0A0A', label: 'Beyaz' },
+                { bg: '#0A0A0A', fg: '#C6F24E', label: 'Koyu' },
+                { bg: '#FAFAFA', fg: '#0A0A0A', label: 'Minimal' },
+              ].map((style) => (
+                <div
+                  key={style.label}
+                  className={`flex aspect-[3/4] flex-col items-center justify-between rounded-xl p-3 ${
+                    style.active ? 'border-2 border-[#0A0A0A]' : 'border border-[#EDEDED]'
+                  }`}
+                  style={{ backgroundColor: style.bg }}
+                >
+                  <p className="text-center text-[12px] font-semibold leading-tight" style={{ color: style.fg }}>
+                    Yorum bırak
+                  </p>
+                  <div className="rounded-md bg-white p-1.5 shadow-sm">
+                    <QrCode size={34} style={{ color: style.fg }} strokeWidth={2.2} />
+                  </div>
+                  <p className="pulse-eyebrow" style={{ color: style.fg }}>{style.label}</p>
+                </div>
+              ))}
             </div>
 
             <div className="space-y-6">
@@ -770,7 +815,7 @@ function QRPageContent() {
 
           {/* Restaurant info */}
           {selectedRestaurant && (
-            <div className="bg-[#0A0A0A] rounded-2xl border border-white/10 shadow-xl p-6 sm:p-8 space-y-6">
+            <div className="bg-[#0A0A0A] rounded-2xl border border-white/10 shadow-xl p-6 sm:p-8 space-y-6 text-white">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-semibold text-[#C6F24E]  leading-none">Hedef Link</p>
                 <div className="h-2 w-2 rounded-full bg-[#10b981] animate-pulse" />
@@ -788,11 +833,11 @@ function QRPageContent() {
 
               <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
                 <div className="space-y-1 min-w-0">
-                  <p className="text-[9px] font-semibold text-[#6B7280] ">İşletme</p>
+                  <p className="text-[9px] font-semibold text-white/45 ">İşletme</p>
                   <p className="text-xs font-semibold text-white truncate" title={selectedRestaurant.name}>{selectedRestaurant.name.toUpperCase()}</p>
                 </div>
                 <div className="space-y-1 text-right">
-                  <p className="text-[9px] font-semibold text-[#6B7280] ">Durum</p>
+                  <p className="text-[9px] font-semibold text-white/45 ">Durum</p>
                   <p className="text-xs font-semibold text-[#10b981] whitespace-nowrap">AKTİF ✓</p>
                 </div>
               </div>
@@ -897,117 +942,132 @@ function QRPageContent() {
         </div>
 
         {/* ─── Right: QR Preview ─── */}
-        <div className="lg:col-span-3 order-1 lg:order-2">
-          <div className="bg-white rounded-xl sm:rounded-2xl border border-[#EDEDED] p-5 sm:p-8 flex flex-col items-center h-full">
-            <div className="flex items-center justify-between w-full mb-6 sm:mb-10">
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg sm:text-2xl font-semibold text-[#0A0A0A] uppercase tracking-tighter">Önizleme</h3>
-                {selectedPlatform && (
-                  <span className={`px-3 py-1 rounded-lg pulse-eyebrow text-white ${
-                    selectedPlatform === 'google' ? 'bg-[#4285F4]' :
-                    selectedPlatform === 'yemeksepeti' ? 'bg-[#FA0050]' :
-                    selectedPlatform === 'getir' ? 'bg-[#5D3EBC]' :
-                    selectedPlatform === 'trendyol_go' ? 'bg-[#F27A1A]' : 'bg-[#6B7280]'
-                  }`}>
-                    {selectedPlatform === 'google' ? 'Google' :
-                     selectedPlatform === 'yemeksepeti' ? 'Yemeksepeti' :
-                     selectedPlatform === 'getir' ? 'Getir' :
-                     selectedPlatform === 'trendyol_go' ? 'Trendyol GO' : selectedPlatform}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {duplicateWarning && (
-                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
-                    <AlertCircle size={12} strokeWidth={2} />
-                    Daha önce oluşturuldu
-                  </div>
-                )}
-                <button
-                  onClick={generateQR}
-                  disabled={generating || !selectedId}
-                  className="flex items-center gap-2 text-[11px] sm:text-xs font-bold text-[#1A1A1A] hover:text-[#0A0A0A] transition-all disabled:opacity-30 border border-[#EDEDED] px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white hover:bg-[#FFFFFF] active:scale-95 "
-                >
-                  <RefreshCw size={14} strokeWidth={2} className={generating ? 'animate-spin' : ''} />
-                  YENİLE
-                </button>
-              </div>
+        <div className="order-1 lg:order-2">
+          <div className="sticky top-6 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="pulse-eyebrow text-[#737373]">CANLI ÖNİZLEME</p>
+              <button
+                onClick={generateQR}
+                disabled={generating || !selectedId}
+                className="inline-flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[11px] font-semibold text-[#1A1A1A] transition-all hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-40"
+              >
+                <RefreshCw size={14} strokeWidth={2} className={generating ? 'animate-spin' : ''} />
+                Yenile
+              </button>
             </div>
+
             {duplicateWarning && (
-              <div className="sm:hidden w-full mb-4 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-bold">
+              <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-700">
                 <AlertCircle size={14} strokeWidth={2} />
                 Bu kombinasyonla daha önce QR oluşturuldu.
               </div>
             )}
 
-            {/* QR Box */}
-            <div className="flex-1 flex items-center justify-center w-full min-h-[260px] sm:min-h-[300px]">
-              {generating ? (
-                <div className="flex items-center justify-center w-56 h-56 sm:w-72 sm:h-72">
-                  <Loader2 className="animate-spin text-[#0A0A0A] w-12 h-12" strokeWidth={2} />
+            <div className="grid gap-3 min-[440px]:grid-cols-2">
+              <div className="flex aspect-[3/4] flex-col items-center justify-between rounded-2xl bg-[#C6F24E] p-4 text-[#0A0A0A] shadow-sm">
+                <div className="text-center">
+                  <p className="pulse-eyebrow text-[#0A0A0A]/60">{selectedRestaurant?.name || 'BUAZE'}</p>
+                  <h2
+                    className="mt-2 text-[24px] font-medium leading-none tracking-[-0.025em]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    Deneyiminizi paylaşın.
+                  </h2>
                 </div>
-              ) : qrSvg ? (
-                <div
-                  className="w-56 h-56 sm:w-72 sm:h-72 [&>svg]:w-full [&>svg]:h-full rounded-xl sm:rounded-2xl overflow-hidden border border-[#EDEDED] shadow-xl p-3 sm:p-4 bg-white transition-transform hover:rotate-1"
-                  dangerouslySetInnerHTML={{ __html: qrSvg }}
-                />
-              ) : (
-                <div className="w-56 h-56 sm:w-72 sm:h-72 bg-[#FFFFFF] rounded-xl sm:rounded-2xl flex flex-col items-center justify-center border-2 border-dashed border-[#EDEDED] text-center p-5 sm:p-8">
-                  <QrCode size={48} strokeWidth={2} className={`${qrError ? 'text-red-300' : 'text-[#C9D0DB]'} mb-4`} />
-                  <p className={`text-[11px] sm:pulse-eyebrow ${qrError ? 'text-red-500' : 'text-[#6B7280]'}`}>
-                    {qrError
-                      ? qrError
-                      : selectedId
-                      ? 'QR HAZIRLANIYOR / YENİLE İLE OLUŞTURUN'
-                      : 'ÖNİZLEME İÇİN İŞLETME SEÇİN'}
-                  </p>
-                  {qrError && (
-                    <button
-                      onClick={generateQR}
-                      className="mt-4 text-[11px] font-semibold text-[#0A0A0A] underline underline-offset-2 "
-                    >
-                      Tekrar Dene
-                    </button>
+                <div className="rounded-xl bg-white p-2 shadow-md">
+                  {generating ? (
+                    <div className="flex h-32 w-32 items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" strokeWidth={2} />
+                    </div>
+                  ) : qrSvg ? (
+                    <div className="h-32 w-32 [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: qrSvg }} />
+                  ) : (
+                    <div className="flex h-32 w-32 flex-col items-center justify-center rounded-lg border border-dashed border-[#EDEDED] text-center">
+                      <QrCode size={38} className={qrError ? 'text-red-400' : 'text-[#C9D0DB]'} strokeWidth={2} />
+                      <p className={`mt-2 px-2 text-[10px] font-semibold leading-tight ${qrError ? 'text-red-500' : 'text-[#737373]'}`}>
+                        {qrError || (selectedId ? 'QR hazırlanıyor' : 'İşletme seçin')}
+                      </p>
+                    </div>
                   )}
                 </div>
-              )}
+                <p className="pulse-eyebrow text-[#0A0A0A]">BUAZE · {placementLabel}</p>
+              </div>
+
+              <div className="hidden aspect-[9/19] rounded-[28px] bg-[#0A0A0A] p-2.5 min-[440px]:block">
+                <div className="flex h-full flex-col gap-3 rounded-[20px] bg-white p-4">
+                  <p className="pulse-eyebrow text-[#737373]">{selectedRestaurant?.name || 'İşletme'}</p>
+                  <h3
+                    className="text-[18px] font-medium leading-tight tracking-[-0.025em] text-[#0A0A0A]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    Deneyiminiz nasıldı?
+                  </h3>
+                  <div className="grid grid-cols-5 gap-1">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className={`flex aspect-square items-center justify-center rounded-full text-[12px] ${i <= 4 ? 'bg-[#C6F24E]' : 'bg-[#EDEDED]'}`}>
+                        ★
+                      </div>
+                    ))}
+                  </div>
+                  <div className="min-h-[64px] rounded-lg bg-[#FAFAFA] p-3 text-[10px] text-[#A3A3A3]">
+                    Kısa notunuz...
+                  </div>
+                  <div className="mt-auto rounded-full bg-[#0A0A0A] py-2 text-center text-[10px] font-semibold text-white">
+                    Paylaş
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Instruction */}
-            {qrSvg && (
-              <div className="bg-[#FFFFFF] border border-[#EDEDED] rounded-2xl p-3 sm:p-4 mt-6 sm:mt-10 mb-6 sm:mb-10 flex items-center gap-3 sm:gap-4 max-w-sm">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-green-100 text-green-500 flex items-center justify-center flex-shrink-0">
-                  <Check size={18} strokeWidth={2} />
+            <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="pulse-eyebrow text-[#737373]">QR URL</p>
+                  <p className="mt-1 truncate font-mono text-[11px] text-[#0A0A0A]" title={qrTargetUrl}>{qrTargetUrl || 'İşletme seçin'}</p>
                 </div>
-                <p className="text-[11px] sm:text-[12px] font-bold text-[#1A1A1A] leading-tight">
-                  Bu QR kodu masalara, menülere veya girişe yerleştirerek müşteri geri bildirimi toplamaya başlayın.
-                </p>
+                <button
+                  onClick={copyUrl}
+                  disabled={!qrTargetUrl}
+                  className={`shrink-0 rounded-lg border px-3 py-2 text-[11px] font-semibold transition-all active:scale-95 disabled:opacity-40 ${
+                    copied ? 'border-green-500 bg-green-500 text-white' : 'border-[#EDEDED] bg-white text-[#1A1A1A] hover:bg-[#FAFAFA]'
+                  }`}
+                >
+                  {copied ? <Check size={14} strokeWidth={2} /> : <Copy size={14} strokeWidth={2} />}
+                </button>
               </div>
+            </div>
+
+            {qrError && (
+              <button
+                onClick={generateQR}
+                className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-600"
+              >
+                Tekrar dene
+              </button>
             )}
 
-            {/* Actions */}
             {selectedId && (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full mt-6 sm:mt-auto">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => downloadQR('png')}
-                  className="col-span-2 flex items-center justify-center gap-3 bg-[#0A0A0A] text-white px-6 sm:px-8 py-4 sm:py-5 rounded-2xl text-[12px] sm:text-[13px] font-semibold border border-white/10 hover:bg-[#1A1A1A] active:scale-95 transition-all group"
+                  className="col-span-2 flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-[#0A0A0A] px-6 py-4 text-[12px] font-semibold text-white transition-all hover:bg-[#1A1A1A] active:scale-95"
                 >
-                  <Download size={20} strokeWidth={2} className="group-hover:translate-y-0.5 transition-transform" />
-                  PNG OLARAK İNDİR (HD)
+                  <Download size={18} strokeWidth={2} />
+                  PNG olarak indir
                 </button>
                 <button
                   onClick={() => downloadQR('svg')}
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-white text-[#1A1A1A] border border-[#EDEDED] px-3 sm:px-6 py-3 sm:py-4 rounded-2xl text-[11px] sm:text-xs font-semibold hover:bg-[#FFFFFF] active:scale-95 transition-all"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[11px] font-semibold text-[#1A1A1A] transition-all hover:bg-[#FAFAFA] active:scale-95"
                 >
-                  <Download size={16} strokeWidth={2} />
+                  <Download size={15} strokeWidth={2} />
                   SVG
                 </button>
                 <button
                   onClick={handlePrint}
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-white text-[#1A1A1A] border border-[#EDEDED] px-3 sm:px-6 py-3 sm:py-4 rounded-2xl text-[11px] sm:text-xs font-semibold hover:bg-[#FFFFFF] active:scale-95 transition-all"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[11px] font-semibold text-[#1A1A1A] transition-all hover:bg-[#FAFAFA] active:scale-95"
                 >
-                  <Printer size={16} strokeWidth={2} />
-                  YAZDIR
+                  <Printer size={15} strokeWidth={2} />
+                  Yazdır
                 </button>
               </div>
             )}

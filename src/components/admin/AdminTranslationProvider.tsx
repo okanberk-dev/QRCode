@@ -13,7 +13,7 @@ interface AdminTranslationContextType {
 const adminTranslations = {
   tr: {
     dashboard: 'Dashboard',
-    restaurants: 'Restoranlar',
+    restaurants: 'İşletmeler',
     qr_codes: 'QR Kodlar',
     users: 'Yetkililer',
     customers: 'Müşteriler',
@@ -31,13 +31,13 @@ const adminTranslations = {
     delete: 'Sil',
     edit: 'Düzenle',
     add_new: 'Yeni Ekle',
-    search_placeholder: 'İsim veya e-posta ile ara...',
+    search_placeholder: 'İsim, URL veya e-posta ile ara...',
     latest_feedbacks: 'Son Değerlendirmeler',
     see_all: 'Hepsini Gör',
   },
   en: {
     dashboard: 'Dashboard',
-    restaurants: 'Restaurants',
+    restaurants: 'Businesses',
     qr_codes: 'QR Codes',
     users: 'Staff',
     customers: 'Customers',

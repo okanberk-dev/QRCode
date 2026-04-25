@@ -47,8 +47,8 @@ export default function PricingPlans({ locale, monthlyCta, yearlyCta, monthlyPer
       featured: true,
       cta: monthlyCta,
       features: isTr
-        ? ['Starter\'daki her şey', 'AI Co-Pilot dahil', 'Çoklu lokasyon (3\'e kadar)', 'Gelişmiş analitik', 'Öncelikli destek']
-        : ['Everything in Starter', 'AI Co-Pilot included', 'Multi-location (up to 3)', 'Advanced analytics', 'Priority support'],
+        ? ['Starter\'daki her şey', 'Buaze Pulse AI dahil', 'Çoklu lokasyon (3\'e kadar)', 'Gelişmiş analitik', 'Öncelikli destek']
+        : ['Everything in Starter', 'Buaze Pulse AI included', 'Multi-location (up to 3)', 'Advanced analytics', 'Priority support'],
     },
     {
       id: 'scale' as const,

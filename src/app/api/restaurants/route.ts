@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       });
 
       if (!restaurant || !restaurant.isActive) {
-        return ApiErrors.notFound('Restoran bulunamadı');
+        return ApiErrors.notFound('İşletme bulunamadı');
       }
 
       // Return public-safe fields only
@@ -75,10 +75,21 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
         include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              plan: true,
+              isActive: true,
+            },
+          },
           _count: {
             select: {
               feedbacks: true,
               menuItems: { where: { deletedAt: null } },
+              qrGenerations: true,
+              adminUsers: true,
             },
           },
         },
@@ -92,7 +103,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error('Failed to fetch restaurants:', error);
-    return ApiErrors.internalError('Restoranlar çekilemedi');
+    return ApiErrors.internalError('İşletmeler çekilemedi');
   }
 }
 
@@ -172,6 +183,6 @@ export async function POST(req: NextRequest) {
       return ApiErrors.conflict('Bu slug zaten kullanılıyor');
     }
     console.error('Failed to create restaurant:', error);
-    return ApiErrors.internalError('Restoran oluşturulamadı');
+    return ApiErrors.internalError('İşletme oluşturulamadı');
   }
 }

@@ -128,7 +128,7 @@ export default function MarketingNavbarClient({
     },
     {
       href: `${base}/features/ai-copilot`,
-      label: 'AI Co-Pilot',
+      label: 'Buaze Pulse AI',
       sub: isTr ? 'Yanıtı saniyede yaz' : 'Drafts in seconds',
       icon: <Sparkles size={16} />,
     },
@@ -377,12 +377,12 @@ export default function MarketingNavbarClient({
                     className="mt-2 text-[16px] font-semibold leading-snug"
                     style={{ fontFamily: 'var(--font-heading)' }}
                   >
-                    {isTr ? 'AI Co-Pilot' : 'AI Co-Pilot'}
+                    {isTr ? 'Buaze Pulse AI' : 'Buaze Pulse AI'}
                   </p>
                   <p className="mt-1 text-[12px] text-white/70">
                     {isTr
-                      ? 'Her yorum için OpenAI destekli yanıt taslağı.'
-                      : 'OpenAI-backed reply drafts for every review.'}
+                      ? 'Her yorum için Buaze Pulse AI yanıt taslağı.'
+                      : 'Buaze Pulse AI reply drafts for every review.'}
                   </p>
                   <Link
                     href={`${base}/features/ai-copilot`}

@@ -24,20 +24,34 @@ export async function GET(
     const restaurant = await prisma.restaurant.findUnique({
       where: { id },
       include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            plan: true,
+            isActive: true,
+          },
+        },
         _count: {
-          select: { feedbacks: true }
+          select: {
+            feedbacks: true,
+            menuItems: { where: { deletedAt: null } },
+            qrGenerations: true,
+            adminUsers: true,
+          }
         }
       }
     });
 
     if (!restaurant) {
-      return ApiErrors.notFound('Restoran bulunamadı');
+      return ApiErrors.notFound('İşletme bulunamadı');
     }
 
     return NextResponse.json(restaurant);
   } catch (error) {
     console.error('Failed to fetch restaurant:', error);
-    return ApiErrors.internalError('Restoran çekilemedi');
+    return ApiErrors.internalError('İşletme çekilemedi');
   }
 }
 
@@ -59,7 +73,7 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, isActive, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, menuLogoUrl } = body;
+    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, isActive, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, menuLogoUrl, userId } = body;
 
     // Validate slug if provided
     if (slug) {
@@ -79,7 +93,25 @@ export async function PUT(
 
     const currentRest = await prisma.restaurant.findUnique({ where: { id } });
     if (!currentRest) {
-      return ApiErrors.notFound('Restoran bulunamadı');
+      return ApiErrors.notFound('İşletme bulunamadı');
+    }
+
+    let ownerUserId: string | null | undefined = undefined;
+    if (userId !== undefined) {
+      if (actor.role !== 'superadmin') {
+        return ApiErrors.forbidden('İşletme sahibi atamak için yetkiniz yok');
+      }
+      if (userId === null || userId === '') {
+        ownerUserId = null;
+      } else if (typeof userId === 'string') {
+        const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+        if (!user) {
+          return ApiErrors.badRequest('Belirtilen işletme sahibi bulunamadı', 'INVALID_USER_ID');
+        }
+        ownerUserId = userId;
+      } else {
+        return ApiErrors.badRequest('Geçersiz işletme sahibi', 'INVALID_USER_ID');
+      }
     }
 
     const restaurant = await prisma.restaurant.update({
@@ -98,13 +130,14 @@ export async function PUT(
         ...(yemekSepetiUrl !== undefined && { yemekSepetiUrl: yemekSepetiUrl || null }),
         ...(trendyolYemekUrl !== undefined && { trendyolYemekUrl: trendyolYemekUrl || null }),
         ...(menuLogoUrl !== undefined && { menuLogoUrl: menuLogoUrl || null }),
+        ...(ownerUserId !== undefined && { userId: ownerUserId }),
       },
     });
 
     return NextResponse.json(restaurant);
   } catch (error) {
     console.error('Failed to update restaurant:', error);
-    return ApiErrors.internalError('Restoran güncellenemedi');
+    return ApiErrors.internalError('İşletme güncellenemedi');
   }
 }
 
@@ -127,20 +160,26 @@ export async function DELETE(
   try {
     const currentRest = await prisma.restaurant.findUnique({ where: { id } });
     if (!currentRest) {
-      return ApiErrors.notFound('Restoran bulunamadı');
+      return ApiErrors.notFound('İşletme bulunamadı');
     }
 
-    // Hard delete: delete related records first to avoid foreign key constraints
+    // Hard delete: delete related records first to avoid foreign key constraints.
+    // Restaurant has several cascading relations, but menu categories are
+    // protected by MenuItem.category Restrict, so clear items before categories.
     await prisma.$transaction([
       prisma.feedback.deleteMany({ where: { restaurantId: id } }),
       prisma.qrGeneration.deleteMany({ where: { restaurantId: id } }),
       prisma.adminUser.deleteMany({ where: { restaurantId: id } }),
+      prisma.menuAnalyticsEvent.deleteMany({ where: { restaurantId: id } }),
+      prisma.brandSettings.deleteMany({ where: { restaurantId: id } }),
+      prisma.menuItem.deleteMany({ where: { restaurantId: id } }),
+      prisma.menuCategory.deleteMany({ where: { restaurantId: id } }),
       prisma.restaurant.delete({ where: { id } })
     ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to delete restaurant:', error);
-    return ApiErrors.internalError('Restoran silinemedi');
+    return ApiErrors.internalError('İşletme silinemedi');
   }
 }

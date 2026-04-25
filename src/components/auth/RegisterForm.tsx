@@ -76,9 +76,14 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
       try {
         const { consumeGoogleRedirectIdToken, isGoogleRedirectPending } =
           await import('@/lib/firebase-client');
-        if (isGoogleRedirectPending()) setLoading(true);
+        const wasGoogleRedirectPending = isGoogleRedirectPending();
+        if (wasGoogleRedirectPending) setLoading(true);
         const idToken = await consumeGoogleRedirectIdToken();
-        if (cancelled || !idToken) return;
+        if (cancelled) return;
+        if (!idToken) {
+          if (wasGoogleRedirectPending) setLoading(false);
+          return;
+        }
         await finalizeGoogleSignUp(idToken);
       } catch (err) {
         console.error('[google-redirect-result]', err);

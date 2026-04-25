@@ -136,7 +136,7 @@ export default function LiveReviewTicker({ locale, rotateMs = 2800 }: Props) {
                 <p className="mt-1 text-[12px] leading-[1.55] text-[#D4D4D4] line-clamp-2">
                   {r.text[isTr ? 'tr' : 'en']}
                 </p>
-                <span className="pulse-eyebrow mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[#A3A3A3]">
+                <span className="pulse-eyebrow mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-1 text-white/55">
                   {r.platform.toUpperCase()}
                 </span>
               </div>

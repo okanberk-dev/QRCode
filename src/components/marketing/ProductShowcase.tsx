@@ -90,7 +90,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
 
                 <div className="grid grid-cols-5 gap-5">
                   {/* QR preview (left big) */}
-                  <div className="col-span-2 bg-[#0A0A0A] rounded-xl p-5 flex flex-col items-center justify-center border border-[#0A0A0A] shadow-md">
+                  <div className="col-span-2 bg-[#0A0A0A] rounded-xl p-5 flex flex-col items-center justify-center border border-[#0A0A0A] text-white shadow-md">
                     <div className="bg-white p-3 rounded-lg border border-[#0A0A0A]">
                       <QrCode size={96} className="text-[#0A0A0A]" strokeWidth={1.5} />
                     </div>

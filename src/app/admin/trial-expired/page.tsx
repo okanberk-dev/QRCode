@@ -8,12 +8,12 @@ export default function TrialExpiredPage() {
         {/* Card */}
         <div className="bg-white rounded-3xl border border-[#EDEDED] overflow-hidden">
           {/* Top banner */}
-          <div className="bg-[#0A0A0A] px-8 py-8 text-center">
+          <div className="bg-[#0A0A0A] px-8 py-8 text-center text-white">
             <div className="w-16 h-16 bg-[#C6F24E]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Clock size={32} className="text-[#C6F24E]" />
             </div>
             <h1 className="text-xl font-semibold text-white mb-1">Deneme Süreniz Doldu</h1>
-            <p className="text-[#6B7280] text-sm">14 günlük ücretsiz deneme süreniz sona ermiştir</p>
+            <p className="text-white/65 text-sm">14 günlük ücretsiz deneme süreniz sona ermiştir</p>
           </div>
 
           {/* Content */}

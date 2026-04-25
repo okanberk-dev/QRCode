@@ -39,7 +39,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ restaurant });
   } catch (error) {
     if ((error as { code?: string })?.code === 'P2025') {
-      return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
+      return NextResponse.json({ error: 'İşletme bulunamadı' }, { status: 404 });
     }
     console.error('[admin menu-settings]', error);
     return NextResponse.json({ error: 'Ayar güncellenemedi' }, { status: 500 });

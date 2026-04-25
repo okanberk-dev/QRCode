@@ -39,7 +39,7 @@ export default function ExportReportButton({ label, format = 'csv', range = '90d
       type="button"
       onClick={onClick}
       disabled={busy}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors disabled:opacity-50"
+      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] font-medium text-[#525252] transition-colors hover:border-[#0A0A0A] disabled:opacity-50 sm:w-auto"
     >
       {busy ? (
         <Loader2 size={12} strokeWidth={2} className="animate-spin" />

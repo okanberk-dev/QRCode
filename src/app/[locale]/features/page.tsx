@@ -26,8 +26,8 @@ export async function generateMetadata({
     locale === 'tr' ? 'Özellikler — Buaze' : 'Features — Buaze';
   const description =
     locale === 'tr'
-      ? 'Yorum gelen kutusu, AI Co-Pilot yanıt, QR kod stüdyosu, analiz ve raporlama. Buaze\'nin tüm özellikleri nabız metaforunda buluşuyor.'
-      : 'Unified inbox, AI Co-Pilot replies, QR studio, analytics and reporting. Every Buaze feature meets in the pulse metaphor.';
+      ? 'Yorum gelen kutusu, Buaze Pulse AI yanıt, QR kod stüdyosu, analiz ve raporlama. Buaze\'nin tüm özellikleri nabız metaforunda buluşuyor.'
+      : 'Unified inbox, Buaze Pulse AI replies, QR studio, analytics and reporting. Every Buaze feature meets in the pulse metaphor.';
   return {
     metadataBase: new URL('https://buaze.com'),
     title,
@@ -63,8 +63,8 @@ export default async function FeaturesPage({
         },
         {
           n: '02',
-          t: 'AI Co-Pilot yanıt',
-          d: 'Her yoruma 30 sn\'de markanıza özel yanıt. GPT-4 + Claude, işletmenizin tonunda öğreniyor.',
+          t: 'Buaze Pulse AI yanıt',
+          d: 'Her yoruma 30 sn\'de markanıza özel yanıt. Buaze Pulse AI işletmenizin tonunu öğrenir.',
           Ill: IllusShield,
         },
         {
@@ -89,8 +89,8 @@ export default async function FeaturesPage({
         },
         {
           n: '02',
-          t: 'AI Co-Pilot replies',
-          d: 'Brand-tone response to every review in 30 seconds. GPT-4 + Claude, trained on your business voice.',
+          t: 'Buaze Pulse AI replies',
+          d: 'Brand-tone response to every review in 30 seconds. Buaze Pulse AI learns your business voice.',
           Ill: IllusShield,
         },
         {
