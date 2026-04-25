@@ -14,6 +14,58 @@ export function isFirebaseConfigured(): boolean {
   return Boolean(c.apiKey && c.authDomain && c.projectId && c.appId);
 }
 
+type FirebaseLikeError = { code?: string; message?: string };
+
+/**
+ * Maps a Firebase auth error (or generic Error) to a user-facing message.
+ * Falls back to the raw error code in parentheses so we can diagnose
+ * unknown failures from the field instead of showing a blind "failed".
+ */
+export function getFirebaseErrorMessage(
+  err: unknown,
+  locale: 'tr' | 'en' = 'tr',
+): string {
+  const e = err as FirebaseLikeError;
+  const code = e?.code || (e?.message?.match(/\(([^)]+)\)/)?.[1] ?? '');
+  const tr = locale === 'tr';
+
+  switch (code) {
+    case 'auth/popup-blocked':
+      return tr
+        ? 'Tarayıcınız Google penceresini engelledi. Pop-up\'lara izin verip tekrar deneyin.'
+        : 'Your browser blocked the Google popup. Allow pop-ups and try again.';
+    case 'auth/unauthorized-domain':
+      return tr
+        ? 'Bu alan adı Firebase\'de yetkili değil. Lütfen yöneticinize bildirin.'
+        : 'This domain is not authorized in Firebase. Please contact support.';
+    case 'auth/network-request-failed':
+      return tr
+        ? 'Ağ hatası. İnternet bağlantınızı kontrol edip tekrar deneyin.'
+        : 'Network error. Check your connection and try again.';
+    case 'auth/operation-not-allowed':
+      return tr
+        ? 'Google ile giriş Firebase konsolunda etkinleştirilmemiş.'
+        : 'Google sign-in is not enabled in Firebase console.';
+    case 'auth/account-exists-with-different-credential':
+      return tr
+        ? 'Bu e-posta farklı bir giriş yöntemiyle kayıtlı. E-posta + şifre ile deneyin.'
+        : 'This email is registered with a different sign-in method. Try email + password.';
+    case 'auth/internal-error':
+      return tr
+        ? 'Firebase hatası. Lütfen biraz sonra tekrar deneyin.'
+        : 'Firebase error. Please try again in a moment.';
+    case 'RECAPTCHA_NOT_READY':
+    case 'RECAPTCHA_SCRIPT_FAILED':
+      return tr
+        ? 'Güvenlik doğrulaması yüklenemedi. Sayfayı yenileyip tekrar deneyin.'
+        : 'Security check failed to load. Refresh the page and try again.';
+    default: {
+      const base = tr ? 'Google ile giriş başarısız oldu.' : 'Google sign-in failed.';
+      return code ? `${base} (${code})` : base;
+    }
+  }
+}
+
 /**
  * Opens a Google sign-in popup and returns the Firebase ID token.
  * Returns null when Firebase is not configured or the SDK isn't installed.

@@ -85,7 +85,9 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         setLoading(false);
         return;
       }
-      setError(locale === 'tr' ? 'Google ile giriş başarısız oldu.' : 'Google sign-in failed.');
+      console.error('[google-signin]', err);
+      const { getFirebaseErrorMessage } = await import('@/lib/firebase-client');
+      setError(getFirebaseErrorMessage(err, locale));
       setLoading(false);
     }
   };

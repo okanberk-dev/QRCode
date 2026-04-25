@@ -95,7 +95,9 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         setLoading(false);
         return;
       }
-      setError(locale === 'tr' ? 'Google ile kayıt başarısız oldu.' : 'Google sign-up failed.');
+      console.error('[google-signup]', err);
+      const { getFirebaseErrorMessage } = await import('@/lib/firebase-client');
+      setError(getFirebaseErrorMessage(err, locale));
       setLoading(false);
     }
   };
