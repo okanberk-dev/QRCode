@@ -9,6 +9,10 @@ const PROJECT_ID =
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const MIN_SCORE = Number(process.env.RECAPTCHA_ENTERPRISE_MIN_SCORE || '0.5');
 const SERVICE_ACCOUNT_JSON = process.env.RECAPTCHA_ENTERPRISE_SERVICE_ACCOUNT_JSON?.trim();
+// Monitor mode (default): never block users on reCAPTCHA failures, just log
+// the reason. Flip RECAPTCHA_ENFORCE=true once dashboards confirm scores
+// are healthy. Mirrors Stripe Radar / Cloudflare Turnstile rollout pattern.
+const ENFORCE = (process.env.RECAPTCHA_ENFORCE ?? 'false').toLowerCase() === 'true';
 
 type RecaptchaSuccess = {
   ok: true;
@@ -85,16 +89,34 @@ export function isRecaptchaServerConfigured(): boolean {
   return Boolean(SITE_KEY && PROJECT_ID);
 }
 
+function softFail(
+  reason: string,
+  detail: Record<string, unknown>,
+  failure: RecaptchaFailure,
+): RecaptchaSuccess | RecaptchaFailure {
+  if (ENFORCE) return failure;
+  console.warn(`[recaptcha] ${reason} — soft-pass (set RECAPTCHA_ENFORCE=true to block)`, detail);
+  return { ok: true, skipped: true };
+}
+
 export async function verifyRecaptchaToken(
   req: NextRequest,
   token: unknown,
   expectedAction: string,
   locale: RecaptchaLocale = 'tr',
 ): Promise<RecaptchaSuccess | RecaptchaFailure> {
-  if (!isRecaptchaServerConfigured()) return { ok: true, skipped: true };
+  if (!isRecaptchaServerConfigured()) {
+    if (!SITE_KEY) console.warn('[recaptcha] NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY not set — skipped');
+    if (!PROJECT_ID) console.warn('[recaptcha] RECAPTCHA_ENTERPRISE_PROJECT_ID not set — skipped');
+    return { ok: true, skipped: true };
+  }
 
   if (typeof token !== 'string' || token.length < 20 || token.length > 4096) {
-    return { ok: false, error: msg('missing', locale), status: 400 };
+    return softFail('client did not send a valid token', { tokenType: typeof token, action: expectedAction }, {
+      ok: false,
+      error: msg('missing', locale),
+      status: 400,
+    });
   }
 
   try {
@@ -114,24 +136,30 @@ export async function verifyRecaptchaToken(
     });
 
     if (!response.tokenProperties?.valid) {
-      console.warn('[recaptcha] invalid token', response.tokenProperties?.invalidReason);
-      return { ok: false, error: msg('invalid', locale), status: 403 };
+      return softFail('token invalid', { invalidReason: response.tokenProperties?.invalidReason, action: expectedAction }, {
+        ok: false,
+        error: msg('invalid', locale),
+        status: 403,
+      });
     }
 
     if (response.tokenProperties.action !== expectedAction) {
-      console.warn('[recaptcha] action mismatch', {
-        expectedAction,
-        action: response.tokenProperties.action,
+      return softFail('action mismatch', { expectedAction, action: response.tokenProperties.action }, {
+        ok: false,
+        error: msg('mismatch', locale),
+        status: 403,
       });
-      return { ok: false, error: msg('mismatch', locale), status: 403 };
     }
 
     const score = response.riskAnalysis?.score ?? 0;
     const reasons = (response.riskAnalysis?.reasons ?? []).map((reason) => String(reason));
 
     if (score < MIN_SCORE) {
-      console.warn('[recaptcha] low score', { score, reasons });
-      return { ok: false, error: msg('lowScore', locale), status: 403 };
+      return softFail('low score', { score, reasons, action: expectedAction }, {
+        ok: false,
+        error: msg('lowScore', locale),
+        status: 403,
+      });
     }
 
     return {
@@ -141,8 +169,11 @@ export async function verifyRecaptchaToken(
       assessmentName: response.name || undefined,
     };
   } catch (error) {
-    console.error('[recaptcha] assessment error', error);
-    return { ok: false, error: msg('failure', locale), status: 502 };
+    return softFail('assessment api error', { error: String(error), action: expectedAction }, {
+      ok: false,
+      error: msg('failure', locale),
+      status: 502,
+    });
   }
 }
 
