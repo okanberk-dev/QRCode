@@ -126,6 +126,8 @@ export default function RestaurantMenuBuilderPage() {
       orUrl: isTr ? 'veya URL' : 'or URL',
       toggleVisible: isTr ? 'Görünürlüğü değiştir' : 'Toggle visibility',
       toggleOutOfStock: isTr ? 'Stok durumunu değiştir' : 'Toggle out of stock',
+      saving: isTr ? 'Kaydediliyor' : 'Saving',
+      resetAccent: isTr ? 'Sıfırla' : 'Reset',
     }),
     [isTr],
   );
@@ -491,22 +493,27 @@ export default function RestaurantMenuBuilderPage() {
   }
 
   const status = !restaurant.menuEnabled
-    ? { label: copy.disabled, cls: 'bg-[#EDEDED] text-[#6B7280] border-[#EDEDED]' }
+    ? { label: copy.disabled, dot: 'bg-[#737373]', text: 'text-[#737373]' }
     : restaurant.menuPublished
-    ? { label: copy.published, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
-    : { label: copy.draft, cls: 'bg-amber-50 text-amber-700 border-amber-200' };
+    ? { label: copy.published, dot: 'bg-emerald-500', text: 'text-emerald-700' }
+    : { label: copy.draft, dot: 'bg-amber-500', text: 'text-amber-700' };
 
   if (previewMode) {
     return (
       <div className="min-h-full">
-        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#EDEDED] bg-[#0A0A0A] px-4 py-3 text-white">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#C6F24E]">{copy.preview}</p>
-            <p className="truncate text-sm font-semibold">{restaurant.name}</p>
+        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#1A1A1A] bg-[#0A0A0A] px-5 py-3.5 text-white">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#C6F24E]">
+              <Eye size={14} strokeWidth={2.25} className="text-[#0A0A0A]" />
+            </span>
+            <div className="min-w-0">
+              <p className="pulse-eyebrow text-[#C6F24E]">{copy.preview}</p>
+              <p className="truncate text-sm font-medium">{restaurant.name}</p>
+            </div>
           </div>
           <button
             onClick={() => router.push(`/${locale}/dashboard/restaurants/${id}/menu`)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-white hover:bg-white/20 active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-medium text-white hover:bg-white/20 active:scale-95"
           >
             <X size={14} strokeWidth={2} />
             {copy.exitPreview}
@@ -520,83 +527,100 @@ export default function RestaurantMenuBuilderPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 space-y-1">
-            <Link
-              href={`/${locale}/dashboard/menu`}
-              className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]"
-            >
-              <ArrowLeft size={14} strokeWidth={2} />
-              {copy.backToMenus}
-            </Link>
-            <h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl">
-              <UtensilsCrossed size={22} strokeWidth={2} />
-              {restaurant.name}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#1A1A1A]">
-              <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 ${status.cls}`}>{status.label}</span>
-              {restaurant.menuUpdatedAt && (
-                <span className="text-[#6B7280]">· {copy.lastUpdated}: {new Date(restaurant.menuUpdatedAt).toLocaleString(isTr ? 'tr-TR' : 'en-US')}</span>
+      <div className="relative overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+        {restaurant.menuPublished && (
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-[#C6F24E]" aria-hidden />
+        )}
+        <div className="flex flex-col gap-5 p-6 sm:p-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-3">
+              <Link
+                href={`/${locale}/dashboard/menu`}
+                className="pulse-eyebrow inline-flex items-center gap-1.5 text-[#737373] transition-colors hover:text-[#0A0A0A]"
+              >
+                <ArrowLeft size={12} strokeWidth={2.25} />
+                {copy.backToMenus}
+              </Link>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
+                  <UtensilsCrossed size={20} strokeWidth={2} />
+                </span>
+                <h1 className="truncate text-[26px] font-medium tracking-[-0.02em] text-[#0A0A0A] sm:text-[32px]">
+                  {restaurant.name}
+                </h1>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-[#737373]">
+                <span className={`inline-flex items-center gap-1.5 ${status.text}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} aria-hidden />
+                  <span className="font-medium">{status.label}</span>
+                </span>
+                {restaurant.menuUpdatedAt && (
+                  <>
+                    <span className="h-1 w-1 rounded-full bg-[#EDEDED]" aria-hidden />
+                    <span>{copy.lastUpdated}: {new Date(restaurant.menuUpdatedAt).toLocaleString(isTr ? 'tr-TR' : 'en-US')}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/${locale}/dashboard/restaurants/${id}/menu?preview=1`}
+                className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+              >
+                <Eye size={14} strokeWidth={2} />
+                {copy.preview}
+              </Link>
+              <button
+                onClick={() => setQrModal(true)}
+                className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+              >
+                <QrCode size={14} strokeWidth={2} />
+                {copy.menuQr}
+              </button>
+              <Link
+                href={`/${locale}/dashboard/restaurants/${id}/menu/analytics`}
+                className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+              >
+                <BarChart3 size={14} strokeWidth={2} />
+                {copy.analytics}
+              </Link>
+              {restaurant.menuPublished && (
+                <Link
+                  href={`/menu/${restaurant.slug}`}
+                  target="_blank"
+                  className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+                >
+                  <ChevronRight size={14} strokeWidth={2} />
+                  {copy.viewPublic}
+                </Link>
               )}
+              <button
+                onClick={togglePublish}
+                disabled={publishBusy || !restaurant.menuEnabled}
+                className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-medium shadow-sm transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
+                  restaurant.menuPublished
+                    ? 'bg-amber-50 text-amber-800 ring-1 ring-amber-200 hover:bg-amber-100'
+                    : 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
+                }`}
+              >
+                {publishBusy ? <Loader2 size={14} className="animate-spin" /> : restaurant.menuPublished ? <EyeOff size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
+                {restaurant.menuPublished ? copy.unpublish : copy.publish}
+              </button>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/${locale}/dashboard/restaurants/${id}/menu?preview=1`}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
-            >
-              <Eye size={14} strokeWidth={2} />
-              {copy.preview}
-            </Link>
-            <button
-              onClick={() => setQrModal(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
-            >
-              <QrCode size={14} strokeWidth={2} />
-              {copy.menuQr}
-            </button>
-            <Link
-              href={`/${locale}/dashboard/restaurants/${id}/menu/analytics`}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
-            >
-              <BarChart3 size={14} strokeWidth={2} />
-              {copy.analytics}
-            </Link>
-            {restaurant.menuPublished && (
-              <Link
-                href={`/menu/${restaurant.slug}`}
-                target="_blank"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95"
-              >
-                <ChevronRight size={14} strokeWidth={2} />
-                {copy.viewPublic}
-              </Link>
-            )}
-            <button
-              onClick={togglePublish}
-              disabled={publishBusy || !restaurant.menuEnabled}
-              className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold uppercase tracking-widest shadow-sm transition-all active:scale-95 disabled:opacity-50 ${
-                restaurant.menuPublished
-                  ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                  : 'bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]'
-              }`}
-            >
-              {publishBusy ? <Loader2 size={14} className="animate-spin" /> : restaurant.menuPublished ? <EyeOff size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
-              {restaurant.menuPublished ? copy.unpublish : copy.publish}
-            </button>
-          </div>
+          {!restaurant.menuEnabled && (
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <AlertTriangle size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-amber-700" />
+              <p className="text-[13px] leading-relaxed text-amber-900">{copy.disabledByAdmin}</p>
+            </div>
+          )}
         </div>
-        {!restaurant.menuEnabled && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800">
-            {copy.disabledByAdmin}
-          </div>
-        )}
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold uppercase tracking-widest text-red-700">
-          {error}
+        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <AlertTriangle size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-red-600" />
+          <p className="text-[13px] leading-relaxed text-red-700">{error}</p>
         </div>
       )}
 
@@ -610,25 +634,40 @@ export default function RestaurantMenuBuilderPage() {
       />
 
       {/* Two-pane builder */}
-      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+      <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
         {/* Categories */}
-        <section className="rounded-2xl border border-[#EDEDED] bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#EDEDED] p-4">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.categories}</h2>
+        <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-3 border-b border-[#EDEDED] px-5 py-4">
+            <div className="min-w-0">
+              <p className="pulse-eyebrow text-[#737373]">{copy.categories}</p>
+              <p className="mt-0.5 text-[11px] text-[#737373]">{categories.length} {isTr ? 'toplam' : 'total'}</p>
+            </div>
             <button
               onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#C6F24E] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#C6F24E] active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-3.5 py-1.5 text-[12px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:bg-[#A8D62E] active:scale-95"
             >
-              <Plus size={12} strokeWidth={2} />
+              <Plus size={14} strokeWidth={2.25} />
               {copy.addCategory}
             </button>
           </div>
           {categories.length === 0 ? (
-            <div className="p-5 text-center text-xs font-bold text-[#1A1A1A]">{copy.noCategories}</div>
+            <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+                <UtensilsCrossed size={22} strokeWidth={2} />
+              </span>
+              <p className="text-[13px] leading-relaxed text-[#525252]">{copy.noCategories}</p>
+              <button
+                onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
+                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white transition-all hover:bg-[#1A1A1A] active:scale-95"
+              >
+                <Plus size={12} strokeWidth={2.25} />
+                {copy.addCategory}
+              </button>
+            </div>
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onCategoryDragEnd}>
               <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                <ul className="divide-y divide-[#EDEDED]">
+                <ul className="divide-y divide-[#F5F5F5]">
                   {categories.map((c, idx) => (
                     <SortableCategoryRow
                       key={c.id}
@@ -653,34 +692,57 @@ export default function RestaurantMenuBuilderPage() {
         </section>
 
         {/* Items */}
-        <section className="rounded-2xl border border-[#EDEDED] bg-white shadow-sm">
-          <div className="flex items-center justify-between gap-2 border-b border-[#EDEDED] p-4">
+        <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+          <div className="flex items-start justify-between gap-3 border-b border-[#EDEDED] px-5 py-4 sm:px-6">
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">
+              <p className="pulse-eyebrow text-[#737373]">{activeCategory ? copy.items : copy.categories}</p>
+              <h2 className="mt-1 truncate text-[18px] font-medium tracking-[-0.015em] text-[#0A0A0A] sm:text-[20px]">
                 {activeCategory ? activeCategory.name : copy.items}
               </h2>
               {activeCategory?.description && (
-                <p className="mt-1 truncate text-[11px] font-bold text-[#1A1A1A]">{activeCategory.description}</p>
+                <p className="mt-1 line-clamp-1 text-[12px] text-[#737373]">{activeCategory.description}</p>
+              )}
+              {activeCategory && (
+                <p className="mt-1 text-[11px] text-[#737373]">
+                  {activeCategory.items.length} {isTr ? 'ürün' : 'items'}
+                </p>
               )}
             </div>
             {activeCategory && (
               <button
                 onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#0A0A0A] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[12px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95"
               >
-                <Plus size={12} strokeWidth={2} />
+                <Plus size={14} strokeWidth={2.25} />
                 {copy.addItem}
               </button>
             )}
           </div>
           {!activeCategory ? (
-            <div className="p-10 text-center text-xs font-bold text-[#1A1A1A]">{copy.noCategorySelected}</div>
+            <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5F5F5] text-[#737373]">
+                <ChevronRight size={24} strokeWidth={2} />
+              </span>
+              <p className="max-w-[260px] text-[13px] leading-relaxed text-[#525252]">{copy.noCategorySelected}</p>
+            </div>
           ) : activeCategory.items.length === 0 ? (
-            <div className="p-10 text-center text-xs font-bold text-[#1A1A1A]">{copy.noItems}</div>
+            <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+                <ImageIcon size={24} strokeWidth={2} />
+              </span>
+              <p className="max-w-[280px] text-[13px] leading-relaxed text-[#525252]">{copy.noItems}</p>
+              <button
+                onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
+                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white transition-all hover:bg-[#1A1A1A] active:scale-95"
+              >
+                <Plus size={12} strokeWidth={2.25} />
+                {copy.addItem}
+              </button>
+            </div>
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onItemDragEnd}>
               <SortableContext items={activeCategory.items.map((it) => it.id)} strategy={verticalListSortingStrategy}>
-                <ul className="divide-y divide-[#EDEDED]">
+                <ul className="divide-y divide-[#F5F5F5]">
                   {activeCategory.items.map((item, idx) => (
                     <SortableItemRow
                       key={item.id}
@@ -777,7 +839,7 @@ function CategoryModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.description}>
@@ -785,12 +847,12 @@ function CategoryModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="w-full resize-none rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
-        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3">
+        <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
           <input type="checkbox" checked={isVisible} onChange={(e) => setIsVisible(e.target.checked)} className="h-4 w-4 accent-[#C6F24E]" />
-          <span className="text-sm font-bold text-[#0A0A0A]">{copy.visible}</span>
+          <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.visible}</span>
         </label>
         <ModalActions busy={busy} copy={copy} onClose={onClose} />
       </form>
@@ -884,7 +946,7 @@ function ItemModal({
             required
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           >
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -896,7 +958,7 @@ function ItemModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.description}>
@@ -904,28 +966,32 @@ function ItemModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="w-full resize-none rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.price}>
-          <input
-            required
-            inputMode="decimal"
-            value={priceInput}
-            onChange={(e) => setPriceInput(e.target.value)}
-            placeholder="0,00"
-            className="w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E]"
-          />
+          <div className="relative">
+            <input
+              required
+              inputMode="decimal"
+              value={priceInput}
+              onChange={(e) => setPriceInput(e.target.value)}
+              placeholder="0,00"
+              className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 pr-12 text-[15px] tabular-nums text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+              style={{ fontFamily: 'var(--font-mono)' }}
+            />
+            <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[13px] font-medium text-[#A3A3A3]">₺</span>
+          </div>
         </Field>
         <Field label={copy.imageUrl}>
           <div className="flex gap-3">
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[#EDEDED] bg-[#FFFFFF]">
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-[#F5F5F5] ring-1 ring-[#EDEDED]">
               {imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={imageUrl} alt="preview" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-[#6B7280]">
-                  <ImageIcon size={22} strokeWidth={2} />
+                <div className="flex h-full w-full items-center justify-center text-[#A3A3A3]">
+                  <ImageIcon size={24} strokeWidth={1.75} />
                 </div>
               )}
             </div>
@@ -935,16 +1001,16 @@ function ItemModal({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-4 py-2 text-[11px] font-semibold uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-4 py-2 text-[12px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
                 >
-                  {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} strokeWidth={2} />}
+                  {uploading ? <Loader2 size={13} className="animate-spin" /> : <ImageIcon size={13} strokeWidth={2} />}
                   {uploading ? copy.uploading : copy.uploadImage}
                 </button>
                 {imageUrl && (
                   <button
                     type="button"
                     onClick={() => setImageUrl('')}
-                    className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[12px] font-medium text-[#525252] transition-all hover:border-[#0A0A0A] hover:text-[#0A0A0A] active:scale-95"
                   >
                     <X size={12} strokeWidth={2} />
                     {copy.removeImage}
@@ -967,7 +1033,7 @@ function ItemModal({
                 value={imageUrl.startsWith('data:') ? '' : imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder={copy.orUrl + ' · https://...'}
-                className="w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-[#C6F24E]"
+                className="w-full rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
               />
             </div>
           </div>
@@ -981,11 +1047,13 @@ function ItemModal({
                   key={b}
                   type="button"
                   onClick={() => toggleBadge(b)}
-                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-widest transition-all ${
-                    active ? 'border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A]' : 'border-[#EDEDED] bg-white text-[#1A1A1A] hover:bg-[#FFFFFF]'
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all ${
+                    active
+                      ? 'border-[#0A0A0A] bg-[#C6F24E] text-[#0A0A0A] shadow-sm'
+                      : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-[#0A0A0A]'
                   }`}
                 >
-                  {active && <Check size={10} strokeWidth={2} />}
+                  {active && <Check size={11} strokeWidth={2.5} />}
                   {BADGE_LABELS[b][locale]}
                 </button>
               );
@@ -993,17 +1061,20 @@ function ItemModal({
           </div>
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3">
+          <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
             <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="h-4 w-4 accent-[#C6F24E]" />
-            <span className="text-sm font-bold text-[#0A0A0A]">{copy.available}</span>
+            <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.available}</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] px-4 py-3">
+          <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
             <input type="checkbox" checked={isOutOfStock} onChange={(e) => setIsOutOfStock(e.target.checked)} className="h-4 w-4 accent-red-500" />
-            <span className="text-sm font-bold text-[#0A0A0A]">{copy.outOfStock}</span>
+            <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.outOfStock}</span>
           </label>
         </div>
         {formError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-700">{formError}</div>
+          <div className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-3">
+            <AlertTriangle size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-red-600" />
+            <p className="text-[13px] text-red-700">{formError}</p>
+          </div>
         )}
         <ModalActions busy={busy} copy={copy} onClose={onClose} />
       </form>
@@ -1013,18 +1084,19 @@ function ItemModal({
 
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-md sm:items-center sm:p-6">
-      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-[#EDEDED] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:rounded-2xl sm:pb-0">
-        <div className="relative border-b border-[#EDEDED] bg-[#FFFFFF] p-5 sm:p-7">
-          <h2 className="pr-10 text-xl font-semibold uppercase tracking-tight text-[#0A0A0A] sm:text-2xl">{title}</h2>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-6">
+      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-[#EDEDED] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:rounded-3xl sm:pb-0">
+        <div className="relative border-b border-[#EDEDED] px-6 py-5 sm:px-8 sm:py-6">
+          <h2 className="pr-10 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A] sm:text-[22px]">{title}</h2>
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 rounded-xl p-2 text-[#6B7280] transition-all hover:bg-[#EDEDED] hover:text-[#0A0A0A]"
+            aria-label="Close"
+            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
           >
-            <X size={20} strokeWidth={2} />
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5 sm:p-7">{children}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-5 sm:px-8 sm:py-7">{children}</div>
       </div>
     </div>
   );
@@ -1033,7 +1105,7 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[11px] font-semibold uppercase tracking-widest text-[#6B7280]">{label}</label>
+      <label className="pulse-eyebrow text-[#737373]">{label}</label>
       {children}
     </div>
   );
@@ -1041,14 +1113,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function ModalActions({ busy, copy, onClose }: { busy: boolean; copy: Record<string, string>; onClose: () => void }) {
   return (
-    <div className="flex justify-end gap-3 border-t-2 border-[#FFFFFF] pt-5">
-      <button type="button" onClick={onClose} className="px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]">
+    <div className="flex justify-end gap-2 border-t border-[#EDEDED] pt-5">
+      <button
+        type="button"
+        onClick={onClose}
+        className="rounded-full px-5 py-2.5 text-[13px] font-medium text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+      >
         {copy.cancel}
       </button>
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-6 py-2.5 text-xs font-semibold uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
       >
         {busy ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2} />}
         {copy.save}
@@ -1087,44 +1163,59 @@ function SortableCategoryRow({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-1 p-3 text-sm transition-all ${isActive ? 'bg-[#C6F24E]/15' : 'hover:bg-[#FFFFFF]'} ${isDragging ? 'z-10 shadow-lg' : ''}`}
+      className={`group relative flex items-center gap-1 px-3 py-2.5 text-sm transition-colors ${
+        isActive ? 'bg-[#EAF9B8]/40' : 'hover:bg-[#FAFAFA]'
+      } ${isDragging ? 'z-10 rounded-xl bg-white shadow-lg ring-1 ring-[#EDEDED]' : ''}`}
     >
+      {isActive && (
+        <span className="absolute inset-y-2 left-0 w-[3px] rounded-r bg-[#C6F24E]" aria-hidden />
+      )}
       <button
         {...attributes}
         {...listeners}
         aria-label={copy.dragToReorder}
-        className="flex h-8 w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#EDEDED] active:cursor-grabbing"
+        className="flex h-8 w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-[#A3A3A3] opacity-0 transition-all hover:bg-[#EDEDED] hover:text-[#525252] group-hover:opacity-100 active:cursor-grabbing"
       >
         <GripVertical size={14} strokeWidth={2} />
       </button>
-      <button onClick={onSelect} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+      <button onClick={onSelect} className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-[#0A0A0A]">{category.name}</p>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
-            {category.items.length} {isTr ? 'ürün' : 'items'}
-            {!category.isVisible && <span className="ml-1 text-amber-600">· {copy.hidden}</span>}
+          <p className={`truncate text-[14px] ${isActive ? 'font-medium text-[#0A0A0A]' : 'text-[#0A0A0A]'}`}>
+            {category.name}
+          </p>
+          <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#737373]">
+            <span>{category.items.length} {isTr ? 'ürün' : 'items'}</span>
+            {!category.isVisible && (
+              <>
+                <span className="h-0.5 w-0.5 rounded-full bg-[#EDEDED]" aria-hidden />
+                <span className="inline-flex items-center gap-1 text-amber-700">
+                  <EyeOff size={10} strokeWidth={2.25} />
+                  {copy.hidden}
+                </span>
+              </>
+            )}
           </p>
         </div>
       </button>
-      <div className="flex shrink-0 items-center gap-0.5">
-        <button onClick={onMoveUp} disabled={isFirst} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30" title="Up">
+      <div className="flex shrink-0 items-center gap-0.5 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+        <button onClick={onMoveUp} disabled={isFirst} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A] disabled:opacity-30 disabled:hover:bg-transparent" title="Up">
           <ArrowUp size={14} strokeWidth={2} />
         </button>
-        <button onClick={onMoveDown} disabled={isLast} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30" title="Down">
+        <button onClick={onMoveDown} disabled={isLast} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A] disabled:opacity-30 disabled:hover:bg-transparent" title="Down">
           <ArrowDown size={14} strokeWidth={2} />
         </button>
         <button
           onClick={onToggleVisible}
-          className={`flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[#EDEDED] ${category.isVisible ? 'text-[#1A1A1A]' : 'text-amber-600'}`}
+          className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${category.isVisible ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-amber-600'}`}
           title={copy.toggleVisible}
           aria-label={copy.toggleVisible}
         >
           {category.isVisible ? <Eye size={14} strokeWidth={2} /> : <EyeOff size={14} strokeWidth={2} />}
         </button>
-        <button onClick={onEdit} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED]" title={copy.editCategory} aria-label={copy.editCategory}>
+        <button onClick={onEdit} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A]" title={copy.editCategory} aria-label={copy.editCategory}>
           <Edit2 size={14} strokeWidth={2} />
         </button>
-        <button onClick={onDelete} className="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50" title={copy.delete} aria-label={copy.delete}>
+        <button onClick={onDelete} className="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50" title={copy.delete} aria-label={copy.delete}>
           <Trash2 size={14} strokeWidth={2} />
         </button>
       </div>
@@ -1156,59 +1247,89 @@ function SortableItemRow({
     transition,
     opacity: isDragging ? 0.6 : 1,
   };
+  const dimmed = !item.isAvailable || item.isOutOfStock;
   return (
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-3 sm:p-4 ${isDragging ? 'z-10 bg-white shadow-lg' : ''}`}
+      className={`group flex flex-col gap-3 px-4 py-3.5 transition-colors hover:bg-[#FAFAFA] sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-4 ${
+        isDragging ? 'z-10 rounded-xl bg-white shadow-lg ring-1 ring-[#EDEDED]' : ''
+      }`}
     >
-      <div className="flex items-center gap-2 sm:contents">
+      <div className="flex items-center gap-3 sm:contents">
         <button
           {...attributes}
           {...listeners}
           aria-label={copy.dragToReorder}
-          className="flex h-9 w-9 cursor-grab touch-none items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#EDEDED] active:cursor-grabbing"
+          className="flex h-9 w-9 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-[#A3A3A3] transition-all hover:bg-[#EDEDED] hover:text-[#525252] sm:opacity-0 sm:group-hover:opacity-100 active:cursor-grabbing"
         >
           <GripVertical size={16} strokeWidth={2} />
         </button>
-        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#EDEDED]">
+        <div className={`h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[#F5F5F5] ring-1 ring-[#EDEDED] transition-opacity ${dimmed ? 'opacity-50' : ''}`}>
           {item.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={item.imageUrl} alt={item.name} loading="lazy" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-[#6B7280]">
-              <ImageIcon size={18} strokeWidth={2} />
+            <div className="flex h-full w-full items-center justify-center text-[#A3A3A3]">
+              <ImageIcon size={20} strokeWidth={1.75} />
             </div>
           )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="truncate text-sm font-semibold text-[#0A0A0A]">{item.name}</p>
+            <p className={`truncate text-[14px] font-medium ${dimmed ? 'text-[#737373]' : 'text-[#0A0A0A]'}`}>
+              {item.name}
+            </p>
             {!item.isAvailable && (
-              <span className="rounded-full bg-[#EDEDED] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-[#6B7280]">{copy.hidden}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#EDEDED] px-2 py-0.5 text-[10px] font-medium text-[#525252]">
+                <EyeOff size={10} strokeWidth={2.25} />
+                {copy.hidden}
+              </span>
             )}
             {item.isOutOfStock && (
-              <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-red-600">{copy.outOfStock}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600 ring-1 ring-red-100">
+                <AlertTriangle size={10} strokeWidth={2.25} />
+                {copy.outOfStock}
+              </span>
             )}
           </div>
-          <p className="mt-0.5 text-[11px] font-bold text-[#1A1A1A]">
-            {formatPrice(item.priceCents, item.currency, isTr ? 'tr-TR' : 'en-US')}
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span
+              className={`text-[15px] font-medium tabular-nums tracking-tight ${dimmed ? 'text-[#737373]' : 'text-[#0A0A0A]'}`}
+              style={{ fontFamily: 'var(--font-mono)' }}
+            >
+              {formatPrice(item.priceCents, item.currency, isTr ? 'tr-TR' : 'en-US')}
+            </span>
             {item.badges.length > 0 && (
-              <span className="ml-2 text-[#6B7280]">· {item.badges.map((b) => BADGE_LABELS[b as MenuBadge]?.[locale] || b).join(', ')}</span>
+              <div className="flex flex-wrap gap-1">
+                {item.badges.slice(0, 3).map((b) => (
+                  <span
+                    key={b}
+                    className="inline-flex items-center rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[10px] font-medium text-[#0A0A0A]"
+                  >
+                    {BADGE_LABELS[b as MenuBadge]?.[locale] || b}
+                  </span>
+                ))}
+                {item.badges.length > 3 && (
+                  <span className="inline-flex items-center rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-[#525252]">
+                    +{item.badges.length - 3}
+                  </span>
+                )}
+              </div>
             )}
-          </p>
+          </div>
         </div>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5 border-t border-[#EDEDED] pt-2 sm:border-t-0 sm:pt-0">
-        <button onClick={onMoveUp} disabled={isFirst} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5 border-t border-[#F5F5F5] pt-2 transition-opacity sm:border-t-0 sm:pt-0 md:opacity-0 md:group-hover:opacity-100">
+        <button onClick={onMoveUp} disabled={isFirst} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A] disabled:opacity-30 disabled:hover:bg-transparent">
           <ArrowUp size={16} strokeWidth={2} />
         </button>
-        <button onClick={onMoveDown} disabled={isLast} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED] disabled:opacity-30">
+        <button onClick={onMoveDown} disabled={isLast} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A] disabled:opacity-30 disabled:hover:bg-transparent">
           <ArrowDown size={16} strokeWidth={2} />
         </button>
         <button
           onClick={onToggleAvailable}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[#EDEDED] ${item.isAvailable ? 'text-[#1A1A1A]' : 'text-amber-600'}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isAvailable ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-amber-600'}`}
           title={copy.toggleVisible}
           aria-label={copy.toggleVisible}
         >
@@ -1216,16 +1337,16 @@ function SortableItemRow({
         </button>
         <button
           onClick={onToggleOutOfStock}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[#EDEDED] ${item.isOutOfStock ? 'text-red-500' : 'text-[#1A1A1A]'}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isOutOfStock ? 'text-red-500' : 'text-[#525252] hover:text-[#0A0A0A]'}`}
           title={copy.toggleOutOfStock}
           aria-label={copy.toggleOutOfStock}
         >
           <AlertTriangle size={16} strokeWidth={2} />
         </button>
-        <button onClick={onEdit} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#EDEDED]" aria-label={copy.editItem || 'Edit'}>
+        <button onClick={onEdit} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A]" aria-label={copy.editItem || 'Edit'}>
           <Edit2 size={16} strokeWidth={2} />
         </button>
-        <button onClick={onDelete} className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:bg-red-50" aria-label={copy.delete}>
+        <button onClick={onDelete} className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50" aria-label={copy.delete}>
           <Trash2 size={16} strokeWidth={2} />
         </button>
       </div>
@@ -1259,15 +1380,31 @@ function ThemePanel({
   const logoFileRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.menuDesign}</h2>
-        {saving && <Loader2 size={14} className="animate-spin text-[#6B7280]" />}
+    <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-[#EDEDED] px-6 py-4">
+        <div className="min-w-0">
+          <p className="pulse-eyebrow text-[#737373]">{copy.menuDesign}</p>
+          <p className="mt-0.5 text-[12px] text-[#737373]">
+            {copy.themeLabel} · {copy.accentColor} · {copy.logo}
+          </p>
+        </div>
+        {saving && (
+          <span className="inline-flex items-center gap-1.5 text-[11px] text-[#737373]">
+            <Loader2 size={12} className="animate-spin" />
+            {copy.saving}
+          </span>
+        )}
       </div>
 
-      <div className="mt-4 space-y-4">
+      <div className="space-y-7 p-6">
+        {/* Themes */}
         <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#6B7280]">{copy.themeLabel}</p>
+          <div className="mb-3 flex items-baseline justify-between">
+            <p className="pulse-eyebrow text-[#737373]">{copy.themeLabel}</p>
+            <p className="text-[11px] text-[#A3A3A3]">
+              {themes.find((t) => t.id === restaurant.menuTheme)?.label ?? ''}
+            </p>
+          </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {themes.map((t) => {
               const active = restaurant.menuTheme === t.id;
@@ -1275,14 +1412,22 @@ function ThemePanel({
                 <button
                   key={t.id}
                   onClick={() => onChange({ menuTheme: t.id })}
-                  className={`group flex flex-col items-stretch gap-2 rounded-2xl border-2 p-2 text-left transition-all ${
-                    active ? 'border-[#C6F24E] bg-[#C6F24E]/5 shadow-sm' : 'border-[#EDEDED] hover:border-[#1A1A1A]'
+                  className={`group relative flex flex-col items-stretch gap-2.5 rounded-2xl border p-2.5 text-left transition-all ${
+                    active
+                      ? 'border-[#0A0A0A] bg-white shadow-md ring-2 ring-[#C6F24E]/50'
+                      : 'border-[#EDEDED] bg-white hover:-translate-y-0.5 hover:border-[#A3A3A3] hover:shadow-sm'
                   }`}
                 >
                   <ThemeThumb theme={t.id} accent={currentAccent} />
-                  <div className="flex items-center justify-between px-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-[#0A0A0A]">{t.label}</span>
-                    {active && <Check size={12} strokeWidth={3} className="text-[#C6F24E]" />}
+                  <div className="flex items-center justify-between px-0.5">
+                    <span className={`text-[13px] ${active ? 'font-medium text-[#0A0A0A]' : 'text-[#525252]'}`}>
+                      {t.label}
+                    </span>
+                    {active && (
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#C6F24E]">
+                        <Check size={11} strokeWidth={3} className="text-[#0A0A0A]" />
+                      </span>
+                    )}
                   </div>
                 </button>
               );
@@ -1290,9 +1435,15 @@ function ThemePanel({
           </div>
         </div>
 
+        {/* Accent color */}
         <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#6B7280]">{copy.accentColor}</p>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="mb-3 flex items-baseline justify-between">
+            <p className="pulse-eyebrow text-[#737373]">{copy.accentColor}</p>
+            <span className="font-mono text-[11px] text-[#A3A3A3]" style={{ fontFamily: 'var(--font-mono)' }}>
+              {currentAccent.toUpperCase()}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
             {THEME_SWATCHES.map((c) => {
               const active = currentAccent.toLowerCase() === c.toLowerCase();
               return (
@@ -1300,68 +1451,80 @@ function ThemePanel({
                   key={c}
                   onClick={() => onChange({ menuAccentColor: c })}
                   style={{ backgroundColor: c }}
-                  className={`h-9 w-9 rounded-full border-2 transition-all active:scale-90 ${active ? 'border-[#0A0A0A] ring-2 ring-[#C6F24E] ring-offset-2' : 'border-white shadow-sm hover:scale-110'}`}
+                  className={`relative h-10 w-10 rounded-full transition-all active:scale-90 ${
+                    active
+                      ? 'ring-2 ring-[#0A0A0A] ring-offset-2'
+                      : 'shadow-sm ring-1 ring-black/5 hover:scale-110'
+                  }`}
                   title={c}
-                />
+                  aria-label={c}
+                >
+                  {active && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <Check size={14} strokeWidth={3} className="text-[#0A0A0A] drop-shadow" />
+                    </span>
+                  )}
+                </button>
               );
             })}
-            <label className="relative inline-flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[#1A1A1A] hover:bg-[#FFFFFF]">
+            <label className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[#A3A3A3] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]">
               <input
                 type="color"
                 value={currentAccent}
                 onChange={(e) => onChange({ menuAccentColor: e.target.value })}
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               />
-              <span className="text-[9px] font-semibold uppercase text-[#1A1A1A]">+</span>
+              <Plus size={14} strokeWidth={2.25} />
             </label>
             {restaurant.menuAccentColor && (
               <button
                 onClick={() => onChange({ menuAccentColor: null })}
-                className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-[#6B7280] hover:bg-[#FFFFFF]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
               >
-                <X size={10} strokeWidth={2} />
-                reset
+                <X size={11} strokeWidth={2} />
+                {copy.resetAccent}
               </button>
             )}
           </div>
         </div>
 
+        {/* Logo */}
         <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#6B7280]">{copy.logo}</p>
-          <div className="flex items-center gap-3">
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#EDEDED] bg-[#FFFFFF]">
+          <p className="pulse-eyebrow mb-3 text-[#737373]">{copy.logo}</p>
+          <div className="flex items-start gap-4 rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-4">
+            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-white ring-1 ring-[#EDEDED]">
               {restaurant.menuLogoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={restaurant.menuLogoUrl} alt="logo" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-[#6B7280]" style={{ color: currentAccent }}>
-                  <UtensilsCrossed size={22} strokeWidth={2} />
+                <div className="flex h-full w-full items-center justify-center" style={{ color: currentAccent }}>
+                  <UtensilsCrossed size={26} strokeWidth={1.75} />
                 </div>
               )}
             </div>
-            <div className="flex flex-1 flex-col gap-1.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => logoFileRef.current?.click()}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-white shadow-sm hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-4 py-2 text-[12px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
                 >
-                  <ImageIcon size={12} strokeWidth={2} />
+                  <ImageIcon size={13} strokeWidth={2} />
                   {copy.uploadImage}
                 </button>
                 {restaurant.menuLogoUrl && (
                   <button
                     type="button"
                     onClick={() => onChange({ menuLogoUrl: null })}
-                    className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[12px] font-medium text-[#525252] transition-all hover:border-[#0A0A0A] hover:text-[#0A0A0A] active:scale-95"
                   >
                     <X size={12} strokeWidth={2} />
                     {copy.removeImage}
                   </button>
                 )}
               </div>
-              <p className="text-[10px] font-medium text-[#6B7280]">{copy.logoHint}</p>
+              <p className="text-[12px] leading-relaxed text-[#737373]">{copy.logoHint}</p>
               <input
                 ref={logoFileRef}
                 type="file"
@@ -1384,49 +1547,51 @@ function ThemePanel({
 function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
   if (theme === 'classic') {
     return (
-      <div className="relative h-20 overflow-hidden rounded-xl border border-[#EDEDED] bg-[#FFFFFF]">
-        <div className="h-6 w-full" style={{ backgroundColor: accent }} />
-        <div className="space-y-1.5 p-2">
-          <div className="h-1.5 w-2/3 rounded bg-[#0A0A0A]/80" />
-          <div className="h-1 w-full rounded bg-[#6B7280]/30" />
-          <div className="h-1 w-4/5 rounded bg-[#6B7280]/30" />
+      <div className="relative h-24 overflow-hidden rounded-xl bg-white ring-1 ring-[#EDEDED]">
+        <div className="h-7 w-full" style={{ backgroundColor: accent }} />
+        <div className="space-y-1.5 p-2.5">
+          <div className="h-2 w-2/3 rounded bg-[#0A0A0A]/85" />
+          <div className="h-1 w-full rounded bg-[#A3A3A3]/40" />
+          <div className="h-1 w-4/5 rounded bg-[#A3A3A3]/40" />
+          <div className="h-1 w-3/5 rounded bg-[#A3A3A3]/40" />
         </div>
       </div>
     );
   }
   if (theme === 'modern') {
     return (
-      <div className="relative grid h-20 grid-cols-3 gap-1 overflow-hidden rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1.5">
+      <div className="relative grid h-24 grid-cols-3 gap-1.5 overflow-hidden rounded-xl bg-[#FAFAFA] p-2 ring-1 ring-[#EDEDED]">
         {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="rounded bg-white shadow-sm" style={{ borderBottom: `2px solid ${accent}` }} />
+          <div key={i} className="rounded-md bg-white shadow-sm" style={{ borderBottom: `2px solid ${accent}` }} />
         ))}
       </div>
     );
   }
   if (theme === 'elegant') {
     return (
-      <div className="relative flex h-20 flex-col gap-1.5 overflow-hidden rounded-xl border border-[#EDEDED] bg-white p-2">
-        <div className="mx-auto h-0.5 w-8 rounded" style={{ backgroundColor: accent }} />
-        <div className="mx-auto h-1.5 w-1/2 rounded bg-[#0A0A0A]" />
+      <div className="relative flex h-24 flex-col gap-1.5 overflow-hidden rounded-xl bg-white p-2.5 ring-1 ring-[#EDEDED]">
+        <div className="mx-auto h-[3px] w-10 rounded" style={{ backgroundColor: accent }} />
+        <div className="mx-auto h-2 w-1/2 rounded bg-[#0A0A0A]" />
         <div className="mt-1 h-px w-full bg-[#EDEDED]" />
         <div className="mt-1 space-y-1">
-          <div className="h-1 w-full rounded bg-[#6B7280]/30" />
-          <div className="h-1 w-4/5 rounded bg-[#6B7280]/30" />
+          <div className="h-1 w-full rounded bg-[#A3A3A3]/40" />
+          <div className="h-1 w-4/5 rounded bg-[#A3A3A3]/40" />
+          <div className="h-1 w-3/5 rounded bg-[#A3A3A3]/40" />
         </div>
       </div>
     );
   }
   if (theme === 'minimal') {
     return (
-      <div className="relative h-20 overflow-hidden rounded-xl border border-[#EDEDED] bg-white p-2">
-        <div className="flex items-center gap-1">
+      <div className="relative h-24 overflow-hidden rounded-xl bg-white p-3 ring-1 ring-[#EDEDED]">
+        <div className="flex items-center gap-1.5">
           <div className="h-1 flex-1 rounded bg-[#0A0A0A]" />
-          <div className="h-1 w-6 rounded" style={{ backgroundColor: accent }} />
+          <div className="h-1 w-8 rounded" style={{ backgroundColor: accent }} />
         </div>
-        <div className="mt-2 space-y-1.5">
+        <div className="mt-3 space-y-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="flex items-center gap-1">
-              <div className="h-0.5 flex-1 rounded bg-[#6B7280]/30" />
+            <div key={i} className="flex items-center gap-1.5">
+              <div className="h-0.5 flex-1 rounded bg-[#A3A3A3]/40" />
               <div className="h-0.5 w-6 rounded" style={{ backgroundColor: accent, opacity: 0.7 }} />
             </div>
           ))}
@@ -1436,11 +1601,11 @@ function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
   }
   if (theme === 'bistro') {
     return (
-      <div className="relative grid h-20 grid-cols-2 gap-1 overflow-hidden rounded-xl border border-[#E8E0D2] p-1.5" style={{ backgroundColor: '#FAF7F0' }}>
+      <div className="relative grid h-24 grid-cols-2 gap-1.5 overflow-hidden rounded-xl p-2 ring-1 ring-[#E8E0D2]" style={{ backgroundColor: '#FAF7F0' }}>
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="rounded-xl bg-white shadow-sm"
+            className="rounded-lg bg-white shadow-sm"
             style={{ borderBottom: `2px solid ${accent}` }}
           />
         ))}
@@ -1449,10 +1614,10 @@ function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
   }
   // gastronomy
   return (
-    <div className="relative h-20 overflow-hidden rounded-xl border border-[#000000] bg-[#000000] p-2">
-      <div className="h-1.5 w-1/3 rounded" style={{ backgroundColor: accent }} />
-      <div className="mt-2 h-1 w-2/3 rounded bg-white/80" />
-      <div className="mt-1 h-1 w-full rounded bg-white/30" />
+    <div className="relative h-24 overflow-hidden rounded-xl bg-[#0A0A0A] p-2.5 ring-1 ring-black">
+      <div className="h-2 w-1/3 rounded" style={{ backgroundColor: accent }} />
+      <div className="mt-2 h-1.5 w-2/3 rounded bg-white/85" />
+      <div className="mt-1.5 h-1 w-full rounded bg-white/30" />
       <div className="mt-1 h-1 w-4/5 rounded bg-white/30" />
       <div className="mt-2 h-1 w-1/4 rounded" style={{ backgroundColor: accent }} />
     </div>
@@ -1522,30 +1687,35 @@ function MenuQrModal({
   return (
     <Modal title={copy.menuQr} onClose={onClose}>
       <div className="space-y-5">
-        <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] p-4 sm:p-6">
+        <div className="flex items-center justify-center rounded-3xl bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 ring-1 ring-[#EDEDED] sm:p-8">
           {previewSvg ? (
             <div
               className="aspect-square w-full max-w-[240px] [&>svg]:h-full [&>svg]:w-full"
               dangerouslySetInnerHTML={{ __html: previewSvg }}
             />
           ) : err ? (
-            <p className="py-20 text-xs font-bold text-red-600">{err}</p>
+            <div className="flex aspect-square w-full max-w-[240px] flex-col items-center justify-center gap-2 text-center">
+              <AlertTriangle size={24} strokeWidth={2} className="text-red-600" />
+              <p className="text-[13px] text-red-700">{err}</p>
+            </div>
           ) : (
             <div className="flex aspect-square w-full max-w-[240px] items-center justify-center">
-              <Loader2 size={28} className="animate-spin text-[#6B7280]" />
+              <Loader2 size={28} className="animate-spin text-[#737373]" />
             </div>
           )}
         </div>
 
         <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#6B7280]">{copy.qrFormat}</p>
+          <p className="pulse-eyebrow mb-2 text-[#737373]">{copy.qrFormat}</p>
           <div className="flex gap-2">
             {(['png', 'svg'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFormat(f)}
-                className={`flex-1 rounded-xl border-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest transition-all ${
-                  format === f ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white' : 'border-[#EDEDED] bg-white text-[#0A0A0A] hover:bg-[#FFFFFF]'
+                className={`flex-1 rounded-full border px-4 py-2.5 text-[13px] font-medium transition-all ${
+                  format === f
+                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white shadow-sm'
+                    : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-[#0A0A0A]'
                 }`}
               >
                 {f.toUpperCase()}
@@ -1554,18 +1724,18 @@ function MenuQrModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t-2 border-[#FFFFFF] pt-5">
+        <div className="flex justify-end gap-2 border-t border-[#EDEDED] pt-5">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A]"
+            className="rounded-full px-5 py-2.5 text-[13px] font-medium text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
           >
             {copy.cancel}
           </button>
           <button
             onClick={download}
             disabled={downloading || !previewSvg}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#C6F24E] px-6 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#D7F98E] active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full bg-[#C6F24E] px-6 py-2.5 text-[13px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:bg-[#A8D62E] active:scale-95 disabled:opacity-50"
           >
             {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
             {copy.downloadQr}

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Store, Loader2, MoreVertical, Mail, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Store, Loader2, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, ArrowRight } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import Link from 'next/link';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
@@ -21,9 +21,9 @@ interface Restaurant {
 }
 
 function menuStatus(r: Pick<Restaurant, 'menuEnabled' | 'menuPublished'>) {
-  if (!r.menuEnabled) return { label: 'KAPALI', cls: 'bg-[#EDEDED] text-[#6B7280] border-[#EDEDED]' };
-  if (!r.menuPublished) return { label: 'TASLAK', cls: 'bg-amber-50 text-amber-700 border-amber-200' };
-  return { label: 'YAYINDA', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+  if (!r.menuEnabled) return { label: 'Kapalı', dot: 'bg-[#A3A3A3]', text: 'text-[#737373]' };
+  if (!r.menuPublished) return { label: 'Taslak', dot: 'bg-amber-500', text: 'text-amber-700' };
+  return { label: 'Yayında', dot: 'bg-emerald-500', text: 'text-emerald-700' };
 }
 
 export default function RestaurantsPage() {
@@ -140,237 +140,278 @@ export default function RestaurantsPage() {
     }
   };
 
+  const filteredRestaurants = useMemo(
+    () =>
+      restaurants.filter(
+        (r) =>
+          r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          r.category.toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
+    [restaurants, searchTerm],
+  );
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#0A0A0A] w-8 h-8" />
+        <Loader2 className="h-7 w-7 animate-spin text-[#0A0A0A]" />
       </div>
     );
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
-        <div className="space-y-1">
-          <p className="pulse-eyebrow text-[#737373]">PANEL / İŞLETMELER</p>
-          <h1
-            className="text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
+      {/* Header */}
+      <div className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+        <div className="flex flex-col gap-5 p-6 sm:p-8 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0 space-y-2">
+            <p className="pulse-eyebrow text-[#737373]">Panel · İşletmeler</p>
+            <h1
+              className="text-[28px] font-medium tracking-[-0.025em] text-[#0A0A0A] sm:text-[34px]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              İşletmeler
+            </h1>
+            <p className="max-w-[540px] text-[13px] leading-relaxed text-[#525252] sm:text-[14px]">
+              Platformdaki tüm restoranları ve şubeleri tek panelden yönetin. Aktif/pasif durumu, menü yayını ve müşteri yorumlarını buradan takip edin.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-5 py-3 text-[13px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:bg-[#A8D62E] active:scale-95"
           >
-            İşletmeler
-          </h1>
-          <p className="text-[#525252] text-[13px] sm:text-[14px] max-w-[520px]">
-            Platformdaki tüm restoranları ve şubeleri tek panelden yönetin.
-          </p>
+            <Plus size={16} strokeWidth={2.25} className="transition-transform group-hover:rotate-90" />
+            Yeni İşletme
+          </button>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 sm:gap-3 bg-[#C6F24E] text-[#0A0A0A] px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-xs sm:text-sm font-semibold hover:bg-[#C6F24E] transition-all active:scale-95 group"
-        >
-          <Plus size={20} strokeWidth={2} className="group-hover:rotate-90 transition-transform" />
-          Yeni İşletme
-        </button>
       </div>
 
       {/* Filters and Search */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        {/* Status Filter */}
-        <div className="flex bg-[#EDEDED]/50 p-1 rounded-xl shrink-0 border border-[#EDEDED]">
-          <button
-            onClick={() => setStatusFilter('active')}
-            className={`px-4 sm:px-6 py-2 text-[10px] sm:pulse-eyebrow rounded-lg transition-all ${
-              statusFilter === 'active' 
-                ? 'bg-white text-[#0A0A0A] shadow-sm' 
-                : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
-            }`}
-          >
-            Aktif
-          </button>
-          <button
-            onClick={() => setStatusFilter('passive')}
-            className={`px-4 sm:px-6 py-2 text-[10px] sm:pulse-eyebrow rounded-lg transition-all ${
-              statusFilter === 'passive' 
-                ? 'bg-white text-[#0A0A0A] shadow-sm' 
-                : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
-            }`}
-          >
-            Pasif
-          </button>
-          <button
-            onClick={() => setStatusFilter('all')}
-            className={`px-4 sm:px-6 py-2 text-[10px] sm:pulse-eyebrow rounded-lg transition-all ${
-              statusFilter === 'all' 
-                ? 'bg-white text-[#0A0A0A] shadow-sm' 
-                : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
-            }`}
-          >
-            Tümü
-          </button>
+      <div className="flex flex-col items-stretch justify-between gap-3 md:flex-row md:items-center">
+        <div className="inline-flex shrink-0 items-center rounded-full border border-[#EDEDED] bg-white p-1 shadow-sm">
+          {(['active', 'passive', 'all'] as const).map((key) => {
+            const labels = { active: 'Aktif', passive: 'Pasif', all: 'Tümü' };
+            const isActive = statusFilter === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setStatusFilter(key)}
+                className={`rounded-full px-4 py-1.5 text-[12px] font-medium transition-all ${
+                  isActive
+                    ? 'bg-[#0A0A0A] text-white shadow-sm'
+                    : 'text-[#525252] hover:text-[#0A0A0A]'
+                }`}
+              >
+                {labels[key]}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Search Bar */}
-        <div className="relative group w-full max-w-md">
-          <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#0A0A0A] transition-colors" size={20} strokeWidth={2} />
+        <div className="relative w-full max-w-md">
+          <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3]" size={16} strokeWidth={2} />
           <input
             type="text"
             placeholder={t('search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white border border-[#EDEDED] rounded-xl pl-12 sm:pl-16 pr-4 sm:pr-8 py-3 sm:py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-[#C6F24E] transition-all"
+            className="w-full rounded-full border border-[#EDEDED] bg-white py-2.5 pl-11 pr-4 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#737373] hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+              aria-label="Aramayı temizle"
+            >
+              <X size={14} strokeWidth={2.25} />
+            </button>
+          )}
         </div>
       </div>
 
       {/* Restaurant Cards Grid */}
       {restaurants.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#EDEDED] p-8 sm:p-16 md:p-24 text-center space-y-6 shadow-sm">
-          <div className="w-24 h-24 bg-[#FFFFFF] rounded-3xl flex items-center justify-center mx-auto border border-[#EDEDED]">
-            <Store size={48} className="text-[#6B7280]" strokeWidth={2} />
+        <div className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white p-10 text-center shadow-sm sm:p-16">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+            <Store size={28} strokeWidth={2} />
           </div>
-          <div className="space-y-2">
-            <h3 className="text-xl font-semibold text-[#0A0A0A]">Henüz işletme kaydı yok</h3>
-            <p className="text-[#1A1A1A] font-bold">İlk restoranınızı ekleyerek dijital itibarınızı yönetmeye başlayın.</p>
-          </div>
+          <h3 className="text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+            Henüz işletme yok
+          </h3>
+          <p className="mx-auto mt-2 max-w-[420px] text-[13px] leading-relaxed text-[#525252]">
+            İlk restoranınızı ekleyin — QR kodu, menüsü ve geri bildirim akışı dakikalar içinde hazır olur.
+          </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-3 bg-[#C6F24E] text-[#0A0A0A] px-10 py-4 rounded-2xl text-sm font-semibold hover:bg-[#C6F24E] transition-all active:scale-95"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95"
           >
-            <Plus size={20} strokeWidth={2} />
+            <Plus size={16} strokeWidth={2.25} />
             İşletme Ekle
           </button>
         </div>
+      ) : filteredRestaurants.length === 0 ? (
+        <div className="rounded-3xl border border-[#EDEDED] bg-white p-10 text-center shadow-sm">
+          <p className="text-[14px] text-[#525252]">
+            "<span className="font-medium text-[#0A0A0A]">{searchTerm}</span>" için sonuç bulunamadı.
+          </p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 lg:gap-10">
-          {restaurants.filter(r => 
-            r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            r.category.toLowerCase().includes(searchTerm.toLowerCase())
-          ).map((r) => (
-            <div key={r.id} className={`bg-white rounded-2xl border border-[#EDEDED] overflow-hidden transition-all hover:translate-y-[-2px] hover:shadow-md ${!r.isActive && 'opacity-70 grayscale-[0.5]'}`}>
-              {/* Color strip */}
-              <div className="h-2 w-full" style={{ backgroundColor: r.primaryColor }} />
-              
-              <div className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-4 min-w-0 flex-1">
-                    <div
-                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-white font-semibold text-xl sm:text-2xl shrink-0"
-                      style={{ backgroundColor: r.primaryColor }}
-                    >
-                      {r.name.charAt(0).toUpperCase()}
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {filteredRestaurants.map((r) => {
+            const ms = menuStatus(r);
+            return (
+              <div
+                key={r.id}
+                className={`group relative overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#A3A3A3] hover:shadow-lg ${
+                  !r.isActive ? 'opacity-75' : ''
+                }`}
+              >
+                {/* Subtle accent rail (theme color) */}
+                <div className="absolute inset-x-0 top-0 h-[3px]" style={{ backgroundColor: r.primaryColor }} aria-hidden />
+
+                <div className="space-y-5 p-5 sm:p-6">
+                  {/* Header: avatar + name + active toggle */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <div
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-[18px] font-semibold text-white shadow-sm ring-1 ring-black/5"
+                        style={{ backgroundColor: r.primaryColor }}
+                      >
+                        {r.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3
+                          className="truncate text-[17px] font-medium leading-tight tracking-[-0.015em] text-[#0A0A0A]"
+                          title={r.name}
+                        >
+                          {r.name}
+                        </h3>
+                        <div className="mt-0.5 flex items-center gap-1.5">
+                          <span className="truncate font-mono text-[12px] text-[#737373]" style={{ fontFamily: 'var(--font-mono)' }}>
+                            /{r.slug}
+                          </span>
+                          <CopyUrlButton
+                            url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${r.slug}`}
+                            className="h-6 w-6"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-[#0A0A0A] text-xl tracking-tight leading-none mb-2 truncate" title={r.name}>{r.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <p className="text-[13px] font-bold text-[#6B7280] truncate">/{r.slug}</p>
-                        <CopyUrlButton 
-                          url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${r.slug}`}
-                          className="h-6 w-6"
-                        />
+                    <button
+                      onClick={() => toggleActive(r.id, r.isActive)}
+                      className={`shrink-0 rounded-lg p-1 transition-all hover:bg-[#F5F5F5] active:scale-90 ${
+                        r.isActive ? 'text-emerald-600' : 'text-[#A3A3A3]'
+                      }`}
+                      title={r.isActive ? 'Pasifleştir' : 'Aktifleştir'}
+                    >
+                      {r.isActive ? <ToggleRight size={32} strokeWidth={1.75} /> : <ToggleLeft size={32} strokeWidth={1.75} />}
+                    </button>
+                  </div>
+
+                  {/* Stats strip */}
+                  <div className="grid grid-cols-3 gap-3 rounded-2xl bg-[#FAFAFA] p-3 ring-1 ring-[#EDEDED]">
+                    <div className="min-w-0">
+                      <p className="pulse-eyebrow text-[#737373]">Kategori</p>
+                      <p className="mt-1 truncate text-[13px] font-medium text-[#0A0A0A]" title={r.category}>
+                        {r.category}
+                      </p>
+                    </div>
+                    <div className="min-w-0 border-x border-[#EDEDED] px-3">
+                      <p className="pulse-eyebrow text-[#737373]">Yorum</p>
+                      <p className="mt-1 text-[15px] font-medium tabular-nums text-[#0A0A0A]" style={{ fontFamily: 'var(--font-mono)' }}>
+                        {r._count.feedbacks}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="pulse-eyebrow text-[#737373]">Menü</p>
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className={`inline-flex items-center gap-1 text-[12px] font-medium ${ms.text}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${ms.dot}`} aria-hidden />
+                          {ms.label}
+                        </span>
+                        <span className="text-[12px] text-[#737373]">· {r._count.menuItems}</span>
                       </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => toggleActive(r.id, r.isActive)}
-                    className={`shrink-0 transition-all active:scale-90 ${r.isActive ? 'text-[#10b981]' : 'text-[#6B7280]'}`}
-                    title={r.isActive ? 'Pasifleştir' : 'Aktifleştir'}
-                  >
-                    {r.isActive ? (
-                      <ToggleRight size={44} strokeWidth={1.5} />
-                    ) : (
-                      <ToggleLeft size={44} strokeWidth={1.5} />
-                    )}
-                  </button>
-                </div>
 
-                <div className="flex items-center gap-3 sm:gap-6 py-4 border-y-2 border-[#FFFFFF] flex-wrap">
-                  <div className="space-y-1 min-w-0">
-                    <p className="text-[10px] font-semibold text-[#6B7280]  leading-none">KATEGORİ</p>
-                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#0A0A0A] truncate">{r.category.toUpperCase()}</p>
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/admin/restaurants/${r.id}`}
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95"
+                    >
+                      Yönet
+                      <ArrowRight size={13} strokeWidth={2.25} className="transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                    <Link
+                      href={`/admin/restaurants/${r.id}/menu`}
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+                    >
+                      <UtensilsCrossed size={13} strokeWidth={2.25} />
+                      Menü
+                    </Link>
+                    <Link
+                      href={`/admin/qr?restaurant=${r.id}`}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#525252] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] hover:text-[#0A0A0A] active:scale-90"
+                      title="QR Kod"
+                      aria-label="QR Kod"
+                    >
+                      <ExternalLink size={14} strokeWidth={2} />
+                    </Link>
                   </div>
-                  <div className="w-px h-8 bg-[#EDEDED]" />
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-semibold text-[#6B7280]  leading-none">YORUM</p>
-                    <p className="text-[12px] sm:text-[13px] font-semibold text-[#C6F24E]">{r._count.feedbacks}</p>
-                  </div>
-                  <div className="w-px h-8 bg-[#EDEDED]" />
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-semibold text-[#6B7280]  leading-none">MENÜ</p>
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:pulse-eyebrow border ${menuStatus(r).cls}`}>
-                        {menuStatus(r).label}
-                      </span>
-                      <span className="text-[12px] sm:text-[13px] font-semibold text-[#0A0A0A]">{r._count.menuItems}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Link
-                    href={`/admin/restaurants/${r.id}`}
-                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-[#0A0A0A] text-white rounded-xl hover:bg-[#1A1A1A] transition-all  active:scale-95"
-                  >
-                    YÖNET
-                  </Link>
-                  <Link
-                    href={`/admin/restaurants/${r.id}/menu`}
-                    className="flex-1 text-center py-3 sm:py-4 text-xs font-bold bg-white text-[#1A1A1A] border border-[#EDEDED] rounded-xl hover:bg-[#FFFFFF] transition-all  active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    <UtensilsCrossed size={14} strokeWidth={2} />
-                    MENÜ
-                  </Link>
-                  <Link
-                    href={`/admin/qr?restaurant=${r.id}`}
-                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-[#6B7280] bg-white hover:text-[#0A0A0A] border border-[#EDEDED] rounded-xl hover:bg-[#FFFFFF] transition-all active:scale-95 shrink-0"
-                    title="QR KOD"
-                  >
-                    <ExternalLink size={18} strokeWidth={2} />
-                  </Link>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-end justify-center p-0 sm:items-center sm:p-6">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col pb-[env(safe-area-inset-bottom)] sm:pb-0">
-            <div className="p-5 sm:p-8 md:p-10 border-b border-[#EDEDED] bg-[#FFFFFF] relative">
-              <h2 className="text-2xl sm:text-3xl font-semibold text-[#0A0A0A] tracking-tight uppercase pr-10">Yeni İşletme</h2>
-              <p className="text-[#1A1A1A] text-xs sm:text-sm font-bold mt-2">Sisteme yeni bir restoran veya şube tanımlayın.</p>
-
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-6">
+          <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-[#EDEDED] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:rounded-3xl sm:pb-0">
+            <div className="relative border-b border-[#EDEDED] px-6 py-5 sm:px-8 sm:py-6">
+              <p className="pulse-eyebrow text-[#737373]">Yeni Kayıt</p>
+              <h2 className="mt-1 text-[22px] font-medium tracking-[-0.015em] text-[#0A0A0A] sm:text-[26px]">
+                İşletme Ekle
+              </h2>
+              <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">
+                Sisteme yeni bir restoran veya şube tanımlayın.
+              </p>
               <button
                 onClick={() => { setShowCreateModal(false); setError(''); }}
-                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#EDEDED] rounded-xl transition-all"
+                aria-label="Kapat"
+                className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
               >
-                <X size={24} strokeWidth={2} />
+                <X size={18} strokeWidth={2} />
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="p-5 sm:p-8 md:p-10 space-y-5 sm:space-y-6 md:space-y-8 overflow-y-auto no-scrollbar">
+            <form onSubmit={handleCreate} className="space-y-5 overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
               {error && (
-                <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-xs font-bold border border-red-200 text-center ">
-                  {error}
+                <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-3.5">
+                  <Info size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-red-600" />
+                  <p className="text-[13px] leading-relaxed text-red-700">{error}</p>
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">İşletme Adı *</label>
+              <div className="space-y-1.5">
+                <label className="pulse-eyebrow text-[#737373]">İşletme Adı</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Örn: Gourmet Eats Ankara"
-                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-[15px] font-bold transition-all"
+                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">URL Slug (Otomatik) *</label>
-                <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-                  <span className="text-[11px] sm:text-[13px] font-semibold text-[#1A1A1A] opacity-40 whitespace-nowrap">buaze.com/r/</span>
+              <div className="space-y-1.5">
+                <label className="pulse-eyebrow text-[#737373]">URL Slug</label>
+                <div className="flex items-center overflow-hidden rounded-2xl border border-[#EDEDED] bg-white transition-all focus-within:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#C6F24E]/40">
+                  <span className="select-none whitespace-nowrap border-r border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-3 font-mono text-[12px] text-[#737373]" style={{ fontFamily: 'var(--font-mono)' }}>
+                    buaze.com/r/
+                  </span>
                   <input
                     type="text"
                     required
@@ -380,42 +421,43 @@ export default function RestaurantsPage() {
                       setIsManualSlug(true);
                     }}
                     placeholder="gourmet-eats"
-                    className="flex-1 min-w-0 px-3 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-[13px] sm:text-[15px] font-bold tracking-tight transition-all"
+                    className="min-w-0 flex-1 bg-transparent px-3.5 py-3 font-mono text-[14px] text-[#0A0A0A] outline-none placeholder:text-[#A3A3A3]"
+                    style={{ fontFamily: 'var(--font-mono)' }}
                   />
                 </div>
               </div>
 
-              {/* ── Google Review Link — emphasized ── */}
-              <div className="rounded-2xl border-2 border-[#C6F24E]/50 bg-gradient-to-br from-[#C6F24E]/15 via-[#C6F24E]/8 to-white p-4 sm:p-5 shadow-sm">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] shadow-sm">
-                      <MapPin size={15} strokeWidth={2} className="text-[#0A0A0A]" />
+              {/* Google Review Link — emphasized */}
+              <div className="rounded-2xl border border-[#C6F24E] bg-gradient-to-br from-[#EAF9B8]/60 via-[#EAF9B8]/30 to-white p-4">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] text-[#0A0A0A] shadow-sm">
+                      <MapPin size={16} strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[12px] sm:text-[13px] font-semibold uppercase tracking-wide text-[#0A0A0A] leading-tight">
+                      <p className="text-[13px] font-medium text-[#0A0A0A]">
                         Google Yorum Bağlantısı
-                        <span className="ml-1 text-[#C6F24E]">*</span>
+                        <span className="ml-1 text-[#737373]">(opsiyonel)</span>
                       </p>
-                      <p className="mt-0.5 text-[10px] font-bold text-[#1A1A1A] leading-tight">
-                        Olumlu yorumlar bu bağlantıya yönlendirilir
+                      <p className="mt-0.5 text-[12px] leading-relaxed text-[#525252]">
+                        Olumlu yorumlar bu bağlantıya yönlendirilir.
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowGoogleInfo((v) => !v)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#EDEDED] bg-white text-[#0A0A0A] transition-all hover:bg-[#C6F24E]/20 active:scale-95"
-                    aria-label="Info"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#525252] transition-all hover:border-[#0A0A0A] hover:text-[#0A0A0A] active:scale-95"
+                    aria-label="Bilgi"
                   >
-                    <Info size={15} strokeWidth={2} />
+                    <Info size={14} strokeWidth={2} />
                   </button>
                 </div>
 
                 {showGoogleInfo && (
-                  <div className="mb-3 rounded-xl border border-[#EDEDED] bg-white p-3.5 text-xs font-bold text-[#1A1A1A] leading-relaxed">
-                    <p className="mb-2 pulse-eyebrow text-[#0A0A0A]">Nasıl alınır?</p>
-                    <ol className="ml-4 list-decimal space-y-1">
+                  <div className="mb-3 rounded-xl border border-[#EDEDED] bg-white p-3.5">
+                    <p className="pulse-eyebrow mb-2 text-[#0A0A0A]">Nasıl alınır?</p>
+                    <ol className="ml-4 list-decimal space-y-1 text-[12px] leading-relaxed text-[#525252]">
                       <li>Google Haritalar&apos;ı açın ve işletmenizi aratın.</li>
                       <li>İşletmeye tıklayın, &quot;Paylaş&quot; butonuna basın.</li>
                       <li>Bağlantıyı kopyalayın ve aşağıya yapıştırın.</li>
@@ -424,7 +466,7 @@ export default function RestaurantsPage() {
                       href="https://www.google.com/maps"
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-3 inline-flex items-center gap-1.5 text-[#C6F24E] font-semibold text-[11px]  underline underline-offset-2"
+                      className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
                     >
                       <ExternalLink size={12} strokeWidth={2} />
                       Google Haritalar&apos;ı Aç
@@ -437,17 +479,17 @@ export default function RestaurantsPage() {
                   value={formData.googlePlaceId}
                   onChange={(e) => setFormData((prev) => ({ ...prev, googlePlaceId: e.target.value }))}
                   placeholder="https://maps.google.com/... veya Place ID"
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3.5 text-sm font-bold text-[#0A0A0A] outline-none transition-all placeholder:text-[#6B7280] focus:ring-2 focus:ring-[#C6F24E]"
+                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Kategori</label>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="pulse-eyebrow text-[#737373]">Kategori</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-semibold appearance-none cursor-pointer shadow-sm"
+                    className="w-full cursor-pointer rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                   >
                     <option>Restoran</option>
                     <option>Kafe</option>
@@ -459,58 +501,60 @@ export default function RestaurantsPage() {
                     <option>Diğer</option>
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Tema Rengi</label>
-                  <div className="flex items-center gap-3 sm:gap-4">
+                <div className="space-y-1.5">
+                  <label className="pulse-eyebrow text-[#737373]">Tema Rengi</label>
+                  <div className="flex items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-3 py-2">
                     <input
                       type="color"
                       value={formData.primaryColor}
                       onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
-                      className="w-14 h-12 sm:w-16 rounded-xl border border-[#EDEDED] cursor-pointer p-1 bg-white shrink-0"
+                      className="h-9 w-9 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-2 [&::-webkit-color-swatch]:border-white [&::-webkit-color-swatch]:shadow-sm"
                     />
-                    <span className="text-xs sm:text-sm font-semibold text-[#0A0A0A] font-mono">{formData.primaryColor.toUpperCase()}</span>
+                    <span className="font-mono text-[13px] tabular-nums text-[#525252]" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {formData.primaryColor.toUpperCase()}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Bildirim E-postası</label>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="pulse-eyebrow text-[#737373]">Bildirim E-postası</label>
                   <input
                     type="email"
                     value={formData.notificationEmail}
                     onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
                     placeholder="yonetim@email.com"
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-bold transition-all"
+                    className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Telefon Numarası</label>
+                <div className="space-y-1.5">
+                  <label className="pulse-eyebrow text-[#737373]">Telefon Numarası</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="05..."
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-bold transition-all"
+                    className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-5 pt-6 sm:pt-10 border-t-2 border-[#FFFFFF]">
+              <div className="flex flex-col-reverse justify-end gap-2 border-t border-[#EDEDED] pt-5 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => { setShowCreateModal(false); setError(''); }}
-                  className="px-6 sm:px-8 py-3 sm:py-4 text-xs font-semibold text-[#1A1A1A] hover:text-[#0A0A0A]  transition-colors"
+                  className="rounded-full px-5 py-2.5 text-[13px] font-medium text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
                 >
-                  İPTAL
+                  İptal
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-[#0A0A0A] text-white px-6 sm:px-10 py-3 sm:py-4 rounded-2xl text-xs font-semibold hover:scale-95 transition-all disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
                 >
-                  {creating ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <Plus size={20} strokeWidth={2} />}
-                  İŞLETMEYİ KAYDET
+                  {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} strokeWidth={2.25} />}
+                  İşletmeyi Kaydet
                 </button>
               </div>
             </form>

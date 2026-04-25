@@ -26,9 +26,6 @@ export default function WatchDemoButton({ locale, className }: Props) {
         →
       </span>
       {isTr ? 'Nasıl çalışır' : 'How it works'}
-      <span className="font-mono text-[10px] text-[#737373]">
-        {isTr ? '3 adım' : '3 steps'}
-      </span>
     </Link>
   );
 }

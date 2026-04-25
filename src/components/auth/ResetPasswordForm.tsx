@@ -168,13 +168,23 @@ export default function ResetPasswordForm({ locale }: Props) {
         {!loading && <ArrowRight size={18} strokeWidth={2} />}
       </button>
 
-      <p className="text-center text-[12px] text-[#525252]">
+      <p className="text-center text-[13px] text-[#737373] mt-1">
         {locale === 'tr' ? 'Kod süresi doldu mu?' : 'Code expired?'}{' '}
         <Link
           href={`/${locale}/auth/forgot-password`}
-          className="font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+          className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
         >
           {locale === 'tr' ? 'Yeni kod iste' : 'Request a new code'}
+        </Link>
+      </p>
+
+      <p className="text-center text-[13px] text-[#737373]">
+        {locale === 'tr' ? 'Hatırladın mı?' : 'Remembered it?'}{' '}
+        <Link
+          href={`/${locale}/auth/login`}
+          className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+        >
+          {locale === 'tr' ? 'Giriş yap' : 'Sign in'}
         </Link>
       </p>
     </form>
