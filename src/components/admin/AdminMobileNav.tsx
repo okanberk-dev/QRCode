@@ -30,7 +30,7 @@ export default function AdminMobileNav() {
   return (
     <nav
       aria-label="Mobil navigasyon"
-      className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0A0A0A]/95 border-t border-white/10 z-50 shadow-[0_-4px_20px_0_rgba(0,0,0,0.4)] backdrop-blur-md"
+      className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0A0A0A]/95 border-t border-white/10 z-50 text-white shadow-[0_-4px_20px_0_rgba(0,0,0,0.4)] backdrop-blur-md"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <ul className="flex items-stretch justify-around px-2 pt-2 pb-1.5">

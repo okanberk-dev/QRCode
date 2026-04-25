@@ -815,7 +815,7 @@ function QRPageContent() {
 
           {/* Restaurant info */}
           {selectedRestaurant && (
-            <div className="bg-[#0A0A0A] rounded-2xl border border-white/10 shadow-xl p-6 sm:p-8 space-y-6">
+            <div className="bg-[#0A0A0A] rounded-2xl border border-white/10 shadow-xl p-6 sm:p-8 space-y-6 text-white">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-semibold text-[#C6F24E]  leading-none">Hedef Link</p>
                 <div className="h-2 w-2 rounded-full bg-[#10b981] animate-pulse" />
@@ -833,11 +833,11 @@ function QRPageContent() {
 
               <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
                 <div className="space-y-1 min-w-0">
-                  <p className="text-[9px] font-semibold text-[#6B7280] ">İşletme</p>
+                  <p className="text-[9px] font-semibold text-white/45 ">İşletme</p>
                   <p className="text-xs font-semibold text-white truncate" title={selectedRestaurant.name}>{selectedRestaurant.name.toUpperCase()}</p>
                 </div>
                 <div className="space-y-1 text-right">
-                  <p className="text-[9px] font-semibold text-[#6B7280] ">Durum</p>
+                  <p className="text-[9px] font-semibold text-white/45 ">Durum</p>
                   <p className="text-xs font-semibold text-[#10b981] whitespace-nowrap">AKTİF ✓</p>
                 </div>
               </div>

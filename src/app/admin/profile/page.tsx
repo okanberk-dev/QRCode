@@ -104,7 +104,7 @@ export default function AdminProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
         {/* Sidebar Info */}
         <div className="space-y-8">
-          <div className="p-6 sm:p-8 bg-[#0A0A0A] rounded-2xl sm:rounded-[40px] border border-[#EDEDED] sm:shadow-md space-y-6">
+          <div className="p-6 sm:p-8 bg-[#0A0A0A] rounded-2xl sm:rounded-[40px] border border-[#EDEDED] sm:shadow-md space-y-6 text-white">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#C6F24E] border border-[#EDEDED] flex items-center justify-center shadow-md">
               <ShieldCheck size={28} className="text-[#0A0A0A]" strokeWidth={2} />
             </div>

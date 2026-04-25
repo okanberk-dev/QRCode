@@ -468,7 +468,7 @@ export default async function LandingPage({
               >
                 {isTr ? 'Tasarla. Yerleştir. Takip et.' : 'Design. Place. Track.'}
               </h3>
-              <p className="mt-3 text-[14px] leading-[1.6] text-[#A3A3A3] max-w-[400px]">
+              <p className="mt-3 text-[14px] leading-[1.6] text-white/70 max-w-[400px]">
                 {isTr
                   ? 'Markana özel QR şablonları, dört yerleştirme yolu (masa / fatura / kapı / paket), ham rapor.'
                   : 'Branded QR templates, four placement modes (table / receipt / door / pack), raw reports.'}

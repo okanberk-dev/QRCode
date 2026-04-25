@@ -155,7 +155,7 @@ export default function AdminBlogPage() {
   return (
     <div className="flex-1 min-h-screen bg-[#FFFFFF] p-3 sm:p-6 md:p-10 space-y-8">
       {/* Banner Header */}
-      <div className="bg-[#0A0A0A] rounded-2xl sm:rounded-2xl border border-white/10 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
+      <div className="bg-[#0A0A0A] rounded-2xl sm:rounded-2xl border border-white/10 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden text-white shadow-2xl">
         <div className="relative z-10 space-y-3">
           <div className="inline-flex items-center gap-2 bg-[#C6F24E]/10 text-[#C6F24E] px-4 py-1.5 rounded-full pulse-eyebrow">
             ✦ İÇERİK YÖNETİMİ

@@ -72,7 +72,7 @@ export default function StickyCtaBar({ locale, threshold = 600 }: Props) {
           <p className="text-[15px] font-medium tracking-tight sm:text-[17px]" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
             {isTr ? 'Bugün başla, ilk yorumunu yarın al.' : 'Start today, see your first review tomorrow.'}
           </p>
-          <p className="mt-0.5 text-[11px] text-[#737373] sm:text-[12px]">
+          <p className="mt-0.5 text-[11px] text-white/65 sm:text-[12px]">
             {isTr
               ? '14 gün ücretsiz · Kredi kartı gerekmez · İstediğin zaman iptal et'
               : '14-day free trial · No credit card · Cancel anytime'}

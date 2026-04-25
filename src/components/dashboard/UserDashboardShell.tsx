@@ -143,7 +143,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     : (locale === 'tr' ? 'Planı yönet' : 'Manage plan');
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col bg-[#0A0A0A]">
+    <div className="flex h-full flex-col bg-[#0A0A0A] text-white">
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
         <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
@@ -346,7 +346,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       {/* Mobile bottom nav — 4 primary tabs + More */}
       <nav
         aria-label={copy.dashboard}
-        className="fixed bottom-0 left-0 right-0 z-40 bg-[#0A0A0A]/95 border-t border-white/10 backdrop-blur-md shadow-[0_-4px_20px_0_rgba(0,0,0,0.35)] lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 bg-[#0A0A0A]/95 border-t border-white/10 text-white backdrop-blur-md shadow-[0_-4px_20px_0_rgba(0,0,0,0.35)] lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <ul className="flex items-stretch px-2 pt-2 pb-1.5">
@@ -413,7 +413,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             onClick={() => setMoreOpen(false)}
           />
           <div
-            className="absolute bottom-0 left-0 right-0 bg-[#0A0A0A] rounded-t-3xl border-t border-white/10 shadow-2xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            className="absolute bottom-0 left-0 right-0 bg-[#0A0A0A] rounded-t-3xl border-t border-white/10 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] text-white shadow-2xl"
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <div className="mb-3 flex items-center justify-between px-2">
