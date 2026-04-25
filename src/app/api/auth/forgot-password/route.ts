@@ -3,9 +3,9 @@ import * as jose from 'jose';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendPasswordResetEmail } from '@/lib/email';
-import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
+import { rateLimit, getClientIp, maybeSweep, recordFailedAttempt } from '@/lib/rate-limit';
 import { getSecret } from '@/lib/auth';
-import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { shouldRequireCaptcha, verifyRecaptchaToken } from '@/lib/recaptcha';
 
 function hashCode(code: string): string {
   return crypto.createHash('sha256').update(code).digest('hex');
@@ -28,10 +28,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Geçerli bir e-posta girin.' }, { status: 400 });
     }
 
-    const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'auth_forgot_password');
-    if (!captcha.ok) {
-      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
+    // Step-up reCAPTCHA: require a token only after STEP_UP_THRESHOLD repeat
+    // submissions from this IP. The legitimate "I forgot my password" user
+    // submits once and never sees the gate; bots probing for valid emails or
+    // hitting the email pipeline trip it on the third try.
+    const failIpKey = `pwr-fail:ip:${ip}`;
+    if (shouldRequireCaptcha(failIpKey)) {
+      const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'auth_forgot_password', locale);
+      if (!captcha.ok) {
+        return NextResponse.json(
+          { error: captcha.error, requireCaptcha: true },
+          { status: captcha.status },
+        );
+      }
     }
+    recordFailedAttempt(failIpKey);
 
     // Rate limiting: 5 per IP per 10 min, 3 per email per 30 min
     const ipLimit = rateLimit(`pwr:ip:${ip}`, 5, 10 * 60 * 1000);

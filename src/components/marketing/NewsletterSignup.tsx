@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
-import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import { getRecaptchaToken, preloadRecaptcha } from '@/lib/recaptcha-client';
 
 interface Props {
   locale: 'tr' | 'en';
@@ -16,6 +16,10 @@ export default function NewsletterSignup({ locale }: Props) {
   const isTr = locale === 'tr';
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+
+  useEffect(() => {
+    preloadRecaptcha();
+  }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

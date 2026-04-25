@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { signJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
-import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
+import { rateLimit, resetRateLimit, getClientIp, maybeSweep, recordFailedAttempt, clearFailedAttempts } from '@/lib/rate-limit';
+import { annotateRecaptchaAssessment, shouldRequireCaptcha, verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,9 +19,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Geçersiz istek' }, { status: 400 });
     }
 
-    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'admin_login');
-    if (!captcha.ok) {
-      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
+    // Step-up reCAPTCHA: require a token only after STEP_UP_THRESHOLD failed
+    // admin login attempts from this IP/username. Routine logins skip the
+    // captcha; brute-forcers trip the gate.
+    const failIpKey = `admin-login-fail:ip:${ip}`;
+    const failUserKey = `admin-login-fail:user:${username.toLowerCase()}`;
+    const stepUp = shouldRequireCaptcha(failIpKey, failUserKey);
+
+    type CaptchaResult = Awaited<ReturnType<typeof verifyRecaptchaToken>>;
+    let captcha: CaptchaResult = { ok: true, skipped: true };
+    if (stepUp) {
+      captcha = await verifyRecaptchaToken(req, recaptchaToken, 'admin_login');
+      if (!captcha.ok) {
+        return NextResponse.json(
+          { error: captcha.error, requireCaptcha: true },
+          { status: captcha.status },
+        );
+      }
     }
 
     // 5 attempts per IP per 10 minutes, with a softer per-username cap
@@ -100,10 +114,12 @@ export async function POST(req: NextRequest) {
 
     // Verify credentials
     if (isPasswordValid) {
-      // Clear the brute-force counters for this IP/username on success.
+      // Clear the brute-force counters and step-up state on success.
       resetRateLimit(`admin-login:ip:${ip}`);
       resetRateLimit(`admin-login:user:${username.toLowerCase()}`);
-      if (captcha.assessmentName) {
+      clearFailedAttempts(failIpKey);
+      clearFailedAttempts(failUserKey);
+      if (captcha.ok && captcha.assessmentName) {
         await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_CORRECT');
       }
 
@@ -155,11 +171,16 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    if (captcha.assessmentName) {
+    if (captcha.ok && captcha.assessmentName) {
       await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_INCORRECT');
     }
 
-    return NextResponse.json({ error: 'Kullanıcı adı veya şifre hatalı' }, { status: 401 });
+    recordFailedAttempt(failIpKey);
+    recordFailedAttempt(failUserKey);
+    return NextResponse.json(
+      { error: 'Kullanıcı adı veya şifre hatalı', requireCaptcha: shouldRequireCaptcha(failIpKey, failUserKey) },
+      { status: 401 },
+    );
   } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json({ error: 'Sunucu hatası veya veritabanı bağlantı sorunu' }, { status: 500 });

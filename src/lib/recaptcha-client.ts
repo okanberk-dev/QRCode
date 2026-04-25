@@ -42,6 +42,17 @@ export function isRecaptchaConfigured(): boolean {
   return Boolean(SITE_KEY);
 }
 
+/**
+ * Inject the reCAPTCHA script tag without executing a token. Call from a
+ * form's mount effect so the script is warm before the user clicks submit —
+ * eliminates the first-submit network round-trip the user would otherwise
+ * pay for. Safe to call multiple times; the script is reused.
+ */
+export function preloadRecaptcha(): void {
+  if (!SITE_KEY) return;
+  void loadRecaptchaScript(SITE_KEY);
+}
+
 export async function getRecaptchaToken(action: string): Promise<string | null> {
   if (!SITE_KEY) return null;
 

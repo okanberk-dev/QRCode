@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useImperativeHandle, forwardRef } from 'react';
+import { useEffect, useState, useImperativeHandle, forwardRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Loader2, Camera, X, ShieldCheck, Mail, Check } from 'lucide-react';
-import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import { getRecaptchaToken, preloadRecaptcha } from '@/lib/recaptcha-client';
 
 interface FeedbackFormProps {
   rating: number;
@@ -42,6 +42,10 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
     const isLowRating = rating <= 3;
 
     const [showLegalModal, setShowLegalModal] = useState<'kvkk' | 'marketing' | null>(null);
+
+    useEffect(() => {
+      preloadRecaptcha();
+    }, []);
 
     const handleSubmit = async () => {
       if (!comment.trim()) {

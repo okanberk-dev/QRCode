@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Send, Loader2, Check, X } from 'lucide-react';
-import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import { getRecaptchaToken, preloadRecaptcha } from '@/lib/recaptcha-client';
 
 interface ContactFormProps {
   t: {
@@ -33,6 +33,10 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const renderedAtRef = useRef<number>(Date.now());
   const isTr = locale !== 'en';
+
+  useEffect(() => {
+    preloadRecaptcha();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

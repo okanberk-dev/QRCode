@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, Check, Loader2 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
-import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import { getRecaptchaToken, preloadRecaptcha } from '@/lib/recaptcha-client';
 
 interface Props {
   locale: Locale;
@@ -18,6 +18,11 @@ export default function ForgotPasswordForm({ locale }: Props) {
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
   const [token, setToken] = useState('');
+  const [requireCaptcha, setRequireCaptcha] = useState(false);
+
+  useEffect(() => {
+    preloadRecaptcha();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +30,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
     setLoading(true);
 
     try {
-      const recaptchaToken = await getRecaptchaToken('auth_forgot_password');
+      const recaptchaToken = requireCaptcha ? await getRecaptchaToken('auth_forgot_password') : null;
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,6 +39,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
 
       const data = await res.json();
       if (!res.ok) {
+        if (data.requireCaptcha) setRequireCaptcha(true);
         setError(data.error || (locale === 'tr' ? 'Bir hata oluştu.' : 'An error occurred.'));
         setLoading(false);
         return;

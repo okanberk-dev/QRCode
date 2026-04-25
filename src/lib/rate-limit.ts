@@ -99,4 +99,53 @@ export function maybeSweep(now = Date.now()) {
   for (const [k, v] of buckets) {
     if (v.resetAt <= now) buckets.delete(k);
   }
+  for (const [k, v] of failedAttempts) {
+    if (v.resetAt <= now) failedAttempts.delete(k);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Failed-attempt counter (used by step-up reCAPTCHA gate).
+//
+// Different semantic from rateLimit():
+//   - rateLimit() denies once a threshold is crossed.
+//   - failed-attempt counter only *counts* — the route decides what to do
+//     (e.g. require a captcha token from the next attempt onward).
+//
+// Same in-memory Map pattern; same per-instance caveat on serverless. The
+// step-up is a UX optimisation, not a security boundary; rateLimit() and
+// reCAPTCHA score gating remain authoritative.
+// ---------------------------------------------------------------------------
+
+const DEFAULT_FAIL_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const failedAttempts = new Map<string, Bucket>();
+
+/**
+ * Record a failed attempt against `key`. Returns the new count within the
+ * current window. Window auto-resets when expired.
+ */
+export function recordFailedAttempt(
+  key: string,
+  windowMs: number = DEFAULT_FAIL_WINDOW_MS,
+): { count: number } {
+  const now = Date.now();
+  const bucket = failedAttempts.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    failedAttempts.set(key, { count: 1, resetAt: now + windowMs });
+    return { count: 1 };
+  }
+  bucket.count += 1;
+  return { count: bucket.count };
+}
+
+/** Read the current failed-attempt count without incrementing. */
+export function getFailedAttemptCount(key: string): number {
+  const bucket = failedAttempts.get(key);
+  if (!bucket || bucket.resetAt <= Date.now()) return 0;
+  return bucket.count;
+}
+
+/** Clear failed attempts for a key (call on successful auth). */
+export function clearFailedAttempts(key: string): void {
+  failedAttempts.delete(key);
 }

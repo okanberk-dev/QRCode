@@ -1089,3 +1089,51 @@ Kullanıcı şikayeti: süperadmin paneli "Üyeler / İşletmeciler / Müşteril
 
 _Son güncelleme: 2026-04 (yedinci dalga) — §20 Admin Terminoloji Normalizasyonu eklendi. Süperadmin panelinde "Üyeler / Üye / Kullanıcı / İşletmeci / Hesap" karışıklığı temizlendi: kanonik terimler **İşletmeler** (User) / **Yöneticiler** (AdminUser) / **Müşteriler** (Feedback). §4.5 baştan yazıldı. URL'ler ve API kontratları değişmedi._
 
+---
+
+## 21. reCAPTCHA Step-Up + Background Preload (2026-04 sekizinci dalga)
+
+reCAPTCHA Enterprise her formda her submit'te token üretiyordu — meşru kullanıcılarda gereksiz Google trafiği + first-submit'te lazy script-load gecikmesi. İki taraflı optimizasyon yapıldı.
+
+### 21.1 Step-up gate — şifreli akışlar
+
+`src/lib/recaptcha.ts` içinde `shouldRequireCaptcha(...keys)` ve `STEP_UP_THRESHOLD = 2` sabiti. Sayaç `src/lib/rate-limit.ts`'teki `recordFailedAttempt / getFailedAttemptCount / clearFailedAttempts` üçlüsüyle takip edilir (10 dk window, ayrı `failedAttempts` Map'i).
+
+Pattern: route, captcha verify çağrısını **yalnızca** `shouldRequireCaptcha(...)` true ise yapar; aksi halde token-suz geçer. Her başarısız denemede `recordFailedAttempt(...)` ile sayaç artar; başarıda `clearFailedAttempts(...)` ile sıfırlanır. Hata response'una `requireCaptcha: true` flag'i eklenir → client bir sonraki denemede token gönderir.
+
+Uygulanan route + key'ler:
+
+| Route | Failed-attempt key(ler) |
+|---|---|
+| `/api/auth/login` | `login-fail:ip:{ip}` + `login-fail:email:{email}` |
+| `/api/auth/forgot-password` | `pwr-fail:ip:{ip}` (her POST sayılır — enumeration koruması) |
+| `/api/auth/reset-password` | `pwr-reset-fail:ip:{ip}` (geçersiz token/code'da increment) |
+| `/api/admin/login` | `admin-login-fail:ip:{ip}` + `admin-login-fail:user:{username}` |
+
+**Önemli:** `verifyRecaptchaToken()` dokunulmadı; hard-block (score ≤ 0.1 → 1 saat IP ban) yine içeride. Step-up koşullu çağrıldığı için yalnızca token gönderildiğinde devreye girer — bu istenen davranış.
+
+### 21.2 Background preload — login dışı tüm form'lar
+
+`src/lib/recaptcha-client.ts` → `preloadRecaptcha()`: script tag'i `<head>`'e enjekte eder ama execute etmez. Form mount olunca çağrılırsa, kullanıcı submit ettiğinde token anında alınır (network round-trip yok).
+
+Eklendiği client form'lar (her birinde `useEffect(() => { preloadRecaptcha(); }, []);`):
+- `LoginForm`, `RegisterForm`, `ForgotPasswordForm`, `ResetPasswordForm`, admin login (`src/app/admin/page.tsx`)
+- `ContactForm`, `NewsletterSignup`, `FeedbackForm`
+
+### 21.3 Yeni form eklerken kural
+
+- reCAPTCHA istediğin yerlerde **mount'ta** `preloadRecaptcha()` çağır.
+- Şifre/retry semantiği olan akışlar için step-up pattern'ini kullan: `shouldRequireCaptcha(...keys)` → token'ı sadece gerektiğinde iste; `requireCaptcha` flag'ini response'a koy; client `data.requireCaptcha` true olunca state'ini güncelleyip sonraki istekte token yollasın.
+- Tek-seferlik form (register/contact/newsletter/feedback): step-up gerek yok, mevcut "her submit'te token" davranışını koru — preload yeterli.
+
+### 21.4 Bilinçli kapsam dışı
+
+- `RECAPTCHA_ENFORCE` default'u `false` kaldı (operational tuning kararı).
+- Hard-block (score ≤ 0.1) her durumda aktif; step-up bypass etmez.
+- Distributed counter (Redis/Upstash) eklenmedi; in-memory Map serverless'ta her instance ayrı — `rateLimit()` ile aynı sınırlama, kabul edilir.
+- Newsletter/feedback'ten reCAPTCHA kaldırılmadı; defansif derinlik için tutuldu.
+
+---
+
+_Son güncelleme: 2026-04 (sekizinci dalga) — §21 reCAPTCHA Step-Up + Background Preload eklendi. 4 şifreli route'a step-up gate (login, forgot-password, reset-password, admin login), 8 form'a preload. Yeni Prisma modeli yok; sadece in-memory failed-attempt counter helper'ları (`rate-limit.ts`)._
+

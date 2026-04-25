@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
-import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import { getRecaptchaToken, preloadRecaptcha } from '@/lib/recaptcha-client';
 
 function GoogleIcon({ size = 16 }: { size?: number }) {
   return (
@@ -94,6 +94,11 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Warm the reCAPTCHA script as soon as the form mounts so submit feels instant.
+  useEffect(() => {
+    preloadRecaptcha();
   }, []);
 
   const handleGoogleSignUp = async () => {

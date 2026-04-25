@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
-import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import { getRecaptchaToken, preloadRecaptcha } from '@/lib/recaptcha-client';
 
 interface LoginFormProps {
   locale: Locale;
@@ -38,6 +38,9 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
   const [notice, setNotice] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: '', password: '', rememberMe: false });
+  // Step-up: server tells us when to start sending captcha tokens (after
+  // failed attempts cross threshold). Until then we skip the round-trip.
+  const [requireCaptcha, setRequireCaptcha] = useState(false);
 
   const finalizeGoogleSignIn = async (idToken: string) => {
     const recaptchaToken = await getRecaptchaToken('auth_google');
@@ -85,6 +88,12 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Warm the reCAPTCHA script as soon as the form mounts so the (eventual)
+  // step-up token request doesn't add a perceivable delay.
+  useEffect(() => {
+    preloadRecaptcha();
+  }, []);
+
   const handleGoogleSignIn = async () => {
     setError('');
     setNotice('');
@@ -117,7 +126,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
     setLoading(true);
 
     try {
-      const recaptchaToken = await getRecaptchaToken('auth_login');
+      const recaptchaToken = requireCaptcha ? await getRecaptchaToken('auth_login') : null;
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -127,6 +136,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.requireCaptcha) setRequireCaptcha(true);
         if (data.trialExpired) {
           setError(
             locale === 'tr'

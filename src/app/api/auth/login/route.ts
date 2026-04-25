@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { signJwt } from '@/lib/auth';
-import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
-import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
+import { rateLimit, resetRateLimit, getClientIp, maybeSweep, recordFailedAttempt, clearFailedAttempts } from '@/lib/rate-limit';
+import { annotateRecaptchaAssessment, shouldRequireCaptcha, verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,9 +22,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
     }
 
-    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_login', captchaLocale);
-    if (!captcha.ok) {
-      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
+    // Step-up reCAPTCHA: only require a token once this IP/email has racked up
+    // STEP_UP_THRESHOLD failed login attempts. First-attempt and casual-typo
+    // users never wait on Google's assessment.
+    const failIpKey = `login-fail:ip:${ip}`;
+    const failEmailKey = `login-fail:email:${email.toLowerCase()}`;
+    const stepUp = shouldRequireCaptcha(failIpKey, failEmailKey);
+
+    type CaptchaResult = Awaited<ReturnType<typeof verifyRecaptchaToken>>;
+    let captcha: CaptchaResult = { ok: true, skipped: true };
+    if (stepUp) {
+      captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_login', captchaLocale);
+      if (!captcha.ok) {
+        return NextResponse.json(
+          { error: captcha.error, requireCaptcha: true },
+          { status: captcha.status },
+        );
+      }
     }
 
     // Burst-protection: 10 attempts per IP per 10 minutes and a tighter 5 per email.
@@ -46,11 +60,13 @@ export async function POST(req: NextRequest) {
     if (!user) {
       // Use constant-time comparison to prevent timing attacks
       await bcrypt.compare(password, '$2b$12$dummyhashfortimingatackprevention');
-      if (captcha.assessmentName) {
+      if (captcha.ok && captcha.assessmentName) {
         await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_INCORRECT');
       }
+      recordFailedAttempt(failIpKey);
+      recordFailedAttempt(failEmailKey);
       return NextResponse.json(
-        { error: 'E-posta veya şifre hatalı.' },
+        { error: 'E-posta veya şifre hatalı.', requireCaptcha: shouldRequireCaptcha(failIpKey, failEmailKey) },
         { status: 401 }
       );
     }
@@ -58,11 +74,13 @@ export async function POST(req: NextRequest) {
     // Verify password
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
-      if (captcha.assessmentName) {
+      if (captcha.ok && captcha.assessmentName) {
         await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_INCORRECT');
       }
+      recordFailedAttempt(failIpKey);
+      recordFailedAttempt(failEmailKey);
       return NextResponse.json(
-        { error: 'E-posta veya şifre hatalı.' },
+        { error: 'E-posta veya şifre hatalı.', requireCaptcha: shouldRequireCaptcha(failIpKey, failEmailKey) },
         { status: 401 }
       );
     }
@@ -89,10 +107,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Successful auth — clear brute-force counters.
+    // Successful auth — clear brute-force counters and step-up state.
     resetRateLimit(`user-login:ip:${ip}`);
     resetRateLimit(`user-login:email:${email.toLowerCase()}`);
-    if (captcha.assessmentName) {
+    clearFailedAttempts(failIpKey);
+    clearFailedAttempts(failEmailKey);
+    if (captcha.ok && captcha.assessmentName) {
       await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_CORRECT');
     }
 

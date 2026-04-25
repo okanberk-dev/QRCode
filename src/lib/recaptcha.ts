@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { RecaptchaEnterpriseServiceClient } from '@google-cloud/recaptcha-enterprise';
-import { getClientIp, blockKey, isBlocked } from '@/lib/rate-limit';
+import { getClientIp, blockKey, isBlocked, getFailedAttemptCount } from '@/lib/rate-limit';
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY;
 const PROJECT_ID =
@@ -239,6 +239,31 @@ export async function verifyRecaptchaToken(
       status: 502,
     });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Step-up gate.
+//
+// Most users authenticate on their first or second attempt. Running a
+// reCAPTCHA assessment for every submit imposes latency on every user and
+// burns Google quota for no defensive value. Instead we only require a token
+// once a key crosses the failed-attempt threshold — typical "step-up"
+// challenge pattern. The legitimate user never sees it; an attacker probing
+// passwords trips it after STEP_UP_THRESHOLD failures.
+//
+// `verifyRecaptchaToken` itself is unchanged; routes call this gate first
+// and skip the verify call when it returns false.
+// ---------------------------------------------------------------------------
+
+export const STEP_UP_THRESHOLD = 2;
+
+/**
+ * Returns true when reCAPTCHA verification should be required for the next
+ * attempt against `failedAttemptKey`. Pass any of the keys you previously
+ * called `recordFailedAttempt(key)` on (e.g. login-fail:ip:..., login-fail:email:...).
+ */
+export function shouldRequireCaptcha(...failedAttemptKeys: string[]): boolean {
+  return failedAttemptKeys.some((k) => getFailedAttemptCount(k) >= STEP_UP_THRESHOLD);
 }
 
 export async function annotateRecaptchaAssessment(

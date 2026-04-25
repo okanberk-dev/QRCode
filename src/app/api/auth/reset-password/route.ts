@@ -3,9 +3,9 @@ import * as jose from 'jose';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
+import { rateLimit, getClientIp, maybeSweep, recordFailedAttempt, clearFailedAttempts } from '@/lib/rate-limit';
 import { getSecret } from '@/lib/auth';
-import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { shouldRequireCaptcha, verifyRecaptchaToken } from '@/lib/recaptcha';
 
 function hashCode(code: string): string {
   return crypto.createHash('sha256').update(code).digest('hex');
@@ -30,9 +30,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Şifre çok uzun.' }, { status: 400 });
     }
 
-    const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'auth_reset_password');
-    if (!captcha.ok) {
-      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
+    // Step-up reCAPTCHA: only after STEP_UP_THRESHOLD failed code/token attempts
+    // from this IP. Legitimate users typing the 6-digit code from email pass
+    // first try; brute-forcers trip the gate.
+    const failIpKey = `pwr-reset-fail:ip:${ip}`;
+    if (shouldRequireCaptcha(failIpKey)) {
+      const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'auth_reset_password');
+      if (!captcha.ok) {
+        return NextResponse.json(
+          { error: captcha.error, requireCaptcha: true },
+          { status: captcha.status },
+        );
+      }
     }
 
     // Rate limit: 10 attempts per IP / 10 min
@@ -49,21 +58,24 @@ export async function POST(req: NextRequest) {
       const verified = await jose.jwtVerify(token, getSecret());
       payload = verified.payload;
     } catch {
+      recordFailedAttempt(failIpKey);
       return NextResponse.json(
-        { error: 'Geçersiz veya süresi dolmuş sıfırlama bağlantısı. Lütfen yeni bir kod talep edin.' },
+        { error: 'Geçersiz veya süresi dolmuş sıfırlama bağlantısı. Lütfen yeni bir kod talep edin.', requireCaptcha: shouldRequireCaptcha(failIpKey) },
         { status: 401 },
       );
     }
 
     if (payload.purpose !== 'pwr' || typeof payload.userId !== 'string' || typeof payload.codeHash !== 'string') {
-      return NextResponse.json({ error: 'Geçersiz token.' }, { status: 401 });
+      recordFailedAttempt(failIpKey);
+      return NextResponse.json({ error: 'Geçersiz token.', requireCaptcha: shouldRequireCaptcha(failIpKey) }, { status: 401 });
     }
 
     // Constant-time compare of code hash
     const submittedHash = Buffer.from(hashCode(code), 'hex');
     const expectedHash = Buffer.from(payload.codeHash, 'hex');
     if (submittedHash.length !== expectedHash.length || !crypto.timingSafeEqual(submittedHash, expectedHash)) {
-      return NextResponse.json({ error: 'Doğrulama kodu hatalı.' }, { status: 401 });
+      recordFailedAttempt(failIpKey);
+      return NextResponse.json({ error: 'Doğrulama kodu hatalı.', requireCaptcha: shouldRequireCaptcha(failIpKey) }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({ where: { id: payload.userId } });
@@ -77,6 +89,7 @@ export async function POST(req: NextRequest) {
       data: { passwordHash },
     });
 
+    clearFailedAttempts(failIpKey);
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[RESET_PASSWORD]', error);

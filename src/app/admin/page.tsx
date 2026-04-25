@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ShieldCheck, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import { getRecaptchaToken, preloadRecaptcha } from '@/lib/recaptcha-client';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -13,6 +13,11 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [rememberMe, setRememberMe] = useState(false);
+  const [requireCaptcha, setRequireCaptcha] = useState(false);
+
+  useEffect(() => {
+    preloadRecaptcha();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +25,7 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      const recaptchaToken = await getRecaptchaToken('admin_login');
+      const recaptchaToken = requireCaptcha ? await getRecaptchaToken('admin_login') : null;
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -30,6 +35,7 @@ export default function AdminLogin() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.requireCaptcha) setRequireCaptcha(true);
         setError(data.error || 'Giriş yapılamadı.');
         setLoading(false);
         return;
