@@ -546,7 +546,11 @@ export default function MarketingNavbarClient({
           />
           <div
             className="relative ml-auto h-[calc(100dvh-64px)] w-full max-w-md overflow-y-auto rounded-tl-[28px] border-l border-[#EDEDED] bg-white shadow-2xl"
-            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+            style={{
+              paddingBottom: 'env(safe-area-inset-bottom)',
+              paddingLeft: 'env(safe-area-inset-left)',
+              paddingRight: 'env(safe-area-inset-right)',
+            }}
           >
             <nav className="flex flex-col p-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]">
               <MobileSection

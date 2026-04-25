@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { RecaptchaEnterpriseServiceClient } from '@google-cloud/recaptcha-enterprise';
-import { getClientIp } from '@/lib/rate-limit';
+import { getClientIp, blockKey, isBlocked } from '@/lib/rate-limit';
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY;
 const PROJECT_ID =
@@ -51,7 +51,38 @@ const MESSAGES = {
     tr: 'Güvenlik doğrulaması sırasında hata oluştu.',
     en: 'Security check failed unexpectedly.',
   },
+  botBlocked: {
+    tr: 'Bot davranışı saptandı. Erişiminiz geçici olarak engellendi.',
+    en: 'Automated/bot behaviour detected. Access is temporarily blocked.',
+  },
 } as const;
+
+// Risk reasons that reCAPTCHA Enterprise emits when it is highly confident
+// the request is automated. These ALWAYS block, regardless of monitor mode.
+// Reference: https://cloud.google.com/recaptcha-enterprise/docs/reference/rest/v1/projects.assessments#ClassificationReason
+const HARD_BLOCK_REASONS = new Set([
+  'AUTOMATION',
+  'MALWARE',
+  'SCRAPING',
+  'SUSPICIOUS_NETWORK',
+  'UNEXPECTED_ENVIRONMENT',
+]);
+
+// Score threshold below which we treat the request as a clear bot regardless
+// of explicit reasons. Tuned conservatively — 0.1 = "we're sure this is a bot".
+const HARD_BLOCK_SCORE = 0.1;
+
+// How long a hard-blocked IP stays banned (1 hour). Bypasses ENFORCE flag.
+const BOT_BAN_WINDOW_MS = 60 * 60 * 1000;
+
+function botBanKey(ip: string) {
+  return `recaptcha-bot-ban:${ip}`;
+}
+
+function hasCriticalBotSignal(score: number, reasons: string[]): boolean {
+  if (score <= HARD_BLOCK_SCORE) return true;
+  return reasons.some((r) => HARD_BLOCK_REASONS.has(r));
+}
 
 const msg = (key: keyof typeof MESSAGES, locale: RecaptchaLocale) =>
   MESSAGES[key][locale];
@@ -105,6 +136,14 @@ export async function verifyRecaptchaToken(
   expectedAction: string,
   locale: RecaptchaLocale = 'tr',
 ): Promise<RecaptchaSuccess | RecaptchaFailure> {
+  // Hard block IPs we previously flagged as bots — bypasses monitor mode
+  // because the signal was already high-confidence at flag-time.
+  const ip = getClientIp(req.headers);
+  if (isBlocked(botBanKey(ip))) {
+    console.warn('[recaptcha] hard-blocked IP retried', { ip, action: expectedAction });
+    return { ok: false, error: msg('botBlocked', locale), status: 429 };
+  }
+
   if (!isRecaptchaServerConfigured()) {
     if (!SITE_KEY) console.warn('[recaptcha] NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY not set — skipped');
     if (!PROJECT_ID) console.warn('[recaptcha] RECAPTCHA_ENTERPRISE_PROJECT_ID not set — skipped');
@@ -153,6 +192,21 @@ export async function verifyRecaptchaToken(
 
     const score = response.riskAnalysis?.score ?? 0;
     const reasons = (response.riskAnalysis?.reasons ?? []).map((reason) => String(reason));
+
+    // High-confidence bot signal → ban this IP for an hour and ALWAYS block,
+    // regardless of monitor mode. Monitor mode is for tuning grey-zone scores;
+    // confirmed automation should never get a free pass.
+    if (hasCriticalBotSignal(score, reasons)) {
+      blockKey(botBanKey(ip), BOT_BAN_WINDOW_MS);
+      console.error('[recaptcha] HARD BLOCK — bot signal confirmed', {
+        ip,
+        score,
+        reasons,
+        action: expectedAction,
+        banWindowMs: BOT_BAN_WINDOW_MS,
+      });
+      return { ok: false, error: msg('botBlocked', locale), status: 403 };
+    }
 
     if (score < MIN_SCORE) {
       return softFail('low score', { score, reasons, action: expectedAction }, {
