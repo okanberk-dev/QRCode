@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
-  let body: { email?: string; locale?: string; source?: string } = {};
+  let body: { email?: string; locale?: string; source?: string; recaptchaToken?: string } = {};
   try {
     body = await req.json();
   } catch {
@@ -15,6 +16,11 @@ export async function POST(req: NextRequest) {
   const email = (body.email ?? '').trim().toLowerCase();
   if (!email || !email.includes('@') || email.length > 200) {
     return NextResponse.json({ error: 'invalid_email' }, { status: 400 });
+  }
+
+  const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'newsletter_signup');
+  if (!captcha.ok) {
+    return NextResponse.json({ error: 'recaptcha_failed' }, { status: captcha.status });
   }
 
   const ip = getClientIp(req.headers);

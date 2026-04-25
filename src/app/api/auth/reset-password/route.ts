@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { getSecret } from '@/lib/auth';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 function hashCode(code: string): string {
   return crypto.createHash('sha256').update(code).digest('hex');
@@ -27,6 +28,11 @@ export async function POST(req: NextRequest) {
     }
     if (newPassword.length > 256) {
       return NextResponse.json({ error: 'Şifre çok uzun.' }, { status: 400 });
+    }
+
+    const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'auth_reset_password');
+    if (!captcha.ok) {
+      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
     // Rate limit: 10 attempts per IP / 10 min

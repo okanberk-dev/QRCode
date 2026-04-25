@@ -3,12 +3,13 @@ import { signJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export async function POST(req: NextRequest) {
   try {
     maybeSweep();
     const ip = getClientIp(req.headers);
-    const { username, password, rememberMe } = await req.json();
+    const { username, password, rememberMe, recaptchaToken } = await req.json();
 
     // Reject obviously malformed input before any DB/bcrypt work
     if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
@@ -16,6 +17,11 @@ export async function POST(req: NextRequest) {
     }
     if (username.length > 128 || password.length > 256) {
       return NextResponse.json({ error: 'Geçersiz istek' }, { status: 400 });
+    }
+
+    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'admin_login');
+    if (!captcha.ok) {
+      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
     // 5 attempts per IP per 10 minutes, with a softer per-username cap

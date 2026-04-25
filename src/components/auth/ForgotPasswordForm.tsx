@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, Check, Loader2 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
+import { getRecaptchaToken } from '@/lib/recaptcha-client';
 
 interface Props {
   locale: Locale;
@@ -24,10 +25,11 @@ export default function ForgotPasswordForm({ locale }: Props) {
     setLoading(true);
 
     try {
+      const recaptchaToken = await getRecaptchaToken('auth_forgot_password');
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, locale }),
+        body: JSON.stringify({ email, locale, recaptchaToken }),
       });
 
       const data = await res.json();

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { sendPasswordResetEmail } from '@/lib/email';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { getSecret } from '@/lib/auth';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 function hashCode(code: string): string {
   return crypto.createHash('sha256').update(code).digest('hex');
@@ -25,6 +26,11 @@ export async function POST(req: NextRequest) {
 
     if (!email || email.length > 256 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'Geçerli bir e-posta girin.' }, { status: 400 });
+    }
+
+    const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'auth_forgot_password');
+    if (!captcha.ok) {
+      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
     // Rate limiting: 5 per IP per 10 min, 3 per email per 30 min

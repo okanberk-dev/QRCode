@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
+import { getRecaptchaToken } from '@/lib/recaptcha-client';
 
 interface Props {
   locale: 'tr' | 'en';
@@ -21,10 +22,11 @@ export default function NewsletterSignup({ locale }: Props) {
     if (!email.includes('@')) return;
     setStatus('loading');
     try {
+      const recaptchaToken = await getRecaptchaToken('newsletter_signup');
       const res = await fetch('/api/newsletter', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, locale }),
+        body: JSON.stringify({ email, locale, recaptchaToken }),
       });
       if (res.ok) setStatus('done');
       else setStatus('error');

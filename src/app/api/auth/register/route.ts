@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { signJwt } from '@/lib/auth';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { isStrongPassword } from '@/lib/validations';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,12 +20,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password, name, website } = await req.json();
+    const { email, password, name, website, recaptchaToken } = await req.json();
 
     // Honeypot check
     if (website) {
       // Silently ignore or return success to trick the bot
       return NextResponse.json({ success: true, message: 'Registration received' }, { status: 201 });
+    }
+
+    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_register');
+    if (!captcha.ok) {
+      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
     // Validate required fields

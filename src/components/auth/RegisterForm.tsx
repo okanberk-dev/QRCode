@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
+import { getRecaptchaToken } from '@/lib/recaptcha-client';
 
 function GoogleIcon({ size = 16 }: { size?: number }) {
   return (
@@ -65,10 +66,11 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         setLoading(false);
         return;
       }
+      const recaptchaToken = await getRecaptchaToken('auth_google');
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ idToken, recaptchaToken }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -100,10 +102,11 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
     setLoading(true);
 
     try {
+      const recaptchaToken = await getRecaptchaToken('auth_register');
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, recaptchaToken }),
       });
 
       const data = await res.json();

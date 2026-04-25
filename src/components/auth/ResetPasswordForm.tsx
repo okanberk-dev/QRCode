@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, Check, Eye, EyeOff, Loader2 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
+import { getRecaptchaToken } from '@/lib/recaptcha-client';
 
 interface Props {
   locale: Locale;
@@ -44,10 +45,11 @@ export default function ResetPasswordForm({ locale }: Props) {
 
     setLoading(true);
     try {
+      const recaptchaToken = await getRecaptchaToken('auth_reset_password');
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, code, newPassword: password }),
+        body: JSON.stringify({ token, code, newPassword: password, recaptchaToken }),
       });
       const data = await res.json();
       if (!res.ok) {

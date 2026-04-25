@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Send, Loader2, Check, X } from 'lucide-react';
+import { getRecaptchaToken } from '@/lib/recaptcha-client';
 
 interface ContactFormProps {
   t: {
@@ -62,10 +63,11 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
     };
 
     try {
+      const recaptchaToken = await getRecaptchaToken('contact_submit');
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, recaptchaToken }),
       });
       const responseData = await res.json().catch(() => ({}));
       if (res.ok) {

@@ -3,12 +3,13 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { signJwt } from '@/lib/auth';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export async function POST(req: NextRequest) {
   try {
     maybeSweep();
     const ip = getClientIp(req.headers);
-    const { email, password, rememberMe } = await req.json();
+    const { email, password, rememberMe, recaptchaToken } = await req.json();
 
     if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
       return NextResponse.json(
@@ -18,6 +19,11 @@ export async function POST(req: NextRequest) {
     }
     if (email.length > 256 || password.length > 256) {
       return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
+    }
+
+    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_login');
+    if (!captcha.ok) {
+      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
     // Burst-protection: 10 attempts per IP per 10 minutes and a tighter 5 per email.

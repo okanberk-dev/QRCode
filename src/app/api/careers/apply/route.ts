@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { sendMail } from '@/lib/email';
 import { isStorageConfigured, uploadToStorage } from '@/lib/supabase-storage';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,11 @@ export async function POST(req: NextRequest) {
     body = (await req.json()) ?? {};
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+  }
+
+  const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'careers_apply');
+  if (!captcha.ok) {
+    return NextResponse.json({ error: 'recaptcha_failed' }, { status: captcha.status });
   }
 
   const name = toStr(body.name, 120);

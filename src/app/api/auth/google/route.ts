@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { signJwt } from '@/lib/auth';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { verifyFirebaseIdToken, getFirebaseProjectId } from '@/lib/firebase-admin';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,9 +26,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { idToken } = await req.json();
+    const { idToken, recaptchaToken } = await req.json();
     if (!idToken || typeof idToken !== 'string') {
       return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
+    }
+
+    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_google');
+    if (!captcha.ok) {
+      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
     const claims = await verifyFirebaseIdToken(idToken);

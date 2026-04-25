@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ShieldCheck, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { getRecaptchaToken } from '@/lib/recaptcha-client';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -19,10 +20,11 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
+      const recaptchaToken = await getRecaptchaToken('admin_login');
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...credentials, rememberMe })
+        body: JSON.stringify({ ...credentials, rememberMe, recaptchaToken })
       });
 
       const data = await res.json();

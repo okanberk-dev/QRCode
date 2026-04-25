@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMail } from '@/lib/email';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 // Must stay in sync with ContactForm.tsx — form under this dwell time is bot-like.
 const MIN_FILL_MS = 2500;
@@ -28,6 +29,11 @@ export async function POST(req: NextRequest) {
 
     if (!name || !email || !message || !kvkk) {
       return NextResponse.json({ error: 'Gerekli alanlar eksik veya KVKK onayı verilmemiş.' }, { status: 400 });
+    }
+
+    const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'contact_submit');
+    if (!captcha.ok) {
+      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
     const subject = `Yeni İletişim Formu: ${business || name}`;

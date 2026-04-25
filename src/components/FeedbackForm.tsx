@@ -3,6 +3,7 @@
 import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Loader2, Camera, X, ShieldCheck, Mail, Check } from 'lucide-react';
+import { getRecaptchaToken } from '@/lib/recaptcha-client';
 
 interface FeedbackFormProps {
   rating: number;
@@ -67,6 +68,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
       setIsSubmitting(true);
 
       try {
+        const recaptchaToken = await getRecaptchaToken('feedback_submit');
         const response = await fetch('/api/feedback', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -85,6 +87,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
             platform: platform || null,
             aspects: null,
             website: website, // Honeypot
+            recaptchaToken,
           })
         });
 

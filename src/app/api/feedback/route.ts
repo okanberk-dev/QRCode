@@ -5,6 +5,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/validations';
 import { ApiErrors } from '@/lib/api-errors';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 function parseAspectRating(value: unknown): number | null {
   const n = typeof value === 'number' ? value : Number(value);
@@ -35,6 +36,11 @@ export async function POST(req: NextRequest) {
     // Honeypot check
     if (website) {
       return NextResponse.json({ success: true, message: 'Feedback received' }, { status: 201 });
+    }
+
+    const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'feedback_submit');
+    if (!captcha.ok) {
+      return ApiErrors.badRequest(captcha.error, 'RECAPTCHA_FAILED');
     }
 
     // Validate platform value if provided. Falsy / unknown → null so the

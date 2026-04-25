@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { sendMail } from '@/lib/email';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,6 +53,11 @@ export async function POST(req: NextRequest) {
       { error: 'rate_limited', retryAfter: limit.retryAfterSeconds },
       { status: 429 },
     );
+  }
+
+  const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'roi_save');
+  if (!captcha.ok) {
+    return NextResponse.json({ error: 'recaptcha_failed' }, { status: captcha.status });
   }
 
   const email = toStr(body.email);
