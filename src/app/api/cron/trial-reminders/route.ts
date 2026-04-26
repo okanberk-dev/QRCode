@@ -7,13 +7,16 @@ import { sendTrialEndingEmail } from '@/lib/email';
  *
  * Schedule: 0 9 * * * (every day 09:00 UTC) — see vercel.json.
  *
- * For each user on the `trial` plan whose `trialEndsAt` falls within the next
- * 4 days and who hasn\'t been reminded in the last 20 hours, sends the Pulse
- * trial-ending email. Marks `lastTrialReminderAt = now()` afterwards so the
- * same user can\'t receive two mails in one day.
+ * Sends at most 2 emails per user across their trial: one when 3 days remain
+ * (decision window) and one when 1 day remains (last call). Other days are
+ * skipped to keep the inbox quiet — saturating users with 4 daily reminders
+ * was rejected as spammy. The `lastTrialReminderAt` field doubles as a
+ * 20-hour safety against the cron firing twice in a day.
  *
  * Auth: Bearer ${CRON_SECRET} — same pattern as weekly-digest.
  */
+const TRIAL_REMINDER_DAYS = [1, 3] as const;
+
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
@@ -23,14 +26,15 @@ export async function GET(req: NextRequest) {
 
   try {
     const now = new Date();
-    const fourDaysOut = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000);
+    const maxWindow = Math.max(...TRIAL_REMINDER_DAYS);
+    const windowEnd = new Date(now.getTime() + (maxWindow + 1) * 24 * 60 * 60 * 1000);
     const twentyHoursAgo = new Date(now.getTime() - 20 * 60 * 60 * 1000);
 
     const candidates = await prisma.user.findMany({
       where: {
         plan: 'trial',
         isActive: true,
-        trialEndsAt: { gte: now, lte: fourDaysOut },
+        trialEndsAt: { gte: now, lte: windowEnd },
         OR: [
           { lastTrialReminderAt: null },
           { lastTrialReminderAt: { lt: twentyHoursAgo } },
@@ -50,7 +54,9 @@ export async function GET(req: NextRequest) {
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
-    const dayBuckets: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0 };
+    const dayBuckets: Record<string, number> = Object.fromEntries(
+      TRIAL_REMINDER_DAYS.map((d) => [String(d), 0]),
+    );
     let sent = 0;
     let skipped = 0;
     let failed = 0;
@@ -63,8 +69,15 @@ export async function GET(req: NextRequest) {
 
       const msLeft = user.trialEndsAt.getTime() - now.getTime();
       const daysLeft = Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
-      const bucket = String(Math.min(4, Math.max(1, daysLeft)));
-      dayBuckets[bucket] = (dayBuckets[bucket] || 0) + 1;
+
+      // Only mail on the configured threshold days. SQL window is wider so
+      // a single migration of trialEndsAt doesn't accidentally skip a user;
+      // we filter precisely here.
+      if (!TRIAL_REMINDER_DAYS.includes(daysLeft as 1 | 3)) {
+        skipped++;
+        continue;
+      }
+      dayBuckets[String(daysLeft)] = (dayBuckets[String(daysLeft)] || 0) + 1;
 
       const usage = await collectUsage(user.restaurants[0]?.id);
       const userLocale: 'tr' | 'en' = user.locale === 'en' ? 'en' : 'tr';
@@ -142,16 +155,10 @@ async function collectUsage(restaurantId: string | undefined): Promise<{
     }),
   ]);
 
-  const aiReplies = await prisma.feedbackReply
-    .count({
-      where: {
-        feedback: { restaurantId },
-        createdAt: { gte: fourteenDaysAgo },
-        // Heuristic — we don\'t track which replies were AI-generated yet, so
-        // surface raw reply count. Will refine when we add a `source` column.
-      },
-    })
-    .catch(() => null);
+  // AI vs manual reply distinction isn't tracked yet (FeedbackReply.source
+  // doesn't exist). Returning null keeps the trial-ending template honest —
+  // the cell renders as "—" instead of an inflated total-reply count.
+  const aiReplies = null;
 
   const growthPct = prior > 0
     ? Math.round(((recent - prior) / prior) * 100)

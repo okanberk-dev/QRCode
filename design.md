@@ -581,3 +581,53 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 - `npx tsc --noEmit -p tsconfig.json` zero error
 - `npx prisma generate` `lastTrialReminderAt` Prisma client'ında tanır
 - Mevcut 4 e-posta tetikleyici akışı (register, contact, careers, roi, feedback reply, weekly digest, monthly newsletter, forgot password, onboarding complete) yeni helper'lara plug edildi — interface breaking change yok
+
+---
+
+## Phase 16.2 — Post-deploy hotfix + risk düzeltmeleri (2026-04)
+
+**Kapsam:** Phase 16.1 deploy sonrası ortaya çıkan 2 production sorunu + 2 retroaktif risk düzeltmesi.
+
+### Production fixes
+
+1. **Admin "Şimdi gönder" 502 cron_failed**
+   - **Kök sebep**: `/api/admin/newsletters/trigger` HTTP üzerinden `/api/cron/monthly-newsletter` fetch ediyordu. Vercel serverless self-fetch cold start + 10s gateway timeout = 502.
+   - **Fix**: Cron logic'i `runMonthlyNewsletter()` adlı export'lu helper'a çıkarıldı. Trigger artık doğrudan invoke ediyor (HTTP yok). `maxDuration: 60` explicit set.
+   - **Anti-pattern documented**: CLAUDE.md §21.13 — gelecekte cron tetiklemesi için referans.
+
+2. **Recharts `width(-1)` console warning**
+   - **Kök sebep**: TrendsChart + DayDistributionChart `flex-col + flex-1` sandwich layout, ResponsiveContainer'ın ResizeObserver ölçümü -1 dönüyordu.
+   - **Fix**: Wrapper div kaldırıldı, ResponsiveContainer fixed-height parent'ın doğrudan child'ı.
+   - **Pattern documented**: CLAUDE.md §21.14.
+
+### Retroactive risk fixes
+
+3. **Trial cron 4 mail → 2 mail** (Risk #1)
+   - **Sorun**: 4-gün penceresi + 20-saat dedup = kullanıcı 4 farklı gün → 4 mail. Spam algısı.
+   - **Fix**: `TRIAL_REMINDER_DAYS = [1, 3]` constant — sadece 3 gün (decision window) ve 1 gün (last call) eşiklerinde mail. SQL window 4 güne kadar geniş kalıyor (race condition güvenliği), precise filter handler'da. Toplam: trial başına max 2 mail.
+
+4. **Trial cron `aiReplies` misleading count → null** (Risk #2)
+   - **Sorun**: `prisma.feedbackReply.count` AI vs manual ayırt etmiyordu. Trial-ending mailinde "38 AI yanıt" yazıyordu ama gerçekte tüm reply'ları sayıyordu (chef Slack notları dahil).
+   - **Fix**: `aiReplies = null` döndür. Template "—" gösterir. Gerçek metrik için `FeedbackReply.source` field'ı eklenmesi lazım (ayrı PR scope).
+
+### Değişen dosyalar
+
+- `src/app/api/cron/monthly-newsletter/route.ts` — `runMonthlyNewsletter()` export
+- `src/app/api/admin/newsletters/trigger/route.ts` — direct invoke, `maxDuration: 60`
+- `src/app/api/cron/trial-reminders/route.ts` — `TRIAL_REMINDER_DAYS = [1, 3]`, `aiReplies = null`
+- `src/components/admin/TrendsChart.tsx` — flex sandwich kaldırıldı
+- `src/components/admin/DayDistributionChart.tsx` — flex sandwich kaldırıldı
+- `CLAUDE.md` §21.11 (trial cron yeni mantık), §21.13 (self-fetch anti-pattern), §21.14 (recharts pattern)
+
+### Backend etkisi
+
+- `runMonthlyNewsletter` ortak helper'ı 2 endpoint'ten invoke ediliyor; abone listesinde değişiklik yok.
+- Trial cron schedule değişmedi (`0 9 * * *`); sadece içerideki day filter daraldı.
+- Recharts fix tamamen UI; chart data unchanged.
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- Admin paneldeki "Şimdi gönder" butonu ile gönderim cycle'ı tek HTTP yanıtında tamamlanır
+- Console'da artık `width(-1) and height(-1)` warning yok
+- Trial cron: lokal'de `User.trialEndsAt = now() + 2d` set et → cron mail atmaz (2 gün eşik değil); `+1d` veya `+3d` set et → mail atar

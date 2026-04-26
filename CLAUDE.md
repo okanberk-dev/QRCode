@@ -726,11 +726,12 @@ Bu rotalar artık Pulse template'lerini kullanır:
 ### 21.11 Trial reminder cron
 
 **Yeni**: `/api/cron/trial-reminders` (`vercel.json`'da `0 9 * * *` günlük 09:00 UTC)
-- `User.lastTrialReminderAt` field'ı dedup için (20-saat threshold)
-- 1, 2, 3, 4 gün kalan trial user'lara mail gönderir (cron her gün → 4 farklı eşik mail)
-- Usage hesabı: ilgili restoran için son 14 gün vs önceki 14 gün (growth %), ortalama puan, yorum sayısı, reply sayısı
+- `User.lastTrialReminderAt` field'ı dedup için (20-saat threshold — cron 24-saat aralık güvenliği)
+- **Sadece 1 ve 3 gün kalan trial user'lara mail gönderir** (`TRIAL_REMINDER_DAYS = [1, 3]` constant'ı). Spam algısını önlemek için kullanıcı başına trial sürecinde max 2 mail. SQL window 4 güne kadar geniş (yanlışlıkla skip etmeyi önlemek için), ama precise filter cron handler'ında.
+- Usage hesabı: ilgili restoran için son 14 gün vs önceki 14 gün (growth %), ortalama puan, yorum sayısı. **`aiReplies = null`** — AI vs manual reply ayrımı `FeedbackReply.source` field'ı eklenene kadar template'te "—" görünür (yanıltıcı toplam göstermek yerine).
 - Auth: `Bearer ${CRON_SECRET}` (mevcut pattern)
 - Sender: `sendTrialEndingEmail` (Pulse `trial-ending` template)
+- **Eşikleri değiştirmek**: `TRIAL_REMINDER_DAYS` array'i tek değişiklik noktası. Yeni eşik (örn. 7 gün) eklendiğinde SQL window otomatik genişler.
 
 ### 21.12 Cron path listesi (mevcut)
 
@@ -739,6 +740,47 @@ Bu rotalar artık Pulse template'lerini kullanır:
 | `/api/cron/weekly-digest` | `0 9 * * 1` | Her pazartesi 09:00 UTC — restoran sahibine haftalık özet |
 | `/api/cron/anonymize-ips` | `0 3 * * 0` | Her pazar 03:00 UTC — KVKK IP retention |
 | `/api/cron/monthly-newsletter` | `0 9 1 * *` | Her ayın 1'i 09:00 UTC — Pulse aylık bülten |
-| `/api/cron/trial-reminders` | `0 9 * * *` | Her gün 09:00 UTC — trial bitimine 1-4 gün kalanlara hatırlatma |
+| `/api/cron/trial-reminders` | `0 9 * * *` | Her gün 09:00 UTC — trial bitimine 1 ve 3 gün kalanlara hatırlatma |
+
+### 21.13 Cron logic'i admin panelden tetikleme (anti-pattern: self-fetch)
+
+**Yapma**: `fetch(${appUrl}/api/cron/...)` ile kendi sunucusunu çağırma. Vercel serverless'ta cold start + 10s gateway timeout = 502.
+
+**Yap**: Cron logic'ini ortak helper'a çıkar, hem cron GET handler hem admin trigger doğrudan invoke etsin.
+
+Pattern (mevcut örnek `/api/cron/monthly-newsletter` + `/api/admin/newsletters/trigger`):
+```ts
+// src/app/api/cron/foo/route.ts
+export async function runFoo(): Promise<FooResult> { /* logic */ }
+export async function GET(req) {
+  // Bearer ${CRON_SECRET} auth
+  return NextResponse.json(await runFoo());
+}
+
+// src/app/api/admin/foo/trigger/route.ts
+import { runFoo } from '@/app/api/cron/foo/route';
+export const maxDuration = 60;  // explicit — abone sayısı arttıkça lazım
+export async function POST(req) {
+  // admin auth
+  return NextResponse.json(await runFoo());
+}
+```
+
+`maxDuration: 60` explicit set — Vercel default 10s, batch send gerektiren işler için yetersiz.
+
+### 21.14 Recharts ResponsiveContainer pattern
+
+**Yapma**: `<div flex flex-col h-[300px]><div flex-1 w-full><ResponsiveContainer width="100%" height="100%">` sandwich. Flexbox child'da `min-height: auto` default → ResponsiveContainer'ın ResizeObserver'ı `width(-1) and height(-1) of chart should be greater than 0` warning'i basıyor.
+
+**Yap**: Fixed-height parent'ın doğrudan child'ı olarak ResponsiveContainer:
+```tsx
+<div className="h-[260px] sm:h-[320px] md:h-[350px] w-full">
+  <ResponsiveContainer width="100%" height="100%">
+    {/* chart */}
+  </ResponsiveContainer>
+</div>
+```
+
+Mevcut örnekler: `src/components/admin/TrendsChart.tsx`, `src/components/admin/DayDistributionChart.tsx`.
 
 
