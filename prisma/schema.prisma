@@ -44,7 +44,7 @@ model Restaurant {
   isActive          Boolean    @default(true) @map("is_active")
   menuEnabled       Boolean    @default(true) @map("menu_enabled")
   menuPublished     Boolean    @default(false) @map("menu_published")
-  menuLogoUrl       String?    @map("menu_logo_url")
+  menuLogoUrl       String?    @map("menu_logo_url") @db.Text
   menuUpdatedAt     DateTime?  @map("menu_updated_at")
   menuTheme         String     @default("classic") @map("menu_theme")
   menuAccentColor   String?    @map("menu_accent_color")
@@ -337,7 +337,7 @@ model MenuItem {
   description  String?
   priceCents   Int          @default(0) @map("price_cents")
   currency     String       @default("TRY")
-  imageUrl     String?      @map("image_url")
+  imageUrl     String?      @map("image_url") @db.Text
   badges       String[]     @default([])
   isAvailable  Boolean      @default(true) @map("is_available")
   isOutOfStock Boolean      @default(false) @map("is_out_of_stock")

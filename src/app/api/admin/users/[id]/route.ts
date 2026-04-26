@@ -14,8 +14,23 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const body = await req.json();
     const { password, role, restaurantId } = body;
+
+    if (role !== 'superadmin' && role !== 'manager') {
+      return NextResponse.json({ error: 'Geçersiz rol' }, { status: 400 });
+    }
+    if (role === 'manager' && (typeof restaurantId !== 'string' || !restaurantId)) {
+      return NextResponse.json({ error: 'Yönetici rolü için restoran seçilmelidir' }, { status: 400 });
+    }
+
+    if (role === 'manager') {
+      const target = await prisma.restaurant.findUnique({ where: { id: restaurantId }, select: { id: true } });
+      if (!target) {
+        return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
+      }
+    }
+
     const data: any = { role, restaurantId: role === 'manager' ? restaurantId : null };
-    
+
     if (password) {
       data.passwordHash = await bcrypt.hash(password, 12);
     }

@@ -65,12 +65,9 @@ async function sendResendEmail({
 
     const responseText = await response.text();
 
-    if (response.ok) {
-      console.log("[Buaze Email] ✅ Successfully sent via Resend API. Response:", responseText);
-      return true;
-    } else {
+    if (!response.ok) {
       console.error(`[Buaze Email] ❌ Resend API error (HTTP ${response.status}):`, responseText);
-      
+
       if (response.status === 403) {
         console.error("[Buaze Email] 🔑 API key may be invalid or domain not verified.");
         console.error("[Buaze Email] → Go to https://resend.com/domains and verify buaze.com");
@@ -80,9 +77,28 @@ async function sendResendEmail({
       } else if (response.status === 401) {
         console.error("[Buaze Email] 🔐 Unauthorized. RESEND_API_KEY is invalid.");
       }
-      
+
       return false;
     }
+
+    // HTTP 2xx alone isn't enough — Resend always responds with a JSON body
+    // containing an `id` on success. Treat any 2xx without that id as a
+    // failure to avoid telling the user "sent" when nothing actually went
+    // out (defensive against future API quirks).
+    let parsed: any = null;
+    try {
+      parsed = JSON.parse(responseText);
+    } catch {
+      console.error("[Buaze Email] ❌ Resend returned non-JSON 2xx body:", responseText);
+      return false;
+    }
+    if (!parsed || typeof parsed.id !== 'string' || !parsed.id) {
+      console.error("[Buaze Email] ❌ Resend 2xx without id field — treating as failed:", responseText);
+      return false;
+    }
+
+    console.log("[Buaze Email] ✅ Sent via Resend, id:", parsed.id);
+    return true;
   } catch (error) {
     console.error("[Buaze Email] ❌ Network/fetch exception:", error);
     return false;
@@ -182,6 +198,7 @@ export interface NotificationParams {
     atmosphere?: number;
   } | null;
   feedbackId?: string;
+  locale?: 'tr' | 'en';
 }
 
 function renderStars(rating: number): string {
@@ -251,7 +268,7 @@ export async function sendFeedbackNotification(data: NotificationParams) {
     </table>
 
     <div align="center">
-      <a href="${appUrl}/tr/auth/login?redirect=${encodeURIComponent('/tr/dashboard/feedbacks' + (data.feedbackId ? `?highlight=${data.feedbackId}` : ''))}" class="btn" style="display:inline-block;padding:16px 40px;font-size:16px;font-weight:900;text-decoration:none;border-radius:12px;">
+      <a href="${appUrl}/${data.locale ?? 'tr'}/auth/login?redirect=${encodeURIComponent(`/${data.locale ?? 'tr'}/dashboard/feedbacks` + (data.feedbackId ? `?highlight=${data.feedbackId}` : ''))}" class="btn" style="display:inline-block;padding:16px 40px;font-size:16px;font-weight:900;text-decoration:none;border-radius:12px;">
         ${isCritical ? 'Hemen Müdahale Et →' : 'Geri Bildirimi Gör →'}
       </a>
     </div>

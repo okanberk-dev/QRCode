@@ -117,6 +117,7 @@ export async function POST(req: NextRequest) {
           toEmail: notificationEmail,
           aspects,
           feedbackId: feedback.id,
+          locale: body.locale === 'en' ? 'en' : 'tr',
         });
         emailSent = true;
       } catch (err) {
@@ -235,14 +236,15 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Primary query includes the Faz-2 flag/reply/assignment joins. When
-    // the database schema is ahead of push (e.g. a preview env where
-    // `prisma db push` hasn't run yet), that include set throws and would
-    // otherwise break every panel page that renders a feedback list. We
-    // fall back to a joinless query so the inbox keeps rendering and the
-    // admin can at least see rows even before the new tables exist.
+    // Primary query includes the Faz-2 flag/reply/assignment joins plus the
+    // FeedbackTag join. When the database schema is ahead of push (e.g. a
+    // preview env where `prisma db push` hasn't run yet), any one of these
+    // includes throws and would otherwise break every panel page that
+    // renders a feedback list. We try three tiers of degradation so the
+    // inbox keeps rendering even if just one of the new tables is missing.
     let feedbacks: any[];
     let joinsAvailable = true;
+    let tagsAvailable = true;
     try {
       feedbacks = await prisma.feedback.findMany({
         where,
@@ -259,17 +261,37 @@ export async function GET(req: NextRequest) {
       });
     } catch (joinErr) {
       console.warn(
-        '[feedback] falling back to joinless query — did `prisma db push` run?',
+        '[feedback] tags+joins failed, retrying without tags — did `prisma db push` run?',
         (joinErr as Error).message,
       );
-      joinsAvailable = false;
-      feedbacks = await prisma.feedback.findMany({
-        where,
-        orderBy: { createdAt: sortOrder },
-        skip,
-        take: limit,
-        include: { restaurant: { select: { name: true, slug: true } } },
-      });
+      tagsAvailable = false;
+      try {
+        feedbacks = await prisma.feedback.findMany({
+          where,
+          orderBy: { createdAt: sortOrder },
+          skip,
+          take: limit,
+          include: {
+            restaurant: { select: { name: true, slug: true } },
+            flag: { select: { id: true } },
+            assignment: { select: { assigneeId: true } },
+            _count: { select: { replies: true } },
+          },
+        });
+      } catch (innerErr) {
+        console.warn(
+          '[feedback] flag/assignment/replies joins failed, falling back to no joins',
+          (innerErr as Error).message,
+        );
+        joinsAvailable = false;
+        feedbacks = await prisma.feedback.findMany({
+          where,
+          orderBy: { createdAt: sortOrder },
+          skip,
+          take: limit,
+          include: { restaurant: { select: { name: true, slug: true } } },
+        });
+      }
     }
 
     const total = await prisma.feedback.count({ where });
@@ -282,7 +304,7 @@ export async function GET(req: NextRequest) {
       isFlagged: joinsAvailable ? Boolean(f.flag) : false,
       isAssigned: joinsAvailable ? Boolean(f.assignment) : false,
       assigneeId: joinsAvailable ? f.assignment?.assigneeId ?? null : null,
-      tags: joinsAvailable ? (f.tags ?? []) : [],
+      tags: joinsAvailable && tagsAvailable ? (f.tags ?? []) : [],
     }));
 
     return NextResponse.json({
