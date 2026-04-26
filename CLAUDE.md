@@ -42,8 +42,8 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 | Veri | Nerede | Not |
 |---|---|---|
 | Veritabanı | Supabase PostgreSQL | Kalıcı (tüm ana veri) |
-| Menü ürün görselleri | **Postgres TEXT kolonu** (`menu_items.image_url`) | Base64 data URL (`data:image/webp;base64,...`) — Vercel ephemeral FS riskini atlatır |
-| Menü logosu | **Postgres TEXT kolonu** (`restaurants.menu_logo_url`) | Aynı şekilde base64 data URL |
+| Menü ürün görselleri | **Postgres TEXT kolonu** (`menu_items.image_url`) | Base64 data URL (`data:image/webp;base64,...`) — Vercel ephemeral FS riskini atlatır. Şemada `@db.Text` ile zorlanır (2026-04 audit fix). |
+| Menü logosu | **Postgres TEXT kolonu** (`restaurants.menu_logo_url`) | Aynı şekilde base64 data URL. `@db.Text` zorunlu. |
 | Site ayarları görselleri | Supabase Storage (ayrı yol) | `src/app/api/admin/site-settings/upload` |
 
 ### Görsel işleme akışı (menü)
@@ -57,6 +57,7 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 - `src/lib/validations.ts` — `imageUrl` hem `http(s)://` URL'i hem `data:image/` prefix'li data URL kabul eder
 - `data:image/` için max 300 KB (base64), diğer URL'ler max 1000 karakter
 - `/api/restaurants/[id]/theme` — `menuLogoUrl` aynı kuralları uygular
+- **Önemli:** Şemada `@db.Text` ile saklama bütçesi `VARCHAR(255)`'ten `TEXT`'e çıkarıldı; aksi halde 300 KB validation geçerken save sırasında sessizce kesiliyordu. Geçmiş truncated kayıtlar tespit için: `SELECT id FROM menu_items WHERE octet_length(image_url) >= 254;`
 
 ### Niçin base64-in-DB?
 - Vercel serverless FS yok → diske yazamıyoruz
@@ -713,23 +714,25 @@ Her PR bir önceki branch'in üzerine açıldı — merge sırayla yapılmalı:
 
 Tüm animasyonlar `prefers-reduced-motion: reduce` altında devre dışı (tek bir `@media` bloğu hepsini kapsar).
 
-### 17.4 Yeni scaffolded API endpoint'leri (501 döner)
+### 17.4 Eski scaffolded API endpoint'leri (TÜMÜ CANLI)
 
-Hepsi `scaffolding.ts` helper'ını kullanır. Prisma model önerileri scaffolding.ts başındaki yorum bloğunda tanımlı.
+> **2026-04 audit güncelleme:** Aşağıdaki 9 endpoint'in tamamı §18 ve §19 dalgalarında gerçek backend'e bağlandı. `scaffolding.ts` helper'ı (özellikle `scaffoldedResponse`) artık hiçbir route tarafından çağrılmıyor — Prisma model önerileri bloğu referans olarak duruyor.
 
-| Endpoint | Method | Prisma model (öneri) | Faz |
+| Endpoint | Method | Prisma model | Bağlandığı yer |
 |---|---|---|---|
-| `/api/newsletter` | POST | `NewsletterSubscriber` | Phase 1 |
-| `/api/admin/analytics/export` | GET | `AnalyticsExport` | Phase 5 |
-| `/api/roi/save` | POST | `ROIRequest` | Phase 3 |
-| `/api/help/articles` | GET | `HelpArticle` | Phase 5 |
-| `/api/careers/apply` | POST | `CareerApplication` | Phase 5 |
-| `/api/billing/summary` | GET | `BillingSubscription` | Phase 5 |
-| `/api/billing/invoices` | GET | `BillingInvoice` | Phase 5 |
-| `/api/onboarding/state` | GET/PATCH | `OnboardingProgress` | Phase 5 |
-| `/api/onboarding/complete` | POST | `OnboardingProgress` | Phase 5 |
+| `/api/newsletter` | POST | `NewsletterSubscriber` | §18.1 |
+| `/api/admin/analytics/export` | GET | (model eklenmedi, stream-only) | §18.2 |
+| `/api/roi/save` | POST | `ROIRequest` | §18.1 |
+| `/api/help/articles` | GET | `HelpArticle` | §18.2 |
+| `/api/careers/apply` | POST | `CareerApplication` | §18.2 |
+| `/api/billing/summary` | GET | `BillingSubscription` | §18.3 |
+| `/api/billing/invoices` | GET | `BillingInvoice` | §18.3 |
+| `/api/onboarding/state` | GET/PATCH | `OnboardingProgress` | §18.1 |
+| `/api/onboarding/complete` | POST | `OnboardingProgress` | §18.1 |
 
-**OpenAI / AI Co-Pilot canlı:** `POST /api/feedback/[id]/suggest-reply` gerçek OpenAI gpt-4o-mini'ye bağlı (rate-limit 30/dk/actor + IDOR koruması + template fallback). §15'e bak.
+**Hâlâ ertelenen tek backend bileşeni:** Sanal POS (Iyzico/Stripe) `POST /api/billing/checkout` + webhook — bkz §18.3.
+
+**OpenAI / AI Co-Pilot canlı:** `POST /api/feedback/[id]/suggest-reply` gerçek OpenAI gpt-4o-mini'ye bağlı (rate-limit 30/dk/**workspace owner** + IDOR koruması + template fallback). §15'e bak.
 
 ### 17.5 Yeni UI route'ları
 
@@ -894,12 +897,15 @@ Aşağıdakilerin hiçbiri **eklenmedi** — her biri ayrı iş kalemi:
 - Stripe parite — Iyzico TR öncelik, Stripe ikinci iterasyon
 - Plan enforcement (quota aşımı durumunda feedback POST'u reddet) — şu an read-only yerinde; write-time enforcement ayrı scope
 
-### 18.6 Yeni env var'ları (hiçbiri zorunlu değil, hepsi opsiyonel)
+### 18.6 Env var'ları
 
-- `CAREERS_INBOX_EMAIL` — HR başvuru maili için; yoksa `NOTIFICATION_EMAIL` fallback.
-- `NOTIFICATION_EMAIL` — zaten mevcut; ROI save ve Careers apply kullanır.
-- `RESEND_API_KEY` — zaten mevcut; newsletter/welcome/ROI/careers mail gönderimleri bunu kullanır.
-- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET` — zaten mevcut; careers attachment upload bunu kullanır.
+**Tüm e-posta + storage env'leri** `.env.example` dosyasında dökümante edilmiştir (2026-04 audit fix). Production'da Vercel ortamında yüklü, local dev için manuel kopyalama gerekir.
+
+- `RESEND_API_KEY` — newsletter/welcome/ROI/careers/feedback yanıt maillerinin tek path'i. Eksikse `sendResendEmail` `false` döner ve hata logu basar (mail akışı sessizce çalışmaz, gözlemlenebilir).
+- `RESEND_FROM_EMAIL` — opsiyonel sender override; varsayılan `"Buaze <noreply@buaze.com>"`. Domain Resend'de doğrulanmış olmalı.
+- `NOTIFICATION_EMAIL` — restoran `notification_email` set değilse default alıcı; ROI/contact/careers fallback adresi.
+- `CAREERS_INBOX_EMAIL` — HR başvuru maili için opsiyonel ayrı kutu; yoksa `NOTIFICATION_EMAIL` fallback.
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET` — careers attachment upload + site-settings görselleri için.
 
 POS için gerekli env'ler (Wave 3.5+): yukarıda §18.3'te listelendi.
 
@@ -1008,8 +1014,12 @@ Session özeti: kullanıcının "admin + restoran paneli tasarım dosyalarındak
 
 **Kök neden:** Faz 2'de `GET /api/feedback` list endpoint'i `include: { flag, _count: { replies }, assignment }` ile join'lendi. Eğer `prisma db push` henüz çalışmamış bir ortamda (preview deploy, stale local DB) bu tablolar yok → query throw → **tüm feedback listesi çöker** → admin dashboard + reviews sayfaları boş, "bazı sayfalar açılmıyor" algısı oluşur.
 
-**Çözüm:**
-- `/api/feedback` GET: primary join'li query bir try/catch içinde; başarısızsa **join'siz fallback** çalışır, satırlar gösterilir ama `isReplied/isFlagged/isAssigned` false döner
+**Çözüm (2026-04 audit'te 3-katmanlı'ya genişletildi):**
+- `/api/feedback` GET: **3-tier graceful degradation**:
+  1. Tüm join'ler (flag + assignment + replies + tags) — happy path
+  2. Tags hariç tüm join'ler — sadece `FeedbackTag` tablosu eksikse `isReplied/isFlagged/isAssigned` korunur
+  3. Hiç join yok — tüm yeni tablolar eksikse satırlar yine gösterilir
+- `mapping`'de `joinsAvailable && tagsAvailable` flag'leri ile UI doğru veriyi alır
 - `/api/feedback/counts`: `replied` sayacı `try/catch` ile sarıldı, hata durumunda 0 döner ama `all + attention` gösterilmeye devam eder
 - Sayfalar DB schema sync edilene kadar "degrade gracefully" çalışır
 
@@ -1021,7 +1031,7 @@ Bu session'ın tüm değişiklikleri `claude/connect-prisma-providers-3ytkP` bra
 2. **Production merge** — `main`'e merge + Vercel production deploy. Bu otomatik olarak `prisma db push --accept-data-loss && next build` çalıştırır.
 3. **Local dev** — `npm install && npx prisma generate && npx prisma db push && npm run dev`. `DATABASE_URL + DIRECT_URL` env'i gerekli (§14.1).
 
-Son session'dan bu yana şemaya toplam **10 + 6 = 16 yeni Prisma modeli** eklendi (§18 + §19 birleşik: CaseStudy, OnboardingProgress, NewsletterSubscriber, ROIRequest, HelpArticle, CareerApplication, BillingSubscription, BillingInvoice, FeedbackReply, FeedbackFlag, FeedbackAssignment, TeamMember, Campaign, NotificationPreference). **`prisma db push` çalışmadan** bu tablolara dokunan endpoint'ler 500 döner. Vercel build script'i bunu otomatik halleder ama local dev'de manuel.
+Son session'dan bu yana şemaya toplam **8 + 6 = 14 yeni Prisma modeli** eklendi (§18'de 8: CaseStudy, OnboardingProgress, NewsletterSubscriber, ROIRequest, HelpArticle, CareerApplication, BillingSubscription, BillingInvoice — §19'da 6: FeedbackReply, FeedbackFlag, FeedbackAssignment, TeamMember, Campaign, NotificationPreference). **`prisma db push` çalışmadan** bu tablolara dokunan endpoint'ler 500 döner. Vercel build script'i bunu otomatik halleder ama local dev'de manuel.
 
 ### 19.7 Session'da kasten atlanmış
 

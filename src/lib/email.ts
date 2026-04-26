@@ -43,7 +43,7 @@ async function sendResendEmail({
     console.log("[Buaze Email] API Key prefix:", resendKey.substring(0, 8) + "...");
 
     const payload: any = {
-      from: "Buaze <noreply@buaze.com>",
+      from: process.env.RESEND_FROM_EMAIL?.trim() || "Buaze <noreply@buaze.com>",
       to,
       subject,
       html,
