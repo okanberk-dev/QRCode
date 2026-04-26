@@ -41,6 +41,9 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
   const router = useRouter();
   const isEdit = Boolean(initial?.id);
   const isImmutable = initial?.status === 'sent' || initial?.status === 'sending';
+  // Preview / send-test endpoints are dev-only (production returns 404).
+  // Hide the buttons in prod so admins don't trigger an opaque error.
+  const isDev = process.env.NODE_ENV !== 'production';
 
   const [value, setValue] = useState<CampaignFormValue>(initial ?? DEFAULT_VALUE);
   const [posts, setPosts] = useState<BlogPostOption[]>([]);
@@ -390,22 +393,26 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onPreview}
-            disabled={isImmutable}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
-          >
-            <Eye size={14} /> Önizle
-          </button>
-          <button
-            type="button"
-            onClick={onSendTest}
-            disabled={isImmutable}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
-          >
-            <Mail size={14} /> Test mail at
-          </button>
+          {isDev && (
+            <>
+              <button
+                type="button"
+                onClick={onPreview}
+                disabled={isImmutable}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+              >
+                <Eye size={14} /> Önizle
+              </button>
+              <button
+                type="button"
+                onClick={onSendTest}
+                disabled={isImmutable}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+              >
+                <Mail size={14} /> Test mail at
+              </button>
+            </>
+          )}
           {isEdit && initial?.status === 'draft' && (
             <button
               type="button"
