@@ -84,16 +84,32 @@ export async function PATCH(
     return NextResponse.json({ error: 'invalid_content' }, { status: 400 });
   }
 
-  // Drop empty strings — means admin wants to revert that field to inline
-  // default. Storing "" would override the default and render as blank.
+  // Two payload shapes are valid:
+  //   1) flat string-only      — most templates
+  //   2) nested {variant:{...}} — form-confirmation (Phase 3): each top-level
+  //      key is a formType variant, inner values are flat strings
+  // Empty strings are dropped (admin reverts that field to inline default);
+  // empty inner objects are dropped (whole variant reverts to default).
   const cleaned: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(body.content)) {
     if (typeof v === 'string') {
       const trimmed = v.trim();
       if (trimmed.length > 0) cleaned[k] = trimmed;
-    } else if (v !== null && v !== undefined) {
-      cleaned[k] = v;
+    } else if (
+      parsed.key === 'form-confirmation' &&
+      v !== null && typeof v === 'object' && !Array.isArray(v)
+    ) {
+      const inner: Record<string, string> = {};
+      for (const [ik, iv] of Object.entries(v as Record<string, unknown>)) {
+        if (typeof iv === 'string') {
+          const trimmed = iv.trim();
+          if (trimmed.length > 0) inner[ik] = trimmed;
+        }
+      }
+      if (Object.keys(inner).length > 0) cleaned[k] = inner;
     }
+    // Anything else (number, null, array, nested object on non-allowlisted
+    // template) is silently dropped to keep the JSON well-shaped.
   }
 
   // Server-side enforcement of KVKK / security locks. Locked fields are

@@ -246,7 +246,7 @@ export async function sendFormConfirmationEmail(params: {
   followUpUrl?: string;
   locale?: 'tr' | 'en';
 }): Promise<boolean> {
-  const rendered = renderFormConfirmation(
+  const rendered = await renderFormConfirmation(
     { formType: params.formType, name: params.name, details: params.details, followUpUrl: params.followUpUrl },
     params.locale ?? 'tr',
   );

@@ -26,6 +26,7 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'new-review': 'Yeni 5★ yorum',
   'weekly-report': 'Haftalık rapor',
   'customer-reply': 'Müşteri yanıtı',
+  'form-confirmation': 'Form onayı',
 };
 
 const LOCALE_LABELS: Record<string, string> = {
