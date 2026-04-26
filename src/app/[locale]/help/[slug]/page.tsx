@@ -99,27 +99,45 @@ export default async function HelpArticlePage({ params }: PageParams) {
       .map((item) => ({ slug: item.slug, title: item.title, excerpt: item.excerpt }));
   }
 
-  const jsonLd = {
+  const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: article.title,
     description: article.excerpt ?? '',
     datePublished: article.updatedAt.toISOString(),
     dateModified: article.updatedAt.toISOString(),
-    author: { '@type': 'Organization', name: 'Buaze' },
+    inLanguage: locale,
+    image: 'https://buaze.com/favicon.svg',
+    author: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
     publisher: {
       '@type': 'Organization',
       name: 'Buaze',
       url: 'https://buaze.com',
+      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
     },
     mainEntityOfPage: `https://buaze.com/${locale}/help/${slug}`,
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım' : 'Help', item: `https://buaze.com/${locale}/help` },
+      { '@type': 'ListItem', position: 3, name: categoryLabel, item: `https://buaze.com/${locale}/help/category/${article.category}` },
+      { '@type': 'ListItem', position: 4, name: article.title, item: `https://buaze.com/${locale}/help/${slug}` },
+    ],
   };
 
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 

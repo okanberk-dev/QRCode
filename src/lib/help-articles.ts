@@ -18,13 +18,16 @@ type BodySection = {
   title: string;
   paragraphs?: string[];
   items?: string[];
+  quote?: string;
 };
 
 type BodyInput = {
   lead: string;
+  keyInsight?: string;
   sections: BodySection[];
   checklist: string[];
   faq: { q: string; a: string }[];
+  policyNote?: string;
 };
 
 const UPDATED_AT = new Date('2026-04-26T09:00:00.000Z');
@@ -36,13 +39,20 @@ function renderBody(input: BodyInput) {
       const items = section.items?.length
         ? `<ul>${section.items.map((item) => `<li>${item}</li>`).join('')}</ul>`
         : '';
-      return `<h2>${section.title}</h2>${paragraphs}${items}`;
+      const quote = section.quote ? `<blockquote>${section.quote}</blockquote>` : '';
+      return `<h2>${section.title}</h2>${paragraphs}${items}${quote}`;
     })
     .join('');
 
+  const lead = `<p>${input.lead}</p>`;
+  const keyInsight = input.keyInsight ? `<blockquote>${input.keyInsight}</blockquote>` : '';
+  const policy = input.policyNote ? `<blockquote>${input.policyNote}</blockquote>` : '';
+
   return [
-    `<p>${input.lead}</p>`,
+    lead,
+    keyInsight,
     sections,
+    policy,
     `<h2>Kontrol listesi / Checklist</h2><ul>${input.checklist.map((item) => `<li>${item}</li>`).join('')}</ul>`,
     `<h2>SSS / FAQ</h2>${input.faq.map((item) => `<h3>${item.q}</h3><p>${item.a}</p>`).join('')}`,
   ].join('');
@@ -1127,6 +1137,294 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
       { q: 'Can everything be deleted?', a: 'Yes, with exceptions like financial records that have legal retention. Confirm scope with legal counsel.' },
       { q: 'Can anonymous reviews be used in marketing?', a: 'They can support operational analysis as long as the customer cannot be re-identified through combinations.' },
     ],
+  }),
+
+  article('tr', 'getting-started', 60, 'common-onboarding-pitfalls', 'İlk kurulumda en sık yapılan 5 hata', 'Buaze’i canlıya alırken yeni işletme sahiplerinin tekrar tekrar düştüğü tuzaklar ve bunlardan nasıl kaçınacağınız.', ['kurulum', 'hata', 'tuzak', 'onboarding', 'troubleshooting'], {
+    lead: 'Hızlı kurulum güzel; <strong>düzgün</strong> kurulum daha güzeldir. Aşağıdaki beş tuzak panele yeni geçen işletmelerin %80’inde gözlemlenir ve hepsi başlangıçta dakikalar içinde önlenebilir.',
+    keyInsight: 'En küçük yapılandırma hatası, müşterinin ilk QR taramasında akışı bozarsa, onu geri kazanma şansınız çok azalır. Bu yüzden ilk testleri ekibe değil, kendinize yapın.',
+    sections: [
+      { title: '1. Slug’ı yarı baskıyla kararlaştırmak', paragraphs: ['Çoğu işletme slug’ı pazarlama materyali çıktıktan sonra değiştirmek ister. Bunun maliyeti basılan QR kodlarının geçersizleşmesidir. <strong>Slug’ı bastıramadan önce</strong> en az 24 saat boyunca kararlaştırılmış sayın ve <a href="/tr/help/slug-and-url">slug rehberini</a> okuyun.'] },
+      { title: '2. Bildirim e-postasını kişisel adrese bağlamak', paragraphs: ['Tek kişilik bir restoranda bile düşük puan bildiriminin <em>shared</em> bir mailbox’a gitmesi sürekliliği korur. Çalışan ayrılınca bildirim akışı kesilmez.'] },
+      { title: '3. QR’ı sadece masaya basmak', items: ['Masa, paket, fiş ve kapı çıkışı için ayrı QR.', 'Her birinde farklı parametre.', 'En az 3 farklı yerde test edin.', '<strong>Tek QR</strong> yerine <strong>tek strateji</strong> düşünün.'] },
+      { title: '4. Trial’ı pasif geçirmek', paragraphs: ['Trial sadece beklemek için değil, gerçek sinyal toplamak içindir. <em>İlk 7 gün</em> en az 30 gerçek QR taraması olmalı, yoksa karar veri yerine sezgiyle alınır.'] },
+      { title: '5. Ekibi panele geç davet etmek', paragraphs: ['İşletme sahibi tek başına panele bakmaya başlarsa kültür yerleşmez. <a href="/tr/help/team-onboarding-checklist">İlk hafta onboarding</a> rehberindeki 5 günlük plan, ekibin de paneli sahiplenmesini sağlar.'], quote: 'Yorum gelir gelmez doğru kişiye ulaşmıyorsa, panel “bakılması gereken bir yer” olarak hatırlanmaz. İlk hafta sahiplenme, sonraki ayların temelidir.' },
+    ],
+    checklist: ['Slug 24 saat boyunca üzerine düşünüldü.', 'Bildirim e-postası shared mailbox.', 'En az 3 farklı QR yerleşimi var.', 'Trial içinde 30+ gerçek tarama yapıldı.', 'Ekipten en az 1 kişi panele davet edildi.', 'Düşük puan akışı bizzat test edildi.', 'Birinci hafta sonunda kısa retro yapıldı.'],
+    faq: [
+      { q: 'Slug’ı değiştirdim, eski QR’lar ne olur?', a: 'Eski slug ile basılı materyaller artık çalışmaz. Slug’ı değiştirdiyseniz baskıları yenilemek veya eski slug için bir yönlendirme kurmak gerekir.' },
+      { q: 'Trial’da kart bilgisi vermek zorunda mıyım?', a: 'Hayır. Trial deneme amaçlıdır; ücretli plana geçtiğinizde fatura adımı net biçimde başlar.' },
+      { q: 'Kurulumdan kim sorumlu olmalı?', a: 'İşletme sahibi veya operasyon müdürü ideal. Kişisel hesap kullanmayın; rolü her zaman bir <em>kişiyle</em> değil <em>pozisyonla</em> bağlayın.' },
+      { q: 'Buaze kurulumu için danışmanlık veriyor musunuz?', a: 'İlk kurulum yardımı için destek ekibimiz Türkçe rehberlik sağlar. Daha kapsamlı entegrasyonlar için iletişime geçebilirsiniz.' },
+    ],
+  }),
+  article('en', 'getting-started', 60, 'common-onboarding-pitfalls', 'The 5 most common onboarding mistakes', 'Recurring traps new operators fall into when launching Buaze, and how to avoid them in minutes.', ['setup', 'pitfalls', 'onboarding', 'troubleshooting', 'mistakes'], {
+    lead: 'Fast setup is good; <strong>correct</strong> setup is better. The five traps below appear in 80% of new operators and can be prevented in the first hour.',
+    keyInsight: 'If a tiny config error breaks the customer’s very first scan, the chance to recover them is small. Run the first tests yourself, not on your team.',
+    sections: [
+      { title: '1. Locking the slug too late', paragraphs: ['Most operators want to change the slug after marketing materials are printed. The cost is invalid QR codes. <strong>Lock the slug</strong> for at least 24 hours before printing and read the <a href="/en/help/slug-and-url">slug guide</a>.'] },
+      { title: '2. Notification email tied to a personal inbox', paragraphs: ['Even in a single-person restaurant, sending low-rating alerts to a <em>shared</em> mailbox preserves continuity. When someone leaves, the flow does not break.'] },
+      { title: '3. QR only on the table', items: ['Separate QRs for table, package, receipt and exit.', 'Different parameter on each.', 'Test in at least 3 placements.', 'Think <strong>strategy</strong>, not <strong>single QR</strong>.'] },
+      { title: '4. A passive trial', paragraphs: ['The trial is for collecting real signal, not waiting. The <em>first 7 days</em> should produce at least 30 real scans, otherwise decisions become guesses.'] },
+      { title: '5. Inviting the team late', paragraphs: ['If only the owner watches the panel, the habit never spreads. The 5-day plan in <a href="/en/help/team-onboarding-checklist">first-week onboarding</a> ensures the team owns the panel too.'], quote: 'If a review does not reach the right person quickly, the panel is never remembered as “somewhere to look.” Week-one ownership shapes the months that follow.' },
+    ],
+    checklist: ['Slug was reviewed for 24 hours.', 'Notification email is a shared mailbox.', 'At least 3 different QR placements.', '30+ real scans during trial.', 'At least 1 teammate invited.', 'Low-rating flow tested personally.', 'Short retro held at end of week one.'],
+    faq: [
+      { q: 'I changed the slug, what happens to old QRs?', a: 'Materials printed with the old slug will not work. After a slug change, reprint or set up a redirect for the old one.' },
+      { q: 'Do I need a credit card during trial?', a: 'No. The trial is for evaluation; billing only kicks in when you upgrade.' },
+      { q: 'Who should own setup?', a: 'The owner or operations manager is ideal. Avoid personal accounts; tie the role to a <em>position</em>, not a <em>person</em>.' },
+      { q: 'Do you offer setup consulting?', a: 'Our support team provides guidance during initial setup. For deeper integrations, get in touch directly.' },
+    ],
+  }),
+
+  article('tr', 'qr-codes', 60, 'qr-scan-rate-optimization', 'QR tarama oranını artırmanın net yolları', 'Yerleşim, çağrı metni ve görsel ipuçlarıyla aynı yorum hacmiyle daha çok geri bildirim toplayın.', ['tarama oranı', 'optimizasyon', 'cta', 'görsel', 'a/b'], {
+    lead: 'QR’ın <strong>basılması</strong> ile <strong>taranması</strong> aynı şey değildir. Tarama oranı (impressions üzerinden) çoğu işletmede yüzde 5 ile 15 arasındadır; doğru optimizasyonla bu rahatlıkla yüzde 25’e çıkar.',
+    keyInsight: 'En iyi QR yerleşimi tasarımcının değil müşterinin perspektifinden seçilir. Müşterinin telefonu çıkardığı an QR görünür olmalı, hayır demek için ayrı bir karar gerektirmemeli.',
+    sections: [
+      { title: 'Yerleşim sezgisi', paragraphs: ['Müşteri telefonu en sık şu üç anda eline alır: <em>menüye bakarken</em>, <em>fişi alırken</em>, <em>sırada beklerken</em>. QR bu üç anın en az ikisinde görünür konumda olmalıdır.'] },
+      { title: 'Çağrı metni (CTA)', paragraphs: ['Sadece “QR’ı tara” yazmak yerine bir fayda iletin: <strong>“Deneyiminizi 20 saniyede paylaşın, ekibimize ulaşır.”</strong> Spesifik süre güven yaratır; soyut “görüşlerinizi paylaşın” cümlesi soluk kalır.'] },
+      { title: 'Görsel destek', items: ['QR çevresinde en az 1 cm boşluk.', 'Logoyu QR’ı bozmayacak şekilde küçük tutun.', 'Renk kontrastı koyu/açık net olsun.', 'Ön planda parlak yansıtıcı yüzeylerden kaçının.', 'Karanlık mekânlarda yumuşak bir spot.'] },
+      { title: 'A/B testi', paragraphs: ['Bir hafta CTA A, bir hafta CTA B kullanın. Tarama sayısını panelde karşılaştırın. Çoğu testte fark net görülür ve karar veri ile alınır.'], quote: 'Müşteriden yorum istemenin en kötü yolu rica etmektir; en iyisi onun zaten yapmak istediği bir şeyi kolaylaştırmaktır.' },
+    ],
+    checklist: ['QR yerleşimi müşteri perspektifinden test edildi.', 'CTA metni spesifik bir fayda taşıyor.', 'QR çevresinde en az 1 cm boşluk var.', 'Kontrast yeterince yüksek.', 'A/B testi planı 2 hafta için kurulmuş.', 'Tarama sayısı haftalık raporda izleniyor.', 'Yer değişikliklerinde performans yeniden ölçülüyor.'],
+    faq: [
+      { q: 'Tarama oranı yüzde kaç olmalı?', a: 'Sektör ortalaması yüzde 10-15 civarındadır. Yüzde 5’in altı yerleşim veya CTA sorununa, yüzde 25’in üstü ise çok iyi bir akış uyumuna işaret eder.' },
+      { q: 'Yorum yazmaya zorlamak yasal mı?', a: 'Hayır. <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">Google katkı politikası</a> dahil çoğu platformun kuralları, müşteriyi yorum yazmaya zorlamayı veya yıldız dayatmayı yasaklar. Buaze akışı bunu desteklemez.' },
+      { q: 'Tek bir CTA tüm dünyada mı çalışır?', a: 'Hayır. Lokasyona, müşteri profiline ve kanala göre değişir. Test etmek yegâne yöntemdir.' },
+      { q: 'QR şablonu yerine özel tasarım yaptırmalı mıyım?', a: 'Marka bilinçli özel tasarım faydalı olabilir, ancak QR’ın okunabilirliği <strong>tasarımdan önce</strong> gelir.' },
+    ],
+    policyNote: 'Bu rehberdeki teknikler tarama oranını artırmaya yöneliktir, müşteriyi belirli bir yıldız vermeye yönlendirmeye değil. Yıldız dayatma, sahte yorum üretimi veya seçici teşvik <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">Google’ın kullanıcı katkı politikalarına</a> aykırıdır ve Buaze tarafından desteklenmez.',
+  }),
+  article('en', 'qr-codes', 60, 'qr-scan-rate-optimization', 'How to lift QR scan rate intentionally', 'Use placement, CTA copy and visual cues to collect more feedback at the same review volume.', ['scan rate', 'optimization', 'cta', 'visual', 'a/b'], {
+    lead: 'A QR being <strong>printed</strong> is not the same as it being <strong>scanned</strong>. Scan rate (over impressions) sits between 5-15% in most businesses; with the right tweaks it lifts comfortably to 25%.',
+    keyInsight: 'The best QR placement is chosen from the customer’s point of view, not the designer’s. The QR should be visible the moment the phone comes out — saying no should not require an additional decision.',
+    sections: [
+      { title: 'Placement intuition', paragraphs: ['Customers reach for their phone in three moments: <em>looking at the menu</em>, <em>paying the bill</em>, <em>waiting in line</em>. The QR should be visible in at least two of these.'] },
+      { title: 'Call to action', paragraphs: ['Instead of “Scan the QR”, communicate a benefit: <strong>“Share your experience in 20 seconds — it reaches our team.”</strong> Specific timing builds trust; abstract “share your thoughts” feels weak.'] },
+      { title: 'Visual support', items: ['At least 1 cm clear space around the QR.', 'Keep the logo small enough to not disturb the QR.', 'Strong dark/light contrast.', 'Avoid glossy reflective foreground.', 'Add gentle lighting in dim spaces.'] },
+      { title: 'A/B testing', paragraphs: ['Run CTA A for one week and CTA B the next. Compare scan counts in the panel. Most tests show a clear winner and the decision becomes data-driven.'], quote: 'The worst way to ask for a review is to beg; the best is to make easier something the customer already wants to do.' },
+    ],
+    checklist: ['Placement tested from the customer’s seat.', 'CTA carries a specific benefit.', 'At least 1 cm clear space around the QR.', 'Sufficient contrast.', '2-week A/B test planned.', 'Scan count tracked weekly.', 'Performance re-measured after relocation.'],
+    faq: [
+      { q: 'What scan rate should I expect?', a: 'Industry averages sit at 10-15%. Below 5% suggests a placement or CTA problem; above 25% indicates a strong overall flow.' },
+      { q: 'Is forcing a review legal?', a: 'No. <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">Google’s contribution policy</a> and similar platform rules prohibit forced reviews or star coercion. Buaze does not support such flows.' },
+      { q: 'Will one CTA work everywhere?', a: 'No. It varies by location, customer profile and channel. Testing is the only reliable method.' },
+      { q: 'Should I commission a custom QR design?', a: 'A brand-aware design helps, but readability comes <strong>before</strong> design.' },
+    ],
+    policyNote: 'These techniques aim to lift scan rate, not steer the customer toward a specific star count. Star coercion, fake reviews or selective incentives violate <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">Google’s user contribution policies</a> and are not supported by Buaze.',
+  }),
+
+  article('tr', 'review-management', 60, 'review-culture-team-sharing', 'Yorumları ekiple paylaşmanın doğru yolu', 'Olumlu ve olumsuz yorumları ekibe nasıl, ne sıklıkta ve hangi tonla paylaşacağınız bir kültür meselesidir.', ['kültür', 'ekip', 'paylaşım', 'motivasyon', 'iletişim'], {
+    lead: 'Yorumları ekiple paylaşmak basit görünür ama yanlış yapıldığında <em>moral kıran</em>, doğru yapıldığında <em>kültür inşa eden</em> bir araca dönüşür. Anahtar tutarlılık ve dürüstlüktür.',
+    keyInsight: 'Bir yorum tek bir müşteriden gelir, ama paylaşılma şekliyle tüm ekibe nasıl çalıştıklarını anlatır. Bu yüzden seçimleri rastgele değil sistemli yapın.',
+    sections: [
+      { title: 'Olumlu yorumların paylaşımı', paragraphs: ['Haftada bir kez ekiple en güzel 3 yorumu okumak basit ama güçlüdür. <strong>İsim verme</strong> önemli: müşterinin “Ahmet Bey’in kahve önerisi” gibi spesifik notları ekibin emeğinin görüldüğünü hisettirir.'] },
+      { title: 'Olumsuz yorumların paylaşımı', paragraphs: ['Olumsuz yorumu <em>kişisel</em> hâle getirmek yerine <em>sistemsel</em> bir mesele olarak ele alın. “Servis yavaştı” yorumu kişiye saldırı değil, vardiya planlamasına geri bildirimdir.'], quote: 'Bir yorumu okurken ekibin yüzü düştüyse, paylaşım amacına ulaşmamıştır. Hedef sahiplenme; suçlama değil.' },
+      { title: 'Kanal seçimi', items: ['Olumlu yorum: ekip toplantısı veya WhatsApp grubu.', 'Tekrar eden konu: <strong>haftalık yorum toplantısı</strong>.', 'Acil olumsuz yorum: doğrudan vardiya yöneticisi.', 'Şikayet özeti: aylık yöneticiler raporu.', 'Müşteriye geri dönüş: <a href="/tr/help/handle-negative-feedback">düşük puan yönetimi</a> rehberi.'] },
+      { title: 'Frekans ve yoğunluk', paragraphs: ['Her yorumu paylaşmak gürültü yaratır; hiç paylaşmamak ise paneli görünmez yapar. <strong>Haftada 5-7 yorum</strong> ve aylık <strong>1 panoramik özet</strong> sağlıklı bir denge oluşturur.'] },
+    ],
+    checklist: ['Haftalık olumlu yorum okuması rutinde.', 'Olumsuz yorumlar sistemsel dilde paylaşılıyor.', 'Vardiya yöneticisi acil eşiği biliyor.', 'Aylık özet yöneticilere düzenli gidiyor.', 'Ekip yorumları haftada en az 1 kez tartışıyor.', 'Müşteri ismine duyarlı paylaşım dili korunuyor.', 'Yorumlar sosyal medyada izinsiz alıntılanmıyor.'],
+    faq: [
+      { q: 'Olumsuz bir yorumu hiç ekiple paylaşmamak doğru mu?', a: 'Hayır. Saklamak güveni azaltır. Ancak paylaşımın <em>tonu</em> ve <em>amacı</em> açık olmalı: suçlama değil sistemsel öğrenme.' },
+      { q: 'Müşteri adlarını ekiple paylaşabilir miyim?', a: 'KVKK çerçevesinde dikkat gerekir. Operasyonel sahiplenme için yeterli bilgi paylaşın; gerekmedikçe tam isim açıklamayın.' },
+      { q: 'Yorumları sosyal medyada paylaşmak doğru mu?', a: 'Müşteri açık rıza vermediği sürece <strong>hayır</strong>. Anonimleştirilmiş alıntılar bile çoğu zaman izin gerektirir.' },
+      { q: 'Müşteri kendi yorumunu sosyal medyada paylaşırsa?', a: 'Bu müşterinin kendi tercihidir; siz alıntılarken yine de etiketlemeden veya sahiplikten kaçınmak güvenlidir.' },
+    ],
+  }),
+  article('en', 'review-management', 60, 'review-culture-team-sharing', 'How to share reviews with your team', 'Sharing positive and negative feedback with the team — how, how often and in what tone — is a culture question.', ['culture', 'team', 'sharing', 'motivation', 'communication'], {
+    lead: 'Sharing reviews looks simple but done poorly it <em>kills morale</em>; done well it <em>builds culture</em>. The key is consistency and honesty.',
+    keyInsight: 'A review comes from a single customer, but the way you share it tells the whole team how they are working. Make the choices deliberate, not random.',
+    sections: [
+      { title: 'Sharing positive reviews', paragraphs: ['Reading the three best reviews of the week with the team is simple and powerful. <strong>Naming specifics</strong> matters: a note like “Ahmet’s coffee recommendation” shows the team that effort is visible.'] },
+      { title: 'Sharing negative reviews', paragraphs: ['Treat a negative review as a <em>systemic</em> matter, not a <em>personal</em> attack. “Service was slow” is feedback to shift planning, not an attack on a person.'], quote: 'If the team’s face drops while you read a review, the sharing missed its goal. The aim is ownership, not blame.' },
+      { title: 'Channel choice', items: ['Positive review: team huddle or WhatsApp group.', 'Recurring theme: <strong>weekly review meeting</strong>.', 'Urgent negative: directly to the shift manager.', 'Complaint summary: monthly executive report.', 'Customer follow-up: <a href="/en/help/handle-negative-feedback">low-rating management</a> guide.'] },
+      { title: 'Frequency and volume', paragraphs: ['Sharing every review creates noise; sharing none keeps the panel invisible. <strong>5-7 reviews per week</strong> plus a <strong>monthly panoramic summary</strong> is a healthy balance.'] },
+    ],
+    checklist: ['Weekly positive review reading is routine.', 'Negatives are framed systemically.', 'Shift manager knows the urgent threshold.', 'Monthly summary reaches executives.', 'Team discusses reviews at least once a week.', 'Customer-name sensitivity is preserved.', 'Reviews are not quoted on social media without consent.'],
+    faq: [
+      { q: 'Is it okay to never share a negative review?', a: 'No. Hiding reduces trust. But the <em>tone</em> and <em>purpose</em> of sharing must be clear: systemic learning, not blame.' },
+      { q: 'Can I share customer names with the team?', a: 'Use care under privacy regulations. Share enough for ownership; avoid full names unless necessary.' },
+      { q: 'Can I post reviews on social media?', a: 'Without explicit customer consent, <strong>no</strong>. Even anonymized quotes often require permission.' },
+      { q: 'What if the customer shares the review themselves?', a: 'That is their choice. When quoting them, still avoid tagging or claiming ownership.' },
+    ],
+  }),
+
+  article('tr', 'integrations', 60, 'slack-discord-webhook-routing', 'Slack ve Discord için yorum bildirimi kurmak', 'Webhook ile yeni yorumları doğrudan ekibin kullandığı kanala düşürün, ekran kontrolüne bağımlılığı azaltın.', ['slack', 'discord', 'webhook', 'bildirim', 'rota'], {
+    lead: 'Ekibin paneli her saat açması gerçekçi değildir. <strong>Slack veya Discord</strong> webhook’una düşen düşük puan bildirimi, doğru kişiyi doğru anda bağlar; panel sadece kararı alacağınız yer haline gelir.',
+    keyInsight: 'Bildirim mimarisi, dikkat ekonomisi mimarisidir. Her yorumu Slack’e atmak ekibi yorar; sadece eyleme ihtiyaç duyanları atmak güveni inşa eder.',
+    sections: [
+      { title: 'Hangi olaylar Slack’e gitmeli?', items: ['1-2 yıldızlı yeni yorum (acil eylem).', 'Aynı etiket günde 3+ kez tekrar ediyorsa (operasyon sinyali).', '5 yıldızlı ve uzun metin (paylaşım fırsatı).', 'Yanıt SLA aşıldıysa (eskalasyon).', 'Kampanya QR’ından gelen ilk yorumlar (ölçüm).'] },
+      { title: 'Webhook URL’i nasıl üretilir?', paragraphs: ['Slack’te <em>Incoming Webhooks</em> uygulamasını yükleyin, kanal seçin, üretilen URL’yi Buaze webhook ayarlarına yapıştırın. Discord’da kanalın <em>Edit Channel → Integrations → Webhooks</em> menüsünden URL alınır.'] },
+      { title: 'Mesaj formatı', paragraphs: ['Sade tutun: <strong>yıldız + kısa metin + restoran + yanıtla butonu</strong>. Çok zengin formatlar mobilde okunmaz hale gelir.'], quote: 'Bildirimin görevi paneli replace etmek değil, paneli tetiklemek; mesaj yeterli bağlamı verirse ekip ne zaman tıklayacağını bilir.' },
+      { title: 'Gürültü yönetimi', paragraphs: ['Her olumlu yorumu kanala atarsanız ekip <em>desensitize</em> olur. Pozitif yorumları haftalık dijest halinde özetlemek daha sürdürülebilirdir. <a href="/tr/help/webhook-events">webhook olayları</a> rehberinde dengeli pattern var.'] },
+    ],
+    checklist: ['Webhook URL gizli tutuluyor.', 'Sadece eyleme yönelik olaylar bildiriliyor.', 'Mesaj formatı mobilde okunaklı.', 'Yanıt SLA için escalation kuralı tanımlı.', 'Pozitif yorumlar haftalık dijestte.', 'Webhook hatası alarmı ayrı kanalda.', 'Yıllık webhook URL rotasyonu planlanmış.'],
+    faq: [
+      { q: 'Webhook URL’si sızarsa ne olur?', a: 'Üçüncü taraflar kanala mesaj gönderebilir. Sızıntı şüphesinde URL’yi hemen Slack/Discord tarafından <em>regenerate</em> edin ve Buaze ayarına yenisini yapıştırın.' },
+      { q: 'Slack’in tüm yorumlarını arşivleyebilir miyim?', a: 'Evet, ama kanalın amacı eyleme yönelikse arşivi ayrı bir kanala düşürmek temizliği korur.' },
+      { q: 'Aynı yorum hem Slack hem CRM’e gidebilir mi?', a: 'Evet. Her hedef için ayrı webhook tanımlamak ve hangi olayların hangi hedefe gittiğini belgelemek faydalıdır.' },
+      { q: 'Müşteri verisi kanalda saklı kalır mı?', a: 'Slack/Discord kanal içeriği o platformun retention politikasına tabidir. Kişisel veriyi gerekmedikçe mesaj gövdesine yazmamak tercih edilir.' },
+    ],
+    policyNote: 'Webhook bildirimleri yorumun <em>içeriğini değiştirmek</em> için değil, ekibe ulaştırmak için kullanılır. Yorum filtreleme veya seçici görüntüleme <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">platform politikalarına</a> aykırıdır ve Buaze tarafından desteklenmez.',
+  }),
+  article('en', 'integrations', 60, 'slack-discord-webhook-routing', 'Wire Slack and Discord notifications', 'Use webhooks to send reviews directly into the channel your team already uses, instead of relying on panel checks.', ['slack', 'discord', 'webhook', 'notification', 'routing'], {
+    lead: 'It is unrealistic to expect the team to open the panel every hour. A low-rating notification dropped into <strong>Slack or Discord</strong> connects the right person at the right moment, and the panel becomes the place for decisions.',
+    keyInsight: 'Notification design is attention-economy design. Sending every review to Slack burns the team out; sending only those that need action builds trust.',
+    sections: [
+      { title: 'Which events should hit Slack?', items: ['New 1-2 star review (urgent action).', 'Same tag repeating 3+ times in a day (operational signal).', '5-star with long text (sharing opportunity).', 'Response SLA breach (escalation).', 'First reviews from a campaign QR (measurement).'] },
+      { title: 'Generating the webhook URL', paragraphs: ['In Slack, install the <em>Incoming Webhooks</em> app, pick a channel and paste the generated URL into Buaze webhook settings. In Discord, get the URL from <em>Edit Channel → Integrations → Webhooks</em>.'] },
+      { title: 'Message format', paragraphs: ['Keep it lean: <strong>star + short text + restaurant + reply button</strong>. Rich layouts read poorly on mobile.'], quote: 'A notification’s job is not to replace the panel but to trigger it; if the message gives enough context, the team knows when to click through.' },
+      { title: 'Noise management', paragraphs: ['Pushing every positive review desensitizes the team. A weekly digest of positives is more sustainable. The <a href="/en/help/webhook-events">webhook events</a> guide has balanced patterns.'] },
+    ],
+    checklist: ['Webhook URL kept secret.', 'Only action-driving events posted.', 'Format readable on mobile.', 'Escalation rule for SLA breach.', 'Positives delivered as a weekly digest.', 'Webhook errors alarm a separate channel.', 'Annual webhook URL rotation planned.'],
+    faq: [
+      { q: 'What if the webhook URL leaks?', a: 'Third parties could post messages. Regenerate it on Slack/Discord side immediately and paste the new URL into Buaze settings.' },
+      { q: 'Can I archive every review in Slack?', a: 'Yes, but if the channel is action-oriented, send the archive feed to a separate channel to keep things clean.' },
+      { q: 'Can the same review go to both Slack and CRM?', a: 'Yes. Use separate webhooks per destination and document which events go where.' },
+      { q: 'Is customer data retained in the channel?', a: 'Yes, by the platform’s retention policy. Avoid placing unnecessary personal data in the message body.' },
+    ],
+    policyNote: 'Webhook notifications are for <em>routing</em> reviews to the team, not modifying their content. Filtering or selectively hiding reviews violates <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">platform policies</a> and is not supported by Buaze.',
+  }),
+
+  article('tr', 'team-roles', 60, 'shift-handoff-reviews', 'Vardiya geçişlerinde yorum devri', 'Açık yorumların vardiyalar arası kayıp gitmemesi için yapılması gereken kısa devir ritüeli.', ['vardiya', 'devir', 'handoff', 'iş akışı', 'sla'], {
+    lead: 'Sabah vardiyası tarafından açılmış bir yorumu akşam vardiyası kapatamazsa müşteri <em>iki kez</em> kaybedilir: önce deneyimde, sonra takipte. Devir ritüeli bu kaybı önler.',
+    keyInsight: 'Vardiya geçişi yorumlar için <strong>üçüncü bir vardiya</strong> gibidir; sahipsizlik en çok bu 15 dakikada başlar. Net bir devir protokolü, paneldeki tüm SLA’nin görünmez bel kemiğidir.',
+    sections: [
+      { title: 'Devir formatı (5 dakika)', items: ['Açık atamalar listesi.', 'Yanıt SLA’si yaklaşan yorumlar.', 'Tekrar eden etiketler (servis, yemek vb).', 'Eskalasyon gerektiren özel durumlar.', 'Pozitif öne çıkanlar (motivasyon için).'] },
+      { title: 'Ortak görünüm', paragraphs: ['Vardiya yöneticileri aynı filtreyi kullanmalıdır: <strong>Son 24 saat + tüm açık atamalar</strong>. Filtreyi <a href="/tr/help/review-search-and-filters">URL üzerinden paylaşmak</a>, “farklı şeylere bakıyoruz” karışıklığını ortadan kaldırır.'] },
+      { title: 'Kim alır, kim teslim eder?', paragraphs: ['Devir <em>iki kişilik</em> bir adımdır. Tek başına yapılan devir, devir değil <em>arşivlemedir</em>. Her iki vardiya yöneticisinin de aynı liste üzerinden tek tek geçmesi gerekir.'], quote: 'Devir 5 dakika sürer, devirsizliğin maliyeti ise saatlerce müşteri sabırsızlığıdır. Bu hesabı yapmak için her gün yapılacak iş listesine eklemek yeterli.' },
+      { title: 'Hafta sonu ve tatil', paragraphs: ['Ekip yapılandırılırken çoğu işletme hafta sonunu unutur. <strong>Cuma akşamı → pazartesi sabahı</strong> arasında bir <em>nöbetçi yönetici</em> tanımlamak boşluğu kapatır.'] },
+    ],
+    checklist: ['Devir formatı yazılı belgede.', 'Ortak filtre URL’si paylaşılmış.', 'Devir iki kişilik adım olarak yapılıyor.', 'Eskalasyon eşiği tanımlı.', 'Hafta sonu nöbetçisi atanmış.', 'Devir notu kaybolmayan bir yerde tutuluyor.', 'Aylık devir kalitesi gözden geçirilmiş.'],
+    faq: [
+      { q: 'Çok küçük ekipte devir gereksiz mi?', a: 'Hayır. Tek kişilik bir vardiyada bile <em>geçen vardiyaya</em> kısa not bırakmak ileride sürpriz önler. 5 dakikalık disiplin, saatlerce telafi tasarrufu sağlar.' },
+      { q: 'Devir Slack’te yapılabilir mi?', a: 'Evet, ancak <strong>liste mantığı</strong> korunmalı. Sohbet halinde devir hızla okunmaz hale gelir; checklist veya thread daha iyidir.' },
+      { q: 'Devirde her yorumu konuşmalı mıyız?', a: 'Hayır. Sadece <em>açık eylem</em> gerektirenler. Kapanmış yorumlar arşivde kalır.' },
+      { q: 'Devir notu kaybolursa ne yapmalı?', a: 'Düzenli bir devir günlüğü tutmak alışkanlık haline geldiğinde kayıp yorumlar drastik biçimde azalır. Kaybolan ilk birkaç notu gözlemleyip pattern’i kapatın.' },
+    ],
+  }),
+  article('en', 'team-roles', 60, 'shift-handoff-reviews', 'Hand off reviews between shifts', 'A short handoff ritual that prevents open reviews from getting lost across shifts.', ['shift', 'handoff', 'workflow', 'sla', 'continuity'], {
+    lead: 'If a review opened by the morning shift is not closed by the evening shift, the customer is lost <em>twice</em>: once in the experience, once in follow-up. A handoff ritual prevents that.',
+    keyInsight: 'A shift transition is the <strong>third shift</strong> for reviews — ownership gaps start in those 15 minutes. A clear handoff protocol is the invisible backbone of every SLA on the panel.',
+    sections: [
+      { title: 'Handoff format (5 minutes)', items: ['Open assignments list.', 'Reviews close to SLA breach.', 'Recurring tags (service, food, etc.).', 'Anything needing escalation.', 'Positive highlights (for motivation).'] },
+      { title: 'Shared view', paragraphs: ['Shift managers should use the same filter: <strong>last 24 hours + all open assignments</strong>. Sharing the filter <a href="/en/help/review-search-and-filters">via URL</a> removes the “we’re looking at different things” problem.'] },
+      { title: 'Who hands off, who receives?', paragraphs: ['Handoff is a <em>two-person</em> step. Done alone, it is not handoff but <em>archiving</em>. Both shift managers must walk through the list together.'], quote: 'A handoff costs 5 minutes; the cost of skipping it is hours of customer patience. Adding it to the daily checklist makes the math obvious.' },
+      { title: 'Weekends and holidays', paragraphs: ['Most teams forget weekends. Defining a <em>duty manager</em> from <strong>Friday evening to Monday morning</strong> closes the gap.'] },
+    ],
+    checklist: ['Handoff format documented.', 'Shared filter URL is in use.', 'Handoff is a two-person step.', 'Escalation threshold is defined.', 'Weekend duty manager assigned.', 'Handoff notes stored where they survive.', 'Handoff quality reviewed monthly.'],
+    faq: [
+      { q: 'Is handoff overkill in tiny teams?', a: 'No. Even in a one-person shift, leaving a short note for the <em>previous</em> shift prevents surprises. Five minutes of discipline saves hours of recovery.' },
+      { q: 'Can handoff happen in Slack?', a: 'Yes, but keep <strong>list logic</strong>. A chat thread quickly becomes unreadable; checklists or threads work better.' },
+      { q: 'Should we discuss every review at handoff?', a: 'No. Only those needing <em>open action</em>. Closed reviews stay in the archive.' },
+      { q: 'What if a handoff note disappears?', a: 'Once a handoff log becomes habit, lost reviews drop sharply. Watch the first few losses and close the pattern.' },
+    ],
+  }),
+
+  article('tr', 'billing', 60, 'multi-account-and-franchise-billing', 'Çoklu hesap, franchise ve grup faturalandırması', 'Birden fazla işletmesi olan operatörler ve franchise yapılarında faturalandırmayı sade ve denetlenebilir tutma.', ['franchise', 'çoklu hesap', 'fatura', 'grup', 'muhasebe'], {
+    lead: 'Tek işletmede fatura sadedir; <strong>üç franchise + iki kendi şubesi</strong> olduğunda kim hangi tutarı ödeyecek, hangi hesap kime ait sorusu hızla karmaşıklaşır. Bu rehber temiz yapılar için pratik desenler önerir.',
+    keyInsight: 'Faturalandırma topolojisi, ileride sahibi değişen veya bölünen işletmelerde sürtünmeyi belirler. Karar vermeden önce <em>çıkış senaryosunu</em> da düşünmek olgun bir alışkanlıktır.',
+    sections: [
+      { title: 'Üç desen', items: ['<strong>Tek hesap, çok restoran</strong>: aile şirketi, tek sahip.', '<strong>Hesap başına franchise</strong>: bağımsız mali yapı.', '<strong>Grup hesabı + alt hesaplar</strong>: kurumsal kontrol + lokal esneklik.', 'Her desenin fatura çıktısı farklıdır.', 'Çıkış senaryosu desen seçiminin parçasıdır.'] },
+      { title: 'Tek hesap, çok restoran', paragraphs: ['En sade yapı. Tüm restoranlar tek faturada birleştirilir; muhasebe basit, ancak <em>franchise ortağına</em> ayrı kayıt vermek istiyorsanız bu desen yetersiz kalır.'] },
+      { title: 'Hesap başına franchise', paragraphs: ['Her franchise kendi Buaze hesabını açar, kendi faturasını alır. <a href="/tr/help/role-permissions">Rol ve izinler</a> rehberindeki <em>group manager</em> rolüyle merkez hala raporlama yapabilir. <strong>Çıkışta</strong> ortaklığı bitirmek temizdir: hesap kapatılır, kalan veri ona ait olur.'], quote: 'Bağımsız fatura ekstra yöneticilik yükü gibi görünür ama ortaklık sona erdiğinde — ki çoğu franchise için günün birinde olur — neyi kimin sahiplendiği sorusu kendiliğinden cevaplanır.' },
+      { title: 'Grup hesabı + alt hesaplar', paragraphs: ['Büyük zincirler için ideal. Merkez fatura tek noktada, ancak alt restoranlar kendi metriklerini ve ekiplerini görür. Bu desen daha fazla yapılandırma gerektirir; muhasebenizle birlikte planlamak zorunludur.'] },
+    ],
+    checklist: ['Faturalandırma deseni yazılı kararlaştırıldı.', 'Çıkış senaryosu konuşuldu.', 'Vergi numarası ve unvan her hesap için doğru.', 'Grup yöneticisi rolü tanımlı.', 'Aylık fatura tek alıcıya net gönderilir.', 'KDV reverse-charge senaryosu netleştirilmiş.', 'Yıllık plan dağılımı sözleşmede yazılı.'],
+    faq: [
+      { q: 'Mevcut tek hesabımı franchise yapısına çevirebilir miyim?', a: 'Genellikle evet, ama veri ayrımı manuel adım gerektirir. Destek ekibimizle <em>migration</em> planlayın.' },
+      { q: 'Grup hesabı ek ücret mi?', a: 'Plan yapısına bağlıdır. Genellikle hacme göre fiyatlanır; özel pricing için iletişime geçmek gerekir.' },
+      { q: 'Franchise kapanırsa veriye ne olur?', a: 'Hesap iptal edildiğinde veri saklama politikamıza tabi olur. Kapanış öncesi <a href="/tr/help/csv-export-bi">CSV export</a> almak iyi bir alışkanlıktır.' },
+      { q: 'Tek faturada şubeleri ayırt edebilir miyim?', a: 'Fatura kalemi olarak ayrı satır gösterilebilir; muhasebenizle uyumu için iletişime geçin.' },
+    ],
+  }),
+  article('en', 'billing', 60, 'multi-account-and-franchise-billing', 'Multi-account, franchise and group billing', 'Keep billing clean and auditable when you operate multiple businesses or franchise structures.', ['franchise', 'multi-account', 'invoice', 'group', 'finance'], {
+    lead: 'A single business is simple; <strong>three franchises plus two of your own branches</strong> quickly raises the question of who pays what. This guide proposes practical patterns.',
+    keyInsight: 'Billing topology determines future friction when ownership splits or rotates. Considering the <em>exit scenario</em> before committing is a mature habit.',
+    sections: [
+      { title: 'Three patterns', items: ['<strong>One account, many restaurants</strong>: family business, single owner.', '<strong>Account per franchise</strong>: independent finance.', '<strong>Group account + sub-accounts</strong>: central control with local flexibility.', 'Each pattern produces a different invoice.', 'Exit scenario is part of the pattern choice.'] },
+      { title: 'One account, many restaurants', paragraphs: ['The simplest. All restaurants roll into one invoice. Accounting is easy, but if you need separate records for a <em>franchise partner</em>, this pattern falls short.'] },
+      { title: 'Account per franchise', paragraphs: ['Each franchise has its own Buaze account and invoice. The central HQ can still report via the <em>group manager</em> role from <a href="/en/help/role-permissions">roles & permissions</a>. <strong>On exit</strong>, ending the partnership is clean: the account is closed and the data remains with that party.'], quote: 'Independent billing looks like extra admin overhead, but when the partnership ends — and for most franchises it does eventually — the question of ownership is already answered.' },
+      { title: 'Group account + sub-accounts', paragraphs: ['Best for chains. The central invoice is single-point, but sub-restaurants see their own metrics and teams. This pattern needs more configuration; plan it with your accountant.'] },
+    ],
+    checklist: ['Billing pattern is documented.', 'Exit scenario discussed.', 'Tax ID and title correct per account.', 'Group manager role defined.', 'Monthly invoice goes to a single recipient cleanly.', 'VAT reverse-charge scenarios clarified.', 'Annual plan allocation written in contract.'],
+    faq: [
+      { q: 'Can I convert a single account into a franchise structure?', a: 'Usually yes, but data separation is a manual step. Plan a <em>migration</em> with our support team.' },
+      { q: 'Does a group account cost extra?', a: 'It depends on the plan structure. Pricing is usually volume-based; contact us for custom pricing.' },
+      { q: 'What if a franchise closes?', a: 'Account cancellation triggers retention policies. <a href="/en/help/csv-export-bi">CSV export</a> before closure is a healthy habit.' },
+      { q: 'Can a single invoice break out branches?', a: 'Line-item separation is possible; align with your accountant by contacting us.' },
+    ],
+  }),
+
+  article('tr', 'api-webhook', 60, 'integration-resilience-runbook', 'Entegrasyon dayanıklılığı: outage runbook’u', 'Buaze API’si veya dış sisteminiz geçici olarak yanıt vermediğinde kurtarma ve müşteri etkisini sıfıra indirme adımları.', ['outage', 'kurtarma', 'runbook', 'resilience', 'sla'], {
+    lead: 'Hiçbir entegrasyon <em>%100 uptime</em> ile çalışmaz. Önemli olan kesinti olduğunda <strong>fark edilmesi</strong>, <strong>iletişim kurulması</strong> ve <strong>geri kazanılması</strong>; geri kalan büyük ölçüde otomatik akıştır.',
+    keyInsight: 'Outage anında en pahalı şey panik değildir; “bunu kim çözecek” sorusudur. Runbook bu sorunun cevabını önceden yazılı tutar.',
+    sections: [
+      { title: '4 saatlik runbook', items: ['00:00 — Olay tespit (alarm veya manuel).', '00:05 — On-call kişi onayladı, paneli kontrol etti.', '00:15 — Müşteri etkisi tahmin edildi.', '01:00 — Geçici workaround uygulandı (manuel mod).', '04:00 — Kalıcı çözüm planı çıkarıldı.'] },
+      { title: 'Manuel mod', paragraphs: ['Webhook çalışmıyorsa Buaze paneli çalışmaya devam eder. Kritik bildirimler için <strong>geçici manuel mod</strong>: ekip panelden son 4 saatlik düşük puanları her saat başı manuel kontrol eder. Bu, otomatik akış restore olana kadar yeterlidir.'] },
+      { title: 'İletişim', paragraphs: ['Müşteriye outage iletişimi yapmak çoğu zaman gerekmez; çünkü Buaze müşteri ile doğrudan değil işletme ile temas halindedir. Ancak ekip iç iletişimi için bir <em>status sayfası</em> veya Slack kanalı, “kim ne biliyor” sorusunu siler.'], quote: 'Bir kesintinin ekibe maliyeti dakikada hesaplanmaz; “neyin çalışıp çalışmadığını bilmemekten” doğan endişede hesaplanır.' },
+      { title: 'Postmortem', paragraphs: ['Olay bittiğinde 24 saat içinde kısa bir postmortem yazın. <a href="/tr/help/incident-response-basics">Incident response</a> rehberindeki disiplin burada da geçerlidir: kök neden, etki, alınan aksiyon, gelecek için önlem.'] },
+    ],
+    checklist: ['On-call rotasyonu yazılı.', 'Manuel mod prosedürü mevcut.', 'Status iletişim kanalı kurulu.', '4 saatlik runbook denendi.', 'Postmortem template’i hazır.', 'Alarm eşikleri yıllık gözden geçirildi.', 'Yedek webhook hedefi (failover) tanımlı.'],
+    faq: [
+      { q: 'Outage Buaze tarafında mı yoksa benim sistemimde mi?', a: 'Buaze status sayfası veya destek kanalı ilk kontrol noktasıdır. Buaze çalışıyorsa kontrol kendi sisteminize geçer; webhook payload’ı log’larınıza ulaşmıyorsa endpoint’iniz hatadadır.' },
+      { q: 'Kayıp eventleri sonradan alabilir miyim?', a: 'Webhook retry mekanizması belirli bir süre boyunca tekrar dener. Sürenin dışında kalan eventler için <a href="/tr/help/csv-export-bi">CSV export</a> ile telafi yapabilirsiniz.' },
+      { q: 'Outage’da müşteri yorum yazamaz mı?', a: 'QR akışı ve panel ayrı katmandır. Webhook gibi yan akışlar olmadan bile yorum kabulü çalışmaya devam eder.' },
+      { q: 'Birden fazla webhook hedefim var, hepsi aynı anda etkilenir mi?', a: 'Genellikle hayır. Hedef başına bağımsız teslim akışları çalışır; biri kesilirse diğerleri etkilenmez.' },
+    ],
+  }),
+  article('en', 'api-webhook', 60, 'integration-resilience-runbook', 'Integration resilience: outage runbook', 'Steps to recover and minimize customer impact when Buaze API or your system is temporarily unresponsive.', ['outage', 'recovery', 'runbook', 'resilience', 'sla'], {
+    lead: 'No integration runs at <em>100% uptime</em>. What matters when an outage hits is <strong>detection</strong>, <strong>communication</strong> and <strong>recovery</strong>; the rest is largely automated.',
+    keyInsight: 'The most expensive thing during an outage is not panic; it is the question “who is going to fix this?” A runbook answers it in advance.',
+    sections: [
+      { title: '4-hour runbook', items: ['00:00 — Incident detected (alarm or manual).', '00:05 — On-call acknowledged, checked panel.', '00:15 — Customer impact estimated.', '01:00 — Temporary workaround in place (manual mode).', '04:00 — Permanent fix plan documented.'] },
+      { title: 'Manual mode', paragraphs: ['If webhooks fail, the Buaze panel still works. For critical alerts, switch to a <strong>temporary manual mode</strong>: the team checks the panel hourly for low ratings from the last 4 hours. This bridges the gap until automation returns.'] },
+      { title: 'Communication', paragraphs: ['Customer-facing outage communication is rarely needed since Buaze talks to operators, not end customers. But for internal alignment, a <em>status page</em> or Slack channel removes the “who knows what” problem.'], quote: 'The cost of an outage is not measured in minutes; it is measured in the anxiety that comes from not knowing what is and is not working.' },
+      { title: 'Postmortem', paragraphs: ['Within 24 hours of resolution, write a short postmortem. The discipline in the <a href="/en/help/incident-response-basics">incident response</a> guide applies: root cause, impact, action taken, prevention plan.'] },
+    ],
+    checklist: ['On-call rotation written.', 'Manual mode procedure exists.', 'Status communication channel set.', '4-hour runbook tested.', 'Postmortem template ready.', 'Alarm thresholds reviewed annually.', 'Backup webhook destination (failover) defined.'],
+    faq: [
+      { q: 'Is the outage on Buaze side or mine?', a: 'Buaze status page or support is the first check. If Buaze is up, check your endpoint; if no payload reaches your logs, the issue is on your side.' },
+      { q: 'Can I retrieve missed events later?', a: 'The webhook retry mechanism re-tries for a defined window. Beyond that window, recover via <a href="/en/help/csv-export-bi">CSV export</a>.' },
+      { q: 'Can customers still leave reviews during an outage?', a: 'The QR flow and the panel are separate layers. Side flows like webhooks can fail while review collection continues.' },
+      { q: 'Do multiple webhook destinations all fail together?', a: 'Usually not. Each destination has its own delivery flow; one failing does not affect the others.' },
+    ],
+  }),
+
+  article('tr', 'security-kvkk', 60, 'two-factor-and-session-management', 'İki faktörlü doğrulama ve oturum yönetimi', 'Hesabınıza yetkisiz erişim riskini en aza indirmek için 2FA, cihaz yönetimi ve oturum sona erdirme pratikleri.', ['2fa', 'oturum', 'güvenlik', 'cihaz', 'mfa'], {
+    lead: 'Parola tek başına yetersizdir. <strong>İki faktörlü doğrulama (2FA)</strong> hesabı dış saldırıların büyük çoğunluğundan korur; cihaz ve oturum yönetimi ise iç tarafın hijyenini sağlar.',
+    keyInsight: 'Saldırgan parolanızı bilse bile telefonunuza erişemez. Bu küçük bariyer, hesap güvenliğinin en yüksek getirili tek adımıdır.',
+    sections: [
+      { title: '2FA seçenekleri', items: ['<strong>Authenticator uygulaması</strong> (önerilen): Google Authenticator, Authy, 1Password.', 'SMS kod: telefon numaranız ele geçirilirse risklidir; ikinci tercih.', 'Donanım anahtarı (YubiKey): yüksek güvenlik, kurumsal kullanım.', 'Yedek kodlar: telefon kaybında erişim için.', 'Eşzamanlı 2 yöntem: kayıp riskini azaltır.'] },
+      { title: 'Aktif oturumlar', paragraphs: ['Hesap ayarlarında aktif cihaz listesi tutulur. <em>Tanımadığınız</em> bir cihaz görüyorsanız <strong>tüm oturumları sonlandırın</strong> ve parolayı değiştirin. Bu adım dakikalar sürer ama olası bir izinsiz erişimi anında keser.'] },
+      { title: 'Cihaz hijyeni', paragraphs: ['Ortak veya kafe bilgisayarına asla giriş yapmayın. Mobil cihazlarda biyometrik kilit aktif olmalı, panel sekmesi açık bırakılmamalıdır.'], quote: 'Hesap güvenliği bir tek anda kazanılmaz; her gün yapılan küçük tercihlerden oluşur. 2FA ve oturum disiplini bu tercihlerin omurgasıdır.' },
+      { title: 'Phishing direnci', paragraphs: ['Buaze size <em>asla</em> e-posta veya Slack üzerinden parola sormaz. Şüpheli bir mesaj geldiğinde linke tıklamadan <a href="/tr/help/incident-response-basics">incident response</a> rehberindeki adımları uygulayın.'] },
+    ],
+    checklist: ['Tüm sahip ve admin hesaplarda 2FA aktif.', 'Yedek kodlar güvenli yerde saklı.', 'Aylık aktif oturum kontrolü yapılıyor.', 'Ortak cihazlardan giriş yapılmıyor.', 'Mobil biyometrik kilit aktif.', 'Phishing simülasyonu yıllık.', 'Çıkış yapan personelin oturumları zorla sonlandırılmış.'],
+    faq: [
+      { q: '2FA telefonumu kaybedersem ne olur?', a: 'Yedek kodlarınız varsa onlarla giriş yapabilirsiniz. Yoksa destek ekibimizle KYC adımıyla erişiminizi geri kazanabilirsiniz; bu süreç birkaç saat sürer.' },
+      { q: 'SMS 2FA yeterli mi?', a: 'Authenticator uygulamasına göre daha zayıftır ama parola-sadece’ye göre çok daha iyidir. Mümkünse authenticator’a geçin.' },
+      { q: 'Aynı cihazda iki ayrı hesabım var, sorun mu?', a: 'Hayır. Tarayıcı profili veya gizli sekme ile karışıklık önlenir. <em>İş</em> ve <em>kişisel</em> hesapları açıkça ayırmak iyi pratiktir.' },
+      { q: 'Oturum süresi ne kadar?', a: 'Varsayılan oturum süresi makul bir periyotta sona erer. Hassas işlemler için ayrıca yeniden doğrulama gerekebilir.' },
+    ],
+    policyNote: 'Bu rehberde önerilen 2FA ve oturum yönetimi pratikleri KVKK çerçevesinde <strong>teknik güvenlik tedbiri</strong> kapsamında değerlendirilebilir. Müşteri verisini koruma sorumluluğunun teknik tarafına ait önemli unsurlardır.',
+  }),
+  article('en', 'security-kvkk', 60, 'two-factor-and-session-management', 'Two-factor authentication and session management', 'Reduce unauthorized access risk with 2FA, device management and session termination practices.', ['2fa', 'session', 'security', 'device', 'mfa'], {
+    lead: 'A password alone is not enough. <strong>Two-factor authentication (2FA)</strong> protects accounts from the vast majority of external attacks; device and session hygiene handle the internal side.',
+    keyInsight: 'Even if an attacker has your password, they cannot reach your phone. That small barrier is the single highest-ROI step in account security.',
+    sections: [
+      { title: '2FA options', items: ['<strong>Authenticator app</strong> (recommended): Google Authenticator, Authy, 1Password.', 'SMS codes: risky if your phone number is compromised; second choice.', 'Hardware key (YubiKey): strong security for enterprise use.', 'Backup codes: for phone loss recovery.', 'Two methods at once: reduces lockout risk.'] },
+      { title: 'Active sessions', paragraphs: ['Account settings list active devices. If you see a device you do not recognize, <strong>sign out of all sessions</strong> and change your password. Minutes of effort, immediate cut on potential intrusion.'] },
+      { title: 'Device hygiene', paragraphs: ['Never sign in on shared or café computers. On mobile, biometric lock should be active and panel tabs should not be left open.'], quote: 'Account security is not won in a single moment; it is the result of small daily choices. 2FA and session discipline are the spine of those choices.' },
+      { title: 'Phishing resistance', paragraphs: ['Buaze will <em>never</em> ask for your password by email or Slack. If something looks off, do not click — follow the steps in the <a href="/en/help/incident-response-basics">incident response</a> guide.'] },
+    ],
+    checklist: ['2FA enabled on every owner and admin account.', 'Backup codes stored safely.', 'Monthly active session check.', 'No sign-in on shared devices.', 'Mobile biometric lock active.', 'Annual phishing simulation.', 'Departed staff sessions force-ended.'],
+    faq: [
+      { q: 'What if I lose my 2FA phone?', a: 'Backup codes can sign you in. Without them, our support team can recover access via KYC; the process takes a few hours.' },
+      { q: 'Is SMS 2FA enough?', a: 'Weaker than authenticator apps but far better than password-only. Move to authenticator if possible.' },
+      { q: 'I have two accounts on the same device — a problem?', a: 'No. Browser profiles or private windows prevent confusion. Separating <em>work</em> and <em>personal</em> clearly is a healthy practice.' },
+      { q: 'How long does a session last?', a: 'The default expires after a reasonable window. Sensitive actions may require additional re-authentication.' },
+    ],
+    policyNote: 'The 2FA and session practices in this guide qualify as <strong>technical security measures</strong> under GDPR/KVKK frameworks. They are key elements of the technical side of customer-data protection responsibility.',
   }),
 ];
 

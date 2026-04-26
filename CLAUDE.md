@@ -1452,3 +1452,160 @@ type NavGroup = {
 2. `id` unique olsun (localStorage key'i için)
 3. Mevcut tek-item entry'leri `children` içine taşı
 4. Grup adı locale-aware (TR primary, EN fallback)
+
+
+---
+
+## 22. Yardım Merkezi (Help Center) — İçerik & SEO Sistemi
+
+Buaze yardım merkezi **hybrid** veri kaynağıyla çalışır: Prisma `HelpArticle` tablosu (admin tarafından eklenen makaleler) + `STATIC_HELP_ARTICLES` array (kod içine yazılı evergreen içerik). DB boşsa veya tablo henüz `prisma db push` çalıştırılmamış preview deploy'larında static array fallback olur — yardım sayfası asla çökmez.
+
+### 22.1 Mimari özet
+
+| Katman | Dosya | İçerik |
+|---|---|---|
+| Veri | `src/lib/help-articles.ts` | Static makale array'i + helper fonksiyonlar (`getStaticHelpArticles`, `getStaticHelpArticle`, `getStaticHelpCategoryCounts`, `getStaticPopularHelpArticles`, `searchStaticHelpArticles`) |
+| Taksonomi | `src/lib/help-categories.ts` | 8 kategori (slug, symbol, TR/EN title + desc) |
+| Public sayfalar | `src/app/[locale]/help/page.tsx`, `category/[slug]/page.tsx`, `[slug]/page.tsx`, `search/page.tsx` | Pulse: pure white + graphite + lime |
+| Public API | `src/app/api/help/articles/route.ts` | `?slug=`, `?category=`, `?search=`, default mode |
+
+**8 kategori**: getting-started, qr-codes, review-management, integrations, team-roles, billing, api-webhook, security-kvkk.
+
+**Sayım**: Her kategoride 6 makale (orderlar 10/20/30/40/50/60), TR+EN = 12 entry/kategori, toplam **96 entry / 48 makale**.
+
+### 22.2 `renderBody` helper inventory
+
+`src/lib/help-articles.ts` içindeki `renderBody()` fonksiyonu makale gövdesini HTML'e dönüştürür. Desteklenen alanlar:
+
+```ts
+type BodyInput = {
+  lead: string;                    // ilk paragraf, HTML inline emphasis OK
+  keyInsight?: string;             // lead-after blockquote (tek vurgu cümlesi)
+  sections: BodySection[];         // 3-5 H2 bölümü
+  checklist: string[];             // 5-7 madde, eyleme dönük
+  faq: { q: string; a: string }[]; // 3-4 SSS
+  policyNote?: string;             // Google policy disclaimer (opsiyonel, blockquote)
+};
+
+type BodySection = {
+  title: string;         // H2
+  paragraphs?: string[]; // her biri <p>
+  items?: string[];      // <ul><li>
+  quote?: string;        // section sonunda blockquote
+};
+```
+
+**Inline HTML kabul edilenler** (helper string interpolation yapar, dış sanitize yok):
+- `<strong>`, `<em>` — vurgu
+- `<a href="..." target="_blank" rel="noopener noreferrer">` — internal/external link
+- `<code>` — teknik terim (henüz yaygın kullanılmıyor)
+
+**Render sırası**: `lead` → `keyInsight` → `sections` (her birinde quote) → `policyNote` → `Kontrol listesi / Checklist` → `SSS / FAQ`.
+
+**Tailwind prose styling** (`/help/[slug]/page.tsx`): `prose-blockquote:border-l-2 prose-blockquote:border-[#C6F24E]`, `prose-a:decoration-[#C6F24E]`, `prose-headings:text-[#0A0A0A]`. Tüm Pulse token'ları hazır.
+
+### 22.3 Yeni makale ekleme checklist
+
+1. Kategoriyi seç (`src/lib/help-categories.ts` kontrol)
+2. Slug seç:
+   - Kısa (3-5 kelime), kebab-case
+   - TR ve EN aynı slug — locale alanı ayrım yapar
+   - Mevcut slug'larla benzersiz
+3. `STATIC_HELP_ARTICLES` veya `MORE_ARTICLES` array'inin sonuna **TR + EN** olarak iki entry ekle
+4. `order` numarası kategorideki son order + 10 (genelde 60'tan devam)
+5. **Yapı tutarlılığı** (yeni makaleler için zorunlu, eski 40 makale retrofit edilebilir):
+   - `lead` 30-60 kelime
+   - `keyInsight` 1 cümle, lead'i destekler
+   - `sections` 3-5 adet, en az 1'inde `quote` veya inline `<strong>`/`<em>`
+   - `checklist` 5-7 madde
+   - `faq` 3-4 soru-cevap
+6. SEO meta:
+   - `title` 50-65 karakter
+   - `excerpt` 140-160 karakter (meta description)
+   - `searchTags` 5-8 düşük çakışmalı keyword
+7. Internal linking:
+   - İlgili makaleye `<a href="/{locale}/help/{slug}">` ile en az 1 link
+   - Locale prefix unutma (TR makalesi `/tr/...`, EN makalesi `/en/...`)
+
+### 22.4 Google policy uyumluluğu
+
+Buaze akışı **review gating yapmaz**: yüksek puan platforma yönlendirilirken düşük puan dahili form'a düşse de, müşteri yine de istediği yere yorum yazma hakkına sahiptir. Akış müşteriyi kandırmaz, zorlamaz veya belirli bir yıldıza yönlendirmez.
+
+**Yasak pattern'ler** (hiçbir makalede önerilmemeli):
+- ❌ Sahte yorum üretimi
+- ❌ Yıldız zorlama / yıldız öneri
+- ❌ Olumlu yorumlara seçici teşvik (örn. "5 yıldız verirsen kupon")
+- ❌ Yorum metnini dayatma (taslak vermek farklı, dayatmak farklı)
+- ❌ Düşük puanları platforma çıkmaktan engelleme
+
+**Disclaimer pattern**: Review-collection veya Google integration ile ilgili makalelerde `policyNote` field'ı kullanılır. Render edilen HTML şuna benzer:
+```html
+<blockquote>
+  Bu rehberdeki teknikler tarama oranını artırmaya yöneliktir, müşteriyi belirli bir
+  yıldız vermeye yönlendirmeye değil. <a href="https://support.google.com/contributionpolicy/"
+  target="_blank" rel="noopener noreferrer">Google'ın kullanıcı katkı politikalarına</a>
+  aykırı pattern'ler Buaze tarafından desteklenmez.
+</blockquote>
+```
+
+`policyNote` kullanan makaleler (her zaman TR+EN):
+- `qr-scan-rate-optimization` (qr-codes)
+- `slack-discord-webhook-routing` (integrations)
+- `two-factor-and-session-management` (security-kvkk) — KVKK çerçevesi disclaimer
+
+Yeni makale Google review akışıyla ilgili herhangi bir konuya değiniyorsa `policyNote` eklemeyi düşün.
+
+### 22.5 SEO inventory (mevcut durum)
+
+**Page-level**:
+- `<title>` ve `description` her sayfada locale-aware (`generateMetadata`)
+- `alternates.canonical` doğru locale URL'i ile set
+- `alternates.languages.tr/en` hreflang tag'leri
+- `openGraph.type: 'article'` makale sayfasında
+- Pulse typography (Space Grotesk h1/h2, Inter body) tüm help sayfalarında
+
+**JSON-LD schema blokları**:
+- `/help` (index): `BreadcrumbList`
+- `/help/category/[slug]`: `BreadcrumbList` + `ItemList`
+- `/help/[slug]`: `Article` (headline, description, datePublished, inLanguage, image, author, publisher) + `BreadcrumbList` (4 seviye)
+
+**Article schema'da** `image` alanı `https://buaze.com/favicon.svg`'dir. İleride per-article OG image üretilirse buraya bağlanır.
+
+### 22.6 Retrofit roadmap (ileride)
+
+Eski 40 makale (orderlar 10/20/30/40/50) `keyInsight` ve section `quote` içermez. `renderBody` opsiyonel olarak ele aldığı için **sorunsuz çalışır**, ama yeni makalelerle tutarlılık için retrofit edilebilir.
+
+**Retrofit önceliği**:
+1. **Yüksek**: getting-started + review-management (en çok ziyaret edilen)
+2. **Orta**: qr-codes + integrations
+3. **Düşük**: api-webhook + security-kvkk (zaten teknik içerik, blockquote daha az gerekli)
+
+Retrofit yaparken:
+- `keyInsight` lead'i tekrarlamasın, onu sentez etsin
+- Section `quote` her bölümde gerekmez; sadece *en güçlü insight* taşıyan bölüme
+- Retrofit aynı PR'da tüm 40 makaleyi kapsamamalı — kategori bazlı parça parça gidilmeli
+
+### 22.7 Pitfall — DB tablosu olmayan preview
+
+Preview deploy'da `prisma db push` koşmamış olabilir. Help sayfaları `try/catch` ile DB sorgusunu sarar; tablo yoksa static array'e düşer. Bu hibridliği bozmamak için:
+- Yeni alan eklenirse static + DB iki tarafı da güncelle (Prisma migration + array entry)
+- DB'den gelen makale `image_url` gibi static'e olmayan alan tutarsa, ortak bir typeguard ile ele al
+
+### 22.8 İçerik tonu (Pulse Voice)
+
+CLAUDE.md §11 ses ve ton kuralları yardım merkezi içeriği için de geçerlidir. Özellikle:
+- "Olabilir / belki" yerine **doğrudan** ifade
+- "Bizim" yerine "ekibinin" — ürün değil operasyon dili
+- Aşırı teknik terim yerine **somut iş senaryosu**
+- Müşteriye karşı saygılı, yargılayıcı olmayan ton
+
+### 22.9 Translation parity
+
+Her TR makale için EN eşi olmalı (aynı slug, aynı `order`, aynı kategori). Helper'lar locale parametresi alır; tek dilli makale UI'da 404 verir.
+
+Yeni makale yazarken **EN ilk taslak değildir**: TR primary, EN paralel çeviri. Kullanıcı tabanı çoğunlukla TR, ancak EN evergreen SEO için kritik.
+
+**EN çeviri kontrolü**:
+- Kültürel referans (örn. "Yemeksepeti") açıklayıcı bağlamla bırakılır, çevrilmez
+- Türkçe-spesifik kelime oyunları EN'de düz cümlelere indirgenir
+- Linkler `/en/help/...` prefix'i ile

@@ -70,8 +70,44 @@ export default async function HelpCategoryPage({ params }: PageParams) {
     }));
   }
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım' : 'Help', item: `https://buaze.com/${locale}/help` },
+      { '@type': 'ListItem', position: 3, name: meta.title, item: `https://buaze.com/${locale}/help/category/${slug}` },
+    ],
+  };
+
+  const itemListJsonLd =
+    articles.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: meta.title,
+          description: meta.desc,
+          itemListElement: articles.map((a, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            url: `https://buaze.com/${locale}/help/${a.slug}`,
+            name: a.title,
+          })),
+        }
+      : null;
+
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      {itemListJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+        />
+      )}
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero */}
