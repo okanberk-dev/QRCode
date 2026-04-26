@@ -1271,13 +1271,13 @@ model MailTemplateRevision {
 }
 ```
 
-**Endpoint'ler**:
-- `PATCH /api/admin/mail-templates/[key]/[locale]` — content yazıldıktan sonra revision oluşturur (editType: 'updated' veya 'created')
-- `DELETE /api/admin/mail-templates/[key]/[locale]` — actual delete'den önce 'deleted' revision (boş content) yazar; SetNull FK ile audit history korunur
-- `GET /api/admin/mail-templates/[key]/[locale]/revisions` — last 50 revision, editor username/email join'lü
-- `POST /api/admin/mail-templates/[key]/[locale]/revisions/[id]/revert` — chosen revision'ın content'ini upsert eder + 'reverted' revision yazar
+**Endpoint'ler** (hepsi `prisma.$transaction(async tx => ...)` ile sarılı — audit log canlı row'la asla drift etmez):
+- `PATCH /api/admin/mail-templates/[key]/[locale]` — upsert + revision tek transaction. `editType` upsert sonrası `createdAt === updatedAt` check'iyle atomik türetilir (find-then-upsert TOCTOU race kapatıldı).
+- `DELETE /api/admin/mail-templates/[key]/[locale]` — delete + 'deleted' revision tek transaction. Order: delete önce → P2025 throw varsa transaction rollback olur, audit drift olmaz. SetNull FK ile audit history survive eder.
+- `GET /api/admin/mail-templates/[key]/[locale]/revisions` — last 50 revision, editor username/email join'lü.
+- `POST /api/admin/mail-templates/[key]/[locale]/revisions/[id]/revert` — upsert + 'reverted' revision tek transaction; revisionId path mismatch (templateKey/locale farklı) ise 400.
 
-**Soft-prune**: Her write sonrası `pruneRevisions()` last 50'yi tutar, geri kalanı sileler. Cron yok — write-time prune yeterli.
+**Soft-prune** (`src/lib/email/revisions.ts` shared helper): PATCH/DELETE/revert hepsinin sonunda çağrılır. Last 50'yi tutar, geri kalanı `deleteMany`. Transaction'ın DIŞINDA — best-effort cleanup, atomically commit gerekmiyor.
 
 **Editor UI**: `<MailRevisionHistory>` slide-over modal. "Geçmiş" butonu açar. Listede her revision için editType badge + tarih + editor + "İçeriği göster" expand + "Bu sürüme dön" buton. Revert sonrası editor state otomatik refresh (reloadKey trigger).
 

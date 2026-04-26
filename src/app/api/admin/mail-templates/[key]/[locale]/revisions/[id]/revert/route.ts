@@ -9,6 +9,7 @@ import {
   type MailLocale,
 } from '@/lib/email/copy-loader';
 import { stripLockedFields } from '@/lib/email/locked-fields';
+import { pruneRevisions } from '@/lib/email/revisions';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,31 +62,38 @@ export async function POST(
   const rawContent = (revision.content ?? {}) as Record<string, unknown>;
   const safeContent = stripLockedFields(rawKey, rawContent) as Prisma.InputJsonValue;
 
-  const upserted = await prisma.mailTemplate.upsert({
-    where: { key_locale: { key: rawKey, locale: rawLocale } },
-    create: {
-      key: rawKey,
-      locale: rawLocale,
-      content: safeContent,
-      updatedById: adminId,
-    },
-    update: {
-      content: safeContent,
-      updatedById: adminId,
-    },
+  // Upsert + 'reverted' revision atomically so the audit log can never
+  // claim a revert that didn't actually apply (or vice versa).
+  const [upserted] = await prisma.$transaction(async (tx) => {
+    const row = await tx.mailTemplate.upsert({
+      where: { key_locale: { key: rawKey, locale: rawLocale } },
+      create: {
+        key: rawKey,
+        locale: rawLocale,
+        content: safeContent,
+        updatedById: adminId,
+      },
+      update: {
+        content: safeContent,
+        updatedById: adminId,
+      },
+    });
+    await tx.mailTemplateRevision.create({
+      data: {
+        templateId: row.id,
+        templateKey: rawKey,
+        locale: rawLocale,
+        editType: 'reverted',
+        content: safeContent,
+        editedById: adminId,
+      },
+    });
+    return [row] as const;
   });
 
-  await prisma.mailTemplateRevision.create({
-    data: {
-      templateId: upserted.id,
-      templateKey: rawKey,
-      locale: rawLocale,
-      editType: 'reverted',
-      content: safeContent,
-      editedById: adminId,
-    },
-  });
-
+  // Match PATCH / DELETE so the table stays bounded even if revert is
+  // the most-used path.
+  await pruneRevisions(rawKey, rawLocale);
   invalidateMailCopyCache(rawKey, locale);
 
   return NextResponse.json({
