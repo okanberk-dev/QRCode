@@ -58,15 +58,29 @@ export async function POST(req: NextRequest) {
   // `await res.json()`s so an empty body crashed with the opaque
   // "Unexpected end of JSON input" — operator couldn't tell what broke.
   try {
-    // Look up the admin's email — `getAdminFromRequest` returns the JWT
-    // payload which doesn't always include the latest email field.
+    // AdminUser model has no `email` field — admins are internal staff
+    // identified by `username`. Test mails go to the ops mailbox
+    // (`NOTIFICATION_EMAIL`), with the JWT-issued admin context still
+    // available as a fallback hint. We keep the prisma lookup so the
+    // username is logged on the response (operator sees who triggered).
     const adminRow = await prisma.adminUser.findUnique({
       where: { id: admin.id ?? admin.userId },
-      select: { email: true, username: true },
+      select: { username: true },
     });
-    const recipient = adminRow?.email || (admin.email as string | undefined);
+    const recipient =
+      (admin.email as string | undefined) ||
+      process.env.NOTIFICATION_EMAIL?.trim() ||
+      null;
     if (!recipient) {
-      return NextResponse.json({ error: 'no_admin_email' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'no_recipient',
+          detail:
+            'AdminUser tablosunda email yok ve NOTIFICATION_EMAIL env de boş — test mail kime gönderileceğine karar veremedik.',
+          hint: 'Vercel → Settings → Environment Variables → NOTIFICATION_EMAIL set et (ops mailbox).',
+        },
+        { status: 400 },
+      );
     }
 
     // For newsletter, fold in compose-time overrides so admins can dry-run
@@ -97,7 +111,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'send_failed' }, { status: 502 });
     }
 
-    return NextResponse.json({ ok: true, to: recipient, template, locale });
+    return NextResponse.json({
+      ok: true,
+      to: recipient,
+      template,
+      locale,
+      triggeredBy: adminRow?.username ?? 'unknown',
+    });
   } catch (err) {
     // Real error stays in Vercel logs; client gets a sanitised summary
     // (no stack trace leak) plus a discriminator the UI can switch on.

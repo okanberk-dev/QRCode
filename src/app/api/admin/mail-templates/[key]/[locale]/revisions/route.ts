@@ -43,25 +43,33 @@ export async function GET(
 
     // Resolve editor usernames in a single query — admin user ids are
     // unique strings, so a single `IN` lookup is cheaper than per-row
-    // joins.
+    // joins. NOTE: AdminUser has no `email` field; the UI just shows
+    // `username` so a stale `select: { email: true }` would crash with
+    // "Unknown field email" at runtime.
     const editorIds = [...new Set(rows.map((r) => r.editedById).filter((id): id is string => Boolean(id)))];
     const editors = editorIds.length
       ? await prisma.adminUser.findMany({
           where: { id: { in: editorIds } },
-          select: { id: true, username: true, email: true },
+          select: { id: true, username: true },
         })
       : [];
     const editorById = new Map(editors.map((e) => [e.id, e]));
 
     return NextResponse.json({
-      revisions: rows.map((r) => ({
-        id: r.id,
-        editType: r.editType,
-        content: r.content,
-        editedById: r.editedById,
-        editor: r.editedById ? editorById.get(r.editedById) ?? null : null,
-        createdAt: r.createdAt.toISOString(),
-      })),
+      revisions: rows.map((r) => {
+        const editor = r.editedById ? editorById.get(r.editedById) ?? null : null;
+        return {
+          id: r.id,
+          editType: r.editType,
+          content: r.content,
+          editedById: r.editedById,
+          // Backward-compatible shape for the UI, but `email` is null
+          // since AdminUser doesn't store one. UI gracefully falls
+          // through to `username` (see MailRevisionHistory).
+          editor: editor ? { id: editor.id, username: editor.username, email: null } : null,
+          createdAt: r.createdAt.toISOString(),
+        };
+      }),
     });
   } catch (err) {
     console.error('[revisions:GET] unhandled error:', err);

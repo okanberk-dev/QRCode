@@ -9,7 +9,9 @@ interface Revision {
   editType: 'created' | 'updated' | 'deleted' | 'reverted';
   content: unknown;
   editedById: string | null;
-  editor: { id: string; username: string; email: string } | null;
+  // AdminUser model has no `email` field — UI only uses `username`.
+  // `email` kept as nullable for backwards compat with old API responses.
+  editor: { id: string; username: string; email: string | null } | null;
   createdAt: string;
 }
 
