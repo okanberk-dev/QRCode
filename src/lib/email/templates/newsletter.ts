@@ -37,9 +37,14 @@ export function renderNewsletter(
   const subject = params.customSubject?.trim() || (isTr
     ? `${issueLabel} — Yorum yönetiminin geleceği`
     : `${issueLabel} — The future of review management`);
-  const preheader = isTr
-    ? 'Bu sayıda: AI Co-Pilot 2.0, restoran vakası, sektör verileri.'
-    : 'This issue: AI Co-Pilot 2.0, restaurant case, sector data.';
+  // Default preheader is generic; specific issue copy comes from the
+  // featured post excerpt (when one is selected) so it stays relevant.
+  const featuredPostForPreheader = params.featured ?? params.posts[0];
+  const preheader = featuredPostForPreheader?.excerpt
+    ? featuredPostForPreheader.excerpt.slice(0, 110) + (featuredPostForPreheader.excerpt.length > 110 ? '…' : '')
+    : isTr
+      ? 'Bu ayın seçtiğimiz vakaları, sektör verileri ve ürün haberleri.'
+      : 'This month\'s curated cases, sector data, and product news.';
 
   const monthLabel = new Date().toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { month: 'long', year: 'numeric' });
 
@@ -96,34 +101,23 @@ export function renderNewsletter(
   const exploreUrl = params.exploreUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/${isTr ? 'tr' : 'en'}/blog`;
   const editorNoteUrl = featured?.url ?? exploreUrl;
 
-  // Featured dark card with code block (jsx:42-83)
+  // Featured dark card. JSX prototipinde sağda statik bir AI Co-Pilot demo
+  // code block vardı ("input.tone / model.draft / latency: 1.2s") — sadece
+  // o sayının kapak yazısı için anlamlıydı. Gerçek mailde her ay farklı bir
+  // post seçildiğinden çelişkili duruyordu, kaldırdık. Card artık tek sütun:
+  // okuma süresi + başlık + excerpt + CTA.
   const featuredBlock = featured ? `
     <tr>
       <td class="bz-pad" style="padding:36px 40px 8px;">
         ${renderEyebrow(copy.featuredEyebrow)}
         ${spacer(14)}
         <div style="background:${PULSE.graphite};border-radius:14px;padding:32px;color:${PULSE.pure};">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
-            <tr>
-              <td class="stack-col" valign="top" style="width:58%;padding-right:24px;">
-                <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.lime};text-transform:uppercase;font-weight:600;">${featured.readMinutes ? `${featured.readMinutes} ${copy.readMinutesUnit} okuma` : copy.featuredReadTime}</div>
-                ${spacer(12)}
-                <h2 style="font-family:${FONTS.heading};font-size:26px;font-weight:500;letter-spacing:-0.02em;line-height:1.2;color:${PULSE.pure};margin:0;">${escapeHtml(featured.title)}</h2>
-                ${featured.excerpt ? `${spacer(14)}<div style="font-family:${FONTS.body};font-size:14px;color:${PULSE.n300};line-height:1.55;">${escapeHtml(featured.excerpt)}</div>` : ''}
-                ${spacer(18)}
-                <a href="${featured.url}" style="display:inline-block;color:${PULSE.graphite};background:${PULSE.lime};padding:10px 18px;border-radius:8px;font-family:${FONTS.body};font-weight:600;font-size:13px;text-decoration:none;">${copy.featuredOpen}</a>
-              </td>
-              <td class="stack-col" valign="top" style="width:42%;padding-top:8px;">
-                <div style="background:${PULSE.n800};border-radius:10px;padding:18px;font-family:${FONTS.mono};font-size:11px;color:${PULSE.n400};line-height:1.7;">
-                  <div style="color:${PULSE.lime};">&gt; input.tone</div>
-                  <div>"warm, restaurant-owner, 30y"</div>
-                  <div style="margin-top:8px;color:${PULSE.lime};">&gt; model.draft</div>
-                  <div style="color:${PULSE.pure};">"Selin hanım, kahvenizin..."</div>
-                  <div style="margin-top:8px;color:${PULSE.n500};">latency: 1.2s · ✓</div>
-                </div>
-              </td>
-            </tr>
-          </table>
+          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.lime};text-transform:uppercase;font-weight:600;">${featured.readMinutes ? `${featured.readMinutes} ${copy.readMinutesUnit} okuma` : copy.featuredReadTime}</div>
+          ${spacer(12)}
+          <h2 style="font-family:${FONTS.heading};font-size:28px;font-weight:500;letter-spacing:-0.02em;line-height:1.2;color:${PULSE.pure};margin:0;">${escapeHtml(featured.title)}</h2>
+          ${featured.excerpt ? `${spacer(14)}<div style="font-family:${FONTS.body};font-size:15px;color:${PULSE.n300};line-height:1.6;max-width:520px;">${escapeHtml(featured.excerpt)}</div>` : ''}
+          ${spacer(20)}
+          <a href="${featured.url}" style="display:inline-block;color:${PULSE.graphite};background:${PULSE.lime};padding:11px 20px;border-radius:8px;font-family:${FONTS.body};font-weight:600;font-size:14px;text-decoration:none;">${copy.featuredOpen}</a>
         </div>
       </td>
     </tr>` : '';
