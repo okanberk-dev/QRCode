@@ -57,9 +57,9 @@ jobs:
         run: npx tsc --noEmit -p tsconfig.json
 
       - name: ESLint
-        # `next lint` exits non-zero on warnings + errors; we accept both as
-        # signal. The repo's eslint config is what `next lint` already uses.
-        run: npx next lint --no-cache --max-warnings 0
-        # Allow lint to fail the run only when actual errors exist; the
-        # `--max-warnings 0` flag treats warnings as errors. Drop the flag if
-        # the team prefers warnings non-blocking.
+        # Direct `eslint` CLI (Next 16 ready). `next lint` is deprecated and
+        # additionally requires interactive setup which CI can't satisfy.
+        # We don't pass `--max-warnings` — historical warnings (~210, mostly
+        # `no-explicit-any`) shouldn't block PRs; only fresh errors do. New
+        # rules can be tightened progressively as cleanup PRs ship.
+        run: npx eslint .

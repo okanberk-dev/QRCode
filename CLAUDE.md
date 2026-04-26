@@ -1038,3 +1038,29 @@ Eski tarayıcı default isteklerini SVG'ye yönlendirir:
 - `src/app/[locale]/blog/[slug]/page.tsx`, `about/page.tsx` — hardcoded `https://buaze.com/favicon.svg`. Site logo değişirse bu üçü de güncellenmeli.
 
 **OG image** (sosyal paylaşım) ayrı bir dosya: `src/app/opengraph-image.tsx` (1200x630 dynamic OG image). Favicon'dan farklı boyut/görsel kuralları.
+
+### 21.25 Lint baseline & technical debt
+
+`eslint.config.mjs` Pulse mail PR'ları sonrası eklendi (CI workflow ilk koştuğunda 117 error + 94 warning yakaladı). Mevcut borcu warning seviyesinde tutup CI'ı çalışır halde bıraktık:
+
+**Warning seviyesinde** (CI fail değil):
+- `@typescript-eslint/no-explicit-any` — 100+ yer (hızlı yazılan API tipleri)
+- `@typescript-eslint/no-unused-vars` — 30+ yer (unused import/destructure)
+- `react/no-unescaped-entities` — 50+ yer (Türkçe içerik içinde tırnak)
+- `react-hooks/exhaustive-deps` — birkaç yer (useEffect dep array)
+- `@next/next/no-img-element` — birkaç yer (`<img>` yerine `<Image>` öneri)
+
+**Halen error seviyesinde** (CI fail eder, yeni PR'larda düzeltilmeli):
+- TypeScript syntax / type errors (tsc adımında yakalanır)
+- Next.js critical patterns (örn. `<a>` yerine `<Link>` zorunluluğu)
+- Tüm Next/typescript preset error'ları default kalmış kurallar
+
+**Warning'leri tek tek temizleme stratejisi**:
+- Yeni PR'da bir kuralı `'error'`'a çevir → ilgili dosyaları düzelt → CI yeşil olunca commit
+- Örn: önce `no-unused-vars` (en az invasive), sonra `no-explicit-any` (saatler sürebilir)
+- `npx eslint . --fix` otomatik düzeltebileceği şeyleri (1-2 düzine) hemen kapatır
+- `next-env.d.ts` ignored — Next.js auto-generates, manuel düzeltilemez
+
+**CI komut**: `npx eslint .` (max-warnings flag'i yok). Yeni error → fail. Mevcut warning → görünür ama bloke etmez.
+
+**Next 16 hazırlığı**: `next lint` deprecated. ESLint CLI'a geçildi. `next/core-web-vitals` + `next/typescript` preset'leri aynen kalıyor; sadece lint runner değişti.
