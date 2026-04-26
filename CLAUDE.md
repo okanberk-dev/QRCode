@@ -1411,3 +1411,42 @@ Bazı mail akışları zaman-kritik: düşük puan uyarısı restoran sahibine u
 - DB persistence (`MailDeliveryLog` table) — admin paneli "failed mails" list + manual re-send
 - Resend webhook integration → bounce/complaint → auto unsubscribe + ops alert
 - Slack webhook alternative (ops mail yerine)
+
+### 21.34 Phase 9 — Admin panel seed (UI'dan kod default'una sıfırlama)
+
+CLI seed (`scripts/seed-mail-templates.ts`) lokal terminal + DB credential paylaşımı gerektiriyordu. Yeni operatör sürtünmesi yüksek. Phase 9'da seed admin paneline taşındı; kullanıcı tek tıkla seed eder, credential exposure sıfır.
+
+**Shared data** (`src/lib/email/seed-data.ts`):
+- `MAIL_TEMPLATE_SEEDS: MailTemplateSeed[]` — 18 row (9 template × 2 locale)
+- Hem CLI script hem API endpoint buradan import eder — drift imkânsız
+- Yeni template eklenince: bu dosyaya entry ekle + render fn'in inline default'unu ayarla
+
+**Endpoint** (`POST /api/admin/seed-mail-templates`):
+- Body: `{ mode: 'missing' | 'force' }` (default `missing`)
+- Auth: superadmin only
+- Rate limit: **5 / saat / admin** (button-spam koruma)
+- `mode='missing'`: sadece DB'de olmayan row'ları insert; mevcut row'lar (admin edit'leri dahil) intact
+- `mode='force'`: upsert + admin edit'leri overwrite. Phase 5 audit log'a 'updated' revision yazılır → recovery mümkün
+- Her write `prisma.$transaction(upsert + revision)` (Phase 5 atomicity pattern)
+- Per-row `pruneRevisions` + `invalidateMailCopyCache` çağrılır
+- Response: `{ ok, mode, counts: { inserted, overwritten, skipped, total }, results }`
+
+**UI** (`/admin/mail-templates` header):
+- **"Eksik seed et"** (Database icon, primary): tek tık, zararsız
+- **"Tümünü sıfırla"** (AlertTriangle, red): çift confirm dialog
+  1. "Tüm admin düzenlemeleri kaybolur — devam?"
+  2. "Son onay: 18 template kod default'una sıfırlanacak — devam?"
+- Sonuç banner: `"Seed tamamlandı. 3 yeni eklendi · 2 atlandı (mevcut)."`
+- Listing otomatik reload (sıfırlamadan sonra "Henüz oluşturulmadı" → "Son güncelleme: ..." flip)
+
+**Recovery for accidental force-reset**:
+- Her overwrite Phase 5 revision'a yazılır
+- Kayıp içerik `/admin/mail-templates/<key>/<locale>` → "Geçmiş" → eski revision → "Bu sürüme dön"
+- Force tek tıkla otomatik recovery yok — manuel revert (kasıtlı disiplin)
+
+**CLI script**: `scripts/seed-mail-templates.ts` korundu, `MAIL_TEMPLATE_SEEDS`'ten import. Davranış: `mode='force'` ile aynı (full upsert). CI/staging script kullanır; production operatör paneli kullanır.
+
+**Phase 10+ backlog**:
+- Per-row seed (admin "sadece welcome:tr default'a dön" diyebilsin)
+- Diff preview before force-reset (operatör neyi kaybedeceğini görsün)
+- Schedule seed (yeni deploy sonrası otomatik missing-seed)

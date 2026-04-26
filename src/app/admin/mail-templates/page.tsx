@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { FileEdit, Loader2, ArrowRight, BellRing } from 'lucide-react';
+import { FileEdit, Loader2, ArrowRight, BellRing, Database, AlertTriangle } from 'lucide-react';
 
 interface GridCell {
   key: string;
@@ -40,6 +40,8 @@ export default function MailTemplatesIndexPage() {
   const [data, setData] = useState<Response | null>(null);
   const [opsTesting, setOpsTesting] = useState(false);
   const [opsResult, setOpsResult] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState<'missing' | 'force' | null>(null);
+  const [seedResult, setSeedResult] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -58,6 +60,56 @@ export default function MailTemplatesIndexPage() {
     })();
     return () => { alive = false; };
   }, []);
+
+  const reload = () => {
+    // Re-fetch the grid after a seed run so "Henüz oluşturulmadı" cards
+    // flip to "Son güncelleme: ..." without a hard navigation.
+    setLoading(true);
+    fetch('/api/admin/mail-templates')
+      .then((r) => r.json())
+      .then((b) => setData(b))
+      .catch((e) => setError((e as Error).message))
+      .finally(() => setLoading(false));
+  };
+
+  const onSeed = async (mode: 'missing' | 'force') => {
+    if (mode === 'force') {
+      const ok = window.confirm(
+        'DİKKAT: Bu işlem TÜM admin düzenlemelerini kod varsayılanına geri alır.\n\nMevcut içerikler "Geçmiş" sekmesinde revision olarak kalır — gerekirse oradan tek tek geri yüklenebilir, ama tek tıkla otomatik geri dönüş YOK.\n\nGerçekten devam etmek istiyor musun?',
+      );
+      if (!ok) return;
+      const ok2 = window.confirm('Son onay: tüm 18 template kod default\'una sıfırlanacak. Devam?');
+      if (!ok2) return;
+    }
+    setSeeding(mode);
+    setSeedResult(null);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/seed-mail-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        if (body.error === 'rate_limited') {
+          throw new Error(`Saatlik limit doldu (${body.retryAfter}s sonra dene).`);
+        }
+        throw new Error(body.error || 'Seed başarısız');
+      }
+      const c = body.counts ?? {};
+      const parts: string[] = [];
+      if (c.inserted) parts.push(`${c.inserted} yeni eklendi`);
+      if (c.overwritten) parts.push(`${c.overwritten} üzerine yazıldı`);
+      if (c.skipped) parts.push(`${c.skipped} atlandı (mevcut)`);
+      setSeedResult(`Seed tamamlandı. ${parts.join(' · ') || 'değişiklik yok'}.`);
+      reload();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSeeding(null);
+    }
+  };
 
   const onTestOpsAlert = async () => {
     setOpsTesting(true);
@@ -99,16 +151,38 @@ export default function MailTemplatesIndexPage() {
               Değişiklikler 1 dakika içinde tüm gönderimlere yansır.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onTestOpsAlert}
-            disabled={opsTesting}
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
-            title="Ops alert pipeline'ı test et — RESEND_API_KEY'e dokunmaz, sadece notifyOpsOfMailFailure'ı tetikler"
-          >
-            {opsTesting ? <Loader2 size={14} className="animate-spin" /> : <BellRing size={14} />}
-            Ops alert testi
-          </button>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => onSeed('missing')}
+              disabled={seeding !== null}
+              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+              title="Sadece DB'de olmayan template'leri kod varsayılanıyla doldur. Mevcut admin edit'lerine dokunmaz."
+            >
+              {seeding === 'missing' ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
+              Eksik seed et
+            </button>
+            <button
+              type="button"
+              onClick={() => onSeed('force')}
+              disabled={seeding !== null}
+              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-semibold text-red-700 hover:bg-red-50 active:scale-95 disabled:opacity-50"
+              title="DİKKAT: Tüm template'leri kod varsayılanına geri alır — admin edit'leri silinir (geçmişten geri yüklenebilir)."
+            >
+              {seeding === 'force' ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
+              Tümünü sıfırla
+            </button>
+            <button
+              type="button"
+              onClick={onTestOpsAlert}
+              disabled={opsTesting}
+              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+              title="Ops alert pipeline'ı test et — RESEND_API_KEY'e dokunmaz, sadece notifyOpsOfMailFailure'ı tetikler"
+            >
+              {opsTesting ? <Loader2 size={14} className="animate-spin" /> : <BellRing size={14} />}
+              Ops alert testi
+            </button>
+          </div>
         </div>
       </div>
 
@@ -117,6 +191,9 @@ export default function MailTemplatesIndexPage() {
       )}
       {opsResult && (
         <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8] p-4 text-xs font-semibold text-[#0A0A0A]">{opsResult}</div>
+      )}
+      {seedResult && (
+        <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8] p-4 text-xs font-semibold text-[#0A0A0A]">{seedResult}</div>
       )}
 
       {loading ? (

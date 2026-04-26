@@ -1218,3 +1218,56 @@ Kritik mail send fail olduğunda restoran sahibi/kullanıcı haberdar olmazken o
 - `MailDeliveryLog` DB tablo + admin "failed mails" panel
 - Resend webhook integration (bounce → auto unsubscribe + ops alert)
 - Slack webhook alternative (mail yerine)
+
+---
+
+## Phase 16.12 — Mail CMS Phase 9: admin panel seed (UI'dan)
+
+**PR:** TBA — `claude/mail-cms-seed-endpoint`
+
+### Hedef
+
+CLI seed lokal terminal + DB credential paylaşımı gerektiriyordu (kullanıcının operasyonel sürtünmesi). UI'a taşı; tek tıkla seed.
+
+### Yeni dosyalar
+
+- `src/lib/email/seed-data.ts` — `MAIL_TEMPLATE_SEEDS` shared module (CLI script + API endpoint birlikte kullanır)
+- `src/app/api/admin/seed-mail-templates/route.ts` — POST endpoint, mode='missing'|'force'
+
+### Değişen dosyalar
+
+- `scripts/seed-mail-templates.ts` — refactor: data shared module'dan import, sadece CLI runner kalır
+- `src/app/admin/mail-templates/page.tsx` — "Eksik seed et" + "Tümünü sıfırla" butonları, sonuç banner, otomatik reload
+- `CLAUDE.md` §21.34 (yeni)
+
+### Mimari karar — neden 2 mode
+
+`force` tek başına olsa: tek tıkla bütün admin edit'leri silinme riski. Operatör accident → saatlerce iş kaybı.
+
+`missing` default + `force` opt-in:
+- Yeni template eklendiğinde "Eksik seed et" güvenli, mevcut edit'lere dokunmaz
+- Reset gerekirse "Tümünü sıfırla" çift confirm + Phase 5 audit log'a revision yazar → recovery mümkün
+
+### Phase 5 audit integration
+
+Her seed write `prisma.$transaction(upsert + revision.create)` ile atomik. Response `counts.overwritten` operatöre kaç edit'in kaybolduğunu söyler. Recovery için "Geçmiş" sekmesi → revision → "Bu sürüme dön" — manual ama mevcut.
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- DB schema değişikliği YOK
+- E2E:
+  - DB boş → "Eksik seed et" → 18 row eklenir, banner "18 yeni eklendi"
+  - "Eksik seed et" tekrar → 0 yeni, 18 atlandı (idempotent)
+  - Bir template'in titleHi'i "Selam!" yapılır → "Eksik seed et" → atlanır, edit korunur ✓
+  - "Tümünü sıfırla" → çift confirm → 18 overwritten, edit silinir, Phase 5 history'de görünür
+  - "Geçmiş" → eski revision → "Bu sürüme dön" → edit geri gelir ✓
+  - 6 ardışık seed deneme → 6. denemede 429 rate limit
+  - Non-superadmin → 403
+
+### Phase 10+ backlog
+
+- Per-row seed (tek bir template'i sıfırla)
+- Diff preview before force-reset
+- Schedule auto-seed on deploy
