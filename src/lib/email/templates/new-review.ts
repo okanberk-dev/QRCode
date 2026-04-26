@@ -2,6 +2,8 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderButton, renderAvatarCircle, renderStatusPill, spacer } from '../components';
+import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export interface NewReviewParams {
   rating: number;
@@ -17,10 +19,10 @@ export interface NewReviewParams {
   shareUrl?: string;
 }
 
-export function renderNewReview(
+export async function renderNewReview(
   params: NewReviewParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const subject = isTr
     ? `🎉 Yeni ${params.rating} yıldız geldi — ${params.customerName ?? 'Müşteri'}`
@@ -40,21 +42,33 @@ export function renderNewReview(
     params.tableNumber ? `Masa ${escapeHtml(params.tableNumber)}` : '',
   ].filter(Boolean).join(' · ');
 
-  const copy = isTr ? {
+  const inlineDefault = isTr ? {
     eyebrow: 'Canlı · Az önce geldi',
-    title: `${params.rating} yıldız.`,
+    title: '${rating} yıldız.',
     titleSub: 'Hak ettin.',
     primaryCta: 'Teşekkür yaz →',
     secondaryCta: 'Google\'da paylaş',
     noComment: 'Yorum bırakılmadı.',
   } : {
     eyebrow: 'Live · Just now',
-    title: `${params.rating} stars.`,
+    title: '${rating} stars.',
     titleSub: 'You earned it.',
     primaryCta: 'Write a thank-you →',
     secondaryCta: 'Share on Google',
     noComment: 'No comment left.',
   };
+
+  // DB-merged + placeholder substitution. `${rating}` `${customerName}`
+  // `${restaurantName}` admin tarafından subject yerine başka field'larda
+  // da kullanılabilir.
+  const merged = await loadMailCopy('new-review', locale, inlineDefault);
+  const vars = {
+    rating: params.rating,
+    restaurantName: params.restaurantName,
+    customerName: params.customerName ?? (isTr ? 'Anonim' : 'Anonymous'),
+  };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
 
   // Star row — warning gold like jsx:31
   const starsHtml = `<span style="color:${PULSE.warning};font-size:18px;letter-spacing:0.05em;">${'★'.repeat(params.rating)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - params.rating)}</span></span>`;
@@ -121,6 +135,6 @@ export function renderNewReview(
     eyebrow: isTr ? 'Yeni yorum · Anında' : 'New review · Live',
     footer: { locale, unsubText: isTr ? 'Yeni yorum bildirimlerini kapatmak için' : 'To stop new-review alerts' },
   });
-  const text = `${copy.title} ${copy.titleSub}\n\n${customerName} · ${params.rating}★\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}\n${copy.primaryCta} ${params.reviewUrl}`;
+  const text = `${copyText.title} ${copyText.titleSub}\n\n${customerName} · ${params.rating}★\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}\n${copyText.primaryCta} ${params.reviewUrl}`;
   return { subject, html, text };
 }

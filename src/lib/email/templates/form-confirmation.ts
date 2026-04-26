@@ -2,8 +2,14 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderTimeline, spacer, renderTwoColCards } from '../components';
+import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export type FormType = 'contact' | 'career' | 'roi' | 'newsletter';
+
+// Per-variant copy. Each variant is a flat record of strings the admin can
+// edit; structural data (`timeline` array, ticket prefix) stays in code.
+export type FormVariantCopy = Record<string, string>;
 
 export interface FormConfirmationParams {
   formType: FormType;
@@ -13,10 +19,10 @@ export interface FormConfirmationParams {
   ticketId?: string;
 }
 
-export function renderFormConfirmation(
+export async function renderFormConfirmation(
   params: FormConfirmationParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const ticket = params.ticketId ?? `BUZ-${Math.floor(Math.random() * 9000 + 1000)}`;
 
@@ -192,7 +198,20 @@ export function renderFormConfirmation(
     },
   };
 
-  const copy = FORM_COPY[params.formType];
+  // DB merge: top-level keys are formType variants. Admin can override any
+  // variant + any string field within it; missing variants/fields fall back
+  // to the inline default. Two-level merge so a partially edited variant
+  // (e.g. only `cta` rewritten) keeps the rest of its fields from code.
+  const merged = await loadMailCopy<typeof FORM_COPY>('form-confirmation', locale, FORM_COPY);
+  const variantOverride = (merged[params.formType] ?? {}) as Partial<typeof FORM_COPY[FormType]>;
+  const mergedCopy = { ...FORM_COPY[params.formType], ...variantOverride };
+  // Placeholder substitution. `${firstName}` admin tarafından subject/intro/
+  // sideBody'de kullanılabilir. params.name boşsa fallback'e düşer.
+  const fallbackName = isTr ? 'merhaba' : 'hi';
+  const vars = { firstName: params.name?.split(' ')[0] || fallbackName };
+  const copy = deepSubstitute(mergedCopy, vars, 'html');
+  const copyText = deepSubstitute(mergedCopy, vars, 'text');
+
   const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
   const localePath = isTr ? 'tr' : 'en';
   const sideHrefA = `${baseAppUrl}/${localePath}/${params.formType === 'career' ? 'careers' : params.formType === 'newsletter' ? 'how-it-works' : 'contact'}`;
@@ -286,7 +305,7 @@ export function renderFormConfirmation(
     eyebrow: copy.eyebrow,
     footer: { locale, unsubText: isTr ? 'Onay maillerini kapatmak için' : 'To stop confirmation emails' },
   });
-  const text = `${copy.titleA}. ${copy.titleB}\n\n${copy.intro}\n\n${copy.timelineEyebrow}:\n` +
-    copy.timeline.map((t) => `· ${t.label} — ${t.body}`).join('\n');
-  return { subject: copy.subject, html, text };
+  const text = `${copyText.titleA}. ${copyText.titleB}\n\n${copyText.intro}\n\n${copyText.timelineEyebrow}:\n` +
+    copyText.timeline.map((t) => `· ${t.label} — ${t.body}`).join('\n');
+  return { subject: copyText.subject, html, text };
 }

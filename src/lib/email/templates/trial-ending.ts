@@ -2,6 +2,8 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderH2, renderP, renderButton, renderBadge, spacer } from '../components';
+import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export interface TrialEndingParams {
   firstName?: string | null;
@@ -26,10 +28,10 @@ export interface TrialEndingParams {
   };
 }
 
-export function renderTrialEnding(
+export async function renderTrialEnding(
   params: TrialEndingParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const days = Math.max(0, params.daysLeft);
 
@@ -40,6 +42,10 @@ export function renderTrialEnding(
     ? `${params.usage.reviews ?? 0} yorum yönettin · ${params.usage.avgRating?.toFixed(1) ?? '—'} ortalama. Devam etmek için planı seç.`
     : `You handled ${params.usage.reviews ?? 0} reviews · ${params.usage.avgRating?.toFixed(1) ?? '—'} avg. Pick a plan to continue.`;
 
+  // Pricing fallback. JSX prototip değerleri burada — caller param.prices
+  // geçmezse plan kartlarında ₺499 / ₺1.299 görünür. Gerçek pricing
+  // değişikliklerini billing UI veya MailTemplate DB content'e (Faz 2)
+  // taşımak en doğrusu; şimdilik default fallback olarak kalıyor.
   const prices = params.prices ?? (isTr
     ? { starter: '₺499', pro: '₺1.299', starterPeriod: '/ ay · 1 şube', proPeriod: '/ ay · 5 şube' }
     : { starter: '$19', pro: '$49', starterPeriod: '/ mo · 1 location', proPeriod: '/ mo · 5 locations' });
@@ -47,9 +53,9 @@ export function renderTrialEnding(
   const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
   const comparisonUrl = params.comparisonUrl ?? `${baseAppUrl}/${isTr ? 'tr' : 'en'}/pricing`;
 
-  const copy = isTr ? {
+  const inlineDefault = isTr ? {
     headerEyebrow: 'Faturalandırma · Hatırlatma',
-    eyebrow: `Deneme · ${days} gün kaldı`,
+    eyebrow: 'Deneme · ${daysLeft} gün kaldı',
     titleA: '14 gündür birlikteyiz.',
     titleB: 'Devam edelim mi?',
     usageEyebrow: 'Bu 14 günde Buaze\'de',
@@ -67,7 +73,7 @@ export function renderTrialEnding(
     comparisonLink: 'Detaylı karşılaştırma',
   } : {
     headerEyebrow: 'Billing · Reminder',
-    eyebrow: `Trial · ${days} day${days === 1 ? '' : 's'} left`,
+    eyebrow: 'Trial · ${daysLeft} days left',
     titleA: 'We\'ve been at it for 14 days.',
     titleB: 'Keep going?',
     usageEyebrow: 'In your 14 days on Buaze',
@@ -84,6 +90,19 @@ export function renderTrialEnding(
     cta: 'Pick my plan →',
     comparisonLink: 'Detailed comparison',
   };
+
+  // DB-driven override + placeholder substitution. `${firstName}`,
+  // `${restaurantName}`, `${daysLeft}` admin tarafından kullanılabilir.
+  const merged = await loadMailCopy('trial-ending', locale, inlineDefault);
+  const vars = {
+    firstName: params.firstName || (isTr ? 'orada' : 'there'),
+    daysLeft: days,
+    // restaurantName param'da yok; future-proof olarak whitelist'te tutuluyor
+    // ama vars'a boş gelir — kullanılırsa empty string substitute olur.
+    restaurantName: '',
+  };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
 
   // 4-col usage stat grid — JSX:22-34
   const stats = [
@@ -178,6 +197,6 @@ export function renderTrialEnding(
     eyebrow: copy.headerEyebrow,
     footer: { locale, unsubText: isTr ? 'Faturalandırma maillerini ayarlamak için' : 'To adjust billing emails' },
   });
-  const text = `${copy.titleA} ${copy.titleB}\n\n${stats.map((s) => `${s.v} ${s.k}`).join(' · ')}\n\n${copy.cta} ${params.upgradeUrl}\n${copy.comparisonLink}: ${comparisonUrl}`;
+  const text = `${copyText.titleA} ${copyText.titleB}\n\n${stats.map((s) => `${s.v} ${s.k}`).join(' · ')}\n\n${copyText.cta} ${params.upgradeUrl}\n${copyText.comparisonLink}: ${comparisonUrl}`;
   return { subject, html, text };
 }

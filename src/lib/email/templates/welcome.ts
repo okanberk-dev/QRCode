@@ -1,7 +1,8 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
-import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderButton, renderEcgDivider, spacer } from '../components';
+import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export interface WelcomeParams {
   firstName?: string | null;
@@ -9,20 +10,19 @@ export interface WelcomeParams {
   demoUrl?: string;
 }
 
-export function renderWelcome(
+export async function renderWelcome(
   params: WelcomeParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
-  const name = params.firstName ? escapeHtml(params.firstName) : (isTr ? 'merhaba' : 'hi');
   const subject = isTr ? 'Hoş geldin — ilk QR kodun 4 adım uzakta' : 'Welcome — your first QR is 4 steps away';
   const preheader = isTr
     ? 'Hesabını aktive ettik. Sıradaki adım: işletme bilgilerini doldurmak.'
     : 'Your account is active. Next: fill out your business details.';
 
-  const copy = isTr ? {
+  const inlineDefault = isTr ? {
     eyebrow: 'Hoş geldin · Sayı bir',
-    titleHi: `Merhaba ${name}.`,
+    titleHi: 'Merhaba ${firstName}.',
     titleSub: 'Şimdi başlıyoruz.',
     intro: 'Hesabını oluşturduğun için teşekkürler. Aşağıdaki 4 adımı tamamladığında masandaki ilk QR kod canlıya çıkmış olacak.',
     stepsEyebrow: 'Kurulum · 4 adım',
@@ -44,7 +44,7 @@ export function renderWelcome(
     ],
   } : {
     eyebrow: 'Welcome · Issue 1',
-    titleHi: `Hi ${name}.`,
+    titleHi: 'Hi ${firstName}.',
     titleSub: 'Now we begin.',
     intro: 'Thanks for joining Buaze. Once you finish these 4 steps, your first QR code goes live on a real table.',
     stepsEyebrow: 'Setup · 4 steps',
@@ -65,6 +65,16 @@ export function renderWelcome(
       { t: 'Inviting your team to the panel', s: 'Help · 2 min', icon: '◇' },
     ],
   };
+
+  // DB-driven copy override. Admin edits land in `mail_templates` and merge
+  // over the inline default. After merge, runtime placeholders (`${firstName}`)
+  // are substituted — admin can keep / move / remove the token and the
+  // greeting still personalises per recipient.
+  const merged = await loadMailCopy('welcome', locale, inlineDefault);
+  const fallbackName = isTr ? 'merhaba' : 'hi';
+  const vars = { firstName: params.firstName || fallbackName };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
 
   const demoUrl = params.demoUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/${isTr ? 'tr' : 'en'}/how-it-works`;
 
@@ -166,8 +176,8 @@ export function renderWelcome(
     eyebrow: isTr ? 'Hoş geldin' : 'Welcome',
     footer: { locale },
   });
-  const text = `${copy.titleHi} ${copy.titleSub}\n\n${copy.intro}\n\n` +
-    copy.steps.map((s) => `${s.n} · ${s.t} — ${s.d}`).join('\n') +
-    `\n\n${copy.cta} ${params.dashboardUrl}\n${copy.demoLink}: ${demoUrl}`;
+  const text = `${copyText.titleHi} ${copyText.titleSub}\n\n${copyText.intro}\n\n` +
+    copyText.steps.map((s) => `${s.n} · ${s.t} — ${s.d}`).join('\n') +
+    `\n\n${copyText.cta} ${params.dashboardUrl}\n${copyText.demoLink}: ${demoUrl}`;
   return { subject, html, text };
 }

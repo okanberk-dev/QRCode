@@ -689,3 +689,532 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 - `npx prisma generate` `FeedbackReply.source` ve `NewsletterCampaign` ScalarFieldEnum'ları doğru
 - E2E lokal kontrol checklist (CLAUDE.md §21.15): 9 template browser + 4 mail client smoke test
 - NewsletterCampaign E2E: yeni kampanya + Şimdi gönder → sent status, sentCount dolu, scheduledAt geçen scheduled campaign cron'da yakalanıyor
+
+---
+
+## Phase 16.4 — Mail Hardcoded Cleanup + DB-Driven Content (MVP) (2026-04)
+
+**Kapsam**: PR #74 sonrası audit ortaya 4 sabit içerik daha çıkardı; ayrıca admin "mail copy'lerini panelden düzenle" istedi. Tek PR'da 2 paralel iş:
+
+### Faz 1 — Hardcoded cleanup (4 item)
+
+- `newsletter.ts` stats band → opsiyonel `params.stats?: NewsletterStat[]`. Cron geçirmediğinden default'ta band gizlenir (eski `+184%/1.4s` her ay aynıydı).
+- `weekly-report.ts` 3. hücre `'1.4s'` placeholder → kaldırıldı, 2-col layout. Backend tracking yokken yanıltıcı placeholder göstermeyiz.
+- `customer-reply.ts` `defaultActions` (3 Kadıköy örneği) silindi. `params.actions` boş → "Aldığımız aksiyonlar" kart gizlenir.
+- `trial-ending.ts` fiyat fallback → comment ile işaretlendi (Faz 2 backlog).
+
+### Faz 2 — DB-Driven Mail Content (MVP)
+
+**Yeni dosyalar**:
+- `prisma/schema.prisma` — `MailTemplate { key, locale, content: Json, editable, updatedById, ... }` `@@unique([key, locale])`
+- `src/lib/email/copy-loader.ts` — `loadMailCopy<T>(key, locale, fallback)` + 60s process-local cache + `invalidateMailCopyCache`
+- `src/app/api/admin/mail-templates/route.ts` — GET grid (seeded/not-seeded)
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts` — GET + PATCH + DELETE
+- `src/app/admin/mail-templates/page.tsx` — list grid
+- `src/app/admin/mail-templates/[key]/[locale]/page.tsx` — edit page wrapper
+- `src/components/admin/MailTemplateEditor.tsx` — schema-aware form (FIELDS_BY_TEMPLATE map)
+- `scripts/seed-mail-templates.ts` — idempotent seed (welcome/newsletter/trial-ending × tr/en = 6 row)
+
+**Değişen**:
+- `src/lib/email/templates/welcome.ts` — `renderWelcome` async, `await loadMailCopy('welcome', ...)`
+- `src/lib/email/templates/newsletter.ts` — `renderNewsletter` async + DB merge + statsBlock opsiyonel
+- `src/lib/email/templates/trial-ending.ts` — `renderTrialEnding` async + DB merge + price fallback yorum
+- `src/lib/email/templates/weekly-report.ts` — `stats` array 2-col
+- `src/lib/email/templates/customer-reply.ts` — `defaultActions` silindi, gizli kart
+- `src/lib/email.ts` — `sendWelcomeEmail`, `sendNewsletterEmail`, `sendTrialEndingEmail` artık `await renderXxx(...)`
+- `src/components/admin/AdminSidebar.tsx` — "Mail İçerikleri" satırı (FileEdit icon, superadmin)
+- `CLAUDE.md` §21.26 (yeni)
+
+**Backend etkisi**:
+- `prisma db push` deploy'da `mail_templates` tablosu sync olur. Boş olduğu için mevcut mailler inline default ile çalışmaya devam eder (backwards compatible).
+- 3 render fonksiyonu async oldu → her mail send'de DB query (60s cache ile amortise). Cron throttle (120ms) zaten DB-friendly.
+- Admin yeni route + sidebar + editor — superadmin only.
+
+**Verification**:
+- `npx tsc --noEmit` zero error
+- `npx eslint .` 0 error
+- `prisma generate` `MailTemplate` field'ları tanır
+- Seed script: `DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts` → 6 row upsert
+- E2E (deploy sonrası): `/admin/mail-templates` 6 kart, edit sayfa form, test mail butonu, varsayılana dön
+
+**Phase 2 backlog** (yapılmadı):
+- 6 kalan template DB-driven (forgot-password, form-confirmation, low-rating-alert, new-review, weekly-report, customer-reply)
+- `${firstName}`, `${restaurantName}` runtime placeholder injection
+- Field-level `editable: false` flag (KVKK lock)
+- Audit log table
+- Redis cache layer (multi-instance Vercel drift fix)
+
+---
+
+## Phase 16.5 — Mail CMS Phase 2: 5 template extension + KVKK field lock (2026-04)
+
+PR #75'in MVP'sini genişleten ve KVKK / güvenlik kritik metinleri kilitleyen iterasyon. Stacked PR — base PR #75.
+
+### Kapsam
+
+- 5 yeni template DB-driven: `forgot-password`, `low-rating-alert`, `new-review`, `weekly-report`, `customer-reply` (form-confirmation Phase 3'e ertelendi — 4-variant yapısı ayrı schema gerektiriyor)
+- Toplam 8 template DB-driven (3 mevcut + 5 yeni)
+- Field-level KVKK / güvenlik kilidi
+- `SUPPORTED_MAIL_KEYS` ortak source-of-truth (DRY)
+
+### Yeni dosya
+
+- `src/lib/email/locked-fields.ts` — `LOCKED_MAIL_FIELDS` map + `isFieldLocked` + `stripLockedFields` helper
+
+### Değişen dosyalar
+
+- `src/lib/email/copy-loader.ts` — `SUPPORTED_MAIL_KEYS` export (8 değer), `MailTemplateKey` union genişletildi
+- 5 template render fn — `async` + `loadMailCopy` (forgot-password, low-rating-alert, new-review, weekly-report, customer-reply)
+- `src/lib/email.ts` — 4 sender'a `await` (`sendFeedbackNotification` 2 call, `sendWeeklyDigest`, `sendPasswordResetEmail`, `sendCustomerReplyEmail`)
+- `src/app/api/admin/mail-templates/route.ts` — `SUPPORTED_KEYS` import
+- `src/app/admin/mail-templates/[key]/[locale]/page.tsx` — `SUPPORTED_KEYS` import
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts` — PATCH endpoint `stripLockedFields()` ile server-side drop
+- `src/components/admin/MailTemplateEditor.tsx` — `FIELDS_BY_TEMPLATE` 5 yeni entry, `FieldDef` tipine `locked?` + `lockReason?` ekledi, UI 🔒 KVKK badge + disabled input + kırmızı border, `TEMPLATE_LABELS` 8 entry
+- `src/app/admin/mail-templates/page.tsx` — `TEMPLATE_LABELS` 8 entry
+- `scripts/seed-mail-templates.ts` — +10 yeni row (toplam 16)
+- `CLAUDE.md` §21.26 başlığı güncellendi, §21.27 (yeni) Phase 2 docs
+
+### Locked field'lar
+
+| Template | Locked field | Sebep |
+|---|---|---|
+| forgot-password | `statusText` | Token süre uyarısı (phishing risk) |
+| forgot-password | `notYouTitle`, `notYouBody`, `notYouLink` | Hesap güvenliği yönergesi |
+| customer-reply | `sentLine`, `sentSuffix` | KVKK / GDPR Buaze gönderim açıklaması |
+
+UI'da 🔒 KVKK badge + tooltip ile sebep gösterilir, `<input disabled>`. Server-side `stripLockedFields()` admin UI bypass'a karşı.
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- DB schema değişikliği YOK (PR #75 `MailTemplate` modelini kuruyor, bu PR sadece kullanıyor)
+- E2E (deploy + seed sonrası):
+  - `/admin/mail-templates` → 16 kart
+  - `/admin/mail-templates/forgot-password/tr` → `notYouTitle` field disabled, "🔒 KVKK" badge görünür
+  - cURL bypass: `curl -X PATCH .../forgot-password/tr -d '{"content":{"notYouTitle":"hacked"}}'` → DB'de `notYouTitle` yazmaz (server drop)
+
+### Phase 3 backlog
+
+- form-confirmation 4-variant DB-driven (nested JSON)
+- Dynamic placeholder injection
+- Audit log table
+- Redis cache (gerekli olduğunda)
+
+---
+
+## Phase 16.6 — Mail CMS Phase 3: form-confirmation 4-variant nested JSON
+
+**PR:** TBA (stacked on PR #76 — `claude/mail-cms-phase3-form-confirmation`)
+
+### Hedef
+
+9. (son) mail template'i — `form-confirmation` — DB-driven yap. Bu template 4 farklı `formType` variant içerir (`contact / career / roi / newsletter`) ve her variant 14 string field tutar. Phase 2'den (PR #76) ertelenmişti çünkü flat JSON content yapısı tek variant düşünüyordu.
+
+### Mimari karar — Nested JSON
+
+- Tek `form-confirmation` key, locale başına bir DB row
+- `content` alanı: `{ contact: {...}, career: {...}, roi: {...}, newsletter: {...} }`
+- Admin UI: tek sayfa + 4 variant tab'ı
+- Avantaj: list page 8 → 9 kart (kart başına locale 2 = 18 kart), 4 ayrı sayfa olmadan tek yerden yönetim
+- Avantaj: schema değişikliği YOK — mevcut `MailTemplate.content: Json` yapısı zaten destekler
+- Trade-off: editor UI iki mod'a sahip oldu (flat 8 + nested 1) → DRY için `<MailFieldInput>` shared component
+
+### Değişen dosyalar
+
+**Yeni:**
+- `src/components/admin/FormConfirmationEditor.tsx` — 4-variant tab UI
+- `src/components/admin/MailFieldInput.tsx` — shared input (label + hint + KVKK lock + multiline)
+
+**Değişen:**
+- `src/lib/email/copy-loader.ts` — `SUPPORTED_MAIL_KEYS` 8 → 9, validation string + plain object kabul
+- `src/lib/email/templates/form-confirmation.ts` — async + nested DB merge (top-level variant + inner field)
+- `src/lib/email.ts` — `sendFormConfirmationEmail` await
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts` — `cleanContent()` per-key branch
+- `src/components/admin/MailTemplateEditor.tsx` — `templateKey === 'form-confirmation'` ise `<FormConfirmationEditor>` render
+- `src/app/admin/mail-templates/page.tsx` — `TEMPLATE_LABELS` +1 entry
+- `src/app/api/dev/email-preview/route.ts` — variant query string
+- `src/app/api/admin/dev/send-test/route.ts` — variant body
+- `scripts/seed-mail-templates.ts` — 2 yeni nested row (toplam 18)
+- `CLAUDE.md` §21.26 başlığı + §21.28 (yeni) nested variant pattern
+
+### Render fn değişikliği (özet)
+
+```ts
+export async function renderFormConfirmation(params, locale) {
+  const FORM_COPY = isTr ? { contact: {...}, career: {...}, ... } : {...};
+  const merged = await loadMailCopy('form-confirmation', locale, FORM_COPY);
+  const variantOverride = merged[params.formType] ?? {};
+  const copy = { ...FORM_COPY[params.formType], ...variantOverride };
+  // ... render
+}
+```
+
+İki seviyeli merge: top-level variant key (admin sadece bir variant düzenlemiş olabilir) + inner field (admin sadece subject'i değiştirmiş olabilir). Eksik field/variant'lar inline default'tan gelir.
+
+### Editor UI (FormConfirmationEditor)
+
+- 4 variant tab: Contact / Kariyer / ROI / Bülten
+- State: `Record<FormType, Record<string, string>>` — her variant kendi state'ini tutar, tab değiştirince kaybolmaz
+- Her variant'ta 14 field (subject, preheader, eyebrow, titleA, titleB, intro, formEyebrow, timelineEyebrow, sideEyebrowA/B, sideBodyA/B, sideCtaA/B)
+- Save → tüm 4 variant tek payload'da gönderilir
+- Preview/Test mail → aktif variant query string'e geçer
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- DB schema değişikliği YOK
+- E2E (deploy + seed sonrası):
+  - `/admin/mail-templates` → 18 kart, "Form onayı" 9. kart
+  - `/admin/mail-templates/form-confirmation/tr` → 4 variant tab; default Contact aktif, 14 field
+  - Career tab → field'lar değişir, state ayrı tutulur
+  - Save → tüm 4 variant tek PATCH'te gider
+  - "Test mail at" career tab'ında → kariyer mail'i admin'e düşer
+  - Preview `?variant=roi` → ROI variant render edilir
+  - DB'ye non-string inject edilirse load'da defansif normalisation drop eder, render inline default'a düşer
+
+### Phase 4+ backlog
+
+- Dynamic placeholder injection (`${firstName}`, `${restaurantName}`)
+- Audit log table (`MailTemplateRevision`)
+- Redis cache (gerekli olduğunda)
+- Per-field validation (max length, format)
+
+---
+
+## Phase 16.7 — Mail CMS Phase 4: dynamic placeholder injection
+
+**PR:** TBA — `claude/mail-cms-phase4-placeholders` (stacked on PR #77 / Phase 3)
+
+### Hedef
+
+Admin'in CMS'te yazdığı copy field'larında `${firstName}`, `${restaurantName}` gibi runtime placeholder'lar kullanabilmesi. Her token render zamanında gerçek değerle dolar. Backward compatible — placeholder'sız field'lar değişmez.
+
+### Yeni dosyalar
+
+- `src/lib/email/placeholders.ts` — `MAIL_PLACEHOLDERS` whitelist, `substitutePlaceholders`, `validatePlaceholders`, `findInvalidPlaceholders`, `deepSubstitute` helper'ları
+
+### Değişen dosyalar
+
+**Render fonksiyonları** (9 template):
+- `welcome.ts`, `newsletter.ts`, `trial-ending.ts`, `forgot-password.ts`, `low-rating-alert.ts`, `new-review.ts`, `weekly-report.ts`, `customer-reply.ts`, `form-confirmation.ts`
+- Her biri `loadMailCopy()` sonrası `deepSubstitute(merged, vars, 'html'|'text')` çağırır
+- `copy` (HTML body) ve `copyText` (text body) iki ayrı substitute pass — XSS guard
+
+**API**:
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts` — PATCH endpoint `findInvalidPlaceholders` ile invalid token yakalar, 400 döner
+
+**Admin UI**:
+- `src/components/admin/MailFieldInput.tsx` — `placeholders?: string[]` prop, chip row, click-to-insert at cursor
+- `src/components/admin/MailTemplateEditor.tsx` — relevant field'lar `placeholders: MAIL_PLACEHOLDERS[key]` ile işaretlendi
+- `src/components/admin/FormConfirmationEditor.tsx` — variant field'lar `placeholders: MAIL_PLACEHOLDERS['form-confirmation']`
+
+### Whitelist
+
+| Template | Placeholder'lar |
+|---|---|
+| welcome | `firstName` |
+| newsletter | `firstName` |
+| trial-ending | `firstName` `restaurantName` `daysLeft` |
+| forgot-password | `firstName` |
+| low-rating-alert | `restaurantName` `customerName` `rating` `branch` |
+| new-review | `restaurantName` `customerName` `rating` |
+| weekly-report | `restaurantName` `totalReviews` `avgRating` |
+| customer-reply | `customerFirstName` `restaurantName` `ownerName` |
+| form-confirmation | `firstName` |
+
+### Inline default değişiklikleri
+
+Önce hardcoded interpolation içeren default'lar literal placeholder'a çevrildi:
+
+| Template | Değişen field |
+|---|---|
+| welcome | `titleHi`: `\`Merhaba ${name}.\`` → `'Merhaba ${firstName}.'` |
+| trial-ending | `eyebrow`: `\`Deneme · ${days} gün kaldı\`` → `'Deneme · ${daysLeft} gün kaldı'` |
+| low-rating-alert | `title`: `\`${params.rating} yıldız geldi.\`` → `'${rating} yıldız geldi.'` |
+| new-review | `title`: `\`${params.rating} yıldız.\`` → `'${rating} yıldız.'` |
+| customer-reply | `titleA`: `\`${customerFirst},\`` → `'${customerFirstName},'` |
+
+### XSS guard
+
+HTML mode substitution `escapeHtml` kullanır. Customer name `<script>` olsa bile mail'de `&lt;script&gt;`. Text mode (plain text mail body) escape yapmaz.
+
+### Validation davranışı
+
+Admin save sırasında geçersiz placeholder yazarsa:
+- API 400: `{ error: 'invalid_placeholder', field: 'subject', invalid: ['userName'], allowed: ['firstName', 'restaurantName', ...] }`
+- Editor user-friendly TR mesaj: `"subject" alanında geçersiz placeholder: ${userName}. İzin verilenler: ${firstName}, ${restaurantName}, ...`
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- DB schema değişikliği YOK
+- E2E:
+  - Admin welcome.titleHi'yi `Selam ${firstName}!` olarak save et → DB'de literal kayıtlanır
+  - Test mail at → mail body "Selam Tom!" olarak gelir
+  - Admin yanlış token yazsa (`${userName}`) → 400 + Turkish error
+  - Admin chip'e tıklasa → caret konumuna `${firstName}` eklenir
+
+### Phase 5+ backlog
+
+- Audit log (`MailTemplateRevision`)
+- Redis cache (multi-instance drift)
+- Per-field validation (max length, format)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+
+---
+
+## Phase 16.8 — Mail CMS Phase 5: audit log + revert
+
+**PR:** TBA — `claude/mail-cms-phase5-audit-log` (stacked on PR #78 / Phase 4)
+
+### Hedef
+
+Mail template her edit'inde DB'ye snapshot. KVKK uyumu + rollback yeteneği.
+
+### Yeni model
+
+```prisma
+model MailTemplateRevision {
+  id          String        @id @default(cuid())
+  templateId  String?       // SetNull on delete — history survives
+  templateKey String        // denormalized for post-delete query
+  locale      String
+  editType    String        // 'created' | 'updated' | 'deleted' | 'reverted'
+  content     Json
+  editedById  String?
+  createdAt   DateTime
+
+  @@index([templateKey, locale, createdAt])
+  @@index([templateId, createdAt])
+}
+```
+
+### Yeni dosyalar
+
+- `src/app/api/admin/mail-templates/[key]/[locale]/revisions/route.ts` — GET list (last 50, editor join)
+- `src/app/api/admin/mail-templates/[key]/[locale]/revisions/[id]/revert/route.ts` — POST revert
+- `src/components/admin/MailRevisionHistory.tsx` — slide-over modal, listele + expand + revert
+
+### Değişen dosyalar
+
+- `prisma/schema.prisma` — `MailTemplate` model + `MailTemplateRevision` ilişkisi
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts`:
+  - PATCH after upsert: revision yaz + soft-prune
+  - DELETE before delete: 'deleted' revision yaz (SetNull FK ile survive)
+  - `pruneRevisions()` helper (last 50 keep)
+- `src/components/admin/MailTemplateEditor.tsx`:
+  - History buton + modal mount
+  - `reloadKey` state — revert sonrası fetch trigger
+- `src/components/admin/FormConfirmationEditor.tsx` — aynı history pattern
+- `CLAUDE.md` §21.30 (yeni)
+
+### Soft-prune
+
+Her PATCH/DELETE sonrası `pruneRevisions(key, locale)` last 50'yi tutar. Cron yok — write-time prune yeterli, chatty admin'lerde tablo unbounded büyümez.
+
+### Cross-template guard
+
+Revert endpoint'inde `revision.templateKey === pathKey && revision.locale === pathLocale` check. UI bug ile A → B revert engelleyici.
+
+### Locked field defence in depth
+
+Revert sırasında `stripLockedFields()` yine çalışır. Eski revision KVKK öncesi unlocked content içerse bile, revert apply ederken locked field drop edilir.
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- Prisma schema valid (`prisma validate`)
+- `prisma db push` Vercel build script'inde otomatik koşar
+- E2E (deploy + seed sonrası):
+  - Welcome.titleHi'yi save → DB'de revision row (editType='updated')
+  - "Geçmiş" buton → modal açılır, en son save görünür "MEVCUT" rozeti
+  - "İçeriği göster" → JSON preview
+  - Bir önceki revision'a "Bu sürüme dön" → confirm + apply + 'reverted' revision yazılır
+  - 60 kez save → 50'den eski revision'lar otomatik silinir
+
+### Phase 6+ backlog
+
+- Diff viewer (revision A vs B)
+- Per-field history filtering
+- Bulk export (CSV/JSON)
+- Redis cache (multi-instance drift)
+- Per-field validation (max length, format)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+
+---
+
+## Phase 16.9 — Mail CMS Phase 6: per-field length validation
+
+**PR:** TBA — `claude/mail-cms-phase6-field-validation` (stacked on PR #79 / Phase 5)
+
+### Hedef
+
+Admin paste-bomb'larını engelleyen length validation. Gmail spam filter tetikleri (subject ≥100), layout kırılmaları (eyebrow ≥200) ve novel-length intro'lar reject. Loose limits — gerçek abuse'u yakalar, küçük overage'larda nag etmez.
+
+### Yeni dosya
+
+- `src/lib/email/field-validation.ts` — `EXPLICIT` per-key + pattern fallback + `validateField` + `findInvalidField`
+
+### Değişen dosyalar
+
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts` — PATCH `findInvalidField()` placeholder validation sonrası, 400 + `{ error: 'invalid_field_length', field, reason, max?, min?, actual }`
+- `src/components/admin/MailFieldInput.tsx` — `getFieldValidation()` import; input altında live char counter (gray/amber/red tone)
+- `src/components/admin/MailTemplateEditor.tsx` + `FormConfirmationEditor.tsx` — TR error mapping (`too_long`, `too_short`)
+- `CLAUDE.md` §21.31 (yeni)
+
+### Limit table
+
+| Field grup | Max | Sebep |
+|---|---|---|
+| `subject` | 100 | Gmail truncate ≥70 chars, spam score ≥100 |
+| `preheader` | 200 | Inbox preview |
+| `*eyebrow*` | 80 | Single-line layout |
+| `title*` | 80 | Hero h1/h2 wrap |
+| `titleAccent` | 60 | Vurgu kelime |
+| `intro` | 1000 | Body paragraph |
+| `*body*` | 400 | Side card body |
+| `*cta`/`*link*` | 60 | Button label |
+| Other | 200 | Generic chrome |
+
+### Live counter
+
+Input altında: `42 / 100` mono font, sağ-aligned. %80'de amber, %100'de red. Locked field counter göstermez.
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- DB schema değişikliği YOK
+- E2E:
+  - Subject'e 150 karakter yapıştır → counter `150 / 100` red
+  - Save dene → 400 + TR error: `"subject" alanı çok uzun: 150 karakter (max 100).`
+  - Boş bırak → counter gizli, save geçer (empty drop)
+  - Form-confirmation nested → variant.field path döner
+
+### Phase 7+ backlog
+
+- Diff viewer (revision A vs B)
+- Bulk export (CSV/JSON revision history)
+- Redis cache (multi-instance drift)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+- URL field format validation
+
+---
+
+## Phase 16.10 — Mail CMS Phase 7: revision diff viewer
+
+**PR:** TBA — `claude/mail-cms-phase7-diff-viewer` (stacked on PR #80 / Phase 6)
+
+### Hedef
+
+Phase 5 history modal'ını upgrade et — admin "ne değişmiş" tek bakışta görsün. Field-level diff, jsdiff dep yok.
+
+### Yeni dosyalar
+
+- `src/lib/email/revision-diff.ts` — `DiffEntry` union + `computeDiff()` (flat + nested destekler)
+- `src/components/admin/MailRevisionDiff.tsx` — added/removed/changed visual
+
+### Değişen dosyalar
+
+- `src/components/admin/MailRevisionHistory.tsx` — her revision'a "Önceki sürümle farkı göster" buton + inline expand
+- `CLAUDE.md` §21.32 (yeni)
+
+### Diff semantik
+
+Her revision için diff = `revisions[idx + 1]` (older) → `revisions[idx]` (this). Yani admin'in "bu revisiyon ne yaptı" sorusunu cevaplar. En eski revision (`idx === N-1`) için `before = {}` → tüm field'lar `added` olarak görünür (initial seed'in tüm field'ları).
+
+### Visual
+
+| Entry tipi | Badge | Bg |
+|---|---|---|
+| `changed` | DEĞİŞTİ (amber) | white + nested −/+ rows (red/emerald 50/60) |
+| `added` | EKLENDİ (emerald) | emerald 50/60 |
+| `removed` | SİLİNDİ (red) | red 50/60 |
+
+Sort: changed → added → removed, alfabetik path.
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (227 warning değişmedi)
+- DB schema değişikliği YOK
+- E2E:
+  - "Geçmiş" → her revision'da iki buton (İçeriği göster + Önceki sürümle farkı göster)
+  - Subject'i değiştir + save → tek `changed` entry görünür
+  - Yeni field ekle → `added`
+  - Field boşalt + save (drop edilir) → `removed`
+  - Form-confirmation variant edit → `contact.subject` path
+  - Initial revision (oldest) → tüm field'lar `added`
+  - Aynı içerik save edilirse (no-op edit) → "Bu iki sürüm arasında değişiklik yok"
+
+### Phase 8+ backlog
+
+- Bulk export (CSV/JSON revision history)
+- Redis cache (multi-instance drift)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+- URL field format validation
+- A/B compare (any two revisions, not just adjacent)
+
+---
+
+## Phase 16.11 — Mail CMS Phase 8: ops alert on critical mail failure
+
+**PR:** TBA — `claude/mail-cms-phase8-ops-alert` (phase 7 main'e merge edildi, base = main)
+
+### Hedef
+
+Kritik mail send fail olduğunda restoran sahibi/kullanıcı haberdar olmazken ops manuel müdahale edebilsin. V1 minimum: structured plain-text alert mail ops kutusuna.
+
+### Yeni dosyalar
+
+- `src/lib/email-internal.ts` — `sendResendEmail` ayrı dosyaya extract (circular dep önleme)
+- `src/lib/email/ops-alert.ts` — `notifyOpsOfMailFailure()` helper (rate-limited, swallow-errors)
+
+### Değişen dosya
+
+- `src/lib/email.ts`:
+  - `sendResendEmail` definition `email-internal.ts`'e taşındı, import edilir
+  - 3 kritik sender (sendFeedbackNotification, sendPasswordResetEmail, sendCustomerReplyEmail) `if (!ok) await notifyOpsOfMailFailure(...)` wrap'i
+
+### Why these 3?
+
+| Sender | Critical? | Reason |
+|---|---|---|
+| sendFeedbackNotification | ✓ HIGH | Düşük puan ulaşmazsa şikayet yanıtsız |
+| sendPasswordResetEmail | ✓ HIGH | Kullanıcı hesaba giremez |
+| sendCustomerReplyEmail | ✓ HIGH | Düşük-puan müşteri ilişkisi |
+| sendWelcomeEmail | LOW | Admin re-trigger |
+| sendNewsletterEmail | LOW | Bulk; ops spam'e maruz kalır |
+| sendTrialEndingEmail | MED | Daily reminder; tek kaçırma kritik değil |
+| sendFormConfirmationEmail | MED | UX courtesy |
+
+### Rate limiting
+
+`rateLimit('ops-alert:${template}', 10, 5*60*1000)` — Resend outage'ında 100 mail bombalanmaz, ilk 10 alert yeter. CLAUDE.md §14.2 in-memory; multi-instance Vercel'de instance başına ayrı, kabul edilen drift.
+
+### Yeni env var
+
+`OPS_EMAIL` (opsiyonel) — production ops dist list. Fallback chain: `OPS_EMAIL` → `NOTIFICATION_EMAIL` → console.error (sessiz).
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- DB schema değişikliği YOK
+- E2E:
+  - Geçerli `RESEND_API_KEY` ile düşük-puan mail send → owner mail alır, ops alert TETIKLEMEZ
+  - `RESEND_API_KEY` boş veya invalid → primary mail fail → ops alert mail "[OPS] Mail send failed: low-rating-alert"
+  - 11 ardışık fail → ilk 10 alert gider, 11. rate-limited (console.warn)
+  - `OPS_EMAIL` boş, `NOTIFICATION_EMAIL` set → fallback recipient
+  - Her ikisi de boş → console.error, alert sessiz
+
+### Phase 9+ backlog
+
+- Retry on transient errors (exponential backoff)
+- `MailDeliveryLog` DB tablo + admin "failed mails" panel
+- Resend webhook integration (bounce → auto unsubscribe + ops alert)
+- Slack webhook alternative (mail yerine)

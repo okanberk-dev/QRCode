@@ -864,7 +864,9 @@ Send başlamadan campaign `'sending'`, bitince `'sent'` + `sentAt` + counts. Eve
 2. `npx prisma generate` (stub DATABASE_URL ile, gerçek DB'siz)
 3. `npx prisma validate` (schema syntax)
 4. `npx tsc --noEmit -p tsconfig.json` (zero error)
-5. `npx next lint --max-warnings 0` (lint)
+5. `npx eslint .` (lint, max-warnings flag yok)
+
+**Trigger**: `on.pull_request` (branch filter YOK — stacked PR'lar (base ≠ main) da koşsun, CLAUDE.md §21.22). Push event sadece `main` branch'inde tetiklenir (zaten merge sonrası verifiy için). Eski `branches: [main]` filter PR base'i `claude/*` olunca CI'ı tamamen atlıyordu — düzeltildi.
 
 Concurrency cancel-in-progress: aynı PR'a yeni commit gelince eski run iptal. Workflow ~2-3 dk sürer. Local geliştirici için aynı 4 komutu local'de koşmak yeterli — CI sadece "review öncesi son güvenlik ağı".
 
@@ -1064,3 +1066,348 @@ Eski tarayıcı default isteklerini SVG'ye yönlendirir:
 **CI komut**: `npx eslint .` (max-warnings flag'i yok). Yeni error → fail. Mevcut warning → görünür ama bloke etmez.
 
 **Next 16 hazırlığı**: `next lint` deprecated. ESLint CLI'a geçildi. `next/core-web-vitals` + `next/typescript` preset'leri aynen kalıyor; sadece lint runner değişti.
+
+### 21.26 DB-driven mail content (9 template — tüm Pulse mailler)
+
+**Schema** (`prisma/schema.prisma` `MailTemplate`):
+- `key: String` — `'welcome' | 'newsletter' | 'trial-ending'` (MVP scope)
+- `locale: String` — `'tr' | 'en'`
+- `content: Json` — flat object: render fonksiyonunun inline `copy = isTr ? {...} : {...}` field'larıyla aynı isimler
+- `editable: Boolean @default(true)` — KVKK/legal copy için Phase 2'de field-level lock
+- `updatedById: String?` + `updatedAt: DateTime` — audit
+- `@@unique([key, locale])` — bir (template, dil) için tek satır
+
+**Helper** (`src/lib/email/copy-loader.ts`):
+```ts
+loadMailCopy<T>(key, locale, fallback) → Promise<T>
+```
+- DB'den `mailTemplate.findUnique` → JSON content çeker
+- `{...fallback, ...dbContent}` shallow merge → admin sadece istediği field'ı override eder, kalan default kalır
+- Process-local cache (60 sn TTL) — `Map<string, CacheEntry>`. Vercel serverless cold start'ta sıfırlanır, kabul edilen drift.
+- DB error → fallback (mail kırılmaz). `console.error` ile log düşer.
+- `invalidateMailCopyCache(key, locale)` — admin PATCH/DELETE sonrası cache bust
+
+**Render fonksiyonu pattern** (welcome/newsletter/trial-ending):
+```ts
+export async function renderXxx(params, locale): Promise<{...}> {
+  const inlineDefault = isTr ? {...} : {...};
+  const copy = await loadMailCopy('xxx', locale, inlineDefault);
+  // copy artık DB-merge'lı; render aynen devam
+}
+```
+3 render fonksiyonu artık `async` — sender'lar `await renderXxx(...)` çağırır.
+
+**Admin UI**:
+- `/admin/mail-templates` (liste) — 3×2 = 6 kart grid, seeded/not-seeded durumu
+- `/admin/mail-templates/[key]/[locale]` (edit form) — `MailTemplateEditor.tsx` schema-bilinçli alan listesi (`FIELDS_BY_TEMPLATE` map'i her template için input + textarea field'ları + hint'ler tanımlar)
+- Eylemler: **Önizle** (yeni tab dev preview), **Test mail at** (admin'in kendi e-postasına), **Kaydet** (PATCH), **Varsayılana dön** (DELETE → kod-içi default)
+- Sidebar: "Mail İçerikleri" (FileEdit icon, superadmin)
+
+**API**:
+- `GET /api/admin/mail-templates` — full grid (seeded/not seeded)
+- `GET /api/admin/mail-templates/[key]/[locale]` — tek template content
+- `PATCH /api/admin/mail-templates/[key]/[locale]` — content upsert + cache invalidate. Empty string field'lar drop edilir (admin "varsayılana dön" istediği field için).
+- `DELETE /api/admin/mail-templates/[key]/[locale]` — full revert + cache invalidate
+
+**Seed** (`scripts/seed-mail-templates.ts`):
+```bash
+DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts
+```
+Idempotent. 6 satır upsert. Çağrıldığında **admin-edited content'i override eder** — operator "kod default'larına geri dön" istediğinde çalıştırılır.
+
+**Phase 2 backlog** (yapılmadı, gelecek scope):
+- Kalan 6 template DB-driven (forgot-password, form-confirmation, low-rating-alert, new-review, weekly-report, customer-reply)
+- Dynamic placeholder injection: `${firstName}`, `${restaurantName}` gibi runtime substitution. Şu an `welcome.titleHi` `Merhaba ${name}.` interpolation render fonksiyonunda yapılıyor; admin override edemez (per-recipient personalization).
+- `editable: false` field-level flag + UI read-only (KVKK metinleri için)
+- Audit log (`MailTemplateRevision { templateId, content, editedAt, editorId }`)
+- Redis-backed cache (multi-instance Vercel'de drift sıfır)
+
+**Faz 1 hardcoded cleanup** (aynı PR):
+- Newsletter `stats` array'i → `params.stats?` opsiyonel param. Cron geçirmediği için band gizlenir (eski `+184% / 1.4s` placeholder'ları yok).
+- Weekly-report 3. stat hücre (`'1.4s'` response time) kaldırıldı → 3-col → 2-col layout. Backend tracking eklendiğinde tekrar `stats.push({...})` ile geri açılır.
+- Customer-reply `defaultActions` (3 sabit Kadıköy hikayesi) silindi. `params.actions` undefined/empty → "Aldığımız aksiyonlar" kart gizlenir.
+- Trial-ending fiyat fallback yorumla işaretlendi (Faz 2'de DB-driven olabilir).
+
+### 21.27 Phase 2 — 5 template extension + KVKK field lock
+
+**Genişletilen template'ler** (2026-04 Phase 2): `forgot-password`, `low-rating-alert`, `new-review`, `weekly-report`, `customer-reply`. PR #75 (welcome/newsletter/trial-ending) ile aynı pattern: render fn `async`, sender `await`, `loadMailCopy('xxx', locale, inlineDefault)`. **Form-confirmation** 4-variant yapısı (`contact/career/roi/newsletter`) bu PR'a alınmadı — Phase 3'te nested JSON ile DB-driven yapılacak.
+
+**Field-level lock** (`src/lib/email/locked-fields.ts`):
+- KVKK / güvenlik kritik field'lar admin UI'da `disabled` + 🔒 KVKK badge
+- API PATCH endpoint server-side `stripLockedFields()` ile drop eder (defence in depth)
+- Mevcut locked field'lar:
+  - `forgot-password`: `statusText`, `notYouTitle`, `notYouBody`, `notYouLink`
+  - `customer-reply`: `sentLine`, `sentSuffix` (Buaze attribution disclosure)
+
+**Editor**: `MailTemplateEditor.tsx` 8 template entry, her field için opsiyonel `locked: true; lockReason: '...'` flag. UI render: `<input disabled>` + kırmızı border + lock icon + reason hint.
+
+**`SUPPORTED_MAIL_KEYS` export** (`src/lib/email/copy-loader.ts`): API route + page validator + editor tek source-of-truth'tan import eder. Yeni template eklerken bu array'i + `MailTemplateKey` union'u + `FIELDS_BY_TEMPLATE` map'i + `TEMPLATE_LABELS` map'i + seed entry'i + (varsa) `LOCKED_MAIL_FIELDS` set'i — bağlantı checklist'i CLAUDE.md §21.26'da.
+
+**Seed**: `npx tsx scripts/seed-mail-templates.ts` artık 16 satır upsert eder (8 template × 2 locale).
+
+**Phase 3 backlog** (yapılmadı):
+- form-confirmation DB-driven (nested `{ contact: {...}, career: {...}, roi: {...}, newsletter: {...} }` JSON)
+- Dynamic placeholder injection (`${firstName}`, `${restaurantName}` runtime)
+- Audit log (`MailTemplateRevision`)
+- Redis cache (gerekli değil şimdilik — 60s drift kabul)
+
+### 21.28 Phase 3 — `form-confirmation` 4-variant nested JSON
+
+`form-confirmation` template'i **4 formType variant** taşır (`contact / career / roi / newsletter`); her variant 14 string field içerir. Phase 2'de erteleme sebebi: tek-row düz JSON yapısı 4 variant'ı doğru modelleyemiyordu. Phase 3 çözümü: aynı `MailTemplate.content: Json` schema'sıyla nested JSON.
+
+**DB shape** (per locale row):
+```json
+{
+  "contact":    { "subject": "...", "preheader": "...", ... },
+  "career":     { ... },
+  "roi":        { ... },
+  "newsletter": { ... }
+}
+```
+
+**Loader** (`src/lib/email/copy-loader.ts`): `loadMailCopy<T>` defansif normalisation iki shape kabul eder — flat `string` (8 template) **veya** plain object of strings (form-confirmation). Array / null / number / nested-deeper yine drop edilir.
+
+**Render** (`src/lib/email/templates/form-confirmation.ts`): Async; iki seviyeli merge:
+```ts
+const merged = await loadMailCopy('form-confirmation', locale, FORM_COPY);
+const variantOverride = merged[formType] ?? {};
+const copy = { ...FORM_COPY[formType], ...variantOverride };
+```
+Admin sadece bir variant'ın bir field'ını override etse, kalan field'lar inline default'tan gelir.
+
+**API endpoint** (`/api/admin/mail-templates/[key]/[locale]`): PATCH validation `parsed.key === 'form-confirmation'` ise top-level değerlere plain object kabul eder, içindeki string'leri trim + drop empty + drop non-string. Diğer 8 template hâlâ flat-only.
+
+**Admin UI**:
+- Tek route: `/admin/mail-templates/form-confirmation/[locale]` — `MailTemplateEditor` `templateKey === 'form-confirmation'` branch'inde `<FormConfirmationEditor>` render eder.
+- `<FormConfirmationEditor>` 4 variant tab'ı (`İletişim / Kariyer / ROI / Bülten`) + her variant için aynı 14 field listesi.
+- State: `Record<FormType, Record<string, string>>` — her tab kendi state'ini tutar; "Kaydet" tüm 4 variant'ı tek PATCH'te gönderir.
+- Önizle / Test mail butonları aktif tab'ın variant'ını query string ile preview / send-test endpoint'ine geçirir.
+
+**`<MailFieldInput>`** (`src/components/admin/MailFieldInput.tsx`) — tek input render component; flat editor + variant editor aynı şeyi kullanır (DRY). Locked badge + multiline + hint hepsi tek yerde.
+
+**Liste sayfası**: `TEMPLATE_LABELS` 9 entry, grid otomatik 9 × 2 = 18 kart.
+
+**Seed**: 18 row upsert (16 mevcut + 2 nested form-confirmation).
+
+**Phase 4 backlog** (yapılmadı):
+- Dynamic placeholder injection (`${firstName}`, `${restaurantName}` runtime substitution)
+- Audit log (`MailTemplateRevision`)
+- Redis cache (gerekli olduğunda)
+- Per-field validation (max length, format) — şu an sadece trim + non-empty
+
+### 21.29 Phase 4 — Dynamic placeholder injection
+
+Admin CMS'inde editlenen copy field'larında runtime placeholder substitution. Admin "Merhaba ${firstName}." yazınca her mailde gerçek isimle dolar; her şey backward compatible — placeholder'sız field'lar olduğu gibi render olur.
+
+**Helper** (`src/lib/email/placeholders.ts`):
+- `MAIL_PLACEHOLDERS: Record<MailTemplateKey, string[]>` — per-template whitelist
+- `substitutePlaceholders(text, vars, mode)` — `${key}` → vars[key]; mode='html' HTML-escape (XSS guard), mode='text' plain
+- `validatePlaceholders(text, allowed)` — token whitelist check
+- `findInvalidPlaceholders(content, allowed)` — flat veya nested (form-confirmation) content içinde ilk geçersiz token'ı bulur
+- `deepSubstitute(value, vars, mode)` — recursive walk, string leaf'larda substitute
+
+**Render fn pattern** (9 template'in tümünde):
+```ts
+const merged = await loadMailCopy('xxx', locale, inlineDefault);
+const vars = { firstName: params.firstName || fallback, ... };
+const copy = deepSubstitute(merged, vars, 'html');
+const copyText = deepSubstitute(merged, vars, 'text');
+// HTML body uses `copy.X` (HTML-escaped substitutions)
+// Text body uses `copyText.X` (plain substitutions)
+```
+
+**Whitelist** (per template):
+| Template | Placeholders |
+|---|---|
+| welcome | `${firstName}` |
+| newsletter | `${firstName}` |
+| trial-ending | `${firstName}` `${restaurantName}` `${daysLeft}` |
+| forgot-password | `${firstName}` |
+| low-rating-alert | `${restaurantName}` `${customerName}` `${rating}` `${branch}` |
+| new-review | `${restaurantName}` `${customerName}` `${rating}` |
+| weekly-report | `${restaurantName}` `${totalReviews}` `${avgRating}` |
+| customer-reply | `${customerFirstName}` `${restaurantName}` `${ownerName}` |
+| form-confirmation | `${firstName}` |
+
+**API validation** (`PATCH /api/admin/mail-templates/[key]/[locale]`):
+- `findInvalidPlaceholders(cleaned, MAIL_PLACEHOLDERS[key])` — typo yakalanır
+- 400 response: `{ error: 'invalid_placeholder', field, invalid: [...], allowed: [...] }`
+- Editor'lerde user-friendly Turkish error gösterilir
+
+**Editor UI** (`MailFieldInput`):
+- `field.placeholders?: readonly string[]` — input altında chip row görünür
+- Tıklayınca caret konumuna `${token}` literal eklenir
+- Locked field'lar chip göstermez (KVKK lock)
+- Editor `FieldDef` schema'sı: yeni alanlar `placeholders: MAIL_PLACEHOLDERS[key]` ile etkinleştirilir
+
+**Yeni placeholder eklemek**:
+1. `MAIL_PLACEHOLDERS[key]` array'ine ekle
+2. Render fn'inde `vars` object'ine değeri map et
+3. (Opsiyonel) Editor `FieldDef.placeholders`'ı güncelle (hint UI için)
+
+**XSS guard**: HTML mode substitution `escapeHtml` kullanır — admin "${customerName}" yazıp customer name `<script>` olsa bile mail'de `&lt;script&gt;` olarak çıkar. Text mode escape yapmaz (text mail saf metin).
+
+**Phase 5+ backlog**:
+- Audit log (`MailTemplateRevision`)
+- Redis cache (multi-instance drift)
+- Per-field validation (max length, format)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+
+### 21.30 Phase 5 — Audit log (`MailTemplateRevision`)
+
+Mail template her edit'inde DB'ye snapshot yazılır. KVKK uyumu (kim ne zaman ne değiştirdi) + rollback yeteneği (admin yanlış save etse, önceki sürüme dön).
+
+**Schema** (`prisma/schema.prisma` `MailTemplateRevision`):
+```prisma
+model MailTemplateRevision {
+  id          String        @id @default(cuid())
+  templateId  String?       // SetNull on MailTemplate delete (history survives)
+  templateKey String        // denormalized for query after delete
+  locale      String
+  editType    String        // 'created' | 'updated' | 'deleted' | 'reverted'
+  content     Json          // snapshot of the new content after edit
+  editedById  String?
+  createdAt   DateTime
+}
+```
+
+**Endpoint'ler** (hepsi `prisma.$transaction(async tx => ...)` ile sarılı — audit log canlı row'la asla drift etmez):
+- `PATCH /api/admin/mail-templates/[key]/[locale]` — upsert + revision tek transaction. `editType` upsert sonrası `createdAt === updatedAt` check'iyle atomik türetilir (find-then-upsert TOCTOU race kapatıldı).
+- `DELETE /api/admin/mail-templates/[key]/[locale]` — delete + 'deleted' revision tek transaction. Order: delete önce → P2025 throw varsa transaction rollback olur, audit drift olmaz. SetNull FK ile audit history survive eder.
+- `GET /api/admin/mail-templates/[key]/[locale]/revisions` — last 50 revision, editor username/email join'lü.
+- `POST /api/admin/mail-templates/[key]/[locale]/revisions/[id]/revert` — upsert + 'reverted' revision tek transaction; revisionId path mismatch (templateKey/locale farklı) ise 400.
+
+**Soft-prune** (`src/lib/email/revisions.ts` shared helper): PATCH/DELETE/revert hepsinin sonunda çağrılır. Last 50'yi tutar, geri kalanı `deleteMany`. Transaction'ın DIŞINDA — best-effort cleanup, atomically commit gerekmiyor.
+
+**Editor UI**: `<MailRevisionHistory>` slide-over modal. "Geçmiş" butonu açar. Listede her revision için editType badge + tarih + editor + "İçeriği göster" expand + "Bu sürüme dön" buton. Revert sonrası editor state otomatik refresh (reloadKey trigger).
+
+**Locked field defansı**: Revert sırasında `stripLockedFields()` yine çalışır — eski revision KVKK öncesi unlocked field içeriyorsa, revert apply eder ama locked field drop edilir.
+
+**Cross-template guard**: revert endpoint revisionId path'iyle gelirken `templateKey` + `locale` mismatch olursa 400 döner. UI bug ile A template'ini B'ye revert etmeyi engeller.
+
+**Phase 6+ backlog**:
+- Diff viewer (revision A vs B side-by-side)
+- Per-field history filtering
+- Bulk export (KVKK soruşturma için CSV/JSON)
+- Redis cache (multi-instance drift)
+- Per-field validation (max length, format)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+
+### 21.31 Phase 6 — Per-field length validation
+
+Mail template'lerde admin paste-bomb'larını engelleyen length validation. 300 karakterlik subject Gmail spam filter'ını tetikler, 500 karakterlik eyebrow hero layout'u 4 satıra wrap eder. Loose limits — gerçek abuse'u yakalar, küçük overage'larda nag etmez.
+
+**Helper** (`src/lib/email/field-validation.ts`):
+- `EXPLICIT: Record<string, FieldValidation>` — per-key override (`subject: 100`, `intro: 1000`, vb.)
+- `getValidationByPattern()` — fallback: `*body*` 400, `*eyebrow*` 80, `*cta/link*` 60, default 200
+- `validateField(key, value)` — null = valid, structured error = invalid
+- `findInvalidField(content)` — flat veya nested (form-confirmation) content içinde ilk geçersiz field
+
+**Limit table**:
+| Field grup | Max | Sebep |
+|---|---|---|
+| `subject` | 100 | Gmail truncate ≥70, spam score ≥100 |
+| `preheader` | 200 | Inbox preview |
+| `*eyebrow*` | 80 | Single-line layout |
+| `title*` | 80 | Hero h1/h2 wrap |
+| `titleAccent` | 60 | Vurgu kelime |
+| `intro` | 1000 | Body paragraph |
+| `*body*` | 400 | Side card body |
+| `*cta`/`*link*` | 60 | Button label |
+| Other (default) | 200 | Generic chrome |
+
+**API validation** (`PATCH /api/admin/mail-templates/[key]/[locale]`):
+- `findInvalidField(cleaned)` placeholder validation'dan sonra
+- 400 response: `{ error: 'invalid_field_length', field, reason: 'too_long' | 'too_short', max?, min?, actual }`
+- Form-confirmation nested için path `variant.field` formatında
+
+**Editor UI** (`MailFieldInput`):
+- Live char counter input altında (sağ-aligned, mono font, 10px)
+- Renk: `<%80` neutral gray, `>=80%` amber, `>100%` red
+- Locked field counter göstermez
+
+**TR error mapping** (editor `onSave`):
+- `too_long`: `"subject" alanı çok uzun: 142 karakter (max 100).`
+- `too_short`: `"cta" alanı çok kısa: 2 karakter (min 5).`
+
+**Yeni field eklemek**: `EXPLICIT` dict'e ekle veya pattern-fallback'e güven. Çoğu yeni field name (`*Eyebrow`, `*Cta`) zaten covered.
+
+**Phase 7+ backlog**:
+- Diff viewer (revision A vs B)
+- Bulk export (CSV/JSON revision history)
+- Redis cache (multi-instance drift)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+- URL field format validation (`http(s)://` zorunluluk)
+
+### 21.32 Phase 7 — Revision diff viewer
+
+Phase 5 audit log'unun debug değerini katlayan field-level diff. Admin "ne değişmiş" görsün — JSON blob squint etmesin. jsdiff dep yok (CLAUDE.md §7 minimum dependency); copy field'ları string-bazlı, char-level diff yerine field-level "subject was X, now Y" daha actionable.
+
+**Helper** (`src/lib/email/revision-diff.ts`):
+- `DiffEntry` union: `{ kind: 'added' | 'removed' | 'changed', path, ... }`
+- `computeDiff(before, after)` → `{ entries, unchangedCount }`
+- Flat + nested (form-confirmation `variant.field` path) destekler
+- Sort: `changed` → `added` → `removed`, alfabetik path
+
+**Component** (`src/components/admin/MailRevisionDiff.tsx`):
+- `before` + `after` prop (her ikisi `unknown`)
+- 3 entry tipi:
+  - `changed`: amber badge + `−` (red 50/60 bg) + `+` (emerald 50/60 bg)
+  - `added`: emerald card
+  - `removed`: red card
+- Truncate at 200 char (uzun string'ler için)
+- "Bu iki sürüm arasında değişiklik yok (12 alan aynı)" empty state
+
+**Integration** (`MailRevisionHistory`):
+- Her revision card'ında "Önceki sürümle farkı göster" buton (GitCompare icon)
+- Click → inline expand: bu revision vs bir önceki revision
+- Oldest revision için `before = {}` (empty start) → tüm field'lar `added` görünür
+- "İçeriği göster" (raw JSON) buton korundu — diff özet, JSON detay
+
+**Phase 8+ backlog**:
+- Bulk export (CSV/JSON revision history)
+- Redis cache (multi-instance drift)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+- URL field format validation
+- A/B compare (any two revisions, not just adjacent)
+
+### 21.33 Phase 8 — Operator alert on critical mail failure
+
+Bazı mail akışları zaman-kritik: düşük puan uyarısı restoran sahibine ulaşmazsa şikayet saatlerce yanıtsız kalır. Forgot-password mail bounce ederse kullanıcı hesabına giremez. Sonsuza dek retry edemeyiz, ama ops'a "bu mail gitmedi" diyebiliriz, manuel müdahale etsinler.
+
+**Helper** (`src/lib/email/ops-alert.ts`):
+- `notifyOpsOfMailFailure({ template, recipient, reason, metadata })`
+- Plain-text mail to `OPS_EMAIL` env (fallback `NOTIFICATION_EMAIL`)
+- Subject: `[OPS] Mail send failed: ${template}`
+- Body: structured failure context (template, recipient, reason, metadata, ISO timestamp)
+- Uses `sendResendEmail` from `email-internal.ts` directly — public sender'lara recurse etmez (Resend outage'ında sonsuz alert loop riski)
+- **Rate-limited** 10 alerts / template / 5 dk → outage'da inbox bombalanmaz
+- Errors swallowed + console.error — caller'ın kararı zaten `false` dönmüş, üstüne throw atmak request crash eder
+
+**Internal layer** (`src/lib/email-internal.ts`):
+- `sendResendEmail` ayrı dosyaya çıkarıldı — ops-alert.ts ↔ email.ts circular dep önleyici
+- email.ts public sender'ları artık `from './email-internal'` import eder
+
+**Wired senders** (V1 — kritik HIGH-criticality):
+- `sendFeedbackNotification` — düşük puan uyarısı + 5★ yorum (rating ≥4 → 'new-review' template, <4 → 'low-rating-alert')
+- `sendPasswordResetEmail` — kullanıcı hesabı locked durumda; ops manuel recovery code issuer
+- `sendCustomerReplyEmail` — düşük-puan müşterisi yanıt almadı; müşteri ilişkisi riski
+
+**NOT wired** (V2 backlog):
+- `sendWelcomeEmail` — re-trigger admin panelden mümkün
+- `sendNewsletterEmail` — bulk; ops bombalanır
+- `sendTrialEndingEmail` — daily reminder; tek kaçırma kritik değil
+- `sendFormConfirmationEmail` — UX teyit; gitmeyince kullanıcı tekrar dener
+
+**Yeni env**: `OPS_EMAIL` (opsiyonel) — production ops distribution list. Yoksa `NOTIFICATION_EMAIL` fallback. Hiçbiri yoksa alert sessiz kalır + console.error ("no recipient configured").
+
+**Yeni sender'a wire eklerken**:
+1. Sender fn'inde `await sendResendEmail(...)` sonucunu yakala (`const ok = await ...`)
+2. `if (!ok) { await notifyOpsOfMailFailure({ template, recipient, reason, metadata: { ... } }); }`
+3. `return ok` — ops alert async ama caller-blocking değil (sender yine boolean döner)
+
+**Phase 9+ backlog**:
+- Retry on transient errors (5xx, network) — exponential backoff [500ms, 1s, 2s]
+- DB persistence (`MailDeliveryLog` table) — admin paneli "failed mails" list + manual re-send
+- Resend webhook integration → bounce/complaint → auto unsubscribe + ops alert
+- Slack webhook alternative (ops mail yerine)

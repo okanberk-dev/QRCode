@@ -2,6 +2,8 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderH2, renderP, spacer, renderTwoColCards } from '../components';
+import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export interface CustomerReplyParams {
   customerName?: string | null;
@@ -23,10 +25,10 @@ export interface CustomerReplyParams {
   signaturePostscript?: string | null;
 }
 
-export function renderCustomerReply(
+export async function renderCustomerReply(
   params: CustomerReplyParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const customerFirst = params.customerName ? escapeHtml(params.customerName).split(' ')[0] : (isTr ? 'merhaba' : 'hi');
   const restaurant = escapeHtml(params.restaurantName);
@@ -41,10 +43,10 @@ export function renderCustomerReply(
     ? `Yaşadığın deneyim için özür dileriz. Seni tekrar ${params.restaurantName}'de ağırlamak isteriz.`
     : `We\'re sorry about your experience. We\'d love to welcome you back to ${params.restaurantName}.`;
 
-  const copy = isTr ? {
+  const inlineDefault = isTr ? {
     headerEyebrow: 'Sana özel · Kişisel yanıt',
     ownerLabel: 'İŞLETMECİ',
-    titleA: `${customerFirst},`,
+    titleA: '${customerFirstName},',
     titleSubA: 'bizi',
     titleSubItalic: 'duyduğun için',
     titleSubB: 'teşekkürler',
@@ -58,15 +60,10 @@ export function renderCustomerReply(
     mapsEyebrow: 'Yol tarifi',
     sentLine: 'Bu yanıt',
     sentSuffix: 'ile gönderildi',
-    defaultActions: [
-      ['Kahveyi yeniden ısıtmak yerine taze yapma kuralı', 'Artık her durumda yeni demleme yapıyoruz.'],
-      ['Vardiya başında bar–salon koordinasyonu', 'Boş saatlerde bile garson 90 saniyede masada.'],
-      ['Geri bildirimi tüm ekibe aktardık', 'Pazartesi briefingimizde okuduk ve teşekkür ettik.'],
-    ] as Array<[string, string]>,
   } : {
     headerEyebrow: 'For you · Personal reply',
     ownerLabel: 'OWNER',
-    titleA: `${customerFirst},`,
+    titleA: '${customerFirstName},',
     titleSubA: 'thank you for',
     titleSubItalic: 'hearing us',
     titleSubB: '',
@@ -80,25 +77,31 @@ export function renderCustomerReply(
     mapsEyebrow: 'Directions',
     sentLine: 'Sent via',
     sentSuffix: '',
-    defaultActions: [
-      ['Fresh brew rule for any returned coffee', 'No re-warming, ever — fresh pour every time.'],
-      ['Bar–floor coordination at shift start', 'Server within 90 seconds even on quiet hours.'],
-      ['Feedback shared with the whole team', 'Read in Monday briefing, with thanks.'],
-    ] as Array<[string, string]>,
   };
+
+  // DB-merged + placeholder substitution. `sentLine`/`sentSuffix` are the
+  // Buaze-attribution disclosure — KVKK-locked server-side (locked-fields.ts).
+  const merged = await loadMailCopy('customer-reply', locale, inlineDefault);
+  const vars = {
+    customerFirstName: customerFirst,
+    restaurantName: params.restaurantName,
+    ownerName: ownerName,
+  };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
 
   const message = escapeHtml(params.message).replace(/\n\s*\n/g, '</p><p style="font-family:' + FONTS.body + ';font-size:15px;line-height:1.7;color:' + PULSE.n700 + ';margin:14px 0 0;letter-spacing:-0.005em;">').replace(/\n/g, '<br>');
 
-  // Actions card — JSX:57-91. Default to 3-item hardcoded list if not overridden.
-  const actionItems: Array<[string, string]> = (() => {
-    if (Array.isArray(params.actions)) {
-      return params.actions.map((title) => {
-        const desc = params.actionDescriptions?.[title] ?? '';
-        return [title, desc] as [string, string];
-      });
-    }
-    return copy.defaultActions;
-  })();
+  // Actions card — JSX prototipinde Kadıköy Bistro hikayesine özel 3 sabit
+  // örnek ("kahve / vardiya / briefing") vardı. Gerçek müşteri yanıtında
+  // restoran kendi gerçek aksiyonlarını param.actions ile geçirir; aksi
+  // durumda bu kart **gizlenir** — varsayılan generic 3 cümle gönderilirse
+  // içerik müşteri için anlamsız kalıyordu.
+  const actionItems: Array<[string, string]> = Array.isArray(params.actions)
+    ? params.actions
+        .filter((t): t is string => typeof t === 'string' && t.trim().length > 0)
+        .map((title) => [title, params.actionDescriptions?.[title] ?? ''] as [string, string])
+    : [];
 
   const actionsBlock = actionItems.length ? `
     <tr>
@@ -222,7 +225,10 @@ export function renderCustomerReply(
     </table>
   `;
 
-  // Trim ownerInitials/restaurantInitial usage warning (referenced for clarity)
+  // ownerInitials is computed up top for a future avatar variant (JSX
+  // prototype showed an owner-initials chip we haven't ported yet); keep
+  // the calculation around so the data is ready when that block lands.
+  // The `void` discards the value so eslint's no-unused-vars stays quiet.
   void ownerInitials;
 
   const html = pulseLayout({

@@ -1,8 +1,11 @@
 name: CI
 
 on:
+  # Run on every PR regardless of base branch — stacked PRs (base = another
+  # claude/* branch) need validation too. CLAUDE.md §21.22 documents the
+  # stacked workflow; this filter would otherwise skip non-main bases and
+  # let typo'd code through.
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 

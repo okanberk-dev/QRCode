@@ -9,87 +9,87 @@ datasource db {
 }
 
 model User {
-  id            String       @id @default(cuid())
-  email         String       @unique
-  passwordHash  String       @map("password_hash")
-  name          String?
-  role          String       @default("restaurant_owner")
-  plan          String       @default("trial")      // trial | monthly | yearly
-  trialEndsAt   DateTime?    @map("trial_ends_at")
-  locale        String       @default("tr")
-  isActive      Boolean      @default(true) @map("is_active")
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  passwordHash        String    @map("password_hash")
+  name                String?
+  role                String    @default("restaurant_owner")
+  plan                String    @default("trial") // trial | monthly | yearly
+  trialEndsAt         DateTime? @map("trial_ends_at")
+  locale              String    @default("tr")
+  isActive            Boolean   @default(true) @map("is_active")
   // Last time the trial-reminders cron sent this user a "trial ending" email.
   // Used as a 20-hour dedup so a single cron tick can't fire repeatedly and
   // 4 daily ticks (1/2/3/4 days remaining) each send exactly one mail.
   lastTrialReminderAt DateTime? @map("last_trial_reminder_at")
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
 
-  restaurants   Restaurant[]
+  restaurants Restaurant[]
 
   @@map("users")
 }
 
 model Restaurant {
-  id                String     @id @default(cuid())
-  slug              String     @unique
+  id                String    @id @default(cuid())
+  slug              String    @unique
   name              String
-  category          String     @default("Restoran")
+  category          String    @default("Restoran")
   address           String?
   phone             String?
-  workingHours      String?    @map("working_hours")
-  googlePlaceId     String?    @map("google_place_id")
-  googleReviewUrl   String?    @map("google_review_url")
-  getirYemekUrl     String?    @map("getir_yemek_url")
-  yemekSepetiUrl    String?    @map("yemek_sepeti_url")
-  trendyolYemekUrl  String?    @map("trendyol_yemek_url")
-  notificationEmail String?    @map("notification_email")
-  primaryColor      String     @default("#1a73e8")
-  isActive          Boolean    @default(true) @map("is_active")
-  menuEnabled       Boolean    @default(true) @map("menu_enabled")
-  menuPublished     Boolean    @default(false) @map("menu_published")
-  menuLogoUrl       String?    @map("menu_logo_url") @db.Text
-  menuUpdatedAt     DateTime?  @map("menu_updated_at")
-  menuTheme         String     @default("classic") @map("menu_theme")
-  menuAccentColor   String?    @map("menu_accent_color")
-  createdAt         DateTime   @default(now()) @map("created_at")
-  updatedAt         DateTime   @updatedAt @map("updated_at")
+  workingHours      String?   @map("working_hours")
+  googlePlaceId     String?   @map("google_place_id")
+  googleReviewUrl   String?   @map("google_review_url")
+  getirYemekUrl     String?   @map("getir_yemek_url")
+  yemekSepetiUrl    String?   @map("yemek_sepeti_url")
+  trendyolYemekUrl  String?   @map("trendyol_yemek_url")
+  notificationEmail String?   @map("notification_email")
+  primaryColor      String    @default("#1a73e8")
+  isActive          Boolean   @default(true) @map("is_active")
+  menuEnabled       Boolean   @default(true) @map("menu_enabled")
+  menuPublished     Boolean   @default(false) @map("menu_published")
+  menuLogoUrl       String?   @map("menu_logo_url") @db.Text
+  menuUpdatedAt     DateTime? @map("menu_updated_at")
+  menuTheme         String    @default("classic") @map("menu_theme")
+  menuAccentColor   String?   @map("menu_accent_color")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  userId            String?    @map("user_id")
-  user              User?      @relation(fields: [userId], references: [id])
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id])
 
-  feedbacks         Feedback[]
-  qrGenerations     QrGeneration[]
-  adminUsers        AdminUser[]
-  menuCategories    MenuCategory[]
-  menuItems         MenuItem[]
-  analyticsEvents   MenuAnalyticsEvent[]
-  brandSettings     BrandSettings?
+  feedbacks       Feedback[]
+  qrGenerations   QrGeneration[]
+  adminUsers      AdminUser[]
+  menuCategories  MenuCategory[]
+  menuItems       MenuItem[]
+  analyticsEvents MenuAnalyticsEvent[]
+  brandSettings   BrandSettings?
 
   @@map("restaurants")
 }
 
 model QrGeneration {
-  id            String      @id @default(cuid())
-  qrUrl         String      @map("qr_url")
+  id          String   @id @default(cuid())
+  qrUrl       String   @map("qr_url")
   // tableNumber is intentionally a string — restaurants use mixed labels
   // ("A1", "2-outdoor", "VIP-3") so a numeric column would force lossy
   // coercion on the operator side.
-  tableNumber   String?     @map("table_number")
-  platform      String?     @map("platform")    // google | yemeksepeti | getir | trendyol_go
-  serviceType   String?     @map("service_type") // dine_in | takeout | delivery
-  type          String      @default("feedback") @map("type") // feedback | menu
-  createdAt     DateTime    @default(now()) @map("created_at")
+  tableNumber String?  @map("table_number")
+  platform    String?  @map("platform") // google | yemeksepeti | getir | trendyol_go
+  serviceType String?  @map("service_type") // dine_in | takeout | delivery
+  type        String   @default("feedback") @map("type") // feedback | menu
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  restaurantId  String      @map("restaurant_id")
-  restaurant    Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String     @map("restaurant_id")
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@index([restaurantId, createdAt])
   @@map("qr_generations")
 }
 
 model Feedback {
-  id                  String      @id @default(cuid())
+  id                  String  @id @default(cuid())
   rating              Int
   name                String?
   email               String?
@@ -97,28 +97,28 @@ model Feedback {
   comment             String?
   source              String?
   branch              String?
-  tableNumber         String?     @map("table_number")
-  ipAddress           String?     @map("ip_address")
-  userAgent           String?     @map("user_agent")
-  hasKvkkConsent      Boolean     @default(true) @map("has_kvkk_consent")
-  hasMarketingConsent Boolean     @default(false) @map("has_marketing_consent")
-  platform            String?     @map("platform")   // google | yemeksepeti | getir | trendyol_go
+  tableNumber         String? @map("table_number")
+  ipAddress           String? @map("ip_address")
+  userAgent           String? @map("user_agent")
+  hasKvkkConsent      Boolean @default(true) @map("has_kvkk_consent")
+  hasMarketingConsent Boolean @default(false) @map("has_marketing_consent")
+  platform            String? @map("platform") // google | yemeksepeti | getir | trendyol_go
 
   // Rich Feedback Additions
-  serviceType         String?     @map("service_type")
-  foodRating          Int?        @map("food_rating")
-  serviceRating       Int?        @map("service_rating")
-  atmosphereRating    Int?        @map("atmosphere_rating")
+  serviceType      String? @map("service_type")
+  foodRating       Int?    @map("food_rating")
+  serviceRating    Int?    @map("service_rating")
+  atmosphereRating Int?    @map("atmosphere_rating")
 
-  createdAt           DateTime    @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  restaurantId        String?     @map("restaurant_id")
-  restaurant          Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String?     @map("restaurant_id")
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
-  replies             FeedbackReply[]
-  flag                FeedbackFlag?
-  assignment          FeedbackAssignment?
-  tags                FeedbackTag[]
+  replies    FeedbackReply[]
+  flag       FeedbackFlag?
+  assignment FeedbackAssignment?
+  tags       FeedbackTag[]
 
   @@index([restaurantId, createdAt])
   @@index([ipAddress, createdAt])
@@ -132,14 +132,14 @@ model FeedbackReply {
   authorUserId String   @map("author_user_id")
   body         String   @db.Text
   channel      String   @default("internal") // internal | google | email
-  status       String   @default("sent")     // draft | sent | failed
+  status       String   @default("sent") // draft | sent | failed
   // Where the reply text came from. 'manual' = the operator typed it,
   // 'ai_copilot' = OpenAI Co-Pilot draft was approved, 'template_fallback'
   // = AI Co-Pilot returned a deterministic template (no key / API down).
   // Powers trial-ending mail's AI reply count and any future analytics on
   // operator vs AI-driven response throughput.
   source       String?  @default("manual")
-  createdAt    DateTime @default(now())      @map("created_at")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([feedbackId, createdAt])
   @@index([source, createdAt])
@@ -215,13 +215,13 @@ model ApiKey {
 }
 
 model BrandSettings {
-  restaurantId String     @id @map("restaurant_id")
-  logoUrl      String?    @map("logo_url")
-  accentColor  String?    @map("accent_color")
-  accentFont   String?    @map("accent_font")
-  updatedAt    DateTime   @default(now()) @updatedAt @map("updated_at")
+  restaurantId String   @id @map("restaurant_id")
+  logoUrl      String?  @map("logo_url")
+  accentColor  String?  @map("accent_color")
+  accentFont   String?  @map("accent_font")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@map("brand_settings")
 }
@@ -241,15 +241,15 @@ model GoogleIntegration {
 }
 
 model TeamMember {
-  id         String   @id @default(cuid())
-  ownerId    String   @map("owner_user_id")
+  id         String    @id @default(cuid())
+  ownerId    String    @map("owner_user_id")
   email      String
   name       String?
-  role       String   @default("manager")  // owner | manager | staff | viewer
-  locations  Json?    // string[] — restaurant ids
-  status     String   @default("invited")  // invited | active | revoked
+  role       String    @default("manager") // owner | manager | staff | viewer
+  locations  Json? // string[] — restaurant ids
+  status     String    @default("invited") // invited | active | revoked
   lastSeenAt DateTime? @map("last_seen_at")
-  createdAt  DateTime @default(now()) @map("created_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   @@unique([ownerId, email])
   @@index([ownerId, status])
@@ -257,20 +257,20 @@ model TeamMember {
 }
 
 model Campaign {
-  id             String   @id @default(cuid())
-  userId         String   @map("user_id")
-  restaurantId   String?  @map("restaurant_id")
-  name           String
-  placement      String   // table | receipt | door | pack
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  restaurantId String?  @map("restaurant_id")
+  name         String
+  placement    String // table | receipt | door | pack
   // count = how many physical QR pieces the operator wants printed
   // (table tents, receipts, door stickers, package inserts). Capped at
   // 10 000 in the API. NOT a usage counter.
-  count          Int      @default(1)
-  template       String   @default("lime") // lime | white | dark | minimal
-  color          String   @default("#C6F24E")
-  status         String   @default("draft") // draft | live | archived
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  count        Int      @default(1)
+  template     String   @default("lime") // lime | white | dark | minimal
+  color        String   @default("#C6F24E")
+  status       String   @default("draft") // draft | live | archived
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@index([userId, status])
   @@index([userId, restaurantId])
@@ -279,9 +279,9 @@ model Campaign {
 
 model NotificationPreference {
   userId           String   @id @map("user_id")
-  lowRatingEmail   Boolean  @default(true)  @map("low_rating_email")
+  lowRatingEmail   Boolean  @default(true) @map("low_rating_email")
   dailyDigestEmail Boolean  @default(false) @map("daily_digest_email")
-  weeklyReport     Boolean  @default(true)  @map("weekly_report")
+  weeklyReport     Boolean  @default(true) @map("weekly_report")
   slackWebhook     String?  @map("slack_webhook")
   updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
 
@@ -289,13 +289,13 @@ model NotificationPreference {
 }
 
 model AdminUser {
-  id           String      @id @default(cuid())
-  username     String      @unique
-  passwordHash String      @map("password_hash")
-  role         String      @default("superadmin")
-  restaurantId String?     @map("restaurant_id")
+  id           String  @id @default(cuid())
+  username     String  @unique
+  passwordHash String  @map("password_hash")
+  role         String  @default("superadmin")
+  restaurantId String? @map("restaurant_id")
 
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id])
 
   @@map("admin_users")
 }
@@ -308,9 +308,9 @@ model AdminAuditLog {
   id          String   @id @default(cuid())
   actorId     String   @map("actor_id")
   actorSource String   @map("actor_source") // 'admin' | 'user'
-  action      String                          // e.g. 'admin.users.update', 'admin.users.delete'
+  action      String // e.g. 'admin.users.update', 'admin.users.delete'
   targetId    String?  @map("target_id")
-  payload     Json?                           // before/after snapshot, redacted of secrets
+  payload     Json? // before/after snapshot, redacted of secrets
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([actorId, createdAt])
@@ -332,8 +332,8 @@ model Announcement {
   title         String
   message       String    @db.Text
   status        String    @default("draft") // draft | published | archived
-  severity      String    @default("info")  // info | warning | critical
-  locale        String    @default("all")   // all | tr | en
+  severity      String    @default("info") // info | warning | critical
+  locale        String    @default("all") // all | tr | en
   priority      Int       @default(0)
   startDate     DateTime? @map("start_date")
   endDate       DateTime? @map("end_date")
@@ -349,45 +349,45 @@ model Announcement {
 }
 
 model MenuCategory {
-  id           String     @id @default(cuid())
-  restaurantId String     @map("restaurant_id")
+  id           String    @id @default(cuid())
+  restaurantId String    @map("restaurant_id")
   name         String
   description  String?
-  sortOrder    Int        @default(0) @map("sort_order")
-  isVisible    Boolean    @default(true) @map("is_visible")
+  sortOrder    Int       @default(0) @map("sort_order")
+  isVisible    Boolean   @default(true) @map("is_visible")
   // Soft delete to mirror MenuItem.deletedAt — keeps history + survives the
   // onDelete: Restrict on items->category. Public/admin lists must filter
   // `deletedAt IS NULL`.
-  deletedAt    DateTime?  @map("deleted_at")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  items        MenuItem[]
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items      MenuItem[]
 
   @@index([restaurantId, sortOrder])
   @@map("menu_categories")
 }
 
 model MenuItem {
-  id           String       @id @default(cuid())
-  restaurantId String       @map("restaurant_id")
-  categoryId   String       @map("category_id")
+  id           String    @id @default(cuid())
+  restaurantId String    @map("restaurant_id")
+  categoryId   String    @map("category_id")
   name         String
   description  String?
-  priceCents   Int          @default(0) @map("price_cents")
-  currency     String       @default("TRY")
-  imageUrl     String?      @map("image_url") @db.Text
-  badges       String[]     @default([])
-  isAvailable  Boolean      @default(true) @map("is_available")
-  isOutOfStock Boolean      @default(false) @map("is_out_of_stock")
-  sortOrder    Int          @default(0) @map("sort_order")
-  deletedAt    DateTime?    @map("deleted_at")
-  createdAt    DateTime     @default(now()) @map("created_at")
-  updatedAt    DateTime     @updatedAt @map("updated_at")
+  priceCents   Int       @default(0) @map("price_cents")
+  currency     String    @default("TRY")
+  imageUrl     String?   @map("image_url") @db.Text
+  badges       String[]  @default([])
+  isAvailable  Boolean   @default(true) @map("is_available")
+  isOutOfStock Boolean   @default(false) @map("is_out_of_stock")
+  sortOrder    Int       @default(0) @map("sort_order")
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  category     MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  restaurant Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category   MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
 
   @@index([restaurantId])
   @@index([categoryId, sortOrder])
@@ -395,17 +395,17 @@ model MenuItem {
 }
 
 model MenuAnalyticsEvent {
-  id           String     @id @default(cuid())
-  restaurantId String     @map("restaurant_id")
-  categoryId   String?    @map("category_id")
-  productId    String?    @map("product_id")
-  eventType    String     @map("event_type")   // menu_view | menu_category_click | menu_product_view | menu_product_click | menu_upsell_click
-  sessionId    String     @map("session_id")
-  sourceType   String?    @map("source_type")  // qr | direct | table | link | delivery
+  id           String   @id @default(cuid())
+  restaurantId String   @map("restaurant_id")
+  categoryId   String?  @map("category_id")
+  productId    String?  @map("product_id")
+  eventType    String   @map("event_type") // menu_view | menu_category_click | menu_product_view | menu_product_click | menu_upsell_click
+  sessionId    String   @map("session_id")
+  sourceType   String?  @map("source_type") // qr | direct | table | link | delivery
   metadata     Json?
-  createdAt    DateTime   @default(now()) @map("created_at")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@index([restaurantId, eventType, createdAt])
   @@index([restaurantId, categoryId, eventType, createdAt])
@@ -418,7 +418,7 @@ model MenuAnalyticsEvent {
 model BlogPost {
   id          String   @id @default(cuid())
   slug        String
-  locale      String   // 'tr' or 'en'
+  locale      String // 'tr' or 'en'
   title       String
   description String
   content     String   @db.Text
@@ -442,14 +442,14 @@ model CaseStudy {
   sectorEn    String?  @map("sector_en")
   location    String
   heroImage   String   @map("hero_image")
-  heroTr      String   @db.Text @map("hero_tr")
-  heroEn      String   @db.Text @map("hero_en")
-  subtitleTr  String?  @db.Text @map("subtitle_tr")
-  subtitleEn  String?  @db.Text @map("subtitle_en")
-  stats       Json     // [{label:{tr,en}, value}]
-  highlights  Json     // [{tr, en}]
-  quoteTr     String?  @db.Text @map("quote_tr")
-  quoteEn     String?  @db.Text @map("quote_en")
+  heroTr      String   @map("hero_tr") @db.Text
+  heroEn      String   @map("hero_en") @db.Text
+  subtitleTr  String?  @map("subtitle_tr") @db.Text
+  subtitleEn  String?  @map("subtitle_en") @db.Text
+  stats       Json // [{label:{tr,en}, value}]
+  highlights  Json // [{tr, en}]
+  quoteTr     String?  @map("quote_tr") @db.Text
+  quoteEn     String?  @map("quote_en") @db.Text
   personName  String?  @map("person_name")
   personRole  Json?    @map("person_role") // {tr, en}
   isPublished Boolean  @default(true) @map("is_published")
@@ -498,12 +498,67 @@ model NewsletterCampaign {
   sentAt      DateTime? @map("sent_at")
   sentCount   Int?      @map("sent_count")
   failedCount Int?      @map("failed_count")
-  createdAt   DateTime  @default(now())   @map("created_at")
-  updatedAt   DateTime  @updatedAt        @map("updated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@index([status, scheduledAt])
   @@index([createdAt])
   @@map("newsletter_campaigns")
+}
+
+// Admin-editable copy for selected mail templates (welcome, newsletter,
+// trial-ending in MVP). Each (key, locale) pair holds a JSON content blob
+// keyed by the inline `copy = {...}` field names. Render functions merge
+// DB content over their inline default — missing fields gracefully fall
+// back to code, so a partial / corrupt row never breaks send.
+model MailTemplate {
+  id          String   @id @default(cuid())
+  key         String // e.g. 'welcome' | 'newsletter' | 'trial-ending'
+  locale      String // 'tr' | 'en'
+  content     Json // { eyebrow: '...', cta: '...', ... }
+  // editable=false reserved for KVKK/legal copy that admins shouldn't tweak.
+  // MVP: every row is editable; flag exists so Phase 2 can lock specific
+  // fields without a schema migration.
+  editable    Boolean  @default(true)
+  updatedById String?  @map("updated_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  revisions MailTemplateRevision[]
+
+  @@unique([key, locale])
+  @@index([key])
+  @@map("mail_templates")
+}
+
+// Phase 5 — Audit log for mail template edits. Every PATCH writes a
+// snapshot row AFTER applying the change, so admins can see history
+// and revert to any prior version. Soft-prune is at the application
+// layer (last 50 per template) to keep the table bounded.
+//
+// `templateKey` + `locale` are denormalized so the audit log survives
+// MailTemplate row deletion (`onDelete: SetNull`); a 'deleted' revision
+// then represents "reverted to inline default" and revert can re-create
+// the row from history.
+model MailTemplateRevision {
+  id          String        @id @default(cuid())
+  templateId  String?       @map("template_id")
+  template    MailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateKey String        @map("template_key")
+  locale      String
+  // 'created' | 'updated' | 'deleted' | 'reverted'. Stored as a string
+  // so we don't need a Postgres enum migration; values are validated at
+  // the API write layer.
+  editType    String        @map("edit_type")
+  // Snapshot of the new content after the edit. For 'deleted' rows, an
+  // empty object {} represents the inline-default state.
+  content     Json
+  editedById  String?       @map("edited_by_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@index([templateKey, locale, createdAt])
+  @@index([templateId, createdAt])
+  @@map("mail_template_revisions")
 }
 
 model ROIRequest {
@@ -511,7 +566,7 @@ model ROIRequest {
   email          String?
   restaurantName String?  @map("restaurant_name")
   tables         Int?
-  avgTicket      Decimal? @db.Decimal(10, 2) @map("avg_ticket")
+  avgTicket      Decimal? @map("avg_ticket") @db.Decimal(10, 2)
   noShowRate     Float?   @map("no_show_rate")
   projection     Json?
   ip             String?
@@ -560,7 +615,7 @@ model CareerApplication {
 
 model BillingSubscription {
   userId       String    @id @map("user_id")
-  plan         String    @default("trial")  // trial | monthly | yearly | enterprise
+  plan         String    @default("trial") // trial | monthly | yearly | enterprise
   status       String    @default("active") // active | past_due | canceled
   trialEndsAt  DateTime? @map("trial_ends_at")
   renewsAt     DateTime? @map("renews_at")
