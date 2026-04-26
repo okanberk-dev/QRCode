@@ -1,0 +1,412 @@
+// Phase 9 — shared seed data for the mail-template system. Both the CLI
+// script (`scripts/seed-mail-templates.ts`) and the admin API endpoint
+// (`/api/admin/seed-mail-templates`) import from here so the two paths
+// can never drift. Update this file when adding a new template or
+// changing inline defaults; both paths pick it up automatically.
+//
+// IMPORTANT: this mirrors the inline default copy each render fn ships
+// with. When you change a render fn's `inlineDefault`, mirror the change
+// here. The seed represents "kod default'una sıfırla" — the well-known
+// baseline operators can revert to from the admin panel.
+
+export type MailTemplateSeedContent = Record<string, unknown>;
+
+export interface MailTemplateSeed {
+  key: string;
+  locale: 'tr' | 'en';
+  content: MailTemplateSeedContent;
+}
+
+const WELCOME_TR: MailTemplateSeedContent = {
+  eyebrow: 'Hoş geldin · Sayı bir',
+  titleSub: 'Şimdi başlıyoruz.',
+  intro: 'Hesabını oluşturduğun için teşekkürler. Aşağıdaki 4 adımı tamamladığında masandaki ilk QR kod canlıya çıkmış olacak.',
+  stepsEyebrow: 'Kurulum · 4 adım',
+  nextLabel: 'Sıradaki',
+  cta: 'Kuruluma devam et →',
+  demoLink: 'Demo videoyu izle (2 dk)',
+  resourcesEyebrow: 'İlk gün için',
+};
+
+const WELCOME_EN: MailTemplateSeedContent = {
+  eyebrow: 'Welcome · Issue 1',
+  titleSub: 'Now we begin.',
+  intro: 'Thanks for joining Buaze. Once you finish these 4 steps, your first QR code goes live on a real table.',
+  stepsEyebrow: 'Setup · 4 steps',
+  nextLabel: 'Next',
+  cta: 'Continue setup →',
+  demoLink: 'Watch demo (2 min)',
+  resourcesEyebrow: 'For your first day',
+};
+
+const NEWSLETTER_TR: MailTemplateSeedContent = {
+  titleA: 'Sessiz misafiri',
+  titleAccent: 'duyabilmek',
+  titleEnd: 'sanatı.',
+  intro: 'Müşterilerin yalnızca %4\'ü kötü deneyim yaşadığında konuşur. Geriye kalan %96\'yı duymak için ne gerekiyor — bu sayıda anlatıyoruz.',
+  cta: 'Editörün notunu oku →',
+  featuredEyebrow: 'Kapak yazısı',
+  listEyebrow: 'Bu sayıda',
+  statsTitle: 'Bu ayın küçük rakamları',
+  futureLabel: 'Önümüzdeki sayıda',
+  futureBody: 'Otel sektörü vakası, yeni heatmap görselleri, OAuth entegrasyonları.',
+  exploreCta: 'Tüm sayıları gör →',
+};
+
+const NEWSLETTER_EN: MailTemplateSeedContent = {
+  titleA: 'The art of',
+  titleAccent: 'hearing',
+  titleEnd: 'the silent guest.',
+  intro: 'Only 4% of customers speak up when they have a bad experience. What does it take to hear the silent 96%? This issue dives in.',
+  cta: 'Read the editor\'s note →',
+  featuredEyebrow: 'Cover story',
+  listEyebrow: 'In this issue',
+  statsTitle: 'Small numbers, this month',
+  futureLabel: 'Next issue',
+  futureBody: 'Hotel sector case, new heatmap visuals, OAuth integrations.',
+  exploreCta: 'Browse all issues →',
+};
+
+const TRIAL_ENDING_TR: MailTemplateSeedContent = {
+  titleA: '14 gündür birlikteyiz.',
+  titleB: 'Devam edelim mi?',
+  usageEyebrow: 'Bu 14 günde Buaze\'de',
+  plansEyebrow: 'Plan seç · İlk ay %50',
+  starterTitle: 'Pulse Starter',
+  starterBody: 'Tek şube, sınırsız QR, 100 AI yanıt/ay.',
+  proTitle: 'Pulse Pro',
+  proBody: 'Çoklu şube, sınırsız AI, OAuth + webhook, öncelikli destek.',
+  proBadge: 'ÖNERİLEN',
+  cta: 'Planımı seç →',
+  comparisonLink: 'Detaylı karşılaştırma',
+};
+
+const TRIAL_ENDING_EN: MailTemplateSeedContent = {
+  titleA: 'We\'ve been at it for 14 days.',
+  titleB: 'Keep going?',
+  usageEyebrow: 'In your 14 days on Buaze',
+  plansEyebrow: 'Pick a plan · 50% off month one',
+  starterTitle: 'Pulse Starter',
+  starterBody: 'Single location, unlimited QRs, 100 AI replies/mo.',
+  proTitle: 'Pulse Pro',
+  proBody: 'Multi-location, unlimited AI, OAuth + webhooks, priority support.',
+  proBadge: 'RECOMMENDED',
+  cta: 'Pick my plan →',
+  comparisonLink: 'Detailed comparison',
+};
+
+// ───────────────────────────────────────────────────────────────────────
+// Phase 2 templates (forgot-password / low-rating-alert / new-review /
+// weekly-report / customer-reply). Inline default mirrors what the
+// matching renderXxx() function ships with — keep these in sync when
+// shipping new fields. KVKK-locked fields are seeded too (admin can't
+// edit them, but the row keeps a known baseline).
+// ───────────────────────────────────────────────────────────────────────
+
+const FORGOT_PASSWORD_TR: MailTemplateSeedContent = {
+  eyebrow: '01 · Talep alındı',
+  title: 'Şifreni',
+  titleAccent: 'sıfırlayalım',
+  cardEyebrow: 'Tek kullanımlık link',
+  statusText: 'Aktif · 30 dk geçerli',
+  cta: 'Yeni şifre belirle →',
+  altCodeLabel: 'Uygulamada kullanmak için kod',
+  metaTime: 'Talep saati',
+  metaIp: 'IP',
+  metaDevice: 'Cihaz',
+  metaAccount: 'Hesap',
+  notYouTitle: 'Sen değil misin?',
+  notYouBody: 'Bu maili görmezden gel. Şifren değişmez, hesabın güvende. Kaygılıysan',
+  notYouLink: 'destek ekibine yaz',
+};
+
+const FORGOT_PASSWORD_EN: MailTemplateSeedContent = {
+  eyebrow: '01 · Request received',
+  title: 'Let\'s reset',
+  titleAccent: 'your password',
+  cardEyebrow: 'One-time link',
+  statusText: 'Active · 30 min valid',
+  cta: 'Pick a new password →',
+  altCodeLabel: 'Or use this code in the app',
+  metaTime: 'Request time',
+  metaIp: 'IP',
+  metaDevice: 'Device',
+  metaAccount: 'Account',
+  notYouTitle: 'Wasn\'t you?',
+  notYouBody: 'Just ignore this email. Your password stays the same. If you\'re worried,',
+  notYouLink: 'contact support',
+};
+
+const LOW_RATING_ALERT_TR: MailTemplateSeedContent = {
+  eyebrowAlert: 'Anlık uyarı · Düşük puan',
+  eyebrowAction: 'Aksiyon gerektiriyor · 1 saat içinde dön',
+  titleSub: 'Önce dinleyelim.',
+  aiEyebrow: 'Co-Pilot taslağı',
+  toneLabel: 'Ton: profesyonel · empati yüksek',
+  aiEdit: 'Düzenle',
+  aiApprove: 'Onayla & Yanıtla →',
+  quickEyebrow: 'Hızlı aksiyon',
+  noComment: 'Yorum bırakılmadı.',
+};
+
+const LOW_RATING_ALERT_EN: MailTemplateSeedContent = {
+  eyebrowAlert: 'Live alert · Low rating',
+  eyebrowAction: 'Action needed · reply within 1 hour',
+  titleSub: 'Listen first.',
+  aiEyebrow: 'Co-Pilot draft',
+  toneLabel: 'Tone: professional · high empathy',
+  aiEdit: 'Edit',
+  aiApprove: 'Approve & Reply →',
+  quickEyebrow: 'Quick actions',
+  noComment: 'No comment left.',
+};
+
+const NEW_REVIEW_TR: MailTemplateSeedContent = {
+  eyebrow: 'Canlı · Az önce geldi',
+  titleSub: 'Hak ettin.',
+  primaryCta: 'Teşekkür yaz →',
+  secondaryCta: 'Google\'da paylaş',
+  noComment: 'Yorum bırakılmadı.',
+};
+
+const NEW_REVIEW_EN: MailTemplateSeedContent = {
+  eyebrow: 'Live · Just now',
+  titleSub: 'You earned it.',
+  primaryCta: 'Write a thank-you →',
+  secondaryCta: 'Share on Google',
+  noComment: 'No comment left.',
+};
+
+const WEEKLY_REPORT_TR: MailTemplateSeedContent = {
+  titleA: 'Sessiz başlayan hafta,',
+  titleEnd: 'yorumla bitti.',
+  statTotal: 'Yeni yorum',
+  statAvg: 'Ortalama puan',
+  statResp: 'Yanıt süresi',
+  chartEyebrow: 'Günlük dağılım',
+  chartTitle: 'Cumartesi günü zirve yaptın.',
+  quotesEyebrow: 'Bu haftanın sözleri',
+  aspectFood: 'Yemek',
+  aspectService: 'Servis',
+  aspectAtm: 'Atmosfer',
+  cta: 'Panele git →',
+  detailLabel: 'Detaylı analiz seni bekliyor.',
+  detailSub: 'Heatmap, sentiment ve aspect kırılımı panelde.',
+};
+
+const WEEKLY_REPORT_EN: MailTemplateSeedContent = {
+  titleA: 'A quiet week,',
+  titleEnd: 'reviews to close.',
+  statTotal: 'New reviews',
+  statAvg: 'Average rating',
+  statResp: 'Response time',
+  chartEyebrow: 'Daily distribution',
+  chartTitle: 'Saturday hit the peak.',
+  quotesEyebrow: 'This week\'s voices',
+  aspectFood: 'Food',
+  aspectService: 'Service',
+  aspectAtm: 'Atmosphere',
+  cta: 'See full details →',
+  detailLabel: 'Deep-dive analytics inside.',
+  detailSub: 'Heatmap, sentiment and aspect breakdown in the panel.',
+};
+
+const CUSTOMER_REPLY_TR: MailTemplateSeedContent = {
+  headerEyebrow: 'Sana özel · Kişisel yanıt',
+  ownerLabel: 'İŞLETMECİ',
+  titleSubA: 'bizi',
+  titleSubItalic: 'duyduğun için',
+  titleSubB: 'teşekkürler',
+  actionsEyebrow: 'Aldığımız aksiyonlar',
+  couponEyebrow: 'Sana küçük bir özür',
+  couponTitle: 'Bir sonraki ziyaretinde\nkahveler bizden.',
+  couponDescDefault: 'Aşağıdaki kodu kasada göster — masa arkadaşınla içtiğin iki kahve ikramımız.',
+  couponLabelDefault: 'Kuponun',
+  daysSuffix: 'gün',
+  callEyebrow: 'Direkt ara',
+  mapsEyebrow: 'Yol tarifi',
+  sentLine: 'Bu yanıt',
+  sentSuffix: 'ile gönderildi',
+};
+
+const CUSTOMER_REPLY_EN: MailTemplateSeedContent = {
+  headerEyebrow: 'For you · Personal reply',
+  ownerLabel: 'OWNER',
+  titleSubA: 'thank you for',
+  titleSubItalic: 'hearing us',
+  titleSubB: '',
+  actionsEyebrow: 'What we changed',
+  couponEyebrow: 'A small apology',
+  couponTitle: 'Next visit,\ncoffees on us.',
+  couponDescDefault: 'Show this code at the counter — two coffees on the house for you and a friend.',
+  couponLabelDefault: 'Your coupon',
+  daysSuffix: 'days',
+  callEyebrow: 'Call us',
+  mapsEyebrow: 'Directions',
+  sentLine: 'Sent via',
+  sentSuffix: '',
+};
+
+// ───────────────────────────────────────────────────────────────────────
+// Phase 3 — form-confirmation 4-variant nested JSON. Top-level keys are
+// formType variants (`contact / career / roi / newsletter`); inner values
+// are the same flat string fields the editor exposes (subject, preheader,
+// eyebrow, titleA, titleB, intro, formEyebrow, timelineEyebrow,
+// sideEyebrowA, sideBodyA, sideCtaA, sideEyebrowB, sideBodyB, sideCtaB).
+// timeline arrays stay in code (structural).
+// ───────────────────────────────────────────────────────────────────────
+
+const FORM_CONFIRMATION_TR = {
+  contact: {
+    subject: 'Mesajını aldık — 24 saat içinde döneceğiz',
+    preheader: 'Talebin sıraya alındı. İşte özet.',
+    eyebrow: 'İletişim · Onay',
+    titleA: 'Aldık',
+    titleB: 'Sıradayız.',
+    intro: 'Mesajın ekibimize ulaştı. Genelde 24 saat içinde dönüyoruz — haftasonu bu süre 48 saate kadar uzayabilir.',
+    formEyebrow: 'Form kaydı',
+    timelineEyebrow: 'Sırada ne var',
+    sideEyebrowA: 'Acil durum',
+    sideBodyA: 'Daha hızlı destek için canlı sohbeti kullanabilirsin.',
+    sideCtaA: 'Sohbeti aç →',
+    sideEyebrowB: 'Beklerken',
+    sideBodyB: '10 dakikalık ürün turu — kayıt olmadan.',
+    sideCtaB: 'Ürün turunu izle →',
+  },
+  career: {
+    subject: 'Başvurun bize ulaştı',
+    preheader: 'Başvurun sıraya alındı. 5 iş gününde dönüyoruz.',
+    eyebrow: 'Kariyer · Onay',
+    titleA: 'Aldık',
+    titleB: 'İnceliyoruz.',
+    intro: 'Başvurunu ekibimize ilettik. 5 iş günü içinde mutlaka geri döneceğiz — uygun bir pozisyon yoksa bile haber vereceğiz.',
+    formEyebrow: 'Başvuru özeti',
+    timelineEyebrow: 'Süreç',
+    sideEyebrowA: 'Açık pozisyonlar',
+    sideBodyA: 'Diğer rolleri de görmek ister misin?',
+    sideCtaA: 'Tüm pozisyonlar →',
+    sideEyebrowB: 'Beklerken',
+    sideBodyB: 'Buaze ekip kültürünü tanımak için hikâyemizi oku.',
+    sideCtaB: 'Ekip blogu →',
+  },
+  roi: {
+    subject: 'ROI hesaplamanı kaydettik',
+    preheader: 'Hesabın hazır. Detaylı PDF birazdan inboxuna düşecek.',
+    eyebrow: 'ROI · Onay',
+    titleA: 'Hesapladık',
+    titleB: 'Sıradaki adım: demo.',
+    intro: 'Verdiğin bilgilerle aylık potansiyel etkiyi hesapladık. Detaylı raporu ve sektör karşılaştırmasını e-posta ile sana ulaştırıyor olacağız.',
+    formEyebrow: 'Hesap özeti',
+    timelineEyebrow: 'Sırada ne var',
+    sideEyebrowA: 'Demo seç',
+    sideBodyA: 'Beklemeden bir slot ayırt edebilirsin.',
+    sideCtaA: 'Takvimden seç →',
+    sideEyebrowB: 'Bu arada',
+    sideBodyB: 'Diğer restoranlar Buaze\'i nasıl kullanıyor?',
+    sideCtaB: 'Vakaları gör →',
+  },
+  newsletter: {
+    subject: 'Aboneliğin aktif',
+    preheader: 'Pulse bülteni her ayın 1\'inde mailine düşecek.',
+    eyebrow: 'Bülten · Onay',
+    titleA: 'Aramızdasın',
+    titleB: 'Pulse her ay 1\'inde gelir.',
+    intro: 'Aboneliğini aktive ettik. Pulse bülteni vakalar, sektör verileri, ürün haberleri — sana ayda bir.',
+    formEyebrow: 'Abonelik',
+    timelineEyebrow: 'Ne bekleyeceksin',
+    sideEyebrowA: 'Bu arada',
+    sideBodyA: 'Buaze\'i hâlâ keşfediyorsan kısa turdan başla.',
+    sideCtaA: 'Buaze nasıl çalışır →',
+    sideEyebrowB: 'Beklerken',
+    sideBodyB: '5 dakikalık ürün turu — kayıt yok.',
+    sideCtaB: 'Ürün turunu izle →',
+  },
+};
+
+const FORM_CONFIRMATION_EN = {
+  contact: {
+    subject: 'Got your message — we\'ll reply within 24h',
+    preheader: 'Your ticket is queued. Here\'s the summary.',
+    eyebrow: 'Contact · Confirmation',
+    titleA: 'Got it',
+    titleB: 'In the queue.',
+    intro: 'Your message reached our team. We typically reply within 24 hours — weekends may extend this to 48 hours.',
+    formEyebrow: 'Form record',
+    timelineEyebrow: 'What happens next',
+    sideEyebrowA: 'Need it faster?',
+    sideBodyA: 'Open live chat for instant support.',
+    sideCtaA: 'Open chat →',
+    sideEyebrowB: 'While you wait',
+    sideBodyB: '10-min product tour — no signup.',
+    sideCtaB: 'Watch tour →',
+  },
+  career: {
+    subject: 'Your application reached us',
+    preheader: 'Application queued. We\'ll reply within 5 business days.',
+    eyebrow: 'Careers · Confirmation',
+    titleA: 'Got it',
+    titleB: 'Reviewing now.',
+    intro: 'We\'ve forwarded your application to the team. We\'ll get back within 5 business days — even if there\'s no fit, you\'ll hear from us.',
+    formEyebrow: 'Application summary',
+    timelineEyebrow: 'Process',
+    sideEyebrowA: 'Open roles',
+    sideBodyA: 'Want to see other positions?',
+    sideCtaA: 'All open roles →',
+    sideEyebrowB: 'While you wait',
+    sideBodyB: 'Read about Buaze culture.',
+    sideCtaB: 'Team blog →',
+  },
+  roi: {
+    subject: 'We saved your ROI estimate',
+    preheader: 'Estimate ready. Detailed PDF inbound.',
+    eyebrow: 'ROI · Confirmation',
+    titleA: 'Crunched',
+    titleB: 'Next: demo.',
+    intro: 'Based on your inputs we estimated monthly potential impact. We\'ll send a detailed PDF report and sector benchmark.',
+    formEyebrow: 'Estimate summary',
+    timelineEyebrow: 'What happens next',
+    sideEyebrowA: 'Pick a demo',
+    sideBodyA: 'Reserve a slot without waiting.',
+    sideCtaA: 'Pick a time →',
+    sideEyebrowB: 'Meanwhile',
+    sideBodyB: 'How do other restaurants use Buaze?',
+    sideCtaB: 'See cases →',
+  },
+  newsletter: {
+    subject: 'Subscription active',
+    preheader: 'Pulse newsletter lands on the 1st of every month.',
+    eyebrow: 'Newsletter · Confirmation',
+    titleA: 'You\'re in',
+    titleB: 'Pulse arrives on the 1st.',
+    intro: 'Your subscription is live. Pulse covers cases, sector data, and product news — once a month.',
+    formEyebrow: 'Subscription',
+    timelineEyebrow: 'What to expect',
+    sideEyebrowA: 'Meanwhile',
+    sideBodyA: 'Still exploring Buaze? Take the short tour.',
+    sideCtaA: 'How Buaze works →',
+    sideEyebrowB: 'While you wait',
+    sideBodyB: '5-min product tour — no signup.',
+    sideCtaB: 'Watch tour →',
+  },
+};
+
+export const MAIL_TEMPLATE_SEEDS: MailTemplateSeed[] = [
+  { key: 'welcome', locale: 'tr', content: WELCOME_TR },
+  { key: 'welcome', locale: 'en', content: WELCOME_EN },
+  { key: 'newsletter', locale: 'tr', content: NEWSLETTER_TR },
+  { key: 'newsletter', locale: 'en', content: NEWSLETTER_EN },
+  { key: 'trial-ending', locale: 'tr', content: TRIAL_ENDING_TR },
+  { key: 'trial-ending', locale: 'en', content: TRIAL_ENDING_EN },
+  { key: 'forgot-password', locale: 'tr', content: FORGOT_PASSWORD_TR },
+  { key: 'forgot-password', locale: 'en', content: FORGOT_PASSWORD_EN },
+  { key: 'low-rating-alert', locale: 'tr', content: LOW_RATING_ALERT_TR },
+  { key: 'low-rating-alert', locale: 'en', content: LOW_RATING_ALERT_EN },
+  { key: 'new-review', locale: 'tr', content: NEW_REVIEW_TR },
+  { key: 'new-review', locale: 'en', content: NEW_REVIEW_EN },
+  { key: 'weekly-report', locale: 'tr', content: WEEKLY_REPORT_TR },
+  { key: 'weekly-report', locale: 'en', content: WEEKLY_REPORT_EN },
+  { key: 'customer-reply', locale: 'tr', content: CUSTOMER_REPLY_TR },
+  { key: 'customer-reply', locale: 'en', content: CUSTOMER_REPLY_EN },
+  { key: 'form-confirmation', locale: 'tr', content: FORM_CONFIRMATION_TR },
+  { key: 'form-confirmation', locale: 'en', content: FORM_CONFIRMATION_EN },
+];
