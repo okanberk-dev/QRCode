@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import { Lock } from 'lucide-react';
+import { getFieldValidation } from '@/lib/email/field-validation';
 
 /**
  * Single editable copy field for the mail template editor. Centralised so
@@ -107,6 +108,24 @@ export default function MailFieldInput({ field, value, onChange }: Props) {
           placeholder={placeholder}
         />
       )}
+      {!field.locked && (() => {
+        // Live char counter — colour shifts amber at 80% and red at
+        // 100% so admin sees the limit approach before save fails.
+        const rules = getFieldValidation(field.key);
+        const max = rules.maxLength;
+        if (!max) return null;
+        const len = value.length;
+        const ratio = len / max;
+        const tone =
+          len > max ? 'text-red-600' :
+          ratio >= 0.8 ? 'text-amber-600' :
+          'text-[#9CA3AF]';
+        return (
+          <div className={`mt-1 text-right font-mono text-[10px] ${tone}`}>
+            {len} / {max}
+          </div>
+        );
+      })()}
       {!field.locked && field.placeholders && field.placeholders.length > 0 && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1">
           <span className="pulse-eyebrow text-[10px] text-[#9CA3AF]">Yerleşik:</span>

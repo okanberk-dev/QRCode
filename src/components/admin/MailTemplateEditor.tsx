@@ -237,6 +237,14 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
             `"${body.field}" alanında geçersiz placeholder: ${body.invalid.map((p: string) => `\${${p}}`).join(', ')}. İzin verilenler: ${(body.allowed ?? []).map((p: string) => `\${${p}}`).join(', ') || '(yok)'}`,
           );
         }
+        if (body.error === 'invalid_field_length' && body.field) {
+          if (body.reason === 'too_long') {
+            throw new Error(`"${body.field}" alanı çok uzun: ${body.actual} karakter (max ${body.max}).`);
+          }
+          if (body.reason === 'too_short') {
+            throw new Error(`"${body.field}" alanı çok kısa: ${body.actual} karakter (min ${body.min}).`);
+          }
+        }
         throw new Error(body.error || 'Kayıt başarısız');
       }
       setSeeded(true);

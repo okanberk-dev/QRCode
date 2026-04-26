@@ -7,6 +7,7 @@ import { invalidateMailCopyCache, isSupportedMailTemplateKey, type MailLocale } 
 import { stripLockedFields } from '@/lib/email/locked-fields';
 import { MAIL_PLACEHOLDERS, findInvalidPlaceholders } from '@/lib/email/placeholders';
 import { pruneRevisions } from '@/lib/email/revisions';
+import { findInvalidField } from '@/lib/email/field-validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -126,6 +127,24 @@ export async function PATCH(
         field: invalid.field,
         invalid: invalid.invalid,
         allowed: allowedPlaceholders,
+      },
+      { status: 400 },
+    );
+  }
+
+  // Phase 6: per-field length validation. Catches admin paste-bombs that
+  // would break layout (300-char eyebrow) or trigger spam filters
+  // (subject ≥ 100 chars).
+  const fieldError = findInvalidField(cleaned);
+  if (fieldError) {
+    return NextResponse.json(
+      {
+        error: 'invalid_field_length',
+        field: fieldError.field,
+        reason: fieldError.reason,
+        max: fieldError.max,
+        min: fieldError.min,
+        actual: fieldError.actual,
       },
       { status: 400 },
     );
