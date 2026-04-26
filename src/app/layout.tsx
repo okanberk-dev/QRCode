@@ -41,8 +41,13 @@ export async function generateMetadata(): Promise<Metadata> {
       canonical: 'https://buaze.com',
     },
     icons: {
-      icon: s.faviconUrl || '/favicon.svg',
+      icon: [
+        { url: s.faviconUrl || '/favicon.svg', type: 'image/svg+xml' },
+      ],
+      shortcut: s.faviconUrl || '/favicon.svg',
+      apple: '/apple-touch-icon.svg',
     },
+    manifest: '/site.webmanifest',
     openGraph: {
       images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze - Every review is a pulse' }],
     },

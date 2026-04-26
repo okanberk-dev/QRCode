@@ -84,8 +84,13 @@ export async function generateMetadata({
       },
     },
     icons: {
-      icon: s.faviconUrl || '/favicon.svg',
+      icon: [
+        { url: s.faviconUrl || '/favicon.svg', type: 'image/svg+xml' },
+      ],
+      shortcut: s.faviconUrl || '/favicon.svg',
+      apple: '/apple-touch-icon.svg',
     },
+    manifest: '/site.webmanifest',
   };
 }
 

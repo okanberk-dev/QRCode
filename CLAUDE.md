@@ -999,3 +999,42 @@ Bunlar **kod ile yapılamaz**, Resend hesabında + DNS provider'da set edilmeli:
 - [ ] Complaint rate < 0.3%
 - [ ] mail-tester.com test mail'i 9+/10
 - [ ] Gmail Postmaster: domain reputation "High" veya "Medium"
+
+### 21.24 Favicon / icon asset envanteri
+
+Pulse temalı favicon her bağlamda doğru servis edilsin diye **3 statik dosya** + **layout metadata** birlikte çalışıyor:
+
+**Statik dosyalar** (`public/`):
+- `favicon.svg` — ana favicon (lime gradient bg + graphite ECG line + dot accent). Tüm modern tarayıcılar bunu kullanır.
+- `apple-touch-icon.svg` — iOS Safari "Add to Home Screen" + pinned tab. 180x180 viewBox.
+- `site.webmanifest` — PWA manifest (Android Chrome "Install App"). Background `#FFFFFF`, theme `#0A0A0A`.
+
+**Layout metadata** (`src/app/layout.tsx` + `src/app/[locale]/layout.tsx`):
+```ts
+icons: {
+  icon: [{ url: s.faviconUrl || '/favicon.svg', type: 'image/svg+xml' }],
+  shortcut: s.faviconUrl || '/favicon.svg',
+  apple: '/apple-touch-icon.svg',
+},
+manifest: '/site.webmanifest',
+```
+
+`s.faviconUrl` — admin paneli `Site Settings`'ten kullanıcı override'ı. Boşsa default `/favicon.svg`.
+
+**Vercel rewrites** (`vercel.json`):
+Eski tarayıcı default isteklerini SVG'ye yönlendirir:
+- `/favicon.ico` → `/favicon.svg`
+- `/favicon.png` → `/favicon.svg`
+- `/apple-touch-icon.png` → `/apple-touch-icon.svg`
+- `/apple-touch-icon-precomposed.png` → `/apple-touch-icon.svg`
+- `/icon-192.png`, `/icon-512.png` → `/apple-touch-icon.svg`
+
+**Eski tarayıcı / third-party cache**:
+- Bazı siteler (DMARC dashboard'ları, social embeds) favicon'u kendi cache'lerinden çeker; Buaze tarafında değişiklik yapsan bile o cache 7-30 gün eski olabilir.
+- Hızlandırma: ilgili siteye favicon URL'i ile cache invalidation isteği yolla, ya da `?v=2` query string ekle.
+
+**JSON-LD logo URL'leri** (SEO yapısal veri):
+- `src/app/[locale]/layout.tsx:131` — Organization schema, `s.logoUrl || ${siteUrl}/favicon.svg`
+- `src/app/[locale]/blog/[slug]/page.tsx`, `about/page.tsx` — hardcoded `https://buaze.com/favicon.svg`. Site logo değişirse bu üçü de güncellenmeli.
+
+**OG image** (sosyal paylaşım) ayrı bir dosya: `src/app/opengraph-image.tsx` (1200x630 dynamic OG image). Favicon'dan farklı boyut/görsel kuralları.
