@@ -864,7 +864,9 @@ Send başlamadan campaign `'sending'`, bitince `'sent'` + `sentAt` + counts. Eve
 2. `npx prisma generate` (stub DATABASE_URL ile, gerçek DB'siz)
 3. `npx prisma validate` (schema syntax)
 4. `npx tsc --noEmit -p tsconfig.json` (zero error)
-5. `npx next lint --max-warnings 0` (lint)
+5. `npx eslint .` (lint, max-warnings flag yok)
+
+**Trigger**: `on.pull_request` (branch filter YOK — stacked PR'lar (base ≠ main) da koşsun, CLAUDE.md §21.22). Push event sadece `main` branch'inde tetiklenir (zaten merge sonrası verifiy için). Eski `branches: [main]` filter PR base'i `claude/*` olunca CI'ı tamamen atlıyordu — düzeltildi.
 
 Concurrency cancel-in-progress: aynı PR'a yeni commit gelince eski run iptal. Workflow ~2-3 dk sürer. Local geliştirici için aynı 4 komutu local'de koşmak yeterli — CI sadece "review öncesi son güvenlik ağı".
 
