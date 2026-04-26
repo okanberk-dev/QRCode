@@ -52,6 +52,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const isTr = locale === 'tr';
 
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
+  const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'attention' | 'replied'>(
@@ -77,6 +78,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           const rows: FeedbackRow[] = data.data ?? [];
           setFeedbacks(rows);
           if (rows.length > 0) setActiveId((curr) => curr ?? rows[0].id);
+          setDegraded(data?.meta?.degraded ?? null);
         }
       } catch (e) {
         console.error(e);
@@ -299,6 +301,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     <div className="flex min-h-[calc(100vh-140px)] flex-col lg:h-[calc(100vh-140px)] lg:flex-row" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* ============ LEFT — review list ============ */}
       <aside className="flex max-h-[55vh] w-full flex-shrink-0 flex-col border-b border-[#EDEDED] bg-white lg:max-h-none lg:w-[340px] lg:border-b-0 lg:border-r">
+        {degraded && (
+          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-[11px] font-medium text-amber-900">
+            {isTr
+              ? `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — DB senkronizasyonu bekleniyor.`
+              : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — DB sync pending.`}
+          </div>
+        )}
         <div className="border-b border-[#EDEDED] p-4">
           <div className="flex flex-wrap gap-1.5">
             {tabs.map((tab) => (
@@ -603,7 +612,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                       onChange={(e) => setSendEmail(e.target.checked)}
                       className="h-4 w-4 accent-[#0A0A0A]"
                     />
-                    <Mail size={12} className="text-[#525252]" />
+                    <Mail size={12} className="text-current opacity-60" />
                     <span>
                       {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'}
                       <span className="ml-1 text-[#737373]">· {active.customerEmail}</span>

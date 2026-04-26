@@ -3,6 +3,18 @@ export type Locale = 'tr' | 'en';
 export const locales: Locale[] = ['tr', 'en'];
 export const defaultLocale: Locale = 'tr';
 
+// Resolve a Locale from an Accept-Language header for server-side routing
+// (not-found, admin redirects). Falls back to defaultLocale.
+export function detectLocaleFromAcceptLanguage(acceptLang: string | null | undefined): Locale {
+  if (!acceptLang) return defaultLocale;
+  const tags = acceptLang.toLowerCase().split(',');
+  for (const raw of tags) {
+    const tag = raw.split(';')[0].trim().split('-')[0];
+    if ((locales as string[]).includes(tag)) return tag as Locale;
+  }
+  return defaultLocale;
+}
+
 export const translations = {
   tr: {
     // Meta

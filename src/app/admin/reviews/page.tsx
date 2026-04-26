@@ -56,6 +56,7 @@ export default function AdminReviewsPage() {
 
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [counts, setCounts] = useState<CountsResp | null>(null);
+  const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [tab, setTab] = useState<'all' | 'new' | 'attention' | 'replied'>('all');
@@ -82,6 +83,7 @@ export default function AdminReviewsPage() {
           const list: FeedbackRow[] = data.data ?? [];
           setRows(list);
           setActiveId((c) => c ?? list[0]?.id ?? null);
+          setDegraded(data?.meta?.degraded ?? null);
         }
         if (countsRes.ok) setCounts(await countsRes.json());
       } catch (err) {
@@ -285,6 +287,14 @@ export default function AdminReviewsPage() {
         </div>
         {notice && <span className={`pulse-eyebrow rounded-full px-3 py-1.5 ${noticeTone}`}>{notice.msg}</span>}
       </header>
+
+      {degraded && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-900">
+          {isTr
+            ? `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — veritabanı senkronizasyonu bekleniyor.`
+            : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — database sync pending.`}
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <aside className="rounded-2xl border border-[#EDEDED] bg-white">
@@ -512,7 +522,7 @@ export default function AdminReviewsPage() {
                         onChange={(e) => setSendEmail(e.target.checked)}
                         className="h-4 w-4 accent-[#0A0A0A]"
                       />
-                      <Mail size={12} className="text-[#525252]" />
+                      <Mail size={12} className="text-current opacity-60" />
                       <span>
                         {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'} ·
                         <span className="ml-1 text-[#737373]">{active.customerEmail}</span>

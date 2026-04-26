@@ -109,7 +109,6 @@ export async function POST(req: NextRequest) {
                 passwordHash: hashedPassword
               }
             });
-            console.log('BOOTSTRAP: Created first admin user successfully.');
           }
         } catch (e) {
           console.error("Bootstrap creation failed, continuing with env authentication", e);

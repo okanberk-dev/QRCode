@@ -38,7 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   const category = await prisma.menuCategory.findUnique({ where: { id: parsed.data.categoryId! } });
-  if (!category || category.restaurantId !== id) {
+  if (!category || category.restaurantId !== id || category.deletedAt) {
     return NextResponse.json({ error: 'Kategori bu restorana ait değil' }, { status: 400 });
   }
 

@@ -125,7 +125,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const [validCategories, validProducts] = await Promise.all([
     incomingCategoryIds.size > 0
       ? prisma.menuCategory.findMany({
-          where: { restaurantId, id: { in: [...incomingCategoryIds] } },
+          where: { restaurantId, id: { in: [...incomingCategoryIds] }, deletedAt: null },
           select: { id: true },
         })
       : Promise.resolve([] as { id: string }[]),

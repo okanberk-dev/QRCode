@@ -279,8 +279,8 @@ function SlugContent() {
       <footer className="py-10 px-6 mt-auto bg-[#FFFFFF]/30">
         <div className="max-w-xl mx-auto flex flex-col items-center gap-6">
           <div className="flex gap-6">
-            <a href="/tr/privacy" className="text-[10px] font-bold text-[#A3A3A3] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">GİZLİLİK</a>
-            <a href="/tr/terms" className="text-[10px] font-bold text-[#A3A3A3] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">KULLANIM</a>
+            <a href={`/${locale}/privacy`} className="text-[10px] font-bold text-[#A3A3A3] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">{locale === 'tr' ? 'GİZLİLİK' : 'PRIVACY'}</a>
+            <a href={`/${locale}/terms`} className="text-[10px] font-bold text-[#A3A3A3] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">{locale === 'tr' ? 'KULLANIM' : 'TERMS'}</a>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[9px] font-bold text-[#A3A3A3] tracking-[0.2em]">POWERED BY</span>

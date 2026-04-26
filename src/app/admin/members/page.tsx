@@ -307,7 +307,9 @@ export default function MembersPage() {
                 <button
                   type="button"
                   onClick={() => setEditIsActive((v) => !v)}
-                  className={`transition-colors ${editIsActive ? 'text-green-500' : 'text-[#6B7280]'}`}
+                  aria-pressed={editIsActive}
+                  aria-label={editIsActive ? 'Aktif - tıklayarak devre dışı bırak' : 'Devre dışı - tıklayarak etkinleştir'}
+                  className={`transition-all duration-200 active:scale-95 ${editIsActive ? 'text-[#A8D62E] hover:text-[#8CB81E]' : 'text-[#6B7280] hover:text-[#0A0A0A]'}`}
                 >
                   {editIsActive
                     ? <ToggleRight size={36} strokeWidth={1.5} />

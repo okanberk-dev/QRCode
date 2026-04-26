@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, ShieldCheck, User } from 'lucide-react';
 import Link from 'next/link';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
 import RecaptchaNotice from '@/components/RecaptchaNotice';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
+import { type Locale, locales, defaultLocale } from '@/lib/translations';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -16,6 +17,11 @@ export default function AdminLogin() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [locale, setLocale] = useState<Locale>(defaultLocale);
+  useEffect(() => {
+    const browser = navigator.language.split('-')[0] as Locale;
+    if ((locales as string[]).includes(browser)) setLocale(browser);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +66,7 @@ export default function AdminLogin() {
             </span>
           </Link>
           <Link
-            href="/tr/auth/login"
+            href={`/${locale}/auth/login`}
             className="hidden rounded-full border border-[#EDEDED] px-4 py-2 text-sm font-semibold text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] sm:inline-flex"
           >
             Müşteri girişi
@@ -158,7 +164,7 @@ export default function AdminLogin() {
             </div>
 
             <Link
-              href="/tr/auth/login"
+              href={`/${locale}/auth/login`}
               className="mt-6 inline-flex w-full items-center justify-center gap-2 text-[13px] font-semibold text-[#737373] hover:text-[#0A0A0A] sm:hidden"
             >
               Müşteri paneline geç <ArrowRight size={15} />

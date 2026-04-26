@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, resolveOwnerUserId } from '@/lib/panel-access';
 import { buildReplyTemplate } from '@/lib/scaffolding';
 import { chatCompletion, hasOpenAIKey } from '@/lib/openai';
 import { rateLimit } from '@/lib/rate-limit';
@@ -18,7 +18,11 @@ export async function POST(
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const limit = rateLimit(`ai-suggest:${actor.id}`, 30, 60_000);
+  // Rate-limit by workspace owner so a team can't bypass the cap by spreading
+  // requests across team members. Falls back to actor.id only when we can't
+  // resolve an owner (e.g. unattached superadmin).
+  const ownerKey = (await resolveOwnerUserId(actor)) ?? actor.id;
+  const limit = rateLimit(`ai-suggest:${ownerKey}`, 30, 60_000);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'rate_limited', retryAfter: limit.retryAfterSeconds },

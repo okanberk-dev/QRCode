@@ -18,7 +18,7 @@ Claude Design handoff'u (`bqQUR3oJWYZ6k1Aq10F34g`, 38 artboard) Buaze sitesine *
 | 5 | Content (blog, faq, help, about, careers, contact, 8 legal) | `claude/design-phase-5-content` | #45 draft | ✅ Tamamlandı |
 | 6 | Admin core (dashboard, reviews, QR wizard, analytics, restaurants, settings) | `claude/design-phase-6-admin-core` | #46 draft | ✅ Tamamlandı |
 | 7 | Admin advanced (campaigns, team, notifications, billing, API/webhook, tüm ikincil) | `claude/design-phase-7-admin-advanced` | #47 draft | ✅ Tamamlandı |
-| 8 | Public QR + Menu + Mobile/A11y polish + design-intent gap fixes | `claude/design-phase-8-public-polish` | draft | 🔄 Devam |
+| 8 | Public QR + Menu + Mobile/A11y polish + design-intent gap fixes | `claude/design-phase-8-public-polish` | #48 draft | ✅ Tamamlandı |
 
 ---
 
