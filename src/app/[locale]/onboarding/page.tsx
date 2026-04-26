@@ -634,10 +634,31 @@ function FinishButton({ isTr, onFinish, saving }: { isTr: boolean; onFinish: () 
 }
 
 // ─── Lightweight confetti burst — DOM-only, no deps ──────────
+type ConfettiParticle = {
+  i: number;
+  angle: number;
+  distance: number;
+  delay: number;
+  size: number;
+  rot: number;
+};
+
 function ConfettiBurst() {
-  const [particles, setParticles] = useState<number[]>([]);
+  // Compute random parameters once on mount; re-renders (e.g. from React
+  // strict mode's double invoke) must not re-randomise them or the animation
+  // restarts with different physics mid-flight.
+  const [particles, setParticles] = useState<ConfettiParticle[]>([]);
   useEffect(() => {
-    setParticles(Array.from({ length: 40 }, (_, i) => i));
+    setParticles(
+      Array.from({ length: 40 }, (_, i) => ({
+        i,
+        angle: (i / 40) * 360 + Math.random() * 20 - 10,
+        distance: 180 + Math.random() * 220,
+        delay: Math.random() * 80,
+        size: 6 + Math.random() * 6,
+        rot: Math.random() * 720 - 360,
+      })),
+    );
   }, []);
 
   const colors = ['#C6F24E', '#0A0A0A', '#A8D62E', '#EAF9B8', '#FFFFFF'];
@@ -648,26 +669,22 @@ function ConfettiBurst() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
-      {particles.map((i) => {
-        const angle = (i / 40) * 360 + Math.random() * 20 - 10;
-        const distance = 180 + Math.random() * 220;
-        const delay = Math.random() * 80;
-        const size = 6 + Math.random() * 6;
-        const color = colors[i % colors.length];
+      {particles.map((p) => {
+        const color = colors[p.i % colors.length];
         return (
           <span
-            key={i}
+            key={p.i}
             className="absolute left-1/2 top-1/2"
             style={{
-              width: size,
-              height: size * 0.4,
+              width: p.size,
+              height: p.size * 0.4,
               background: color,
               transform: 'translate(-50%, -50%)',
               borderRadius: 2,
-              animation: `confettiFly 1000ms cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}ms forwards`,
-              ['--cf-x' as string]: `${Math.cos((angle * Math.PI) / 180) * distance}px`,
-              ['--cf-y' as string]: `${Math.sin((angle * Math.PI) / 180) * distance}px`,
-              ['--cf-rot' as string]: `${Math.random() * 720 - 360}deg`,
+              animation: `confettiFly 1000ms cubic-bezier(0.2, 0.8, 0.2, 1) ${p.delay}ms forwards`,
+              ['--cf-x' as string]: `${Math.cos((p.angle * Math.PI) / 180) * p.distance}px`,
+              ['--cf-y' as string]: `${Math.sin((p.angle * Math.PI) / 180) * p.distance}px`,
+              ['--cf-rot' as string]: `${p.rot}deg`,
             }}
           />
         );
