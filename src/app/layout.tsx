@@ -41,9 +41,13 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: {
       icon: s.faviconUrl || '/favicon.svg',
     },
-    openGraph: s.ogImageUrl
-      ? { images: [{ url: s.ogImageUrl, width: 1200, height: 630 }] }
-      : undefined,
+    openGraph: {
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze - Every review is a pulse' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      images: ['/opengraph-image'],
+    },
     verification: {
       google: 'FYUcNyiNfUTFfmZBl_Xqb_YCFqBpD-PcpHHiGDz_kZ0',
     },

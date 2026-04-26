@@ -4,6 +4,7 @@ import { useState, useImperativeHandle, forwardRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Loader2, Camera, X, ShieldCheck, Mail, Check } from 'lucide-react';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import RecaptchaNotice from '@/components/RecaptchaNotice';
 
 interface FeedbackFormProps {
   rating: number;
@@ -267,6 +268,7 @@ const FeedbackForm = forwardRef<FeedbackFormHandle, FeedbackFormProps>(
                   {isLowRating ? 'ÖZEL VE GÜVENLİ GERİ BİLDİRİM' : 'GÜVENLİ GERİ BİLDİRİM'}
                </p>
             </div>
+            <RecaptchaNotice locale="tr" className="mt-3 text-center px-2" />
           </div>
         </div>
 

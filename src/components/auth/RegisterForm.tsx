@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import RecaptchaNotice from '@/components/RecaptchaNotice';
 
 function GoogleIcon({ size = 16 }: { size?: number }) {
   return (
@@ -280,6 +281,8 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           : (locale === 'tr' ? 'Ücretsiz başla' : 'Start free')}
         {!loading && <ArrowRight size={18} strokeWidth={2} />}
       </button>
+
+      <RecaptchaNotice locale={locale} className="text-center px-1" />
 
       <p className="text-center text-[13px] text-[#737373] mt-1">
         {locale === 'tr' ? 'Hesabın var mı?' : 'Already have an account?'}{' '}

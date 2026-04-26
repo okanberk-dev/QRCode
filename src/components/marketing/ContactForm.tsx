@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Send, Loader2, Check, X } from 'lucide-react';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import RecaptchaNotice from '@/components/RecaptchaNotice';
 
 interface ContactFormProps {
   t: {
@@ -304,6 +305,8 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
             {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : <Send size={16} strokeWidth={2} />}
             {t.contact_form_submit}
           </button>
+
+          <RecaptchaNotice locale={locale} className="text-center px-1" />
         </form>
       )}
 

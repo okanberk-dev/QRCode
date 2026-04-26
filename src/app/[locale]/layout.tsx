@@ -23,7 +23,7 @@ export async function generateMetadata({
   const title = locale === 'tr' ? s.titleDefaultTr : s.titleDefaultEn;
   const description = locale === 'tr' ? s.descriptionTr : s.descriptionEn;
   const keywords = locale === 'tr' ? s.keywordsTr : s.keywordsEn;
-  const ogImage = s.ogImageUrl;
+  const ogImage = locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
 
   return {
     metadataBase: new URL('https://buaze.com'),
@@ -65,7 +65,7 @@ export async function generateMetadata({
       siteName: 'Buaze',
       title,
       description,
-      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630 }] } : {}),
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -73,7 +73,7 @@ export async function generateMetadata({
       description,
       site: '@buaze',
       creator: '@buaze',
-      ...(ogImage ? { images: [ogImage] } : {}),
+      images: [ogImage],
     },
     alternates: {
       canonical: `https://buaze.com/${locale}`,

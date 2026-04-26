@@ -7,6 +7,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import { HELP_CATEGORIES } from '@/lib/help-categories';
+import { getStaticHelpCategoryCounts, getStaticPopularHelpArticles } from '@/lib/help-articles';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +55,7 @@ export default async function HelpCenterPage({
   // Live counts per category
   let countBySlug: Record<string, number> = {};
   let popular: { slug: string; title: string; category: string }[] = [];
+  const staticCounts = getStaticHelpCategoryCounts(locale);
   try {
     const counts = await prisma.helpArticle.groupBy({
       by: ['category'],
@@ -71,6 +73,14 @@ export default async function HelpCenterPage({
   } catch {
     // If the table is missing (pre-first `prisma db push`) fall back to
     // an empty state — the layout still renders "Coming soon".
+  }
+  countBySlug = { ...staticCounts, ...Object.fromEntries(Object.entries(countBySlug).filter(([, count]) => count > 0)) };
+  if (popular.length === 0) {
+    popular = getStaticPopularHelpArticles(locale).map((article) => ({
+      slug: article.slug,
+      title: article.title,
+      category: article.category,
+    }));
   }
 
   return (

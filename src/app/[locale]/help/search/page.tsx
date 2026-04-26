@@ -8,6 +8,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import { HELP_CATEGORIES, CATEGORY_BY_SLUG } from '@/lib/help-categories';
+import { searchStaticHelpArticles } from '@/lib/help-articles';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,6 +75,15 @@ export default async function HelpSearchPage({ params, searchParams }: PageParam
       });
     } catch {
       /* table missing — results stays empty */
+    }
+    if (results.length === 0) {
+      results = searchStaticHelpArticles(locale, q).map((article) => ({
+        id: article.id,
+        slug: article.slug,
+        category: article.category,
+        title: article.title,
+        excerpt: article.excerpt,
+      }));
     }
   }
 

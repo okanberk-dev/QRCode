@@ -30,7 +30,7 @@ export default function SiteSettingsPage() {
   const [activeLang, setActiveLang] = useState<Lang>('tr');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [uploading, setUploading] = useState<'logo' | 'favicon' | 'og' | null>(null);
+  const [uploading, setUploading] = useState<'logo' | 'favicon' | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/site-settings')
@@ -68,7 +68,7 @@ export default function SiteSettingsPage() {
     }
   };
 
-  const handleUpload = async (file: File, kind: 'logo' | 'favicon' | 'og') => {
+  const handleUpload = async (file: File, kind: 'logo' | 'favicon') => {
     setUploading(kind);
     setError('');
     try {
@@ -80,7 +80,6 @@ export default function SiteSettingsPage() {
       if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
       if (kind === 'logo') update('logoUrl', data.url);
       if (kind === 'favicon') update('faviconUrl', data.url);
-      if (kind === 'og') update('ogImageUrl', data.url);
       setSuccess('Dosya yüklendi. Değişikliği kalıcı yapmak için Kaydet butonuna basın.');
       setTimeout(() => setSuccess(''), 5000);
     } catch (e) {
@@ -90,10 +89,9 @@ export default function SiteSettingsPage() {
     }
   };
 
-  const handleRemove = (kind: 'logo' | 'favicon' | 'og') => {
+  const handleRemove = (kind: 'logo' | 'favicon') => {
     if (kind === 'logo') update('logoUrl', null);
     if (kind === 'favicon') update('faviconUrl', null);
-    if (kind === 'og') update('ogImageUrl', null);
   };
 
   if (loading) {
@@ -129,7 +127,7 @@ export default function SiteSettingsPage() {
             Site Ayarları
           </h1>
           <p className="text-[14px] text-[#525252] mt-1.5 max-w-[560px]">
-            SEO metadatası, Open Graph görseli, logo ve favicon — her değişiklik tüm site genelinde yansır.
+            SEO metadatası, logo ve favicon — her değişiklik tüm site genelinde yansır.
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-[#C6F24E]/60 bg-[#EAF9B8] px-3 py-1.5">
@@ -240,28 +238,7 @@ export default function SiteSettingsPage() {
         </div>
       </div>
 
-      {/* ─── Kart 2: Open Graph ─── */}
-      <div className={CARD}>
-        <div className="mb-6">
-          <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">Open Graph Görseli</h2>
-          <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
-            Link paylaşımlarında (Twitter, Facebook, WhatsApp) görünen görsel. Önerilen: 1200×630 PNG/JPG.
-          </p>
-        </div>
-
-        <AssetUploader
-          url={settings.ogImageUrl}
-          label="OG Görseli"
-          accept="image/png,image/jpeg,image/webp"
-          aspect="1200 × 630"
-          onUpload={(f) => handleUpload(f, 'og')}
-          onRemove={() => handleRemove('og')}
-          uploading={uploading === 'og'}
-          previewClass="aspect-[1200/630] w-full max-w-md"
-        />
-      </div>
-
-      {/* ─── Kart 3: Branding ─── */}
+      {/* ─── Kart 2: Branding ─── */}
       <div className={CARD}>
         <div className="mb-6">
           <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">Marka Kimliği</h2>

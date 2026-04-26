@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowRight, Check, Eye, EyeOff, Loader2 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import RecaptchaNotice from '@/components/RecaptchaNotice';
 
 interface Props {
   locale: Locale;
@@ -169,6 +170,8 @@ export default function ResetPasswordForm({ locale }: Props) {
           : (locale === 'tr' ? 'Şifreyi güncelle' : 'Update password')}
         {!loading && <ArrowRight size={18} strokeWidth={2} />}
       </button>
+
+      <RecaptchaNotice locale={locale} className="text-center px-1" />
 
       <p className="text-center text-[13px] text-[#737373] mt-1">
         {locale === 'tr' ? 'Kod süresi doldu mu?' : 'Code expired?'}{' '}

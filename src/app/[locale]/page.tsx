@@ -38,6 +38,7 @@ export async function generateMetadata({
   const description = locale === 'tr'
     ? 'Buaze ile işletmenizin dijital itibarını profesyonelleştirin. Geri bildirim operasyonlarınızı tek bir merkezden yöneterek güven inşa edin.'
     : 'Professionalize your business\'s digital reputation with Buaze. Build trust by managing your feedback operations from a single hub.';
+  const ogImage = locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
 
   return {
     metadataBase: new URL('https://buaze.com'),
@@ -59,10 +60,10 @@ export async function generateMetadata({
       description: t.siteDescription || description,
       images: [
         {
-          url: '/assets/3d-hero.png',
+          url: ogImage,
           width: 1200,
           height: 630,
-          alt: 'Buaze platform dashboard preview',
+          alt: title,
         },
       ],
     },
@@ -70,7 +71,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      images: ['/assets/3d-hero.png'],
+      images: [ogImage],
     },
   };
 }

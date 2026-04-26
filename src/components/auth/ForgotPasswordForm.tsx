@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowRight, Check, Loader2 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import RecaptchaNotice from '@/components/RecaptchaNotice';
 
 interface Props {
   locale: Locale;
@@ -142,6 +143,8 @@ export default function ForgotPasswordForm({ locale }: Props) {
           : (locale === 'tr' ? 'Bağlantı gönder' : 'Send reset link')}
         {!loading && <ArrowRight size={18} strokeWidth={2} />}
       </button>
+
+      <RecaptchaNotice locale={locale} className="text-center px-1" />
 
       <p className="text-center text-[13px] text-[#737373] mt-1">
         {locale === 'tr' ? 'Hatırladın mı?' : 'Remembered it?'}{' '}

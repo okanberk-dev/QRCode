@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ShieldCheck, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import RecaptchaNotice from '@/components/RecaptchaNotice';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -124,6 +125,8 @@ export default function AdminLogin() {
                 {loading ? <Loader2 className="animate-spin" size={20} /> : 'GÜVENLİ GİRİŞ YAP'}
               </button>
             </div>
+
+            <RecaptchaNotice locale="tr" className="text-center px-1" />
           </form>
         </div>
 

@@ -4,7 +4,7 @@ import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
 import { uploadToStorage, isStorageConfigured } from '@/lib/supabase-storage';
 
-type Kind = 'logo' | 'favicon' | 'og';
+type Kind = 'logo' | 'favicon';
 
 const RASTER_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const LOGO_TYPES = [...RASTER_TYPES, 'image/svg+xml'];
@@ -13,7 +13,6 @@ const FAVICON_TYPES = [...RASTER_TYPES, 'image/svg+xml', 'image/x-icon', 'image/
 const MAX_BYTES: Record<Kind, number> = {
   logo: 2 * 1024 * 1024,
   favicon: 1 * 1024 * 1024,
-  og: 5 * 1024 * 1024,
 };
 
 export async function POST(req: NextRequest) {
@@ -34,12 +33,12 @@ export async function POST(req: NextRequest) {
     const kind = typeof kindRaw === 'string' ? (kindRaw as Kind) : null;
 
     if (!file) return ApiErrors.badRequest('Dosya bulunamadı');
-    if (!kind || !['logo', 'favicon', 'og'].includes(kind)) {
-      return ApiErrors.badRequest('Geçersiz kind (logo|favicon|og)');
+    if (!kind || !['logo', 'favicon'].includes(kind)) {
+      return ApiErrors.badRequest('Geçersiz kind (logo|favicon)');
     }
 
     const allowed =
-      kind === 'og' ? RASTER_TYPES : kind === 'logo' ? LOGO_TYPES : FAVICON_TYPES;
+      kind === 'logo' ? LOGO_TYPES : FAVICON_TYPES;
     if (!allowed.includes(file.type)) {
       return ApiErrors.badRequest(`Geçersiz dosya türü: ${file.type}`);
     }
@@ -61,13 +60,6 @@ export async function POST(req: NextRequest) {
       outBuffer = buffer;
       outExt = 'svg';
       outMime = 'image/svg+xml';
-    } else if (kind === 'og') {
-      outBuffer = await sharp(buffer)
-        .resize(1200, 630, { fit: 'cover', position: 'center' })
-        .webp({ quality: 85 })
-        .toBuffer();
-      outExt = 'webp';
-      outMime = 'image/webp';
     } else if (kind === 'logo') {
       outBuffer = await sharp(buffer)
         .resize(512, 512, { fit: 'inside', withoutEnlargement: true })

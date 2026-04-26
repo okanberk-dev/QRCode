@@ -8,6 +8,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import { CATEGORY_BY_SLUG } from '@/lib/help-categories';
+import { getStaticHelpArticle, getStaticHelpArticles, type StaticHelpArticle } from '@/lib/help-articles';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,7 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   } catch {
     /* table may not exist yet */
   }
+  article = article ?? getStaticHelpArticle(locale, slug);
   if (!article) return { title: locale === 'tr' ? 'Makale bulunamadı' : 'Article not found' };
   const title = `${article.title} — ${locale === 'tr' ? 'Yardım' : 'Help'} | Buaze`;
   const description =
@@ -59,14 +61,15 @@ export default async function HelpArticlePage({ params }: PageParams) {
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
-  let article: Awaited<ReturnType<typeof prisma.helpArticle.findUnique>> = null;
+  let article: Awaited<ReturnType<typeof prisma.helpArticle.findUnique>> | StaticHelpArticle | null = null;
   try {
     article = await prisma.helpArticle.findUnique({
       where: { slug_locale: { slug, locale } },
     });
   } catch {
-    notFound();
+    article = null;
   }
+  article = article ?? getStaticHelpArticle(locale, slug);
   if (!article || !article.isPublished) notFound();
 
   const cat = CATEGORY_BY_SLUG[article.category];
@@ -88,6 +91,12 @@ export default async function HelpArticlePage({ params }: PageParams) {
     });
   } catch {
     /* ignore */
+  }
+  if (related.length === 0) {
+    related = getStaticHelpArticles(locale, article.category)
+      .filter((item) => item.slug !== article.slug)
+      .slice(0, 3)
+      .map((item) => ({ slug: item.slug, title: item.title, excerpt: item.excerpt }));
   }
 
   const jsonLd = {

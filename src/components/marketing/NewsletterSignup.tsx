@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import RecaptchaNotice from '@/components/RecaptchaNotice';
 
 interface Props {
   locale: 'tr' | 'en';
@@ -54,24 +55,27 @@ export default function NewsletterSignup({ locale }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-2 sm:flex-row">
-      <input
-        type="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder={isTr ? 'e-posta@işletme.com' : 'your@email.com'}
-        aria-label={isTr ? 'E-posta adresi' : 'Email address'}
-        className="min-h-[44px] flex-1 rounded-full border border-[#333] bg-[#1A1A1A] px-4 py-3 text-[16px] text-white outline-none placeholder:text-[#737373] focus:border-[#C6F24E] sm:px-5 sm:text-[14px]"
-      />
-      <button
-        type="submit"
-        disabled={status === 'loading'}
-        className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-5 py-3 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] disabled:opacity-60 sm:w-auto"
-      >
-        {status === 'loading' ? <Loader2 size={14} className="animate-spin" /> : null}
-        {isTr ? 'Abone ol' : 'Subscribe'} →
-      </button>
+    <form onSubmit={onSubmit} className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={isTr ? 'e-posta@işletme.com' : 'your@email.com'}
+          aria-label={isTr ? 'E-posta adresi' : 'Email address'}
+          className="min-h-[44px] flex-1 rounded-full border border-[#333] bg-[#1A1A1A] px-4 py-3 text-[16px] text-white outline-none placeholder:text-[#737373] focus:border-[#C6F24E] sm:px-5 sm:text-[14px]"
+        />
+        <button
+          type="submit"
+          disabled={status === 'loading'}
+          className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-5 py-3 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] disabled:opacity-60 sm:w-auto"
+        >
+          {status === 'loading' ? <Loader2 size={14} className="animate-spin" /> : null}
+          {isTr ? 'Abone ol' : 'Subscribe'} →
+        </button>
+      </div>
+      <RecaptchaNotice locale={locale} dark className="px-1" />
       {status === 'error' && (
         <p className="text-[11px] text-red-400 sm:hidden">
           {isTr ? 'Bir sorun oldu, tekrar dene.' : 'Something went wrong, try again.'}

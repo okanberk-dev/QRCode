@@ -1,5 +1,11 @@
 import type { NextConfig } from "next";
 
+const firebaseAuthProxyTarget =
+  process.env.FIREBASE_AUTH_PROXY_TARGET ||
+  (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    ? `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com`
+    : '');
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -15,6 +21,21 @@ const nextConfig: NextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
+  },
+
+  async rewrites() {
+    if (!firebaseAuthProxyTarget) return [];
+
+    return [
+      {
+        source: '/__/auth/:path*',
+        destination: `https://${firebaseAuthProxyTarget}/__/auth/:path*`,
+      },
+      {
+        source: '/__/firebase/init.json',
+        destination: `https://${firebaseAuthProxyTarget}/__/firebase/init.json`,
+      },
+    ];
   },
 
   async headers() {

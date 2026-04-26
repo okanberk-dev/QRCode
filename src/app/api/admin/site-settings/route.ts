@@ -60,7 +60,6 @@ export async function PUT(req: NextRequest) {
   const kwEn = keywordsToCsv(body.keywordsEn);
   if (kwEn !== null) updates.push({ key: SITE_SETTINGS_KEYS.keywordsEn, value: kwEn });
 
-  if (body.ogImageUrl !== undefined) updates.push({ key: SITE_SETTINGS_KEYS.ogImageUrl, value: body.ogImageUrl });
   if (body.faviconUrl !== undefined) updates.push({ key: SITE_SETTINGS_KEYS.faviconUrl, value: body.faviconUrl });
   if (body.logoUrl !== undefined) updates.push({ key: SITE_SETTINGS_KEYS.logoUrl, value: body.logoUrl });
 

@@ -76,8 +76,8 @@ export function getFirebaseErrorMessage(
         : 'This email is registered with a different sign-in method. Try email + password.';
     case 'auth/internal-error':
       return tr
-        ? `Firebase iç hatası. authDomain="${authDomain}" değerinin <project-id>.firebaseapp.com formatında olduğunu doğrulayın; aksi halde popup başarısız olur.`
-        : `Firebase internal error. Verify NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ("${authDomain}") matches "<project-id>.firebaseapp.com".`;
+        ? `Firebase iç hatası. authDomain="${authDomain}" değerinin Firebase default domaini veya /__/auth proxy'si tanımlı kendi domaininiz olduğunu doğrulayın.`
+        : `Firebase internal error. Verify NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ("${authDomain}") is either the default Firebase domain or your own domain with the /__/auth proxy configured.`;
     case 'RECAPTCHA_NOT_READY':
     case 'RECAPTCHA_SCRIPT_FAILED':
       return tr

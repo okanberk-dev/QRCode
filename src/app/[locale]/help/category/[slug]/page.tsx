@@ -9,6 +9,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import { CATEGORY_BY_SLUG } from '@/lib/help-categories';
+import { getStaticHelpArticles } from '@/lib/help-articles';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,6 +60,14 @@ export default async function HelpCategoryPage({ params }: PageParams) {
     });
   } catch {
     /* table may not exist yet; render empty state */
+  }
+  if (articles.length === 0) {
+    articles = getStaticHelpArticles(locale, slug).map((article) => ({
+      slug: article.slug,
+      title: article.title,
+      excerpt: article.excerpt,
+      updatedAt: article.updatedAt,
+    }));
   }
 
   return (
