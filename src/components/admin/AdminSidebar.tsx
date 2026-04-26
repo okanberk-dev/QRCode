@@ -7,6 +7,7 @@ import {
   Bell,
   BookOpen,
   ChevronDown,
+  ChevronRight,
   CreditCard,
   Crown,
   FileEdit,
@@ -51,12 +52,54 @@ function getTrialInfo(trialEndsAt: string | null | undefined): { daysLeft: numbe
   return { daysLeft, isExpired: daysLeft <= 0 };
 }
 
+const SIDEBAR_GROUP_STATE_KEY = 'buaze.admin.sidebarGroups';
+
+function loadGroupState(): Record<string, boolean> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(SIDEBAR_GROUP_STATE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveGroupState(state: Record<string, boolean>) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SIDEBAR_GROUP_STATE_KEY, JSON.stringify(state));
+  } catch {
+    // localStorage full or disabled — ignore. Group state is purely UX
+    // sugar; the user will just see all groups closed by default next
+    // session.
+  }
+}
+
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { t, locale, setLocale } = useAdminTranslation();
   const [role, setRole] = useState('superadmin');
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Expanded-group state: { groupId: bool }. Persisted to localStorage so
+  // navigating between pages doesn't collapse what the operator opened.
+  // Default missing → group is closed; we auto-expand below when an
+  // active route lives inside the group.
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setExpandedGroups(loadGroupState());
+  }, []);
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = { ...prev, [groupId]: !prev[groupId] };
+      saveGroupState(next);
+      return next;
+    });
+  };
 
   useEffect(() => {
     fetch('/api/admin/me')
@@ -86,50 +129,107 @@ export default function AdminSidebar() {
     };
   }, [mobileOpen]);
 
-  const menuItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; roles: string[] }> = [
-    { href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
-    { href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/reviews', icon: Inbox, label: locale === 'en' ? 'Reviews' : 'Yorumlar', roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik', roles: ['superadmin', 'manager', 'restaurant_owner'] },
+  // Sidebar nav supports two entry kinds:
+  //   - 'item': flat link (Dashboard, QR vs.)
+  //   - 'group': collapsible parent that hides 2-4 related items under one
+  //     header (Mail / Kullanıcılar / İçerik). Click toggles expand;
+  //     clicking a child auto-keeps the group open if active route is
+  //     inside.
+  type NavItem = {
+    type: 'item';
+    href: string;
+    icon: typeof LayoutDashboard;
+    label: string;
+    roles: string[];
+  };
+  type NavGroup = {
+    type: 'group';
+    id: string;
+    icon: typeof LayoutDashboard;
+    label: string;
+    roles: string[];
+    children: Array<{ href: string; icon: typeof LayoutDashboard; label: string }>;
+  };
+  type Nav = NavItem | NavGroup;
+
+  const menuItems: Nav[] = [
+    { type: 'item', href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { type: 'item', href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
+    { type: 'item', href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { type: 'item', href: '/admin/reviews', icon: Inbox, label: locale === 'en' ? 'Reviews' : 'Yorumlar', roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { type: 'item', href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik', roles: ['superadmin', 'manager', 'restaurant_owner'] },
     // Workspace-scoped features — shown only to restaurant_owner (and
     // managers where it makes sense). Superadmin manages the platform
-    // globally via İşletmeler / Yöneticiler / Müşteriler / Site Ayarları
-    // below, so these workspace entries would only clutter that view.
-    { href: '/admin/campaigns', icon: Sparkles, label: locale === 'en' ? 'Campaigns' : 'Kampanyalar', roles: ['restaurant_owner'] },
-    { href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip', roles: ['restaurant_owner'] },
-    { href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma', roles: ['restaurant_owner'] },
-    { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notifications' : 'Bildirimler', roles: ['manager', 'restaurant_owner'] },
-    { href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar', roles: ['restaurant_owner'] },
+    // globally via groups below; these workspace entries would only
+    // clutter that view.
+    { type: 'item', href: '/admin/campaigns', icon: Sparkles, label: locale === 'en' ? 'Campaigns' : 'Kampanyalar', roles: ['restaurant_owner'] },
+    { type: 'item', href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip', roles: ['restaurant_owner'] },
+    { type: 'item', href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma', roles: ['restaurant_owner'] },
+    { type: 'item', href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notifications' : 'Bildirimler', roles: ['manager', 'restaurant_owner'] },
+    { type: 'item', href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar', roles: ['restaurant_owner'] },
   ];
 
   if (role === 'superadmin') {
-    menuItems.push(
-      { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri', roles: ['superadmin'] },
-      { href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler', roles: ['superadmin'] },
-      { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler', roles: ['superadmin'] },
-      { href: '/admin/newsletters', icon: Mail, label: locale === 'en' ? 'Newsletter' : 'Bülten Aboneleri', roles: ['superadmin'] },
-      { href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Newsletter Campaigns' : 'Bülten Kampanyaları', roles: ['superadmin'] },
-      { href: '/admin/mail-templates', icon: FileEdit, label: locale === 'en' ? 'Mail Templates' : 'Mail İçerikleri', roles: ['superadmin'] },
-      { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog Yönetimi', roles: ['superadmin'] },
-      { href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular', roles: ['superadmin'] },
-      { href: '/admin/site-settings', icon: Settings, label: locale === 'en' ? 'Site Settings' : 'Site Ayarları', roles: ['superadmin'] },
-    );
+    // Group: Kullanıcılar — 3 user-related panels
+    menuItems.push({
+      type: 'group',
+      id: 'users',
+      icon: Users,
+      label: locale === 'en' ? 'Users' : 'Kullanıcılar',
+      roles: ['superadmin'],
+      children: [
+        { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri' },
+        { href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler' },
+        { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler' },
+      ],
+    });
 
-    // Dev-only mail preview entry. Hidden in production builds (incl. Vercel
-    // preview deploys, where NODE_ENV is also 'production'). Lets a local dev
-    // open Pulse template renders + fire test mails to themselves.
+    // Group: Mail — 3-4 mail-related panels (dev preview only on local)
+    const mailChildren: Array<{ href: string; icon: typeof LayoutDashboard; label: string }> = [
+      { href: '/admin/newsletters', icon: Mail, label: locale === 'en' ? 'Newsletter Subscribers' : 'Bülten Aboneleri' },
+      { href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Newsletter Campaigns' : 'Bülten Kampanyaları' },
+      { href: '/admin/mail-templates', icon: FileEdit, label: locale === 'en' ? 'Mail Templates' : 'Mail İçerikleri' },
+    ];
     if (process.env.NODE_ENV !== 'production') {
-      menuItems.push({
+      mailChildren.push({
         href: '/admin/dev/mail-preview',
         icon: Mail,
         label: locale === 'en' ? 'Mail Preview (dev)' : 'Mail Önizleme (dev)',
-        roles: ['superadmin'],
       });
     }
+    menuItems.push({
+      type: 'group',
+      id: 'mail',
+      icon: Mail,
+      label: locale === 'en' ? 'Mail' : 'Mail',
+      roles: ['superadmin'],
+      children: mailChildren,
+    });
+
+    // Group: İçerik — blog + announcements
+    menuItems.push({
+      type: 'group',
+      id: 'content',
+      icon: BookOpen,
+      label: locale === 'en' ? 'Content' : 'İçerik',
+      roles: ['superadmin'],
+      children: [
+        { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog Yönetimi' },
+        { href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular' },
+      ],
+    });
+
+    menuItems.push({
+      type: 'item',
+      href: '/admin/site-settings',
+      icon: Settings,
+      label: locale === 'en' ? 'Site Settings' : 'Site Ayarları',
+      roles: ['superadmin'],
+    });
   }
 
   menuItems.push({
+    type: 'item',
     href: '/admin/profile',
     icon: User,
     label: locale === 'en' ? 'Profile' : 'Profilim',
@@ -224,22 +324,78 @@ export default function AdminSidebar() {
         {menuItems
           .filter((i) => i.roles.includes(role))
           .map((item) => {
+            if (item.type === 'item') {
+              const Icon = item.icon;
+              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
+                    isActive
+                      ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
+                      : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
+                  }`}
+                >
+                  <Icon size={16} strokeWidth={2} />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            }
+
+            // Group: collapsible parent with children. Auto-expanded
+            // when the active route lives inside one of the children
+            // — operator never has to click to find where they are.
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+            const childActive = item.children.some(
+              (c) => pathname === c.href || pathname?.startsWith(c.href + '/'),
+            );
+            const isExpanded = childActive || expandedGroups[item.id] === true;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
-                  isActive
-                    ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
-                    : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
-                }`}
-              >
-                <Icon size={16} strokeWidth={2} />
-                <span className="truncate">{item.label}</span>
-              </Link>
+              <div key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(item.id)}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
+                    childActive
+                      ? 'bg-white/10 text-white font-semibold'
+                      : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
+                  }`}
+                  aria-expanded={isExpanded}
+                >
+                  <Icon size={16} strokeWidth={2} />
+                  <span className="flex-1 truncate text-left">{item.label}</span>
+                  {isExpanded ? (
+                    <ChevronDown size={14} strokeWidth={2} className="text-white/50" />
+                  ) : (
+                    <ChevronRight size={14} strokeWidth={2} className="text-white/50" />
+                  )}
+                </button>
+                {isExpanded && (
+                  <div className="mt-0.5 ml-3 space-y-0.5 border-l border-white/10 pl-3">
+                    {item.children.map((child) => {
+                      const ChildIcon = child.icon;
+                      const isActive = pathname === child.href || pathname?.startsWith(child.href + '/');
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-all ${
+                            isActive
+                              ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
+                              : 'text-white/60 hover:bg-white/5 hover:text-white font-medium'
+                          }`}
+                        >
+                          <ChildIcon size={14} strokeWidth={2} />
+                          <span className="truncate">{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
       </nav>

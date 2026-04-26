@@ -1411,3 +1411,44 @@ Bazı mail akışları zaman-kritik: düşük puan uyarısı restoran sahibine u
 - DB persistence (`MailDeliveryLog` table) — admin paneli "failed mails" list + manual re-send
 - Resend webhook integration → bounce/complaint → auto unsubscribe + ops alert
 - Slack webhook alternative (ops mail yerine)
+
+### 21.36 Admin sidebar — collapsible groups
+
+Superadmin sidebar'ında 14+ menü item vardı; mail/user/content kategorileri karışıktı. Operatör scroll edip ne ne diye tahmin ediyordu. 3 grupta collapsible accordion ile düzenlendi — her grup tek tıkla açılıp kapanır, aktif route otomatik açılır, expand state localStorage'da korunur.
+
+**Schema** (`src/components/admin/AdminSidebar.tsx`):
+
+```ts
+type NavItem = { type: 'item'; href; icon; label; roles };
+type NavGroup = {
+  type: 'group';
+  id: string;
+  icon; label; roles;
+  children: Array<{ href; icon; label }>;
+};
+```
+
+**Superadmin grupları**:
+| Grup | İçerik |
+|---|---|
+| **Kullanıcılar** | İşletme Sahipleri · Yöneticiler · Müşteriler |
+| **Mail** | Bülten Aboneleri · Bülten Kampanyaları · Mail İçerikleri · (+ Mail Önizleme dev only) |
+| **İçerik** | Blog Yönetimi · Duyurular |
+
+Üst seviyedeki tek-tek item'lar (Dashboard, QR, Yorumlar, Analitik, Site Ayarları, Profilim) korundu — her gün kullanılan navigation hızlı erişimde.
+
+**UX davranışı**:
+- Group header'a tıkla → expand/collapse
+- Aktif route bir grup'un child'ında ise → grup **otomatik açılır** (childActive state)
+- Expand state `localStorage['buaze.admin.sidebarGroups']`'a yazılır (key: `Record<groupId, boolean>`)
+- ChevronRight (kapalı) → ChevronDown (açık)
+- Child item'lar sol border (`border-l border-white/10 pl-3`) ile parent'a görsel olarak bağlı
+- Child item active state: lime arka plan, parent group: white/10 bg
+
+**Owner / manager için**: gruplama yok — flat list (5-9 item, kategorize gereksiz).
+
+**Yeni grup eklerken**:
+1. Role check'in altına `menuItems.push({ type: 'group', id, icon, label, roles, children })`
+2. `id` unique olsun (localStorage key'i için)
+3. Mevcut tek-item entry'leri `children` içine taşı
+4. Grup adı locale-aware (TR primary, EN fallback)
