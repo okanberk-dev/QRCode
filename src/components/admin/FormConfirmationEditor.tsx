@@ -178,8 +178,13 @@ export default function FormConfirmationEditor({ locale }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ template: 'form-confirmation', locale, variant: activeVariant }),
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || 'Test mail gönderimi başarısız');
+      // Defensive parse — see MailTemplateEditor for rationale.
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = body.detail || body.error || `Sunucu hatası (HTTP ${res.status})`;
+        const hint = body.hint ? ` — ${body.hint}` : '';
+        throw new Error(`Test mail gönderimi başarısız: ${msg}${hint}`);
+      }
       setInfo(`Test mail gönderildi (${activeVariant}): ${body.to}`);
     } catch (e) {
       setError((e as Error).message);

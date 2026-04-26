@@ -291,8 +291,14 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ template: templateKey, locale }),
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || 'Test mail gönderimi başarısız');
+      // Defensive parse: empty-body 500 can slip through on platform
+      // edge cases. Fall back to status-derived message.
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = body.detail || body.error || `Sunucu hatası (HTTP ${res.status})`;
+        const hint = body.hint ? ` — ${body.hint}` : '';
+        throw new Error(`Test mail gönderimi başarısız: ${msg}${hint}`);
+      }
       setInfo(`Test mail gönderildi: ${body.to}`);
     } catch (e) {
       setError((e as Error).message);
