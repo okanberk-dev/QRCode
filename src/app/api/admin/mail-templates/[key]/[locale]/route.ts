@@ -6,6 +6,7 @@ import { ApiErrors } from '@/lib/api-errors';
 import { invalidateMailCopyCache, isSupportedMailTemplateKey, type MailLocale } from '@/lib/email/copy-loader';
 import { stripLockedFields } from '@/lib/email/locked-fields';
 import { MAIL_PLACEHOLDERS, findInvalidPlaceholders } from '@/lib/email/placeholders';
+import { pruneRevisions } from '@/lib/email/revisions';
 
 export const dynamic = 'force-dynamic';
 
@@ -136,21 +137,47 @@ export async function PATCH(
   const safeCleaned = stripLockedFields(parsed.key, cleaned);
 
   const adminId = admin.id ?? admin.userId ?? null;
-
   const contentJson = safeCleaned as Prisma.InputJsonValue;
-  const upserted = await prisma.mailTemplate.upsert({
-    where: { key_locale: { key: parsed.key, locale: parsed.locale } },
-    create: {
-      key: parsed.key,
-      locale: parsed.locale,
-      content: contentJson,
-      updatedById: adminId,
-    },
-    update: {
-      content: contentJson,
-      updatedById: adminId,
-    },
+
+  // Phase 5 — upsert + revision write in a single transaction so the
+  // audit log can never drift from the live row when one of the writes
+  // fails midway. editType is derived from upsert timestamps (atomic at
+  // DB level): if createdAt === updatedAt this row was just created;
+  // otherwise it was an update. This avoids the find-then-upsert TOCTOU
+  // race where two concurrent saves could both write 'created'.
+  const [upserted] = await prisma.$transaction(async (tx) => {
+    const row = await tx.mailTemplate.upsert({
+      where: { key_locale: { key: parsed.key, locale: parsed.locale } },
+      create: {
+        key: parsed.key,
+        locale: parsed.locale,
+        content: contentJson,
+        updatedById: adminId,
+      },
+      update: {
+        content: contentJson,
+        updatedById: adminId,
+      },
+    });
+    const editType: 'created' | 'updated' =
+      row.createdAt.getTime() === row.updatedAt.getTime() ? 'created' : 'updated';
+    await tx.mailTemplateRevision.create({
+      data: {
+        templateId: row.id,
+        templateKey: parsed.key,
+        locale: parsed.locale,
+        editType,
+        content: contentJson,
+        editedById: adminId,
+      },
+    });
+    return [row] as const;
   });
+
+  // Soft-prune outside the transaction: best-effort cleanup, doesn't need
+  // to atomically commit with the write. Tiny race if two concurrent
+  // saves both compute keepIds is acceptable — eventually consistent.
+  await pruneRevisions(parsed.key, parsed.locale);
 
   // Cache bust — next mail send (cron or transactional) reads fresh copy.
   invalidateMailCopyCache(parsed.key, parsed.locale);
@@ -182,9 +209,28 @@ export async function DELETE(
   const parsed = parseParams(rawKey, rawLocale);
   if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
+  // Phase 5 — delete + 'deleted' revision in a single transaction so we
+  // never end up with an audit row claiming "deleted" for a template
+  // that's still alive (or vice versa). Schema's `onDelete: SetNull` on
+  // revisions keeps the audit row reachable via (templateKey, locale)
+  // after the template row is gone — revert can re-create from history.
+  const adminId = admin.id ?? admin.userId ?? null;
   try {
-    await prisma.mailTemplate.delete({
-      where: { key_locale: { key: parsed.key, locale: parsed.locale } },
+    await prisma.$transaction(async (tx) => {
+      // Delete first so a missing row throws P2025 before we insert the
+      // audit row — guards against orphan 'deleted' revisions.
+      await tx.mailTemplate.delete({
+        where: { key_locale: { key: parsed.key, locale: parsed.locale } },
+      });
+      await tx.mailTemplateRevision.create({
+        data: {
+          templateKey: parsed.key,
+          locale: parsed.locale,
+          editType: 'deleted',
+          content: {} as Prisma.InputJsonValue,
+          editedById: adminId,
+        },
+      });
     });
   } catch (err) {
     if ((err as { code?: string }).code === 'P2025') {
@@ -192,6 +238,7 @@ export async function DELETE(
     }
     throw err;
   }
+  await pruneRevisions(parsed.key, parsed.locale);
   invalidateMailCopyCache(parsed.key, parsed.locale);
   return NextResponse.json({ ok: true });
 }

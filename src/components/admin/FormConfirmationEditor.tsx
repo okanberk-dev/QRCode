@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Eye, Loader2, Mail, RotateCcw, Save } from 'lucide-react';
+import { ArrowLeft, Eye, History, Loader2, Mail, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import MailFieldInput, { type MailFieldDef } from './MailFieldInput';
+import MailRevisionHistory from './MailRevisionHistory';
 import { MAIL_PLACEHOLDERS } from '@/lib/email/placeholders';
 
 type FormType = 'contact' | 'career' | 'roi' | 'newsletter';
@@ -60,6 +61,8 @@ export default function FormConfirmationEditor({ locale }: Props) {
   const [saving, setSaving] = useState(false);
   const [reverting, setReverting] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -97,7 +100,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
       }
     })();
     return () => { alive = false; };
-  }, [locale]);
+  }, [locale, reloadKey]);
 
   const updateField = (variant: FormType, key: string, value: string) => {
     setNested((prev) => ({
@@ -272,6 +275,13 @@ export default function FormConfirmationEditor({ locale }: Props) {
                   </button>
                 </>
               )}
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+              >
+                <History size={14} /> Geçmiş
+              </button>
               {seeded && (
                 <button
                   type="button"
@@ -297,6 +307,17 @@ export default function FormConfirmationEditor({ locale }: Props) {
           </div>
         </>
       )}
+
+      <MailRevisionHistory
+        templateKey="form-confirmation"
+        locale={locale}
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        onReverted={() => {
+          setReloadKey((k) => k + 1);
+          setInfo('Geri dönüş başarılı — içerik yenilendi.');
+        }}
+      />
     </div>
   );
 }

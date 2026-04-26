@@ -963,3 +963,84 @@ Admin save sırasında geçersiz placeholder yazarsa:
 - Redis cache (multi-instance drift)
 - Per-field validation (max length, format)
 - Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+
+---
+
+## Phase 16.8 — Mail CMS Phase 5: audit log + revert
+
+**PR:** TBA — `claude/mail-cms-phase5-audit-log` (stacked on PR #78 / Phase 4)
+
+### Hedef
+
+Mail template her edit'inde DB'ye snapshot. KVKK uyumu + rollback yeteneği.
+
+### Yeni model
+
+```prisma
+model MailTemplateRevision {
+  id          String        @id @default(cuid())
+  templateId  String?       // SetNull on delete — history survives
+  templateKey String        // denormalized for post-delete query
+  locale      String
+  editType    String        // 'created' | 'updated' | 'deleted' | 'reverted'
+  content     Json
+  editedById  String?
+  createdAt   DateTime
+
+  @@index([templateKey, locale, createdAt])
+  @@index([templateId, createdAt])
+}
+```
+
+### Yeni dosyalar
+
+- `src/app/api/admin/mail-templates/[key]/[locale]/revisions/route.ts` — GET list (last 50, editor join)
+- `src/app/api/admin/mail-templates/[key]/[locale]/revisions/[id]/revert/route.ts` — POST revert
+- `src/components/admin/MailRevisionHistory.tsx` — slide-over modal, listele + expand + revert
+
+### Değişen dosyalar
+
+- `prisma/schema.prisma` — `MailTemplate` model + `MailTemplateRevision` ilişkisi
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts`:
+  - PATCH after upsert: revision yaz + soft-prune
+  - DELETE before delete: 'deleted' revision yaz (SetNull FK ile survive)
+  - `pruneRevisions()` helper (last 50 keep)
+- `src/components/admin/MailTemplateEditor.tsx`:
+  - History buton + modal mount
+  - `reloadKey` state — revert sonrası fetch trigger
+- `src/components/admin/FormConfirmationEditor.tsx` — aynı history pattern
+- `CLAUDE.md` §21.30 (yeni)
+
+### Soft-prune
+
+Her PATCH/DELETE sonrası `pruneRevisions(key, locale)` last 50'yi tutar. Cron yok — write-time prune yeterli, chatty admin'lerde tablo unbounded büyümez.
+
+### Cross-template guard
+
+Revert endpoint'inde `revision.templateKey === pathKey && revision.locale === pathLocale` check. UI bug ile A → B revert engelleyici.
+
+### Locked field defence in depth
+
+Revert sırasında `stripLockedFields()` yine çalışır. Eski revision KVKK öncesi unlocked content içerse bile, revert apply ederken locked field drop edilir.
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- Prisma schema valid (`prisma validate`)
+- `prisma db push` Vercel build script'inde otomatik koşar
+- E2E (deploy + seed sonrası):
+  - Welcome.titleHi'yi save → DB'de revision row (editType='updated')
+  - "Geçmiş" buton → modal açılır, en son save görünür "MEVCUT" rozeti
+  - "İçeriği göster" → JSON preview
+  - Bir önceki revision'a "Bu sürüme dön" → confirm + apply + 'reverted' revision yazılır
+  - 60 kez save → 50'den eski revision'lar otomatik silinir
+
+### Phase 6+ backlog
+
+- Diff viewer (revision A vs B)
+- Per-field history filtering
+- Bulk export (CSV/JSON)
+- Redis cache (multi-instance drift)
+- Per-field validation (max length, format)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
