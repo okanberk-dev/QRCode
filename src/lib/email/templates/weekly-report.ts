@@ -79,14 +79,18 @@ export function renderWeeklyReport(
     detailSub: 'Heatmap, sentiment and aspect breakdown in the panel.',
   };
 
-  // Hero stat grid — 3 columns matching weekly-report.jsx:22-34
-  const stats = [
+  // Hero stat grid — total + avg are real metrics, always shown. The third
+  // "response time" cell from the JSX prototype rendered '1.4s' as a static
+  // placeholder because backend doesn't track response latency yet. To avoid
+  // a meaningless number every week, the cell is hidden and the grid drops
+  // to 2 columns until a `responseDelta` value is actually populated by the
+  // caller. When a real metric is available, push a third entry into `stats`.
+  const stats: Array<{ k: string; v: string; delta?: string | null }> = [
     { k: copy.statTotal, v: String(params.stats.total), delta: params.deltas?.totalDelta },
     { k: copy.statAvg, v: params.stats.avgRating.toFixed(1), delta: params.deltas?.avgDelta },
-    { k: copy.statResp, v: '1.4s', delta: params.deltas?.responseDelta }, // Static placeholder; backend doesn't track this yet.
   ];
   const heroStatCells = stats.map((s, i) => `
-    <td class="stack-col" valign="top" style="width:33.33%;padding:0 20px;${i === 0 ? 'padding-left:0;' : ''}${i < stats.length - 1 ? `border-right:1px solid ${PULSE.n800};` : 'padding-right:0;'}">
+    <td class="stack-col" valign="top" style="width:${(100 / stats.length).toFixed(2)}%;padding:0 20px;${i === 0 ? 'padding-left:0;' : ''}${i < stats.length - 1 ? `border-right:1px solid ${PULSE.n800};` : 'padding-right:0;'}">
       <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${s.k}</div>
       <div style="font-family:${FONTS.heading};font-size:36px;font-weight:500;letter-spacing:-0.025em;color:${PULSE.pure};line-height:1;margin-top:6px;">${s.v}</div>
       ${s.delta ? `<div style="margin-top:6px;font-size:12px;color:${PULSE.lime};font-weight:500;">${s.delta} ↑</div>` : ''}

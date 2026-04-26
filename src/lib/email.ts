@@ -232,7 +232,7 @@ export async function sendWelcomeEmail(params: {
 }): Promise<boolean> {
   const locale = params.locale ?? 'tr';
   const dashboardUrl = `${appUrl()}/${locale}/dashboard`;
-  const rendered = renderWelcome({ firstName: params.firstName, dashboardUrl } satisfies WelcomeParams, locale);
+  const rendered = await renderWelcome({ firstName: params.firstName, dashboardUrl } satisfies WelcomeParams, locale);
   return sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
 }
 
@@ -265,7 +265,7 @@ export async function sendCustomerReplyEmail(params: CustomerReplyParams & { to:
 
 export async function sendTrialEndingEmail(params: TrialEndingParams & { to: string; locale?: 'tr' | 'en' }): Promise<boolean> {
   const { to, locale, ...rest } = params;
-  const rendered = renderTrialEnding(rest, locale ?? 'tr');
+  const rendered = await renderTrialEnding(rest, locale ?? 'tr');
   return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text });
 }
 
@@ -283,7 +283,7 @@ export async function sendNewsletterEmail(params: {
   intro?: string | null;
   subject?: string | null;
 }): Promise<boolean> {
-  const rendered = renderNewsletter(
+  const rendered = await renderNewsletter(
     {
       posts: params.posts,
       unsubscribeUrl: params.unsubscribeUrl,
