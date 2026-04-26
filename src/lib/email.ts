@@ -255,9 +255,21 @@ export async function sendNewsletterEmail(params: {
   unsubscribeUrl: string;
   issueNumber?: number;
   locale?: 'tr' | 'en';
+  /** Optional NewsletterCampaign overrides. When set the cron uses authored
+   *  copy instead of the static "Sessiz misafiri…" hero / Pulse default. */
+  title?: string | null;
+  intro?: string | null;
+  subject?: string | null;
 }): Promise<boolean> {
   const rendered = renderNewsletter(
-    { posts: params.posts, unsubscribeUrl: params.unsubscribeUrl, issueNumber: params.issueNumber },
+    {
+      posts: params.posts,
+      unsubscribeUrl: params.unsubscribeUrl,
+      issueNumber: params.issueNumber,
+      customTitle: params.title,
+      customIntro: params.intro,
+      customSubject: params.subject,
+    },
     params.locale ?? 'tr',
   );
   return sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });

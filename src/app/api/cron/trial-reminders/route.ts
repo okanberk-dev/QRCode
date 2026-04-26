@@ -139,7 +139,7 @@ async function collectUsage(restaurantId: string | undefined): Promise<{
   const twentyEightDaysAgo = new Date();
   twentyEightDaysAgo.setDate(twentyEightDaysAgo.getDate() - 28);
 
-  const [recent, recentAgg, prior] = await Promise.all([
+  const [recent, recentAgg, prior, aiRepliesRaw] = await Promise.all([
     prisma.feedback.count({
       where: { restaurantId, createdAt: { gte: fourteenDaysAgo } },
     }),
@@ -153,12 +153,21 @@ async function collectUsage(restaurantId: string | undefined): Promise<{
         createdAt: { gte: twentyEightDaysAgo, lt: fourteenDaysAgo },
       },
     }),
+    // FeedbackReply.source filter — only AI Co-Pilot approved replies count.
+    // `.catch` keeps the cron alive if Prisma hasn't seen the column yet
+    // (e.g. fresh deploy where db push lagged behind code rollout).
+    prisma.feedbackReply
+      .count({
+        where: {
+          feedback: { restaurantId },
+          createdAt: { gte: fourteenDaysAgo },
+          source: 'ai_copilot',
+        },
+      })
+      .catch(() => null),
   ]);
 
-  // AI vs manual reply distinction isn't tracked yet (FeedbackReply.source
-  // doesn't exist). Returning null keeps the trial-ending template honest —
-  // the cell renders as "—" instead of an inflated total-reply count.
-  const aiReplies = null;
+  const aiReplies = aiRepliesRaw;
 
   const growthPct = prior > 0
     ? Math.round(((recent - prior) / prior) * 100)

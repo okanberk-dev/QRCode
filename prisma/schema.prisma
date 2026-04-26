@@ -133,9 +133,16 @@ model FeedbackReply {
   body         String   @db.Text
   channel      String   @default("internal") // internal | google | email
   status       String   @default("sent")     // draft | sent | failed
+  // Where the reply text came from. 'manual' = the operator typed it,
+  // 'ai_copilot' = OpenAI Co-Pilot draft was approved, 'template_fallback'
+  // = AI Co-Pilot returned a deterministic template (no key / API down).
+  // Powers trial-ending mail's AI reply count and any future analytics on
+  // operator vs AI-driven response throughput.
+  source       String?  @default("manual")
   createdAt    DateTime @default(now())      @map("created_at")
 
   @@index([feedbackId, createdAt])
+  @@index([source, createdAt])
   @@map("feedback_replies")
 }
 
@@ -474,6 +481,29 @@ model NewsletterSubscriber {
 
   @@index([createdAt])
   @@map("newsletter_subscribers")
+}
+
+// Authored newsletter issues. Cron prefers an active campaign over the
+// static "last 3 blog posts" fallback. `postIds` is a plain string array
+// (not a relation) — six-post cap + cron-only read keeps a join table
+// premature; phantom ids from deleted posts are silently skipped at send.
+model NewsletterCampaign {
+  id          String    @id @default(cuid())
+  title       String
+  intro       String    @db.Text
+  postIds     String[]  @map("post_ids")
+  locale      String    @default("tr") // tr | en | both
+  status      String    @default("draft") // draft | scheduled | sending | sent | failed
+  scheduledAt DateTime? @map("scheduled_at")
+  sentAt      DateTime? @map("sent_at")
+  sentCount   Int?      @map("sent_count")
+  failedCount Int?      @map("failed_count")
+  createdAt   DateTime  @default(now())   @map("created_at")
+  updatedAt   DateTime  @updatedAt        @map("updated_at")
+
+  @@index([status, scheduledAt])
+  @@index([createdAt])
+  @@map("newsletter_campaigns")
 }
 
 model ROIRequest {

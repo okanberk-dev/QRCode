@@ -13,6 +13,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { getNewsletterSourceLabel } from '@/lib/newsletter-sources';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 type Status = 'all' | 'active' | 'cancelled';
@@ -274,7 +275,7 @@ export default function AdminNewslettersPage() {
           >
             <option value="all">Tüm kaynaklar</option>
             {(data?.facets.sources ?? []).map((s) => (
-              <option key={s.value} value={s.value}>{s.value} ({s.count})</option>
+              <option key={s.value} value={s.value}>{getNewsletterSourceLabel(s.value, 'tr')} ({s.count})</option>
             ))}
           </select>
 
@@ -344,7 +345,7 @@ export default function AdminNewslettersPage() {
                       <td className="px-5 py-3 text-[#1A1A1A]">
                         <span className="pulse-eyebrow text-[#525252]">{r.locale.toUpperCase()}</span>
                       </td>
-                      <td className="px-5 py-3 text-[#1A1A1A]">{r.source ?? '—'}</td>
+                      <td className="px-5 py-3 text-[#1A1A1A]">{getNewsletterSourceLabel(r.source, 'tr')}</td>
                       <td className="px-5 py-3 text-[#1A1A1A]">
                         {new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
@@ -379,7 +380,7 @@ export default function AdminNewslettersPage() {
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 pulse-eyebrow text-[#6B7280]">
                     <span>{r.locale.toUpperCase()}</span>
                     <span>·</span>
-                    <span className="truncate">{r.source ?? 'Kaynak yok'}</span>
+                    <span className="truncate">{getNewsletterSourceLabel(r.source, 'tr')}</span>
                     <span>·</span>
                     <span>{new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}</span>
                   </div>
