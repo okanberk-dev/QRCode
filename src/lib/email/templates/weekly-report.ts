@@ -1,6 +1,7 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { renderEyebrow, renderH2, renderP, renderButton, renderBarChart, renderQuoteCard, spacer } from '../components';
+import { loadMailCopy } from '../copy-loader';
 
 export interface WeeklyReportParams {
   restaurantName: string;
@@ -24,10 +25,10 @@ export interface WeeklyReportParams {
   dashboardUrl: string;
 }
 
-export function renderWeeklyReport(
+export async function renderWeeklyReport(
   params: WeeklyReportParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const formatDate = (d: Date) => d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'short' });
   const periodStr = `${formatDate(params.period.from)}–${formatDate(params.period.to)}`;
@@ -43,7 +44,7 @@ export function renderWeeklyReport(
   const positiveCount = params.stats.highRatings;
   const totalDeltaText = params.deltas?.totalDelta ?? (positiveCount > params.stats.total / 2 ? '+' : '');
 
-  const copy = isTr ? {
+  const inlineDefault = isTr ? {
     eyebrow: `Hafta ${weekNum} · Pazartesi raporu`,
     titleA: positiveCount > 0 ? 'Sessiz başlayan hafta,' : 'Hafta nasıl geçti?',
     titleAccent: totalDeltaText && totalDeltaText !== '' ? `${totalDeltaText}` : `${params.stats.total}`,
@@ -78,6 +79,10 @@ export function renderWeeklyReport(
     detailLabel: 'Deep-dive analytics inside.',
     detailSub: 'Heatmap, sentiment and aspect breakdown in the panel.',
   };
+
+  // DB-merged. `eyebrow` keeps the week-number template literal — the editor
+  // shows users a hint that the dynamic part stays.
+  const copy = await loadMailCopy('weekly-report', locale, inlineDefault);
 
   // Hero stat grid — total + avg are real metrics, always shown. The third
   // "response time" cell from the JSX prototype rendered '1.4s' as a static

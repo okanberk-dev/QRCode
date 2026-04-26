@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import MailTemplateEditor from '@/components/admin/MailTemplateEditor';
+import { SUPPORTED_MAIL_KEYS } from '@/lib/email/copy-loader';
 
-const SUPPORTED_KEYS = new Set(['welcome', 'newsletter', 'trial-ending']);
+const SUPPORTED_KEYS = new Set<string>(SUPPORTED_MAIL_KEYS);
 const SUPPORTED_LOCALES = new Set(['tr', 'en']);
 
 export default async function EditMailTemplatePage({

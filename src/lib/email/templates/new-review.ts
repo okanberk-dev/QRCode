@@ -2,6 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderButton, renderAvatarCircle, renderStatusPill, spacer } from '../components';
+import { loadMailCopy } from '../copy-loader';
 
 export interface NewReviewParams {
   rating: number;
@@ -17,10 +18,10 @@ export interface NewReviewParams {
   shareUrl?: string;
 }
 
-export function renderNewReview(
+export async function renderNewReview(
   params: NewReviewParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const subject = isTr
     ? `🎉 Yeni ${params.rating} yıldız geldi — ${params.customerName ?? 'Müşteri'}`
@@ -40,7 +41,7 @@ export function renderNewReview(
     params.tableNumber ? `Masa ${escapeHtml(params.tableNumber)}` : '',
   ].filter(Boolean).join(' · ');
 
-  const copy = isTr ? {
+  const inlineDefault = isTr ? {
     eyebrow: 'Canlı · Az önce geldi',
     title: `${params.rating} yıldız.`,
     titleSub: 'Hak ettin.',
@@ -55,6 +56,11 @@ export function renderNewReview(
     secondaryCta: 'Share on Google',
     noComment: 'No comment left.',
   };
+
+  // DB-merged. `title` keeps the rating template literal — admin override
+  // would lose the `${rating}` substitution, so the editor exposes only the
+  // copy fields that don't need runtime data.
+  const copy = await loadMailCopy('new-review', locale, inlineDefault);
 
   // Star row — warning gold like jsx:31
   const starsHtml = `<span style="color:${PULSE.warning};font-size:18px;letter-spacing:0.05em;">${'★'.repeat(params.rating)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - params.rating)}</span></span>`;

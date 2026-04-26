@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
 import { invalidateMailCopyCache, isSupportedMailTemplateKey, type MailLocale } from '@/lib/email/copy-loader';
+import { stripLockedFields } from '@/lib/email/locked-fields';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,9 +96,14 @@ export async function PATCH(
     }
   }
 
+  // Server-side enforcement of KVKK / security locks. Locked fields are
+  // stripped from the payload regardless of UI gating — defence in depth
+  // against curl bypass and stale UI states. See locked-fields.ts.
+  const safeCleaned = stripLockedFields(parsed.key, cleaned);
+
   const adminId = admin.id ?? admin.userId ?? null;
 
-  const contentJson = cleaned as Prisma.InputJsonValue;
+  const contentJson = safeCleaned as Prisma.InputJsonValue;
   const upserted = await prisma.mailTemplate.upsert({
     where: { key_locale: { key: parsed.key, locale: parsed.locale } },
     create: {

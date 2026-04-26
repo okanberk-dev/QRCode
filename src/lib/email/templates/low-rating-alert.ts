@@ -2,6 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderAvatarCircle, renderStatusPill, spacer } from '../components';
+import { loadMailCopy } from '../copy-loader';
 
 export interface LowRatingAlertParams {
   rating: number;
@@ -22,10 +23,10 @@ export interface LowRatingAlertParams {
   platformLabel?: string | null;
 }
 
-export function renderLowRatingAlert(
+export async function renderLowRatingAlert(
   params: LowRatingAlertParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const subject = isTr
     ? `⚠ Düşük puanlı yorum — ${params.restaurantName}${params.branch ? ' · ' + params.branch : ''} · ${params.rating}★`
@@ -43,7 +44,7 @@ export function renderLowRatingAlert(
   const safeComment = params.comment ? escapeHtml(params.comment).replace(/\n/g, '<br>') : '';
   const tags = (params.tags ?? []).slice(0, 4);
 
-  const copy = isTr ? {
+  const inlineDefault = isTr ? {
     eyebrowAlert: 'Anlık uyarı · Düşük puan',
     eyebrowAction: 'Aksiyon gerektiriyor · 1 saat içinde dön',
     title: `${params.rating} yıldız geldi.`,
@@ -76,6 +77,10 @@ export function renderLowRatingAlert(
     ],
     noComment: 'No comment left.',
   };
+
+  // DB-merged copy. Quick action labels (`quickActions`) are structural —
+  // admin UI doesn't expose them, so the inline defaults always win.
+  const copy = await loadMailCopy('low-rating-alert', locale, inlineDefault);
 
   const timestamp = new Date().toLocaleString(isTr ? 'tr-TR' : 'en-US', {
     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',

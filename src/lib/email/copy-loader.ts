@@ -21,10 +21,29 @@ type CacheEntry = { content: Record<string, unknown>; expiresAt: number };
 const cache = new Map<string, CacheEntry>();
 const TTL_MS = 60 * 1000;
 
-const SUPPORTED_KEYS = new Set(['welcome', 'newsletter', 'trial-ending']);
+/**
+ * Source of truth for which template keys the CMS recognises. Phase 2
+ * extended this from 3 (welcome / newsletter / trial-ending) to 8 — only
+ * `form-confirmation` stays inline because its 4 formType variants need a
+ * nested-JSON schema we'd rather build separately. Update this list +
+ * `MailTemplateKey` together, then re-export points in API routes and the
+ * admin editor wire automatically.
+ */
+export const SUPPORTED_MAIL_KEYS = [
+  'welcome',
+  'newsletter',
+  'trial-ending',
+  'forgot-password',
+  'low-rating-alert',
+  'new-review',
+  'weekly-report',
+  'customer-reply',
+] as const;
 
-export type MailTemplateKey = 'welcome' | 'newsletter' | 'trial-ending';
+export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];
 export type MailLocale = 'tr' | 'en';
+
+const SUPPORTED_KEYS = new Set<string>(SUPPORTED_MAIL_KEYS);
 
 export function isSupportedMailTemplateKey(value: string): value is MailTemplateKey {
   return SUPPORTED_KEYS.has(value);
@@ -46,10 +65,23 @@ export async function loadMailCopy<T extends Record<string, unknown>>(
       where: { key_locale: { key, locale } },
       select: { content: true },
     });
-    const dbContent: Record<string, unknown> =
+    const rawContent: Record<string, unknown> =
       row && row.content && typeof row.content === 'object' && !Array.isArray(row.content)
         ? (row.content as Record<string, unknown>)
         : {};
+    // Defensive normalisation: render functions interpolate copy fields into
+    // HTML strings, so anything non-string from the DB (number / null / nested
+    // object that slipped past PATCH validation) must NOT reach the template.
+    // Drop those keys entirely — render falls back to the inline default for
+    // that field. Keeps the merge type-safe at runtime, not just at compile.
+    const dbContent: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(rawContent)) {
+      if (typeof v === 'string') {
+        dbContent[k] = v;
+      } else {
+        console.warn('[loadMailCopy] non-string field dropped', { key, locale, field: k, type: typeof v });
+      }
+    }
     cache.set(cacheKey, { content: dbContent, expiresAt: Date.now() + TTL_MS });
     return { ...fallback, ...dbContent } as T;
   } catch (err) {

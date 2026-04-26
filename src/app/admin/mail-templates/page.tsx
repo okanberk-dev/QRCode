@@ -21,6 +21,11 @@ const TEMPLATE_LABELS: Record<string, string> = {
   welcome: 'Hoş geldin',
   newsletter: 'Aylık bülten',
   'trial-ending': 'Deneme bitiyor',
+  'forgot-password': 'Şifre sıfırlama',
+  'low-rating-alert': 'Düşük puan uyarısı',
+  'new-review': 'Yeni 5★ yorum',
+  'weekly-report': 'Haftalık rapor',
+  'customer-reply': 'Müşteri yanıtı',
 };
 
 const LOCALE_LABELS: Record<string, string> = {

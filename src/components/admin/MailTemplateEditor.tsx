@@ -2,13 +2,28 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Eye, Loader2, Mail, RotateCcw, Save } from 'lucide-react';
+import { ArrowLeft, Eye, Loader2, Lock, Mail, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 
 // Schema-aware fields per template. Only string copy fields the admin
-// should edit; structural arrays (steps, resources, stats) are hidden in
-// MVP — they require typed editing UI which is Phase 2 scope.
-const FIELDS_BY_TEMPLATE: Record<string, Array<{ key: string; label: string; multiline?: boolean; hint?: string }>> = {
+// should edit; structural arrays (steps, resources, quickActions, quotes)
+// are hidden — they require typed editing UI which is Phase 3+ scope.
+//
+// Field flags:
+//  - `multiline?: boolean` → render as <textarea>
+//  - `locked?: boolean` → KVKK/security lock; UI shows disabled input
+//    with 🔒 KVKK badge. Server-side enforcement is in `locked-fields.ts`,
+//    so UI bypass via curl/devtools still gets dropped.
+//  - `lockReason?: string` → user-facing tooltip explaining the lock
+type FieldDef = {
+  key: string;
+  label: string;
+  multiline?: boolean;
+  hint?: string;
+  locked?: boolean;
+  lockReason?: string;
+};
+const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
   welcome: [
     { key: 'eyebrow', label: 'Eyebrow', hint: 'Üst köşedeki küçük etiket — örn. "Hoş geldin · Sayı bir"' },
     { key: 'titleSub', label: 'Başlık alt satırı', hint: 'Hero başlığın 2. satırı — "Şimdi başlıyoruz."' },
@@ -45,12 +60,90 @@ const FIELDS_BY_TEMPLATE: Record<string, Array<{ key: string; label: string; mul
     { key: 'cta', label: 'Birincil CTA' },
     { key: 'comparisonLink', label: 'Detay link metni' },
   ],
+  'forgot-password': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"01 · Talep alındı"' },
+    { key: 'title', label: 'Başlık 1. parça', hint: '"Şifreni"' },
+    { key: 'titleAccent', label: 'Başlık vurgu', hint: '"sıfırlayalım" — lime altçizgili' },
+    { key: 'cardEyebrow', label: 'Token kart etiketi', hint: '"Tek kullanımlık link"' },
+    { key: 'statusText', label: 'Durum pill metni', hint: '"Aktif · 30 dk geçerli"', locked: true, lockReason: 'Güvenlik: token süre uyarısı, değiştirmek phishing riski yaratır' },
+    { key: 'cta', label: 'Birincil CTA buton metni' },
+    { key: 'altCodeLabel', label: 'Alternatif kod açıklaması', hint: '"Uygulamada kullanmak için kod"' },
+    { key: 'metaTime', label: 'Talep saati etiketi' },
+    { key: 'metaIp', label: 'IP etiketi' },
+    { key: 'metaDevice', label: 'Cihaz etiketi' },
+    { key: 'metaAccount', label: 'Hesap etiketi' },
+    { key: 'notYouTitle', label: '"Sen değil misin?" başlık', locked: true, lockReason: 'Güvenlik uyarısı — hesap sahibi değilsen ne yapmalı bilgisi' },
+    { key: 'notYouBody', label: '"Sen değil misin?" gövde', multiline: true, locked: true, lockReason: 'Güvenlik uyarısı içeriği' },
+    { key: 'notYouLink', label: 'Destek link metni', locked: true, lockReason: 'Şüpheli durum eskalasyon linki' },
+  ],
+  'low-rating-alert': [
+    { key: 'eyebrowAlert', label: 'Üst alarm etiketi', hint: '"Anlık uyarı · Düşük puan"' },
+    { key: 'eyebrowAction', label: 'Aksiyon urgency etiketi', hint: '"Aksiyon gerektiriyor · 1 saat içinde dön"' },
+    { key: 'titleSub', label: 'Başlık alt satır', hint: '"Önce dinleyelim."' },
+    { key: 'aiEyebrow', label: 'AI Co-Pilot kart etiketi' },
+    { key: 'toneLabel', label: 'AI tone default etiket', hint: 'aiTone param yokken görünür' },
+    { key: 'aiEdit', label: '"Düzenle" buton metni' },
+    { key: 'aiApprove', label: '"Onayla & Yanıtla" buton metni' },
+    { key: 'quickEyebrow', label: 'Hızlı aksiyon başlığı' },
+    { key: 'noComment', label: '"Yorum yok" hint metni' },
+  ],
+  'new-review': [
+    { key: 'eyebrow', label: 'Status pill', hint: '"● Canlı · Az önce geldi"' },
+    { key: 'titleSub', label: 'Başlık alt satır', hint: '"Hak ettin."' },
+    { key: 'primaryCta', label: 'Birincil CTA', hint: '"Teşekkür yaz →"' },
+    { key: 'secondaryCta', label: 'İkincil CTA', hint: '"Google\'da paylaş"' },
+    { key: 'noComment', label: '"Yorum yok" hint' },
+  ],
+  'weekly-report': [
+    // NOTE: `eyebrow` is intentionally not exposed here. Inline default uses
+    // a `Hafta ${weekNum} · …` template literal — interpolation that admin
+    // override would silently strip (DB stores plain strings). Render keeps
+    // the literal default so the week number stays dynamic. If we ever want
+    // operators to edit this, refactor render to compose `${weekPrefix}
+    // ${weekNum} ${weekSuffix}` from separately-stored fields.
+    { key: 'titleA', label: 'Hero 1. satır', hint: '"Sessiz başlayan hafta," (positive senaryo)' },
+    { key: 'titleEnd', label: 'Hero 3. satır', hint: '"yorumla bitti."' },
+    { key: 'statTotal', label: 'Yeni yorum etiketi' },
+    { key: 'statAvg', label: 'Ortalama puan etiketi' },
+    { key: 'statResp', label: 'Yanıt süresi etiketi', hint: 'Şu an gizli — backend response time tracking henüz yok' },
+    { key: 'chartEyebrow', label: 'Grafik bölüm etiketi' },
+    { key: 'chartTitle', label: 'Grafik başlığı' },
+    { key: 'quotesEyebrow', label: 'Alıntılar bölüm etiketi' },
+    { key: 'aspectFood', label: 'Yemek aspect etiketi' },
+    { key: 'aspectService', label: 'Servis aspect etiketi' },
+    { key: 'aspectAtm', label: 'Atmosfer aspect etiketi' },
+    { key: 'cta', label: 'Birincil CTA' },
+    { key: 'detailLabel', label: 'Detay kart başlığı' },
+    { key: 'detailSub', label: 'Detay kart açıklaması', multiline: true },
+  ],
+  'customer-reply': [
+    { key: 'headerEyebrow', label: 'Üst eyebrow', hint: '"Sana özel · Kişisel yanıt"' },
+    { key: 'ownerLabel', label: 'İşletmeci rozeti', hint: '"İŞLETMECİ"' },
+    { key: 'titleSubA', label: 'Başlık 2. parça', hint: '"bizi"' },
+    { key: 'titleSubItalic', label: 'Başlık italic kelime', hint: '"duyduğun için"' },
+    { key: 'titleSubB', label: 'Başlık 4. parça', hint: '"teşekkürler"' },
+    { key: 'actionsEyebrow', label: 'Aksiyonlar kart etiketi' },
+    { key: 'couponEyebrow', label: 'Kupon kart etiketi' },
+    { key: 'couponTitle', label: 'Kupon başlığı', multiline: true },
+    { key: 'couponDescDefault', label: 'Kupon açıklaması (default)', multiline: true },
+    { key: 'couponLabelDefault', label: 'Kupon kod etiketi' },
+    { key: 'daysSuffix', label: 'Gün sayısı suffix', hint: '"gün"' },
+    { key: 'callEyebrow', label: 'Telefon kart etiketi' },
+    { key: 'mapsEyebrow', label: 'Yol tarifi kart etiketi' },
+    { key: 'sentLine', label: 'Footer Buaze disclosure 1', locked: true, lockReason: 'KVKK / GDPR: Buaze gönderim açıklaması — şeffaflık zorunluluğu' },
+    { key: 'sentSuffix', label: 'Footer Buaze disclosure 2', locked: true, lockReason: 'KVKK / GDPR: Buaze gönderim açıklaması — şeffaflık zorunluluğu' },
+  ],
 };
 
 const TEMPLATE_LABELS: Record<string, string> = {
   welcome: 'Hoş geldin',
   newsletter: 'Aylık bülten',
   'trial-ending': 'Deneme bitiyor',
+  'forgot-password': 'Şifre sıfırlama',
+  'low-rating-alert': 'Düşük puan uyarısı',
+  'new-review': 'Yeni 5★ yorum',
+  'weekly-report': 'Haftalık rapor',
+  'customer-reply': 'Müşteri yanıtı',
 };
 
 interface Props {
@@ -90,6 +183,11 @@ export default function MailTemplateEditor({ templateKey, locale }: Props) {
         const dbContent = (body.template?.content as Record<string, string>) ?? {};
         const stringContent: Record<string, string> = {};
         for (const f of fields) {
+          // Locked fields never round-trip through the form: the inline
+          // default is always the source of truth, so leaving state empty
+          // keeps the PATCH payload minimal (server strips anyway, but
+          // sending nothing means slow networks see no flicker).
+          if (f.locked) continue;
           stringContent[f.key] = typeof dbContent[f.key] === 'string' ? dbContent[f.key] : '';
         }
         setContent(stringContent);
@@ -205,33 +303,59 @@ export default function MailTemplateEditor({ templateKey, locale }: Props) {
       ) : (
         <>
           <div className="space-y-4 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-            {fields.map((f) => (
-              <div key={f.key}>
-                <label htmlFor={f.key} className="block text-[13px] font-semibold text-[#0A0A0A]">
-                  {f.label}
-                </label>
-                {f.hint && <p className="mt-0.5 text-[11px] text-[#9CA3AF]">{f.hint}</p>}
-                {f.multiline ? (
-                  <textarea
-                    id={f.key}
-                    value={content[f.key] ?? ''}
-                    onChange={(e) => setContent((c) => ({ ...c, [f.key]: e.target.value }))}
-                    rows={3}
-                    className="mt-1.5 w-full rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[14px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
-                    placeholder="(Boş bırakırsan kod-içi varsayılan)"
-                  />
-                ) : (
-                  <input
-                    id={f.key}
-                    type="text"
-                    value={content[f.key] ?? ''}
-                    onChange={(e) => setContent((c) => ({ ...c, [f.key]: e.target.value }))}
-                    className="mt-1.5 w-full rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[14px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
-                    placeholder="(Boş bırakırsan kod-içi varsayılan)"
-                  />
-                )}
-              </div>
-            ))}
+            {fields.map((f) => {
+              const baseClass =
+                'mt-1.5 w-full rounded-xl border bg-white px-3 py-2 text-[14px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]';
+              const inputClass = f.locked
+                ? `${baseClass} border-red-200 bg-red-50/40 cursor-not-allowed opacity-70`
+                : `${baseClass} border-[#EDEDED]`;
+              const placeholder = f.locked
+                ? '(Bu alan KVKK / güvenlik kilitli — kod-içi varsayılan kullanılır)'
+                : '(Boş bırakırsan kod-içi varsayılan)';
+              return (
+                <div key={f.key}>
+                  <div className="flex items-center gap-2">
+                    <label htmlFor={f.key} className="block text-[13px] font-semibold text-[#0A0A0A]">
+                      {f.label}
+                    </label>
+                    {f.locked && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-700"
+                        title={f.lockReason ?? 'KVKK / güvenlik nedeniyle düzenlenemez'}
+                      >
+                        <Lock size={10} strokeWidth={2.5} />
+                        KVKK
+                      </span>
+                    )}
+                  </div>
+                  {f.hint && <p className="mt-0.5 text-[11px] text-[#9CA3AF]">{f.hint}</p>}
+                  {f.locked && f.lockReason && (
+                    <p className="mt-0.5 text-[11px] font-medium text-red-700">{f.lockReason}</p>
+                  )}
+                  {f.multiline ? (
+                    <textarea
+                      id={f.key}
+                      value={content[f.key] ?? ''}
+                      onChange={(e) => setContent((c) => ({ ...c, [f.key]: e.target.value }))}
+                      rows={3}
+                      disabled={f.locked}
+                      className={inputClass}
+                      placeholder={placeholder}
+                    />
+                  ) : (
+                    <input
+                      id={f.key}
+                      type="text"
+                      value={content[f.key] ?? ''}
+                      onChange={(e) => setContent((c) => ({ ...c, [f.key]: e.target.value }))}
+                      disabled={f.locked}
+                      className={inputClass}
+                      placeholder={placeholder}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">

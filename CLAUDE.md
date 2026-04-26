@@ -1067,7 +1067,7 @@ Eski tarayıcı default isteklerini SVG'ye yönlendirir:
 
 **Next 16 hazırlığı**: `next lint` deprecated. ESLint CLI'a geçildi. `next/core-web-vitals` + `next/typescript` preset'leri aynen kalıyor; sadece lint runner değişti.
 
-### 21.26 DB-driven mail content (welcome / newsletter / trial-ending)
+### 21.26 DB-driven mail content (8 template, form-confirmation hariç)
 
 **Schema** (`prisma/schema.prisma` `MailTemplate`):
 - `key: String` — `'welcome' | 'newsletter' | 'trial-ending'` (MVP scope)
@@ -1127,3 +1127,26 @@ Idempotent. 6 satır upsert. Çağrıldığında **admin-edited content'i overri
 - Weekly-report 3. stat hücre (`'1.4s'` response time) kaldırıldı → 3-col → 2-col layout. Backend tracking eklendiğinde tekrar `stats.push({...})` ile geri açılır.
 - Customer-reply `defaultActions` (3 sabit Kadıköy hikayesi) silindi. `params.actions` undefined/empty → "Aldığımız aksiyonlar" kart gizlenir.
 - Trial-ending fiyat fallback yorumla işaretlendi (Faz 2'de DB-driven olabilir).
+
+### 21.27 Phase 2 — 5 template extension + KVKK field lock
+
+**Genişletilen template'ler** (2026-04 Phase 2): `forgot-password`, `low-rating-alert`, `new-review`, `weekly-report`, `customer-reply`. PR #75 (welcome/newsletter/trial-ending) ile aynı pattern: render fn `async`, sender `await`, `loadMailCopy('xxx', locale, inlineDefault)`. **Form-confirmation** 4-variant yapısı (`contact/career/roi/newsletter`) bu PR'a alınmadı — Phase 3'te nested JSON ile DB-driven yapılacak.
+
+**Field-level lock** (`src/lib/email/locked-fields.ts`):
+- KVKK / güvenlik kritik field'lar admin UI'da `disabled` + 🔒 KVKK badge
+- API PATCH endpoint server-side `stripLockedFields()` ile drop eder (defence in depth)
+- Mevcut locked field'lar:
+  - `forgot-password`: `statusText`, `notYouTitle`, `notYouBody`, `notYouLink`
+  - `customer-reply`: `sentLine`, `sentSuffix` (Buaze attribution disclosure)
+
+**Editor**: `MailTemplateEditor.tsx` 8 template entry, her field için opsiyonel `locked: true; lockReason: '...'` flag. UI render: `<input disabled>` + kırmızı border + lock icon + reason hint.
+
+**`SUPPORTED_MAIL_KEYS` export** (`src/lib/email/copy-loader.ts`): API route + page validator + editor tek source-of-truth'tan import eder. Yeni template eklerken bu array'i + `MailTemplateKey` union'u + `FIELDS_BY_TEMPLATE` map'i + `TEMPLATE_LABELS` map'i + seed entry'i + (varsa) `LOCKED_MAIL_FIELDS` set'i — bağlantı checklist'i CLAUDE.md §21.26'da.
+
+**Seed**: `npx tsx scripts/seed-mail-templates.ts` artık 16 satır upsert eder (8 template × 2 locale).
+
+**Phase 3 backlog** (yapılmadı):
+- form-confirmation DB-driven (nested `{ contact: {...}, career: {...}, roi: {...}, newsletter: {...} }` JSON)
+- Dynamic placeholder injection (`${firstName}`, `${restaurantName}` runtime)
+- Audit log (`MailTemplateRevision`)
+- Redis cache (gerekli değil şimdilik — 60s drift kabul)
