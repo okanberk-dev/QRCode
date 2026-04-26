@@ -133,7 +133,7 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1.5 text-[#737373] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#737373] hover:bg-[#FAFAFA] hover:text-[#0A0A0A] active:scale-95"
             aria-label="Kapat"
           >
             <X size={18} />
