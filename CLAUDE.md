@@ -801,7 +801,7 @@ Mevcut örnekler: `src/components/admin/TrendsChart.tsx`, `src/components/admin/
 **Yerler**:
 - `/api/dev/email-preview?template=...&locale=tr|en&format=html|text` — raw HTML / text response. Production'da 404 (Vercel preview dahil).
 - `/admin/dev/mail-preview` — superadmin index sayfası, 9 template kart + locale toggle + "Önizle" + "Test mail at" butonları. Sidebar'da yalnız `NODE_ENV !== 'production'` ise görünür.
-- `/api/admin/dev/send-test` — superadmin POST endpoint, seed data ile sender'ı çağırır, admin'in kendi e-posta'sına gönderir. Production'da 404.
+- `/api/admin/dev/send-test` — superadmin POST endpoint, seed data ile sender'ı çağırır, admin'in kendi e-posta'sına gönderir. Production'da 404. Rate limit: **10 mail / 5 dk / admin** (`mail-test:${adminId}` key'i, `rateLimit()` helper'ı). Misclick veya stuck button'dan korur.
 
 **Seed data**: `src/app/api/dev/email-preview/seeds.ts` — her template için realistic placeholder. Yeni template eklerken bu factory'e seed entry ekle.
 
@@ -842,6 +842,46 @@ Send başlamadan campaign `'sending'`, bitince `'sent'` + `sentAt` + counts. Eve
 
 ### 21.17 Newsletter source tracking pattern
 
+(taşındı — alttaki §21.20'ye bak)
+
+### 21.18 Vercel preview env'leri
+
+**Mevcut durum (2026-04 doğrulandı)**: Vercel'de **`DATABASE_URL`, `DIRECT_URL`, `CRON_SECRET`, `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`** Production + Preview + Development scope'larında set. **Yeni preview branch açıldığında ekstra konfigürasyon yok** — `prisma db push` build script'inde otomatik koşar, schema sync olur.
+
+**Mevcut DB topology**: production DB tek paylaşılan Supabase instance (preview deploy'lar da aynı DB'ye yazıyor). Supabase Branching aktif değil (`supabase/` klasörü boş → PR'larda `Supabase Preview` check `skipped` normal).
+
+**Schema değişikliği yaparken** (preview deploy'un prod'u kırmaması için):
+- **Yapma**: NOT NULL kolon eklemek → eski koda yazan request fail eder
+- **Yapma**: kolonu silmek → eski kod o kolonu okumaya devam eder, fail
+- **Yap**: Her yeni kolon **nullable + default'lu**. Pulse mail PR'larında bu disiplin uygulandı (`FeedbackReply.source String? @default("manual")`, `User.lastTrialReminderAt DateTime?`, vb.)
+
+**Preview deploy paranoidliği gerekirse**: Supabase Branching aktif edilebilir (yeni `supabase/migrations/` klasörü + Vercel-Supabase integration ayarı) → her preview kendi izole DB'sini alır, prod etkilenmez. Şu anki ölçek için gereksiz.
+
+### 21.19 GitHub Actions CI
+
+`.github/workflows/ci.yml` her PR'da koşar:
+1. `npm ci` (lockfile-strict install)
+2. `npx prisma generate` (stub DATABASE_URL ile, gerçek DB'siz)
+3. `npx prisma validate` (schema syntax)
+4. `npx tsc --noEmit -p tsconfig.json` (zero error)
+5. `npx next lint --max-warnings 0` (lint)
+
+Concurrency cancel-in-progress: aynı PR'a yeni commit gelince eski run iptal. Workflow ~2-3 dk sürer. Local geliştirici için aynı 4 komutu local'de koşmak yeterli — CI sadece "review öncesi son güvenlik ağı".
+
+`.github/pull_request_template.md` — her yeni PR'a Test plan / Backend etkisi / Risks bölümleri otomatik gelir.
+
+### 21.20 FeedbackReply.source backfill
+
+`scripts/backfill-feedback-reply-source.ts` — eski reply'ları `source = 'manual'` ile dolduran one-shot data migration. `prisma db push` schema kolonu ekler ama eski rows NULL kalır. Çalıştırmak (idempotent):
+
+```bash
+DATABASE_URL=... npx tsx scripts/backfill-feedback-reply-source.ts
+```
+
+Cron `'ai_copilot'` filter'ında zaten NULL'lar yer almıyor → backfill **opsiyonel**. Ama admin reports/analytics `GROUP BY source` sorguları "Unknown" bucket'ı görmek istemiyorsa run et.
+
+### 21.21 Newsletter source tracking pattern
+
 **`NewsletterSubscriber.source`** her abonede dolu olmalı. Yeni signup placement eklendiğinde:
 
 1. Component'e `source` prop pas et (örn. `<NewsletterSignup locale={l} source="popup" />`)
@@ -851,5 +891,52 @@ Send başlamadan campaign `'sending'`, bitince `'sent'` + `sentAt` + counts. Eve
 **Mevcut sources**: `footer`, `popup`, `blog_inline`, `dashboard_invite`, `onboarding`, `roi_form`, `homepage_hero`. Yeni eklemeler için CLAUDE.md'yi güncelle.
 
 **Helper**: `getNewsletterSourceLabel(source, locale)` — admin UI + CSV export'ta tek nokta.
+
+### 21.22 Stacked PR workflow (kanonik)
+
+**Hedef**: Kullanıcı bazen birden fazla PR aynı anda açık tutuyor. Sadece **en son PR'ı** main'e merge ettiğinde tüm önceki PR'ların değişiklikleri de gelmeli — manuel sıralı merge yapmak zorunda kalmamalı.
+
+**Yöntem — Stacked PR pattern**: Yeni branch açarken, eğer önceki feature branch'i hâlâ open PR'sa, **önceki branch'ten branch'le** (main'den değil). Yeni PR'ın base'i de önceki PR'ın head branch'i olur.
+
+```
+main
+ └─ feature-A  (PR #100, base=main)
+     └─ feature-B  (PR #101, base=feature-A)
+         └─ feature-C  (PR #102, base=feature-B)
+```
+
+**Kullanıcı PR #102'yi main'e merge ettiğinde**:
+- GitHub diff: A + B + C tüm commit'leri main'e gelir
+- PR #100 ve #101 otomatik `Closed` olarak işaretlenir (içerikleri main'de)
+- Status `Merged` değil `Closed` olur — ama kod main'e geçti, fonksiyonel olarak aynı
+
+**Yeni AI/dev session'u feature branch açarken yapması gereken**:
+
+1. Açık PR'ları kontrol et:
+   ```bash
+   git branch -r --no-merged origin/main | grep claude/
+   ```
+2. Eğer son commit'lediğin/PR'sı açık olan branch varsa → o branch'ten branch'le:
+   ```bash
+   git fetch origin <onceki-branch>
+   git checkout -b claude/<yeni-feature> origin/<onceki-branch>
+   ```
+3. Yeni PR açarken `mcp__github__create_pull_request`'te `base: '<onceki-branch>'` (main değil)
+4. PR description'da belirt: "Bu PR `<onceki-branch>` üzerine kuruludur. PR #<önceki> main'e merge'lenirse base otomatik main'e güncellenir."
+
+**Eğer önceki PR yoksa veya kullanıcı paralel iş istediğini söylüyorsa** → main'den branch'le, base=main yap (klasik akış).
+
+**Kontrol listesi (yeni feature branch öncesi)**:
+- [ ] `git fetch origin main` — main güncel mi?
+- [ ] Açık PR var mı? `gh pr list` veya GitHub UI'dan kontrol — yoksa `mcp__github__list_pull_requests`
+- [ ] Stacked PR pattern uygulanacak mı? (cevap genelde **evet**, kullanıcı tek-PR-merge konforu istiyor)
+- [ ] Branch ismi `claude/<scope>-<short-description>` formatında
+
+**Pulse mail iterasyonlarında uygulanan örnek**:
+- PR #68 base=main (`claude/analyze-codebase-dBomf`)
+- PR #69 base=`claude/analyze-codebase-dBomf` (`claude/pulse-mail-followups`) — stacked
+- PR #70 base=main (`claude/pulse-mail-hardening`) — #69 main'e merge edildikten sonra açıldığı için stack kırıldı, main'den branch'lendi
+
+**Squash merge yan etkisi**: Kullanıcı GitHub UI'da "Squash and merge" seçerse stacked PR'ların commit'leri tek commit'e sıkışır → individual blame info kaybolur. "Create a merge commit" veya "Rebase and merge" history'yi korur. Kullanıcı tercihi.
 
 

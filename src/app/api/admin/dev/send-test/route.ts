@@ -3,6 +3,7 @@ import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/email';
+import { rateLimit } from '@/lib/rate-limit';
 import { isPreviewTemplate, SEEDS, type PreviewTemplate } from '@/app/api/dev/email-preview/seeds';
 import { renderTemplate } from '@/app/api/dev/email-preview/route';
 
@@ -22,6 +23,18 @@ export async function POST(req: NextRequest) {
   const admin: any = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
+
+  // Rate limit per admin: 10 test mails / 5 min. Resend free tier is 10
+  // mails/sec; this stops a misclick or a stuck "Test mail" button from
+  // exhausting the daily quota.
+  const adminId = admin.id ?? admin.userId ?? 'unknown';
+  const limit = rateLimit(`mail-test:${adminId}`, 10, 5 * 60 * 1000);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'rate_limited', retryAfter: limit.retryAfterSeconds },
+      { status: 429 },
+    );
+  }
 
   let body: any = {};
   try {
