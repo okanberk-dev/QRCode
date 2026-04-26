@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { signJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
+import { blockKey, isBlocked, rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
+
+const DUMMY_BCRYPT_HASH = '$2b$12$CwTycUXWue0Thq9StjUM0uJ8N1g9vDg0v7wv3V60N9ku74f75hJ5a';
+const LOCKOUT_WINDOW_MS = 30 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,17 +21,33 @@ export async function POST(req: NextRequest) {
     if (username.length > 128 || password.length > 256) {
       return NextResponse.json({ error: 'Geçersiz istek' }, { status: 400 });
     }
+    const normalizedUsername = username.trim().toLowerCase();
+    if (!normalizedUsername) {
+      return NextResponse.json({ error: 'Kullanıcı adı ve şifre zorunludur' }, { status: 400 });
+    }
+    const ipKey = `admin-login:ip:${ip}`;
+    const userKey = `admin-login:user:${normalizedUsername}`;
+    const lockKey = `admin-login:lock:${normalizedUsername}:${ip}`;
+    const failedKey = `admin-login:failed:${normalizedUsername}:${ip}`;
+
+    if (isBlocked(lockKey)) {
+      return NextResponse.json(
+        { error: 'Çok fazla başarısız deneme. Güvenlik nedeniyle giriş geçici olarak kilitlendi.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(LOCKOUT_WINDOW_MS / 1000)) } },
+      );
+    }
 
     const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'admin_login');
     if (!captcha.ok) {
       return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
-    // 5 attempts per IP per 10 minutes, with a softer per-username cap
-    const ipLimit = rateLimit(`admin-login:ip:${ip}`, 8, 10 * 60 * 1000);
-    const userLimit = rateLimit(`admin-login:user:${username.toLowerCase()}`, 5, 10 * 60 * 1000);
+    // Defence-in-depth: per-IP and per-username throttles before DB/bcrypt work.
+    const ipLimit = rateLimit(ipKey, 8, 10 * 60 * 1000);
+    const userLimit = rateLimit(userKey, 5, 10 * 60 * 1000);
     if (!ipLimit.allowed || !userLimit.allowed) {
       const retry = Math.max(ipLimit.retryAfterSeconds, userLimit.retryAfterSeconds);
+      blockKey(lockKey, LOCKOUT_WINDOW_MS);
       return NextResponse.json(
         { error: 'Çok fazla başarısız deneme. Lütfen bir süre sonra tekrar deneyin.' },
         { status: 429, headers: { 'Retry-After': String(retry) } },
@@ -60,7 +79,7 @@ export async function POST(req: NextRequest) {
     let admin = null;
     try {
       admin = await prisma.adminUser.findUnique({
-        where: { username }
+        where: { username: normalizedUsername }
       });
     } catch (dbError) {
       console.error("Database check failed, using fallback:", dbError);
@@ -73,12 +92,12 @@ export async function POST(req: NextRequest) {
       isPasswordValid = await bcrypt.compare(password, admin.passwordHash);
     } else {
       // Dummy compare to prevent timing attack vulnerabilities
-      await bcrypt.compare(password, '$2b$12$dummyhashfortimingatackprevention');
+      await bcrypt.compare(password, DUMMY_BCRYPT_HASH);
       // Fallback for DB issues or first run
       const envUsername = process.env.ADMIN_USERNAME || 'oknbrk';
       const envPassword = process.env.ADMIN_PASSWORD || '123456+';
       
-      if (username === envUsername && password === envPassword) {
+      if (normalizedUsername === envUsername.toLowerCase() && password === envPassword) {
         isPasswordValid = true;
         try {
           const adminCount = await prisma.adminUser.count();
@@ -101,8 +120,10 @@ export async function POST(req: NextRequest) {
     // Verify credentials
     if (isPasswordValid) {
       // Clear the brute-force counters for this IP/username on success.
-      resetRateLimit(`admin-login:ip:${ip}`);
-      resetRateLimit(`admin-login:user:${username.toLowerCase()}`);
+      resetRateLimit(ipKey);
+      resetRateLimit(userKey);
+      resetRateLimit(lockKey);
+      resetRateLimit(failedKey);
       if (captcha.assessmentName) {
         await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_CORRECT');
       }
@@ -110,7 +131,7 @@ export async function POST(req: NextRequest) {
       let payloadRole: 'superadmin' | 'manager' = 'superadmin';
       let payloadRestaurantId = null;
       let payloadId = 'env-admin';
-      let payloadUsername = username;
+      let payloadUsername = normalizedUsername;
 
       if (admin) {
         payloadRole = admin.role === 'manager' ? 'manager' : 'superadmin';
@@ -157,6 +178,11 @@ export async function POST(req: NextRequest) {
 
     if (captcha.assessmentName) {
       await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_INCORRECT');
+    }
+
+    const failedLimit = rateLimit(failedKey, 3, 10 * 60 * 1000);
+    if (!failedLimit.allowed) {
+      blockKey(lockKey, LOCKOUT_WINDOW_MS);
     }
 
     return NextResponse.json({ error: 'Kullanıcı adı veya şifre hatalı' }, { status: 401 });

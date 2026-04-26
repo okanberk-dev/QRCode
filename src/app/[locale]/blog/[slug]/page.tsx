@@ -25,6 +25,8 @@ export async function generateMetadata(
 
   if (!post) return { title: 'Post Not Found' };
 
+  const ogImage = post.coverImage?.trim() || `/images/open-graph-${locale}.png`;
+
   return {
     title: `${post.title} — Buaze Blog`,
     description: post.description,
@@ -38,7 +40,7 @@ export async function generateMetadata(
       description: post.description,
       publishedTime: post.date,
       authors: [post.author],
-      images: [{ url: post.coverImage, width: 1200, height: 600, alt: post.title }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
     },
   };
 }
@@ -53,13 +55,18 @@ function authorInitials(name: string) {
     .toUpperCase();
 }
 
+function extractHeadings(html: string) {
+  const matches = [...html.matchAll(/<h2[^>]*>(.*?)<\/h2>/gi)];
+  return matches
+    .map(match => match[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, 6);
+}
+
 /**
  * 1:1 with .design/site/site-pages4.jsx:BlogPostPage (lines 448-533):
  * lime hero + eyebrow (read time) + big title + author row, 2-col content grid
  * (article + sticky TOC/author sidebar), dark CTA box.
- *
- * Extension: uploaded coverImage renders as an overlapping editorial card
- * that bridges the lime hero into the white article column.
  */
 export default async function BlogPostPage({
   params,
@@ -83,12 +90,12 @@ export default async function BlogPostPage({
     '@type': 'BlogPosting',
     headline: post.title,
     description: post.description,
-    image: [post.coverImage],
+    image: [post.coverImage?.trim() || `https://buaze.com/images/open-graph-${locale}.png`],
     author: [{ '@type': 'Organization', name: post.author, url: 'https://buaze.com' }],
     datePublished: post.date,
   };
 
-  const hasCover = Boolean(post.coverImage && post.coverImage.trim().length > 0);
+  const tocItems = extractHeadings(post.content);
 
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
@@ -158,24 +165,8 @@ export default async function BlogPostPage({
         </div>
       </section>
 
-      {/* ─── Cover image · overlaps hero into white column for editorial feel ─── */}
-      {hasCover && (
-        <section className="relative px-6 sm:px-10 -mt-10 sm:-mt-16">
-          <div className="relative max-w-[1040px] mx-auto overflow-hidden rounded-[20px] sm:rounded-[28px] border border-[#0A0A0A]/10 bg-white shadow-[0_20px_60px_-20px_rgba(10,10,10,0.25)]">
-            <div className="aspect-[16/9] sm:aspect-[21/9]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={post.coverImage}
-                alt={post.title}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ─── Content grid · main article + sticky TOC/author sidebar ─── */}
-      <section className="px-6 sm:px-10 pt-14 sm:pt-20 pb-20">
+      <section className="px-6 sm:px-10 py-[60px]">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-10 lg:gap-12">
           {/* Main column */}
           <div>
@@ -234,22 +225,20 @@ export default async function BlogPostPage({
                   className="text-[10px] font-semibold tracking-[0.14em] text-[#737373]"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
-                  {isTr ? 'BU YAZI' : 'THIS POST'}
+                  {isTr ? 'İÇERİK' : 'CONTENT'}
                 </div>
-                <dl className="mt-3 grid grid-cols-1 gap-2 text-[13px]">
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-[#737373]">{isTr ? 'Tarih' : 'Date'}</dt>
-                    <dd className="text-[#0A0A0A] text-right">{post.date}</dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-[#737373]">{isTr ? 'Okuma' : 'Read'}</dt>
-                    <dd className="text-[#0A0A0A] text-right">{post.readTime}</dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-[#737373]">{isTr ? 'Dil' : 'Lang'}</dt>
-                    <dd className="text-[#0A0A0A] text-right uppercase">{locale}</dd>
-                  </div>
-                </dl>
+                <ul className="mt-4 space-y-3">
+                  {(tocItems.length ? tocItems : [post.title]).map((item, index) => (
+                    <li
+                      key={`${item}-${index}`}
+                      className={`text-[13px] leading-5 ${
+                        index === 0 ? 'font-semibold text-[#0A0A0A]' : 'font-medium text-[#737373]'
+                      }`}
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               <div className="rounded-[14px] bg-[#EAF9B8] p-5">

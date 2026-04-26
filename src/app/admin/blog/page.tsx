@@ -1,7 +1,23 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, BookOpen, Globe, Eye, EyeOff, X, Save, Loader2, RefreshCw } from 'lucide-react';
+import {
+  BookOpen,
+  Eye,
+  FileText,
+  Globe,
+  LayoutTemplate,
+  Loader2,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Sparkles,
+  Trash2,
+  Wand2,
+  X,
+} from 'lucide-react';
 
 interface BlogPost {
   id: string;
@@ -31,6 +47,62 @@ const EMPTY_FORM = {
   isActive: true,
 };
 
+function createSlug(value: string) {
+  return value
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+function stripHtml(value: string) {
+  return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function estimateReadTime(content: string, locale: string) {
+  const text = stripHtml(content);
+  const words = text ? text.split(' ').length : 1;
+  const minutes = Math.max(1, Math.ceil(words / 180));
+  return locale === 'en' ? `${minutes} min read` : `${minutes} dk okuma`;
+}
+
+function defaultDate(locale: string) {
+  return new Date().toLocaleDateString(locale === 'en' ? 'en-US' : 'tr-TR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+function getStarterTemplate(locale: string) {
+  if (locale === 'en') {
+    return `<h2>Why this matters</h2>
+<p>Open with the concrete business problem this article solves. Keep the first paragraph practical, specific, and easy to scan.</p>
+
+<h2>What changes in the daily workflow?</h2>
+<p>Explain the operational impact for restaurants, teams, and guests. Use examples instead of abstract claims.</p>
+
+<h2>How to apply it with Buaze</h2>
+<p>Describe the recommended setup, the safe review flow, and the measurable outcome.</p>`;
+  }
+
+  return `<h2>Bu neden önemli?</h2>
+<p>Yazının çözdüğü işletme problemini net ve pratik bir girişle anlatın. İlk paragraf doğrudan faydayı göstermeli.</p>
+
+<h2>Günlük operasyonu nasıl değiştirir?</h2>
+<p>Restoran ekibi, misafir ve yönetici açısından etkisini örneklerle açıklayın. Soyut vaat yerine uygulanabilir öneriler kullanın.</p>
+
+<h2>Buaze ile nasıl uygulanır?</h2>
+<p>Önerilen kurulumu, güvenli yorum akışını ve ölçülebilir sonucu anlatın.</p>`;
+}
+
 export default function AdminBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +115,9 @@ export default function AdminBlogPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [filterLocale, setFilterLocale] = useState<'all' | 'tr' | 'en'>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [editorMode, setEditorMode] = useState<'write' | 'preview'>('write');
+  const [slugTouched, setSlugTouched] = useState(false);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -84,8 +159,10 @@ export default function AdminBlogPage() {
 
   const openNew = () => {
     setEditingPost(null);
-    setForm({ ...EMPTY_FORM, date: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) });
+    setForm({ ...EMPTY_FORM, date: defaultDate('tr') });
     setShowForm(true);
+    setEditorMode('write');
+    setSlugTouched(false);
     setError('');
   };
 
@@ -104,7 +181,34 @@ export default function AdminBlogPage() {
       isActive: post.isActive,
     });
     setShowForm(true);
+    setEditorMode('write');
+    setSlugTouched(true);
     setError('');
+  };
+
+  const updateTitle = (title: string) => {
+    setForm(f => ({
+      ...f,
+      title,
+      slug: slugTouched ? f.slug : createSlug(title),
+    }));
+  };
+
+  const updateContent = (content: string) => {
+    setForm(f => ({
+      ...f,
+      content,
+      readTime: f.readTime ? f.readTime : estimateReadTime(content, f.locale),
+    }));
+  };
+
+  const insertStarterTemplate = () => {
+    const template = getStarterTemplate(form.locale);
+    setForm(f => ({
+      ...f,
+      content: f.content ? `${f.content}\n\n${template}` : template,
+      readTime: estimateReadTime(f.content ? `${f.content}\n\n${template}` : template, f.locale),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -150,7 +254,14 @@ export default function AdminBlogPage() {
     }
   };
 
-  const filtered = filterLocale === 'all' ? posts : posts.filter(p => p.locale === filterLocale);
+  const filtered = posts.filter(post => {
+    const matchesLocale = filterLocale === 'all' || post.locale === filterLocale;
+    const query = search.trim().toLowerCase();
+    const matchesSearch = !query || [post.title, post.description, post.slug].some(value => value.toLowerCase().includes(query));
+    return matchesLocale && matchesSearch;
+  });
+  const activeCount = posts.filter(post => post.isActive).length;
+  const draftCount = posts.length - activeCount;
 
   return (
     <div className="flex-1 min-h-screen bg-[#FFFFFF] p-3 sm:p-6 md:p-10 space-y-8">
@@ -168,17 +279,35 @@ export default function AdminBlogPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 self-start md:self-center relative z-10">
+        <div className="grid grid-cols-3 gap-3 self-start md:self-center relative z-10">
           <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/10 text-center">
             <p className="text-2xl font-semibold text-white">{posts.length}</p>
             <p className="text-[10px] pulse-eyebrow text-white/60 mt-1">Toplam Yazı</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/10 text-center">
+            <p className="text-2xl font-semibold text-[#C6F24E]">{activeCount}</p>
+            <p className="text-[10px] pulse-eyebrow text-white/60 mt-1">Yayında</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/10 text-center">
+            <p className="text-2xl font-semibold text-white/70">{draftCount}</p>
+            <p className="text-[10px] pulse-eyebrow text-white/60 mt-1">Taslak</p>
           </div>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-xl border border-[#EDEDED] shadow-sm">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+      <div className="grid gap-3 bg-white p-3 sm:p-4 rounded-xl border border-[#EDEDED] shadow-sm xl:grid-cols-[minmax(260px,1fr)_auto_auto] xl:items-center">
+        <div className="relative">
+          <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#737373]" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Başlık, açıklama veya slug ara..."
+            className="w-full rounded-xl border border-[#EDEDED] bg-[#FAFAFA] py-3 pl-11 pr-4 text-sm font-semibold outline-none transition-all focus:border-[#C6F24E] focus:bg-white focus:shadow-[0_0_0_4px_rgba(198,242,78,0.16)]"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
           {(['all', 'tr', 'en'] as const).map(l => (
             <button
               key={l}
@@ -189,7 +318,7 @@ export default function AdminBlogPage() {
                   : 'bg-[#FFFFFF] text-[#6B7280] hover:bg-[#EDEDED]'
               }`}
             >
-              {l === 'all' ? 'TÜMÜ' : l === 'tr' ? '🇹🇷 TÜRKÇE' : '🇺🇸 ENGLISH'}
+              {l === 'all' ? 'TÜMÜ' : l === 'tr' ? 'TR' : 'EN'}
             </button>
           ))}
         </div>
@@ -206,7 +335,7 @@ export default function AdminBlogPage() {
           </button>
           <button
             onClick={openNew}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#C6F24E] text-[#0A0A0A] rounded-xl font-semibold text-[10px]  hover:bg-[#f5b914] transition-all shadow-lg shadow-[#C6F24E]/10 active:scale-95 whitespace-nowrap"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#C6F24E] text-[#0A0A0A] rounded-xl font-semibold text-[10px] hover:bg-[#A8D62E] transition-all shadow-lg shadow-[#C6F24E]/10 active:scale-95 whitespace-nowrap"
           >
             <Plus size={18} strokeWidth={2} />
             Yeni Yazı
@@ -345,180 +474,305 @@ export default function AdminBlogPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-[#0A0A0A]/60 backdrop-blur-md z-60 flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl w-full max-w-4xl my-8 shadow-2xl border border-[#EDEDED] overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-[#0A0A0A]/60 backdrop-blur-md z-60 flex items-start justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-[28px] w-full max-w-7xl my-4 sm:my-8 shadow-2xl border border-[#EDEDED] overflow-hidden animate-in fade-in zoom-in-95 duration-300">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-8 border-b border-[#FFFFFF]">
+            <div className="flex flex-col gap-5 border-b border-[#EDEDED] bg-[#FAFAFA] p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[#C6F24E]/10 rounded-2xl flex items-center justify-center">
-                  {editingPost ? <Pencil size={20} className="text-[#C6F24E]" strokeWidth={2} /> : <Plus size={20} className="text-[#C6F24E]" strokeWidth={2} />}
+                <div className="w-12 h-12 bg-[#0A0A0A] text-[#C6F24E] rounded-2xl flex items-center justify-center">
+                  {editingPost ? <Pencil size={20} strokeWidth={2} /> : <Plus size={20} strokeWidth={2} />}
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-[#0A0A0A]">{editingPost ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı'}</h2>
-                  <p className="text-[#6B7280] text-xs font-semibold mt-0.5">{editingPost ? editingPost.title : 'Harika bir içerik oluşturun'}</p>
+                  <p className="text-[#737373] text-xs font-semibold mt-0.5">
+                    {editingPost ? editingPost.title : 'SEO uyumlu ve tasarıma hazır içerik oluşturun'}
+                  </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowForm(false)}
-                className="w-10 h-10 flex items-center justify-center text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#FFFFFF] rounded-xl transition-all"
-              >
-                <X size={20} strokeWidth={2} />
-              </button>
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3 py-2 text-[11px] font-semibold text-[#737373]">
+                  <FileText size={14} />
+                  {stripHtml(form.content).split(' ').filter(Boolean).length} kelime
+                </div>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="w-10 h-10 flex items-center justify-center text-[#737373] hover:text-[#0A0A0A] hover:bg-white rounded-xl transition-all"
+                >
+                  <X size={20} strokeWidth={2} />
+                </button>
+              </div>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
-              {/* Locale + Slug */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">DİL SEÇİMİ</label>
-                  <div className="flex gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
-                    {(['tr', 'en'] as const).map(l => (
+            <form onSubmit={handleSubmit} className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_420px]">
+              <div className="space-y-6 p-5 sm:p-7">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-[#737373] uppercase tracking-[0.2em] mb-3">DİL SEÇİMİ</label>
+                    <div className="flex gap-2 rounded-[18px] border border-[#EDEDED] bg-[#FAFAFA] p-1.5">
+                      {(['tr', 'en'] as const).map(l => (
+                        <button
+                          key={l}
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, locale: l, date: f.date || defaultDate(l), readTime: estimateReadTime(f.content, l) }))}
+                          className={`flex-1 rounded-xl py-3 text-xs font-semibold transition-all ${
+                            form.locale === l ? 'bg-[#0A0A0A] text-white shadow-lg' : 'text-[#737373] hover:text-[#0A0A0A]'
+                          }`}
+                        >
+                          {l === 'tr' ? 'TR' : 'EN'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-[#737373] uppercase tracking-[0.2em] mb-3">URL SLUG</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        required
+                        value={form.slug}
+                        onChange={e => {
+                          setSlugTouched(true);
+                          setForm(f => ({ ...f, slug: createSlug(e.target.value) }));
+                        }}
+                        placeholder="ornek-yazi-basligi"
+                        className="w-full rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-3.5 text-sm font-semibold text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E] focus:bg-white focus:ring-2 focus:ring-[#C6F24E]"
+                      />
                       <button
-                        key={l}
                         type="button"
-                        onClick={() => setForm(f => ({ ...f, locale: l }))}
-                        className={`flex-1 py-3 rounded-xl text-xs font-semibold transition-all ${
-                          form.locale === l
-                            ? 'bg-[#0A0A0A] text-white shadow-lg'
-                            : 'text-[#6B7280] hover:text-[#0A0A0A]'
-                        }`}
+                        onClick={() => {
+                          setSlugTouched(false);
+                          setForm(f => ({ ...f, slug: createSlug(f.title) }));
+                        }}
+                        className="rounded-xl border border-[#EDEDED] px-4 text-[#737373] hover:bg-[#EAF9B8] hover:text-[#0A0A0A] transition-colors"
+                        title="Başlıktan üret"
                       >
-                        {l === 'tr' ? '🇹🇷 TÜRKÇE' : '🇺🇸 ENGLISH'}
+                        <Wand2 size={18} />
                       </button>
-                    ))}
+                    </div>
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">URL SLUG</label>
+                  <label className="block text-[10px] font-semibold text-[#737373] uppercase tracking-[0.2em] mb-3">BAŞLIK</label>
                   <input
                     type="text"
                     required
-                    value={form.slug}
-                    onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
-                    placeholder="ornek-yazi-basligi"
-                    className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
+                    maxLength={180}
+                    value={form.title}
+                    onChange={e => updateTitle(e.target.value)}
+                    placeholder={form.locale === 'tr' ? 'Başlığı buraya girin...' : 'Enter title here...'}
+                    className="w-full rounded-2xl border border-[#EDEDED] bg-white px-5 py-4 text-xl font-semibold tracking-[-0.02em] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:ring-2 focus:ring-[#C6F24E]"
                   />
                 </div>
-              </div>
 
-              {/* Title */}
-              <div>
-                <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BAŞLIK</label>
-                <input
-                  type="text"
-                  required
-                  value={form.title}
-                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                  placeholder={form.locale === 'tr' ? "Başlığı buraya girin..." : "Enter title here..."}
-                  className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">SEO AÇIKLAMASI (META)</label>
-                <textarea
-                  required
-                  rows={2}
-                  value={form.description}
-                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Arama sonuçlarında görünecek kısa açıklama..."
-                  className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all resize-none"
-                />
-              </div>
-
-              {/* Cover Image + Author */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">KAPAK GÖRSELİ URL</label>
-                  <input
-                    type="url"
-                    value={form.coverImage}
-                    onChange={e => setForm(f => ({ ...f, coverImage: e.target.value }))}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <label className="block text-[10px] font-semibold text-[#737373] uppercase tracking-[0.2em]">SEO AÇIKLAMASI</label>
+                    <span className={`text-[11px] font-semibold ${form.description.length > 160 ? 'text-amber-600' : 'text-[#737373]'}`}>
+                      {form.description.length}/160 önerilen
+                    </span>
+                  </div>
+                  <textarea
+                    required
+                    rows={3}
+                    maxLength={280}
+                    value={form.description}
+                    onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                    placeholder="Arama sonuçlarında ve blog kartlarında görünecek kısa açıklama..."
+                    className="w-full resize-none rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 text-sm font-semibold leading-6 text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:bg-white focus:ring-2 focus:ring-[#C6F24E]"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">YAZAR</label>
-                  <input
-                    type="text"
-                    value={form.author}
-                    onChange={e => setForm(f => ({ ...f, author: e.target.value }))}
-                    className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
-                  />
+
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-[#737373] uppercase tracking-[0.2em] mb-3">KAPAK GÖRSELİ URL</label>
+                    <input
+                      type="text"
+                      value={form.coverImage}
+                      onChange={e => setForm(f => ({ ...f, coverImage: e.target.value }))}
+                      placeholder="https://... veya /images/..."
+                      className="w-full rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-3.5 text-sm font-semibold text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E] focus:bg-white focus:ring-2 focus:ring-[#C6F24E]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-[#737373] uppercase tracking-[0.2em] mb-3">YAZAR</label>
+                    <input
+                      type="text"
+                      value={form.author}
+                      onChange={e => setForm(f => ({ ...f, author: e.target.value }))}
+                      className="w-full rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-3.5 text-sm font-semibold text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E] focus:bg-white focus:ring-2 focus:ring-[#C6F24E]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-[#737373] uppercase tracking-[0.2em] mb-3">YAYIN TARİHİ</label>
+                    <input
+                      type="text"
+                      value={form.date}
+                      onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                      placeholder={form.locale === 'tr' ? '15 Mart 2026' : 'March 15, 2026'}
+                      className="w-full rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-3.5 text-sm font-semibold text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E] focus:bg-white focus:ring-2 focus:ring-[#C6F24E]"
+                    />
+                  </div>
+                  <div>
+                    <div className="mb-3 flex items-center justify-between">
+                      <label className="block text-[10px] font-semibold text-[#737373] uppercase tracking-[0.2em]">OKUMA SÜRESİ</label>
+                      <button
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, readTime: estimateReadTime(f.content, f.locale) }))}
+                        className="text-[11px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4"
+                      >
+                        Hesapla
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={form.readTime}
+                      onChange={e => setForm(f => ({ ...f, readTime: e.target.value }))}
+                      placeholder={form.locale === 'tr' ? '4 dk okuma' : '4 min read'}
+                      className="w-full rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-3.5 text-sm font-semibold text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E] focus:bg-white focus:ring-2 focus:ring-[#C6F24E]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-[#0A0A0A] text-[13px] font-semibold uppercase tracking-tight">{form.isActive ? 'YAYINDA' : 'TASLAK'}</p>
+                    <p className="text-[#737373] text-[12px] font-semibold">{form.isActive ? 'Yazı sitede tüm ziyaretçilere görünür.' : 'Yazı sadece panelde görünür.'}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
+                    className={`relative h-7 w-14 rounded-full transition-all duration-300 ${form.isActive ? 'bg-[#C6F24E]' : 'bg-[#D4D4D4]'}`}
+                  >
+                    <span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-all duration-300 ${form.isActive ? 'translate-x-7' : ''}`} />
+                  </button>
+                </div>
+
+                <div className="rounded-2xl border border-[#EDEDED] overflow-hidden">
+                  <div className="flex flex-col gap-3 border-b border-[#EDEDED] bg-[#FAFAFA] p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditorMode('write')}
+                        className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all ${editorMode === 'write' ? 'bg-[#0A0A0A] text-white' : 'text-[#737373] hover:bg-white'}`}
+                      >
+                        HTML Yaz
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditorMode('preview')}
+                        className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all ${editorMode === 'preview' ? 'bg-[#0A0A0A] text-white' : 'text-[#737373] hover:bg-white'}`}
+                      >
+                        Önizle
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={insertStarterTemplate}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#EAF9B8] px-4 py-2 text-xs font-semibold text-[#0A0A0A] hover:bg-[#C6F24E] transition-colors"
+                    >
+                      <LayoutTemplate size={15} />
+                      Hazır iskelet ekle
+                    </button>
+                  </div>
+
+                  {editorMode === 'write' ? (
+                    <textarea
+                      required
+                      rows={18}
+                      value={form.content}
+                      onChange={e => updateContent(e.target.value)}
+                      placeholder="<h2>Başlık</h2>&#10;<p>Paragraf...</p>"
+                      className="w-full border-0 bg-white px-5 py-4 font-mono text-sm leading-7 text-[#0A0A0A] outline-none"
+                    />
+                  ) : (
+                    <div
+                      className="min-h-[380px] bg-white px-5 py-5 prose prose-lg max-w-none prose-h2:text-[28px] prose-h2:font-medium prose-p:text-[#525252] prose-p:leading-[1.7] prose-a:text-[#0A0A0A] prose-a:decoration-[#C6F24E]"
+                      dangerouslySetInnerHTML={{ __html: form.content || '<p>Önizleme için içerik yazın.</p>' }}
+                    />
+                  )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">YAYIN TARİHİ</label>
-                  <input
-                    type="text"
-                    value={form.date}
-                    onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-                    placeholder={form.locale === 'tr' ? "15 Mart 2026" : "March 15, 2026"}
-                    className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">OKUMA SÜRESİ</label>
-                  <input
-                    type="text"
-                    value={form.readTime}
-                    onChange={e => setForm(f => ({ ...f, readTime: e.target.value }))}
-                    placeholder={form.locale === 'tr' ? "4 dk okuma" : "4 min read"}
-                    className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
-                  />
-                </div>
-              </div>
+              <aside className="border-t border-[#EDEDED] bg-[#FAFAFA] p-5 sm:p-7 lg:border-l lg:border-t-0">
+                <div className="sticky top-6 space-y-5">
+                  <div className="rounded-2xl bg-[#C6F24E] p-5 text-[#0A0A0A]">
+                    <div className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.16em]">
+                      <Sparkles size={15} />
+                      CANLI BLOG ÖNİZLEME
+                    </div>
+                    <h3 className="mt-4 text-[32px] font-medium leading-none tracking-[-0.045em]">
+                      {form.title || 'Yazı başlığı'}
+                    </h3>
+                    <p className="mt-4 text-sm font-medium leading-6 text-[#0A0A0A]/75">
+                      {form.description || 'SEO açıklaması ve blog kartı özeti burada görünür.'}
+                    </p>
+                    <div className="mt-5 flex items-center gap-3 text-xs font-semibold text-[#0A0A0A]/70">
+                      <Globe size={15} />
+                      <span>{form.locale.toUpperCase()}</span>
+                      <span>{form.readTime || estimateReadTime(form.content, form.locale)}</span>
+                    </div>
+                  </div>
 
-              {/* Active toggle */}
-              <div className="flex items-center justify-between p-5 bg-[#FFFFFF] rounded-xl border border-[#EDEDED]">
-                <div className="space-y-0.5">
-                  <p className="text-[#0A0A0A] text-[13px] font-semibold uppercase tracking-tight">{form.isActive ? 'YAYINDA' : 'TASLAK'}</p>
-                  <p className="text-[#6B7280] text-[11px] font-bold">{form.isActive ? 'Yazı sitede tüm ziyaretçilere görünür.' : 'Yazı sadece panelde görünür.'}</p>
+                  {form.coverImage ? (
+                    <div className="overflow-hidden rounded-2xl border border-[#EDEDED] bg-white">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={form.coverImage} alt="" className="h-40 w-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-[#D4D4D4] bg-white p-5 text-center text-sm font-semibold text-[#737373]">
+                      Kapak görseli eklenirse OG/blog kartlarında kullanılır.
+                    </div>
+                  )}
+
+                  <div className="rounded-2xl border border-[#EDEDED] bg-white p-5">
+                    <p className="pulse-eyebrow text-[#737373]">SEO KONTROL</p>
+                    <div className="mt-4 space-y-3 text-sm font-semibold">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#737373]">Başlık</span>
+                        <span className={form.title.length >= 35 && form.title.length <= 70 ? 'text-emerald-600' : 'text-amber-600'}>
+                          {form.title.length || 0} karakter
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#737373]">Açıklama</span>
+                        <span className={form.description.length >= 90 && form.description.length <= 160 ? 'text-emerald-600' : 'text-amber-600'}>
+                          {form.description.length || 0} karakter
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#737373]">Slug</span>
+                        <span className={form.slug ? 'text-emerald-600' : 'text-amber-600'}>
+                          {form.slug ? 'Hazır' : 'Eksik'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                      className="px-5 py-3 text-[#737373] hover:text-[#0A0A0A] font-semibold text-xs transition-all"
+                    >
+                      İPTAL
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="flex items-center gap-2 px-7 py-3 bg-[#0A0A0A] text-white rounded-xl font-semibold text-xs hover:bg-[#1A1A1A] transition-all disabled:opacity-50 active:scale-95"
+                    >
+                      {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                      {editingPost ? 'GÜNCELLE' : 'YAYINLA'}
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
-                  className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.isActive ? 'bg-[#C6F24E]' : 'bg-[#C9D0DB]'}`}
-                >
-                  <span className={`absolute top-1 left-1 w-4.5 h-4.5 bg-white rounded-full transition-all duration-300 ${form.isActive ? 'translate-x-5.5' : ''}`} />
-                </button>
-              </div>
-
-              {/* Content */}
-              <div>
-                <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">İÇERİK (HTML)</label>
-                <textarea
-                  required
-                  rows={12}
-                  value={form.content}
-                  onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                  className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-4 text-[#0A0A0A] text-sm font-mono placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-inner leading-relaxed"
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-6 border-t border-[#FFFFFF]">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-8 py-3.5 text-[#6B7280] hover:text-[#0A0A0A] font-semibold text-xs  transition-all"
-                >
-                  İPTAL
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex items-center gap-2 px-10 py-3.5 bg-[#0A0A0A] text-white rounded-xl font-semibold text-xs  hover:bg-[#1A1A1A] transition-all shadow-xl shadow-[#EDEDED] disabled:opacity-50 active:scale-95"
-                >
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                  {editingPost ? 'GÜNCELLE' : 'YAYINLA'}
-                </button>
-              </div>
+              </aside>
             </form>
           </div>
         </div>
