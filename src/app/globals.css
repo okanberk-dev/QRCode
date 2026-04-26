@@ -211,6 +211,49 @@ h1, h2, h3, h4, h5, h6 {
   background-color: #FAFAFA;
 }
 
+.pulse-blog-content blockquote {
+  position: relative;
+  border-left: 4px solid #C6F24E !important;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 18px 18px, rgba(198, 242, 78, 0.55), transparent 32px),
+    linear-gradient(135deg, #F8FFE0 0%, #EAF9B8 100%);
+  color: #0A0A0A !important;
+  padding: 24px 26px 24px 58px !important;
+  font-weight: 500;
+  box-shadow: 0 20px 50px -36px rgba(10, 10, 10, 0.45);
+}
+
+.pulse-blog-content blockquote::before {
+  content: "“";
+  position: absolute;
+  left: 20px;
+  top: 14px;
+  font-family: var(--font-heading);
+  font-size: 48px;
+  line-height: 1;
+  color: #0A0A0A;
+  opacity: 0.22;
+}
+
+.pulse-blog-content blockquote p {
+  margin: 0;
+  color: #0A0A0A !important;
+}
+
+.pulse-blog-content ul,
+.pulse-blog-content ol {
+  border-radius: 18px;
+  background: #FAFAFA;
+  border: 1px solid #EDEDED;
+  padding: 18px 22px 18px 34px;
+}
+
+.pulse-blog-content li::marker {
+  color: #A8D62E;
+  font-weight: 700;
+}
+
 /* Card hover lift — gentle Y-axis nudge + shadow ramp.
  * Used on solution / feature / pricing tiles. */
 .pulse-card-hover {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
+import { sanitizeBlogContent } from '@/lib/blog-content';
 
 async function requireSuperadmin(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
@@ -33,7 +34,7 @@ function normalizeBlogPayload(body: Record<string, unknown>) {
   const locale = normalizeText(body.locale, 'tr').toLowerCase();
   const title = normalizeText(body.title);
   const description = normalizeText(body.description);
-  const content = normalizeText(body.content);
+  const content = sanitizeBlogContent(normalizeText(body.content));
   const date = normalizeText(
     body.date,
     new Date().toLocaleDateString(locale === 'en' ? 'en-US' : 'tr-TR', {

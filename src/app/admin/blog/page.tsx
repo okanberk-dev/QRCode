@@ -1,15 +1,24 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
+  Bold,
   BookOpen,
   Eye,
   FileText,
   Globe,
+  Heading2,
+  Heading3,
+  Italic,
   LayoutTemplate,
+  Link2,
+  List,
   Loader2,
+  ListOrdered,
+  Pilcrow,
   Pencil,
   Plus,
+  Quote,
   RefreshCw,
   Save,
   Search,
@@ -18,6 +27,7 @@ import {
   Wand2,
   X,
 } from 'lucide-react';
+import { plainTextToBlogContent, sanitizeBlogContent } from '@/lib/blog-content';
 
 interface BlogPost {
   id: string;
@@ -86,6 +96,8 @@ function getStarterTemplate(locale: string) {
     return `<h2>Why this matters</h2>
 <p>Open with the concrete business problem this article solves. Keep the first paragraph practical, specific, and easy to scan.</p>
 
+<blockquote>Use quotes for sharp takeaways, customer observations, or a short expert note. The public page will render this in the Pulse quote style automatically.</blockquote>
+
 <h2>What changes in the daily workflow?</h2>
 <p>Explain the operational impact for restaurants, teams, and guests. Use examples instead of abstract claims.</p>
 
@@ -96,6 +108,8 @@ function getStarterTemplate(locale: string) {
   return `<h2>Bu neden önemli?</h2>
 <p>Yazının çözdüğü işletme problemini net ve pratik bir girişle anlatın. İlk paragraf doğrudan faydayı göstermeli.</p>
 
+<blockquote>Keskin çıkarımlar, müşteri gözlemleri veya kısa uzman notları için alıntı kullanın. Public sayfa bunu otomatik Pulse alıntı stilinde gösterir.</blockquote>
+
 <h2>Günlük operasyonu nasıl değiştirir?</h2>
 <p>Restoran ekibi, misafir ve yönetici açısından etkisini örneklerle açıklayın. Soyut vaat yerine uygulanabilir öneriler kullanın.</p>
 
@@ -104,6 +118,7 @@ function getStarterTemplate(locale: string) {
 }
 
 export default function AdminBlogPage() {
+  const editorRef = useRef<HTMLDivElement | null>(null);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -118,6 +133,12 @@ export default function AdminBlogPage() {
   const [search, setSearch] = useState('');
   const [editorMode, setEditorMode] = useState<'write' | 'preview'>('write');
   const [slugTouched, setSlugTouched] = useState(false);
+
+  const syncEditorFromState = useCallback((content: string) => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = content || '<p></p>';
+    }
+  }, []);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -135,6 +156,12 @@ export default function AdminBlogPage() {
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
+
+  useEffect(() => {
+    if (showForm) {
+      window.setTimeout(() => syncEditorFromState(form.content), 0);
+    }
+  }, [showForm, editingPost?.id, editorMode, syncEditorFromState]);
 
   const handleSeed = async () => {
     setSeeding(true);
@@ -195,20 +222,46 @@ export default function AdminBlogPage() {
   };
 
   const updateContent = (content: string) => {
+    const cleanContent = sanitizeBlogContent(content);
     setForm(f => ({
       ...f,
-      content,
-      readTime: f.readTime ? f.readTime : estimateReadTime(content, f.locale),
+      content: cleanContent,
+      readTime: f.readTime ? f.readTime : estimateReadTime(cleanContent, f.locale),
     }));
+  };
+
+  const handleEditorInput = () => {
+    updateContent(editorRef.current?.innerHTML || '');
+  };
+
+  const runEditorCommand = (command: string, value?: string) => {
+    editorRef.current?.focus();
+    document.execCommand(command, false, value);
+    handleEditorInput();
+  };
+
+  const addLink = () => {
+    const url = window.prompt('Bağlantı adresi (https://... veya /sayfa)');
+    if (!url) return;
+    runEditorCommand('createLink', url);
+  };
+
+  const handleEditorPaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const text = event.clipboardData.getData('text/plain');
+    document.execCommand('insertHTML', false, plainTextToBlogContent(text));
+    handleEditorInput();
   };
 
   const insertStarterTemplate = () => {
     const template = getStarterTemplate(form.locale);
+    const nextContent = sanitizeBlogContent(form.content ? `${form.content}\n\n${template}` : template);
     setForm(f => ({
       ...f,
-      content: f.content ? `${f.content}\n\n${template}` : template,
-      readTime: estimateReadTime(f.content ? `${f.content}\n\n${template}` : template, f.locale),
+      content: nextContent,
+      readTime: estimateReadTime(nextContent, f.locale),
     }));
+    window.setTimeout(() => syncEditorFromState(nextContent), 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -221,7 +274,7 @@ export default function AdminBlogPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, content: sanitizeBlogContent(form.content) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -654,46 +707,100 @@ export default function AdminBlogPage() {
                 </div>
 
                 <div className="rounded-2xl border border-[#EDEDED] overflow-hidden">
-                  <div className="flex flex-col gap-3 border-b border-[#EDEDED] bg-[#FAFAFA] p-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-3 border-b border-[#EDEDED] bg-[#FAFAFA] p-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditorMode('write')}
+                          className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all ${editorMode === 'write' ? 'bg-[#0A0A0A] text-white' : 'text-[#737373] hover:bg-white'}`}
+                        >
+                          Zengin Metin
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditorMode('preview')}
+                          className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all ${editorMode === 'preview' ? 'bg-[#0A0A0A] text-white' : 'text-[#737373] hover:bg-white'}`}
+                        >
+                          Public Önizleme
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setEditorMode('write')}
-                        className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all ${editorMode === 'write' ? 'bg-[#0A0A0A] text-white' : 'text-[#737373] hover:bg-white'}`}
+                        onClick={insertStarterTemplate}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#EAF9B8] px-4 py-2 text-xs font-semibold text-[#0A0A0A] hover:bg-[#C6F24E] transition-colors"
                       >
-                        HTML Yaz
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditorMode('preview')}
-                        className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all ${editorMode === 'preview' ? 'bg-[#0A0A0A] text-white' : 'text-[#737373] hover:bg-white'}`}
-                      >
-                        Önizle
+                        <LayoutTemplate size={15} />
+                        Hazır iskelet ekle
                       </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={insertStarterTemplate}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#EAF9B8] px-4 py-2 text-xs font-semibold text-[#0A0A0A] hover:bg-[#C6F24E] transition-colors"
-                    >
-                      <LayoutTemplate size={15} />
-                      Hazır iskelet ekle
-                    </button>
+
+                    {editorMode === 'write' && (
+                      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#EDEDED] bg-white p-2">
+                        {[
+                          { label: 'Paragraf', icon: Pilcrow, command: 'formatBlock', value: 'p' },
+                          { label: 'H2', icon: Heading2, command: 'formatBlock', value: 'h2' },
+                          { label: 'H3', icon: Heading3, command: 'formatBlock', value: 'h3' },
+                          { label: 'Kalın', icon: Bold, command: 'bold' },
+                          { label: 'İtalik', icon: Italic, command: 'italic' },
+                          { label: 'Liste', icon: List, command: 'insertUnorderedList' },
+                          { label: 'Numara', icon: ListOrdered, command: 'insertOrderedList' },
+                          { label: 'Alıntı', icon: Quote, command: 'formatBlock', value: 'blockquote' },
+                        ].map(({ label, icon: Icon, command, value }) => (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => runEditorCommand(command, value)}
+                            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#525252] hover:bg-[#EAF9B8] hover:text-[#0A0A0A] transition-colors"
+                            title={label}
+                          >
+                            <Icon size={15} />
+                            <span className="hidden sm:inline">{label}</span>
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={addLink}
+                          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#525252] hover:bg-[#EAF9B8] hover:text-[#0A0A0A] transition-colors"
+                          title="Bağlantı"
+                        >
+                          <Link2 size={15} />
+                          <span className="hidden sm:inline">Link</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {editorMode === 'write' ? (
-                    <textarea
-                      required
-                      rows={18}
-                      value={form.content}
-                      onChange={e => updateContent(e.target.value)}
-                      placeholder="<h2>Başlık</h2>&#10;<p>Paragraf...</p>"
-                      className="w-full border-0 bg-white px-5 py-4 font-mono text-sm leading-7 text-[#0A0A0A] outline-none"
+                    <div
+                      ref={editorRef}
+                      contentEditable
+                      role="textbox"
+                      aria-label="Blog içeriği"
+                      onInput={handleEditorInput}
+                      onBlur={handleEditorInput}
+                      onPaste={handleEditorPaste}
+                      className="min-h-[420px] bg-white px-5 py-5 text-[16px] leading-7 text-[#0A0A0A] outline-none
+                        [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:text-[28px] [&_h2]:font-medium [&_h2]:tracking-[-0.02em]
+                        [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:text-[21px] [&_h3]:font-medium [&_h3]:tracking-[-0.01em]
+                        [&_p]:mb-5 [&_p]:text-[#525252]
+                        [&_a]:font-medium [&_a]:text-[#0A0A0A] [&_a]:underline [&_a]:decoration-[#C6F24E] [&_a]:decoration-2 [&_a]:underline-offset-4
+                        [&_ul]:mb-5 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mb-5 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-2 [&_li]:text-[#525252]
+                        [&_blockquote]:my-7 [&_blockquote]:rounded-[18px] [&_blockquote]:border-l-4 [&_blockquote]:border-[#C6F24E] [&_blockquote]:bg-[#EAF9B8]/70 [&_blockquote]:px-5 [&_blockquote]:py-4 [&_blockquote]:font-medium [&_blockquote]:text-[#0A0A0A]"
+                      suppressContentEditableWarning
+                      dangerouslySetInnerHTML={{ __html: form.content || '<p></p>' }}
                     />
                   ) : (
                     <div
-                      className="min-h-[380px] bg-white px-5 py-5 prose prose-lg max-w-none prose-h2:text-[28px] prose-h2:font-medium prose-p:text-[#525252] prose-p:leading-[1.7] prose-a:text-[#0A0A0A] prose-a:decoration-[#C6F24E]"
-                      dangerouslySetInnerHTML={{ __html: form.content || '<p>Önizleme için içerik yazın.</p>' }}
+                      className="pulse-blog-content min-h-[420px] bg-white px-5 py-5 prose prose-lg max-w-none
+                        prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
+                        prose-h2:text-[28px] prose-h2:mt-10 prose-h2:mb-4
+                        prose-h3:text-[21px] prose-h3:mt-8 prose-h3:mb-3
+                        prose-p:text-[#525252] prose-p:leading-[1.7] prose-p:mb-6 prose-p:text-[16px]
+                        prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4
+                        prose-li:text-[#525252] prose-li:leading-[1.7]
+                        prose-blockquote:rounded-[20px] prose-blockquote:border-l-4 prose-blockquote:border-[#C6F24E] prose-blockquote:bg-[#EAF9B8]/75 prose-blockquote:px-6 prose-blockquote:py-5 prose-blockquote:text-[#0A0A0A] prose-blockquote:not-italic prose-blockquote:font-medium"
+                      dangerouslySetInnerHTML={{ __html: sanitizeBlogContent(form.content) || '<p>Önizleme için içerik yazın.</p>' }}
                     />
                   )}
                 </div>

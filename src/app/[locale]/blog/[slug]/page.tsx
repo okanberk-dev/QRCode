@@ -4,6 +4,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
+import { sanitizeBlogContent } from '@/lib/blog-content';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
@@ -95,7 +96,8 @@ export default async function BlogPostPage({
     datePublished: post.date,
   };
 
-  const tocItems = extractHeadings(post.content);
+  const content = sanitizeBlogContent(post.content);
+  const tocItems = extractHeadings(content);
 
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
@@ -177,7 +179,7 @@ export default async function BlogPostPage({
 
             {/* Body */}
             <article
-              className="mt-8 prose prose-lg max-w-none
+              className="pulse-blog-content mt-8 prose prose-lg max-w-none
                 prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
                 prose-h2:text-[26px] sm:prose-h2:text-[28px] prose-h2:mt-10 prose-h2:mb-4
                 prose-h3:text-[20px] prose-h3:mt-8 prose-h3:mb-3
@@ -185,11 +187,11 @@ export default async function BlogPostPage({
                 prose-strong:font-semibold prose-strong:text-[#0A0A0A]
                 prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4 hover:prose-a:text-[#A8D62E]
                 prose-li:text-[#525252] prose-li:leading-[1.7]
-                prose-blockquote:border-l-2 prose-blockquote:border-[#C6F24E] prose-blockquote:pl-5 prose-blockquote:text-[#525252] prose-blockquote:not-italic
+                prose-blockquote:not-italic
                 prose-img:rounded-2xl prose-img:border prose-img:border-[#EDEDED]
                 break-words"
               style={{ fontFamily: 'var(--font-body)' }}
-              dangerouslySetInnerHTML={{ __html: post.content }}
+              dangerouslySetInnerHTML={{ __html: content }}
             />
 
             {/* CTA box (from design) */}
