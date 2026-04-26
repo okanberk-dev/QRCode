@@ -21,6 +21,17 @@ import { escapeHtml as _escapeHtml } from './email/escape';
 // Re-exported so existing imports of `escapeHtml` from this file keep working.
 export const escapeHtml = _escapeHtml;
 
+// Default Reply-To when caller doesn't specify one. We send From the noreply
+// alias (so consumer mail clients won't reply by reflex) but route any reply
+// the user does compose to a monitored inbox. Falls back through Resend's
+// "from" if the env is unset.
+function defaultReplyTo(): string | undefined {
+  const env = process.env.RESEND_REPLY_TO?.trim()
+    || process.env.NOTIFICATION_EMAIL?.trim();
+  if (env) return env;
+  return undefined;
+}
+
 // ─── Resend HTTP layer ──────────────────────────────────────────────────
 // This is the ONLY email-sending method. No SMTP fallback.
 async function sendResendEmail({
@@ -29,12 +40,16 @@ async function sendResendEmail({
   html,
   text,
   replyTo,
+  headers,
 }: {
   to: string | string[];
   subject: string;
   html: string;
   text: string;
   replyTo?: string;
+  /** Extra RFC-style headers passed straight to Resend. Used for marketing
+   *  mail compliance (List-Unsubscribe, List-Unsubscribe-Post one-click). */
+  headers?: Record<string, string>;
 }): Promise<boolean> {
   const resendKey = process.env.RESEND_API_KEY?.trim();
 
@@ -51,7 +66,14 @@ async function sendResendEmail({
       html,
       text,
     };
-    if (replyTo) payload.reply_to = replyTo;
+    // Reply-To: explicit caller value > env default. Always set when
+    // possible — Gmail flags pure noreply senders as suspicious in marketing
+    // contexts and a real reply path is required for some bulk-sender rules.
+    const effectiveReplyTo = replyTo ?? defaultReplyTo();
+    if (effectiveReplyTo) payload.reply_to = effectiveReplyTo;
+    if (headers && Object.keys(headers).length > 0) {
+      payload.headers = headers;
+    }
 
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -87,7 +109,7 @@ async function sendResendEmail({
   }
 }
 
-export async function sendMail(args: { to: string | string[]; subject: string; html: string; text: string; replyTo?: string }): Promise<boolean> {
+export async function sendMail(args: { to: string | string[]; subject: string; html: string; text: string; replyTo?: string; headers?: Record<string, string> }): Promise<boolean> {
   return sendResendEmail(args);
 }
 
@@ -272,5 +294,26 @@ export async function sendNewsletterEmail(params: {
     },
     params.locale ?? 'tr',
   );
-  return sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  // RFC 2369 + RFC 8058 (Gmail/Yahoo Feb-2024 bulk sender requirements):
+  //   - List-Unsubscribe: <https-link>, <mailto:link>
+  //   - List-Unsubscribe-Post: List-Unsubscribe=One-Click
+  // The HTTPS link is our token-based GET endpoint (idempotent, no auth);
+  // the mailto: route is a fallback some clients prefer. The Post header
+  // tells Gmail/Yahoo/Apple Mail's "Unsubscribe" button to fire a one-click
+  // POST to the same URL — no extra confirmation page, which is required
+  // for senders >5K mails/day.
+  const mailtoUnsub = process.env.RESEND_REPLY_TO?.trim()
+    || process.env.NOTIFICATION_EMAIL?.trim()
+    || 'unsubscribe@buaze.com';
+  return sendResendEmail({
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    headers: {
+      'List-Unsubscribe': `<${params.unsubscribeUrl}>, <mailto:${mailtoUnsub}?subject=Unsubscribe>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      'Precedence': 'bulk',
+    },
+  });
 }

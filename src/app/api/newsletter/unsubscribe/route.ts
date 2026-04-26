@@ -5,39 +5,75 @@ import { PULSE, FONTS } from '@/lib/email/tokens';
 export const dynamic = 'force-dynamic';
 
 /**
- * One-click unsubscribe. KVKK / CAN-SPAM friendly: GET-only, requires
- * an unguessable token, idempotent (re-visit shows the same confirmation).
+ * One-click unsubscribe. KVKK / CAN-SPAM + RFC 8058 friendly:
+ *  - GET: human-facing flow (link in mail body), returns confirmation HTML
+ *  - POST: machine-facing flow (Gmail/Yahoo/Apple Mail "Unsubscribe" button)
+ *    fires `List-Unsubscribe=One-Click` POST to the same URL — required
+ *    for bulk senders (>5K mails/day, Feb-2024 ruleset)
  *
- * Always returns HTML — never redirects, never throws. If the token is
- * invalid we still show a polite "couldn\'t find this subscription" page
- * so we don\'t leak whether the email exists.
+ * Both methods are idempotent and require an unguessable token.
+ * Always 200 with HTML/JSON — never redirects, never throws — so an
+ * invalid token doesn't leak whether the email exists.
  */
-export async function GET(req: NextRequest) {
-  const url = new URL(req.url);
-  const token = url.searchParams.get('token')?.trim() || '';
-  const locale: 'tr' | 'en' = url.searchParams.get('lang') === 'en' ? 'en' : 'tr';
-
-  if (!token || token.length < 16) {
-    return htmlResponse(renderInvalid(locale));
-  }
-
+async function applyUnsubscribe(token: string): Promise<{ ok: boolean; email?: string }> {
+  if (!token || token.length < 16) return { ok: false };
   const sub = await prisma.newsletterSubscriber.findFirst({
     where: { unsubscribeToken: token },
     select: { id: true, email: true, unsubscribedAt: true },
   });
-
-  if (!sub) {
-    return htmlResponse(renderInvalid(locale));
-  }
-
+  if (!sub) return { ok: false };
   if (!sub.unsubscribedAt) {
     await prisma.newsletterSubscriber.update({
       where: { id: sub.id },
       data: { unsubscribedAt: new Date() },
     });
   }
+  return { ok: true, email: sub.email };
+}
 
-  return htmlResponse(renderSuccess(locale, sub.email));
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url);
+  const token = url.searchParams.get('token')?.trim() || '';
+  const locale: 'tr' | 'en' = url.searchParams.get('lang') === 'en' ? 'en' : 'tr';
+
+  const result = await applyUnsubscribe(token);
+  if (!result.ok) return htmlResponse(renderInvalid(locale));
+  return htmlResponse(renderSuccess(locale, result.email!));
+}
+
+export async function POST(req: NextRequest) {
+  // RFC 8058 one-click — token comes via query string. Body is the literal
+  // "List-Unsubscribe=One-Click" tag (we don't parse it; presence is implied
+  // by the POST itself). Some clients also accept token in the body, so we
+  // try both.
+  const url = new URL(req.url);
+  let token = url.searchParams.get('token')?.trim() || '';
+  if (!token) {
+    try {
+      const ct = req.headers.get('content-type') ?? '';
+      if (ct.includes('application/x-www-form-urlencoded')) {
+        const form = await req.formData();
+        token = String(form.get('token') ?? '').trim();
+      } else if (ct.includes('application/json')) {
+        const body = await req.json().catch(() => ({}));
+        token = typeof body?.token === 'string' ? body.token.trim() : '';
+      }
+    } catch {
+      /* fall through with empty token */
+    }
+  }
+
+  const result = await applyUnsubscribe(token);
+  if (!result.ok) {
+    return new Response(JSON.stringify({ ok: false }), {
+      status: 200, // RFC 8058: bulk senders must NOT 4xx on bad tokens
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 function htmlResponse(html: string): Response {
