@@ -2,6 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderH2, renderP, spacer, renderTwoColCards } from '../components';
+import { loadMailCopy } from '../copy-loader';
 
 export interface CustomerReplyParams {
   customerName?: string | null;
@@ -23,10 +24,10 @@ export interface CustomerReplyParams {
   signaturePostscript?: string | null;
 }
 
-export function renderCustomerReply(
+export async function renderCustomerReply(
   params: CustomerReplyParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const customerFirst = params.customerName ? escapeHtml(params.customerName).split(' ')[0] : (isTr ? 'merhaba' : 'hi');
   const restaurant = escapeHtml(params.restaurantName);
@@ -41,7 +42,7 @@ export function renderCustomerReply(
     ? `Yaşadığın deneyim için özür dileriz. Seni tekrar ${params.restaurantName}'de ağırlamak isteriz.`
     : `We\'re sorry about your experience. We\'d love to welcome you back to ${params.restaurantName}.`;
 
-  const copy = isTr ? {
+  const inlineDefault = isTr ? {
     headerEyebrow: 'Sana özel · Kişisel yanıt',
     ownerLabel: 'İŞLETMECİ',
     titleA: `${customerFirst},`,
@@ -76,6 +77,11 @@ export function renderCustomerReply(
     sentLine: 'Sent via',
     sentSuffix: '',
   };
+
+  // DB-merged. `sentLine`/`sentSuffix` are the Buaze-attribution disclosure
+  // — KVKK-locked server-side (locked-fields.ts) so admins can't strip the
+  // mention even if they edit the row.
+  const copy = await loadMailCopy('customer-reply', locale, inlineDefault);
 
   const message = escapeHtml(params.message).replace(/\n\s*\n/g, '</p><p style="font-family:' + FONTS.body + ';font-size:15px;line-height:1.7;color:' + PULSE.n700 + ';margin:14px 0 0;letter-spacing:-0.005em;">').replace(/\n/g, '<br>');
 

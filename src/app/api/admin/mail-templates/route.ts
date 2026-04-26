@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
+import { SUPPORTED_MAIL_KEYS } from '@/lib/email/copy-loader';
 
 export const dynamic = 'force-dynamic';
 
-const SUPPORTED_KEYS = ['welcome', 'newsletter', 'trial-ending'] as const;
+const SUPPORTED_KEYS = SUPPORTED_MAIL_KEYS;
 const SUPPORTED_LOCALES = ['tr', 'en'] as const;
 
 /**
- * List mail templates (mvp scope: 3 keys × 2 locales = 6 rows). Always
+ * List mail templates (Phase 2 scope: 8 keys × 2 locales = 16 rows). Always
  * returns the full grid; missing rows render as "not seeded yet" so the
  * admin UI can show a button to create + seed defaults.
  */

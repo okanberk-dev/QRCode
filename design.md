@@ -743,3 +743,60 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 - Field-level `editable: false` flag (KVKK lock)
 - Audit log table
 - Redis cache layer (multi-instance Vercel drift fix)
+
+---
+
+## Phase 16.5 — Mail CMS Phase 2: 5 template extension + KVKK field lock (2026-04)
+
+PR #75'in MVP'sini genişleten ve KVKK / güvenlik kritik metinleri kilitleyen iterasyon. Stacked PR — base PR #75.
+
+### Kapsam
+
+- 5 yeni template DB-driven: `forgot-password`, `low-rating-alert`, `new-review`, `weekly-report`, `customer-reply` (form-confirmation Phase 3'e ertelendi — 4-variant yapısı ayrı schema gerektiriyor)
+- Toplam 8 template DB-driven (3 mevcut + 5 yeni)
+- Field-level KVKK / güvenlik kilidi
+- `SUPPORTED_MAIL_KEYS` ortak source-of-truth (DRY)
+
+### Yeni dosya
+
+- `src/lib/email/locked-fields.ts` — `LOCKED_MAIL_FIELDS` map + `isFieldLocked` + `stripLockedFields` helper
+
+### Değişen dosyalar
+
+- `src/lib/email/copy-loader.ts` — `SUPPORTED_MAIL_KEYS` export (8 değer), `MailTemplateKey` union genişletildi
+- 5 template render fn — `async` + `loadMailCopy` (forgot-password, low-rating-alert, new-review, weekly-report, customer-reply)
+- `src/lib/email.ts` — 4 sender'a `await` (`sendFeedbackNotification` 2 call, `sendWeeklyDigest`, `sendPasswordResetEmail`, `sendCustomerReplyEmail`)
+- `src/app/api/admin/mail-templates/route.ts` — `SUPPORTED_KEYS` import
+- `src/app/admin/mail-templates/[key]/[locale]/page.tsx` — `SUPPORTED_KEYS` import
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts` — PATCH endpoint `stripLockedFields()` ile server-side drop
+- `src/components/admin/MailTemplateEditor.tsx` — `FIELDS_BY_TEMPLATE` 5 yeni entry, `FieldDef` tipine `locked?` + `lockReason?` ekledi, UI 🔒 KVKK badge + disabled input + kırmızı border, `TEMPLATE_LABELS` 8 entry
+- `src/app/admin/mail-templates/page.tsx` — `TEMPLATE_LABELS` 8 entry
+- `scripts/seed-mail-templates.ts` — +10 yeni row (toplam 16)
+- `CLAUDE.md` §21.26 başlığı güncellendi, §21.27 (yeni) Phase 2 docs
+
+### Locked field'lar
+
+| Template | Locked field | Sebep |
+|---|---|---|
+| forgot-password | `statusText` | Token süre uyarısı (phishing risk) |
+| forgot-password | `notYouTitle`, `notYouBody`, `notYouLink` | Hesap güvenliği yönergesi |
+| customer-reply | `sentLine`, `sentSuffix` | KVKK / GDPR Buaze gönderim açıklaması |
+
+UI'da 🔒 KVKK badge + tooltip ile sebep gösterilir, `<input disabled>`. Server-side `stripLockedFields()` admin UI bypass'a karşı.
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- DB schema değişikliği YOK (PR #75 `MailTemplate` modelini kuruyor, bu PR sadece kullanıyor)
+- E2E (deploy + seed sonrası):
+  - `/admin/mail-templates` → 16 kart
+  - `/admin/mail-templates/forgot-password/tr` → `notYouTitle` field disabled, "🔒 KVKK" badge görünür
+  - cURL bypass: `curl -X PATCH .../forgot-password/tr -d '{"content":{"notYouTitle":"hacked"}}'` → DB'de `notYouTitle` yazmaz (server drop)
+
+### Phase 3 backlog
+
+- form-confirmation 4-variant DB-driven (nested JSON)
+- Dynamic placeholder injection
+- Audit log table
+- Redis cache (gerekli olduğunda)

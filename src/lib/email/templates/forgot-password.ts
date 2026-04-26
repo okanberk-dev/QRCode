@@ -8,6 +8,7 @@ import {
   renderStatusPill,
   spacer,
 } from '../components';
+import { loadMailCopy } from '../copy-loader';
 
 export interface ForgotPasswordParams {
   /** 6-digit fallback code; preserved for the existing sender contract.
@@ -21,10 +22,10 @@ export interface ForgotPasswordParams {
   account?: string | null;
 }
 
-export function renderForgotPassword(
+export async function renderForgotPassword(
   params: ForgotPasswordParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const subject = isTr ? 'Şifreni sıfırlamak için tek tık' : 'One click to reset your password';
   const preheader = isTr
@@ -51,7 +52,7 @@ export function renderForgotPassword(
     }
   })();
 
-  const copy = isTr ? {
+  const inlineDefault = isTr ? {
     eyebrow: '01 · Talep alındı',
     title: 'Şifreni',
     titleAccent: 'sıfırlayalım',
@@ -90,6 +91,11 @@ export function renderForgotPassword(
     notYouLink: 'contact support',
     altCodeLabel: 'Or use this code in the app',
   };
+
+  // DB-merged copy. Security-critical strings (notYou*, statusText) are
+  // server-side locked: even if an admin rewrites them in the editor, the
+  // PATCH endpoint drops them — see locked-fields.ts.
+  const copy = await loadMailCopy('forgot-password', locale, inlineDefault);
 
   const supportHref = `${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/${isTr ? 'tr' : 'en'}/contact`;
 

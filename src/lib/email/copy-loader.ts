@@ -21,10 +21,29 @@ type CacheEntry = { content: Record<string, unknown>; expiresAt: number };
 const cache = new Map<string, CacheEntry>();
 const TTL_MS = 60 * 1000;
 
-const SUPPORTED_KEYS = new Set(['welcome', 'newsletter', 'trial-ending']);
+/**
+ * Source of truth for which template keys the CMS recognises. Phase 2
+ * extended this from 3 (welcome / newsletter / trial-ending) to 8 — only
+ * `form-confirmation` stays inline because its 4 formType variants need a
+ * nested-JSON schema we'd rather build separately. Update this list +
+ * `MailTemplateKey` together, then re-export points in API routes and the
+ * admin editor wire automatically.
+ */
+export const SUPPORTED_MAIL_KEYS = [
+  'welcome',
+  'newsletter',
+  'trial-ending',
+  'forgot-password',
+  'low-rating-alert',
+  'new-review',
+  'weekly-report',
+  'customer-reply',
+] as const;
 
-export type MailTemplateKey = 'welcome' | 'newsletter' | 'trial-ending';
+export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];
 export type MailLocale = 'tr' | 'en';
+
+const SUPPORTED_KEYS = new Set<string>(SUPPORTED_MAIL_KEYS);
 
 export function isSupportedMailTemplateKey(value: string): value is MailTemplateKey {
   return SUPPORTED_KEYS.has(value);

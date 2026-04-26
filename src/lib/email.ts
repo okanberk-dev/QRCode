@@ -158,7 +158,7 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
 
   let rendered;
   if (data.rating >= 4) {
-    rendered = renderNewReview({
+    rendered = await renderNewReview({
       rating: data.rating,
       restaurantName,
       customerName: data.name,
@@ -168,7 +168,7 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
       reviewUrl,
     }, locale);
   } else {
-    rendered = renderLowRatingAlert({
+    rendered = await renderLowRatingAlert({
       rating: data.rating,
       restaurantName,
       customerName: data.name,
@@ -194,7 +194,7 @@ export interface WeeklyDigestParams {
 
 export async function sendWeeklyDigest(params: WeeklyDigestParams): Promise<boolean> {
   const dashboardUrl = `${appUrl()}/${params.locale}/dashboard`;
-  const rendered = renderWeeklyReport(
+  const rendered = await renderWeeklyReport(
     {
       restaurantName: params.restaurantName,
       period: params.period,
@@ -216,7 +216,7 @@ export async function sendPasswordResetEmail(params: {
   ip?: string | null;
   device?: string | null;
 }): Promise<boolean> {
-  const rendered = renderForgotPassword(
+  const rendered = await renderForgotPassword(
     { code: params.code, resetUrl: params.resetUrl, ip: params.ip, device: params.device },
     params.locale ?? 'tr',
   );
@@ -257,7 +257,7 @@ export async function sendFormConfirmationEmail(params: {
 
 export async function sendCustomerReplyEmail(params: CustomerReplyParams & { to: string; locale?: 'tr' | 'en'; replyTo?: string }): Promise<boolean> {
   const { to, locale, replyTo, ...rest } = params;
-  const rendered = renderCustomerReply(rest, locale ?? 'tr');
+  const rendered = await renderCustomerReply(rest, locale ?? 'tr');
   return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text, replyTo });
 }
 

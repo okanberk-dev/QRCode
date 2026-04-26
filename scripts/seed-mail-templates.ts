@@ -95,6 +95,158 @@ const TRIAL_ENDING_EN: Copy = {
   comparisonLink: 'Detailed comparison',
 };
 
+// ───────────────────────────────────────────────────────────────────────
+// Phase 2 templates (forgot-password / low-rating-alert / new-review /
+// weekly-report / customer-reply). Inline default mirrors what the
+// matching renderXxx() function ships with — keep these in sync when
+// shipping new fields. KVKK-locked fields are seeded too (admin can't
+// edit them, but the row keeps a known baseline).
+// ───────────────────────────────────────────────────────────────────────
+
+const FORGOT_PASSWORD_TR: Copy = {
+  eyebrow: '01 · Talep alındı',
+  title: 'Şifreni',
+  titleAccent: 'sıfırlayalım',
+  cardEyebrow: 'Tek kullanımlık link',
+  statusText: 'Aktif · 30 dk geçerli',
+  cta: 'Yeni şifre belirle →',
+  altCodeLabel: 'Uygulamada kullanmak için kod',
+  metaTime: 'Talep saati',
+  metaIp: 'IP',
+  metaDevice: 'Cihaz',
+  metaAccount: 'Hesap',
+  notYouTitle: 'Sen değil misin?',
+  notYouBody: 'Bu maili görmezden gel. Şifren değişmez, hesabın güvende. Kaygılıysan',
+  notYouLink: 'destek ekibine yaz',
+};
+
+const FORGOT_PASSWORD_EN: Copy = {
+  eyebrow: '01 · Request received',
+  title: 'Let\'s reset',
+  titleAccent: 'your password',
+  cardEyebrow: 'One-time link',
+  statusText: 'Active · 30 min valid',
+  cta: 'Pick a new password →',
+  altCodeLabel: 'Or use this code in the app',
+  metaTime: 'Request time',
+  metaIp: 'IP',
+  metaDevice: 'Device',
+  metaAccount: 'Account',
+  notYouTitle: 'Wasn\'t you?',
+  notYouBody: 'Just ignore this email. Your password stays the same. If you\'re worried,',
+  notYouLink: 'contact support',
+};
+
+const LOW_RATING_ALERT_TR: Copy = {
+  eyebrowAlert: 'Anlık uyarı · Düşük puan',
+  eyebrowAction: 'Aksiyon gerektiriyor · 1 saat içinde dön',
+  titleSub: 'Önce dinleyelim.',
+  aiEyebrow: 'Co-Pilot taslağı',
+  toneLabel: 'Ton: profesyonel · empati yüksek',
+  aiEdit: 'Düzenle',
+  aiApprove: 'Onayla & Yanıtla →',
+  quickEyebrow: 'Hızlı aksiyon',
+  noComment: 'Yorum bırakılmadı.',
+};
+
+const LOW_RATING_ALERT_EN: Copy = {
+  eyebrowAlert: 'Live alert · Low rating',
+  eyebrowAction: 'Action needed · reply within 1 hour',
+  titleSub: 'Listen first.',
+  aiEyebrow: 'Co-Pilot draft',
+  toneLabel: 'Tone: professional · high empathy',
+  aiEdit: 'Edit',
+  aiApprove: 'Approve & Reply →',
+  quickEyebrow: 'Quick actions',
+  noComment: 'No comment left.',
+};
+
+const NEW_REVIEW_TR: Copy = {
+  eyebrow: 'Canlı · Az önce geldi',
+  titleSub: 'Hak ettin.',
+  primaryCta: 'Teşekkür yaz →',
+  secondaryCta: 'Google\'da paylaş',
+  noComment: 'Yorum bırakılmadı.',
+};
+
+const NEW_REVIEW_EN: Copy = {
+  eyebrow: 'Live · Just now',
+  titleSub: 'You earned it.',
+  primaryCta: 'Write a thank-you →',
+  secondaryCta: 'Share on Google',
+  noComment: 'No comment left.',
+};
+
+const WEEKLY_REPORT_TR: Copy = {
+  titleA: 'Sessiz başlayan hafta,',
+  titleEnd: 'yorumla bitti.',
+  statTotal: 'Yeni yorum',
+  statAvg: 'Ortalama puan',
+  statResp: 'Yanıt süresi',
+  chartEyebrow: 'Günlük dağılım',
+  chartTitle: 'Cumartesi günü zirve yaptın.',
+  quotesEyebrow: 'Bu haftanın sözleri',
+  aspectFood: 'Yemek',
+  aspectService: 'Servis',
+  aspectAtm: 'Atmosfer',
+  cta: 'Panele git →',
+  detailLabel: 'Detaylı analiz seni bekliyor.',
+  detailSub: 'Heatmap, sentiment ve aspect kırılımı panelde.',
+};
+
+const WEEKLY_REPORT_EN: Copy = {
+  titleA: 'A quiet week,',
+  titleEnd: 'reviews to close.',
+  statTotal: 'New reviews',
+  statAvg: 'Average rating',
+  statResp: 'Response time',
+  chartEyebrow: 'Daily distribution',
+  chartTitle: 'Saturday hit the peak.',
+  quotesEyebrow: 'This week\'s voices',
+  aspectFood: 'Food',
+  aspectService: 'Service',
+  aspectAtm: 'Atmosphere',
+  cta: 'See full details →',
+  detailLabel: 'Deep-dive analytics inside.',
+  detailSub: 'Heatmap, sentiment and aspect breakdown in the panel.',
+};
+
+const CUSTOMER_REPLY_TR: Copy = {
+  headerEyebrow: 'Sana özel · Kişisel yanıt',
+  ownerLabel: 'İŞLETMECİ',
+  titleSubA: 'bizi',
+  titleSubItalic: 'duyduğun için',
+  titleSubB: 'teşekkürler',
+  actionsEyebrow: 'Aldığımız aksiyonlar',
+  couponEyebrow: 'Sana küçük bir özür',
+  couponTitle: 'Bir sonraki ziyaretinde\nkahveler bizden.',
+  couponDescDefault: 'Aşağıdaki kodu kasada göster — masa arkadaşınla içtiğin iki kahve ikramımız.',
+  couponLabelDefault: 'Kuponun',
+  daysSuffix: 'gün',
+  callEyebrow: 'Direkt ara',
+  mapsEyebrow: 'Yol tarifi',
+  sentLine: 'Bu yanıt',
+  sentSuffix: 'ile gönderildi',
+};
+
+const CUSTOMER_REPLY_EN: Copy = {
+  headerEyebrow: 'For you · Personal reply',
+  ownerLabel: 'OWNER',
+  titleSubA: 'thank you for',
+  titleSubItalic: 'hearing us',
+  titleSubB: '',
+  actionsEyebrow: 'What we changed',
+  couponEyebrow: 'A small apology',
+  couponTitle: 'Next visit,\ncoffees on us.',
+  couponDescDefault: 'Show this code at the counter — two coffees on the house for you and a friend.',
+  couponLabelDefault: 'Your coupon',
+  daysSuffix: 'days',
+  callEyebrow: 'Call us',
+  mapsEyebrow: 'Directions',
+  sentLine: 'Sent via',
+  sentSuffix: '',
+};
+
 const SEEDS: Array<{ key: string; locale: string; content: Copy }> = [
   { key: 'welcome', locale: 'tr', content: WELCOME_TR },
   { key: 'welcome', locale: 'en', content: WELCOME_EN },
@@ -102,6 +254,16 @@ const SEEDS: Array<{ key: string; locale: string; content: Copy }> = [
   { key: 'newsletter', locale: 'en', content: NEWSLETTER_EN },
   { key: 'trial-ending', locale: 'tr', content: TRIAL_ENDING_TR },
   { key: 'trial-ending', locale: 'en', content: TRIAL_ENDING_EN },
+  { key: 'forgot-password', locale: 'tr', content: FORGOT_PASSWORD_TR },
+  { key: 'forgot-password', locale: 'en', content: FORGOT_PASSWORD_EN },
+  { key: 'low-rating-alert', locale: 'tr', content: LOW_RATING_ALERT_TR },
+  { key: 'low-rating-alert', locale: 'en', content: LOW_RATING_ALERT_EN },
+  { key: 'new-review', locale: 'tr', content: NEW_REVIEW_TR },
+  { key: 'new-review', locale: 'en', content: NEW_REVIEW_EN },
+  { key: 'weekly-report', locale: 'tr', content: WEEKLY_REPORT_TR },
+  { key: 'weekly-report', locale: 'en', content: WEEKLY_REPORT_EN },
+  { key: 'customer-reply', locale: 'tr', content: CUSTOMER_REPLY_TR },
+  { key: 'customer-reply', locale: 'en', content: CUSTOMER_REPLY_EN },
 ];
 
 async function main() {
