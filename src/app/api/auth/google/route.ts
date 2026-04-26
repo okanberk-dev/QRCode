@@ -112,6 +112,11 @@ export async function POST(req: NextRequest) {
 
     // Dönen kullanıcıysa onboarding tamamlanmış mı — email akışıyla parite için
     // aynı "yeni ise /onboarding, değilse /dashboard" davranışını client'a aktarıyoruz.
+    //
+    // Önemli: progress satırı bulunamayan legacy/eski kullanıcıyı (OnboardingProgress
+    // tablosundan önce kaydolmuş) onboarding'e geri göndermiyoruz — onlar zaten
+    // paneli kullanıyor. Sadece satır VAR ama completedAt boşsa (kullanıcı wizard'ı
+    // yarıda bıraktı) onboarding'e gönder.
     let onboardingCompleted = false;
     if (!isNewUser) {
       try {
@@ -119,9 +124,9 @@ export async function POST(req: NextRequest) {
           where: { userId: user.id },
           select: { completedAt: true },
         });
-        onboardingCompleted = Boolean(progress?.completedAt);
+        onboardingCompleted = progress ? Boolean(progress.completedAt) : true;
       } catch {
-        // Tablo henüz deploy edilmemişse sessizce false kabul et — dashboard'a yönlendirme güvenli.
+        // Tablo henüz deploy edilmemişse sessizce true kabul et — dashboard'a yönlendirme güvenli.
         onboardingCompleted = true;
       }
     }

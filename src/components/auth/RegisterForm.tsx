@@ -101,9 +101,9 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
     setNotice('');
     setLoading(true);
     try {
-      const { startGoogleSignInRedirect } = await import('@/lib/firebase-client');
-      const ok = await startGoogleSignInRedirect();
-      if (!ok) {
+      const { startGoogleSignIn } = await import('@/lib/firebase-client');
+      const result = await startGoogleSignIn();
+      if (result.status === 'unconfigured') {
         setNotice(
           locale === 'tr'
             ? 'Google ile kayıt henüz aktif değil. Lütfen e-posta ile devam edin.'
@@ -112,8 +112,19 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         setLoading(false);
         return;
       }
-      // Browser navigates away; result handled by the mount effect on return.
+      if (result.status === 'idToken') {
+        await finalizeGoogleSignUp(result.idToken);
+        return;
+      }
+      // status === 'redirecting' — browser navigates away; result handled by
+      // the mount effect on return.
     } catch (err: unknown) {
+      const code = (err as { code?: string })?.code;
+      // User dismissed the popup — not an error, just reset UI.
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        setLoading(false);
+        return;
+      }
       console.error('[google-signup]', err);
       const { getFirebaseErrorMessage } = await import('@/lib/firebase-client');
       setError(getFirebaseErrorMessage(err, locale));
