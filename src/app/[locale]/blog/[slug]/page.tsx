@@ -27,21 +27,58 @@ export async function generateMetadata(
   if (!post) return { title: 'Post Not Found' };
 
   const ogImage = post.coverImage?.trim() || `/images/open-graph-${locale}.png`;
+  const keywords = getBlogKeywords(post.title, post.description, locale);
 
   return {
     title: `${post.title} — Buaze Blog`,
     description: post.description,
+    keywords,
+    authors: [{ name: post.author, url: 'https://buaze.com' }],
+    publisher: 'Buaze',
+    category: locale === 'tr' ? 'İtibar yönetimi' : 'Reputation management',
     alternates: {
       canonical: `https://buaze.com/${locale}/blog/${slug}`,
+      languages: {
+        tr: `https://buaze.com/tr/blog/${slug}`,
+        en: `https://buaze.com/en/blog/${slug}`,
+        'x-default': `https://buaze.com/en/blog/${slug}`,
+      },
+    },
+    robots: {
+      index: Boolean(post.isActive),
+      follow: true,
+      googleBot: {
+        index: Boolean(post.isActive),
+        follow: true,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    other: {
+      'geo.region': 'TR-34',
+      'geo.placename': 'Ataşehir, İstanbul',
+      'geo.position': '40.9923;29.1244',
+      ICBM: '40.9923, 29.1244',
+      'article:section': locale === 'tr' ? 'İtibar Yönetimi' : 'Reputation Management',
+      'article:tag': keywords.join(', '),
     },
     openGraph: {
       type: 'article',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       url: `https://buaze.com/${locale}/blog/${slug}`,
+      siteName: 'Buaze',
       title: post.title,
       description: post.description,
       publishedTime: post.date,
       authors: [post.author],
+      tags: keywords,
       images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.description,
+      images: [ogImage],
     },
   };
 }
@@ -61,7 +98,50 @@ function extractHeadings(html: string) {
   return matches
     .map(match => match[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim())
     .filter(Boolean)
-    .slice(0, 6);
+    .slice(0, 8)
+    .map(text => ({ text, id: slugifyHeading(text) }));
+}
+
+function slugifyHeading(value: string) {
+  return value
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+function addHeadingAnchors(html: string) {
+  return html.replace(/<h2>(.*?)<\/h2>/gi, (_match, inner: string) => {
+    const text = inner.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    return `<h2 id="${slugifyHeading(text)}">${inner}</h2>`;
+  });
+}
+
+function stripHtml(value: string) {
+  return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function getBlogKeywords(title: string, description: string, locale: Locale) {
+  const base =
+    locale === 'tr'
+      ? ['itibar yönetimi', 'google yorum', 'restoran yorum yönetimi', 'müşteri deneyimi', 'QR yorum sistemi', 'Buaze']
+      : ['reputation management', 'Google reviews', 'restaurant review management', 'customer experience', 'QR feedback system', 'Buaze'];
+
+  const sourceWords = `${title} ${description}`
+    .toLocaleLowerCase(locale === 'tr' ? 'tr-TR' : 'en-US')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 4)
+    .slice(0, 10);
+
+  return Array.from(new Set([...base, ...sourceWords]));
 }
 
 /**
@@ -89,18 +169,57 @@ export default async function BlogPostPage({
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
+    '@id': `https://buaze.com/${locale}/blog/${slug}#article`,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://buaze.com/${locale}/blog/${slug}`,
+    },
     headline: post.title,
     description: post.description,
     image: [post.coverImage?.trim() || `https://buaze.com/images/open-graph-${locale}.png`],
     author: [{ '@type': 'Organization', name: post.author, url: 'https://buaze.com' }],
+    publisher: {
+      '@type': 'Organization',
+      name: 'Buaze',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://buaze.com/favicon.svg',
+      },
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Ataşehir',
+        addressRegion: 'İstanbul',
+        addressCountry: 'TR',
+      },
+    },
     datePublished: post.date,
+    dateModified: post.updatedAt?.toISOString?.() || post.date,
+    inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
+    isAccessibleForFree: true,
+    articleSection: isTr ? 'İtibar Yönetimi' : 'Reputation Management',
+    keywords: getBlogKeywords(post.title, post.description, locale),
+    wordCount: stripHtml(post.content).split(' ').filter(Boolean).length,
+    about: [
+      { '@type': 'Thing', name: isTr ? 'Restoran itibar yönetimi' : 'Restaurant reputation management' },
+      { '@type': 'Thing', name: 'Google Reviews' },
+      { '@type': 'Thing', name: 'QR feedback' },
+    ],
+    spatialCoverage: {
+      '@type': 'Place',
+      name: 'Türkiye',
+      geo: {
+        '@type': 'GeoCoordinates',
+        latitude: 40.9923,
+        longitude: 29.1244,
+      },
+    },
   };
 
-  const content = sanitizeBlogContent(post.content);
+  const content = addHeadingAnchors(sanitizeBlogContent(post.content));
   const tocItems = extractHeadings(content);
 
   return (
-    <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
+    <div id="top" className="min-h-screen bg-white text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -189,6 +308,7 @@ export default async function BlogPostPage({
                 prose-li:text-[#525252] prose-li:leading-[1.7]
                 prose-blockquote:not-italic
                 prose-img:rounded-2xl prose-img:border prose-img:border-[#EDEDED]
+                prose-hr:border-[#EDEDED]
                 break-words"
               style={{ fontFamily: 'var(--font-body)' }}
               dangerouslySetInnerHTML={{ __html: content }}
@@ -229,18 +349,45 @@ export default async function BlogPostPage({
                 >
                   {isTr ? 'İÇERİK' : 'CONTENT'}
                 </div>
-                <ul className="mt-4 space-y-3">
-                  {(tocItems.length ? tocItems : [post.title]).map((item, index) => (
-                    <li
-                      key={`${item}-${index}`}
-                      className={`text-[13px] leading-5 ${
-                        index === 0 ? 'font-semibold text-[#0A0A0A]' : 'font-medium text-[#737373]'
-                      }`}
-                    >
-                      {item}
+                <ul className="mt-4 space-y-1">
+                  {(tocItems.length ? tocItems : [{ text: post.title, id: 'top' }]).map((item, index) => (
+                    <li key={`${item.id}-${index}`}>
+                      <a
+                        href={`#${item.id}`}
+                        className={`block border-l-2 py-1.5 pl-3 text-[13px] leading-5 transition-colors ${
+                          index === 0
+                            ? 'border-[#C6F24E] font-semibold text-[#0A0A0A]'
+                            : 'border-transparent font-medium text-[#737373] hover:border-[#EAF9B8] hover:text-[#0A0A0A]'
+                        }`}
+                      >
+                        {item.text}
+                      </a>
                     </li>
                   ))}
                 </ul>
+              </div>
+
+              <div className="rounded-[14px] border border-[#EDEDED] bg-white p-5">
+                <div
+                  className="text-[10px] font-semibold tracking-[0.14em] text-[#737373]"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {isTr ? 'SEO ÖZETİ' : 'SEO SNAPSHOT'}
+                </div>
+                <dl className="mt-3 space-y-2 text-[13px]">
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-[#737373]">{isTr ? 'Dil' : 'Language'}</dt>
+                    <dd className="font-semibold text-[#0A0A0A]">{locale.toUpperCase()}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-[#737373]">{isTr ? 'Okuma' : 'Read'}</dt>
+                    <dd className="font-semibold text-[#0A0A0A]">{post.readTime}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-[#737373]">{isTr ? 'Kapsam' : 'Coverage'}</dt>
+                    <dd className="font-semibold text-[#0A0A0A]">{isTr ? 'Türkiye' : 'Turkey'}</dd>
+                  </div>
+                </dl>
               </div>
 
               <div className="rounded-[14px] bg-[#EAF9B8] p-5">
