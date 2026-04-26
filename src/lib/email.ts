@@ -17,97 +17,11 @@ import {
   type TrialEndingParams,
 } from './email/templates';
 import { escapeHtml as _escapeHtml } from './email/escape';
+import { sendResendEmail } from './email-internal';
+import { notifyOpsOfMailFailure } from './email/ops-alert';
 
 // Re-exported so existing imports of `escapeHtml` from this file keep working.
 export const escapeHtml = _escapeHtml;
-
-// Default Reply-To when caller doesn't specify one. We send From the noreply
-// alias (so consumer mail clients won't reply by reflex) but route any reply
-// the user does compose to a monitored inbox. Falls back through Resend's
-// "from" if the env is unset.
-function defaultReplyTo(): string | undefined {
-  const env = process.env.RESEND_REPLY_TO?.trim()
-    || process.env.NOTIFICATION_EMAIL?.trim();
-  if (env) return env;
-  return undefined;
-}
-
-// ─── Resend HTTP layer ──────────────────────────────────────────────────
-// This is the ONLY email-sending method. No SMTP fallback.
-async function sendResendEmail({
-  to,
-  subject,
-  html,
-  text,
-  replyTo,
-  headers,
-}: {
-  to: string | string[];
-  subject: string;
-  html: string;
-  text: string;
-  replyTo?: string;
-  /** Extra RFC-style headers passed straight to Resend. Used for marketing
-   *  mail compliance (List-Unsubscribe, List-Unsubscribe-Post one-click). */
-  headers?: Record<string, string>;
-}): Promise<boolean> {
-  const resendKey = process.env.RESEND_API_KEY?.trim();
-
-  if (!resendKey) {
-    console.error('[Buaze Email] RESEND_API_KEY missing — cannot send email.');
-    return false;
-  }
-
-  try {
-    const payload: Record<string, unknown> = {
-      from: process.env.RESEND_FROM_EMAIL?.trim() || 'Buaze <noreply@buaze.com>',
-      to,
-      subject,
-      html,
-      text,
-    };
-    // Reply-To: explicit caller value > env default. Always set when
-    // possible — Gmail flags pure noreply senders as suspicious in marketing
-    // contexts and a real reply path is required for some bulk-sender rules.
-    const effectiveReplyTo = replyTo ?? defaultReplyTo();
-    if (effectiveReplyTo) payload.reply_to = effectiveReplyTo;
-    if (headers && Object.keys(headers).length > 0) {
-      payload.headers = headers;
-    }
-
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${resendKey}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      console.error(`[Buaze Email] Resend HTTP ${response.status}:`, responseText);
-      return false;
-    }
-
-    let parsed: { id?: string } | null = null;
-    try {
-      parsed = JSON.parse(responseText);
-    } catch {
-      console.error('[Buaze Email] Resend non-JSON 2xx body:', responseText);
-      return false;
-    }
-    if (!parsed || typeof parsed.id !== 'string' || !parsed.id) {
-      console.error('[Buaze Email] Resend 2xx without id:', responseText);
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error('[Buaze Email] Network exception:', error);
-    return false;
-  }
-}
 
 export async function sendMail(args: { to: string | string[]; subject: string; html: string; text: string; replyTo?: string; headers?: Record<string, string> }): Promise<boolean> {
   return sendResendEmail(args);
@@ -179,7 +93,25 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
     }, locale);
   }
 
-  return sendResendEmail({ to: recipientEmail, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const ok = await sendResendEmail({ to: recipientEmail, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  if (!ok) {
+    // Phase 8: critical mail. Low-rating alert that doesn't reach the
+    // owner means a complaint goes unanswered for hours; positive
+    // 5-star notifications less urgent but still worth surfacing so
+    // ops can check the recipient inbox / Resend dashboard.
+    await notifyOpsOfMailFailure({
+      template: data.rating >= 4 ? 'new-review' : 'low-rating-alert',
+      recipient: recipientEmail,
+      reason: 'sendResendEmail returned false (see app logs for HTTP status / network error)',
+      metadata: {
+        feedbackId: data.feedbackId,
+        rating: data.rating,
+        restaurantName,
+        branch: data.branch,
+      },
+    });
+  }
+  return ok;
 }
 
 // ─── Weekly digest ──────────────────────────────────────────────────────
@@ -220,7 +152,19 @@ export async function sendPasswordResetEmail(params: {
     { code: params.code, resetUrl: params.resetUrl, ip: params.ip, device: params.device },
     params.locale ?? 'tr',
   );
-  return sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  if (!ok) {
+    // Phase 8: a forgot-password mail that bounces locks the user out
+    // of their account. Surface to ops so support can manually issue
+    // a recovery code via the admin panel.
+    await notifyOpsOfMailFailure({
+      template: 'forgot-password',
+      recipient: params.to,
+      reason: 'sendResendEmail returned false',
+      metadata: { ip: params.ip ?? undefined, device: params.device ?? undefined },
+    });
+  }
+  return ok;
 }
 
 // ─── Welcome ────────────────────────────────────────────────────────────
@@ -258,7 +202,19 @@ export async function sendFormConfirmationEmail(params: {
 export async function sendCustomerReplyEmail(params: CustomerReplyParams & { to: string; locale?: 'tr' | 'en'; replyTo?: string }): Promise<boolean> {
   const { to, locale, replyTo, ...rest } = params;
   const rendered = await renderCustomerReply(rest, locale ?? 'tr');
-  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text, replyTo });
+  const ok = await sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text, replyTo });
+  if (!ok) {
+    // Phase 8: a customer-reply mail that doesn't land means a low-
+    // rating customer never hears back from the owner — direct hit on
+    // the customer relationship. Owner should be told manually.
+    await notifyOpsOfMailFailure({
+      template: 'customer-reply',
+      recipient: to,
+      reason: 'sendResendEmail returned false',
+      metadata: { restaurantName: params.restaurantName, customerName: params.customerName ?? undefined },
+    });
+  }
+  return ok;
 }
 
 // ─── Trial ending ───────────────────────────────────────────────────────

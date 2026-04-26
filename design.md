@@ -1158,3 +1158,63 @@ Sort: changed → added → removed, alfabetik path.
 - Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
 - URL field format validation
 - A/B compare (any two revisions, not just adjacent)
+
+---
+
+## Phase 16.11 — Mail CMS Phase 8: ops alert on critical mail failure
+
+**PR:** TBA — `claude/mail-cms-phase8-ops-alert` (phase 7 main'e merge edildi, base = main)
+
+### Hedef
+
+Kritik mail send fail olduğunda restoran sahibi/kullanıcı haberdar olmazken ops manuel müdahale edebilsin. V1 minimum: structured plain-text alert mail ops kutusuna.
+
+### Yeni dosyalar
+
+- `src/lib/email-internal.ts` — `sendResendEmail` ayrı dosyaya extract (circular dep önleme)
+- `src/lib/email/ops-alert.ts` — `notifyOpsOfMailFailure()` helper (rate-limited, swallow-errors)
+
+### Değişen dosya
+
+- `src/lib/email.ts`:
+  - `sendResendEmail` definition `email-internal.ts`'e taşındı, import edilir
+  - 3 kritik sender (sendFeedbackNotification, sendPasswordResetEmail, sendCustomerReplyEmail) `if (!ok) await notifyOpsOfMailFailure(...)` wrap'i
+
+### Why these 3?
+
+| Sender | Critical? | Reason |
+|---|---|---|
+| sendFeedbackNotification | ✓ HIGH | Düşük puan ulaşmazsa şikayet yanıtsız |
+| sendPasswordResetEmail | ✓ HIGH | Kullanıcı hesaba giremez |
+| sendCustomerReplyEmail | ✓ HIGH | Düşük-puan müşteri ilişkisi |
+| sendWelcomeEmail | LOW | Admin re-trigger |
+| sendNewsletterEmail | LOW | Bulk; ops spam'e maruz kalır |
+| sendTrialEndingEmail | MED | Daily reminder; tek kaçırma kritik değil |
+| sendFormConfirmationEmail | MED | UX courtesy |
+
+### Rate limiting
+
+`rateLimit('ops-alert:${template}', 10, 5*60*1000)` — Resend outage'ında 100 mail bombalanmaz, ilk 10 alert yeter. CLAUDE.md §14.2 in-memory; multi-instance Vercel'de instance başına ayrı, kabul edilen drift.
+
+### Yeni env var
+
+`OPS_EMAIL` (opsiyonel) — production ops dist list. Fallback chain: `OPS_EMAIL` → `NOTIFICATION_EMAIL` → console.error (sessiz).
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- DB schema değişikliği YOK
+- E2E:
+  - Geçerli `RESEND_API_KEY` ile düşük-puan mail send → owner mail alır, ops alert TETIKLEMEZ
+  - `RESEND_API_KEY` boş veya invalid → primary mail fail → ops alert mail "[OPS] Mail send failed: low-rating-alert"
+  - 11 ardışık fail → ilk 10 alert gider, 11. rate-limited (console.warn)
+  - `OPS_EMAIL` boş, `NOTIFICATION_EMAIL` set → fallback recipient
+  - Her ikisi de boş → console.error, alert sessiz
+
+### Phase 9+ backlog
+
+- Retry on transient errors (exponential backoff)
+- `MailDeliveryLog` DB tablo + admin "failed mails" panel
+- Resend webhook integration (bounce → auto unsubscribe + ops alert)
+- Slack webhook alternative (mail yerine)

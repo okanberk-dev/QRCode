@@ -1370,3 +1370,44 @@ Phase 5 audit log'unun debug değerini katlayan field-level diff. Admin "ne değ
 - Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
 - URL field format validation
 - A/B compare (any two revisions, not just adjacent)
+
+### 21.33 Phase 8 — Operator alert on critical mail failure
+
+Bazı mail akışları zaman-kritik: düşük puan uyarısı restoran sahibine ulaşmazsa şikayet saatlerce yanıtsız kalır. Forgot-password mail bounce ederse kullanıcı hesabına giremez. Sonsuza dek retry edemeyiz, ama ops'a "bu mail gitmedi" diyebiliriz, manuel müdahale etsinler.
+
+**Helper** (`src/lib/email/ops-alert.ts`):
+- `notifyOpsOfMailFailure({ template, recipient, reason, metadata })`
+- Plain-text mail to `OPS_EMAIL` env (fallback `NOTIFICATION_EMAIL`)
+- Subject: `[OPS] Mail send failed: ${template}`
+- Body: structured failure context (template, recipient, reason, metadata, ISO timestamp)
+- Uses `sendResendEmail` from `email-internal.ts` directly — public sender'lara recurse etmez (Resend outage'ında sonsuz alert loop riski)
+- **Rate-limited** 10 alerts / template / 5 dk → outage'da inbox bombalanmaz
+- Errors swallowed + console.error — caller'ın kararı zaten `false` dönmüş, üstüne throw atmak request crash eder
+
+**Internal layer** (`src/lib/email-internal.ts`):
+- `sendResendEmail` ayrı dosyaya çıkarıldı — ops-alert.ts ↔ email.ts circular dep önleyici
+- email.ts public sender'ları artık `from './email-internal'` import eder
+
+**Wired senders** (V1 — kritik HIGH-criticality):
+- `sendFeedbackNotification` — düşük puan uyarısı + 5★ yorum (rating ≥4 → 'new-review' template, <4 → 'low-rating-alert')
+- `sendPasswordResetEmail` — kullanıcı hesabı locked durumda; ops manuel recovery code issuer
+- `sendCustomerReplyEmail` — düşük-puan müşterisi yanıt almadı; müşteri ilişkisi riski
+
+**NOT wired** (V2 backlog):
+- `sendWelcomeEmail` — re-trigger admin panelden mümkün
+- `sendNewsletterEmail` — bulk; ops bombalanır
+- `sendTrialEndingEmail` — daily reminder; tek kaçırma kritik değil
+- `sendFormConfirmationEmail` — UX teyit; gitmeyince kullanıcı tekrar dener
+
+**Yeni env**: `OPS_EMAIL` (opsiyonel) — production ops distribution list. Yoksa `NOTIFICATION_EMAIL` fallback. Hiçbiri yoksa alert sessiz kalır + console.error ("no recipient configured").
+
+**Yeni sender'a wire eklerken**:
+1. Sender fn'inde `await sendResendEmail(...)` sonucunu yakala (`const ok = await ...`)
+2. `if (!ok) { await notifyOpsOfMailFailure({ template, recipient, reason, metadata: { ... } }); }`
+3. `return ok` — ops alert async ama caller-blocking değil (sender yine boolean döner)
+
+**Phase 9+ backlog**:
+- Retry on transient errors (5xx, network) — exponential backoff [500ms, 1s, 2s]
+- DB persistence (`MailDeliveryLog` table) — admin paneli "failed mails" list + manual re-send
+- Resend webhook integration → bounce/complaint → auto unsubscribe + ops alert
+- Slack webhook alternative (ops mail yerine)
