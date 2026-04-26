@@ -3,6 +3,7 @@ import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderH2, renderP, renderButton, renderBadge, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export interface TrialEndingParams {
   firstName?: string | null;
@@ -54,7 +55,7 @@ export async function renderTrialEnding(
 
   const inlineDefault = isTr ? {
     headerEyebrow: 'Faturalandırma · Hatırlatma',
-    eyebrow: `Deneme · ${days} gün kaldı`,
+    eyebrow: 'Deneme · ${daysLeft} gün kaldı',
     titleA: '14 gündür birlikteyiz.',
     titleB: 'Devam edelim mi?',
     usageEyebrow: 'Bu 14 günde Buaze\'de',
@@ -72,7 +73,7 @@ export async function renderTrialEnding(
     comparisonLink: 'Detaylı karşılaştırma',
   } : {
     headerEyebrow: 'Billing · Reminder',
-    eyebrow: `Trial · ${days} day${days === 1 ? '' : 's'} left`,
+    eyebrow: 'Trial · ${daysLeft} days left',
     titleA: 'We\'ve been at it for 14 days.',
     titleB: 'Keep going?',
     usageEyebrow: 'In your 14 days on Buaze',
@@ -90,10 +91,18 @@ export async function renderTrialEnding(
     comparisonLink: 'Detailed comparison',
   };
 
-  // DB-driven override (mail_templates table). Plan/promo copy is the
-  // most-tweaked part of trial mail — admin can update CTAs, recommended
-  // badge text, plan blurbs without a deploy.
-  const copy = await loadMailCopy('trial-ending', locale, inlineDefault);
+  // DB-driven override + placeholder substitution. `${firstName}`,
+  // `${restaurantName}`, `${daysLeft}` admin tarafından kullanılabilir.
+  const merged = await loadMailCopy('trial-ending', locale, inlineDefault);
+  const vars = {
+    firstName: params.firstName || (isTr ? 'orada' : 'there'),
+    daysLeft: days,
+    // restaurantName param'da yok; future-proof olarak whitelist'te tutuluyor
+    // ama vars'a boş gelir — kullanılırsa empty string substitute olur.
+    restaurantName: '',
+  };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
 
   // 4-col usage stat grid — JSX:22-34
   const stats = [
@@ -188,6 +197,6 @@ export async function renderTrialEnding(
     eyebrow: copy.headerEyebrow,
     footer: { locale, unsubText: isTr ? 'Faturalandırma maillerini ayarlamak için' : 'To adjust billing emails' },
   });
-  const text = `${copy.titleA} ${copy.titleB}\n\n${stats.map((s) => `${s.v} ${s.k}`).join(' · ')}\n\n${copy.cta} ${params.upgradeUrl}\n${copy.comparisonLink}: ${comparisonUrl}`;
+  const text = `${copyText.titleA} ${copyText.titleB}\n\n${stats.map((s) => `${s.v} ${s.k}`).join(' · ')}\n\n${copyText.cta} ${params.upgradeUrl}\n${copyText.comparisonLink}: ${comparisonUrl}`;
   return { subject, html, text };
 }

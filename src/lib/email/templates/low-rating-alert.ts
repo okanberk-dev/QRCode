@@ -3,6 +3,7 @@ import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderAvatarCircle, renderStatusPill, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export interface LowRatingAlertParams {
   rating: number;
@@ -47,7 +48,7 @@ export async function renderLowRatingAlert(
   const inlineDefault = isTr ? {
     eyebrowAlert: 'Anlık uyarı · Düşük puan',
     eyebrowAction: 'Aksiyon gerektiriyor · 1 saat içinde dön',
-    title: `${params.rating} yıldız geldi.`,
+    title: '${rating} yıldız geldi.',
     titleSub: 'Önce dinleyelim.',
     aiEyebrow: 'Co-Pilot taslağı',
     toneLabel: params.aiTone ?? 'Ton: profesyonel · empati yüksek',
@@ -63,7 +64,7 @@ export async function renderLowRatingAlert(
   } : {
     eyebrowAlert: 'Live alert · Low rating',
     eyebrowAction: 'Action needed · reply within 1 hour',
-    title: `A ${params.rating}-star review just landed.`,
+    title: 'A ${rating}-star review just landed.',
     titleSub: 'Listen first.',
     aiEyebrow: 'Co-Pilot draft',
     toneLabel: params.aiTone ?? 'Tone: professional · high empathy',
@@ -80,7 +81,15 @@ export async function renderLowRatingAlert(
 
   // DB-merged copy. Quick action labels (`quickActions`) are structural —
   // admin UI doesn't expose them, so the inline defaults always win.
-  const copy = await loadMailCopy('low-rating-alert', locale, inlineDefault);
+  const merged = await loadMailCopy('low-rating-alert', locale, inlineDefault);
+  const vars = {
+    rating: params.rating,
+    restaurantName: params.restaurantName,
+    customerName: params.customerName ?? (isTr ? 'Anonim' : 'Anonymous'),
+    branch: params.branch ?? '',
+  };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
 
   const timestamp = new Date().toLocaleString(isTr ? 'tr-TR' : 'en-US', {
     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
@@ -220,6 +229,6 @@ export async function renderLowRatingAlert(
     eyebrow: '',
     footer: { locale, unsubText: isTr ? 'Düşük puan uyarılarını ayarlamak için' : 'To adjust low-rating alerts' },
   });
-  const text = `${copy.title} ${copy.titleSub}\n\n${customerName} · ${params.rating}★\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}\n${params.reviewUrl}`;
+  const text = `${copyText.title} ${copyText.titleSub}\n\n${customerName} · ${params.rating}★\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}\n${params.reviewUrl}`;
   return { subject, html, text };
 }

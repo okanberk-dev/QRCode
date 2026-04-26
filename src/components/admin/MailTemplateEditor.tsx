@@ -6,6 +6,7 @@ import { ArrowLeft, Eye, Loader2, Mail, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import MailFieldInput, { type MailFieldDef } from './MailFieldInput';
 import FormConfirmationEditor from './FormConfirmationEditor';
+import { MAIL_PLACEHOLDERS } from '@/lib/email/placeholders';
 
 // Schema-aware fields per template. Only string copy fields the admin
 // should edit; structural arrays (steps, resources, quickActions, quotes)
@@ -23,8 +24,9 @@ type FieldDef = MailFieldDef;
 const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
   welcome: [
     { key: 'eyebrow', label: 'Eyebrow', hint: 'Üst köşedeki küçük etiket — örn. "Hoş geldin · Sayı bir"' },
+    { key: 'titleHi', label: 'Selamlama başlığı', hint: 'Hero başlığın 1. satırı — "Merhaba ${firstName}."', placeholders: MAIL_PLACEHOLDERS.welcome },
     { key: 'titleSub', label: 'Başlık alt satırı', hint: 'Hero başlığın 2. satırı — "Şimdi başlıyoruz."' },
-    { key: 'intro', label: 'Giriş paragrafı', multiline: true },
+    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS.welcome },
     { key: 'stepsEyebrow', label: 'Adımlar bölüm etiketi', hint: '"Kurulum · 4 adım"' },
     { key: 'nextLabel', label: 'Sıradaki rozet', hint: 'Aktif adımın yanındaki "Sıradaki" etiketi' },
     { key: 'cta', label: 'Birincil CTA buton metni' },
@@ -35,7 +37,7 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'titleA', label: 'Başlık 1. parça', hint: 'Hero başlığın ilk yarısı — "Sessiz misafiri"' },
     { key: 'titleAccent', label: 'Başlık vurgu kelimesi', hint: 'Lime arka planlı kelime — "duyabilmek"' },
     { key: 'titleEnd', label: 'Başlık 3. parça', hint: '"sanatı."' },
-    { key: 'intro', label: 'Giriş paragrafı', multiline: true },
+    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS.newsletter },
     { key: 'cta', label: 'Birincil CTA' },
     { key: 'featuredEyebrow', label: 'Kapak yazısı bölüm etiketi' },
     { key: 'listEyebrow', label: 'Yazılar listesi başlığı', hint: '"Bu sayıda"' },
@@ -45,8 +47,9 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'exploreCta', label: 'Tüm sayılar linki' },
   ],
   'trial-ending': [
-    { key: 'titleA', label: 'Başlık 1. satır', hint: '"14 gündür birlikteyiz."' },
-    { key: 'titleB', label: 'Başlık 2. satır', hint: '"Devam edelim mi?"' },
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"Deneme · ${daysLeft} gün kaldı"', placeholders: MAIL_PLACEHOLDERS['trial-ending'] },
+    { key: 'titleA', label: 'Başlık 1. satır', hint: '"14 gündür birlikteyiz."', placeholders: MAIL_PLACEHOLDERS['trial-ending'] },
+    { key: 'titleB', label: 'Başlık 2. satır', hint: '"Devam edelim mi?"', placeholders: MAIL_PLACEHOLDERS['trial-ending'] },
     { key: 'usageEyebrow', label: 'Kullanım kart etiketi' },
     { key: 'plansEyebrow', label: 'Plan bölüm etiketi', hint: '"Plan seç · İlk ay %50"' },
     { key: 'starterTitle', label: 'Starter plan başlığı' },
@@ -59,8 +62,9 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
   ],
   'forgot-password': [
     { key: 'eyebrow', label: 'Eyebrow', hint: '"01 · Talep alındı"' },
-    { key: 'title', label: 'Başlık 1. parça', hint: '"Şifreni"' },
+    { key: 'title', label: 'Başlık 1. parça', hint: '"Şifreni"', placeholders: MAIL_PLACEHOLDERS['forgot-password'] },
     { key: 'titleAccent', label: 'Başlık vurgu', hint: '"sıfırlayalım" — lime altçizgili' },
+    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['forgot-password'] },
     { key: 'cardEyebrow', label: 'Token kart etiketi', hint: '"Tek kullanımlık link"' },
     { key: 'statusText', label: 'Durum pill metni', hint: '"Aktif · 30 dk geçerli"', locked: true, lockReason: 'Güvenlik: token süre uyarısı, değiştirmek phishing riski yaratır' },
     { key: 'cta', label: 'Birincil CTA buton metni' },
@@ -76,7 +80,8 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
   'low-rating-alert': [
     { key: 'eyebrowAlert', label: 'Üst alarm etiketi', hint: '"Anlık uyarı · Düşük puan"' },
     { key: 'eyebrowAction', label: 'Aksiyon urgency etiketi', hint: '"Aksiyon gerektiriyor · 1 saat içinde dön"' },
-    { key: 'titleSub', label: 'Başlık alt satır', hint: '"Önce dinleyelim."' },
+    { key: 'title', label: 'Başlık', hint: '"${rating} yıldız geldi."', placeholders: MAIL_PLACEHOLDERS['low-rating-alert'] },
+    { key: 'titleSub', label: 'Başlık alt satır', hint: '"Önce dinleyelim."', placeholders: MAIL_PLACEHOLDERS['low-rating-alert'] },
     { key: 'aiEyebrow', label: 'AI Co-Pilot kart etiketi' },
     { key: 'toneLabel', label: 'AI tone default etiket', hint: 'aiTone param yokken görünür' },
     { key: 'aiEdit', label: '"Düzenle" buton metni' },
@@ -86,7 +91,8 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
   ],
   'new-review': [
     { key: 'eyebrow', label: 'Status pill', hint: '"● Canlı · Az önce geldi"' },
-    { key: 'titleSub', label: 'Başlık alt satır', hint: '"Hak ettin."' },
+    { key: 'title', label: 'Başlık', hint: '"${rating} yıldız."', placeholders: MAIL_PLACEHOLDERS['new-review'] },
+    { key: 'titleSub', label: 'Başlık alt satır', hint: '"Hak ettin."', placeholders: MAIL_PLACEHOLDERS['new-review'] },
     { key: 'primaryCta', label: 'Birincil CTA', hint: '"Teşekkür yaz →"' },
     { key: 'secondaryCta', label: 'İkincil CTA', hint: '"Google\'da paylaş"' },
     { key: 'noComment', label: '"Yorum yok" hint' },
@@ -98,8 +104,8 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     // the literal default so the week number stays dynamic. If we ever want
     // operators to edit this, refactor render to compose `${weekPrefix}
     // ${weekNum} ${weekSuffix}` from separately-stored fields.
-    { key: 'titleA', label: 'Hero 1. satır', hint: '"Sessiz başlayan hafta," (positive senaryo)' },
-    { key: 'titleEnd', label: 'Hero 3. satır', hint: '"yorumla bitti."' },
+    { key: 'titleA', label: 'Hero 1. satır', hint: '"Sessiz başlayan hafta," (positive senaryo)', placeholders: MAIL_PLACEHOLDERS['weekly-report'] },
+    { key: 'titleEnd', label: 'Hero 3. satır', hint: '"yorumla bitti."', placeholders: MAIL_PLACEHOLDERS['weekly-report'] },
     { key: 'statTotal', label: 'Yeni yorum etiketi' },
     { key: 'statAvg', label: 'Ortalama puan etiketi' },
     { key: 'statResp', label: 'Yanıt süresi etiketi', hint: 'Şu an gizli — backend response time tracking henüz yok' },
@@ -116,12 +122,13 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
   'customer-reply': [
     { key: 'headerEyebrow', label: 'Üst eyebrow', hint: '"Sana özel · Kişisel yanıt"' },
     { key: 'ownerLabel', label: 'İşletmeci rozeti', hint: '"İŞLETMECİ"' },
+    { key: 'titleA', label: 'Başlık 1. parça', hint: '"${customerFirstName},"', placeholders: MAIL_PLACEHOLDERS['customer-reply'] },
     { key: 'titleSubA', label: 'Başlık 2. parça', hint: '"bizi"' },
     { key: 'titleSubItalic', label: 'Başlık italic kelime', hint: '"duyduğun için"' },
     { key: 'titleSubB', label: 'Başlık 4. parça', hint: '"teşekkürler"' },
     { key: 'actionsEyebrow', label: 'Aksiyonlar kart etiketi' },
     { key: 'couponEyebrow', label: 'Kupon kart etiketi' },
-    { key: 'couponTitle', label: 'Kupon başlığı', multiline: true },
+    { key: 'couponTitle', label: 'Kupon başlığı', multiline: true, placeholders: MAIL_PLACEHOLDERS['customer-reply'] },
     { key: 'couponDescDefault', label: 'Kupon açıklaması (default)', multiline: true },
     { key: 'couponLabelDefault', label: 'Kupon kod etiketi' },
     { key: 'daysSuffix', label: 'Gün sayısı suffix', hint: '"gün"' },
@@ -220,7 +227,14 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
         body: JSON.stringify({ content }),
       });
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error || 'Kayıt başarısız');
+      if (!res.ok) {
+        if (body.error === 'invalid_placeholder' && body.field && Array.isArray(body.invalid)) {
+          throw new Error(
+            `"${body.field}" alanında geçersiz placeholder: ${body.invalid.map((p: string) => `\${${p}}`).join(', ')}. İzin verilenler: ${(body.allowed ?? []).map((p: string) => `\${${p}}`).join(', ') || '(yok)'}`,
+          );
+        }
+        throw new Error(body.error || 'Kayıt başarısız');
+      }
       setSeeded(true);
       setInfo('Kayıt başarılı — değişiklik 1 dakika içinde tüm gönderimlere yansır.');
     } catch (e) {

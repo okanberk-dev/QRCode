@@ -3,6 +3,7 @@ import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderH2, renderP, spacer, renderTwoColCards } from '../components';
 import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export interface CustomerReplyParams {
   customerName?: string | null;
@@ -45,7 +46,7 @@ export async function renderCustomerReply(
   const inlineDefault = isTr ? {
     headerEyebrow: 'Sana özel · Kişisel yanıt',
     ownerLabel: 'İŞLETMECİ',
-    titleA: `${customerFirst},`,
+    titleA: '${customerFirstName},',
     titleSubA: 'bizi',
     titleSubItalic: 'duyduğun için',
     titleSubB: 'teşekkürler',
@@ -62,7 +63,7 @@ export async function renderCustomerReply(
   } : {
     headerEyebrow: 'For you · Personal reply',
     ownerLabel: 'OWNER',
-    titleA: `${customerFirst},`,
+    titleA: '${customerFirstName},',
     titleSubA: 'thank you for',
     titleSubItalic: 'hearing us',
     titleSubB: '',
@@ -78,10 +79,16 @@ export async function renderCustomerReply(
     sentSuffix: '',
   };
 
-  // DB-merged. `sentLine`/`sentSuffix` are the Buaze-attribution disclosure
-  // — KVKK-locked server-side (locked-fields.ts) so admins can't strip the
-  // mention even if they edit the row.
-  const copy = await loadMailCopy('customer-reply', locale, inlineDefault);
+  // DB-merged + placeholder substitution. `sentLine`/`sentSuffix` are the
+  // Buaze-attribution disclosure — KVKK-locked server-side (locked-fields.ts).
+  const merged = await loadMailCopy('customer-reply', locale, inlineDefault);
+  const vars = {
+    customerFirstName: customerFirst,
+    restaurantName: params.restaurantName,
+    ownerName: ownerName,
+  };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
 
   const message = escapeHtml(params.message).replace(/\n\s*\n/g, '</p><p style="font-family:' + FONTS.body + ';font-size:15px;line-height:1.7;color:' + PULSE.n700 + ';margin:14px 0 0;letter-spacing:-0.005em;">').replace(/\n/g, '<br>');
 

@@ -880,3 +880,86 @@ export async function renderFormConfirmation(params, locale) {
 - Audit log table (`MailTemplateRevision`)
 - Redis cache (gerekli olduğunda)
 - Per-field validation (max length, format)
+
+---
+
+## Phase 16.7 — Mail CMS Phase 4: dynamic placeholder injection
+
+**PR:** TBA — `claude/mail-cms-phase4-placeholders` (stacked on PR #77 / Phase 3)
+
+### Hedef
+
+Admin'in CMS'te yazdığı copy field'larında `${firstName}`, `${restaurantName}` gibi runtime placeholder'lar kullanabilmesi. Her token render zamanında gerçek değerle dolar. Backward compatible — placeholder'sız field'lar değişmez.
+
+### Yeni dosyalar
+
+- `src/lib/email/placeholders.ts` — `MAIL_PLACEHOLDERS` whitelist, `substitutePlaceholders`, `validatePlaceholders`, `findInvalidPlaceholders`, `deepSubstitute` helper'ları
+
+### Değişen dosyalar
+
+**Render fonksiyonları** (9 template):
+- `welcome.ts`, `newsletter.ts`, `trial-ending.ts`, `forgot-password.ts`, `low-rating-alert.ts`, `new-review.ts`, `weekly-report.ts`, `customer-reply.ts`, `form-confirmation.ts`
+- Her biri `loadMailCopy()` sonrası `deepSubstitute(merged, vars, 'html'|'text')` çağırır
+- `copy` (HTML body) ve `copyText` (text body) iki ayrı substitute pass — XSS guard
+
+**API**:
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts` — PATCH endpoint `findInvalidPlaceholders` ile invalid token yakalar, 400 döner
+
+**Admin UI**:
+- `src/components/admin/MailFieldInput.tsx` — `placeholders?: string[]` prop, chip row, click-to-insert at cursor
+- `src/components/admin/MailTemplateEditor.tsx` — relevant field'lar `placeholders: MAIL_PLACEHOLDERS[key]` ile işaretlendi
+- `src/components/admin/FormConfirmationEditor.tsx` — variant field'lar `placeholders: MAIL_PLACEHOLDERS['form-confirmation']`
+
+### Whitelist
+
+| Template | Placeholder'lar |
+|---|---|
+| welcome | `firstName` |
+| newsletter | `firstName` |
+| trial-ending | `firstName` `restaurantName` `daysLeft` |
+| forgot-password | `firstName` |
+| low-rating-alert | `restaurantName` `customerName` `rating` `branch` |
+| new-review | `restaurantName` `customerName` `rating` |
+| weekly-report | `restaurantName` `totalReviews` `avgRating` |
+| customer-reply | `customerFirstName` `restaurantName` `ownerName` |
+| form-confirmation | `firstName` |
+
+### Inline default değişiklikleri
+
+Önce hardcoded interpolation içeren default'lar literal placeholder'a çevrildi:
+
+| Template | Değişen field |
+|---|---|
+| welcome | `titleHi`: `\`Merhaba ${name}.\`` → `'Merhaba ${firstName}.'` |
+| trial-ending | `eyebrow`: `\`Deneme · ${days} gün kaldı\`` → `'Deneme · ${daysLeft} gün kaldı'` |
+| low-rating-alert | `title`: `\`${params.rating} yıldız geldi.\`` → `'${rating} yıldız geldi.'` |
+| new-review | `title`: `\`${params.rating} yıldız.\`` → `'${rating} yıldız.'` |
+| customer-reply | `titleA`: `\`${customerFirst},\`` → `'${customerFirstName},'` |
+
+### XSS guard
+
+HTML mode substitution `escapeHtml` kullanır. Customer name `<script>` olsa bile mail'de `&lt;script&gt;`. Text mode (plain text mail body) escape yapmaz.
+
+### Validation davranışı
+
+Admin save sırasında geçersiz placeholder yazarsa:
+- API 400: `{ error: 'invalid_placeholder', field: 'subject', invalid: ['userName'], allowed: ['firstName', 'restaurantName', ...] }`
+- Editor user-friendly TR mesaj: `"subject" alanında geçersiz placeholder: ${userName}. İzin verilenler: ${firstName}, ${restaurantName}, ...`
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- DB schema değişikliği YOK
+- E2E:
+  - Admin welcome.titleHi'yi `Selam ${firstName}!` olarak save et → DB'de literal kayıtlanır
+  - Test mail at → mail body "Selam Tom!" olarak gelir
+  - Admin yanlış token yazsa (`${userName}`) → 400 + Turkish error
+  - Admin chip'e tıklasa → caret konumuna `${firstName}` eklenir
+
+### Phase 5+ backlog
+
+- Audit log (`MailTemplateRevision`)
+- Redis cache (multi-instance drift)
+- Per-field validation (max length, format)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)

@@ -3,6 +3,7 @@ import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderButton, renderAvatarCircle, renderStatusPill, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export interface NewReviewParams {
   rating: number;
@@ -43,24 +44,31 @@ export async function renderNewReview(
 
   const inlineDefault = isTr ? {
     eyebrow: 'Canlı · Az önce geldi',
-    title: `${params.rating} yıldız.`,
+    title: '${rating} yıldız.',
     titleSub: 'Hak ettin.',
     primaryCta: 'Teşekkür yaz →',
     secondaryCta: 'Google\'da paylaş',
     noComment: 'Yorum bırakılmadı.',
   } : {
     eyebrow: 'Live · Just now',
-    title: `${params.rating} stars.`,
+    title: '${rating} stars.',
     titleSub: 'You earned it.',
     primaryCta: 'Write a thank-you →',
     secondaryCta: 'Share on Google',
     noComment: 'No comment left.',
   };
 
-  // DB-merged. `title` keeps the rating template literal — admin override
-  // would lose the `${rating}` substitution, so the editor exposes only the
-  // copy fields that don't need runtime data.
-  const copy = await loadMailCopy('new-review', locale, inlineDefault);
+  // DB-merged + placeholder substitution. `${rating}` `${customerName}`
+  // `${restaurantName}` admin tarafından subject yerine başka field'larda
+  // da kullanılabilir.
+  const merged = await loadMailCopy('new-review', locale, inlineDefault);
+  const vars = {
+    rating: params.rating,
+    restaurantName: params.restaurantName,
+    customerName: params.customerName ?? (isTr ? 'Anonim' : 'Anonymous'),
+  };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
 
   // Star row — warning gold like jsx:31
   const starsHtml = `<span style="color:${PULSE.warning};font-size:18px;letter-spacing:0.05em;">${'★'.repeat(params.rating)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - params.rating)}</span></span>`;
@@ -127,6 +135,6 @@ export async function renderNewReview(
     eyebrow: isTr ? 'Yeni yorum · Anında' : 'New review · Live',
     footer: { locale, unsubText: isTr ? 'Yeni yorum bildirimlerini kapatmak için' : 'To stop new-review alerts' },
   });
-  const text = `${copy.title} ${copy.titleSub}\n\n${customerName} · ${params.rating}★\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}\n${copy.primaryCta} ${params.reviewUrl}`;
+  const text = `${copyText.title} ${copyText.titleSub}\n\n${customerName} · ${params.rating}★\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}\n${copyText.primaryCta} ${params.reviewUrl}`;
   return { subject, html, text };
 }

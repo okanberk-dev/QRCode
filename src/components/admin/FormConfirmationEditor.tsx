@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Eye, Loader2, Mail, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import MailFieldInput, { type MailFieldDef } from './MailFieldInput';
+import { MAIL_PLACEHOLDERS } from '@/lib/email/placeholders';
 
 type FormType = 'contact' | 'career' | 'roi' | 'newsletter';
 
@@ -19,12 +20,12 @@ const VARIANTS: Array<{ key: FormType; label: string }> = [
 // admin should touch; structural arrays (`timeline`) and ticket prefix
 // stay in code.
 const VARIANT_FIELDS: MailFieldDef[] = [
-  { key: 'subject', label: 'Mail subject' },
-  { key: 'preheader', label: 'Inbox preview', hint: 'Mail listesinde subject altında görünür' },
+  { key: 'subject', label: 'Mail subject', placeholders: MAIL_PLACEHOLDERS['form-confirmation'] },
+  { key: 'preheader', label: 'Inbox preview', hint: 'Mail listesinde subject altında görünür', placeholders: MAIL_PLACEHOLDERS['form-confirmation'] },
   { key: 'eyebrow', label: 'Eyebrow', hint: 'Üst köşedeki etiket — örn. "İletişim · Onay"' },
-  { key: 'titleA', label: 'Başlık 1. parça', hint: '"Aldık"' },
+  { key: 'titleA', label: 'Başlık 1. parça', hint: '"Aldık"', placeholders: MAIL_PLACEHOLDERS['form-confirmation'] },
   { key: 'titleB', label: 'Başlık 2. parça', hint: '"Sıradayız."' },
-  { key: 'intro', label: 'Giriş paragrafı', multiline: true },
+  { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['form-confirmation'] },
   { key: 'formEyebrow', label: 'Form özet kart etiketi' },
   { key: 'timelineEyebrow', label: 'Timeline bölüm etiketi' },
   { key: 'sideEyebrowA', label: 'Sol kart etiketi (A)' },
@@ -116,7 +117,14 @@ export default function FormConfirmationEditor({ locale }: Props) {
         body: JSON.stringify({ content: nested }),
       });
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error || 'Kayıt başarısız');
+      if (!res.ok) {
+        if (body.error === 'invalid_placeholder' && body.field && Array.isArray(body.invalid)) {
+          throw new Error(
+            `"${body.field}" alanında geçersiz placeholder: ${body.invalid.map((p: string) => `\${${p}}`).join(', ')}. İzin verilenler: ${(body.allowed ?? []).map((p: string) => `\${${p}}`).join(', ') || '(yok)'}`,
+          );
+        }
+        throw new Error(body.error || 'Kayıt başarısız');
+      }
       setSeeded(true);
       setInfo('Tüm 4 variant kaydedildi — değişiklik 1 dakika içinde tüm gönderimlere yansır.');
     } catch (e) {

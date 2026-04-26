@@ -3,6 +3,7 @@ import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderButton, renderEcgDivider, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export interface NewsletterPost {
   title: string;
@@ -101,10 +102,15 @@ export async function renderNewsletter(
     featuredOpen: 'Open article →',
   };
 
-  // DB-driven copy override (mail_templates row by key+locale). Missing
-  // fields fall through to the inline default above. Cron's per-call DB
-  // hit is amortised by 60s process-local cache in copy-loader.
-  const copy = await loadMailCopy('newsletter', locale, inlineDefault);
+  // DB-driven copy override + placeholder substitution. `${firstName}` admin
+  // tarafından subject/intro'da kullanılabilir; her abone için cron call'unda
+  // gerçek değerle dolar. Bu render fn `firstName` param almıyor çünkü
+  // newsletter aboneye özel kişiselleştirilmiyor — `firstName` placeholder'ı
+  // future-proof; kullanılırsa empty substitute olur.
+  const merged = await loadMailCopy('newsletter', locale, inlineDefault);
+  const vars = { firstName: '' };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
 
   const exploreUrl = params.exploreUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/${isTr ? 'tr' : 'en'}/blog`;
   const editorNoteUrl = featured?.url ?? exploreUrl;
@@ -243,7 +249,7 @@ export async function renderNewsletter(
       unsubText: isTr ? 'Aylık bülteni almayı bırakmak için' : 'To stop the monthly digest',
     },
   });
-  const textTitle = customTitleTrimmed ?? `${copy.titleA} ${copy.titleAccent} ${copy.titleEnd}`;
+  const textTitle = customTitleTrimmed ?? `${copyText.titleA} ${copyText.titleAccent} ${copyText.titleEnd}`;
   const text = `${textTitle}\n\n${introText}\n\n` +
     (featured ? `★ ${featured.title} — ${featured.url}\n\n` : '') +
     restPosts.map((p, i) => `${i + 1}. ${p.title} — ${p.url}`).join('\n');
