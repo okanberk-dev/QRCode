@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Eye, Loader2, Mail, RotateCcw, Save } from 'lucide-react';
+import { ArrowLeft, Eye, History, Loader2, Mail, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import MailFieldInput, { type MailFieldDef } from './MailFieldInput';
 import FormConfirmationEditor from './FormConfirmationEditor';
+import MailRevisionHistory from './MailRevisionHistory';
 import { MAIL_PLACEHOLDERS } from '@/lib/email/placeholders';
 
 // Schema-aware fields per template. Only string copy fields the admin
@@ -179,6 +180,8 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
   const [sendingTest, setSendingTest] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -214,7 +217,8 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
       }
     })();
     return () => { alive = false; };
-  }, [templateKey, locale, fields]);
+    // `reloadKey` re-fetches after revert; `fields` is stable per template.
+  }, [templateKey, locale, fields, reloadKey]);
 
   const onSave = async () => {
     setSaving(true);
@@ -353,6 +357,13 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
                 {sendingTest ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
                 Test mail at
               </button>
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+              >
+                <History size={14} /> Geçmiş
+              </button>
               {seeded && (
                 <button
                   type="button"
@@ -378,6 +389,19 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
           </div>
         </>
       )}
+
+      <MailRevisionHistory
+        templateKey={templateKey}
+        locale={locale}
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        onReverted={() => {
+          // Revert applied DB-side; re-fetch the editor's content so the
+          // form reflects the reverted state without a hard reload.
+          setReloadKey((k) => k + 1);
+          setInfo('Geri dönüş başarılı — içerik yenilendi.');
+        }}
+      />
     </div>
   );
 }

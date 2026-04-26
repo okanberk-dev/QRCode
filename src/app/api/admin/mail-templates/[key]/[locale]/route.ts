@@ -11,6 +11,31 @@ export const dynamic = 'force-dynamic';
 
 const SUPPORTED_LOCALES = new Set(['tr', 'en']);
 
+const REVISION_KEEP = 50;
+
+/**
+ * Drop revisions older than the most recent `REVISION_KEEP` for a given
+ * (key, locale). We do this after each write rather than via a cron so
+ * the table stays bounded without an extra moving part.
+ */
+async function pruneRevisions(key: string, locale: string) {
+  const recent = await prisma.mailTemplateRevision.findMany({
+    where: { templateKey: key, locale },
+    orderBy: { createdAt: 'desc' },
+    take: REVISION_KEEP,
+    select: { id: true },
+  });
+  const keepIds = recent.map((r) => r.id);
+  if (keepIds.length === 0) return;
+  await prisma.mailTemplateRevision.deleteMany({
+    where: {
+      templateKey: key,
+      locale,
+      id: { notIn: keepIds },
+    },
+  });
+}
+
 function parseParams(key: string, locale: string) {
   if (!isSupportedMailTemplateKey(key)) {
     return { error: 'invalid_key' as const };
@@ -136,8 +161,17 @@ export async function PATCH(
   const safeCleaned = stripLockedFields(parsed.key, cleaned);
 
   const adminId = admin.id ?? admin.userId ?? null;
-
   const contentJson = safeCleaned as Prisma.InputJsonValue;
+
+  // Phase 5 — write the revision in the same transaction as the upsert
+  // so the audit log can never drift from the live row. editType depends
+  // on whether a row existed before this PATCH.
+  const existing = await prisma.mailTemplate.findUnique({
+    where: { key_locale: { key: parsed.key, locale: parsed.locale } },
+    select: { id: true },
+  });
+  const editType: 'created' | 'updated' = existing ? 'updated' : 'created';
+
   const upserted = await prisma.mailTemplate.upsert({
     where: { key_locale: { key: parsed.key, locale: parsed.locale } },
     create: {
@@ -151,6 +185,20 @@ export async function PATCH(
       updatedById: adminId,
     },
   });
+
+  await prisma.mailTemplateRevision.create({
+    data: {
+      templateId: upserted.id,
+      templateKey: parsed.key,
+      locale: parsed.locale,
+      editType,
+      content: contentJson,
+      editedById: adminId,
+    },
+  });
+  // Soft-prune: keep the last 50 revisions per (key, locale). Older rows
+  // are mostly noise and the table grows fast on chatty admins.
+  await pruneRevisions(parsed.key, parsed.locale);
 
   // Cache bust — next mail send (cron or transactional) reads fresh copy.
   invalidateMailCopyCache(parsed.key, parsed.locale);
@@ -182,7 +230,21 @@ export async function DELETE(
   const parsed = parseParams(rawKey, rawLocale);
   if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
+  // Phase 5 — write a 'deleted' revision before the actual delete so the
+  // history survives. Schema's `onDelete: SetNull` on revisions keeps the
+  // audit row reachable via (templateKey, locale) after the template row
+  // is gone — revert can re-create from history.
+  const adminId = admin.id ?? admin.userId ?? null;
   try {
+    await prisma.mailTemplateRevision.create({
+      data: {
+        templateKey: parsed.key,
+        locale: parsed.locale,
+        editType: 'deleted',
+        content: {} as Prisma.InputJsonValue,
+        editedById: adminId,
+      },
+    });
     await prisma.mailTemplate.delete({
       where: { key_locale: { key: parsed.key, locale: parsed.locale } },
     });
@@ -192,6 +254,7 @@ export async function DELETE(
     }
     throw err;
   }
+  await pruneRevisions(parsed.key, parsed.locale);
   invalidateMailCopyCache(parsed.key, parsed.locale);
   return NextResponse.json({ ok: true });
 }
