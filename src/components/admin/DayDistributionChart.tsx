@@ -11,9 +11,8 @@ interface DayDistributionChartProps {
 
 export default function DayDistributionChart({ data }: DayDistributionChartProps) {
   return (
-    <div className="flex flex-col h-[260px] sm:h-[320px] md:h-[350px] w-full">
-      <div className="flex-1 w-full">
-        <ResponsiveContainer width="100%" height="100%">
+    <div className="h-[260px] sm:h-[320px] md:h-[350px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
             <XAxis 
@@ -53,8 +52,7 @@ export default function DayDistributionChart({ data }: DayDistributionChartProps
               ))}
             </Bar>
           </BarChart>
-        </ResponsiveContainer>
-      </div>
+      </ResponsiveContainer>
     </div>
   );
 }
