@@ -24,119 +24,117 @@ import { MAIL_PLACEHOLDERS } from '@/lib/email/placeholders';
 type FieldDef = MailFieldDef;
 const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
   welcome: [
-    { key: 'eyebrow', label: 'Eyebrow', hint: 'Üst köşedeki küçük etiket — örn. "Hoş geldin · Sayı bir"' },
-    { key: 'titleHi', label: 'Selamlama başlığı', hint: 'Hero başlığın 1. satırı — "Merhaba ${firstName}."', placeholders: MAIL_PLACEHOLDERS.welcome },
-    { key: 'titleSub', label: 'Başlık alt satırı', hint: 'Hero başlığın 2. satırı — "Şimdi başlıyoruz."' },
-    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS.welcome },
-    { key: 'stepsEyebrow', label: 'Adımlar bölüm etiketi', hint: '"Kurulum · 4 adım"' },
-    { key: 'nextLabel', label: 'Sıradaki rozet', hint: 'Aktif adımın yanındaki "Sıradaki" etiketi' },
-    { key: 'cta', label: 'Birincil CTA buton metni' },
-    { key: 'demoLink', label: 'İkincil link metni', hint: '"Demo videoyu izle (2 dk)"' },
-    { key: 'resourcesEyebrow', label: 'Kaynaklar bölüm etiketi' },
+    { key: 'eyebrow', label: 'Eyebrow', group: 'Başlık', hint: 'Hero kartının sağ-üst köşesinde küçük mono-font etiket. Lime arka plan üstünde graphite text. Örnek: "Hoş geldin · Sayı bir".' },
+    { key: 'titleHi', label: 'Selamlama başlığı', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS.welcome, hint: 'Hero başlığın 1. satırı — büyük graphite font. "${firstName}" placeholder runtime\'da kullanıcının adıyla doldurulur. Örnek: "Merhaba ${firstName}.".' },
+    { key: 'titleSub', label: 'Başlık alt satırı', group: 'Başlık', hint: 'Hero başlığın 2. satırı — italic, navy/n800 renkte. Selamlamadan hemen sonra. Örnek: "Şimdi başlıyoruz."' },
+    { key: 'intro', label: 'Giriş paragrafı', group: 'Başlık', multiline: true, placeholders: MAIL_PLACEHOLDERS.welcome, hint: 'Hero altındaki açıklama metni — 1-2 cümle. Body font, hero kartının iç bölümünde. Örnek: "Hesabını oluşturduğun için teşekkürler. ..."' },
+    { key: 'stepsEyebrow', label: 'Adımlar bölüm etiketi', group: 'Adımlar', hint: 'Hero altındaki kurulum bölümünün üst etiketi. ECG divider sonrası ilk satır. Örnek: "Kurulum · 4 adım".' },
+    { key: 'nextLabel', label: '"Sıradaki" rozet metni', group: 'Adımlar', hint: 'Aktif adımın sağ tarafında lime arka planlı küçük rozet. Sadece "current" durumdaki adımda görünür. Örnek: "Sıradaki".' },
+    { key: 'cta', label: 'Birincil CTA buton metni', group: 'Aksiyon', hint: 'Adımlar listesinin altındaki büyük lime buton — kullanıcıyı dashboard\'a yönlendirir. Örnek: "Kuruluma devam et →".' },
+    { key: 'demoLink', label: 'Demo video link metni', group: 'Aksiyon', hint: 'Birincil CTA butonunun yanındaki ikincil link — alt çizgili gri text. Örnek: "Demo videoyu izle (2 dk)".' },
+    { key: 'resourcesEyebrow', label: 'Kaynaklar bölüm etiketi', group: 'Footer', hint: 'Mail\'in alt kısmındaki 4-kart kaynak grid\'inin üst etiketi. Örnek: "İlk gün için".' },
   ],
   newsletter: [
-    { key: 'titleA', label: 'Başlık 1. parça', hint: 'Hero başlığın ilk yarısı — "Sessiz misafiri"' },
-    { key: 'titleAccent', label: 'Başlık vurgu kelimesi', hint: 'Lime arka planlı kelime — "duyabilmek"' },
-    { key: 'titleEnd', label: 'Başlık 3. parça', hint: '"sanatı."' },
-    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS.newsletter },
-    { key: 'cta', label: 'Birincil CTA' },
-    { key: 'featuredEyebrow', label: 'Kapak yazısı bölüm etiketi' },
-    { key: 'listEyebrow', label: 'Yazılar listesi başlığı', hint: '"Bu sayıda"' },
-    { key: 'statsTitle', label: 'İstatistik kart başlığı', hint: 'Stats geçirilmediğinde block gizlenir' },
-    { key: 'futureLabel', label: 'Gelecek sayı etiketi', hint: '"Önümüzdeki sayıda"' },
-    { key: 'futureBody', label: 'Gelecek sayı metni', multiline: true },
-    { key: 'exploreCta', label: 'Tüm sayılar linki' },
+    { key: 'titleA', label: 'Başlık 1. parça', group: 'Başlık', hint: 'Hero başlığın ilk yarısı — büyük graphite font, sol-üst hizalı. Örnek: "Sessiz misafiri".' },
+    { key: 'titleAccent', label: 'Başlık vurgu kelimesi', group: 'Başlık', hint: 'Lime arka planlı, italic vurgu kelimesi — başlığın ortasında. Örnek: "duyabilmek".' },
+    { key: 'titleEnd', label: 'Başlık 3. parça', group: 'Başlık', hint: 'Hero başlığın son satırı — vurgu kelimesinden sonra. Örnek: "sanatı."' },
+    { key: 'intro', label: 'Giriş paragrafı', group: 'Başlık', multiline: true, placeholders: MAIL_PLACEHOLDERS.newsletter, hint: 'Hero altındaki editör notu — 2-3 cümle. Örnek: "Müşterilerin yalnızca %4\'ü kötü deneyim yaşadığında konuşur. ..."' },
+    { key: 'featuredEyebrow', label: 'Kapak yazısı etiketi', group: 'Bölümler', hint: 'Featured (öne çıkan) yazı kartının üst etiketi — koyu kart üstünde. Örnek: "Kapak yazısı".' },
+    { key: 'listEyebrow', label: 'Yazılar listesi başlığı', group: 'Bölümler', hint: 'Featured altındaki numaralandırılmış yazı listesinin üst etiketi. Örnek: "Bu sayıda".' },
+    { key: 'statsTitle', label: 'İstatistik kart başlığı', group: 'Bölümler', hint: 'Stats band başlığı — caller params.stats geçirmediğinde band tamamen gizlenir. Örnek: "Bu ayın küçük rakamları".' },
+    { key: 'futureLabel', label: 'Gelecek sayı etiketi', group: 'Footer', hint: 'Mail sonundaki "next issue" teaser kart üst etiketi. Örnek: "Önümüzdeki sayıda".' },
+    { key: 'futureBody', label: 'Gelecek sayı metni', group: 'Footer', multiline: true, hint: 'Teaser açıklaması — 1 cümle. Örnek: "Otel sektörü vakası, yeni heatmap görselleri, OAuth entegrasyonları."' },
+    { key: 'exploreCta', label: 'Arşiv link metni', group: 'Footer', hint: 'Footer\'da blog/issue arşivine giden ikincil link. Örnek: "Tüm sayıları gör →".' },
+    { key: 'cta', label: 'Birincil CTA', group: 'Aksiyon', hint: 'Featured yazıyı açan koyu kart içindeki lime buton. Örnek: "Editörün notunu oku →".' },
   ],
   'trial-ending': [
-    { key: 'eyebrow', label: 'Eyebrow', hint: '"Deneme · ${daysLeft} gün kaldı"', placeholders: MAIL_PLACEHOLDERS['trial-ending'] },
-    { key: 'titleA', label: 'Başlık 1. satır', hint: '"14 gündür birlikteyiz."', placeholders: MAIL_PLACEHOLDERS['trial-ending'] },
-    { key: 'titleB', label: 'Başlık 2. satır', hint: '"Devam edelim mi?"', placeholders: MAIL_PLACEHOLDERS['trial-ending'] },
-    { key: 'usageEyebrow', label: 'Kullanım kart etiketi' },
-    { key: 'plansEyebrow', label: 'Plan bölüm etiketi', hint: '"Plan seç · İlk ay %50"' },
-    { key: 'starterTitle', label: 'Starter plan başlığı' },
-    { key: 'starterBody', label: 'Starter plan açıklaması', multiline: true },
-    { key: 'proTitle', label: 'Pro plan başlığı' },
-    { key: 'proBody', label: 'Pro plan açıklaması', multiline: true },
-    { key: 'proBadge', label: 'Pro rozet metni', hint: '"ÖNERİLEN"' },
-    { key: 'cta', label: 'Birincil CTA' },
-    { key: 'comparisonLink', label: 'Detay link metni' },
+    { key: 'eyebrow', label: 'Eyebrow', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['trial-ending'], hint: 'Hero kartının üst etiketi — "${daysLeft}" runtime\'da gerçek gün sayısı olur. Örnek: "Deneme · ${daysLeft} gün kaldı".' },
+    { key: 'titleA', label: 'Başlık 1. satır', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['trial-ending'], hint: 'Hero büyük başlığının 1. satırı. Geçmiş zamanlı bir cümle. Örnek: "14 gündür birlikteyiz."' },
+    { key: 'titleB', label: 'Başlık 2. satır', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['trial-ending'], hint: 'Hero büyük başlığının 2. satırı — soru cümlesi. Örnek: "Devam edelim mi?"' },
+    { key: 'usageEyebrow', label: 'Kullanım kart etiketi', group: 'Kullanım', hint: '4-sütun stat grid\'inin üst etiketi (yorum / ortalama / AI yanıt / +X% organik). Örnek: "Bu 14 günde Buaze\'de".' },
+    { key: 'plansEyebrow', label: 'Plan bölüm etiketi', group: 'Planlar', hint: '2 plan kartının üst etiketi. Genelde promo bilgisi içerir. Örnek: "Plan seç · İlk ay %50".' },
+    { key: 'starterTitle', label: 'Starter plan başlığı', group: 'Planlar', hint: 'Sol plan kartının başlığı (ucuz olan). Örnek: "Pulse Starter".' },
+    { key: 'starterBody', label: 'Starter plan açıklaması', group: 'Planlar', multiline: true, hint: 'Sol plan kartının açıklama metni — özellikleri özetler. Örnek: "Tek şube, sınırsız QR, 100 AI yanıt/ay."' },
+    { key: 'proTitle', label: 'Pro plan başlığı', group: 'Planlar', hint: 'Sağ plan kartının başlığı (premium olan). "ÖNERİLEN" rozeti bu kart üzerinde. Örnek: "Pulse Pro".' },
+    { key: 'proBody', label: 'Pro plan açıklaması', group: 'Planlar', multiline: true, hint: 'Sağ plan kartının açıklama metni. Örnek: "Çoklu şube, sınırsız AI, OAuth + webhook, öncelikli destek."' },
+    { key: 'proBadge', label: 'Pro rozet metni', group: 'Planlar', hint: 'Pro kartının sağ-üst köşesinde absolute pozisyonlu küçük lime rozet. Örnek: "ÖNERİLEN".' },
+    { key: 'cta', label: 'Birincil CTA', group: 'Aksiyon', hint: 'Plan kartlarının altındaki büyük lime buton — Stripe/billing\'e yönlendirir. Örnek: "Planımı seç →".' },
+    { key: 'comparisonLink', label: 'Detay link metni', group: 'Aksiyon', hint: 'CTA butonunun yanındaki ikincil link — pricing sayfasına gider. Örnek: "Detaylı karşılaştırma".' },
   ],
   'forgot-password': [
-    { key: 'eyebrow', label: 'Eyebrow', hint: '"01 · Talep alındı"' },
-    { key: 'title', label: 'Başlık 1. parça', hint: '"Şifreni"', placeholders: MAIL_PLACEHOLDERS['forgot-password'] },
-    { key: 'titleAccent', label: 'Başlık vurgu', hint: '"sıfırlayalım" — lime altçizgili' },
-    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['forgot-password'] },
-    { key: 'cardEyebrow', label: 'Token kart etiketi', hint: '"Tek kullanımlık link"' },
-    { key: 'statusText', label: 'Durum pill metni', hint: '"Aktif · 30 dk geçerli"', locked: true, lockReason: 'Güvenlik: token süre uyarısı, değiştirmek phishing riski yaratır' },
-    { key: 'cta', label: 'Birincil CTA buton metni' },
-    { key: 'altCodeLabel', label: 'Alternatif kod açıklaması', hint: '"Uygulamada kullanmak için kod"' },
-    { key: 'metaTime', label: 'Talep saati etiketi' },
-    { key: 'metaIp', label: 'IP etiketi' },
-    { key: 'metaDevice', label: 'Cihaz etiketi' },
-    { key: 'metaAccount', label: 'Hesap etiketi' },
-    { key: 'notYouTitle', label: '"Sen değil misin?" başlık', locked: true, lockReason: 'Güvenlik uyarısı — hesap sahibi değilsen ne yapmalı bilgisi' },
-    { key: 'notYouBody', label: '"Sen değil misin?" gövde', multiline: true, locked: true, lockReason: 'Güvenlik uyarısı içeriği' },
-    { key: 'notYouLink', label: 'Destek link metni', locked: true, lockReason: 'Şüpheli durum eskalasyon linki' },
+    { key: 'eyebrow', label: 'Eyebrow', group: 'Başlık', hint: 'Hero kartının üst etiketi — adım numarası içerir. Örnek: "01 · Talep alındı".' },
+    { key: 'title', label: 'Başlık 1. parça', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['forgot-password'], hint: 'Hero başlığın 1. satırı — büyük graphite font. Örnek: "Şifreni".' },
+    { key: 'titleAccent', label: 'Başlık vurgu', group: 'Başlık', hint: 'Başlığın 2. satırı — lime altçizgili italic vurgu. Örnek: "sıfırlayalım".' },
+    { key: 'intro', label: 'Giriş paragrafı', group: 'Başlık', multiline: true, placeholders: MAIL_PLACEHOLDERS['forgot-password'], hint: 'Hero altındaki açıklama. "${firstName}" varsa kişiselleştirilir. Örnek: "Merhaba ${firstName}, az önce bu adres için yeni bir şifre talep edildi. ..."' },
+    { key: 'cardEyebrow', label: 'Token kartı etiketi', group: 'Token kartı', hint: 'Hero altındaki token kartının üst etiketi. Örnek: "Tek kullanımlık link".' },
+    { key: 'statusText', label: 'Durum pill metni', group: 'Token kartı', locked: true, lockReason: 'Güvenlik: token süre uyarısı, değiştirmek phishing riski yaratır', hint: 'Token kartının sağ-üst köşesindeki yeşil pill. Örnek: "Aktif · 30 dk geçerli".' },
+    { key: 'cta', label: 'Birincil CTA buton metni', group: 'Aksiyon', hint: 'Token kartı içindeki büyük lime buton — kullanıcıyı reset URL\'ine götürür. Örnek: "Yeni şifre belirle →".' },
+    { key: 'altCodeLabel', label: 'Alternatif kod açıklaması', group: 'Aksiyon', hint: 'CTA butonu altında, 6-haneli fallback kod\'un üst etiketi. Örnek: "Uygulamada kullanmak için kod".' },
+    { key: 'metaTime', label: '"Talep saati" alanı etiketi', group: 'Meta', hint: '2x2 meta grid\'in sol-üst hücresi etiketi. Sağda timestamp gösterilir. Örnek: "Talep saati".' },
+    { key: 'metaIp', label: '"IP" alanı etiketi', group: 'Meta', hint: '2x2 meta grid\'in sağ-üst hücresi etiketi. Sağda IP adresi gösterilir. Örnek: "IP".' },
+    { key: 'metaDevice', label: '"Cihaz" alanı etiketi', group: 'Meta', hint: '2x2 meta grid\'in sol-alt hücresi etiketi. Sağda user-agent özeti. Örnek: "Cihaz".' },
+    { key: 'metaAccount', label: '"Hesap" alanı etiketi', group: 'Meta', hint: '2x2 meta grid\'in sağ-alt hücresi etiketi. Sağda user email gösterilir. Örnek: "Hesap".' },
+    { key: 'notYouTitle', label: '"Sen değil misin?" başlık', group: 'Güvenlik uyarısı', locked: true, lockReason: 'Güvenlik uyarısı — hesap sahibi değilsen ne yapmalı bilgisi', hint: 'Mail\'in alt kısmındaki güvenlik kartının başlığı. Lime-soft arka plan + 3px lime-deep sol border.' },
+    { key: 'notYouBody', label: '"Sen değil misin?" gövde', group: 'Güvenlik uyarısı', multiline: true, locked: true, lockReason: 'Güvenlik uyarısı içeriği', hint: 'Güvenlik kartının gövde metni — kullanıcı şüphelendiğinde ne yapacağını söyler.' },
+    { key: 'notYouLink', label: 'Destek link metni', group: 'Güvenlik uyarısı', locked: true, lockReason: 'Şüpheli durum eskalasyon linki', hint: 'Güvenlik kartı içindeki destek ekibi linki — lime altı çizgili.' },
   ],
   'low-rating-alert': [
-    { key: 'eyebrowAlert', label: 'Üst alarm etiketi', hint: '"Anlık uyarı · Düşük puan"' },
-    { key: 'eyebrowAction', label: 'Aksiyon urgency etiketi', hint: '"Aksiyon gerektiriyor · 1 saat içinde dön"' },
-    { key: 'title', label: 'Başlık', hint: '"${rating} yıldız geldi."', placeholders: MAIL_PLACEHOLDERS['low-rating-alert'] },
-    { key: 'titleSub', label: 'Başlık alt satır', hint: '"Önce dinleyelim."', placeholders: MAIL_PLACEHOLDERS['low-rating-alert'] },
-    { key: 'aiEyebrow', label: 'AI Co-Pilot kart etiketi' },
-    { key: 'toneLabel', label: 'AI tone default etiket', hint: 'aiTone param yokken görünür' },
-    { key: 'aiEdit', label: '"Düzenle" buton metni' },
-    { key: 'aiApprove', label: '"Onayla & Yanıtla" buton metni' },
-    { key: 'quickEyebrow', label: 'Hızlı aksiyon başlığı' },
-    { key: 'noComment', label: '"Yorum yok" hint metni' },
+    { key: 'eyebrowAlert', label: 'Üst alarm etiketi', group: 'Etiketler', hint: 'Hero üstündeki graphite alert bar\'ın sol bilgi metni. Warning dot + bu text + timestamp. Örnek: "Anlık uyarı · Düşük puan".' },
+    { key: 'eyebrowAction', label: 'Aksiyon urgency etiketi', group: 'Etiketler', hint: 'Hero başlığının üstündeki ikinci eyebrow — aksiyon urgency mesajı. Örnek: "Aksiyon gerektiriyor · 1 saat içinde dön".' },
+    { key: 'title', label: 'Başlık', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['low-rating-alert'], hint: 'Hero büyük başlık — "${rating}" runtime\'da gerçek puanla doldurulur. Örnek: "${rating} yıldız geldi."' },
+    { key: 'titleSub', label: 'Başlık alt satırı', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['low-rating-alert'], hint: 'Hero başlığın 2. satırı — italic, n500 renkte. Örnek: "Önce dinleyelim."' },
+    { key: 'aiEyebrow', label: 'AI Co-Pilot kart etiketi', group: 'AI Co-Pilot', hint: 'Yorum kartı altındaki dark AI Co-Pilot draft kartının üst etiketi. Örnek: "Co-Pilot taslağı".' },
+    { key: 'toneLabel', label: 'AI tone default etiketi', group: 'AI Co-Pilot', hint: 'AI Co-Pilot kartında, taslağın yanındaki tone label\'ı — caller params.aiTone geçirmediğinde fallback görünür. Örnek: "Ton: profesyonel · empati yüksek".' },
+    { key: 'aiEdit', label: 'AI "Düzenle" buton metni', group: 'AI Co-Pilot', hint: 'AI Co-Pilot kartı altındaki ikincil buton — taslağı düzenlemek için panele yönlendirir. Örnek: "Düzenle".' },
+    { key: 'aiApprove', label: 'AI "Onayla" buton metni', group: 'AI Co-Pilot', hint: 'AI Co-Pilot kartı altındaki birincil lime buton — taslağı onaylar ve yollar. Örnek: "Onayla & Yanıtla →".' },
+    { key: 'quickEyebrow', label: 'Hızlı aksiyon başlığı', group: 'Hızlı aksiyon', hint: 'Mail\'in alt kısmındaki 3-sütun aksiyon grid\'inin üst etiketi. Örnek: "Hızlı aksiyon".' },
+    { key: 'noComment', label: '"Yorum yok" hint metni', group: 'Hızlı aksiyon', hint: 'Müşteri yorum bırakmadığında yorum kartının yerine görünen italic placeholder text. Örnek: "Yorum bırakılmadı."' },
   ],
   'new-review': [
-    { key: 'eyebrow', label: 'Status pill', hint: '"● Canlı · Az önce geldi"' },
-    { key: 'title', label: 'Başlık', hint: '"${rating} yıldız."', placeholders: MAIL_PLACEHOLDERS['new-review'] },
-    { key: 'titleSub', label: 'Başlık alt satır', hint: '"Hak ettin."', placeholders: MAIL_PLACEHOLDERS['new-review'] },
-    { key: 'primaryCta', label: 'Birincil CTA', hint: '"Teşekkür yaz →"' },
-    { key: 'secondaryCta', label: 'İkincil CTA', hint: '"Google\'da paylaş"' },
-    { key: 'noComment', label: '"Yorum yok" hint' },
+    { key: 'eyebrow', label: 'Status pill metni', group: 'Etiket', hint: 'Hero üstündeki "Canlı" status pill\'inin metni — yeşil dot + bu text. Örnek: "Canlı · Az önce geldi".' },
+    { key: 'title', label: 'Başlık', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['new-review'], hint: 'Hero büyük başlık — "${rating}" runtime\'da gerçek puanla doldurulur. Örnek: "${rating} yıldız."' },
+    { key: 'titleSub', label: 'Başlık alt satırı', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['new-review'], hint: 'Hero başlığın 2. satırı — italic, n500 renkte (kutlama tonu). Örnek: "Hak ettin."' },
+    { key: 'primaryCta', label: 'Birincil CTA buton metni', group: 'Aksiyon', hint: 'Yorum kartı altındaki büyük lime buton — feedback yanıt panelinde açar. Örnek: "Teşekkür yaz →".' },
+    { key: 'secondaryCta', label: 'İkincil CTA link metni', group: 'Aksiyon', hint: 'Birincil CTA\'nın yanındaki ikincil border\'lı buton — Google review URL\'ine gider (params.shareUrl varsa). Örnek: "Google\'da paylaş".' },
+    { key: 'noComment', label: '"Yorum yok" hint metni', group: 'Boş durum', hint: 'Müşteri yorum bırakmadığında kart yerine italic placeholder. Örnek: "Yorum bırakılmadı."' },
   ],
   'weekly-report': [
     // NOTE: `eyebrow` is intentionally not exposed here. Inline default uses
     // a `Hafta ${weekNum} · …` template literal — interpolation that admin
     // override would silently strip (DB stores plain strings). Render keeps
-    // the literal default so the week number stays dynamic. If we ever want
-    // operators to edit this, refactor render to compose `${weekPrefix}
-    // ${weekNum} ${weekSuffix}` from separately-stored fields.
-    { key: 'titleA', label: 'Hero 1. satır', hint: '"Sessiz başlayan hafta," (positive senaryo)', placeholders: MAIL_PLACEHOLDERS['weekly-report'] },
-    { key: 'titleEnd', label: 'Hero 3. satır', hint: '"yorumla bitti."', placeholders: MAIL_PLACEHOLDERS['weekly-report'] },
-    { key: 'statTotal', label: 'Yeni yorum etiketi' },
-    { key: 'statAvg', label: 'Ortalama puan etiketi' },
-    { key: 'statResp', label: 'Yanıt süresi etiketi', hint: 'Şu an gizli — backend response time tracking henüz yok' },
-    { key: 'chartEyebrow', label: 'Grafik bölüm etiketi' },
-    { key: 'chartTitle', label: 'Grafik başlığı' },
-    { key: 'quotesEyebrow', label: 'Alıntılar bölüm etiketi' },
-    { key: 'aspectFood', label: 'Yemek aspect etiketi' },
-    { key: 'aspectService', label: 'Servis aspect etiketi' },
-    { key: 'aspectAtm', label: 'Atmosfer aspect etiketi' },
-    { key: 'cta', label: 'Birincil CTA' },
-    { key: 'detailLabel', label: 'Detay kart başlığı' },
-    { key: 'detailSub', label: 'Detay kart açıklaması', multiline: true },
+    // the literal default so the week number stays dynamic.
+    { key: 'titleA', label: 'Hero 1. satır', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['weekly-report'], hint: 'Hero başlığın 1. satırı — geçmiş hafta yorumu. Örnek: "Sessiz başlayan hafta," (pozitif senaryo).' },
+    { key: 'titleEnd', label: 'Hero 3. satır', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['weekly-report'], hint: 'Hero başlığın son satırı — sayı ve aksiyon birleşimi. Aradaki vurgu sayı runtime\'da. Örnek: "yorumla bitti."' },
+    { key: 'statTotal', label: 'Yeni yorum etiketi', group: 'İstatistikler', hint: 'Dark hero kartındaki ilk stat hücresinin etiketi — sayı altında küçük mono text. Örnek: "Yeni yorum".' },
+    { key: 'statAvg', label: 'Ortalama puan etiketi', group: 'İstatistikler', hint: 'Dark hero kartındaki 2. stat hücresinin etiketi. Sayı altında. Örnek: "Ortalama puan".' },
+    { key: 'statResp', label: 'Yanıt süresi etiketi', group: 'İstatistikler', hint: 'Şu an gizli — backend response-time tracking henüz yok. Eklendiğinde 3. stat sütunu olacak. Örnek: "Yanıt süresi".' },
+    { key: 'chartEyebrow', label: 'Grafik bölüm etiketi', group: 'Grafik', hint: 'Stats altındaki 7-günlük bar chart\'ın üst etiketi. Örnek: "Günlük dağılım".' },
+    { key: 'chartTitle', label: 'Grafik başlığı', group: 'Grafik', hint: 'Bar chart\'ın altındaki kısa açıklama — peak gün vurgusu. Örnek: "Cumartesi günü zirve yaptın."' },
+    { key: 'quotesEyebrow', label: 'Alıntılar bölüm etiketi', group: 'Alıntılar', hint: 'Bar chart altındaki 3-quote galerisinin üst etiketi. Örnek: "Bu haftanın sözleri".' },
+    { key: 'aspectFood', label: '"Yemek" aspect etiketi', group: 'Alıntılar', hint: 'Sentiment aspect score 3-grid\'in 1. hücresi. Sayısal score altında. Örnek: "Yemek".' },
+    { key: 'aspectService', label: '"Servis" aspect etiketi', group: 'Alıntılar', hint: 'Sentiment aspect score 3-grid\'in 2. hücresi. Örnek: "Servis".' },
+    { key: 'aspectAtm', label: '"Atmosfer" aspect etiketi', group: 'Alıntılar', hint: 'Sentiment aspect score 3-grid\'in 3. hücresi. Örnek: "Atmosfer".' },
+    { key: 'cta', label: 'Birincil CTA', group: 'Footer', hint: 'Mail\'in altındaki büyük lime buton — dashboard\'a yönlendirir. Örnek: "Panele git →".' },
+    { key: 'detailLabel', label: 'Detay kart başlığı', group: 'Footer', hint: 'CTA üstündeki lime-soft side-by-side kart\'ın başlığı. Örnek: "Detaylı analiz seni bekliyor."' },
+    { key: 'detailSub', label: 'Detay kart açıklaması', group: 'Footer', multiline: true, hint: 'Detay kartının başlık altındaki gri açıklama metni. Örnek: "Heatmap, sentiment ve aspect kırılımı panelde."' },
   ],
   'customer-reply': [
-    { key: 'headerEyebrow', label: 'Üst eyebrow', hint: '"Sana özel · Kişisel yanıt"' },
-    { key: 'ownerLabel', label: 'İşletmeci rozeti', hint: '"İŞLETMECİ"' },
-    { key: 'titleA', label: 'Başlık 1. parça', hint: '"${customerFirstName},"', placeholders: MAIL_PLACEHOLDERS['customer-reply'] },
-    { key: 'titleSubA', label: 'Başlık 2. parça', hint: '"bizi"' },
-    { key: 'titleSubItalic', label: 'Başlık italic kelime', hint: '"duyduğun için"' },
-    { key: 'titleSubB', label: 'Başlık 4. parça', hint: '"teşekkürler"' },
-    { key: 'actionsEyebrow', label: 'Aksiyonlar kart etiketi' },
-    { key: 'couponEyebrow', label: 'Kupon kart etiketi' },
-    { key: 'couponTitle', label: 'Kupon başlığı', multiline: true, placeholders: MAIL_PLACEHOLDERS['customer-reply'] },
-    { key: 'couponDescDefault', label: 'Kupon açıklaması (default)', multiline: true },
-    { key: 'couponLabelDefault', label: 'Kupon kod etiketi' },
-    { key: 'daysSuffix', label: 'Gün sayısı suffix', hint: '"gün"' },
-    { key: 'callEyebrow', label: 'Telefon kart etiketi' },
-    { key: 'mapsEyebrow', label: 'Yol tarifi kart etiketi' },
-    { key: 'sentLine', label: 'Footer Buaze disclosure 1', locked: true, lockReason: 'KVKK / GDPR: Buaze gönderim açıklaması — şeffaflık zorunluluğu' },
-    { key: 'sentSuffix', label: 'Footer Buaze disclosure 2', locked: true, lockReason: 'KVKK / GDPR: Buaze gönderim açıklaması — şeffaflık zorunluluğu' },
+    { key: 'headerEyebrow', label: 'Üst eyebrow', group: 'Etiketler', hint: 'Hero kartı üstündeki lime-soft bandın etiketi. Örnek: "Sana özel · Kişisel yanıt".' },
+    { key: 'ownerLabel', label: 'İşletmeci rozeti', group: 'Etiketler', hint: 'Restoran kartında, işletmeci avatar harfinin altındaki küçük mono rozet. Örnek: "İŞLETMECİ".' },
+    { key: 'titleA', label: 'Başlık 1. parça', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['customer-reply'], hint: 'Hero büyük başlığın 1. parçası — virgüllü selamlama. "${customerFirstName}" runtime\'da müşteri ismiyle dolar. Örnek: "${customerFirstName},".' },
+    { key: 'titleSubA', label: 'Başlık 2. parça', group: 'Başlık', hint: 'Başlığın selamlamadan sonraki 2. kelimesi/parçası. Örnek: "bizi".' },
+    { key: 'titleSubItalic', label: 'Başlık italic kelime', group: 'Başlık', hint: 'Başlığın ortasındaki italic vurgu kelimesi. Örnek: "duyduğun için".' },
+    { key: 'titleSubB', label: 'Başlık 4. parça', group: 'Başlık', hint: 'Başlığın son kelimesi. Örnek: "teşekkürler".' },
+    { key: 'actionsEyebrow', label: 'Aksiyonlar kart etiketi', group: 'Aksiyonlar', hint: 'Mektup gövdesinden sonraki "aldığımız aksiyonlar" listesinin üst etiketi. params.actions geçirilmediğinde tüm aksiyon kartı gizlenir. Örnek: "Aldığımız aksiyonlar".' },
+    { key: 'couponEyebrow', label: 'Kupon kart etiketi', group: 'Kupon', hint: 'Aksiyonlardan sonraki graphite kupon kartının üst etiketi. params.couponCode geçirilmediğinde kart gizlenir. Örnek: "Sana küçük bir özür".' },
+    { key: 'couponTitle', label: 'Kupon başlığı', group: 'Kupon', multiline: true, placeholders: MAIL_PLACEHOLDERS['customer-reply'], hint: 'Kupon kartının ana başlığı — kupon değerini söyler. \\n ile satır kırılır. Örnek: "Bir sonraki ziyaretinde\\nkahveler bizden."' },
+    { key: 'couponDescDefault', label: 'Kupon açıklaması (default)', group: 'Kupon', multiline: true, hint: 'Kupon kartının başlık altındaki açıklama metni — params.couponBody geçilmediğinde fallback. Örnek: "Aşağıdaki kodu kasada göster ..."' },
+    { key: 'couponLabelDefault', label: 'Kupon kod etiketi (default)', group: 'Kupon', hint: 'Kupon kodu satırının sol etiketi — params.couponLabel geçilmediğinde fallback. Örnek: "Kuponun".' },
+    { key: 'daysSuffix', label: 'Gün sayısı suffix', group: 'Kupon', hint: 'Kupon kodu satırının sağındaki "30 gün" suffix\'i. Sayı runtime\'da, bu sadece "gün" kelimesi. Örnek: "gün".' },
+    { key: 'callEyebrow', label: 'Telefon kartı etiketi', group: 'İletişim', hint: 'Mail sonundaki 2x1 iletişim grid\'inin sol kartı (telefon) etiketi. Örnek: "Direkt ara".' },
+    { key: 'mapsEyebrow', label: 'Yol tarifi kart etiketi', group: 'İletişim', hint: 'Mail sonundaki 2x1 iletişim grid\'inin sağ kartı (Maps) etiketi. Örnek: "Yol tarifi".' },
+    { key: 'sentLine', label: 'Footer Buaze disclosure 1', group: 'Footer', locked: true, lockReason: 'KVKK / GDPR: Buaze gönderim açıklaması — şeffaflık zorunluluğu', hint: 'Mail\'in en altındaki Buaze attribution satırının ilk parçası. Örnek: "Bu yanıt".' },
+    { key: 'sentSuffix', label: 'Footer Buaze disclosure 2', group: 'Footer', locked: true, lockReason: 'KVKK / GDPR: Buaze gönderim açıklaması — şeffaflık zorunluluğu', hint: 'Buaze attribution satırının "Buaze" link\'inden sonraki son parçası. Örnek: "ile gönderildi".' },
   ],
 };
 
@@ -317,10 +315,17 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
           <Mail size={20} strokeWidth={2} />
           {TEMPLATE_LABELS[templateKey] ?? templateKey} · {isEnglish ? 'English' : 'Türkçe'}
         </h1>
-        <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252]">
-          Aşağıdaki alanlar mailde görünür. Boş bıraktıkların kod-içi varsayılan
-          değer ile doldurulur. Değişikliklerin 1 dakika içinde tüm gönderimlerde aktif olur.
-        </p>
+        <div className="mt-2 space-y-1.5 text-[13px] sm:text-[14px] text-[#525252]">
+          <p>
+            Alanlar gruplara bölündü — her alanın yanında <strong>mailde nereye düştüğü</strong> açıklamalı.
+          </p>
+          <ul className="list-disc space-y-0.5 pl-5 text-[12px] text-[#737373]">
+            <li>Boş bıraktığın alanlar otomatik <strong>kod-içi varsayılan</strong> kullanır.</li>
+            <li>Değişiklikler <strong>1 dakika içinde</strong> tüm gönderimlere yansır (cache TTL).</li>
+            <li><code className="font-mono text-[11px]">{'${firstName}'}</code> gibi placeholder'lar runtime'da değişir — chip'lerden ekleyebilirsin.</li>
+            <li>Yanlışlıkla bozarsan <strong>"Geçmiş"</strong> butonundan eski sürümlere geri dönebilirsin.</li>
+          </ul>
+        </div>
       </div>
 
       {error && (
@@ -336,15 +341,45 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
         </div>
       ) : (
         <>
-          <div className="space-y-4 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-            {fields.map((f) => (
-              <MailFieldInput
-                key={f.key}
-                field={f}
-                value={content[f.key] ?? ''}
-                onChange={(next) => setContent((c) => ({ ...c, [f.key]: next }))}
-              />
-            ))}
+          <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
+            {(() => {
+              // Group fields by `group` while preserving original order.
+              // Fields without a group fall into a single "Diğer" bucket
+              // so legacy templates don't break.
+              const groups: Array<{ name: string; items: typeof fields }> = [];
+              for (const f of fields) {
+                const name = f.group ?? 'Diğer';
+                let g = groups.find((x) => x.name === name);
+                if (!g) {
+                  g = { name, items: [] };
+                  groups.push(g);
+                }
+                g.items.push(f);
+              }
+              return groups.map((g, i) => (
+                <section
+                  key={g.name}
+                  className={i === 0 ? '' : 'mt-6 border-t border-[#EDEDED] pt-6'}
+                >
+                  <h3 className="mb-3 flex items-baseline gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-[#525252]">
+                    <span>{g.name}</span>
+                    <span className="text-[10px] font-normal tracking-normal text-[#9CA3AF] normal-case">
+                      · {g.items.length} alan
+                    </span>
+                  </h3>
+                  <div className="space-y-4">
+                    {g.items.map((f) => (
+                      <MailFieldInput
+                        key={f.key}
+                        field={f}
+                        value={content[f.key] ?? ''}
+                        onChange={(next) => setContent((c) => ({ ...c, [f.key]: next }))}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ));
+            })()}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">

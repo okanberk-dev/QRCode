@@ -21,20 +21,20 @@ const VARIANTS: Array<{ key: FormType; label: string }> = [
 // admin should touch; structural arrays (`timeline`) and ticket prefix
 // stay in code.
 const VARIANT_FIELDS: MailFieldDef[] = [
-  { key: 'subject', label: 'Mail subject', placeholders: MAIL_PLACEHOLDERS['form-confirmation'] },
-  { key: 'preheader', label: 'Inbox preview', hint: 'Mail listesinde subject altında görünür', placeholders: MAIL_PLACEHOLDERS['form-confirmation'] },
-  { key: 'eyebrow', label: 'Eyebrow', hint: 'Üst köşedeki etiket — örn. "İletişim · Onay"' },
-  { key: 'titleA', label: 'Başlık 1. parça', hint: '"Aldık"', placeholders: MAIL_PLACEHOLDERS['form-confirmation'] },
-  { key: 'titleB', label: 'Başlık 2. parça', hint: '"Sıradayız."' },
-  { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['form-confirmation'] },
-  { key: 'formEyebrow', label: 'Form özet kart etiketi' },
-  { key: 'timelineEyebrow', label: 'Timeline bölüm etiketi' },
-  { key: 'sideEyebrowA', label: 'Sol kart etiketi (A)' },
-  { key: 'sideBodyA', label: 'Sol kart metni (A)', multiline: true },
-  { key: 'sideCtaA', label: 'Sol kart link (A)' },
-  { key: 'sideEyebrowB', label: 'Sağ kart etiketi (B)' },
-  { key: 'sideBodyB', label: 'Sağ kart metni (B)', multiline: true },
-  { key: 'sideCtaB', label: 'Sağ kart link (B)' },
+  { key: 'subject', label: 'Mail subject', group: 'Mail metadata', placeholders: MAIL_PLACEHOLDERS['form-confirmation'], hint: 'Inbox\'ta görünen mail başlığı (üst satır). Gmail ≥70 karakteri kestiği için kısa tut. Örnek: "Mesajını aldık — 24 saat içinde döneceğiz".' },
+  { key: 'preheader', label: 'Inbox preview metni', group: 'Mail metadata', placeholders: MAIL_PLACEHOLDERS['form-confirmation'], hint: 'Subject\'in hemen altında görünen küçük gri özet metni (mail açılmadan görünür). Örnek: "Talebin sıraya alındı. İşte özet."' },
+  { key: 'eyebrow', label: 'Hero eyebrow', group: 'Başlık', hint: 'Hero kartının üst köşesindeki küçük mono etiket — variant tipini belirtir. Örnek: "İletişim · Onay".' },
+  { key: 'titleA', label: 'Başlık 1. parça', group: 'Başlık', placeholders: MAIL_PLACEHOLDERS['form-confirmation'], hint: 'Hero büyük başlığın 1. satırı — geçmiş zamanlı kısa cümle. Örnek: "Aldık".' },
+  { key: 'titleB', label: 'Başlık 2. parça', group: 'Başlık', hint: 'Hero büyük başlığın 2. satırı — italic vurgu. Örnek: "Sıradayız."' },
+  { key: 'intro', label: 'Giriş paragrafı', group: 'Başlık', multiline: true, placeholders: MAIL_PLACEHOLDERS['form-confirmation'], hint: 'Hero altındaki açıklama — 1-2 cümle. Sürecin ne kadar süreceğini söyler. Örnek: "Mesajın ekibimize ulaştı. Genelde 24 saat içinde dönüyoruz ..."' },
+  { key: 'formEyebrow', label: 'Form özet kart etiketi', group: 'Form', hint: 'Kullanıcının doldurduğu form özetinin üst etiketi — sender\'ın geçirdiği "details" array\'i bunun altında render edilir. Örnek: "Form kaydı".' },
+  { key: 'timelineEyebrow', label: 'Timeline bölüm etiketi', group: 'Timeline', hint: 'Form özetinden sonra "ne olacak" timeline\'ının üst etiketi. Timeline içeriği kod tarafında structural array. Örnek: "Sırada ne var".' },
+  { key: 'sideEyebrowA', label: 'Sol yan kart etiketi', group: 'Yan kart A', hint: 'Mail\'in alt kısmındaki 2-kart grid\'inin sol kartının üst etiketi. Örnek: "Acil durum".' },
+  { key: 'sideBodyA', label: 'Sol yan kart metni', group: 'Yan kart A', multiline: true, hint: 'Sol kartın açıklama metni — kullanıcıya alternatif/ek bilgi. Örnek: "Daha hızlı destek için canlı sohbeti kullanabilirsin."' },
+  { key: 'sideCtaA', label: 'Sol yan kart link', group: 'Yan kart A', hint: 'Sol kartın altındaki link metni — variant\'a göre uygun sayfaya yönlendirir. Örnek: "Sohbeti aç →".' },
+  { key: 'sideEyebrowB', label: 'Sağ yan kart etiketi', group: 'Yan kart B', hint: '2-kart grid\'inin sağ kartının üst etiketi. Örnek: "Beklerken".' },
+  { key: 'sideBodyB', label: 'Sağ yan kart metni', group: 'Yan kart B', multiline: true, hint: 'Sağ kartın açıklama metni — genellikle pasif değer önerisi (demo, ürün turu). Örnek: "10 dakikalık ürün turu — kayıt olmadan."' },
+  { key: 'sideCtaB', label: 'Sağ yan kart link', group: 'Yan kart B', hint: 'Sağ kartın altındaki link metni. Örnek: "Ürün turunu izle →".' },
 ];
 
 interface Props {
@@ -206,9 +206,16 @@ export default function FormConfirmationEditor({ locale }: Props) {
           <Mail size={20} strokeWidth={2} />
           Form onayı · {isEnglish ? 'English' : 'Türkçe'}
         </h1>
-        <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252]">
-          4 form tipi (İletişim · Kariyer · ROI · Bülten) için ayrı içerik. Sekmeler arasında geçiş yap, her birinin alanlarını düzenle, sonra "Kaydet" tüm 4 variant'ı tek seferde DB'ye yazar.
-        </p>
+        <div className="mt-2 space-y-1.5 text-[13px] sm:text-[14px] text-[#525252]">
+          <p>
+            <strong>4 form tipi</strong> (İletişim · Kariyer · ROI · Bülten) için ayrı içerik. Aşağıdaki sekmelerden birini seç, alanları düzenle, sonra "Kaydet" <strong>4 variant'ın hepsini tek seferde</strong> DB'ye yazar.
+          </p>
+          <ul className="list-disc space-y-0.5 pl-5 text-[12px] text-[#737373]">
+            <li>Her variant'ın <strong>kendi alanları</strong> var — bir variant'ı düzenlerken diğerleri etkilenmez.</li>
+            <li>Boş bıraktığın alanlar <strong>kod-içi varsayılan</strong> kullanır; değişiklikler 1 dakika içinde aktif olur.</li>
+            <li>Yanlış olursa <strong>"Geçmiş"</strong> butonundan eski sürümlere dönebilirsin.</li>
+          </ul>
+        </div>
       </div>
 
       {error && (
@@ -246,16 +253,43 @@ export default function FormConfirmationEditor({ locale }: Props) {
             </div>
           </div>
 
-          {/* Active variant fields */}
-          <div className="space-y-4 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-            {VARIANT_FIELDS.map((f) => (
-              <MailFieldInput
-                key={`${activeVariant}:${f.key}`}
-                field={f}
-                value={nested[activeVariant]?.[f.key] ?? ''}
-                onChange={(next) => updateField(activeVariant, f.key, next)}
-              />
-            ))}
+          {/* Active variant fields — grouped */}
+          <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
+            {(() => {
+              const groups: Array<{ name: string; items: typeof VARIANT_FIELDS }> = [];
+              for (const f of VARIANT_FIELDS) {
+                const name = f.group ?? 'Diğer';
+                let g = groups.find((x) => x.name === name);
+                if (!g) {
+                  g = { name, items: [] };
+                  groups.push(g);
+                }
+                g.items.push(f);
+              }
+              return groups.map((g, i) => (
+                <section
+                  key={g.name}
+                  className={i === 0 ? '' : 'mt-6 border-t border-[#EDEDED] pt-6'}
+                >
+                  <h3 className="mb-3 flex items-baseline gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-[#525252]">
+                    <span>{g.name}</span>
+                    <span className="text-[10px] font-normal tracking-normal text-[#9CA3AF] normal-case">
+                      · {g.items.length} alan
+                    </span>
+                  </h3>
+                  <div className="space-y-4">
+                    {g.items.map((f) => (
+                      <MailFieldInput
+                        key={`${activeVariant}:${f.key}`}
+                        field={f}
+                        value={nested[activeVariant]?.[f.key] ?? ''}
+                        onChange={(next) => updateField(activeVariant, f.key, next)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ));
+            })()}
           </div>
 
           {/* Actions */}

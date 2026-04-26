@@ -1445,3 +1445,45 @@ CLI seed (`scripts/seed-mail-templates.ts`) lokal terminal + DB credential payla
 - Force tek tıkla otomatik recovery yok — manuel revert (kasıtlı disiplin)
 
 **CLI script**: `scripts/seed-mail-templates.ts` korundu, `MAIL_TEMPLATE_SEEDS`'ten import. Davranış: `mode='force'` ile aynı (full upsert, audit log YAZMAZ — bypass eder). CI/staging için kalır.
+
+### 21.35 Phase 9.5 — Editor UX overhaul (field grouping + hint quality)
+
+Phase 2-9 boyunca template editor'üne 50+ field eklendi. Bunlar flat liste olarak akıyordu — operatör scroll edip ne ne diye tahmin ediyordu. UX zayıflığı 2 vektörde: (1) hint coverage düşük (45%) ve muğlak ("İkincil link metni"); (2) field grouping yok, hero/footer/CTA field'ları karışık.
+
+**Değişiklikler**:
+
+`MailFieldDef.group?: string` — yeni opsiyonel alan (`src/components/admin/MailFieldInput.tsx`). Aynı `group` değeri olan field'lar editor'de tek bir section header altında render edilir.
+
+**Group şeması per template** (kanonik):
+
+| Template | Gruplar |
+|---|---|
+| welcome | Başlık · Adımlar · Aksiyon · Footer |
+| newsletter | Başlık · Bölümler · Footer · Aksiyon |
+| trial-ending | Başlık · Kullanım · Planlar · Aksiyon |
+| forgot-password | Başlık · Token kartı · Aksiyon · Meta · Güvenlik uyarısı |
+| low-rating-alert | Etiketler · Başlık · AI Co-Pilot · Hızlı aksiyon |
+| new-review | Etiket · Başlık · Aksiyon · Boş durum |
+| weekly-report | Başlık · İstatistikler · Grafik · Alıntılar · Footer |
+| customer-reply | Etiketler · Başlık · Aksiyonlar · Kupon · İletişim · Footer |
+| form-confirmation | Mail metadata · Başlık · Form · Timeline · Yan kart A · Yan kart B |
+
+Group yoksa "Diğer" bucket'ına düşer (legacy fallback).
+
+**Hint standardı** — her field hint'i 3 bilgi içermeli:
+1. **Yer**: mailde hangi konum/bölüm? ("hero kartının sağ-üst köşesinde", "ECG divider sonrası ilk satır")
+2. **Bağlam**: ne ile yan yana? ("buton üstünde", "warning dot + bu text + timestamp")
+3. **Örnek**: tipik kullanım (`'"Hoş geldin · Sayı bir"'`)
+
+Tüm 50+ field hint'i bu pattern'e revize edildi. Locked field'lar için `lockReason` zaten vardı, korundu.
+
+**Sayfa açıklaması zenginleştirildi**:
+- Boş alan davranışı (kod-içi varsayılan)
+- Cache TTL (1 dakika)
+- Placeholder kullanımı (`${firstName}` vb.)
+- "Geçmiş" recovery yolu
+
+**Yeni template eklerken**:
+1. `FIELDS_BY_TEMPLATE` (veya `FormConfirmationEditor` `VARIANT_FIELDS`) entry
+2. Her field için: `key`, `label`, `group`, `hint` (3-bilgi standardı), opsiyonel `multiline`/`locked`/`placeholders`
+3. Yeni group adı varsa Turkce kanonik isim kullan (mevcut tablodaki style'a uy)
