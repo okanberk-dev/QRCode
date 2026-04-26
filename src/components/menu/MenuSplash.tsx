@@ -19,12 +19,23 @@ export default function MenuSplash({ name, accent, logoUrl, durationMs = 3000, o
   const doneRef = useRef(false);
 
   useEffect(() => {
+    // Respect OS-level reduced-motion preference: skip the 3-second splash
+    // entirely so users with vestibular sensitivity or screen readers go
+    // straight to the menu. The globals.css blanket disables the keyframes
+    // but a 3s blank wait would still feel broken.
+    const reduceMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const effectiveDuration = reduceMotion ? 0 : durationMs;
+
     const t = window.setTimeout(() => {
       if (!doneRef.current) {
         doneRef.current = true;
         onDone();
       }
-    }, durationMs);
+    }, effectiveDuration);
     return () => window.clearTimeout(t);
   }, [durationMs, onDone]);
 

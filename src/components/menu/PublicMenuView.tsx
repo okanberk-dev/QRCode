@@ -61,13 +61,18 @@ const BADGE_META: Record<MenuBadge, { tr: string; en: string; icon: typeof Flame
   glutensiz:   { tr: 'Glutensiz',     en: 'Gluten-Free',   icon: WheatOff, cls: 'bg-[#EAF9B8] text-[#0A0A0A]' },
 };
 
+// Single source of truth for the badge chip glyph size — keep icon size
+// equal to the surrounding text size (10px) so the chip renders crisply.
+// If chip text size changes, bump this in lockstep.
+const BADGE_ICON_SIZE = 10;
+
 function BadgeChip({ badge, locale }: { badge: string; locale: 'tr' | 'en' }) {
   const meta = BADGE_META[badge as MenuBadge];
   if (!meta) return null;
   const Icon = meta.icon;
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${meta.cls}`}>
-      <Icon size={10} strokeWidth={2} />
+      <Icon size={BADGE_ICON_SIZE} strokeWidth={2} />
       {meta[locale]}
     </span>
   );
@@ -82,7 +87,7 @@ function BadgeChipOnDark({ badge, locale, accent }: { badge: string; locale: 'tr
       className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/85"
       style={{ borderColor: `${accent}4D`, backgroundColor: `${accent}1A` }}
     >
-      <Icon size={10} strokeWidth={2} />
+      <Icon size={BADGE_ICON_SIZE} strokeWidth={2} />
       {meta[locale]}
     </span>
   );

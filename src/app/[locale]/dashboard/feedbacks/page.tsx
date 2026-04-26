@@ -603,7 +603,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                       onChange={(e) => setSendEmail(e.target.checked)}
                       className="h-4 w-4 accent-[#0A0A0A]"
                     />
-                    <Mail size={12} className="text-[#525252]" />
+                    <Mail size={12} className="text-current opacity-60" />
                     <span>
                       {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'}
                       <span className="ml-1 text-[#737373]">· {active.customerEmail}</span>

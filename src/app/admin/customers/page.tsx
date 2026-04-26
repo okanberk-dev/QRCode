@@ -248,7 +248,7 @@ export default function AdminCustomersPage() {
             ))}
           </select>
 
-          <div className="relative min-w-[200px] flex-1">
+          <div className="relative w-full flex-1 sm:w-auto sm:min-w-[200px]">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" strokeWidth={2} />
             <input
               value={search}

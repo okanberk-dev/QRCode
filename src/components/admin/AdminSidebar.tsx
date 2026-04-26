@@ -132,7 +132,10 @@ export default function AdminSidebar() {
           ? 'Manager'
           : 'İşletme Yetkilisi';
   const displayName = profile?.name || profile?.username || profile?.email?.split('@')[0] || 'Kullanıcı';
-  const initial = displayName.charAt(0).toUpperCase();
+  // Strip leading whitespace + non-printable chars before slicing — defends
+  // against sentinel-only display names (single space, etc.) that would
+  // otherwise render an empty avatar.
+  const initial = displayName.trim().charAt(0).toUpperCase() || '·';
   const trialInfo = profile?.plan === 'trial' ? getTrialInfo(profile?.trialEndsAt) : null;
 
   const workspaceName =
