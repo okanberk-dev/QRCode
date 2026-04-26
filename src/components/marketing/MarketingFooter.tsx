@@ -123,7 +123,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 : 'Google policies, QR tips, case studies. Once a week, never more.'}
             </p>
           </div>
-          <NewsletterSignup locale={locale} />
+          <NewsletterSignup locale={locale} source="footer" />
         </div>
       </div>
 

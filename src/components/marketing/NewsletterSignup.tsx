@@ -7,13 +7,16 @@ import RecaptchaNotice from '@/components/RecaptchaNotice';
 
 interface Props {
   locale: 'tr' | 'en';
+  /**
+   * Where the signup form lives. Stored on NewsletterSubscriber.source so the
+   * admin "Newsletter" filter can break down conversions by funnel. Defaults
+   * to "footer" since that's the only placement today; pass a different value
+   * (e.g. "popup", "blog_inline") when adding more entry points.
+   */
+  source?: string;
 }
 
-/**
- * Footer newsletter capture. Posts to `/api/newsletter`, which stores the
- * subscriber locally. A future provider integration can consume saved rows.
- */
-export default function NewsletterSignup({ locale }: Props) {
+export default function NewsletterSignup({ locale, source = 'footer' }: Props) {
   const isTr = locale === 'tr';
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
@@ -27,7 +30,7 @@ export default function NewsletterSignup({ locale }: Props) {
       const res = await fetch('/api/newsletter', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, locale, recaptchaToken }),
+        body: JSON.stringify({ email, locale, recaptchaToken, source }),
       });
       if (res.ok) setStatus('done');
       else setStatus('error');
@@ -47,7 +50,7 @@ export default function NewsletterSignup({ locale }: Props) {
             {isTr ? 'Süper! Kayıt oldunuz.' : "You're in. Thanks!"}
           </p>
           <p className="mt-0.5 text-[12px] text-[#525252]">
-            {isTr ? 'İlk e-posta pazartesi geliyor.' : "First email lands Monday."}
+            {isTr ? 'Hoş geldin maili gelen kutuna düştü.' : 'A welcome email is in your inbox.'}
           </p>
         </div>
       </div>

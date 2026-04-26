@@ -13,6 +13,7 @@ import {
   Inbox,
   LayoutDashboard,
   LogOut,
+  Mail,
   Megaphone,
   QrCode,
   Settings,
@@ -106,10 +107,24 @@ export default function AdminSidebar() {
       { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri', roles: ['superadmin'] },
       { href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler', roles: ['superadmin'] },
       { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler', roles: ['superadmin'] },
+      { href: '/admin/newsletters', icon: Mail, label: locale === 'en' ? 'Newsletter' : 'Bülten Aboneleri', roles: ['superadmin'] },
+      { href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Newsletter Campaigns' : 'Bülten Kampanyaları', roles: ['superadmin'] },
       { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog Yönetimi', roles: ['superadmin'] },
       { href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular', roles: ['superadmin'] },
       { href: '/admin/site-settings', icon: Settings, label: locale === 'en' ? 'Site Settings' : 'Site Ayarları', roles: ['superadmin'] },
     );
+
+    // Dev-only mail preview entry. Hidden in production builds (incl. Vercel
+    // preview deploys, where NODE_ENV is also 'production'). Lets a local dev
+    // open Pulse template renders + fire test mails to themselves.
+    if (process.env.NODE_ENV !== 'production') {
+      menuItems.push({
+        href: '/admin/dev/mail-preview',
+        icon: Mail,
+        label: locale === 'en' ? 'Mail Preview (dev)' : 'Mail Önizleme (dev)',
+        roles: ['superadmin'],
+      });
+    }
   }
 
   menuItems.push({

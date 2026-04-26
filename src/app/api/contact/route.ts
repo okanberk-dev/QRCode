@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMail } from '@/lib/email';
+import { sendMail, sendFormConfirmationEmail } from '@/lib/email';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 // Must stay in sync with ContactForm.tsx — form under this dwell time is bot-like.
@@ -68,6 +68,16 @@ export async function POST(req: NextRequest) {
     });
 
     if (!success) throw new Error('Mail sending failed');
+
+    // User-facing confirmation — fire and forget; the contact submission
+    // already succeeded internally, no reason to fail the request if this
+    // hiccups.
+    void sendFormConfirmationEmail({
+      to: email,
+      formType: 'contact',
+      name,
+      details: business ? [{ label: 'İşletme', value: String(business) }] : undefined,
+    }).catch((err) => console.error('[contact] confirmation mail failed', err));
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

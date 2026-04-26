@@ -464,3 +464,228 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 - `npx tsc --noEmit` temiz
 - Hero açıldığında: 600ms sonra chart lime çizgisi sağa doğru çizilir + 1,284'e kadar sayar + "+184%" badge sağ üstte float eder + canlı dot pulse + 2 review sırayla fade-up
 - `prefers-reduced-motion: reduce` — chart anında tam gözükür, sayı direkt final değerde, float badge sabit kalır, pulse durur
+
+
+---
+
+## Phase 16 — Pulse Mail System & Newsletter Cron (2026-04)
+
+**Kapsam:** Claude Design "buaze-mail" handoff bundle'ı (9 Pulse mail template'i: forgot-password, welcome, form-confirmation, low-rating-alert, new-review, weekly-report, newsletter, customer-reply, trial-ending) Buaze mail katmanına entegre edildi. Eski neo-brutalist `SHARED_LAYOUT` kaldırıldı. Aylık marketing newsletter cron'u kuruldu, admin panelinde mobil-uyumlu bülten abone yönetim sayfası açıldı.
+
+**Referans:** `/tmp/design-pkg/buaze-mail/project/emails/*.jsx` (handoff bundle, repo'ya kopyalanmadı). `shared.jsx` PULSE token'ları + `BuazeLogo`, `EcgDivider`, `EmailFrame`, `EmailHeader`, `EmailFooter`, `Button`, `Eyebrow`, `H1/H2/P`.
+
+**Yeni dosyalar:**
+- `src/lib/email/tokens.ts` — PULSE color object + FONTS + Instagram handle
+- `src/lib/email/escape.ts` — HTML escape (mevcut helper taşındı)
+- `src/lib/email/layout.ts` — `pulseLayout()` table-based mobile-first skeleton
+- `src/lib/email/components.ts` — HTML string builder'lar (logo / header / footer / button / star row / stat grid / typography)
+- `src/lib/email/templates/{forgot-password,welcome,form-confirmation,low-rating-alert,new-review,weekly-report,newsletter,customer-reply,trial-ending}.ts` (+ `index.ts`)
+- `src/app/api/cron/monthly-newsletter/route.ts` — `0 9 1 * *` Vercel cron, Resend rate limit 120ms throttle, `unsubscribeToken` backfill
+- `src/app/api/newsletter/unsubscribe/route.ts` — GET token-based unsubscribe + Pulse stilinde standalone HTML response
+- `src/app/api/admin/newsletters/route.ts` (GET list) + `export/route.ts` (CSV) + `trigger/route.ts` (manuel cron tetikleme, superadmin only)
+- `src/app/admin/newsletters/page.tsx` — mobil-uyumlu liste sayfası (`/admin/customers` pattern'i clone, desktop table + mobile cards, 4-sütun summary card grid mobile 2-col)
+
+**Değişen dosyalar:**
+- `prisma/schema.prisma` — `NewsletterSubscriber.unsubscribeToken String? @unique` eklendi (deploy build script `prisma db push` otomatik sync)
+- `src/lib/email.ts` — `EMAIL_STYLES` + `SHARED_LAYOUT` silindi (~70 satır), template helper'larına plug. Yeni public sender'lar: `sendWelcomeEmail`, `sendFormConfirmationEmail`, `sendCustomerReplyEmail`, `sendTrialEndingEmail`, `sendNewsletterEmail`. `getUnsubscribeUrl(token)` utility eklendi.
+- `src/app/api/newsletter/route.ts` — POST upsert'inde `crypto.randomBytes(24).toString('hex')` ile yeni token üretimi
+- `src/components/admin/AdminSidebar.tsx` — superadmin section'a `Mail` ikonlu "Bülten Aboneleri" / "Newsletter" satırı
+- `vercel.json` — `monthly-newsletter` cron entry
+- Mevcut akış entegrasyonları: `auth/register` → welcome, `contact` + `careers/apply` + `roi/save` → form-confirmation (locale TR/EN), `feedback/[id]/reply` → customer-reply (Pulse), `feedback` notif → low-rating-alert (≤3★) / new-review (≥4★)
+- `CLAUDE.md` — yeni §21 "Pulse Mail System" bölümü
+
+**Mobile-first email teknikleri (kritik):**
+- Tüm template'ler `<table>`-based (Outlook flex/grid desteklemez)
+- `@media (max-width:600px)` tek breakpoint: `td.stack-col` mobile'da `display:block;width:100%`
+- Min font-size 14px (iOS auto-zoom önleme), buton min `padding:14px 24px` (44px touch target)
+- Hidden preheader: `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">`
+- Google Fonts `@import` + Outlook fallback Arial (`<!--[if mso]>` conditional)
+
+**KVKK / Unsubscribe:**
+- Token-based unsubscribe (her abonede `unsubscribeToken @unique`); cron mailinde `getUnsubscribeUrl(token)` footer link
+- `/api/newsletter/unsubscribe?token=...` GET → idempotent, Pulse stilinde TR/EN HTML confirmation
+- Aboneliği iptal eden satır cron listede artık yok (`unsubscribedAt: { not: null }`)
+
+**Backend etkisi:**
+- `prisma db push` deploy'da çalıştığında `unsubscribe_token` kolonu eklenir (mevcut satırlar null kalır, cron ilk çağrıda backfill eder)
+- 9 yeni public sender + 1 yeni cron path = build-time ekstra ~3 KB JS
+- Resend rate limit (10/sn) için 120 ms throttle; 1000 abonede ~2 dakika sürer (Vercel function timeout 300 sn limiti dahilinde)
+
+**Verification:**
+- `npx tsc --noEmit -p tsconfig.json` temiz
+- `node -e "Object.keys(require('@prisma/client').Prisma.NewsletterSubscriberScalarFieldEnum)"` — `unsubscribeToken` listede
+- Lokal email preview: dev'de `?template=welcome&locale=tr` query ile her 9 template'i 375px viewport'ta kontrol (manual)
+- Resend gerçek gönderim: kendi adresine 9 mail (iPhone Mail + Gmail Web + Gmail iOS app + Outlook Web; özellikle 2-sütun layout'lar mobile'da tek sütun stack)
+- Newsletter end-to-end: signup → DB token → manual cron tetikle → mail al → unsubscribe link → DB `unsubscribed_at` dolu → 2. cron'da o satır yok
+- Admin UI: 1440px masaüstü tablo + 375px mobile cards; "CSV İndir" UTF-8 BOM
+
+---
+
+## Phase 16.1 — Pixel-Perfect Mail Audit + Source Tracking + Trial Cron (2026-04)
+
+**Kapsam:** Phase 16'da implement edilen 9 Pulse mail template'i, JSX prototipleri ile yeniden birebir hizalandı (kullanıcı "maksimum pixel-perfect" istedi). Source tracking aktif edildi. Trial reminder cron kuruldu. `.env.example` + cron logging + onboarding mail iyileştirildi.
+
+**Referans:** `/tmp/design-pkg/buaze-mail/project/emails/*.jsx` (handoff bundle, repo'ya kopyalanmadı).
+
+**Yeni dosyalar:**
+- `src/app/api/cron/trial-reminders/route.ts` — günlük 09:00 UTC, `Bearer CRON_SECRET`, 1-4 gün trial pencere, `User.lastTrialReminderAt` dedup, son 14 gün usage stats
+
+**Değişen dosyalar:**
+- `prisma/schema.prisma` — `User.lastTrialReminderAt DateTime?` (deploy build script `prisma db push` otomatik sync)
+- `src/lib/email/components.ts` — yeni helper'lar: `renderBadge` (MSO conditional `<v:rect>`-aware), `renderTwoColCards`, `renderBarChart`, `renderAvatarCircle`, `renderQuoteCard`, `renderTimeline`, `renderStatusPill`
+- `src/lib/email/layout.ts` — media query'ler: `.col-half`, `.grid-4 td.cell`, `.badge-absolute`, `.bar-chart td` (mobilde stack/inline-block)
+- `src/lib/email/templates/{forgot-password,welcome,form-confirmation,low-rating-alert,new-review,weekly-report,newsletter,customer-reply,trial-ending}.ts` — 9 dosya pixel-perfect rewrite
+- `src/components/marketing/NewsletterSignup.tsx` — `source?: string` prop (default `'footer'`)
+- `src/components/marketing/MarketingFooter.tsx` — `<NewsletterSignup source="footer" />` explicit
+- `vercel.json` — `trial-reminders` cron entry
+- `.env.example` — `CRON_SECRET` documented (was missing)
+- `src/app/api/cron/monthly-newsletter/route.ts` — structured fail logging (subscriber bağlamı dahil)
+- `src/app/api/onboarding/complete/route.ts` — Pulse layout sarmalı
+- `CLAUDE.md` — §21.9–21.12 (audit + source tracking + trial cron + cron paths)
+
+**Pixel-perfect kayıplar onarıldı:**
+- forgot-password: 2x2 meta grid + status pill + token URL display
+- welcome: done/current/pending step states + "İlk gün için" 4-card grid + demo CTA
+- form-confirmation: animated check + timeline + 2 alt cards (formType-specific)
+- low-rating-alert: alert bar + avatar review card + tags + AI Co-Pilot editor + quick actions
+- new-review: gradient quote card (MSO fallback) + avatar + 2 CTAs + status pill
+- weekly-report: 3 delta'lı stat hero + 7-gün bar chart + 3-quote gallery + side-by-side CTA
+- newsletter: dark featured card + code block + numbered list + stats band
+- customer-reply: lime-soft hero + restaurant card + 3 action items + coupon split + 2x2 contact grid
+- trial-ending: warning eyebrow + 4-col usage grid + "Pulse Starter/Pro" plan cards + **MSO-aware "ÖNERİLEN" badge** + secondary link
+
+**Email rendering teknikleri:**
+- `position: absolute` badge → MSO `<!--[if mso]>` ile inline fallback, non-Outlook'ta absolute div + `@media (max-width:600px) .badge-absolute { position:static; }` mobile collapse
+- `linear-gradient(...)` → `<!--[if mso]>` solid `bgcolor` fallback + non-Outlook `background-image`
+- Live countdown ("29:48 kaldı") → statik "Aktif · 30 dk geçerli" + status pill
+- CSS animation (pulse dot, scale) → statik dot + StatusPill helper
+- 4-col stat grid → `<table class="grid-4">` + `td.cell` 25% desktop, mobilde `inline-block 50%`
+
+**Source tracking:**
+- `NewsletterSubscriber.source` artık her abonede `'footer'` (default). Yeni kayıt yolları eklenirse farklı string geçer.
+- Admin newsletter sayfasındaki Kaynak filter dropdown'ı dinamik distinct count gösterir.
+- Performans: tek string body alanı, mevcut upsert flow korundu, ek query yok.
+
+**Trial reminder cron:**
+- Schedule `0 9 * * *` (günlük 09:00 UTC) → 1+2+3+4 gün eşiklerini aynı cron yakalar
+- Dedup: `lastTrialReminderAt < now() - 20h` (cron 24-saat aralık → her gün max 1 mail/user)
+- Usage: 14-day rolling vs prior 14-day (growth %), avg rating, total feedback, reply count
+- 120ms throttle (Resend rate limit safety)
+
+**Backend etkisi:**
+- `prisma db push` deploy'da `last_trial_reminder_at` kolon eklenir (nullable, default null — veri kaybı yok)
+- 7 yeni HTML helper, ~1900 satır rewrite, build-time +5 KB JS
+- Cron `vercel.json` 4 path'e çıktı (önceki 3 + trial-reminders)
+
+**Verification:**
+- `npx tsc --noEmit -p tsconfig.json` zero error
+- `npx prisma generate` `lastTrialReminderAt` Prisma client'ında tanır
+- Mevcut 4 e-posta tetikleyici akışı (register, contact, careers, roi, feedback reply, weekly digest, monthly newsletter, forgot password, onboarding complete) yeni helper'lara plug edildi — interface breaking change yok
+
+---
+
+## Phase 16.2 — Post-deploy hotfix + risk düzeltmeleri (2026-04)
+
+**Kapsam:** Phase 16.1 deploy sonrası ortaya çıkan 2 production sorunu + 2 retroaktif risk düzeltmesi.
+
+### Production fixes
+
+1. **Admin "Şimdi gönder" 502 cron_failed**
+   - **Kök sebep**: `/api/admin/newsletters/trigger` HTTP üzerinden `/api/cron/monthly-newsletter` fetch ediyordu. Vercel serverless self-fetch cold start + 10s gateway timeout = 502.
+   - **Fix**: Cron logic'i `runMonthlyNewsletter()` adlı export'lu helper'a çıkarıldı. Trigger artık doğrudan invoke ediyor (HTTP yok). `maxDuration: 60` explicit set.
+   - **Anti-pattern documented**: CLAUDE.md §21.13 — gelecekte cron tetiklemesi için referans.
+
+2. **Recharts `width(-1)` console warning**
+   - **Kök sebep**: TrendsChart + DayDistributionChart `flex-col + flex-1` sandwich layout, ResponsiveContainer'ın ResizeObserver ölçümü -1 dönüyordu.
+   - **Fix**: Wrapper div kaldırıldı, ResponsiveContainer fixed-height parent'ın doğrudan child'ı.
+   - **Pattern documented**: CLAUDE.md §21.14.
+
+### Retroactive risk fixes
+
+3. **Trial cron 4 mail → 2 mail** (Risk #1)
+   - **Sorun**: 4-gün penceresi + 20-saat dedup = kullanıcı 4 farklı gün → 4 mail. Spam algısı.
+   - **Fix**: `TRIAL_REMINDER_DAYS = [1, 3]` constant — sadece 3 gün (decision window) ve 1 gün (last call) eşiklerinde mail. SQL window 4 güne kadar geniş kalıyor (race condition güvenliği), precise filter handler'da. Toplam: trial başına max 2 mail.
+
+4. **Trial cron `aiReplies` misleading count → null** (Risk #2)
+   - **Sorun**: `prisma.feedbackReply.count` AI vs manual ayırt etmiyordu. Trial-ending mailinde "38 AI yanıt" yazıyordu ama gerçekte tüm reply'ları sayıyordu (chef Slack notları dahil).
+   - **Fix**: `aiReplies = null` döndür. Template "—" gösterir. Gerçek metrik için `FeedbackReply.source` field'ı eklenmesi lazım (ayrı PR scope).
+
+### Değişen dosyalar
+
+- `src/app/api/cron/monthly-newsletter/route.ts` — `runMonthlyNewsletter()` export
+- `src/app/api/admin/newsletters/trigger/route.ts` — direct invoke, `maxDuration: 60`
+- `src/app/api/cron/trial-reminders/route.ts` — `TRIAL_REMINDER_DAYS = [1, 3]`, `aiReplies = null`
+- `src/components/admin/TrendsChart.tsx` — flex sandwich kaldırıldı
+- `src/components/admin/DayDistributionChart.tsx` — flex sandwich kaldırıldı
+- `CLAUDE.md` §21.11 (trial cron yeni mantık), §21.13 (self-fetch anti-pattern), §21.14 (recharts pattern)
+
+### Backend etkisi
+
+- `runMonthlyNewsletter` ortak helper'ı 2 endpoint'ten invoke ediliyor; abone listesinde değişiklik yok.
+- Trial cron schedule değişmedi (`0 9 * * *`); sadece içerideki day filter daraldı.
+- Recharts fix tamamen UI; chart data unchanged.
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- Admin paneldeki "Şimdi gönder" butonu ile gönderim cycle'ı tek HTTP yanıtında tamamlanır
+- Console'da artık `width(-1) and height(-1)` warning yok
+- Trial cron: lokal'de `User.trialEndsAt = now() + 2d` set et → cron mail atmaz (2 gün eşik değil); `+1d` veya `+3d` set et → mail atar
+
+---
+
+## Phase 16.3 — Open-item closure: FeedbackReply.source + NewsletterCampaign + Mail Preview + Source Tracking (2026-04)
+
+**Kapsam**: PR #68 sonrası "halen açık konular" tablosundaki 4 maddeyi kapatan iterasyon. Yeni branch `claude/pulse-mail-followups`, base `claude/analyze-codebase-dBomf` (PR #68 henüz merge'lenmemiş).
+
+### Item 1 — `FeedbackReply.source`
+
+- Schema: `source String? @default("manual")` — 'manual' | 'ai_copilot' | 'template_fallback'. `@@index([source, createdAt])`.
+- `/api/feedback/[id]/reply` artık body'den `source` alıyor; geçersiz değer `'manual'`'a düşer.
+- `/admin/reviews/page.tsx` ve `/[locale]/dashboard/feedbacks/page.tsx` — `aiSource` state'i `replySource` ile maple → POST body, send sonrası reset.
+- `/api/cron/trial-reminders/route.ts` — `aiReplies = null` kaldırıldı, gerçek `prisma.feedbackReply.count({ where: { source: 'ai_copilot', ... } })` query'si açıldı (`.catch(() => null)` graceful degradation).
+
+### Item 2 — `NewsletterCampaign` + admin compose UI
+
+- Yeni model `NewsletterCampaign` (title, intro, postIds[], locale, status, scheduledAt, sentAt, sentCount, failedCount)
+- API: `/api/admin/newsletters/campaigns` GET+POST, `/[id]` GET+PATCH+DELETE. Status mutability rules: `'sent'/'sending'` immutable, `'draft'` deletable, `'scheduled'` scheduledAt zorunlu.
+- Cron `runMonthlyNewsletter({ campaignId? })` — 3-tier precedence: explicit > scheduled > fallback static. Locale 'both' → her aboneye locale'ine göre filtreli posts.
+- `sendNewsletterEmail` + `renderNewsletter` — `customTitle`, `customIntro`, `customSubject` opsiyonel. Override edildiğinde lime-highlight stylelar düşer, plain title.
+- Admin UI: 3 yeni route + 1 ortak Editor component
+  - `/admin/newsletters/campaigns` (list) — desktop table + mobile cards
+  - `/admin/newsletters/campaigns/new` — yeni form
+  - `/admin/newsletters/campaigns/[id]` — edit form
+  - `NewsletterCampaignEditor.tsx` — title/intro/locale/posts/mode (Taslak/Zamanla/Şimdi gönder) + Preview + Test mail butonları
+- Trigger endpoint `/api/admin/newsletters/trigger` artık `{ campaignId }` body kabul ediyor.
+- Sidebar: "Bülten Kampanyaları" satırı (Megaphone icon, superadmin).
+
+### Item 3 — Mail visual smoke test
+
+- `/api/dev/email-preview?template=...&locale=...&format=html|text` (NODE_ENV gated)
+- `src/app/api/dev/email-preview/seeds.ts` — 9 template için realistic placeholder factory
+- `/admin/dev/mail-preview` — superadmin sayfası, 9 kart + locale toggle + Önizle + Test mail
+- `/api/admin/dev/send-test` POST — seed (veya newsletter compose override) ile admin'in kendi e-posta'sına gönderim
+- Sidebar "Mail Önizleme (dev)" satırı `NODE_ENV !== 'production'` gated
+- Newsletter compose form'undaki Önizle butonu DB'deki gerçek post'lar ile preview yapıyor
+
+### Item 4 — Source tracking pattern
+
+- `src/lib/newsletter-sources.ts` — `NEWSLETTER_SOURCE_LABELS` haritası + `getNewsletterSourceLabel()` helper
+- 7 hazır source: footer, popup, blog_inline, dashboard_invite, onboarding, roi_form, homepage_hero
+- Admin Kaynak filter + tablo + mobile cards artık label gösteriyor
+- CSV export'a `source_label` kolonu eklendi
+- CLAUDE.md §21.17'de yeni signup placement ekleme rehberi
+
+### Backend etkisi
+
+- `prisma db push` deploy'da: `feedback_replies.source`, `feedback_replies(source, created_at)` index, `newsletter_campaigns` tablosu sync edilir. Tümü nullable / default'lu, veri kaybı yok.
+- 11 yeni dosya, ~2400 LOC (700 schema/API, 800 UI, 600 mail preview, 300 helpers + docs)
+- Public sender imzaları korundu (newsletter sadece opsiyonel parametre eklendi)
+- Sadece superadmin yeni route'lara erişiyor; trial cron ve monthly cron mevcut Bearer ${CRON_SECRET} pattern'ini kullanmaya devam
+
+### Verification
+
+- `npx tsc --noEmit -p tsconfig.json` zero error
+- `npx prisma generate` `FeedbackReply.source` ve `NewsletterCampaign` ScalarFieldEnum'ları doğru
+- E2E lokal kontrol checklist (CLAUDE.md §21.15): 9 template browser + 4 mail client smoke test
+- NewsletterCampaign E2E: yeni kampanya + Şimdi gönder → sent status, sentCount dolu, scheduledAt geçen scheduled campaign cron'da yakalanıyor

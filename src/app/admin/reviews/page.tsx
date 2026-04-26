@@ -166,6 +166,17 @@ export default function AdminReviewsPage() {
     if (!active || !draft.trim()) return;
     setSending(true);
     const wantsEmail = sendEmail && Boolean(active.customerEmail);
+    // Map suggest-reply's `source` into the wire-format used by FeedbackReply.
+    // Operators who edit the AI text and send it still count as ai_copilot —
+    // that's the model surfaced AI took the first pass; analytics tracks it.
+    // If the operator typed the reply from scratch (`aiSource` null), we
+    // record manual.
+    const replySource =
+      aiSource === 'openai'
+        ? 'ai_copilot'
+        : aiSource === 'template' || aiSource === 'template-fallback'
+          ? 'template_fallback'
+          : 'manual';
     try {
       const res = await fetch(`/api/feedback/${active.id}/reply`, {
         method: 'POST',
@@ -175,6 +186,7 @@ export default function AdminReviewsPage() {
           channel: wantsEmail ? 'email' : 'internal',
           sendEmail: wantsEmail,
           locale,
+          source: replySource,
         }),
       });
       if (res.ok) {
