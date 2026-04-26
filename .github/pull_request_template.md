@@ -36,3 +36,12 @@
 ## Open questions
 
 <!-- Cevap bekleyen kararlar -->
+
+## Merge stratejisi
+
+<!-- Stacked PR pattern (CLAUDE.md §21.22) — eğer base main değilse belirt -->
+
+- [ ] Base = `main` (standalone)
+- [ ] Base = başka feature branch'i (stacked) — branch adı: `<branch>`
+  <!-- Kullanıcı bu PR'ı main'e merge ettiğinde tüm zincir gelir -->
+

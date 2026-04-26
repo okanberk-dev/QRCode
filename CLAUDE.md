@@ -846,16 +846,16 @@ Send başlamadan campaign `'sending'`, bitince `'sent'` + `sentAt` + counts. Eve
 
 ### 21.18 Vercel preview env'leri
 
-`prisma db push --accept-data-loss` her preview deploy'da çalışıyor (CLAUDE.md §14.1 build script). Bu nedenle **her Vercel preview branch'i için** `DATABASE_URL` + `DIRECT_URL` env var'ları set edilmeli.
+**Mevcut durum (2026-04 doğrulandı)**: Vercel'de **`DATABASE_URL`, `DIRECT_URL`, `CRON_SECRET`, `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`** Production + Preview + Development scope'larında set. **Yeni preview branch açıldığında ekstra konfigürasyon yok** — `prisma db push` build script'inde otomatik koşar, schema sync olur.
 
-**Preview için 2 yaklaşım**:
-1. **Production DB'yi paylaş** (mevcut default) — preview deploy üretim DB'sine yazıyor. Riski: schema değişikliği preview'da onay almadan prod'da etkili olur.
-2. **Supabase Branching** kullan — `supabase/` klasöründe `migrations/` varsa Vercel preview otomatik branch DB üretir. Bu repoda `supabase/` boş → branching atlanıyor (PR'larda Supabase Preview check `skipped` görünüyor, normal).
+**Mevcut DB topology**: production DB tek paylaşılan Supabase instance (preview deploy'lar da aynı DB'ye yazıyor). Supabase Branching aktif değil (`supabase/` klasörü boş → PR'larda `Supabase Preview` check `skipped` normal).
 
-**Mevcut deploy disiplini**: production DB tek paylaşılan instance. Schema değişiklikleri Pulse mail PR'larında nullable + default'lu eklendiği için backwards-compat ediyor — preview build'da DB'ye yeni kolon eklenir, prod kodu eski hâliyle bunu görmez (forward compat). Yine de:
-- **Yapma**: NOT NULL kolon eklemek (eski kayıt fail eder)
-- **Yapma**: kolonu silmek (eski kod fail eder)
-- **Yap**: Her schema değişikliği nullable + default'lu
+**Schema değişikliği yaparken** (preview deploy'un prod'u kırmaması için):
+- **Yapma**: NOT NULL kolon eklemek → eski koda yazan request fail eder
+- **Yapma**: kolonu silmek → eski kod o kolonu okumaya devam eder, fail
+- **Yap**: Her yeni kolon **nullable + default'lu**. Pulse mail PR'larında bu disiplin uygulandı (`FeedbackReply.source String? @default("manual")`, `User.lastTrialReminderAt DateTime?`, vb.)
+
+**Preview deploy paranoidliği gerekirse**: Supabase Branching aktif edilebilir (yeni `supabase/migrations/` klasörü + Vercel-Supabase integration ayarı) → her preview kendi izole DB'sini alır, prod etkilenmez. Şu anki ölçek için gereksiz.
 
 ### 21.19 GitHub Actions CI
 
@@ -891,5 +891,52 @@ Cron `'ai_copilot'` filter'ında zaten NULL'lar yer almıyor → backfill **opsi
 **Mevcut sources**: `footer`, `popup`, `blog_inline`, `dashboard_invite`, `onboarding`, `roi_form`, `homepage_hero`. Yeni eklemeler için CLAUDE.md'yi güncelle.
 
 **Helper**: `getNewsletterSourceLabel(source, locale)` — admin UI + CSV export'ta tek nokta.
+
+### 21.22 Stacked PR workflow (kanonik)
+
+**Hedef**: Kullanıcı bazen birden fazla PR aynı anda açık tutuyor. Sadece **en son PR'ı** main'e merge ettiğinde tüm önceki PR'ların değişiklikleri de gelmeli — manuel sıralı merge yapmak zorunda kalmamalı.
+
+**Yöntem — Stacked PR pattern**: Yeni branch açarken, eğer önceki feature branch'i hâlâ open PR'sa, **önceki branch'ten branch'le** (main'den değil). Yeni PR'ın base'i de önceki PR'ın head branch'i olur.
+
+```
+main
+ └─ feature-A  (PR #100, base=main)
+     └─ feature-B  (PR #101, base=feature-A)
+         └─ feature-C  (PR #102, base=feature-B)
+```
+
+**Kullanıcı PR #102'yi main'e merge ettiğinde**:
+- GitHub diff: A + B + C tüm commit'leri main'e gelir
+- PR #100 ve #101 otomatik `Closed` olarak işaretlenir (içerikleri main'de)
+- Status `Merged` değil `Closed` olur — ama kod main'e geçti, fonksiyonel olarak aynı
+
+**Yeni AI/dev session'u feature branch açarken yapması gereken**:
+
+1. Açık PR'ları kontrol et:
+   ```bash
+   git branch -r --no-merged origin/main | grep claude/
+   ```
+2. Eğer son commit'lediğin/PR'sı açık olan branch varsa → o branch'ten branch'le:
+   ```bash
+   git fetch origin <onceki-branch>
+   git checkout -b claude/<yeni-feature> origin/<onceki-branch>
+   ```
+3. Yeni PR açarken `mcp__github__create_pull_request`'te `base: '<onceki-branch>'` (main değil)
+4. PR description'da belirt: "Bu PR `<onceki-branch>` üzerine kuruludur. PR #<önceki> main'e merge'lenirse base otomatik main'e güncellenir."
+
+**Eğer önceki PR yoksa veya kullanıcı paralel iş istediğini söylüyorsa** → main'den branch'le, base=main yap (klasik akış).
+
+**Kontrol listesi (yeni feature branch öncesi)**:
+- [ ] `git fetch origin main` — main güncel mi?
+- [ ] Açık PR var mı? `gh pr list` veya GitHub UI'dan kontrol — yoksa `mcp__github__list_pull_requests`
+- [ ] Stacked PR pattern uygulanacak mı? (cevap genelde **evet**, kullanıcı tek-PR-merge konforu istiyor)
+- [ ] Branch ismi `claude/<scope>-<short-description>` formatında
+
+**Pulse mail iterasyonlarında uygulanan örnek**:
+- PR #68 base=main (`claude/analyze-codebase-dBomf`)
+- PR #69 base=`claude/analyze-codebase-dBomf` (`claude/pulse-mail-followups`) — stacked
+- PR #70 base=main (`claude/pulse-mail-hardening`) — #69 main'e merge edildikten sonra açıldığı için stack kırıldı, main'den branch'lendi
+
+**Squash merge yan etkisi**: Kullanıcı GitHub UI'da "Squash and merge" seçerse stacked PR'ların commit'leri tek commit'e sıkışır → individual blame info kaybolur. "Create a merge commit" veya "Rebase and merge" history'yi korur. Kullanıcı tercihi.
 
 
