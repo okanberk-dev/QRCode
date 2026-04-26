@@ -832,6 +832,21 @@ Tek dış bağımlılık yok; sadece Prisma + mevcut helper'lar.
 **Yeni Prisma modelleri:**
 - `CaseStudy` — `slug @unique, brand, sector, sectorEn, location, heroImage, heroTr/En, subtitleTr/En, stats Json, highlights Json, quoteTr/En, personName, personRole Json, isPublished, publishedAt`
 - `OnboardingProgress` — `userId @id, step Int, data Json?, completedAt` (UI kontratına hizalandı; scaffolding'deki 4 boolean kolon bu wizard'a uymuyordu)
+  - `data` JSON şeması (UI ↔ API sözleşmesi, `OnboardingState` ile birebir, bkz `src/app/[locale]/onboarding/page.tsx:27`):
+    ```ts
+    {
+      bizName: string;          // step 1 (profile)
+      contactName: string;      // step 1
+      phone: string;            // step 1
+      sector: string;           // step 2 (sector) — lowercase category slug
+      locationName: string;     // step 3 (location)
+      city: string;             // step 3
+      platforms: string[];      // step 4 — ['google','yemeksepeti','getir','trendyol_go']
+      qrTemplate: 'lime' | 'dark' | 'white' | 'minimal';  // step 5
+    }
+    ```
+  - `step Int` 1-5 arası adım sayacıdır; UI `currentIdx + 2` (next save) veya `currentIdx + 1` (skipLater) gönderir.
+  - `completedAt` sadece `/api/onboarding/complete` POST'unda set edilir; PATCH'ler dokunmaz.
 - `NewsletterSubscriber` — `email @unique, locale, source, ip, createdAt, unsubscribedAt`
 - `ROIRequest` — `email, restaurantName, tables, avgTicket Decimal, noShowRate, projection Json, ip, createdAt`
 

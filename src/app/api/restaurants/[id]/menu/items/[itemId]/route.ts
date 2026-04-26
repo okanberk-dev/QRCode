@@ -25,7 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (parsed.data.categoryId) {
     const cat = await prisma.menuCategory.findUnique({ where: { id: parsed.data.categoryId } });
-    if (!cat || cat.restaurantId !== id) {
+    if (!cat || cat.restaurantId !== id || cat.deletedAt) {
       return NextResponse.json({ error: 'Kategori bu restorana ait değil' }, { status: 400 });
     }
   }

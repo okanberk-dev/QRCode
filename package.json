@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push --accept-data-loss && next build",
+    "build": "node scripts/validate-env.js && prisma db push --accept-data-loss && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",

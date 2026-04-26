@@ -309,7 +309,18 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       data,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        // UI uses these flags to surface "feature unavailable" notices when
+        // schema sync hasn't happened yet (e.g. preview deploys, fresh DBs).
+        degraded:
+          !joinsAvailable || !tagsAvailable
+            ? { joins: !joinsAvailable, tags: !tagsAvailable }
+            : null,
+      },
     });
   } catch (error) {
     console.error('Failed to fetch feedback:', error);

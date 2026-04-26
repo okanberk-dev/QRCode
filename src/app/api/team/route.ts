@@ -63,10 +63,20 @@ export async function POST(req: NextRequest) {
 
   const role = body.role && VALID_ROLES.has(body.role) ? body.role : 'manager';
   const name = typeof body.name === 'string' ? body.name.trim().slice(0, 120) || null : null;
-  const locations =
-    Array.isArray(body.locations) && body.locations.every((x) => typeof x === 'string')
-      ? body.locations.slice(0, 40)
-      : null;
+
+  // locations is optional. When provided it must be a string[]. Anything
+  // else (object, single string, mixed array) is a client bug — fail loud
+  // instead of silently storing null.
+  let locations: string[] | null = null;
+  if (body.locations !== undefined && body.locations !== null) {
+    if (
+      !Array.isArray(body.locations) ||
+      !body.locations.every((x) => typeof x === 'string' && x.length <= 64)
+    ) {
+      return NextResponse.json({ error: 'invalid_locations' }, { status: 400 });
+    }
+    locations = body.locations.slice(0, 40);
+  }
 
   const member = await prisma.teamMember.upsert({
     where: { ownerId_email: { ownerId: actor.id, email } },

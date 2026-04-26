@@ -354,15 +354,19 @@ export function buildReplyTemplate(opts: {
   rating: number;
   locale: 'tr' | 'en';
 }): string {
+  // Intentionally bland & short: the goal is to give the user a starting
+  // skeleton when AI is unavailable, NOT to compete with OpenAI output.
+  // OpenAI replies are 2-4 personalized sentences; templates are one line
+  // so the difference is obvious in the UI (matches §15 "ŞABLON" badge UX).
   const { name, rating, locale } = opts;
   const firstName = (name ?? (locale === 'tr' ? 'Değerli müşterimiz' : 'Valued customer'))
     .split(' ')[0];
   if (locale === 'tr') {
     return rating >= 4
-      ? `Merhaba ${firstName}, değerli geri bildiriminiz için çok teşekkür ederiz. Yorumunuzu tüm ekibimize ileteceğiz — yeniden ağırlamak için sabırsızlanıyoruz.`
-      : `Merhaba ${firstName}, yaşadıklarınız için özür dileriz. Geri bildiriminiz doğrudan işletme yönetimine iletilecek; sizi tekrar ağırlamak ve bu deneyimi düzeltmek için fırsat verirseniz memnun oluruz.`;
+      ? `Merhaba ${firstName}, geri bildiriminiz için teşekkürler. [Buraya kişisel notunuzu ekleyin.]`
+      : `Merhaba ${firstName}, yorumunuz için teşekkürler. [Buraya somut bir cevap ve düzeltme adımı ekleyin.]`;
   }
   return rating >= 4
-    ? `Hi ${firstName}, thank you for taking the time to share your experience. We will pass this on to the team and look forward to seeing you again.`
-    : `Hi ${firstName}, we're sorry your experience fell short — we're forwarding your note to management and would love a chance to make it right on your next visit.`;
+    ? `Hi ${firstName}, thank you for your feedback. [Add a personal note here.]`
+    : `Hi ${firstName}, thank you for sharing this. [Add a concrete response and remediation step here.]`;
 }

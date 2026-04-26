@@ -9,7 +9,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!gate.ok) return gate.res;
 
   const categories = await prisma.menuCategory.findMany({
-    where: { restaurantId: id },
+    where: { restaurantId: id, deletedAt: null },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     include: {
       items: {
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   const last = await prisma.menuCategory.findFirst({
-    where: { restaurantId: id },
+    where: { restaurantId: id, deletedAt: null },
     orderBy: { sortOrder: 'desc' },
     select: { sortOrder: true },
   });

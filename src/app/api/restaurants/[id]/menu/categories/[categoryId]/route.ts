@@ -40,14 +40,19 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     where: { id: categoryId },
     include: { _count: { select: { items: { where: { deletedAt: null } } } } },
   });
-  if (!existing || existing.restaurantId !== id) {
+  if (!existing || existing.restaurantId !== id || existing.deletedAt) {
     return NextResponse.json({ error: 'Kategori bulunamadı' }, { status: 404 });
   }
   if (existing._count.items > 0) {
     return NextResponse.json({ error: 'Kategoride aktif ürünler var. Önce taşıyın veya silin.' }, { status: 409 });
   }
 
-  await prisma.menuCategory.delete({ where: { id: categoryId } });
+  // Soft delete to mirror MenuItem behavior; preserves history and avoids
+  // FK churn on the Restrict relation. Hard delete is a separate ops job.
+  await prisma.menuCategory.update({
+    where: { id: categoryId },
+    data: { deletedAt: new Date() },
+  });
   await touchMenuUpdated(id);
   return NextResponse.json({ success: true });
 }

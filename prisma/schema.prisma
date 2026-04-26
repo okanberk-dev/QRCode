@@ -277,10 +277,29 @@ model AdminUser {
   passwordHash String      @map("password_hash")
   role         String      @default("superadmin")
   restaurantId String?     @map("restaurant_id")
-  
+
   restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
 
   @@map("admin_users")
+}
+
+// Append-only log of privileged superadmin actions (user CRUD, role
+// changes, etc). Defense-in-depth on top of IDOR scoping. Querying:
+// `prisma.adminAuditLog.findMany({ where: { actorId } })` for a "who
+// changed what" report.
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  actorId     String   @map("actor_id")
+  actorSource String   @map("actor_source") // 'admin' | 'user'
+  action      String                          // e.g. 'admin.users.update', 'admin.users.delete'
+  targetId    String?  @map("target_id")
+  payload     Json?                           // before/after snapshot, redacted of secrets
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetId, createdAt])
+  @@map("admin_audit_logs")
 }
 
 model Settings {
@@ -319,6 +338,10 @@ model MenuCategory {
   description  String?
   sortOrder    Int        @default(0) @map("sort_order")
   isVisible    Boolean    @default(true) @map("is_visible")
+  // Soft delete to mirror MenuItem.deletedAt — keeps history + survives the
+  // onDelete: Restrict on items->category. Public/admin lists must filter
+  // `deletedAt IS NULL`.
+  deletedAt    DateTime?  @map("deleted_at")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
 

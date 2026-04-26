@@ -12,7 +12,7 @@ async function loadMenu(slug: string) {
     where: { slug },
     include: {
       menuCategories: {
-        where: { isVisible: true },
+        where: { isVisible: true, deletedAt: null },
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
         include: {
           items: {
