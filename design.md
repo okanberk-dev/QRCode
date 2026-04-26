@@ -1102,3 +1102,59 @@ Input altında: `42 / 100` mono font, sağ-aligned. %80'de amber, %100'de red. L
 - Redis cache (multi-instance drift)
 - Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
 - URL field format validation
+
+---
+
+## Phase 16.10 — Mail CMS Phase 7: revision diff viewer
+
+**PR:** TBA — `claude/mail-cms-phase7-diff-viewer` (stacked on PR #80 / Phase 6)
+
+### Hedef
+
+Phase 5 history modal'ını upgrade et — admin "ne değişmiş" tek bakışta görsün. Field-level diff, jsdiff dep yok.
+
+### Yeni dosyalar
+
+- `src/lib/email/revision-diff.ts` — `DiffEntry` union + `computeDiff()` (flat + nested destekler)
+- `src/components/admin/MailRevisionDiff.tsx` — added/removed/changed visual
+
+### Değişen dosyalar
+
+- `src/components/admin/MailRevisionHistory.tsx` — her revision'a "Önceki sürümle farkı göster" buton + inline expand
+- `CLAUDE.md` §21.32 (yeni)
+
+### Diff semantik
+
+Her revision için diff = `revisions[idx + 1]` (older) → `revisions[idx]` (this). Yani admin'in "bu revisiyon ne yaptı" sorusunu cevaplar. En eski revision (`idx === N-1`) için `before = {}` → tüm field'lar `added` olarak görünür (initial seed'in tüm field'ları).
+
+### Visual
+
+| Entry tipi | Badge | Bg |
+|---|---|---|
+| `changed` | DEĞİŞTİ (amber) | white + nested −/+ rows (red/emerald 50/60) |
+| `added` | EKLENDİ (emerald) | emerald 50/60 |
+| `removed` | SİLİNDİ (red) | red 50/60 |
+
+Sort: changed → added → removed, alfabetik path.
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (227 warning değişmedi)
+- DB schema değişikliği YOK
+- E2E:
+  - "Geçmiş" → her revision'da iki buton (İçeriği göster + Önceki sürümle farkı göster)
+  - Subject'i değiştir + save → tek `changed` entry görünür
+  - Yeni field ekle → `added`
+  - Field boşalt + save (drop edilir) → `removed`
+  - Form-confirmation variant edit → `contact.subject` path
+  - Initial revision (oldest) → tüm field'lar `added`
+  - Aynı içerik save edilirse (no-op edit) → "Bu iki sürüm arasında değişiklik yok"
+
+### Phase 8+ backlog
+
+- Bulk export (CSV/JSON revision history)
+- Redis cache (multi-instance drift)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+- URL field format validation
+- A/B compare (any two revisions, not just adjacent)

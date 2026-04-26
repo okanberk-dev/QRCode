@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { History, Loader2, RotateCcw, X } from 'lucide-react';
+import { GitCompare, History, Loader2, RotateCcw, X } from 'lucide-react';
+import MailRevisionDiff from './MailRevisionDiff';
 
 interface Revision {
   id: string;
@@ -55,6 +56,7 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
   const [error, setError] = useState<string | null>(null);
   const [reverting, setReverting] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [diffOpenFor, setDiffOpenFor] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -146,7 +148,15 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
               {revisions.map((r, idx) => {
                 const isLatest = idx === 0;
                 const isExpanded = expanded.has(r.id);
+                const isDiffOpen = diffOpenFor === r.id;
                 const editorLabel = r.editor?.username || r.editor?.email || (r.editedById ? 'Bilinmeyen admin' : 'Sistem');
+                // Diff shows "what THIS edit changed": before = the older
+                // revision (idx+1), after = this revision. The oldest
+                // entry compares against an empty state so its diff
+                // surfaces every field the initial seed introduced.
+                const olderSibling = revisions[idx + 1];
+                const diffBefore = olderSibling ? olderSibling.content : {};
+                const diffAfter = r.content;
                 return (
                   <li key={r.id} className="rounded-xl border border-[#EDEDED] bg-white p-3">
                     <div className="flex items-start justify-between gap-2">
@@ -177,17 +187,37 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
                         </button>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleExpand(r.id)}
-                      className="mt-2 text-[11px] font-semibold text-[#737373] hover:text-[#0A0A0A]"
-                    >
-                      {isExpanded ? 'İçeriği gizle' : 'İçeriği göster'}
-                    </button>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpand(r.id)}
+                        className="text-[11px] font-semibold text-[#737373] hover:text-[#0A0A0A]"
+                      >
+                        {isExpanded ? 'İçeriği gizle' : 'İçeriği göster'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDiffOpenFor(isDiffOpen ? null : r.id)}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#737373] hover:text-[#0A0A0A]"
+                      >
+                        <GitCompare size={11} />
+                        {isDiffOpen ? 'Farkı gizle' : 'Önceki sürümle farkı göster'}
+                      </button>
+                    </div>
                     {isExpanded && (
                       <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-[#FAFAFA] p-2 text-[10px] text-[#525252]">
                         {JSON.stringify(r.content, null, 2)}
                       </pre>
+                    )}
+                    {isDiffOpen && (
+                      <div className="mt-2">
+                        <MailRevisionDiff
+                          before={diffBefore}
+                          after={diffAfter}
+                          beforeLabel={olderSibling ? formatDate(olderSibling.createdAt) : 'Boş başlangıç'}
+                          afterLabel={isLatest ? 'MEVCUT' : formatDate(r.createdAt)}
+                        />
+                      </div>
                     )}
                   </li>
                 );

@@ -1338,3 +1338,35 @@ Mail template'lerde admin paste-bomb'larını engelleyen length validation. 300 
 - Redis cache (multi-instance drift)
 - Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
 - URL field format validation (`http(s)://` zorunluluk)
+
+### 21.32 Phase 7 — Revision diff viewer
+
+Phase 5 audit log'unun debug değerini katlayan field-level diff. Admin "ne değişmiş" görsün — JSON blob squint etmesin. jsdiff dep yok (CLAUDE.md §7 minimum dependency); copy field'ları string-bazlı, char-level diff yerine field-level "subject was X, now Y" daha actionable.
+
+**Helper** (`src/lib/email/revision-diff.ts`):
+- `DiffEntry` union: `{ kind: 'added' | 'removed' | 'changed', path, ... }`
+- `computeDiff(before, after)` → `{ entries, unchangedCount }`
+- Flat + nested (form-confirmation `variant.field` path) destekler
+- Sort: `changed` → `added` → `removed`, alfabetik path
+
+**Component** (`src/components/admin/MailRevisionDiff.tsx`):
+- `before` + `after` prop (her ikisi `unknown`)
+- 3 entry tipi:
+  - `changed`: amber badge + `−` (red 50/60 bg) + `+` (emerald 50/60 bg)
+  - `added`: emerald card
+  - `removed`: red card
+- Truncate at 200 char (uzun string'ler için)
+- "Bu iki sürüm arasında değişiklik yok (12 alan aynı)" empty state
+
+**Integration** (`MailRevisionHistory`):
+- Her revision card'ında "Önceki sürümle farkı göster" buton (GitCompare icon)
+- Click → inline expand: bu revision vs bir önceki revision
+- Oldest revision için `before = {}` (empty start) → tüm field'lar `added` görünür
+- "İçeriği göster" (raw JSON) buton korundu — diff özet, JSON detay
+
+**Phase 8+ backlog**:
+- Bulk export (CSV/JSON revision history)
+- Redis cache (multi-instance drift)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+- URL field format validation
+- A/B compare (any two revisions, not just adjacent)
