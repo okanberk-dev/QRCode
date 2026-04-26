@@ -66,9 +66,17 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
     (async () => {
       try {
         const res = await fetch(`/api/admin/mail-templates/${templateKey}/${locale}/revisions`);
-        const body = await res.json();
+        // Defensive parse: server SHOULD return JSON for every status,
+        // but if a stray empty-body 500 slips through (older deploy,
+        // proxy stripping body, etc.) we want a useful error instead
+        // of "Unexpected end of JSON input".
+        const body = await res.json().catch(() => ({}));
         if (!alive) return;
-        if (!res.ok) throw new Error(body.error || 'Yüklenemedi');
+        if (!res.ok) {
+          const msg = body.detail || body.error || `Sunucu hatası (HTTP ${res.status})`;
+          const hint = body.hint ? ` — ${body.hint}` : '';
+          throw new Error(`${msg}${hint}`);
+        }
         setRevisions(body.revisions ?? []);
       } catch (e) {
         if (alive) setError((e as Error).message);
