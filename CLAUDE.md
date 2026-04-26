@@ -940,3 +940,62 @@ main
 **Squash merge yan etkisi**: Kullanıcı GitHub UI'da "Squash and merge" seçerse stacked PR'ların commit'leri tek commit'e sıkışır → individual blame info kaybolur. "Create a merge commit" veya "Rebase and merge" history'yi korur. Kullanıcı tercihi.
 
 
+
+### 21.23 Mail Deliverability — Spam'e düşmemek için
+
+Pulse mail sistemi 5000+ mail/gün eşiğine yaklaşıldığında bulk sender olarak değerlendirilir. Gmail (Şubat 2024) + Yahoo + Apple Mail spam filter'ları için aşağıdaki kontroller **zorunlu**.
+
+#### Otomatik (kod tarafında halledildi)
+
+| Kontrol | Nerede | Detay |
+|---|---|---|
+| **`List-Unsubscribe` header** | `sendNewsletterEmail` (`src/lib/email.ts`) | Token-based HTTPS link + `mailto:` fallback. RFC 2369. |
+| **`List-Unsubscribe-Post: One-Click`** | Aynı yer | RFC 8058. Gmail/Yahoo bulk sender requirement. |
+| **`Precedence: bulk`** header | Aynı yer | Marketing trafik işareti. |
+| **POST `/api/newsletter/unsubscribe`** | `src/app/api/newsletter/unsubscribe/route.ts` | RFC 8058 one-click POST endpoint — bad token'da bile 200 (RFC zorunluluğu). |
+| **Plain text + HTML** | Tüm sender'lar | Resend `text` + `html` field'larını birlikte alır → tek-format spam tetiği yok. |
+| **Default Reply-To** | `defaultReplyTo()` helper | `RESEND_REPLY_TO` veya `NOTIFICATION_EMAIL` env'lerine düşer. Marketing mail'de noreply-only sender Gmail'de risk. |
+| **Unsubscribe link HTML body'de** | Newsletter footer | `EmailFooter` Pulse layout. Token-based, idempotent. |
+| **`unsubscribedAt: null` filter** | Cron query'leri | İptal edenlere mail göndermez — complaint rate kontrolü. |
+
+#### Kullanıcı tarafında (DNS + Resend dashboard)
+
+Bunlar **kod ile yapılamaz**, Resend hesabında + DNS provider'da set edilmeli:
+
+1. **SPF record** → Resend domain doğrulama yapınca otomatik talimat verir. `TXT @ "v=spf1 include:_spf.resend.com ~all"`. ✓ Resend dashboard'da yeşil tik kontrol et.
+2. **DKIM** → Resend otomatik 3 CNAME record verir. ✓ Resend dashboard'da yeşil tik kontrol et.
+3. **DMARC** → Manuel olarak ekle, DNS:
+   ```
+   TXT _dmarc "v=DMARC1; p=none; rua=mailto:dmarc@buaze.com; pct=100"
+   ```
+   - Başlangıç: `p=none` (sadece raporla, bloke etme)
+   - 2 hafta sonra raporlar temizse: `p=quarantine` (şüphelileri spam'e yolla)
+   - 1 ay sonra: `p=reject` (sertleştir)
+4. **MX record** → buaze.com için aktif olmalı (mailto: ve bounce için). DNS provider'da kontrol et.
+5. **`RESEND_REPLY_TO`** Vercel env'inde **set edilmeli** — `hello@buaze.com` veya monitored bir mailbox.
+6. **Resend webhook** (opsiyonel ama önerilir): Bounce + Complaint event'lerini DB'ye kaydet, abone listesinden auto-remove. Gelecek scope.
+
+#### Spam testi (deploy sonrası)
+
+1. **mail-tester.com**: `/admin/dev/mail-preview` "Test mail at" butonu ile mail-tester'ın verdiği test adresine gönder → 10/10 puan hedefle. <8 ise raporu oku, eksiği gider.
+2. **Gmail Postmaster Tools** (gönderim hacmi >100/gün olunca): https://postmastertools.google.com — domain reputation, IP reputation, spam rate metrikleri.
+3. **Sender Score** (https://senderscore.org) — Resend shared IP score'unu görmek için.
+
+#### Spam riski tetikleyen şeyler (yapma)
+
+- ❌ `noreply@` from + Reply-To yok (yapıldı, default fallback eklendi)
+- ❌ Subject'te `!!!`, ALL CAPS, "FREE", "$$$" gibi tetik kelimeler
+- ❌ Image-only HTML (text yok). Bizim template'ler image + text dengeli ✓
+- ❌ Gizli `display:none` text. Bizimki sadece preheader (RFC-uyumlu)
+- ❌ URL shortener (bit.ly). Tüm linkler `buaze.com` direct ✓
+- ❌ Yüksek bounce rate (>5%). Resend dashboard'da izle, geçersiz adresleri DB'den temizle.
+- ❌ Yüksek complaint rate (>0.3% Gmail eşiği). `unsubscribedAt`'i hemen set et + bir daha mail gönderme ✓
+
+#### Audit checklist (her ay)
+
+- [ ] Resend dashboard: SPF + DKIM yeşil tik
+- [ ] DMARC report mail'lerini oku (rua adresine düşüyor)
+- [ ] Bounce rate < 5%
+- [ ] Complaint rate < 0.3%
+- [ ] mail-tester.com test mail'i 9+/10
+- [ ] Gmail Postmaster: domain reputation "High" veya "Medium"
