@@ -9,6 +9,7 @@ import {
   spacer,
 } from '../components';
 import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export interface ForgotPasswordParams {
   /** 6-digit fallback code; preserved for the existing sender contract.
@@ -95,7 +96,10 @@ export async function renderForgotPassword(
   // DB-merged copy. Security-critical strings (notYou*, statusText) are
   // server-side locked: even if an admin rewrites them in the editor, the
   // PATCH endpoint drops them — see locked-fields.ts.
-  const copy = await loadMailCopy('forgot-password', locale, inlineDefault);
+  const merged = await loadMailCopy('forgot-password', locale, inlineDefault);
+  const vars = { firstName: params.firstName || (isTr ? 'orada' : 'there') };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
 
   const supportHref = `${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/${isTr ? 'tr' : 'en'}/contact`;
 
@@ -181,6 +185,6 @@ export async function renderForgotPassword(
     eyebrow: isTr ? 'Güvenlik · Şifre sıfırlama' : 'Security · Password reset',
     footer: { locale },
   });
-  const text = `${copy.title} ${copy.titleAccent}.\n\n${copy.intro.replace(/<[^>]+>/g, '')}\n\n${copy.cta} ${params.resetUrl}\n\n${copy.altCodeLabel}: ${params.code}`;
+  const text = `${copyText.title} ${copyText.titleAccent}.\n\n${copyText.intro.replace(/<[^>]+>/g, '')}\n\n${copyText.cta} ${params.resetUrl}\n\n${copyText.altCodeLabel}: ${params.code}`;
   return { subject, html, text };
 }

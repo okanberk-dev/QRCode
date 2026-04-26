@@ -1194,3 +1194,61 @@ Admin sadece bir variant'ın bir field'ını override etse, kalan field'lar inli
 - Audit log (`MailTemplateRevision`)
 - Redis cache (gerekli olduğunda)
 - Per-field validation (max length, format) — şu an sadece trim + non-empty
+
+### 21.29 Phase 4 — Dynamic placeholder injection
+
+Admin CMS'inde editlenen copy field'larında runtime placeholder substitution. Admin "Merhaba ${firstName}." yazınca her mailde gerçek isimle dolar; her şey backward compatible — placeholder'sız field'lar olduğu gibi render olur.
+
+**Helper** (`src/lib/email/placeholders.ts`):
+- `MAIL_PLACEHOLDERS: Record<MailTemplateKey, string[]>` — per-template whitelist
+- `substitutePlaceholders(text, vars, mode)` — `${key}` → vars[key]; mode='html' HTML-escape (XSS guard), mode='text' plain
+- `validatePlaceholders(text, allowed)` — token whitelist check
+- `findInvalidPlaceholders(content, allowed)` — flat veya nested (form-confirmation) content içinde ilk geçersiz token'ı bulur
+- `deepSubstitute(value, vars, mode)` — recursive walk, string leaf'larda substitute
+
+**Render fn pattern** (9 template'in tümünde):
+```ts
+const merged = await loadMailCopy('xxx', locale, inlineDefault);
+const vars = { firstName: params.firstName || fallback, ... };
+const copy = deepSubstitute(merged, vars, 'html');
+const copyText = deepSubstitute(merged, vars, 'text');
+// HTML body uses `copy.X` (HTML-escaped substitutions)
+// Text body uses `copyText.X` (plain substitutions)
+```
+
+**Whitelist** (per template):
+| Template | Placeholders |
+|---|---|
+| welcome | `${firstName}` |
+| newsletter | `${firstName}` |
+| trial-ending | `${firstName}` `${restaurantName}` `${daysLeft}` |
+| forgot-password | `${firstName}` |
+| low-rating-alert | `${restaurantName}` `${customerName}` `${rating}` `${branch}` |
+| new-review | `${restaurantName}` `${customerName}` `${rating}` |
+| weekly-report | `${restaurantName}` `${totalReviews}` `${avgRating}` |
+| customer-reply | `${customerFirstName}` `${restaurantName}` `${ownerName}` |
+| form-confirmation | `${firstName}` |
+
+**API validation** (`PATCH /api/admin/mail-templates/[key]/[locale]`):
+- `findInvalidPlaceholders(cleaned, MAIL_PLACEHOLDERS[key])` — typo yakalanır
+- 400 response: `{ error: 'invalid_placeholder', field, invalid: [...], allowed: [...] }`
+- Editor'lerde user-friendly Turkish error gösterilir
+
+**Editor UI** (`MailFieldInput`):
+- `field.placeholders?: readonly string[]` — input altında chip row görünür
+- Tıklayınca caret konumuna `${token}` literal eklenir
+- Locked field'lar chip göstermez (KVKK lock)
+- Editor `FieldDef` schema'sı: yeni alanlar `placeholders: MAIL_PLACEHOLDERS[key]` ile etkinleştirilir
+
+**Yeni placeholder eklemek**:
+1. `MAIL_PLACEHOLDERS[key]` array'ine ekle
+2. Render fn'inde `vars` object'ine değeri map et
+3. (Opsiyonel) Editor `FieldDef.placeholders`'ı güncelle (hint UI için)
+
+**XSS guard**: HTML mode substitution `escapeHtml` kullanır — admin "${customerName}" yazıp customer name `<script>` olsa bile mail'de `&lt;script&gt;` olarak çıkar. Text mode escape yapmaz (text mail saf metin).
+
+**Phase 5+ backlog**:
+- Audit log (`MailTemplateRevision`)
+- Redis cache (multi-instance drift)
+- Per-field validation (max length, format)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)

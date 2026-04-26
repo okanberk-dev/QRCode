@@ -3,6 +3,7 @@ import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderTimeline, spacer, renderTwoColCards } from '../components';
 import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export type FormType = 'contact' | 'career' | 'roi' | 'newsletter';
 
@@ -203,7 +204,13 @@ export async function renderFormConfirmation(
   // (e.g. only `cta` rewritten) keeps the rest of its fields from code.
   const merged = await loadMailCopy<typeof FORM_COPY>('form-confirmation', locale, FORM_COPY);
   const variantOverride = (merged[params.formType] ?? {}) as Partial<typeof FORM_COPY[FormType]>;
-  const copy = { ...FORM_COPY[params.formType], ...variantOverride };
+  const mergedCopy = { ...FORM_COPY[params.formType], ...variantOverride };
+  // Placeholder substitution. `${firstName}` admin tarafından subject/intro/
+  // sideBody'de kullanılabilir. params.name boşsa fallback'e düşer.
+  const fallbackName = isTr ? 'merhaba' : 'hi';
+  const vars = { firstName: params.name?.split(' ')[0] || fallbackName };
+  const copy = deepSubstitute(mergedCopy, vars, 'html');
+  const copyText = deepSubstitute(mergedCopy, vars, 'text');
 
   const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
   const localePath = isTr ? 'tr' : 'en';
@@ -298,7 +305,7 @@ export async function renderFormConfirmation(
     eyebrow: copy.eyebrow,
     footer: { locale, unsubText: isTr ? 'Onay maillerini kapatmak için' : 'To stop confirmation emails' },
   });
-  const text = `${copy.titleA}. ${copy.titleB}\n\n${copy.intro}\n\n${copy.timelineEyebrow}:\n` +
-    copy.timeline.map((t) => `· ${t.label} — ${t.body}`).join('\n');
-  return { subject: copy.subject, html, text };
+  const text = `${copyText.titleA}. ${copyText.titleB}\n\n${copyText.intro}\n\n${copyText.timelineEyebrow}:\n` +
+    copyText.timeline.map((t) => `· ${t.label} — ${t.body}`).join('\n');
+  return { subject: copyText.subject, html, text };
 }

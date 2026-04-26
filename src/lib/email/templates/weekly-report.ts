@@ -2,6 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { renderEyebrow, renderH2, renderP, renderButton, renderBarChart, renderQuoteCard, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 export interface WeeklyReportParams {
   restaurantName: string;
@@ -80,9 +81,17 @@ export async function renderWeeklyReport(
     detailSub: 'Heatmap, sentiment and aspect breakdown in the panel.',
   };
 
-  // DB-merged. `eyebrow` keeps the week-number template literal — the editor
-  // shows users a hint that the dynamic part stays.
-  const copy = await loadMailCopy('weekly-report', locale, inlineDefault);
+  // DB-merged + placeholder substitution. `eyebrow` is locked in editor
+  // (admin override would lose `${weekNumber}` literal); but other fields
+  // like `chartTitle`, `cta`, `detailLabel` can use `${restaurantName}`.
+  const merged = await loadMailCopy('weekly-report', locale, inlineDefault);
+  const vars = {
+    restaurantName: params.restaurantName,
+    totalReviews: params.stats.total,
+    avgRating: params.stats.avgRating.toFixed(1),
+  };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
 
   // Hero stat grid — total + avg are real metrics, always shown. The third
   // "response time" cell from the JSX prototype rendered '1.4s' as a static
@@ -227,6 +236,6 @@ export async function renderWeeklyReport(
     eyebrow: '',
     footer: { locale, unsubText: isTr ? 'Haftalık raporu kapatmak için' : 'To stop the weekly report' },
   });
-  const text = `${copy.titleA} ${copy.titleAccent} ${copy.titleEnd}\n\n${copy.statTotal}: ${params.stats.total}\n${copy.statAvg}: ${params.stats.avgRating}\n\n${copy.cta} ${params.dashboardUrl}`;
+  const text = `${copyText.titleA} ${copyText.titleAccent} ${copyText.titleEnd}\n\n${copyText.statTotal}: ${params.stats.total}\n${copyText.statAvg}: ${params.stats.avgRating}\n\n${copyText.cta} ${params.dashboardUrl}`;
   return { subject, html, text };
 }

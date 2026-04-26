@@ -5,6 +5,7 @@ import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
 import { invalidateMailCopyCache, isSupportedMailTemplateKey, type MailLocale } from '@/lib/email/copy-loader';
 import { stripLockedFields } from '@/lib/email/locked-fields';
+import { MAIL_PLACEHOLDERS, findInvalidPlaceholders } from '@/lib/email/placeholders';
 
 export const dynamic = 'force-dynamic';
 
@@ -110,6 +111,23 @@ export async function PATCH(
     }
     // Anything else (number, null, array, nested object on non-allowlisted
     // template) is silently dropped to keep the JSON well-shaped.
+  }
+
+  // Phase 4: validate placeholders. Admin can use `${firstName}` etc. but
+  // typo'lu / izinsiz token'lar reject — render time'da `${badName}`
+  // empty'e degrade ediyor, ama erken hata daha iyi UX.
+  const allowedPlaceholders = MAIL_PLACEHOLDERS[parsed.key as keyof typeof MAIL_PLACEHOLDERS] ?? [];
+  const invalid = findInvalidPlaceholders(cleaned, allowedPlaceholders);
+  if (invalid) {
+    return NextResponse.json(
+      {
+        error: 'invalid_placeholder',
+        field: invalid.field,
+        invalid: invalid.invalid,
+        allowed: allowedPlaceholders,
+      },
+      { status: 400 },
+    );
   }
 
   // Server-side enforcement of KVKK / security locks. Locked fields are
