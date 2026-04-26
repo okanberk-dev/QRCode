@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAdminFromRequest } from '@/lib/auth';
 import {
   renderForgotPassword,
   renderWelcome,
@@ -17,19 +18,18 @@ import { getUnsubscribeUrl } from '@/lib/email';
 export const dynamic = 'force-dynamic';
 
 /**
- * Dev-only email preview endpoint. Renders any of the 9 Pulse templates with
- * realistic seed data so a dev (or admin) can eyeball layout in a real
- * browser without staging traffic. Disabled in production deploys (incl.
- * Vercel preview, where NODE_ENV is also 'production') so the route can't
- * leak content from canonical sender domains.
+ * Email preview endpoint. Renders any of the 9 Pulse templates with
+ * realistic seed data so a dev / superadmin can eyeball layout in a
+ * real browser. Originally dev-only but enabled in production for
+ * operators to verify mail content after editing — superadmin auth
+ * + GET-only (no mail send) keeps the abuse surface small.
  */
 export async function GET(req: NextRequest) {
-  if (process.env.NODE_ENV === 'production') {
-    // JSON response so client-side fetch().json() doesn't throw on the
-    // 404. Editor / preview pages already gate the link with isDev so
-    // a real user shouldn't see this — but a stale browser cache or
-    // direct URL hit would otherwise crash with an opaque parse error.
-    return NextResponse.json({ error: 'dev_only' }, { status: 404 });
+  // Superadmin gate. Endpoint was production-disabled before, so it had
+  // no auth — opening it up to prod requires a real auth check.
+  const admin: any = await getAdminFromRequest(req);
+  if (!admin || admin.role !== 'superadmin') {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
   const url = new URL(req.url);

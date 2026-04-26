@@ -15,23 +15,11 @@ const TEMPLATES = [
   { key: 'trial-ending', label: 'Deneme bitiyor', desc: 'Plan kartları + ÖNERİLEN badge' },
 ] as const;
 
-const IS_DEV = process.env.NODE_ENV !== 'production';
-
 export default function MailPreviewIndex() {
   const [locale, setLocale] = useState<'tr' | 'en'>('tr');
   const [sending, setSending] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  if (!IS_DEV) {
-    return (
-      <div className="mx-auto max-w-3xl p-8">
-        <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-6 text-sm text-[#525252]">
-          Bu sayfa yalnız geliştirme ortamında çalışır. Production deploy'larda ve Vercel preview'larda kapalıdır.
-        </div>
-      </div>
-    );
-  }
 
   const previewUrl = (key: string) => `/api/dev/email-preview?template=${key}&locale=${locale}`;
 
@@ -69,7 +57,7 @@ export default function MailPreviewIndex() {
               Mail Önizleme
             </h1>
             <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252] max-w-[600px]">
-              9 Pulse mail template'i seed verilerle render edilir. Browser'da yeni tab'da görüntüle ya da kendi e-posta adresine test gönder. Bu sayfa yalnız geliştirme ortamında çalışır.
+              9 Pulse mail template'i seed verilerle render edilir. Browser'da yeni tab'da görüntüle ya da kendi e-posta adresine test gönder.
             </p>
           </div>
           <div className="inline-flex rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-1 pulse-eyebrow">

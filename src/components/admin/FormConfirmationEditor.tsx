@@ -52,8 +52,6 @@ const emptyNested = (): NestedContent => ({
 
 export default function FormConfirmationEditor({ locale }: Props) {
   const router = useRouter();
-  const isDev = process.env.NODE_ENV !== 'production';
-
   const [activeVariant, setActiveVariant] = useState<FormType>('contact');
   const [nested, setNested] = useState<NestedContent>(emptyNested);
   const [seeded, setSeeded] = useState(false);
@@ -263,26 +261,22 @@ export default function FormConfirmationEditor({ locale }: Props) {
           {/* Actions */}
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
             <div className="flex flex-wrap gap-2">
-              {isDev && (
-                <>
-                  <button
-                    type="button"
-                    onClick={onPreview}
-                    className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
-                  >
-                    <Eye size={14} /> Önizle ({VARIANTS.find((v) => v.key === activeVariant)?.label})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onTestMail}
-                    disabled={sendingTest}
-                    className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
-                  >
-                    {sendingTest ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
-                    Test mail at
-                  </button>
-                </>
-              )}
+              <button
+                type="button"
+                onClick={onPreview}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+              >
+                <Eye size={14} /> Önizle ({VARIANTS.find((v) => v.key === activeVariant)?.label})
+              </button>
+              <button
+                type="button"
+                onClick={onTestMail}
+                disabled={sendingTest}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+              >
+                {sendingTest ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                Test mail at
+              </button>
               <button
                 type="button"
                 onClick={() => setHistoryOpen(true)}

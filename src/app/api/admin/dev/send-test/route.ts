@@ -12,17 +12,12 @@ export const dynamic = 'force-dynamic';
 /**
  * Admin "Test mail at" endpoint. Sends a Pulse template, rendered with seed
  * (or compose-time override) data, to the calling admin's own email address.
- * Strictly dev/staging — production gets 404 so we don't accidentally fire
- * test mails from the real sender domain.
+ * Originally dev-only but enabled in production so operators can verify
+ * mail content after editing. Safety: superadmin only, rate-limited
+ * 10/5min, can only target the calling admin's own DB email — no way to
+ * spam arbitrary recipients via this endpoint.
  */
 export async function POST(req: NextRequest) {
-  if (process.env.NODE_ENV === 'production') {
-    // Return JSON, not plain text — admin UI's onTestMail does
-    // `await res.json()` unconditionally and a "Not Found" plain body
-    // would throw "Unexpected token N" which surfaces to the user as
-    // a confusing red banner instead of "this is dev-only".
-    return NextResponse.json({ error: 'dev_only' }, { status: 404 });
-  }
 
   const admin: any = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
