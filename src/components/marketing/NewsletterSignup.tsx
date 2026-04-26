@@ -47,7 +47,7 @@ export default function NewsletterSignup({ locale }: Props) {
             {isTr ? 'Süper! Kayıt oldunuz.' : "You're in. Thanks!"}
           </p>
           <p className="mt-0.5 text-[12px] text-[#525252]">
-            {isTr ? 'İlk e-posta pazartesi geliyor.' : "First email lands Monday."}
+            {isTr ? 'Hoş geldin maili gelen kutuna düştü.' : 'A welcome email is in your inbox.'}
           </p>
         </div>
       </div>

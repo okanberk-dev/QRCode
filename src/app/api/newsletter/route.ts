@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { sendFormConfirmationEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +41,11 @@ export async function POST(req: NextRequest) {
   // on create and reused on resubscribe so the same person can\'t accumulate
   // tokens by signing up twice.
   const newToken = crypto.randomBytes(24).toString('hex');
+  const existing = await prisma.newsletterSubscriber.findUnique({
+    where: { email },
+    select: { id: true, unsubscribedAt: true },
+  });
+
   await prisma.newsletterSubscriber.upsert({
     where: { email },
     create: { email, locale, source, ip, unsubscribeToken: newToken },
@@ -50,5 +56,14 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ ok: true });
+  // Instant welcome mail. Fire-and-forget — Resend hiccup must not block the
+  // signup response. Resubscribers get the same confirmation (intentional:
+  // they re-opted in, treat them as fresh).
+  void sendFormConfirmationEmail({
+    to: email,
+    formType: 'newsletter',
+    locale,
+  }).catch((err) => console.error('[newsletter] welcome mail failed', err));
+
+  return NextResponse.json({ ok: true, isNew: !existing });
 }

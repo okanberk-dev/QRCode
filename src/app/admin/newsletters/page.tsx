@@ -8,6 +8,7 @@ import {
   RefreshCw,
   Search,
   Send,
+  Trash2,
   TrendingDown,
   Users,
   X,
@@ -39,6 +40,7 @@ export default function AdminNewslettersPage() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [sending, setSending] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [data, setData] = useState<SubscribersResponse | null>(null);
@@ -133,6 +135,28 @@ export default function AdminNewslettersPage() {
       setError((e as Error).message);
     }
     setSending(false);
+  };
+
+  // KVKK / GDPR right-to-erasure: hard delete the row. Soft-delete
+  // (unsubscribedAt) is the default for opt-outs; this is reserved for
+  // explicit data-removal requests.
+  const deleteSubscriber = async (id: string, email: string) => {
+    if (!confirm(`"${email}" aboneliğini KALICI olarak silmek istediğine emin misin?\n\nBu işlem geri alınamaz. Yalnızca KVKK silme talepleri için kullan.`)) return;
+    setDeletingId(id);
+    setError(null);
+    setInfo(null);
+    try {
+      const res = await fetch(`/api/admin/newsletters/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Silme başarısız');
+      }
+      setInfo(`${email} kalıcı olarak silindi.`);
+      fetchData();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setDeletingId(null);
   };
 
   const hasActiveFilters = useMemo(
@@ -308,6 +332,7 @@ export default function AdminNewslettersPage() {
                     <th className="px-5 py-3">Kaynak</th>
                     <th className="px-5 py-3">Kayıt Tarihi</th>
                     <th className="px-5 py-3">Durum</th>
+                    <th className="px-5 py-3 text-right">İşlem</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#EDEDED]">
@@ -325,6 +350,17 @@ export default function AdminNewslettersPage() {
                       </td>
                       <td className="px-5 py-3">
                         <StatusPill cancelled={!!r.unsubscribedAt} />
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        <button
+                          onClick={() => deleteSubscriber(r.id, r.email)}
+                          disabled={deletingId === r.id}
+                          title="Kalıcı sil (KVKK)"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] bg-white px-2 py-1 text-[11px] font-semibold text-[#525252] hover:border-red-300 hover:text-red-600 active:scale-95 disabled:opacity-50"
+                        >
+                          {deletingId === r.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} strokeWidth={2} />}
+                          Sil
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -346,6 +382,16 @@ export default function AdminNewslettersPage() {
                     <span className="truncate">{r.source ?? 'Kaynak yok'}</span>
                     <span>·</span>
                     <span>{new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}</span>
+                  </div>
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      onClick={() => deleteSubscriber(r.id, r.email)}
+                      disabled={deletingId === r.id}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#525252] hover:border-red-300 hover:text-red-600 active:scale-95 disabled:opacity-50"
+                    >
+                      {deletingId === r.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} strokeWidth={2} />}
+                      Kalıcı sil (KVKK)
+                    </button>
                   </div>
                 </div>
               ))}
