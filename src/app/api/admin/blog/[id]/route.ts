@@ -15,6 +15,24 @@ async function requireSuperadmin(req: NextRequest) {
   return { ok: true as const, admin };
 }
 
+// GET - fetch one post
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const gate = await requireSuperadmin(req);
+  if (!gate.ok) return gate.res;
+
+  try {
+    const { id } = await params;
+    const post = await prisma.blogPost.findUnique({ where: { id } });
+    if (!post) {
+      return ApiErrors.notFound('Blog yazısı bulunamadı');
+    }
+    return NextResponse.json({ post });
+  } catch (error) {
+    console.error('[API blog GET id]', error);
+    return ApiErrors.internalError('Blog yazısı çekilemedi');
+  }
+}
+
 const VALID_LOCALES = new Set(['tr', 'en']);
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
