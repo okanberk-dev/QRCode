@@ -695,6 +695,19 @@ Bu rotalar artık Pulse template'lerini kullanır:
 
 **Yapma**: `react-email` / `mjml` dep ekleme (CLAUDE.md §7 minimum dependency). Pulse layout helper'ları yeterli.
 
+### 21.8.1 FeedbackReply.source
+
+`FeedbackReply.source String? @default("manual")` — her yanıt 'manual', 'ai_copilot', veya 'template_fallback'. Trial-ending mailindeki "AI yanıt" sayacı bu kolonun `source: 'ai_copilot'` count'ına dayanıyor. Yeni reply UI eklerken (örn. mobile app, third-party kanal):
+
+1. Frontend "Taslak oluştur" / suggest-reply çağrısı yaparsa → `setAiSource('openai' | 'template' | 'template-fallback')`.
+2. Reply gönderirken POST `/api/feedback/[id]/reply` body'sine map et:
+   - `'openai'` → `'ai_copilot'`
+   - `'template'` veya `'template-fallback'` → `'template_fallback'`
+   - Hiç AI çağrısı olmamış → `'manual'`
+3. Reply gönderildikten sonra `setAiSource(null)` — sonraki manuel reply yanlışlıkla `ai_copilot` etiketlenmesin.
+
+Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düşürür.
+
 ### 21.9 Pixel-perfect 1:1 audit (Phase 16.1)
 
 9 template `.design/` JSX prototipleriyle birebir hizalandı:
@@ -728,7 +741,7 @@ Bu rotalar artık Pulse template'lerini kullanır:
 **Yeni**: `/api/cron/trial-reminders` (`vercel.json`'da `0 9 * * *` günlük 09:00 UTC)
 - `User.lastTrialReminderAt` field'ı dedup için (20-saat threshold — cron 24-saat aralık güvenliği)
 - **Sadece 1 ve 3 gün kalan trial user'lara mail gönderir** (`TRIAL_REMINDER_DAYS = [1, 3]` constant'ı). Spam algısını önlemek için kullanıcı başına trial sürecinde max 2 mail. SQL window 4 güne kadar geniş (yanlışlıkla skip etmeyi önlemek için), ama precise filter cron handler'ında.
-- Usage hesabı: ilgili restoran için son 14 gün vs önceki 14 gün (growth %), ortalama puan, yorum sayısı. **`aiReplies = null`** — AI vs manual reply ayrımı `FeedbackReply.source` field'ı eklenene kadar template'te "—" görünür (yanıltıcı toplam göstermek yerine).
+- Usage hesabı: ilgili restoran için son 14 gün vs önceki 14 gün (growth %), ortalama puan, yorum sayısı, **AI Co-Pilot ile gönderilen yanıt sayısı** (`prisma.feedbackReply.count({ where: { source: 'ai_copilot', ... } })`).
 - Auth: `Bearer ${CRON_SECRET}` (mevcut pattern)
 - Sender: `sendTrialEndingEmail` (Pulse `trial-ending` template)
 - **Eşikleri değiştirmek**: `TRIAL_REMINDER_DAYS` array'i tek değişiklik noktası. Yeni eşik (örn. 7 gün) eklendiğinde SQL window otomatik genişler.
@@ -782,5 +795,61 @@ export async function POST(req) {
 ```
 
 Mevcut örnekler: `src/components/admin/TrendsChart.tsx`, `src/components/admin/DayDistributionChart.tsx`.
+
+### 21.15 Mail visual smoke test workflow
+
+**Yerler**:
+- `/api/dev/email-preview?template=...&locale=tr|en&format=html|text` — raw HTML / text response. Production'da 404 (Vercel preview dahil).
+- `/admin/dev/mail-preview` — superadmin index sayfası, 9 template kart + locale toggle + "Önizle" + "Test mail at" butonları. Sidebar'da yalnız `NODE_ENV !== 'production'` ise görünür.
+- `/api/admin/dev/send-test` — superadmin POST endpoint, seed data ile sender'ı çağırır, admin'in kendi e-posta'sına gönderir. Production'da 404.
+
+**Seed data**: `src/app/api/dev/email-preview/seeds.ts` — her template için realistic placeholder. Yeni template eklerken bu factory'e seed entry ekle.
+
+**Newsletter compose preview**: `/admin/newsletters/campaigns/{new,[id]}` formundaki "Önizle" butonu preview route'una `title`, `intro`, `postIds` query parametreleri geçer; render aşamasında DB'den o post'lar çekilip seed'in posts array'ini override eder. Bu sayede authored content gerçek post'larla eşleştirilmiş hâlde önizlenir.
+
+**Release checklist** (her major mail değişikliğinden önce):
+1. Lokal `npm run dev` → `localhost:3000/admin/dev/mail-preview`
+2. 9 template'i 375px (mobile DevTools) ve 1440px (desktop) viewport'ta aç
+3. Layout kırılma yok, font ≥ 14px, butonlar tıklanabilir
+4. "Test mail at" butonu → kendi adresine gerçek gönderim
+5. iPhone Mail / Gmail Web / Gmail iOS / Outlook Web kontrolü
+6. Spesifik bakılacaklar: trial-ending "ÖNERİLEN" badge Outlook'ta, newsletter dark featured card 4 client'ta, forgot-password token URL hover/click
+
+### 21.16 NewsletterCampaign
+
+**Schema** (`prisma/schema.prisma` `NewsletterCampaign`):
+- `title`, `intro` (override default Pulse copy)
+- `postIds: String[]` — BlogPost id array (max 6, en az 1). Phantom id'ler cron'da sessizce skip
+- `locale: 'tr' | 'en' | 'both'` — `'both'` aboneye locale'ine göre matching post'lar
+- `status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'`
+- `scheduledAt` + `sentAt` + `sentCount` + `failedCount`
+
+**Cron precedence** (`runMonthlyNewsletter()` `src/app/api/cron/monthly-newsletter/route.ts`):
+1. Explicit `campaignId` (admin "Şimdi gönder" yolu) → ilgili campaign
+2. `status: 'scheduled'`, `scheduledAt <= now`, en eski → o campaign
+3. Hiç campaign yoksa → fallback "son 3 aktif blog post" (legacy)
+
+Send başlamadan campaign `'sending'`, bitince `'sent'` + `sentAt` + counts. Even partial failure marks campaign `'sent'` — re-fire'dan korur.
+
+**Admin UI** (`/admin/newsletters/campaigns`):
+- Liste: `page.tsx` desktop table + mobile cards, status pill, `sentCount/failedCount`, "Yeni kampanya" butonu
+- Compose form: `NewsletterCampaignEditor.tsx` (ortak new + edit) — title + intro + locale + post checkbox grid + Taslak/Zamanla/Şimdi gönder mode
+- Preview + Test mail butonları (yalnız `NODE_ENV !== 'production'`'da işe yarar)
+- `'sent'` ve `'sending'` campaign'lar **immutable** (PATCH 409, DELETE 409)
+- Sadece `'draft'` campaign silinebilir
+
+**Sender override**: `sendNewsletterEmail({ title, intro, subject })` — set edildiğinde Pulse default "Sessiz misafiri…" hero'sunu replace eder, lime-highlight styling yerine plain title.
+
+### 21.17 Newsletter source tracking pattern
+
+**`NewsletterSubscriber.source`** her abonede dolu olmalı. Yeni signup placement eklendiğinde:
+
+1. Component'e `source` prop pas et (örn. `<NewsletterSignup locale={l} source="popup" />`)
+2. `src/lib/newsletter-sources.ts` `NEWSLETTER_SOURCE_LABELS` haritasına eklemeyi unutma — admin UI ham string yerine label gösterir
+3. Admin Kaynak filter dropdown'ı dinamik distinct query — yeni source otomatik görünür, label upgrade cosmetic
+
+**Mevcut sources**: `footer`, `popup`, `blog_inline`, `dashboard_invite`, `onboarding`, `roi_form`, `homepage_hero`. Yeni eklemeler için CLAUDE.md'yi güncelle.
+
+**Helper**: `getNewsletterSourceLabel(source, locale)` — admin UI + CSV export'ta tek nokta.
 
 

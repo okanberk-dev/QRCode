@@ -229,6 +229,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     if (!active || !replyDraft.trim() || sendingReply) return;
     setSendingReply(true);
     const wantsEmail = sendEmail && Boolean(active.customerEmail);
+    // Mirror /admin/reviews — track whether the reply originated from the
+    // AI Co-Pilot draft so trial-ending mail can count operator vs AI replies.
+    const replySource =
+      aiSource === 'openai'
+        ? 'ai_copilot'
+        : aiSource === 'template' || aiSource === 'template-fallback'
+          ? 'template_fallback'
+          : 'manual';
     try {
       const res = await fetch(`/api/feedback/${active.id}/reply`, {
         method: 'POST',
@@ -238,12 +246,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           channel: wantsEmail ? 'email' : 'internal',
           sendEmail: wantsEmail,
           locale,
+          source: replySource,
         }),
       });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
         setFeedbacks((list) => list.map((r) => (r.id === active.id ? { ...r, isReplied: true } : r)));
         setReplyDraft('');
+        setAiSource(null);
         const emailStatus = data?.email?.status as 'sent' | 'skipped' | 'failed' | undefined;
         if (emailStatus === 'sent') {
           flashReply(

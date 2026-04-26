@@ -631,3 +631,61 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 - Admin paneldeki "Şimdi gönder" butonu ile gönderim cycle'ı tek HTTP yanıtında tamamlanır
 - Console'da artık `width(-1) and height(-1)` warning yok
 - Trial cron: lokal'de `User.trialEndsAt = now() + 2d` set et → cron mail atmaz (2 gün eşik değil); `+1d` veya `+3d` set et → mail atar
+
+---
+
+## Phase 16.3 — Open-item closure: FeedbackReply.source + NewsletterCampaign + Mail Preview + Source Tracking (2026-04)
+
+**Kapsam**: PR #68 sonrası "halen açık konular" tablosundaki 4 maddeyi kapatan iterasyon. Yeni branch `claude/pulse-mail-followups`, base `claude/analyze-codebase-dBomf` (PR #68 henüz merge'lenmemiş).
+
+### Item 1 — `FeedbackReply.source`
+
+- Schema: `source String? @default("manual")` — 'manual' | 'ai_copilot' | 'template_fallback'. `@@index([source, createdAt])`.
+- `/api/feedback/[id]/reply` artık body'den `source` alıyor; geçersiz değer `'manual'`'a düşer.
+- `/admin/reviews/page.tsx` ve `/[locale]/dashboard/feedbacks/page.tsx` — `aiSource` state'i `replySource` ile maple → POST body, send sonrası reset.
+- `/api/cron/trial-reminders/route.ts` — `aiReplies = null` kaldırıldı, gerçek `prisma.feedbackReply.count({ where: { source: 'ai_copilot', ... } })` query'si açıldı (`.catch(() => null)` graceful degradation).
+
+### Item 2 — `NewsletterCampaign` + admin compose UI
+
+- Yeni model `NewsletterCampaign` (title, intro, postIds[], locale, status, scheduledAt, sentAt, sentCount, failedCount)
+- API: `/api/admin/newsletters/campaigns` GET+POST, `/[id]` GET+PATCH+DELETE. Status mutability rules: `'sent'/'sending'` immutable, `'draft'` deletable, `'scheduled'` scheduledAt zorunlu.
+- Cron `runMonthlyNewsletter({ campaignId? })` — 3-tier precedence: explicit > scheduled > fallback static. Locale 'both' → her aboneye locale'ine göre filtreli posts.
+- `sendNewsletterEmail` + `renderNewsletter` — `customTitle`, `customIntro`, `customSubject` opsiyonel. Override edildiğinde lime-highlight stylelar düşer, plain title.
+- Admin UI: 3 yeni route + 1 ortak Editor component
+  - `/admin/newsletters/campaigns` (list) — desktop table + mobile cards
+  - `/admin/newsletters/campaigns/new` — yeni form
+  - `/admin/newsletters/campaigns/[id]` — edit form
+  - `NewsletterCampaignEditor.tsx` — title/intro/locale/posts/mode (Taslak/Zamanla/Şimdi gönder) + Preview + Test mail butonları
+- Trigger endpoint `/api/admin/newsletters/trigger` artık `{ campaignId }` body kabul ediyor.
+- Sidebar: "Bülten Kampanyaları" satırı (Megaphone icon, superadmin).
+
+### Item 3 — Mail visual smoke test
+
+- `/api/dev/email-preview?template=...&locale=...&format=html|text` (NODE_ENV gated)
+- `src/app/api/dev/email-preview/seeds.ts` — 9 template için realistic placeholder factory
+- `/admin/dev/mail-preview` — superadmin sayfası, 9 kart + locale toggle + Önizle + Test mail
+- `/api/admin/dev/send-test` POST — seed (veya newsletter compose override) ile admin'in kendi e-posta'sına gönderim
+- Sidebar "Mail Önizleme (dev)" satırı `NODE_ENV !== 'production'` gated
+- Newsletter compose form'undaki Önizle butonu DB'deki gerçek post'lar ile preview yapıyor
+
+### Item 4 — Source tracking pattern
+
+- `src/lib/newsletter-sources.ts` — `NEWSLETTER_SOURCE_LABELS` haritası + `getNewsletterSourceLabel()` helper
+- 7 hazır source: footer, popup, blog_inline, dashboard_invite, onboarding, roi_form, homepage_hero
+- Admin Kaynak filter + tablo + mobile cards artık label gösteriyor
+- CSV export'a `source_label` kolonu eklendi
+- CLAUDE.md §21.17'de yeni signup placement ekleme rehberi
+
+### Backend etkisi
+
+- `prisma db push` deploy'da: `feedback_replies.source`, `feedback_replies(source, created_at)` index, `newsletter_campaigns` tablosu sync edilir. Tümü nullable / default'lu, veri kaybı yok.
+- 11 yeni dosya, ~2400 LOC (700 schema/API, 800 UI, 600 mail preview, 300 helpers + docs)
+- Public sender imzaları korundu (newsletter sadece opsiyonel parametre eklendi)
+- Sadece superadmin yeni route'lara erişiyor; trial cron ve monthly cron mevcut Bearer ${CRON_SECRET} pattern'ini kullanmaya devam
+
+### Verification
+
+- `npx tsc --noEmit -p tsconfig.json` zero error
+- `npx prisma generate` `FeedbackReply.source` ve `NewsletterCampaign` ScalarFieldEnum'ları doğru
+- E2E lokal kontrol checklist (CLAUDE.md §21.15): 9 template browser + 4 mail client smoke test
+- NewsletterCampaign E2E: yeni kampanya + Şimdi gönder → sent status, sentCount dolu, scheduledAt geçen scheduled campaign cron'da yakalanıyor

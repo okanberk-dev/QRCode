@@ -19,6 +19,13 @@ export interface NewsletterParams {
   posts: NewsletterPost[];
   unsubscribeUrl: string;
   exploreUrl?: string;
+  /** Override the hero headline ("Sessiz misafiri duyabilmek sanatı."). When a
+   *  NewsletterCampaign authors a custom title, that's the title used here. */
+  customTitle?: string | null;
+  /** Override the intro paragraph. Shown in place of the default copy. */
+  customIntro?: string | null;
+  /** Override the subject line. Falls back to the locale-specific default. */
+  customSubject?: string | null;
 }
 
 export function renderNewsletter(
@@ -27,9 +34,9 @@ export function renderNewsletter(
 ): { subject: string; html: string; text: string } {
   const isTr = locale !== 'en';
   const issueLabel = params.issueNumber ? `Pulse #${String(params.issueNumber).padStart(2, '0')}` : 'Pulse';
-  const subject = isTr
+  const subject = params.customSubject?.trim() || (isTr
     ? `${issueLabel} — Yorum yönetiminin geleceği`
-    : `${issueLabel} — The future of review management`;
+    : `${issueLabel} — The future of review management`);
   const preheader = isTr
     ? 'Bu sayıda: AI Co-Pilot 2.0, restoran vakası, sektör verileri.'
     : 'This issue: AI Co-Pilot 2.0, restaurant case, sector data.';
@@ -156,6 +163,16 @@ export function renderNewsletter(
     </td>
   `).join('');
 
+  // Custom title/intro override the default Pulse copy. When admin authors a
+  // campaign with its own headline, the lime-highlight styling falls away and
+  // we render plain text — the operator's words are already the hook.
+  const customTitleTrimmed = params.customTitle?.trim();
+  const customIntroTrimmed = params.customIntro?.trim();
+  const titleHtml = customTitleTrimmed
+    ? escapeHtml(customTitleTrimmed)
+    : `${copy.titleA}<br/><span style="display:inline-block;background:${PULSE.lime};padding:0 6px;">${copy.titleAccent}</span> ${copy.titleEnd}`;
+  const introText = customIntroTrimmed ?? copy.intro;
+
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
@@ -163,11 +180,10 @@ export function renderNewsletter(
           ${renderEyebrow(copy.eyebrowTop)}
           ${spacer(18)}
           <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:48px;font-weight:500;letter-spacing:-0.025em;line-height:1.05;color:${PULSE.graphite};margin:0;">
-            ${copy.titleA}<br/>
-            <span style="display:inline-block;background:${PULSE.lime};padding:0 6px;">${copy.titleAccent}</span> ${copy.titleEnd}
+            ${titleHtml}
           </h1>
           ${spacer(22)}
-          ${renderP(copy.intro, { size: 16 })}
+          ${renderP(introText, { size: 16 })}
           ${spacer(24)}
           ${renderButton({ href: editorNoteUrl, label: copy.cta, size: 'lg' })}
         </td>
@@ -220,7 +236,8 @@ export function renderNewsletter(
       unsubText: isTr ? 'Aylık bülteni almayı bırakmak için' : 'To stop the monthly digest',
     },
   });
-  const text = `${copy.titleA} ${copy.titleAccent} ${copy.titleEnd}\n\n${copy.intro}\n\n` +
+  const textTitle = customTitleTrimmed ?? `${copy.titleA} ${copy.titleAccent} ${copy.titleEnd}`;
+  const text = `${textTitle}\n\n${introText}\n\n` +
     (featured ? `★ ${featured.title} — ${featured.url}\n\n` : '') +
     restPosts.map((p, i) => `${i + 1}. ${p.title} — ${p.url}`).join('\n');
   return { subject, html, text };

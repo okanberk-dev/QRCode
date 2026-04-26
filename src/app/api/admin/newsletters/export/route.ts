@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
+import { getNewsletterSourceLabel } from '@/lib/newsletter-sources';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,11 +47,12 @@ export async function GET(req: NextRequest) {
   });
 
   const csv = [
-    'email,locale,source,subscribed_at,unsubscribed_at',
+    'email,locale,source,source_label,subscribed_at,unsubscribed_at',
     ...rows.map((r) => [
       escapeCsv(r.email),
       r.locale,
       escapeCsv(r.source ?? ''),
+      escapeCsv(getNewsletterSourceLabel(r.source, 'tr')),
       r.createdAt.toISOString(),
       r.unsubscribedAt ? r.unsubscribedAt.toISOString() : '',
     ].join(',')),

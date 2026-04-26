@@ -42,7 +42,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: access.error }, { status: access.status });
   }
 
-  let body: { body?: string; channel?: string; sendEmail?: boolean; locale?: 'tr' | 'en' } = {};
+  let body: { body?: string; channel?: string; sendEmail?: boolean; locale?: 'tr' | 'en'; source?: string } = {};
   try {
     body = await req.json();
   } catch {
@@ -56,6 +56,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const locale: 'tr' | 'en' = body.locale === 'en' ? 'en' : 'tr';
   const requestedEmail = body.channel === 'email' || body.sendEmail === true;
   const customerEmail = access.feedback.email;
+
+  // `source` lets us tell apart manual replies from those approved off an
+  // AI Co-Pilot draft. Trial-ending mail surfaces this as the AI-reply count;
+  // unknown values fall back to 'manual' so a misbehaving client can't poison
+  // analytics.
+  const ALLOWED_SOURCES = new Set(['manual', 'ai_copilot', 'template_fallback']);
+  const replySource = ALLOWED_SOURCES.has(body.source ?? '') ? (body.source as string) : 'manual';
 
   // Decide delivery. 4-5★ redirects don't capture email in most flows, so
   // the reply is internal-only unless an email is actually on file.
@@ -78,6 +85,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       body: text.slice(0, 2000),
       channel,
       status: channel === 'email' ? 'pending' : 'sent',
+      source: replySource,
     },
   });
 
