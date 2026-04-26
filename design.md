@@ -1044,3 +1044,61 @@ Revert sırasında `stripLockedFields()` yine çalışır. Eski revision KVKK ö
 - Redis cache (multi-instance drift)
 - Per-field validation (max length, format)
 - Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+
+---
+
+## Phase 16.9 — Mail CMS Phase 6: per-field length validation
+
+**PR:** TBA — `claude/mail-cms-phase6-field-validation` (stacked on PR #79 / Phase 5)
+
+### Hedef
+
+Admin paste-bomb'larını engelleyen length validation. Gmail spam filter tetikleri (subject ≥100), layout kırılmaları (eyebrow ≥200) ve novel-length intro'lar reject. Loose limits — gerçek abuse'u yakalar, küçük overage'larda nag etmez.
+
+### Yeni dosya
+
+- `src/lib/email/field-validation.ts` — `EXPLICIT` per-key + pattern fallback + `validateField` + `findInvalidField`
+
+### Değişen dosyalar
+
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts` — PATCH `findInvalidField()` placeholder validation sonrası, 400 + `{ error: 'invalid_field_length', field, reason, max?, min?, actual }`
+- `src/components/admin/MailFieldInput.tsx` — `getFieldValidation()` import; input altında live char counter (gray/amber/red tone)
+- `src/components/admin/MailTemplateEditor.tsx` + `FormConfirmationEditor.tsx` — TR error mapping (`too_long`, `too_short`)
+- `CLAUDE.md` §21.31 (yeni)
+
+### Limit table
+
+| Field grup | Max | Sebep |
+|---|---|---|
+| `subject` | 100 | Gmail truncate ≥70 chars, spam score ≥100 |
+| `preheader` | 200 | Inbox preview |
+| `*eyebrow*` | 80 | Single-line layout |
+| `title*` | 80 | Hero h1/h2 wrap |
+| `titleAccent` | 60 | Vurgu kelime |
+| `intro` | 1000 | Body paragraph |
+| `*body*` | 400 | Side card body |
+| `*cta`/`*link*` | 60 | Button label |
+| Other | 200 | Generic chrome |
+
+### Live counter
+
+Input altında: `42 / 100` mono font, sağ-aligned. %80'de amber, %100'de red. Locked field counter göstermez.
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- DB schema değişikliği YOK
+- E2E:
+  - Subject'e 150 karakter yapıştır → counter `150 / 100` red
+  - Save dene → 400 + TR error: `"subject" alanı çok uzun: 150 karakter (max 100).`
+  - Boş bırak → counter gizli, save geçer (empty drop)
+  - Form-confirmation nested → variant.field path döner
+
+### Phase 7+ backlog
+
+- Diff viewer (revision A vs B)
+- Bulk export (CSV/JSON revision history)
+- Redis cache (multi-instance drift)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+- URL field format validation

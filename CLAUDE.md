@@ -1292,3 +1292,49 @@ model MailTemplateRevision {
 - Redis cache (multi-instance drift)
 - Per-field validation (max length, format)
 - Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+
+### 21.31 Phase 6 — Per-field length validation
+
+Mail template'lerde admin paste-bomb'larını engelleyen length validation. 300 karakterlik subject Gmail spam filter'ını tetikler, 500 karakterlik eyebrow hero layout'u 4 satıra wrap eder. Loose limits — gerçek abuse'u yakalar, küçük overage'larda nag etmez.
+
+**Helper** (`src/lib/email/field-validation.ts`):
+- `EXPLICIT: Record<string, FieldValidation>` — per-key override (`subject: 100`, `intro: 1000`, vb.)
+- `getValidationByPattern()` — fallback: `*body*` 400, `*eyebrow*` 80, `*cta/link*` 60, default 200
+- `validateField(key, value)` — null = valid, structured error = invalid
+- `findInvalidField(content)` — flat veya nested (form-confirmation) content içinde ilk geçersiz field
+
+**Limit table**:
+| Field grup | Max | Sebep |
+|---|---|---|
+| `subject` | 100 | Gmail truncate ≥70, spam score ≥100 |
+| `preheader` | 200 | Inbox preview |
+| `*eyebrow*` | 80 | Single-line layout |
+| `title*` | 80 | Hero h1/h2 wrap |
+| `titleAccent` | 60 | Vurgu kelime |
+| `intro` | 1000 | Body paragraph |
+| `*body*` | 400 | Side card body |
+| `*cta`/`*link*` | 60 | Button label |
+| Other (default) | 200 | Generic chrome |
+
+**API validation** (`PATCH /api/admin/mail-templates/[key]/[locale]`):
+- `findInvalidField(cleaned)` placeholder validation'dan sonra
+- 400 response: `{ error: 'invalid_field_length', field, reason: 'too_long' | 'too_short', max?, min?, actual }`
+- Form-confirmation nested için path `variant.field` formatında
+
+**Editor UI** (`MailFieldInput`):
+- Live char counter input altında (sağ-aligned, mono font, 10px)
+- Renk: `<%80` neutral gray, `>=80%` amber, `>100%` red
+- Locked field counter göstermez
+
+**TR error mapping** (editor `onSave`):
+- `too_long`: `"subject" alanı çok uzun: 142 karakter (max 100).`
+- `too_short`: `"cta" alanı çok kısa: 2 karakter (min 5).`
+
+**Yeni field eklemek**: `EXPLICIT` dict'e ekle veya pattern-fallback'e güven. Çoğu yeni field name (`*Eyebrow`, `*Cta`) zaten covered.
+
+**Phase 7+ backlog**:
+- Diff viewer (revision A vs B)
+- Bulk export (CSV/JSON revision history)
+- Redis cache (multi-instance drift)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+- URL field format validation (`http(s)://` zorunluluk)
