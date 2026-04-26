@@ -68,6 +68,9 @@ model Restaurant {
 model QrGeneration {
   id            String      @id @default(cuid())
   qrUrl         String      @map("qr_url")
+  // tableNumber is intentionally a string — restaurants use mixed labels
+  // ("A1", "2-outdoor", "VIP-3") so a numeric column would force lossy
+  // coercion on the operator side.
   tableNumber   String?     @map("table_number")
   platform      String?     @map("platform")    // google | yemeksepeti | getir | trendyol_go
   serviceType   String?     @map("service_type") // dine_in | takeout | delivery
@@ -248,6 +251,9 @@ model Campaign {
   restaurantId   String?  @map("restaurant_id")
   name           String
   placement      String   // table | receipt | door | pack
+  // count = how many physical QR pieces the operator wants printed
+  // (table tents, receipts, door stickers, package inserts). Capped at
+  // 10 000 in the API. NOT a usage counter.
   count          Int      @default(1)
   template       String   @default("lime") // lime | white | dark | minimal
   color          String   @default("#C6F24E")
@@ -314,9 +320,9 @@ model Announcement {
   id            String    @id @default(cuid())
   title         String
   message       String    @db.Text
-  status        String    @default("draft")
-  severity      String    @default("info")
-  locale        String    @default("all")
+  status        String    @default("draft") // draft | published | archived
+  severity      String    @default("info")  // info | warning | critical
+  locale        String    @default("all")   // all | tr | en
   priority      Int       @default(0)
   startDate     DateTime? @map("start_date")
   endDate       DateTime? @map("end_date")

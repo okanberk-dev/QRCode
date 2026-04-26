@@ -9,7 +9,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!gate.ok) return gate.res;
 
   const existing = await prisma.menuCategory.findUnique({ where: { id: categoryId } });
-  if (!existing || existing.restaurantId !== id) {
+  // Treat soft-deleted rows as not found — prevents zombie writes that
+  // would silently revive a category the user thought was gone.
+  if (!existing || existing.restaurantId !== id || existing.deletedAt) {
     return NextResponse.json({ error: 'Kategori bulunamadı' }, { status: 404 });
   }
 

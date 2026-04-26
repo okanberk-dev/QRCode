@@ -393,6 +393,7 @@ Magazin stilindeki client-side sayfa. PublicMenuView'den ayrı yaşıyor (kendi 
 - **Item PATCH + kategori değişikliği:** Item farklı bir kategoriye taşındığında server tarafı otomatik olarak hedef kategorinin sonuna yerleştirir (`sortOrder = MAX + 1`). Aksi halde sortOrder eski değerinde kalır ve listede yanlış pozisyonda görünür. Bkz. `/api/restaurants/[id]/menu/items/[itemId]` PATCH.
 - **sortOrder default:** Yeni item/kategori POST'unda `sortOrder = last + 10` kullanılır (10'luk boşluk manuel ince ayar için ama reorder sonrası `0,1,2...`'e sıkıştırılır). Small quirk, functional.
 - **`parsePriceInput`:** TR (`1.234,56`), EN (`1,234.56`) ve basit formatları (`1,50` / `1.50` / `1000`) destekler. Comma varsa decimal, dotlar thousand separator; tersi de geçerli. Tek dot belirsizlik durumunda decimal kabul edilir. Bkz. `src/lib/format.ts`.
+- **MenuCategory soft-delete (Sprint 3):** `deletedAt` kolonu ile mantıksal silme. `MenuItem.category onDelete: Restrict` korunur, `MenuCategory.items` cascade `deleteMany` sadece **restoran tamamen silindiğinde** çalışır (`/api/restaurants/[id]` DELETE). Tüm read sayfaları + reorder + item POST/PATCH `deletedAt: null` filtresi uygular; PATCH endpoint'i soft-deleted satırı 404 döner (zombie write koruması). Restore yolu yok — soft-delete = arşivleme; geri çağırmak DB direct müdahale gerektirir (Sprint 4 kararı).
 
 ---
 
@@ -485,12 +486,22 @@ Daily rollup tabloları **yok** — ham event'ler + composite index yeterli. ~10
   - AreaChart x-axis tick interval trend uzunluğuna göre (`≤7 gün: 0`, `≤30 gün: 5`, `>30: length/6`) — 375px ekranda etiketler çakışmaz.
   - BarChart Y-axis kategori etiketleri 14 karakterden uzunsa truncate edilir, tam ad tooltip'te görünür.
 
-### 13.9 Retention (TODO)
+### 13.9 Retention politikası
 
-Event tablosu **temizlenmiyor**. 10 restorana + günde 1K event varsayımı ile 1 yıl ~3.6M satır — partition yerine şimdilik kabul ediliyor. İleride:
-- 180 gün sonrası event'leri daily rollup tablosuna aggregate et
-- Raw event'leri 90 gün sonra sil
-- Cron: `/api/cron/analytics-compact` (örnek path, henüz yok)
+| Veri sınıfı | Tablo | Retention | Mekanizma |
+|---|---|---|---|
+| Müşteri IP'si | `Feedback.ipAddress` | **90 gün** (KVKK data minimization) | `/api/cron/anonymize-ips` — `IP_RETENTION_DAYS` env override edilebilir |
+| Menü analitik event'i | `menu_analytics_events` | **Süresiz** (şimdilik) | 10 restoran × 1K/gün = ~3.6M satır/yıl — ileride 90 gün raw + 180 gün rollup planı |
+| Admin audit log | `admin_audit_logs` | **2 yıl** (legitimate interest) | Şu an cron yok; günde 1-2 işlem × 730 gün ≈ 1500 satır → manuel temizlik yeterli. Volume artarsa `/api/cron/prune-audit-logs` eklenir. |
+| Yorum (Feedback) | `Feedback` | **Süresiz** (KVKK onaylı) | İşletmenin müşteri ilişkisi kaydı — silmek müşteri talebine bağlı |
+
+**Cron path'leri:**
+- `/api/cron/anonymize-ips` — canlı (Sprint 3)
+- `/api/cron/weekly-digest` — canlı (haftalık özet)
+- `/api/cron/analytics-compact` — örnek path, henüz yok
+- `/api/cron/prune-audit-logs` — gerek olunca eklenecek
+
+Tüm cron'lar `Authorization: Bearer ${CRON_SECRET}` zorunlu; Vercel Cron config ya da harici scheduler ile tetiklenir.
 
 ### 13.10 Eklememe kuralları (scope disiplini)
 
