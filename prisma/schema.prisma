@@ -18,6 +18,10 @@ model User {
   trialEndsAt   DateTime?    @map("trial_ends_at")
   locale        String       @default("tr")
   isActive      Boolean      @default(true) @map("is_active")
+  // Last time the trial-reminders cron sent this user a "trial ending" email.
+  // Used as a 20-hour dedup so a single cron tick can't fire repeatedly and
+  // 4 daily ticks (1/2/3/4 days remaining) each send exactly one mail.
+  lastTrialReminderAt DateTime? @map("last_trial_reminder_at")
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 

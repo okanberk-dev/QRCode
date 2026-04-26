@@ -196,3 +196,179 @@ export function renderP(text: string, opts: { color?: string; size?: number } = 
 export function spacer(height: number): string {
   return `<div style="height:${height}px;line-height:${height}px;font-size:1px;">&nbsp;</div>`;
 }
+
+// ─── Pixel-perfect helpers (Phase 16.1) ─────────────────────────────────
+//
+// Each helper renders a self-contained HTML chunk that survives Outlook + Gmail
+// + iOS Mail. Where mainstream CSS is unsupported (absolute positioning,
+// flex-grid) we fall back to <table>-based layouts plus a small @media query
+// in layout.ts for the mobile collapse.
+
+export interface BadgeOpts {
+  text: string;
+  variant?: 'lime-on-dark' | 'dark-on-lime' | 'soft';
+  /** Inline = renders as a normal block. Absolute-tr = anchored top-right of
+   *  its parent (used for "ÖNERİLEN" plan badge). MSO conditional with
+   *  `<v:rect>` provides a comparable shape on Outlook 2007+. */
+  position?: 'inline' | 'absolute-tr';
+}
+
+export function renderBadge(opts: BadgeOpts): string {
+  const { text } = opts;
+  const variant = opts.variant ?? 'dark-on-lime';
+  const position = opts.position ?? 'inline';
+
+  const colors = variant === 'lime-on-dark'
+    ? { bg: PULSE.graphite, fg: PULSE.lime }
+    : variant === 'soft'
+      ? { bg: PULSE.limeSoft, fg: PULSE.graphite }
+      : { bg: PULSE.graphite, fg: PULSE.lime };
+
+  const inner = `<span style="display:inline-block;font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;background:${colors.bg};color:${colors.fg};padding:4px 10px;border-radius:6px;text-transform:uppercase;font-weight:600;line-height:1.2;">${text}</span>`;
+
+  if (position === 'inline') return inner;
+
+  // Absolute-tr — Outlook (mso) gets a VML rect; everyone else gets the inline span
+  // wrapped in a positioned div. On mobile the @media rule in layout.ts unsticks it.
+  return `<!--[if mso]>
+<div style="mso-margin-top-alt:-12px;text-align:right;">${inner}</div>
+<![endif]-->
+<!--[if !mso]><!-->
+<div class="badge-absolute" style="position:absolute;top:-10px;right:18px;z-index:2;">${inner}</div>
+<!--<![endif]-->`;
+}
+
+export interface StatusPillOpts {
+  text: string;
+  dotColor?: string;
+  textColor?: string;
+  bgColor?: string;
+}
+
+export function renderStatusPill(opts: StatusPillOpts): string {
+  const dotColor = opts.dotColor ?? PULSE.success;
+  const textColor = opts.textColor ?? PULSE.success;
+  const bg = opts.bgColor ?? 'transparent';
+  return `<span style="display:inline-flex;align-items:center;gap:6px;font-family:${FONTS.mono};font-size:11px;color:${textColor};background:${bg};padding:${bg !== 'transparent' ? '4px 10px' : '0'};border-radius:999px;">
+    <span style="display:inline-block;width:6px;height:6px;background:${dotColor};border-radius:50%;"></span>
+    ${opts.text}
+  </span>`;
+}
+
+export interface TwoColCardsParams {
+  left: string;
+  right: string;
+  gap?: number;
+}
+
+export function renderTwoColCards(params: TwoColCardsParams): string {
+  const gap = params.gap ?? 12;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
+    <tr>
+      <td class="stack-col col-half" valign="top" style="width:50%;padding-right:${gap / 2}px;">${params.left}</td>
+      <td class="stack-col col-half" valign="top" style="width:50%;padding-left:${gap / 2}px;">${params.right}</td>
+    </tr>
+  </table>`;
+}
+
+export interface BarChartOpts {
+  values: number[];
+  labels: string[];
+  peakIndex?: number;
+  height?: number;
+}
+
+export function renderBarChart(opts: BarChartOpts): string {
+  const height = opts.height ?? 140;
+  const max = Math.max(...opts.values, 1);
+  const peak = opts.peakIndex ?? opts.values.indexOf(max);
+  const cells = opts.values.map((v, i) => {
+    const pct = Math.max(8, Math.round((v / max) * 100));
+    const isPeak = i === peak;
+    return `<td valign="bottom" align="center" style="padding:0 4px;width:${Math.floor(100 / opts.values.length)}%;">
+      <div style="font-family:${FONTS.mono};font-size:11px;color:${isPeak ? PULSE.graphite : PULSE.n400};font-weight:${isPeak ? 500 : 400};margin-bottom:8px;">${v}</div>
+      <div style="background:${isPeak ? PULSE.lime : PULSE.n100};height:${Math.round((pct / 100) * height)}px;border-radius:4px;width:100%;min-height:8px;line-height:1px;font-size:1px;">&nbsp;</div>
+      <div style="font-family:${FONTS.mono};font-size:10px;color:${PULSE.n400};letter-spacing:0.1em;margin-top:8px;">${opts.labels[i] ?? ''}</div>
+    </td>`;
+  }).join('');
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="bar-chart" style="height:${height + 40}px;"><tr>${cells}</tr></table>`;
+}
+
+export interface AvatarCircleOpts {
+  initials: string;
+  bg?: string;
+  fg?: string;
+  size?: number;
+}
+
+export function renderAvatarCircle(opts: AvatarCircleOpts): string {
+  const size = opts.size ?? 36;
+  const bg = opts.bg ?? PULSE.limeSoft;
+  const fg = opts.fg ?? PULSE.graphite;
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};display:inline-block;text-align:center;line-height:${size}px;font-family:${FONTS.heading};font-weight:500;font-size:${Math.round(size * 0.4)}px;color:${fg};">${opts.initials.charAt(0).toUpperCase()}</div>`;
+}
+
+export interface QuoteCardOpts {
+  stars: number;
+  name: string;
+  platform?: string;
+  text: string;
+  warn?: boolean;
+}
+
+export function renderQuoteCard(opts: QuoteCardOpts): string {
+  const avatarBg = opts.warn ? '#FEF3C7' : PULSE.limeSoft;
+  const starColor = opts.warn ? PULSE.warning : PULSE.graphite;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr>
+      <td valign="top" style="width:48px;padding:16px 0;">
+        ${renderAvatarCircle({ initials: opts.name, bg: avatarBg, size: 36 })}
+      </td>
+      <td valign="top" style="padding:16px 0 16px 16px;border-bottom:1px solid ${PULSE.n200};">
+        <div style="margin-bottom:4px;">
+          <span style="color:${starColor};font-size:13px;letter-spacing:0.05em;">${'★'.repeat(opts.stars)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - opts.stars)}</span></span>
+          <span style="font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};margin-left:10px;">${escapeHtmlInline(opts.name)}${opts.platform ? ` · ${escapeHtmlInline(opts.platform)}` : ''}</span>
+        </div>
+        <div style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n700};line-height:1.55;">"${escapeHtmlInline(opts.text)}"</div>
+      </td>
+    </tr>
+  </table>`;
+}
+
+export interface TimelineItem {
+  label: string;
+  body: string;
+  status?: 'done' | 'current' | 'pending';
+}
+
+export function renderTimeline(items: TimelineItem[]): string {
+  const rows = items.map((it, i) => {
+    const status = it.status ?? (i === 0 ? 'done' : i === 1 ? 'current' : 'pending');
+    const dotColor = status === 'done' ? PULSE.graphite : status === 'current' ? PULSE.lime : PULSE.n300;
+    const dotBorder = status === 'current' ? `border:2px solid ${PULSE.graphite};` : '';
+    const lineColor = i === items.length - 1 ? 'transparent' : PULSE.n200;
+    return `<tr>
+      <td valign="top" align="center" style="width:32px;padding:6px 0;">
+        <div style="width:12px;height:12px;background:${dotColor};${dotBorder}border-radius:50%;display:inline-block;line-height:1;"></div>
+        <div style="width:2px;background:${lineColor};height:36px;margin:4px auto 0;"></div>
+      </td>
+      <td valign="top" style="padding:6px 0 6px 16px;">
+        <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.12em;color:${status === 'done' ? PULSE.graphite : PULSE.n500};text-transform:uppercase;font-weight:500;">${escapeHtmlInline(it.label)}</div>
+        <div style="font-family:${FONTS.body};font-size:14px;color:${PULSE.graphite};margin-top:2px;line-height:1.5;">${escapeHtmlInline(it.body)}</div>
+      </td>
+    </tr>`;
+  }).join('');
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${rows}</table>`;
+}
+
+// Local re-export of escape helper to avoid a `./escape` round-trip on every
+// call from rendering helpers in this file.
+function escapeHtmlInline(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}

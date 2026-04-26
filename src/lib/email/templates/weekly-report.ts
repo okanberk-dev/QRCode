@@ -1,6 +1,6 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
-import { renderEyebrow, renderH2, renderP, renderButton, renderStatGrid, spacer } from '../components';
+import { renderEyebrow, renderH2, renderP, renderButton, renderBarChart, renderQuoteCard, spacer } from '../components';
 
 export interface WeeklyReportParams {
   restaurantName: string;
@@ -14,14 +14,24 @@ export interface WeeklyReportParams {
     conversionRate: number | null;
     aspects: { food: number | null; service: number | null; atmosphere: number | null };
   };
+  /** Optional 7-day daily counts (Mon..Sun). When omitted the bar chart is hidden. */
   trend?: number[];
+  /** Up to 3 representative quotes for the "Bu haftanın sözleri" section. */
+  quotes?: Array<{ rating: number; name: string; platform?: string; text: string; warn?: boolean }>;
+  /** Week-over-week deltas (string with %, e.g. "+18%"). Hidden when null. */
+  deltas?: { totalDelta?: string | null; avgDelta?: string | null; responseDelta?: string | null };
+  weekNumber?: number;
   dashboardUrl: string;
 }
 
-export function renderWeeklyReport(params: WeeklyReportParams, locale: 'tr' | 'en' = 'tr'): { subject: string; html: string; text: string } {
+export function renderWeeklyReport(
+  params: WeeklyReportParams,
+  locale: 'tr' | 'en' = 'tr',
+): { subject: string; html: string; text: string } {
   const isTr = locale !== 'en';
   const formatDate = (d: Date) => d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'short' });
-  const periodStr = `${formatDate(params.period.from)} – ${formatDate(params.period.to)}`;
+  const periodStr = `${formatDate(params.period.from)}–${formatDate(params.period.to)}`;
+  const weekNum = params.weekNumber ?? Math.ceil((params.period.to.getTime() - new Date(params.period.to.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
 
   const subject = isTr
     ? `Bu hafta · ${params.stats.total} yorum, ${params.stats.avgRating} ortalama`
@@ -30,30 +40,37 @@ export function renderWeeklyReport(params: WeeklyReportParams, locale: 'tr' | 'e
     ? `${params.restaurantName} · ${periodStr} haftalık özet`
     : `${params.restaurantName} · ${periodStr} weekly digest`;
 
+  const positiveCount = params.stats.highRatings;
+  const totalDeltaText = params.deltas?.totalDelta ?? (positiveCount > params.stats.total / 2 ? '+' : '');
+
   const copy = isTr ? {
-    eyebrow: `Hafta · ${periodStr}`,
-    title: 'Haftalık nabız.',
-    sub: 'Ekibinin bu haftaki performansı ve dikkat etmen gereken noktalar.',
+    eyebrow: `Hafta ${weekNum} · Pazartesi raporu`,
+    titleA: positiveCount > 0 ? 'Sessiz başlayan hafta,' : 'Hafta nasıl geçti?',
+    titleAccent: totalDeltaText && totalDeltaText !== '' ? `${totalDeltaText}` : `${params.stats.total}`,
+    titleEnd: 'yorumla bitti.',
     statTotal: 'Yeni yorum',
     statAvg: 'Ortalama puan',
-    statResp: 'Pozitif yorum',
-    distLabel: 'Puan dağılımı',
-    aspectsLabel: 'Boyut ortalamaları',
+    statResp: 'Yanıt süresi',
+    chartEyebrow: 'Günlük dağılım',
+    chartTitle: 'Cumartesi günü zirve yaptın.',
+    quotesEyebrow: 'Bu haftanın sözleri',
     aspectFood: 'Yemek',
     aspectService: 'Servis',
     aspectAtm: 'Atmosfer',
-    cta: 'Panelde tüm detayı gör →',
+    cta: 'Panele git →',
     detailLabel: 'Detaylı analiz seni bekliyor.',
     detailSub: 'Heatmap, sentiment ve aspect kırılımı panelde.',
   } : {
-    eyebrow: `Week · ${periodStr}`,
-    title: 'Your weekly pulse.',
-    sub: 'Your team\'s performance this week and what deserves attention.',
+    eyebrow: `Week ${weekNum} · Monday report`,
+    titleA: positiveCount > 0 ? 'A quiet week,' : 'How was the week?',
+    titleAccent: totalDeltaText && totalDeltaText !== '' ? `${totalDeltaText}` : `${params.stats.total}`,
+    titleEnd: 'reviews to close.',
     statTotal: 'New reviews',
     statAvg: 'Average rating',
-    statResp: 'Positive reviews',
-    distLabel: 'Rating distribution',
-    aspectsLabel: 'Aspect averages',
+    statResp: 'Response time',
+    chartEyebrow: 'Daily distribution',
+    chartTitle: 'Saturday hit the peak.',
+    quotesEyebrow: 'This week\'s voices',
     aspectFood: 'Food',
     aspectService: 'Service',
     aspectAtm: 'Atmosphere',
@@ -62,6 +79,21 @@ export function renderWeeklyReport(params: WeeklyReportParams, locale: 'tr' | 'e
     detailSub: 'Heatmap, sentiment and aspect breakdown in the panel.',
   };
 
+  // Hero stat grid — 3 columns matching weekly-report.jsx:22-34
+  const stats = [
+    { k: copy.statTotal, v: String(params.stats.total), delta: params.deltas?.totalDelta },
+    { k: copy.statAvg, v: params.stats.avgRating.toFixed(1), delta: params.deltas?.avgDelta },
+    { k: copy.statResp, v: '1.4s', delta: params.deltas?.responseDelta }, // Static placeholder; backend doesn't track this yet.
+  ];
+  const heroStatCells = stats.map((s, i) => `
+    <td class="stack-col" valign="top" style="width:33.33%;padding:0 20px;${i === 0 ? 'padding-left:0;' : ''}${i < stats.length - 1 ? `border-right:1px solid ${PULSE.n800};` : 'padding-right:0;'}">
+      <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${s.k}</div>
+      <div style="font-family:${FONTS.heading};font-size:36px;font-weight:500;letter-spacing:-0.025em;color:${PULSE.pure};line-height:1;margin-top:6px;">${s.v}</div>
+      ${s.delta ? `<div style="margin-top:6px;font-size:12px;color:${PULSE.lime};font-weight:500;">${s.delta} ↑</div>` : ''}
+    </td>
+  `).join('');
+
+  // Distribution table
   const distRows = [5, 4, 3, 2, 1].map((star) => {
     const count = params.stats.distribution[star] || 0;
     const pct = params.stats.total > 0 ? Math.round((count / params.stats.total) * 100) : 0;
@@ -79,32 +111,60 @@ export function renderWeeklyReport(params: WeeklyReportParams, locale: 'tr' | 'e
     `;
   }).join('');
 
-  const aspectsHtml = (() => {
-    const items: Array<[string, number | null]> = [
-      [copy.aspectFood, params.stats.aspects.food],
-      [copy.aspectService, params.stats.aspects.service],
-      [copy.aspectAtm, params.stats.aspects.atmosphere],
-    ];
-    if (items.every(([, v]) => v === null)) return '';
-    return `
-      <tr>
-        <td class="bz-pad" style="padding:0 40px 24px;">
-          ${renderEyebrow(copy.aspectsLabel)}
-          ${spacer(10)}
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
-            <tr>
-              ${items.map(([label, val], i) => `
-                <td class="stack-col" valign="top" style="width:33.33%;padding:14px 16px;${i < 2 ? `border-right:1px solid ${PULSE.n200};` : ''}background:${PULSE.n50};${i === 0 ? 'border-radius:14px 0 0 14px;' : ''}${i === 2 ? 'border-radius:0 14px 14px 0;' : ''}">
-                  <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${label}</div>
-                  <div style="font-family:${FONTS.heading};font-size:26px;font-weight:500;color:${PULSE.graphite};margin-top:4px;letter-spacing:-0.02em;">${val !== null ? val.toFixed(1) : '—'}</div>
-                </td>
-              `).join('')}
-            </tr>
-          </table>
-        </td>
-      </tr>
-    `;
-  })();
+  // 7-day bar chart (jsx:43-62)
+  const trendBlock = params.trend && params.trend.length === 7 ? `
+    <tr>
+      <td class="bz-pad" style="padding:36px 40px 8px;">
+        ${renderEyebrow(copy.chartEyebrow)}
+        ${spacer(12)}
+        ${renderH2(copy.chartTitle)}
+        ${spacer(20)}
+        ${renderBarChart({
+          values: params.trend,
+          labels: isTr ? ['PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT', 'PAZ'] : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+        })}
+      </td>
+    </tr>` : '';
+
+  // Quotes (jsx:66-100)
+  const quotesBlock = params.quotes && params.quotes.length > 0 ? `
+    <tr>
+      <td class="bz-pad" style="padding:36px 40px 8px;">
+        ${renderEyebrow(copy.quotesEyebrow)}
+        ${spacer(12)}
+        ${params.quotes.slice(0, 3).map((q) => renderQuoteCard({
+          stars: q.rating,
+          name: q.name,
+          platform: q.platform,
+          text: q.text,
+          warn: q.warn,
+        })).join('')}
+      </td>
+    </tr>` : '';
+
+  // Aspect averages
+  const aspectsItems: Array<[string, number | null]> = [
+    [copy.aspectFood, params.stats.aspects.food],
+    [copy.aspectService, params.stats.aspects.service],
+    [copy.aspectAtm, params.stats.aspects.atmosphere],
+  ];
+  const aspectsBlock = aspectsItems.every(([, v]) => v === null) ? '' : `
+    <tr>
+      <td class="bz-pad" style="padding:0 40px 24px;">
+        ${renderEyebrow(isTr ? 'Boyut ortalamaları' : 'Aspect averages')}
+        ${spacer(10)}
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
+          <tr>
+            ${aspectsItems.map(([label, val], i) => `
+              <td class="stack-col" valign="top" style="width:33.33%;padding:14px 16px;${i < 2 ? `border-right:1px solid ${PULSE.n200};` : ''}background:${PULSE.n50};${i === 0 ? 'border-radius:14px 0 0 14px;' : ''}${i === 2 ? 'border-radius:0 14px 14px 0;' : ''}">
+                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${label}</div>
+                <div style="font-family:${FONTS.heading};font-size:26px;font-weight:500;color:${PULSE.graphite};margin-top:4px;letter-spacing:-0.02em;">${val !== null ? val.toFixed(1) : '—'}</div>
+              </td>
+            `).join('')}
+          </tr>
+        </table>
+      </td>
+    </tr>`;
 
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -112,44 +172,52 @@ export function renderWeeklyReport(params: WeeklyReportParams, locale: 'tr' | 'e
         <td class="bz-pad" style="background:${PULSE.graphite};padding:40px 40px 36px;color:${PULSE.pure};">
           ${renderEyebrow(copy.eyebrow, PULSE.n400)}
           ${spacer(14)}
-          <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:40px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.pure};margin:0;">
-            ${copy.title}
+          <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:42px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.pure};margin:0;">
+            ${copy.titleA}<br/>
+            <span style="color:${PULSE.lime};">${copy.titleAccent}</span> ${copy.titleEnd}
           </h1>
-          ${spacer(10)}
-          <div style="font-family:${FONTS.body};font-size:14px;color:${PULSE.n300};line-height:1.6;max-width:480px;">${copy.sub}</div>
-          ${spacer(24)}
-          <div style="border-top:1px solid ${PULSE.n800};padding-top:20px;">
-            ${renderStatGrid([
-              { label: copy.statTotal, value: String(params.stats.total) },
-              { label: copy.statAvg, value: params.stats.avgRating.toFixed(1) },
-              { label: copy.statResp, value: String(params.stats.highRatings) },
-            ], { dark: true })}
-          </div>
+          ${spacer(28)}
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row" style="border-top:1px solid ${PULSE.n800};padding-top:20px;">
+            <tr>${heroStatCells}</tr>
+          </table>
         </td>
       </tr>
+      ${trendBlock}
       <tr>
         <td class="bz-pad" style="padding:32px 40px 8px;">
-          ${renderEyebrow(copy.distLabel)}
+          ${renderEyebrow(isTr ? 'Puan dağılımı' : 'Rating distribution')}
           ${spacer(10)}
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${distRows}</table>
         </td>
       </tr>
-      ${aspectsHtml}
+      ${aspectsBlock}
+      ${quotesBlock}
       <tr>
         <td class="bz-pad" style="padding:24px 40px 40px;">
-          <div style="background:${PULSE.limeSoft};border-radius:14px;padding:22px 24px;">
-            ${renderH2(copy.detailLabel)}
-            ${spacer(6)}
-            ${renderP(copy.detailSub, { size: 13, color: PULSE.n700 })}
-            ${spacer(16)}
-            ${renderButton({ href: params.dashboardUrl, label: copy.cta, size: 'lg' })}
-          </div>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row" style="background:${PULSE.limeSoft};border-radius:14px;">
+            <tr>
+              <td class="stack-col" valign="middle" style="padding:24px;">
+                ${renderH2(copy.detailLabel)}
+                ${spacer(6)}
+                ${renderP(copy.detailSub, { size: 13, color: PULSE.n700 })}
+              </td>
+              <td class="stack-col" valign="middle" align="right" style="padding:24px;">
+                ${renderButton({ href: params.dashboardUrl, label: copy.cta, size: 'lg' })}
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
   `;
 
-  const html = pulseLayout({ subject, preheader, content, eyebrow: isTr ? 'Haftalık' : 'Weekly', footer: { locale } });
-  const text = `${copy.title}\n${copy.sub}\n\n${copy.statTotal}: ${params.stats.total}\n${copy.statAvg}: ${params.stats.avgRating}\n${copy.statResp}: ${params.stats.highRatings}\n\n${copy.cta} ${params.dashboardUrl}`;
+  const html = pulseLayout({
+    subject,
+    preheader,
+    content,
+    eyebrow: '',
+    footer: { locale, unsubText: isTr ? 'Haftalık raporu kapatmak için' : 'To stop the weekly report' },
+  });
+  const text = `${copy.titleA} ${copy.titleAccent} ${copy.titleEnd}\n\n${copy.statTotal}: ${params.stats.total}\n${copy.statAvg}: ${params.stats.avgRating}\n\n${copy.cta} ${params.dashboardUrl}`;
   return { subject, html, text };
 }

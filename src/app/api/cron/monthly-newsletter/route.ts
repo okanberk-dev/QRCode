@@ -84,8 +84,20 @@ export async function GET(req: NextRequest) {
         issueNumber,
         locale,
       });
-      if (ok) sent++;
-      else failed++;
+      if (ok) {
+        sent++;
+      } else {
+        failed++;
+        // Resend already logs the upstream HTTP body in src/lib/email.ts.
+        // Add subscriber context here so failures are correlatable in
+        // Vercel/console without dumping the full email payload.
+        console.error('[MONTHLY_NEWSLETTER] send failed', {
+          email: sub.email,
+          locale,
+          postsCount: posts.length,
+          issueNumber,
+        });
+      }
 
       await new Promise((r) => setTimeout(r, 120));
     }

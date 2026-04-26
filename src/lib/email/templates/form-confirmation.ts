@@ -1,7 +1,7 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderH1, renderP, renderButton, spacer } from '../components';
+import { renderEyebrow, renderP, renderTimeline, spacer, renderTwoColCards } from '../components';
 
 export type FormType = 'contact' | 'career' | 'roi' | 'newsletter';
 
@@ -10,191 +10,283 @@ export interface FormConfirmationParams {
   name?: string | null;
   details?: Array<{ label: string; value: string }>;
   followUpUrl?: string;
+  ticketId?: string;
 }
 
-export function renderFormConfirmation(params: FormConfirmationParams, locale: 'tr' | 'en' = 'tr'): { subject: string; html: string; text: string } {
+export function renderFormConfirmation(
+  params: FormConfirmationParams,
+  locale: 'tr' | 'en' = 'tr',
+): { subject: string; html: string; text: string } {
   const isTr = locale !== 'en';
-  const name = params.name ? escapeHtml(params.name).split(' ')[0] : (isTr ? 'merhaba' : 'hi');
+  const ticket = params.ticketId ?? `BUZ-${Math.floor(Math.random() * 9000 + 1000)}`;
 
   const FORM_COPY = isTr ? {
     contact: {
-      subject: 'Mesajını aldık — yanıt 24 saat içinde',
-      preheader: 'İletişim formundan gelen taleplere işletme saatleri içinde dönüyoruz.',
-      eyebrow: 'Form · İletişim',
-      title: 'Aldık.',
-      intro: 'Mesajını ekibimize ilettik. İlgili kişi 24 saat içinde sana yanıt yazacak.',
-      timelineHeading: 'Sıradaki adımlar',
+      subject: 'Mesajını aldık — 24 saat içinde döneceğiz',
+      preheader: `Talep #${ticket} sıraya alındı. İşte özet.`,
+      eyebrow: 'İletişim · Onay',
+      titleA: 'Aldık',
+      titleB: 'Sıradayız.',
+      intro: 'Mesajın ekibimize ulaştı. Genelde 24 saat içinde dönüyoruz — haftasonu bu süre 48 saate kadar uzayabilir.',
+      formEyebrow: 'Form kaydı',
+      timelineEyebrow: 'Sırada ne var',
       timeline: [
-        ['Şimdi', 'Mesajın bize ulaştı'],
-        ['1 saat içinde', 'Doğru kişiye yönlendirildi'],
-        ['24 saat içinde', 'Yanıt geliyor'],
-      ] as Array<[string, string]>,
-      cta: 'Buaze ürün sayfasına dön',
+        { label: 'Az önce · Tamamlandı', body: 'Mesajını aldık', status: 'done' as const },
+        { label: 'İlk 4 saat içinde · Sales', body: 'Ekip atayacağız', status: 'current' as const },
+        { label: '24 saat içinde · E-posta veya telefon', body: 'Birebir döneceğiz', status: 'pending' as const },
+      ],
+      sideEyebrowA: 'Acil durum',
+      sideBodyA: 'Daha hızlı destek için canlı sohbeti kullanabilirsin.',
+      sideCtaA: 'Sohbeti aç →',
+      sideEyebrowB: 'Beklerken',
+      sideBodyB: '10 dakikalık ürün turu — kayıt olmadan.',
+      sideCtaB: 'Ürün turunu izle →',
     },
     career: {
       subject: 'Başvurun bize ulaştı',
-      preheader: 'Buaze HR ekibi başvurunu inceleyip 5 iş günü içinde dönecek.',
-      eyebrow: 'Form · Kariyer',
-      title: `${name}, başvurun aramızda.`,
-      intro: 'Başvurunu aldık ve uygun ekipler arasında dağıttık. 5 iş günü içinde sana yazıyor olacağız — uygun bir pozisyon yoksa bile mutlaka bilgi vereceğiz.',
-      timelineHeading: 'Süreç',
+      preheader: `Başvuru #${ticket} sıraya alındı. 5 iş gününde dönüyoruz.`,
+      eyebrow: 'Kariyer · Onay',
+      titleA: 'Aldık',
+      titleB: 'İnceliyoruz.',
+      intro: 'Başvurunu ekibimize ilettik. 5 iş günü içinde mutlaka geri döneceğiz — uygun bir pozisyon yoksa bile haber vereceğiz.',
+      formEyebrow: 'Başvuru özeti',
+      timelineEyebrow: 'Süreç',
       timeline: [
-        ['1. gün', 'CV inceleme'],
-        ['3. gün', 'İlk görüşme daveti (uygunsa)'],
-        ['5. gün', 'Sonuç bildirimi'],
-      ] as Array<[string, string]>,
-      cta: 'Açık pozisyonları gör →',
+        { label: '1. gün · Tamamlandı', body: 'Başvurun ulaştı', status: 'done' as const },
+        { label: '2-3. gün · İnceleme', body: 'CV ve portfolyon HR\'da', status: 'current' as const },
+        { label: '5. gün içinde', body: 'Sonuç bildirimi e-postası', status: 'pending' as const },
+      ],
+      sideEyebrowA: 'Açık pozisyonlar',
+      sideBodyA: 'Diğer rolleri de görmek ister misin?',
+      sideCtaA: 'Tüm pozisyonlar →',
+      sideEyebrowB: 'Beklerken',
+      sideBodyB: 'Buaze ekip kültürünü tanımak için hikâyemizi oku.',
+      sideCtaB: 'Ekip blogu →',
     },
     roi: {
       subject: 'ROI hesaplamanı kaydettik',
-      preheader: 'Tahmini gelir etkisi ve önerilerin ekibimize iletildi.',
-      eyebrow: 'Form · ROI hesaplama',
-      title: 'Hesabını yaptık.',
+      preheader: `Hesap #${ticket} hazır. Detaylı PDF birazdan inboxuna düşecek.`,
+      eyebrow: 'ROI · Onay',
+      titleA: 'Hesapladık',
+      titleB: 'Sıradaki adım: demo.',
       intro: 'Verdiğin bilgilerle aylık potansiyel etkiyi hesapladık. Detaylı raporu ve sektör karşılaştırmasını e-posta ile sana ulaştırıyor olacağız.',
-      timelineHeading: 'Sıradaki adımlar',
+      formEyebrow: 'Hesap özeti',
+      timelineEyebrow: 'Sırada ne var',
       timeline: [
-        ['Şimdi', 'Hesaplama kaydedildi'],
-        ['2 saat içinde', 'Detaylı PDF raporu hazır'],
-        ['1 gün içinde', 'Demo daveti gönderiyoruz'],
-      ] as Array<[string, string]>,
-      cta: 'Şimdi bir demo seç →',
+        { label: 'Az önce · Tamamlandı', body: 'Hesaplamanı kaydettik', status: 'done' as const },
+        { label: '2 saat içinde · Sales ekibi', body: 'Detaylı PDF rapor hazırlanıyor', status: 'current' as const },
+        { label: '1 gün içinde', body: 'Demo daveti gönderiyoruz', status: 'pending' as const },
+      ],
+      sideEyebrowA: 'Demo seç',
+      sideBodyA: 'Beklemeden bir slot ayırt edebilirsin.',
+      sideCtaA: 'Takvimden seç →',
+      sideEyebrowB: 'Bu arada',
+      sideBodyB: 'Diğer restoranlar Buaze\'i nasıl kullanıyor?',
+      sideCtaB: 'Vakaları gör →',
     },
     newsletter: {
       subject: 'Aboneliğin aktif',
       preheader: 'Pulse bülteni her ayın 1\'inde mailine düşecek.',
-      eyebrow: 'Form · Bülten',
-      title: 'Aramızdasın.',
-      intro: 'Aboneliğini aktive ettik. Pulse bülteni her ayın 1\'inde — vakalar, sektör verileri, ürün haberleri.',
-      timelineHeading: 'Ne bekleyeceksin?',
+      eyebrow: 'Bülten · Onay',
+      titleA: 'Aramızdasın',
+      titleB: 'Pulse her ay 1\'inde gelir.',
+      intro: 'Aboneliğini aktive ettik. Pulse bülteni vakalar, sektör verileri, ürün haberleri — sana ayda bir.',
+      formEyebrow: 'Abonelik',
+      timelineEyebrow: 'Ne bekleyeceksin',
       timeline: [
-        ['Her ayın 1\'i', 'Pulse aylık bülten'],
-        ['Ara sıra', 'Önemli ürün duyuruları'],
-        ['Hiçbir zaman', 'Spam veya 3. taraf paylaşım'],
-      ] as Array<[string, string]>,
-      cta: 'Buaze\'i keşfet →',
+        { label: 'Şimdi', body: 'Hoş geldin maili (bu mail)', status: 'done' as const },
+        { label: 'Her ayın 1\'i', body: 'Pulse aylık bülten', status: 'current' as const },
+        { label: 'Hiç', body: 'Spam, 3. taraf paylaşımı, yığın mail — yok', status: 'pending' as const },
+      ],
+      sideEyebrowA: 'Bu arada',
+      sideBodyA: 'Buaze\'i hâlâ keşfediyorsan kısa turdan başla.',
+      sideCtaA: 'Buaze nasıl çalışır →',
+      sideEyebrowB: 'Beklerken',
+      sideBodyB: '5 dakikalık ürün turu — kayıt yok.',
+      sideCtaB: 'Ürün turunu izle →',
     },
   } : {
     contact: {
       subject: 'Got your message — we\'ll reply within 24h',
-      preheader: 'We respond to contact form requests within business hours.',
-      eyebrow: 'Form · Contact',
-      title: 'Got it.',
-      intro: 'Your message reached our team. The right person will reply within 24 hours.',
-      timelineHeading: 'What happens next',
+      preheader: `Ticket #${ticket} queued. Here\'s the summary.`,
+      eyebrow: 'Contact · Confirmation',
+      titleA: 'Got it',
+      titleB: 'In the queue.',
+      intro: 'Your message reached our team. We typically reply within 24 hours — weekends may extend this to 48 hours.',
+      formEyebrow: 'Form record',
+      timelineEyebrow: 'What happens next',
       timeline: [
-        ['Now', 'Your message arrived'],
-        ['Within 1 hour', 'Routed to the right person'],
-        ['Within 24 hours', 'Reply on its way'],
-      ] as Array<[string, string]>,
-      cta: 'Back to Buaze →',
+        { label: 'Now · Done', body: 'We received your message', status: 'done' as const },
+        { label: 'Within 4h · Sales', body: 'Routing to the right person', status: 'current' as const },
+        { label: 'Within 24h · email or call', body: 'You\'ll hear from a human', status: 'pending' as const },
+      ],
+      sideEyebrowA: 'Need it faster?',
+      sideBodyA: 'Open live chat for instant support.',
+      sideCtaA: 'Open chat →',
+      sideEyebrowB: 'While you wait',
+      sideBodyB: '10-min product tour — no signup.',
+      sideCtaB: 'Watch tour →',
     },
     career: {
       subject: 'Your application reached us',
-      preheader: 'Our HR team will review and respond within 5 business days.',
-      eyebrow: 'Form · Careers',
-      title: `${name}, you\'re in the loop.`,
-      intro: 'We received your application and routed it to the relevant teams. We\'ll reach out within 5 business days — even if there\'s no fit, you\'ll hear from us.',
-      timelineHeading: 'Process',
+      preheader: `Application #${ticket} queued. We\'ll reply within 5 business days.`,
+      eyebrow: 'Careers · Confirmation',
+      titleA: 'Got it',
+      titleB: 'Reviewing now.',
+      intro: 'We\'ve forwarded your application to the team. We\'ll get back within 5 business days — even if there\'s no fit, you\'ll hear from us.',
+      formEyebrow: 'Application summary',
+      timelineEyebrow: 'Process',
       timeline: [
-        ['Day 1', 'Resume review'],
-        ['Day 3', 'First interview invite (if matching)'],
-        ['Day 5', 'Final decision'],
-      ] as Array<[string, string]>,
-      cta: 'See open roles →',
+        { label: 'Day 1 · Done', body: 'Application received', status: 'done' as const },
+        { label: 'Day 2-3 · Review', body: 'Resume + portfolio with HR', status: 'current' as const },
+        { label: 'By day 5', body: 'Final decision email', status: 'pending' as const },
+      ],
+      sideEyebrowA: 'Open roles',
+      sideBodyA: 'Want to see other positions?',
+      sideCtaA: 'All open roles →',
+      sideEyebrowB: 'While you wait',
+      sideBodyB: 'Read about Buaze culture.',
+      sideCtaB: 'Team blog →',
     },
     roi: {
       subject: 'We saved your ROI estimate',
-      preheader: 'Your estimated revenue impact and recommendations are with our team.',
-      eyebrow: 'Form · ROI calculator',
-      title: 'Crunched the numbers.',
-      intro: 'Based on your inputs we estimated monthly potential impact. We\'ll send a detailed PDF report and sector benchmark to your inbox.',
-      timelineHeading: 'What happens next',
+      preheader: `Estimate #${ticket} ready. Detailed PDF inbound.`,
+      eyebrow: 'ROI · Confirmation',
+      titleA: 'Crunched',
+      titleB: 'Next: demo.',
+      intro: 'Based on your inputs we estimated monthly potential impact. We\'ll send a detailed PDF report and sector benchmark.',
+      formEyebrow: 'Estimate summary',
+      timelineEyebrow: 'What happens next',
       timeline: [
-        ['Now', 'Estimate saved'],
-        ['Within 2 hours', 'Detailed PDF ready'],
-        ['Within 1 day', 'Demo invitation sent'],
-      ] as Array<[string, string]>,
-      cta: 'Pick a demo slot →',
+        { label: 'Now · Done', body: 'Estimate saved', status: 'done' as const },
+        { label: 'Within 2h · Sales', body: 'Detailed PDF report being prepared', status: 'current' as const },
+        { label: 'Within 1 day', body: 'Demo invitation sent', status: 'pending' as const },
+      ],
+      sideEyebrowA: 'Pick a demo',
+      sideBodyA: 'Reserve a slot without waiting.',
+      sideCtaA: 'Pick a time →',
+      sideEyebrowB: 'Meanwhile',
+      sideBodyB: 'How do other restaurants use Buaze?',
+      sideCtaB: 'See cases →',
     },
     newsletter: {
       subject: 'Subscription active',
-      preheader: 'The Pulse newsletter lands on the 1st of every month.',
-      eyebrow: 'Form · Newsletter',
-      title: 'You\'re in.',
-      intro: 'Your subscription is live. Pulse hits your inbox on the 1st of every month — cases, sector data, product news.',
-      timelineHeading: 'What to expect',
+      preheader: 'Pulse newsletter lands on the 1st of every month.',
+      eyebrow: 'Newsletter · Confirmation',
+      titleA: 'You\'re in',
+      titleB: 'Pulse arrives on the 1st.',
+      intro: 'Your subscription is live. Pulse covers cases, sector data, and product news — once a month.',
+      formEyebrow: 'Subscription',
+      timelineEyebrow: 'What to expect',
       timeline: [
-        ['1st of each month', 'Pulse monthly digest'],
-        ['Occasionally', 'Major product news'],
-        ['Never', 'Spam or 3rd-party sharing'],
-      ] as Array<[string, string]>,
-      cta: 'Explore Buaze →',
+        { label: 'Now', body: 'Welcome email (this one)', status: 'done' as const },
+        { label: '1st of each month', body: 'Pulse monthly digest', status: 'current' as const },
+        { label: 'Never', body: 'Spam, 3rd-party sharing, bulk mail', status: 'pending' as const },
+      ],
+      sideEyebrowA: 'Meanwhile',
+      sideBodyA: 'Still exploring Buaze? Take the short tour.',
+      sideCtaA: 'How Buaze works →',
+      sideEyebrowB: 'While you wait',
+      sideBodyB: '5-min product tour — no signup.',
+      sideCtaB: 'Watch tour →',
     },
   };
 
   const copy = FORM_COPY[params.formType];
-  const followUpUrl = params.followUpUrl || (process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com');
+  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const localePath = isTr ? 'tr' : 'en';
+  const sideHrefA = `${baseAppUrl}/${localePath}/${params.formType === 'career' ? 'careers' : params.formType === 'newsletter' ? 'how-it-works' : 'contact'}`;
+  const sideHrefB = `${baseAppUrl}/${localePath}/how-it-works`;
 
-  const detailsRows = (params.details || []).map((d) => `
+  // Form summary table — matches form-confirmation.jsx:51-69
+  const detailRows = (params.details || []).map((d, i, arr) => `
     <tr>
-      <td style="padding:8px 0;border-bottom:1px solid ${PULSE.n200};font-size:13px;color:${PULSE.n500};">${escapeHtml(d.label)}</td>
-      <td align="right" style="padding:8px 0;border-bottom:1px solid ${PULSE.n200};font-size:13px;font-weight:600;color:${PULSE.graphite};">${escapeHtml(d.value)}</td>
+      <td valign="top" style="width:110px;padding:12px 16px 12px 0;${i < arr.length - 1 ? `border-bottom:1px solid ${PULSE.n200};` : ''}">
+        <div style="font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};letter-spacing:0.1em;text-transform:uppercase;padding-top:2px;">${escapeHtml(d.label)}</div>
+      </td>
+      <td valign="top" style="padding:12px 0;${i < arr.length - 1 ? `border-bottom:1px solid ${PULSE.n200};` : ''}">
+        <div style="font-family:${FONTS.body};font-size:14px;color:${PULSE.graphite};line-height:1.55;">${escapeHtml(d.value)}</div>
+      </td>
     </tr>
   `).join('');
 
-  const timelineRows = copy.timeline.map((t, i) => `
-    <tr>
-      <td valign="top" style="padding:10px 0;width:120px;font-family:${FONTS.mono};font-size:11px;letter-spacing:0.12em;color:${i === 0 ? PULSE.graphite : PULSE.n500};text-transform:uppercase;">${t[0]}</td>
-      <td valign="top" style="padding:10px 0;border-top:${i === 0 ? 'none' : `1px solid ${PULSE.n200}`};font-family:${FONTS.body};font-size:14px;color:${PULSE.graphite};">${t[1]}</td>
-    </tr>
-  `).join('');
+  const filedAt = new Date().toLocaleString(isTr ? 'tr-TR' : 'en-US', {
+    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+  });
+
+  const formCard = detailRows ? `
+    <div style="border:1px solid ${PULSE.n200};border-radius:14px;overflow:hidden;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.n50};border-bottom:1px solid ${PULSE.n200};">
+        <tr>
+          <td style="padding:14px 20px;" valign="middle">${renderEyebrow(copy.formEyebrow)}</td>
+          <td style="padding:14px 20px;" valign="middle" align="right"><span style="font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};">${filedAt}</span></td>
+        </tr>
+      </table>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="padding:0;">
+        <tbody>${detailRows}</tbody>
+      </table>
+    </div>
+  ` : '';
+
+  const sideCardA = `
+    <div style="padding:18px;background:${PULSE.n50};border-radius:12px;height:100%;">
+      ${renderEyebrow(copy.sideEyebrowA)}
+      ${spacer(8)}
+      ${renderP(copy.sideBodyA, { size: 13 })}
+      ${spacer(10)}
+      <a href="${sideHrefA}" style="font-size:13px;color:${PULSE.graphite};font-weight:500;border-bottom:1px solid ${PULSE.graphite};text-decoration:none;">${copy.sideCtaA}</a>
+    </div>
+  `;
+  const sideCardB = `
+    <div style="padding:18px;background:${PULSE.graphite};border-radius:12px;color:${PULSE.pure};height:100%;">
+      ${renderEyebrow(copy.sideEyebrowB, PULSE.lime)}
+      ${spacer(8)}
+      ${renderP(copy.sideBodyB, { size: 13, color: PULSE.n300 })}
+      ${spacer(10)}
+      <a href="${sideHrefB}" style="font-size:13px;color:${PULSE.lime};font-weight:500;border-bottom:1px solid ${PULSE.lime};text-decoration:none;">${copy.sideCtaB}</a>
+    </div>
+  `;
 
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
-        <td class="bz-pad" style="padding:40px 40px 32px;">
-          ${renderEyebrow(copy.eyebrow)}
-          ${spacer(14)}
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td valign="middle" style="width:46px;">
-                <div style="width:40px;height:40px;border-radius:50%;background:${PULSE.lime};text-align:center;line-height:40px;">
-                  <span style="font-family:${FONTS.heading};font-size:22px;font-weight:600;color:${PULSE.graphite};">✓</span>
-                </div>
-              </td>
-              <td valign="middle">${renderH1(copy.title, { size: 36 })}</td>
-            </tr>
-          </table>
-          ${spacer(16)}
-          ${renderP(copy.intro)}
-        </td>
-      </tr>
-      ${detailsRows ? `
-      <tr>
-        <td class="bz-pad" style="padding:0 40px 24px;">
-          <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:20px 24px;">
-            ${renderEyebrow(isTr ? 'Form özeti' : 'Form summary')}
-            ${spacer(10)}
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${detailsRows}</table>
+        <td class="bz-pad" style="padding:44px 40px 24px;text-align:center;">
+          <div style="width:64px;height:64px;margin:0 auto 24px;border-radius:50%;background:${PULSE.limeSoft};text-align:center;line-height:64px;">
+            <div style="display:inline-block;width:44px;height:44px;border-radius:50%;background:${PULSE.lime};text-align:center;line-height:44px;color:${PULSE.graphite};font-family:${FONTS.heading};font-size:22px;font-weight:600;vertical-align:middle;">✓</div>
           </div>
+          ${renderEyebrow(`${copy.eyebrow.split(' · ')[0]} · #${ticket}`)}
+          ${spacer(14)}
+          <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:36px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.graphite};margin:0;">
+            ${copy.titleA}<span style="color:${PULSE.lime};">.</span> <span style="color:${PULSE.n500};">${copy.titleB}</span>
+          </h1>
+          ${spacer(14)}
+          <div style="max-width:420px;margin:0 auto;">${renderP(copy.intro)}</div>
         </td>
-      </tr>` : ''}
+      </tr>
+      ${formCard ? `<tr><td class="bz-pad" style="padding:8px 40px;">${formCard}</td></tr>` : ''}
       <tr>
-        <td class="bz-pad" style="padding:0 40px 24px;">
-          ${renderEyebrow(copy.timelineHeading)}
-          ${spacer(10)}
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${timelineRows}</table>
+        <td class="bz-pad" style="padding:32px 40px 8px;">
+          ${renderEyebrow(copy.timelineEyebrow)}
+          ${spacer(16)}
+          ${renderTimeline(copy.timeline)}
         </td>
       </tr>
       <tr>
-        <td class="bz-pad" style="padding:0 40px 40px;">
-          ${renderButton({ href: followUpUrl, label: copy.cta, size: 'md' })}
+        <td class="bz-pad" style="padding:32px 40px 44px;">
+          ${renderTwoColCards({ left: sideCardA, right: sideCardB })}
         </td>
       </tr>
     </table>
   `;
 
-  const html = pulseLayout({ subject: copy.subject, preheader: copy.preheader, content, eyebrow: isTr ? 'Onay' : 'Confirmation', footer: { locale } });
-  const text = `${copy.title}\n\n${copy.intro}\n\n${copy.timelineHeading}:\n` + copy.timeline.map((t) => `· ${t[0]} — ${t[1]}`).join('\n');
+  const html = pulseLayout({
+    subject: copy.subject,
+    preheader: copy.preheader,
+    content,
+    eyebrow: copy.eyebrow,
+    footer: { locale, unsubText: isTr ? 'Onay maillerini kapatmak için' : 'To stop confirmation emails' },
+  });
+  const text = `${copy.titleA}. ${copy.titleB}\n\n${copy.intro}\n\n${copy.timelineEyebrow}:\n` +
+    copy.timeline.map((t) => `· ${t.label} — ${t.body}`).join('\n');
   return { subject: copy.subject, html, text };
 }

@@ -695,4 +695,50 @@ Bu rotalar artık Pulse template'lerini kullanır:
 
 **Yapma**: `react-email` / `mjml` dep ekleme (CLAUDE.md §7 minimum dependency). Pulse layout helper'ları yeterli.
 
+### 21.9 Pixel-perfect 1:1 audit (Phase 16.1)
+
+9 template `.design/` JSX prototipleriyle birebir hizalandı:
+- **forgot-password**: 2x2 meta grid (Talep saati / IP / Cihaz / Hesap), token URL display + 6-digit code fallback, "Sen değil misin?" lime-soft card with 3px lime-deep left border, status pill ("Aktif · 30 dk geçerli")
+- **welcome**: 4-step list with done/current/pending visual states (graphite check / lime current / muted pending), "İlk gün için" 4-card resource grid, secondary "Demo videoyu izle" CTA
+- **form-confirmation**: animated check icon (nested limeSoft → lime), timeline visualization (left border + dot markers), 2 side cards (Acil durum + Beklerken)
+- **low-rating-alert**: graphite alert bar with warning dot + timestamp, avatar circle (FEF3C7) review card, hashtag chips, AI Co-Pilot dark editor card with tone label + edit/approve buttons, 3-col quick actions grid
+- **new-review**: "● Canlı · Az önce geldi" status pill, gradient quote card (limeSoft → pure 2-stop with MSO solid fallback), avatar initials, primary "Teşekkür yaz" + secondary "Google'da paylaş" CTAs
+- **weekly-report**: dark hero with 3 deltaed stats, 7-day bar chart (HTML/CSS bars with peak highlight), "Bu haftanın sözleri" 3-quote gallery, side-by-side limeSoft CTA card
+- **newsletter**: dark featured article card (1.4fr/1fr table layout) with monospace code block sample ("> input.tone..."), 4-item numbered list, stats band, future teaser, lime-highlight title positioning
+- **customer-reply**: lime-soft hero with restaurant card (graphite K initial), single-line italicized title, paragraph-bazlı letter body, 3 action items (override edilebilir), graphite coupon card with code + "30 gün" split, 2x2 contact grid (call + maps), italic signature
+- **trial-ending**: warning eyebrow, dark usage card with **4-col grid** (yorum / ortalama / AI yanıt / +X% organik artış), 2 plan cards ("Pulse Starter" ₺499 + "Pulse Pro" ₺1.299), **absolute-positioned "ÖNERİLEN" badge** (MSO `<v:rect>`-aware fallback in `renderBadge({ position: 'absolute-tr' })`), "İlk ay %50" eyebrow, secondary "Detaylı karşılaştırma" link
+
+**Yeni helper'lar** (`src/lib/email/components.ts`):
+- `renderBadge` — MSO-conditional positioned badge
+- `renderTwoColCards` — table-based 50/50 cards stack on mobile
+- `renderBarChart` — `<td height="${pct}%">` cells
+- `renderAvatarCircle` — circle with initial fallback
+- `renderQuoteCard` — review row with avatar + stars + text
+- `renderTimeline` — done/current/pending dot+line
+- `renderStatusPill` — colored dot + label
+
+**Layout updates** (`src/lib/email/layout.ts`): yeni media queries — `.col-half`, `.grid-4 td.cell`, `.badge-absolute`, `.bar-chart td` → mobilde stack/inline-block.
+
+### 21.10 Source tracking
+
+`NewsletterSubscriber.source` artık her abonede dolu. `<NewsletterSignup>` component opsiyonel `source?: string` prop alır; default `'footer'`. Footer'da explicit `<NewsletterSignup source="footer" />`. Yeni kayıt yolları (popup, blog inline, onboarding) eklenirken farklı source string geç → admin paneldeki `Kaynak` filter dropdown otomatik kategorileri gösterir.
+
+### 21.11 Trial reminder cron
+
+**Yeni**: `/api/cron/trial-reminders` (`vercel.json`'da `0 9 * * *` günlük 09:00 UTC)
+- `User.lastTrialReminderAt` field'ı dedup için (20-saat threshold)
+- 1, 2, 3, 4 gün kalan trial user'lara mail gönderir (cron her gün → 4 farklı eşik mail)
+- Usage hesabı: ilgili restoran için son 14 gün vs önceki 14 gün (growth %), ortalama puan, yorum sayısı, reply sayısı
+- Auth: `Bearer ${CRON_SECRET}` (mevcut pattern)
+- Sender: `sendTrialEndingEmail` (Pulse `trial-ending` template)
+
+### 21.12 Cron path listesi (mevcut)
+
+| Path | Schedule | Amaç |
+|---|---|---|
+| `/api/cron/weekly-digest` | `0 9 * * 1` | Her pazartesi 09:00 UTC — restoran sahibine haftalık özet |
+| `/api/cron/anonymize-ips` | `0 3 * * 0` | Her pazar 03:00 UTC — KVKK IP retention |
+| `/api/cron/monthly-newsletter` | `0 9 1 * *` | Her ayın 1'i 09:00 UTC — Pulse aylık bülten |
+| `/api/cron/trial-reminders` | `0 9 * * *` | Her gün 09:00 UTC — trial bitimine 1-4 gün kalanlara hatırlatma |
+
 

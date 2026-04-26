@@ -1,7 +1,7 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderP, renderButton, renderStarRow, spacer } from '../components';
+import { renderEyebrow, renderP, renderButton, renderAvatarCircle, renderStatusPill, spacer } from '../components';
 
 export interface NewReviewParams {
   rating: number;
@@ -9,90 +9,118 @@ export interface NewReviewParams {
   customerName?: string | null;
   comment?: string | null;
   branch?: string | null;
+  tableNumber?: string | null;
   platform?: string | null;
   reviewUrl: string;
+  /** Optional Google share link — falls back to a generic Google review URL
+   *  if the restaurant has googlePlaceId, otherwise hides the secondary CTA. */
+  shareUrl?: string;
 }
 
-export function renderNewReview(params: NewReviewParams, locale: 'tr' | 'en' = 'tr'): { subject: string; html: string; text: string } {
+export function renderNewReview(
+  params: NewReviewParams,
+  locale: 'tr' | 'en' = 'tr',
+): { subject: string; html: string; text: string } {
   const isTr = locale !== 'en';
   const subject = isTr
-    ? `${params.rating}★ yorum geldi · ${params.restaurantName}`
-    : `${params.rating}★ review · ${params.restaurantName}`;
-  const preheader = isTr
-    ? 'Müşteri memnuniyetini Google\'da paylaşmak için iyi bir an.'
-    : 'A perfect moment to share this review on Google.';
+    ? `🎉 Yeni ${params.rating} yıldız geldi — ${params.customerName ?? 'Müşteri'}`
+    : `🎉 New ${params.rating}-star review — ${params.customerName ?? 'a customer'}`;
+  const preheader = params.comment
+    ? params.comment.slice(0, 90) + (params.comment.length > 90 ? '…' : '')
+    : (isTr ? 'Bu yorumu Google\'da paylaşmak için iyi bir an.' : 'Perfect moment to share this on Google.');
+
+  const customerName = params.customerName ? escapeHtml(params.customerName) : (isTr ? 'Anonim' : 'Anonymous');
+  const customerInitial = (params.customerName || '?').charAt(0).toUpperCase();
+  const safeComment = params.comment ? escapeHtml(params.comment).replace(/\n/g, '<br>') : '';
+
+  const subtitleParts = [
+    params.platform ? escapeHtml(params.platform) : '',
+    escapeHtml(params.restaurantName),
+    params.branch ? escapeHtml(params.branch) : '',
+    params.tableNumber ? `Masa ${escapeHtml(params.tableNumber)}` : '',
+  ].filter(Boolean).join(' · ');
 
   const copy = isTr ? {
-    eyebrow: 'Yorum · Pozitif sinyal',
-    title: 'Mükemmel bir yorum geldi.',
-    intro: `${escapeHtml(params.restaurantName)} için yeni bir ${params.rating} yıldız değerlendirme aldın. Müşterinin bıraktığı kelimeler aşağıda.`,
-    cta: 'Panele git →',
-    quoteLabel: 'Müşteri sözleri',
-    actionLabel: 'Bu yorumla ne yapabilirsin?',
-    bullets: [
-      'Sosyal medyada öne çıkar',
-      'Müşteriye kişisel bir teşekkür yaz',
-      'Ekibinle paylaş — performans rozetiyle',
-    ],
+    eyebrow: 'Canlı · Az önce geldi',
+    title: `${params.rating} yıldız.`,
+    titleSub: 'Hak ettin.',
+    primaryCta: 'Teşekkür yaz →',
+    secondaryCta: 'Google\'da paylaş',
+    noComment: 'Yorum bırakılmadı.',
   } : {
-    eyebrow: 'Review · Positive signal',
-    title: 'Glowing review just dropped.',
-    intro: `You got a fresh ${params.rating}-star review for ${escapeHtml(params.restaurantName)}. Customer\'s words below.`,
-    cta: 'Open in panel →',
-    quoteLabel: 'Customer words',
-    actionLabel: 'What you can do with this',
-    bullets: [
-      'Spotlight on social media',
-      'Send a personal thank-you',
-      'Share with your team as a perf badge',
-    ],
+    eyebrow: 'Live · Just now',
+    title: `${params.rating} stars.`,
+    titleSub: 'You earned it.',
+    primaryCta: 'Write a thank-you →',
+    secondaryCta: 'Share on Google',
+    noComment: 'No comment left.',
   };
 
-  const safeComment = params.comment ? escapeHtml(params.comment).replace(/\n/g, '<br>') : '';
-  const customer = params.customerName ? escapeHtml(params.customerName) : (isTr ? 'Anonim' : 'Anonymous');
-  const platform = params.platform ? escapeHtml(params.platform) : '';
+  // Star row — warning gold like jsx:31
+  const starsHtml = `<span style="color:${PULSE.warning};font-size:18px;letter-spacing:0.05em;">${'★'.repeat(params.rating)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - params.rating)}</span></span>`;
+
+  const shareCta = params.shareUrl
+    ? `<a href="${params.shareUrl}" style="display:inline-block;padding:12px 24px;border:1px solid ${PULSE.n300};border-radius:10px;font-size:14px;font-weight:500;color:${PULSE.graphite};text-decoration:none;margin-left:10px;">${copy.secondaryCta}</a>`
+    : '';
 
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
-        <td class="bz-pad" style="background:${PULSE.lime};padding:40px 40px 36px;">
-          ${renderEyebrow(copy.eyebrow, PULSE.n800)}
+        <td class="bz-pad" style="padding:40px 40px 8px;">
+          ${renderStatusPill({ text: copy.eyebrow, dotColor: PULSE.success, textColor: PULSE.success })}
           ${spacer(14)}
-          <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:42px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.graphite};margin:0;">${copy.title}</h1>
-          ${spacer(14)}
-          <div style="font-family:${FONTS.body};font-size:15px;color:${PULSE.n800};line-height:1.6;">${copy.intro}</div>
-          ${spacer(20)}
-          ${renderStarRow(params.rating, { size: 24, color: PULSE.graphite })}
+          <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:36px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.graphite};margin:0;">
+            ${copy.title}<br/>
+            <span style="color:${PULSE.n500};">${copy.titleSub}</span>
+          </h1>
         </td>
       </tr>
       <tr>
-        <td class="bz-pad" style="padding:32px 40px 16px;">
-          ${renderEyebrow(copy.quoteLabel)}
-          ${spacer(10)}
-          <div style="font-family:${FONTS.heading};font-size:22px;font-weight:500;color:${PULSE.graphite};line-height:1.4;letter-spacing:-0.015em;">
-            ${safeComment ? `"${safeComment}"` : (isTr ? '— Yorum bırakılmadı —' : '— No comment —')}
+        <td class="bz-pad" style="padding:24px 40px 8px;">
+          <!--[if mso]>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.limeSoft};border:1px solid ${PULSE.n200};border-radius:14px;"><tr><td style="padding:28px;">
+          <![endif]-->
+          <!--[if !mso]><!-->
+          <div style="background-image:linear-gradient(180deg, ${PULSE.limeSoft} 0%, ${PULSE.pure} 100%);background-color:${PULSE.limeSoft};border:1px solid ${PULSE.n200};border-radius:14px;padding:28px;">
+          <!--<![endif]-->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td valign="middle" style="width:58px;">${renderAvatarCircle({ initials: customerInitial, bg: PULSE.lime, fg: PULSE.graphite, size: 44 })}</td>
+                <td valign="middle" style="padding-left:14px;">
+                  <div style="font-family:${FONTS.body};font-size:15px;font-weight:500;color:${PULSE.graphite};">${customerName}</div>
+                  ${subtitleParts ? `<div style="font-size:12px;color:${PULSE.n500};">${subtitleParts}</div>` : ''}
+                </td>
+                <td valign="middle" align="right">${starsHtml}</td>
+              </tr>
+            </table>
+            ${spacer(18)}
+            ${safeComment
+              ? `<p style="font-family:${FONTS.body};font-size:15px;line-height:1.6;color:${PULSE.n800};margin:0;letter-spacing:-0.005em;">"${safeComment}"</p>`
+              : `<p style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n500};margin:0;">${copy.noComment}</p>`}
+          <!--[if !mso]><!-->
           </div>
-          ${spacer(12)}
-          <div style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n500};">— ${customer}${platform ? ` · ${platform}` : ''}${params.branch ? ` · ${escapeHtml(params.branch)}` : ''}</div>
+          <!--<![endif]-->
+          <!--[if mso]>
+          </td></tr></table>
+          <![endif]-->
         </td>
       </tr>
       <tr>
-        <td class="bz-pad" style="padding:16px 40px 8px;">
-          <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:22px 24px;">
-            <div style="font-family:${FONTS.heading};font-size:16px;font-weight:600;color:${PULSE.graphite};margin-bottom:12px;">${copy.actionLabel}</div>
-            ${copy.bullets.map((b) => `<div style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n700};padding:6px 0;line-height:1.55;"><span style="color:${PULSE.lime};margin-right:8px;">●</span>${b}</div>`).join('')}
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:24px 40px 40px;">
-          ${renderButton({ href: params.reviewUrl, label: copy.cta, size: 'lg' })}
+        <td class="bz-pad" style="padding:28px 40px 44px;">
+          ${renderButton({ href: params.reviewUrl, label: copy.primaryCta, size: 'md' })}
+          ${shareCta}
         </td>
       </tr>
     </table>
   `;
 
-  const html = pulseLayout({ subject, preheader, content, eyebrow: isTr ? 'Yorum' : 'Review', footer: { locale } });
-  const text = `${copy.title}\n${copy.intro}\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}— ${customer}\n\n${copy.cta} ${params.reviewUrl}`;
+  const html = pulseLayout({
+    subject,
+    preheader,
+    content,
+    eyebrow: isTr ? 'Yeni yorum · Anında' : 'New review · Live',
+    footer: { locale, unsubText: isTr ? 'Yeni yorum bildirimlerini kapatmak için' : 'To stop new-review alerts' },
+  });
+  const text = `${copy.title} ${copy.titleSub}\n\n${customerName} · ${params.rating}★\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}\n${copy.primaryCta} ${params.reviewUrl}`;
   return { subject, html, text };
 }

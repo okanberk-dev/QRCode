@@ -518,3 +518,66 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 - Resend gerçek gönderim: kendi adresine 9 mail (iPhone Mail + Gmail Web + Gmail iOS app + Outlook Web; özellikle 2-sütun layout'lar mobile'da tek sütun stack)
 - Newsletter end-to-end: signup → DB token → manual cron tetikle → mail al → unsubscribe link → DB `unsubscribed_at` dolu → 2. cron'da o satır yok
 - Admin UI: 1440px masaüstü tablo + 375px mobile cards; "CSV İndir" UTF-8 BOM
+
+---
+
+## Phase 16.1 — Pixel-Perfect Mail Audit + Source Tracking + Trial Cron (2026-04)
+
+**Kapsam:** Phase 16'da implement edilen 9 Pulse mail template'i, JSX prototipleri ile yeniden birebir hizalandı (kullanıcı "maksimum pixel-perfect" istedi). Source tracking aktif edildi. Trial reminder cron kuruldu. `.env.example` + cron logging + onboarding mail iyileştirildi.
+
+**Referans:** `/tmp/design-pkg/buaze-mail/project/emails/*.jsx` (handoff bundle, repo'ya kopyalanmadı).
+
+**Yeni dosyalar:**
+- `src/app/api/cron/trial-reminders/route.ts` — günlük 09:00 UTC, `Bearer CRON_SECRET`, 1-4 gün trial pencere, `User.lastTrialReminderAt` dedup, son 14 gün usage stats
+
+**Değişen dosyalar:**
+- `prisma/schema.prisma` — `User.lastTrialReminderAt DateTime?` (deploy build script `prisma db push` otomatik sync)
+- `src/lib/email/components.ts` — yeni helper'lar: `renderBadge` (MSO conditional `<v:rect>`-aware), `renderTwoColCards`, `renderBarChart`, `renderAvatarCircle`, `renderQuoteCard`, `renderTimeline`, `renderStatusPill`
+- `src/lib/email/layout.ts` — media query'ler: `.col-half`, `.grid-4 td.cell`, `.badge-absolute`, `.bar-chart td` (mobilde stack/inline-block)
+- `src/lib/email/templates/{forgot-password,welcome,form-confirmation,low-rating-alert,new-review,weekly-report,newsletter,customer-reply,trial-ending}.ts` — 9 dosya pixel-perfect rewrite
+- `src/components/marketing/NewsletterSignup.tsx` — `source?: string` prop (default `'footer'`)
+- `src/components/marketing/MarketingFooter.tsx` — `<NewsletterSignup source="footer" />` explicit
+- `vercel.json` — `trial-reminders` cron entry
+- `.env.example` — `CRON_SECRET` documented (was missing)
+- `src/app/api/cron/monthly-newsletter/route.ts` — structured fail logging (subscriber bağlamı dahil)
+- `src/app/api/onboarding/complete/route.ts` — Pulse layout sarmalı
+- `CLAUDE.md` — §21.9–21.12 (audit + source tracking + trial cron + cron paths)
+
+**Pixel-perfect kayıplar onarıldı:**
+- forgot-password: 2x2 meta grid + status pill + token URL display
+- welcome: done/current/pending step states + "İlk gün için" 4-card grid + demo CTA
+- form-confirmation: animated check + timeline + 2 alt cards (formType-specific)
+- low-rating-alert: alert bar + avatar review card + tags + AI Co-Pilot editor + quick actions
+- new-review: gradient quote card (MSO fallback) + avatar + 2 CTAs + status pill
+- weekly-report: 3 delta'lı stat hero + 7-gün bar chart + 3-quote gallery + side-by-side CTA
+- newsletter: dark featured card + code block + numbered list + stats band
+- customer-reply: lime-soft hero + restaurant card + 3 action items + coupon split + 2x2 contact grid
+- trial-ending: warning eyebrow + 4-col usage grid + "Pulse Starter/Pro" plan cards + **MSO-aware "ÖNERİLEN" badge** + secondary link
+
+**Email rendering teknikleri:**
+- `position: absolute` badge → MSO `<!--[if mso]>` ile inline fallback, non-Outlook'ta absolute div + `@media (max-width:600px) .badge-absolute { position:static; }` mobile collapse
+- `linear-gradient(...)` → `<!--[if mso]>` solid `bgcolor` fallback + non-Outlook `background-image`
+- Live countdown ("29:48 kaldı") → statik "Aktif · 30 dk geçerli" + status pill
+- CSS animation (pulse dot, scale) → statik dot + StatusPill helper
+- 4-col stat grid → `<table class="grid-4">` + `td.cell` 25% desktop, mobilde `inline-block 50%`
+
+**Source tracking:**
+- `NewsletterSubscriber.source` artık her abonede `'footer'` (default). Yeni kayıt yolları eklenirse farklı string geçer.
+- Admin newsletter sayfasındaki Kaynak filter dropdown'ı dinamik distinct count gösterir.
+- Performans: tek string body alanı, mevcut upsert flow korundu, ek query yok.
+
+**Trial reminder cron:**
+- Schedule `0 9 * * *` (günlük 09:00 UTC) → 1+2+3+4 gün eşiklerini aynı cron yakalar
+- Dedup: `lastTrialReminderAt < now() - 20h` (cron 24-saat aralık → her gün max 1 mail/user)
+- Usage: 14-day rolling vs prior 14-day (growth %), avg rating, total feedback, reply count
+- 120ms throttle (Resend rate limit safety)
+
+**Backend etkisi:**
+- `prisma db push` deploy'da `last_trial_reminder_at` kolon eklenir (nullable, default null — veri kaybı yok)
+- 7 yeni HTML helper, ~1900 satır rewrite, build-time +5 KB JS
+- Cron `vercel.json` 4 path'e çıktı (önceki 3 + trial-reminders)
+
+**Verification:**
+- `npx tsc --noEmit -p tsconfig.json` zero error
+- `npx prisma generate` `lastTrialReminderAt` Prisma client'ında tanır
+- Mevcut 4 e-posta tetikleyici akışı (register, contact, careers, roi, feedback reply, weekly digest, monthly newsletter, forgot password, onboarding complete) yeni helper'lara plug edildi — interface breaking change yok

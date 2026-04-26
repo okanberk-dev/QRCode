@@ -48,7 +48,11 @@ a { color:${PULSE.graphite}; }
   td.bz-pad { padding:24px 20px !important; }
   td.bz-pad-tight { padding:18px 20px !important; }
   td.stack-col { display:block !important; width:100% !important; padding:8px 0 !important; border-right:none !important; text-align:left !important; }
+  td.col-half { width:100% !important; display:block !important; padding:6px 0 !important; }
   table.stack-row, table.stack-row > tbody, table.stack-row > tbody > tr { display:block !important; width:100% !important; }
+  table.grid-4 td.cell { display:inline-block !important; width:50% !important; box-sizing:border-box; }
+  .badge-absolute { position:static !important; display:inline-block !important; margin:0 0 8px 0 !important; top:auto !important; right:auto !important; }
+  table.bar-chart td { padding:0 2px !important; }
   h1.bz-h1 { font-size:32px !important; line-height:1.1 !important; }
   h1.bz-h1-lg { font-size:36px !important; line-height:1.1 !important; }
   .bz-hide-mobile { display:none !important; }
