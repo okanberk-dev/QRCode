@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Auto-cancel a stale run when a new commit lands on the same PR. Saves CI
+# minutes and surfaces only the latest verdict.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate (tsc + lint + prisma)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install deps
+        # Use npm ci against the lockfile so installs are deterministic and
+        # fail fast on lockfile drift. --no-audit shaves ~5s of unrelated noise.
+        run: npm ci --no-audit --no-fund --prefer-offline
+        env:
+          # Skip prisma's `postinstall` here — the validate step below runs
+          # `prisma generate` explicitly with a stub DATABASE_URL.
+          PRISMA_SKIP_POSTINSTALL_GENERATE: '1'
+
+      - name: Prisma generate (no DB)
+        # `db push` would need a real database; `generate` only needs the
+        # schema and produces the client used by tsc.
+        run: npx prisma generate
+        env:
+          # Stub URLs — prisma generate ignores them but the schema's
+          # env() calls require the variables to be defined.
+          DATABASE_URL: 'postgresql://stub:stub@localhost:5432/stub'
+          DIRECT_URL: 'postgresql://stub:stub@localhost:5432/stub'
+
+      - name: Prisma schema validate
+        run: npx prisma validate
+        env:
+          DATABASE_URL: 'postgresql://stub:stub@localhost:5432/stub'
+          DIRECT_URL: 'postgresql://stub:stub@localhost:5432/stub'
+
+      - name: TypeScript typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: ESLint
+        # `next lint` exits non-zero on warnings + errors; we accept both as
+        # signal. The repo's eslint config is what `next lint` already uses.
+        run: npx next lint --no-cache --max-warnings 0
+        # Allow lint to fail the run only when actual errors exist; the
+        # `--max-warnings 0` flag treats warnings as errors. Drop the flag if
+        # the team prefers warnings non-blocking.

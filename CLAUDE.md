@@ -801,7 +801,7 @@ Mevcut örnekler: `src/components/admin/TrendsChart.tsx`, `src/components/admin/
 **Yerler**:
 - `/api/dev/email-preview?template=...&locale=tr|en&format=html|text` — raw HTML / text response. Production'da 404 (Vercel preview dahil).
 - `/admin/dev/mail-preview` — superadmin index sayfası, 9 template kart + locale toggle + "Önizle" + "Test mail at" butonları. Sidebar'da yalnız `NODE_ENV !== 'production'` ise görünür.
-- `/api/admin/dev/send-test` — superadmin POST endpoint, seed data ile sender'ı çağırır, admin'in kendi e-posta'sına gönderir. Production'da 404.
+- `/api/admin/dev/send-test` — superadmin POST endpoint, seed data ile sender'ı çağırır, admin'in kendi e-posta'sına gönderir. Production'da 404. Rate limit: **10 mail / 5 dk / admin** (`mail-test:${adminId}` key'i, `rateLimit()` helper'ı). Misclick veya stuck button'dan korur.
 
 **Seed data**: `src/app/api/dev/email-preview/seeds.ts` — her template için realistic placeholder. Yeni template eklerken bu factory'e seed entry ekle.
 
@@ -841,6 +841,46 @@ Send başlamadan campaign `'sending'`, bitince `'sent'` + `sentAt` + counts. Eve
 **Sender override**: `sendNewsletterEmail({ title, intro, subject })` — set edildiğinde Pulse default "Sessiz misafiri…" hero'sunu replace eder, lime-highlight styling yerine plain title.
 
 ### 21.17 Newsletter source tracking pattern
+
+(taşındı — alttaki §21.20'ye bak)
+
+### 21.18 Vercel preview env'leri
+
+`prisma db push --accept-data-loss` her preview deploy'da çalışıyor (CLAUDE.md §14.1 build script). Bu nedenle **her Vercel preview branch'i için** `DATABASE_URL` + `DIRECT_URL` env var'ları set edilmeli.
+
+**Preview için 2 yaklaşım**:
+1. **Production DB'yi paylaş** (mevcut default) — preview deploy üretim DB'sine yazıyor. Riski: schema değişikliği preview'da onay almadan prod'da etkili olur.
+2. **Supabase Branching** kullan — `supabase/` klasöründe `migrations/` varsa Vercel preview otomatik branch DB üretir. Bu repoda `supabase/` boş → branching atlanıyor (PR'larda Supabase Preview check `skipped` görünüyor, normal).
+
+**Mevcut deploy disiplini**: production DB tek paylaşılan instance. Schema değişiklikleri Pulse mail PR'larında nullable + default'lu eklendiği için backwards-compat ediyor — preview build'da DB'ye yeni kolon eklenir, prod kodu eski hâliyle bunu görmez (forward compat). Yine de:
+- **Yapma**: NOT NULL kolon eklemek (eski kayıt fail eder)
+- **Yapma**: kolonu silmek (eski kod fail eder)
+- **Yap**: Her schema değişikliği nullable + default'lu
+
+### 21.19 GitHub Actions CI
+
+`.github/workflows/ci.yml` her PR'da koşar:
+1. `npm ci` (lockfile-strict install)
+2. `npx prisma generate` (stub DATABASE_URL ile, gerçek DB'siz)
+3. `npx prisma validate` (schema syntax)
+4. `npx tsc --noEmit -p tsconfig.json` (zero error)
+5. `npx next lint --max-warnings 0` (lint)
+
+Concurrency cancel-in-progress: aynı PR'a yeni commit gelince eski run iptal. Workflow ~2-3 dk sürer. Local geliştirici için aynı 4 komutu local'de koşmak yeterli — CI sadece "review öncesi son güvenlik ağı".
+
+`.github/pull_request_template.md` — her yeni PR'a Test plan / Backend etkisi / Risks bölümleri otomatik gelir.
+
+### 21.20 FeedbackReply.source backfill
+
+`scripts/backfill-feedback-reply-source.ts` — eski reply'ları `source = 'manual'` ile dolduran one-shot data migration. `prisma db push` schema kolonu ekler ama eski rows NULL kalır. Çalıştırmak (idempotent):
+
+```bash
+DATABASE_URL=... npx tsx scripts/backfill-feedback-reply-source.ts
+```
+
+Cron `'ai_copilot'` filter'ında zaten NULL'lar yer almıyor → backfill **opsiyonel**. Ama admin reports/analytics `GROUP BY source` sorguları "Unknown" bucket'ı görmek istemiyorsa run et.
+
+### 21.21 Newsletter source tracking pattern
 
 **`NewsletterSubscriber.source`** her abonede dolu olmalı. Yeni signup placement eklendiğinde:
 
