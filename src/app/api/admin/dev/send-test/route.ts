@@ -17,7 +17,11 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(req: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
-    return new NextResponse('Not Found', { status: 404 });
+    // Return JSON, not plain text — admin UI's onTestMail does
+    // `await res.json()` unconditionally and a "Not Found" plain body
+    // would throw "Unexpected token N" which surfaces to the user as
+    // a confusing red banner instead of "this is dev-only".
+    return NextResponse.json({ error: 'dev_only' }, { status: 404 });
   }
 
   const admin: any = await getAdminFromRequest(req);

@@ -25,7 +25,11 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(req: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
-    return new NextResponse('Not Found', { status: 404 });
+    // JSON response so client-side fetch().json() doesn't throw on the
+    // 404. Editor / preview pages already gate the link with isDev so
+    // a real user shouldn't see this — but a stale browser cache or
+    // direct URL hit would otherwise crash with an opaque parse error.
+    return NextResponse.json({ error: 'dev_only' }, { status: 404 });
   }
 
   const url = new URL(req.url);
