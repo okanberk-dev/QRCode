@@ -218,7 +218,10 @@ export async function renderCustomerReply(
     </table>
   `;
 
-  // Trim ownerInitials/restaurantInitial usage warning (referenced for clarity)
+  // ownerInitials is computed up top for a future avatar variant (JSX
+  // prototype showed an owner-initials chip we haven't ported yet); keep
+  // the calculation around so the data is ready when that block lands.
+  // The `void` discards the value so eslint's no-unused-vars stays quiet.
   void ownerInitials;
 
   const html = pulseLayout({

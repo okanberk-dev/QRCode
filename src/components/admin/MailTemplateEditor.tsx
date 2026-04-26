@@ -95,6 +95,12 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'noComment', label: '"Yorum yok" hint' },
   ],
   'weekly-report': [
+    // NOTE: `eyebrow` is intentionally not exposed here. Inline default uses
+    // a `Hafta ${weekNum} · …` template literal — interpolation that admin
+    // override would silently strip (DB stores plain strings). Render keeps
+    // the literal default so the week number stays dynamic. If we ever want
+    // operators to edit this, refactor render to compose `${weekPrefix}
+    // ${weekNum} ${weekSuffix}` from separately-stored fields.
     { key: 'titleA', label: 'Hero 1. satır', hint: '"Sessiz başlayan hafta," (positive senaryo)' },
     { key: 'titleEnd', label: 'Hero 3. satır', hint: '"yorumla bitti."' },
     { key: 'statTotal', label: 'Yeni yorum etiketi' },
@@ -177,6 +183,11 @@ export default function MailTemplateEditor({ templateKey, locale }: Props) {
         const dbContent = (body.template?.content as Record<string, string>) ?? {};
         const stringContent: Record<string, string> = {};
         for (const f of fields) {
+          // Locked fields never round-trip through the form: the inline
+          // default is always the source of truth, so leaving state empty
+          // keeps the PATCH payload minimal (server strips anyway, but
+          // sending nothing means slow networks see no flicker).
+          if (f.locked) continue;
           stringContent[f.key] = typeof dbContent[f.key] === 'string' ? dbContent[f.key] : '';
         }
         setContent(stringContent);

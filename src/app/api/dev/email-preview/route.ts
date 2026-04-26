@@ -63,6 +63,10 @@ export async function renderTemplate(
     case 'welcome':
       return renderWelcome(SEEDS.welcome(), locale);
     case 'form-confirmation':
+      // Sync — renderFormConfirmation is the only Phase 2 template still
+      // using inline copy (4-variant nested JSON deferred to Phase 3). The
+      // outer `renderTemplate` is async, so returning the sync result is
+      // auto-wrapped into a resolved Promise.
       return renderFormConfirmation(SEEDS['form-confirmation'](), locale);
     case 'low-rating-alert':
       return renderLowRatingAlert(SEEDS['low-rating-alert'](), locale);

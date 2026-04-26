@@ -65,10 +65,23 @@ export async function loadMailCopy<T extends Record<string, unknown>>(
       where: { key_locale: { key, locale } },
       select: { content: true },
     });
-    const dbContent: Record<string, unknown> =
+    const rawContent: Record<string, unknown> =
       row && row.content && typeof row.content === 'object' && !Array.isArray(row.content)
         ? (row.content as Record<string, unknown>)
         : {};
+    // Defensive normalisation: render functions interpolate copy fields into
+    // HTML strings, so anything non-string from the DB (number / null / nested
+    // object that slipped past PATCH validation) must NOT reach the template.
+    // Drop those keys entirely — render falls back to the inline default for
+    // that field. Keeps the merge type-safe at runtime, not just at compile.
+    const dbContent: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(rawContent)) {
+      if (typeof v === 'string') {
+        dbContent[k] = v;
+      } else {
+        console.warn('[loadMailCopy] non-string field dropped', { key, locale, field: k, type: typeof v });
+      }
+    }
     cache.set(cacheKey, { content: dbContent, expiresAt: Date.now() + TTL_MS });
     return { ...fallback, ...dbContent } as T;
   } catch (err) {
