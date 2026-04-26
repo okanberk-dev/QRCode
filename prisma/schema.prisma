@@ -459,13 +459,14 @@ model OnboardingProgress {
 }
 
 model NewsletterSubscriber {
-  id             String    @id @default(cuid())
-  email          String    @unique
-  locale         String    @default("tr")
-  source         String?
-  ip             String?
-  createdAt      DateTime  @default(now()) @map("created_at")
-  unsubscribedAt DateTime? @map("unsubscribed_at")
+  id               String    @id @default(cuid())
+  email            String    @unique
+  locale           String    @default("tr")
+  source           String?
+  ip               String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  unsubscribedAt   DateTime? @map("unsubscribed_at")
+  unsubscribeToken String?   @unique @map("unsubscribe_token")
 
   @@index([createdAt])
   @@map("newsletter_subscribers")

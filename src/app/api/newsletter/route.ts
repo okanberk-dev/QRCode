@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
@@ -35,9 +36,13 @@ export async function POST(req: NextRequest) {
   const locale = body.locale === 'en' ? 'en' : 'tr';
   const source = typeof body.source === 'string' ? body.source.slice(0, 64) : null;
 
+  // Token is required for the unsubscribe link in marketing emails. Generated
+  // on create and reused on resubscribe so the same person can\'t accumulate
+  // tokens by signing up twice.
+  const newToken = crypto.randomBytes(24).toString('hex');
   await prisma.newsletterSubscriber.upsert({
     where: { email },
-    create: { email, locale, source, ip },
+    create: { email, locale, source, ip, unsubscribeToken: newToken },
     update: {
       locale,
       ...(source ? { source } : {}),

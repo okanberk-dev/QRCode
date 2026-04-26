@@ -82,6 +82,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Welcome email — fire and forget. We don\'t want a Resend hiccup to
+    // block account creation; the cookie + redirect still succeeds.
+    const userLocale: 'tr' | 'en' = locale === 'en' ? 'en' : 'tr';
+    void (async () => {
+      try {
+        const { sendWelcomeEmail } = await import('@/lib/email');
+        await sendWelcomeEmail({ to: user.email, firstName: user.name, locale: userLocale });
+      } catch (err) {
+        console.error('[register] welcome mail failed', err);
+      }
+    })();
+
     // Sign tokens — no restaurantId yet; it's populated after onboarding completes.
     const token = await signJwt({
       userId: user.id,

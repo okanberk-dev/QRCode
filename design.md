@@ -464,3 +464,57 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 - `npx tsc --noEmit` temiz
 - Hero açıldığında: 600ms sonra chart lime çizgisi sağa doğru çizilir + 1,284'e kadar sayar + "+184%" badge sağ üstte float eder + canlı dot pulse + 2 review sırayla fade-up
 - `prefers-reduced-motion: reduce` — chart anında tam gözükür, sayı direkt final değerde, float badge sabit kalır, pulse durur
+
+
+---
+
+## Phase 16 — Pulse Mail System & Newsletter Cron (2026-04)
+
+**Kapsam:** Claude Design "buaze-mail" handoff bundle'ı (9 Pulse mail template'i: forgot-password, welcome, form-confirmation, low-rating-alert, new-review, weekly-report, newsletter, customer-reply, trial-ending) Buaze mail katmanına entegre edildi. Eski neo-brutalist `SHARED_LAYOUT` kaldırıldı. Aylık marketing newsletter cron'u kuruldu, admin panelinde mobil-uyumlu bülten abone yönetim sayfası açıldı.
+
+**Referans:** `/tmp/design-pkg/buaze-mail/project/emails/*.jsx` (handoff bundle, repo'ya kopyalanmadı). `shared.jsx` PULSE token'ları + `BuazeLogo`, `EcgDivider`, `EmailFrame`, `EmailHeader`, `EmailFooter`, `Button`, `Eyebrow`, `H1/H2/P`.
+
+**Yeni dosyalar:**
+- `src/lib/email/tokens.ts` — PULSE color object + FONTS + Instagram handle
+- `src/lib/email/escape.ts` — HTML escape (mevcut helper taşındı)
+- `src/lib/email/layout.ts` — `pulseLayout()` table-based mobile-first skeleton
+- `src/lib/email/components.ts` — HTML string builder'lar (logo / header / footer / button / star row / stat grid / typography)
+- `src/lib/email/templates/{forgot-password,welcome,form-confirmation,low-rating-alert,new-review,weekly-report,newsletter,customer-reply,trial-ending}.ts` (+ `index.ts`)
+- `src/app/api/cron/monthly-newsletter/route.ts` — `0 9 1 * *` Vercel cron, Resend rate limit 120ms throttle, `unsubscribeToken` backfill
+- `src/app/api/newsletter/unsubscribe/route.ts` — GET token-based unsubscribe + Pulse stilinde standalone HTML response
+- `src/app/api/admin/newsletters/route.ts` (GET list) + `export/route.ts` (CSV) + `trigger/route.ts` (manuel cron tetikleme, superadmin only)
+- `src/app/admin/newsletters/page.tsx` — mobil-uyumlu liste sayfası (`/admin/customers` pattern'i clone, desktop table + mobile cards, 4-sütun summary card grid mobile 2-col)
+
+**Değişen dosyalar:**
+- `prisma/schema.prisma` — `NewsletterSubscriber.unsubscribeToken String? @unique` eklendi (deploy build script `prisma db push` otomatik sync)
+- `src/lib/email.ts` — `EMAIL_STYLES` + `SHARED_LAYOUT` silindi (~70 satır), template helper'larına plug. Yeni public sender'lar: `sendWelcomeEmail`, `sendFormConfirmationEmail`, `sendCustomerReplyEmail`, `sendTrialEndingEmail`, `sendNewsletterEmail`. `getUnsubscribeUrl(token)` utility eklendi.
+- `src/app/api/newsletter/route.ts` — POST upsert'inde `crypto.randomBytes(24).toString('hex')` ile yeni token üretimi
+- `src/components/admin/AdminSidebar.tsx` — superadmin section'a `Mail` ikonlu "Bülten Aboneleri" / "Newsletter" satırı
+- `vercel.json` — `monthly-newsletter` cron entry
+- Mevcut akış entegrasyonları: `auth/register` → welcome, `contact` + `careers/apply` + `roi/save` → form-confirmation (locale TR/EN), `feedback/[id]/reply` → customer-reply (Pulse), `feedback` notif → low-rating-alert (≤3★) / new-review (≥4★)
+- `CLAUDE.md` — yeni §21 "Pulse Mail System" bölümü
+
+**Mobile-first email teknikleri (kritik):**
+- Tüm template'ler `<table>`-based (Outlook flex/grid desteklemez)
+- `@media (max-width:600px)` tek breakpoint: `td.stack-col` mobile'da `display:block;width:100%`
+- Min font-size 14px (iOS auto-zoom önleme), buton min `padding:14px 24px` (44px touch target)
+- Hidden preheader: `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">`
+- Google Fonts `@import` + Outlook fallback Arial (`<!--[if mso]>` conditional)
+
+**KVKK / Unsubscribe:**
+- Token-based unsubscribe (her abonede `unsubscribeToken @unique`); cron mailinde `getUnsubscribeUrl(token)` footer link
+- `/api/newsletter/unsubscribe?token=...` GET → idempotent, Pulse stilinde TR/EN HTML confirmation
+- Aboneliği iptal eden satır cron listede artık yok (`unsubscribedAt: { not: null }`)
+
+**Backend etkisi:**
+- `prisma db push` deploy'da çalıştığında `unsubscribe_token` kolonu eklenir (mevcut satırlar null kalır, cron ilk çağrıda backfill eder)
+- 9 yeni public sender + 1 yeni cron path = build-time ekstra ~3 KB JS
+- Resend rate limit (10/sn) için 120 ms throttle; 1000 abonede ~2 dakika sürer (Vercel function timeout 300 sn limiti dahilinde)
+
+**Verification:**
+- `npx tsc --noEmit -p tsconfig.json` temiz
+- `node -e "Object.keys(require('@prisma/client').Prisma.NewsletterSubscriberScalarFieldEnum)"` — `unsubscribeToken` listede
+- Lokal email preview: dev'de `?template=welcome&locale=tr` query ile her 9 template'i 375px viewport'ta kontrol (manual)
+- Resend gerçek gönderim: kendi adresine 9 mail (iPhone Mail + Gmail Web + Gmail iOS app + Outlook Web; özellikle 2-sütun layout'lar mobile'da tek sütun stack)
+- Newsletter end-to-end: signup → DB token → manual cron tetikle → mail al → unsubscribe link → DB `unsubscribed_at` dolu → 2. cron'da o satır yok
+- Admin UI: 1440px masaüstü tablo + 375px mobile cards; "CSV İndir" UTF-8 BOM

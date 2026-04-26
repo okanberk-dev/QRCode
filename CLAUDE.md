@@ -588,3 +588,111 @@ Response `meta.degraded: { joins, tags } | null` döner. UI amber banner ile "DB
 
 <!-- §20 §4.5 ile birleştirildi (kanonik terminoloji tek bölümde) -->
 
+
+---
+
+## 21. Pulse Mail System (2026-04 Pulse mail handoff)
+
+Buaze mail katmanı 2026-04 Claude Design "buaze-mail" handoff bundle'ı temel alınarak Pulse design system'ine taşındı. Eski neo-brutalist `SHARED_LAYOUT` (3px border + 6px offset shadow + tek harf "B") tamamen kaldırıldı.
+
+### 21.1 Klasör yapısı
+
+```
+src/lib/email/
+├── tokens.ts           # PULSE renk paleti + FONTS + Instagram handle
+├── escape.ts           # HTML escape (mevcut yardımcı taşındı)
+├── layout.ts           # pulseLayout({subject, preheader, content, eyebrow, darkHeader, footer})
+├── components.ts       # renderLogo / renderHeader / renderFooter / renderButton / renderEyebrow / renderEcgDivider / renderStarRow / renderStatGrid / renderH1 / renderH2 / renderP / spacer
+└── templates/
+    ├── forgot-password.ts
+    ├── welcome.ts
+    ├── form-confirmation.ts   # contact | career | roi | newsletter (tek template)
+    ├── low-rating-alert.ts    # rating ≤ 3
+    ├── new-review.ts          # rating ≥ 4
+    ├── weekly-report.ts
+    ├── newsletter.ts          # aylık Pulse bülteni
+    ├── customer-reply.ts      # düşük puan müşteriye yanıt
+    ├── trial-ending.ts
+    └── index.ts               # re-export
+```
+
+`src/lib/email.ts` şimdi sadece **Resend HTTP layer** + **public sender'lar**:
+- `sendResendEmail` (private), `sendMail` (legacy generic)
+- `sendFeedbackNotification` (rating ≤ 3 → low-rating-alert, ≥ 4 → new-review)
+- `sendWeeklyDigest`, `sendPasswordResetEmail`
+- `sendWelcomeEmail`, `sendFormConfirmationEmail`, `sendCustomerReplyEmail`, `sendTrialEndingEmail`, `sendNewsletterEmail`
+- `getUnsubscribeUrl(token)` utility
+
+### 21.2 Mail mobile-first kuralları
+
+Email client'ları (Outlook, Gmail) flex/grid çoğunlukla desteklemez. Tüm template'ler **table-based** + `@media (max-width:600px)` tek breakpoint:
+
+- `<td class="stack-col">` mobile'da `display:block;width:100%` — 2-sütun row'lar dikey stack.
+- `<table class="stack-row">` parent — nested grid'lerde de stack davranışı.
+- Min font-size **14px** (iOS auto-zoom önleme), buton padding **min 14px 24px** (44px touch target).
+- Görseller `style="max-width:100%;height:auto;"` + HTML `width="100%"` attr.
+- Hidden preheader: `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">…</div>`.
+- Google Fonts `@import` (Outlook fallback Arial/Helvetica), `<!--[if mso]>` MSO conditional.
+
+### 21.3 Newsletter & Marketing cron
+
+Yeni cron: `/api/cron/monthly-newsletter` schedule `0 9 1 * *` (her ayın 1'i 09:00 UTC, `vercel.json`'da tanımlı).
+
+Davranış:
+- `unsubscribedAt: null` aboneleri pull eder.
+- Locale başına son 3 aktif blog post (`isActive: true`, `orderBy: createdAt desc`).
+- Resend rate limit (10/sn) için 120 ms throttle.
+- `unsubscribeToken` legacy abonelerde yoksa `crypto.randomBytes(24).toString('hex')` ile backfill edilir.
+- Issue numarası deterministik: `(year - 2026) * 12 + (month + 1)`.
+
+Auth: `Bearer ${CRON_SECRET}` (CLAUDE.md §14.1 mevcut env'i kullanılır, yeni env yok).
+
+### 21.4 Newsletter signup → unsubscribe akışı
+
+| Adım | Kod yolu | Davranış |
+|---|---|---|
+| Signup | `POST /api/newsletter` | Upsert + `unsubscribeToken` üretimi (yeni kayıt) |
+| Mail | Aylık cron | `getUnsubscribeUrl(token)` footer'a gömer |
+| Unsubscribe | `GET /api/newsletter/unsubscribe?token=...` | `unsubscribedAt = now()` set + Pulse stilinde plain HTML "Aboneliğin sonlandı" sayfası |
+
+Schema: `NewsletterSubscriber.unsubscribeToken String? @unique` (Prisma 6.x, `prisma db push` deploy build script'inde otomatik sync).
+
+### 21.5 Admin newsletter sayfası (`/admin/newsletters`)
+
+Sadece superadmin. `/admin/customers/page.tsx` pattern'i temel alındı (mobile cards + desktop table):
+- 4-sütun summary card grid (mobile 2-col): toplam abone, aktif, iptal, iptal oranı %
+- Filtreler: range (7d/30d/90d/all), status (aktif/iptal/all), locale (tr/en/all), source (dinamik distinct), debounced email search
+- "Yenile" + "CSV İndir" + "Şimdi gönder" butonları
+- "Şimdi gönder" → POST `/api/admin/newsletters/trigger` → internal `Bearer CRON_SECRET` ile cron'a fetch (compose UI kasıtlı yok, scope creep önleme)
+
+Sidebar (`AdminSidebar.tsx`): superadmin section'ında `Mail` ikonu, kanonik label "Bülten Aboneleri" / "Newsletter".
+
+### 21.6 Mevcut akışlardaki entegrasyonlar
+
+Bu rotalar artık Pulse template'lerini kullanır:
+
+| Rota | Template | Tetik |
+|---|---|---|
+| `POST /api/auth/register` | `welcome` | Hesap oluşturulduktan sonra fire-and-forget |
+| `POST /api/contact` | `form-confirmation` (contact) | Kullanıcıya onay (admin maili eski formatta kalır) |
+| `POST /api/careers/apply` | `form-confirmation` (career) | Başvuran onayı |
+| `POST /api/roi/save` | `form-confirmation` (roi) | ROI hesap onayı |
+| `POST /api/feedback/[id]/reply` | `customer-reply` | Düşük puanlı müşteriye yanıt |
+| `POST /api/feedback` | `new-review` (≥4★) / `low-rating-alert` (≤3★) | Restoran sahibine bildirim |
+| `GET /api/cron/weekly-digest` | `weekly-report` | Haftalık digest |
+| `POST /api/auth/forgot-password` | `forgot-password` | Şifre sıfırlama |
+
+### 21.7 Tasarım kaynağı (referans, src/'ye kopyalanmaz)
+
+`/tmp/design-pkg/buaze-mail/` (Claude Design handoff bundle, git-tracked değil, lokal `.design/` analoji). Tüm 9 template + shared.jsx orijinalleri orada. AB-test-result template'i ertelendi (sistem feature'ı yok, eklenirse `/api/admin/abtests/...` ile birlikte gelmesi mantıklı).
+
+### 21.8 Yeni template eklemek
+
+1. `src/lib/email/templates/<name>.ts` — `render<Name>(params, locale): { subject, html, text }` exportu
+2. `templates/index.ts` re-export ekle
+3. `src/lib/email.ts` içine `send<Name>Email(...)` sender helper
+4. Tetikleyici route'u plug et (sender çağırılır)
+
+**Yapma**: `react-email` / `mjml` dep ekleme (CLAUDE.md §7 minimum dependency). Pulse layout helper'ları yeterli.
+
+
