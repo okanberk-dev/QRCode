@@ -800,3 +800,83 @@ UI'da 🔒 KVKK badge + tooltip ile sebep gösterilir, `<input disabled>`. Serve
 - Dynamic placeholder injection
 - Audit log table
 - Redis cache (gerekli olduğunda)
+
+---
+
+## Phase 16.6 — Mail CMS Phase 3: form-confirmation 4-variant nested JSON
+
+**PR:** TBA (stacked on PR #76 — `claude/mail-cms-phase3-form-confirmation`)
+
+### Hedef
+
+9. (son) mail template'i — `form-confirmation` — DB-driven yap. Bu template 4 farklı `formType` variant içerir (`contact / career / roi / newsletter`) ve her variant 14 string field tutar. Phase 2'den (PR #76) ertelenmişti çünkü flat JSON content yapısı tek variant düşünüyordu.
+
+### Mimari karar — Nested JSON
+
+- Tek `form-confirmation` key, locale başına bir DB row
+- `content` alanı: `{ contact: {...}, career: {...}, roi: {...}, newsletter: {...} }`
+- Admin UI: tek sayfa + 4 variant tab'ı
+- Avantaj: list page 8 → 9 kart (kart başına locale 2 = 18 kart), 4 ayrı sayfa olmadan tek yerden yönetim
+- Avantaj: schema değişikliği YOK — mevcut `MailTemplate.content: Json` yapısı zaten destekler
+- Trade-off: editor UI iki mod'a sahip oldu (flat 8 + nested 1) → DRY için `<MailFieldInput>` shared component
+
+### Değişen dosyalar
+
+**Yeni:**
+- `src/components/admin/FormConfirmationEditor.tsx` — 4-variant tab UI
+- `src/components/admin/MailFieldInput.tsx` — shared input (label + hint + KVKK lock + multiline)
+
+**Değişen:**
+- `src/lib/email/copy-loader.ts` — `SUPPORTED_MAIL_KEYS` 8 → 9, validation string + plain object kabul
+- `src/lib/email/templates/form-confirmation.ts` — async + nested DB merge (top-level variant + inner field)
+- `src/lib/email.ts` — `sendFormConfirmationEmail` await
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts` — `cleanContent()` per-key branch
+- `src/components/admin/MailTemplateEditor.tsx` — `templateKey === 'form-confirmation'` ise `<FormConfirmationEditor>` render
+- `src/app/admin/mail-templates/page.tsx` — `TEMPLATE_LABELS` +1 entry
+- `src/app/api/dev/email-preview/route.ts` — variant query string
+- `src/app/api/admin/dev/send-test/route.ts` — variant body
+- `scripts/seed-mail-templates.ts` — 2 yeni nested row (toplam 18)
+- `CLAUDE.md` §21.26 başlığı + §21.28 (yeni) nested variant pattern
+
+### Render fn değişikliği (özet)
+
+```ts
+export async function renderFormConfirmation(params, locale) {
+  const FORM_COPY = isTr ? { contact: {...}, career: {...}, ... } : {...};
+  const merged = await loadMailCopy('form-confirmation', locale, FORM_COPY);
+  const variantOverride = merged[params.formType] ?? {};
+  const copy = { ...FORM_COPY[params.formType], ...variantOverride };
+  // ... render
+}
+```
+
+İki seviyeli merge: top-level variant key (admin sadece bir variant düzenlemiş olabilir) + inner field (admin sadece subject'i değiştirmiş olabilir). Eksik field/variant'lar inline default'tan gelir.
+
+### Editor UI (FormConfirmationEditor)
+
+- 4 variant tab: Contact / Kariyer / ROI / Bülten
+- State: `Record<FormType, Record<string, string>>` — her variant kendi state'ini tutar, tab değiştirince kaybolmaz
+- Her variant'ta 14 field (subject, preheader, eyebrow, titleA, titleB, intro, formEyebrow, timelineEyebrow, sideEyebrowA/B, sideBodyA/B, sideCtaA/B)
+- Save → tüm 4 variant tek payload'da gönderilir
+- Preview/Test mail → aktif variant query string'e geçer
+
+### Verification
+
+- `npx tsc --noEmit` zero error
+- `npx eslint .` zero error (mevcut warning'ler değişmedi)
+- DB schema değişikliği YOK
+- E2E (deploy + seed sonrası):
+  - `/admin/mail-templates` → 18 kart, "Form onayı" 9. kart
+  - `/admin/mail-templates/form-confirmation/tr` → 4 variant tab; default Contact aktif, 14 field
+  - Career tab → field'lar değişir, state ayrı tutulur
+  - Save → tüm 4 variant tek PATCH'te gider
+  - "Test mail at" career tab'ında → kariyer mail'i admin'e düşer
+  - Preview `?variant=roi` → ROI variant render edilir
+  - DB'ye non-string inject edilirse load'da defansif normalisation drop eder, render inline default'a düşer
+
+### Phase 4+ backlog
+
+- Dynamic placeholder injection (`${firstName}`, `${restaurantName}`)
+- Audit log table (`MailTemplateRevision`)
+- Redis cache (gerekli olduğunda)
+- Per-field validation (max length, format)

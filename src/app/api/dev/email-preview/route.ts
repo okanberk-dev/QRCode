@@ -62,12 +62,18 @@ export async function renderTemplate(
       return renderForgotPassword(SEEDS['forgot-password'](), locale);
     case 'welcome':
       return renderWelcome(SEEDS.welcome(), locale);
-    case 'form-confirmation':
-      // Sync — renderFormConfirmation is the only Phase 2 template still
-      // using inline copy (4-variant nested JSON deferred to Phase 3). The
-      // outer `renderTemplate` is async, so returning the sync result is
-      // auto-wrapped into a resolved Promise.
-      return renderFormConfirmation(SEEDS['form-confirmation'](), locale);
+    case 'form-confirmation': {
+      // Phase 3 — form-confirmation now reads DB-driven nested copy. Variant
+      // override comes via query string (?variant=contact|career|roi|newsletter)
+      // so admins can preview any of the 4 form types from the editor tabs.
+      const variantParam = searchParams?.get('variant');
+      const validVariant: 'contact' | 'career' | 'roi' | 'newsletter' =
+        variantParam === 'career' || variantParam === 'roi' || variantParam === 'newsletter'
+          ? variantParam
+          : 'contact';
+      const seed = SEEDS['form-confirmation']();
+      return renderFormConfirmation({ ...seed, formType: validVariant }, locale);
+    }
     case 'low-rating-alert':
       return renderLowRatingAlert(SEEDS['low-rating-alert'](), locale);
     case 'new-review':

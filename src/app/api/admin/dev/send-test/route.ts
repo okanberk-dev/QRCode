@@ -72,6 +72,11 @@ export async function POST(req: NextRequest) {
     if (typeof body.customIntro === 'string') search.set('intro', body.customIntro);
     if (Array.isArray(body.postIds)) search.set('postIds', body.postIds.join(','));
   }
+  // form-confirmation has 4 variants — admin's active editor tab tells us
+  // which one to render. Defaults to 'contact' if missing.
+  if (template === 'form-confirmation' && typeof body.variant === 'string') {
+    search.set('variant', body.variant);
+  }
 
   const rendered = await renderTemplate(template as PreviewTemplate, locale, search);
   // Subject prefix to make test mails obviously test in any inbox.

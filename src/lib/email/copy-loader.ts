@@ -38,6 +38,11 @@ export const SUPPORTED_MAIL_KEYS = [
   'new-review',
   'weekly-report',
   'customer-reply',
+  // Phase 3: form-confirmation uses nested JSON
+  // (`{ contact: {...}, career: {...}, roi: {...}, newsletter: {...} }`)
+  // because it has 4 formType variants. Loader keeps the same signature;
+  // validation below also accepts plain objects at the top level.
+  'form-confirmation',
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];
@@ -70,14 +75,26 @@ export async function loadMailCopy<T extends Record<string, unknown>>(
         ? (row.content as Record<string, unknown>)
         : {};
     // Defensive normalisation: render functions interpolate copy fields into
-    // HTML strings, so anything non-string from the DB (number / null / nested
-    // object that slipped past PATCH validation) must NOT reach the template.
-    // Drop those keys entirely — render falls back to the inline default for
-    // that field. Keeps the merge type-safe at runtime, not just at compile.
+    // HTML strings, so anything non-string from the DB must NOT reach the
+    // template. Two shapes are accepted:
+    //   1) string                  — flat copy field (most templates)
+    //   2) plain object of strings — variant container (form-confirmation
+    //      style: { contact: { titleA: '...', ... }, career: {...}, ... })
+    // Anything else (number / null / array / nested object beyond depth 1)
+    // is dropped + warn-logged. Render falls back to inline default for
+    // that key. Keeps merge runtime-safe even when admin somehow PATCHes a
+    // bad shape.
     const dbContent: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(rawContent)) {
       if (typeof v === 'string') {
         dbContent[k] = v;
+      } else if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+        // Variant object: keep only string children, drop any other shape.
+        const inner: Record<string, string> = {};
+        for (const [ik, iv] of Object.entries(v as Record<string, unknown>)) {
+          if (typeof iv === 'string') inner[ik] = iv;
+        }
+        if (Object.keys(inner).length > 0) dbContent[k] = inner;
       } else {
         console.warn('[loadMailCopy] non-string field dropped', { key, locale, field: k, type: typeof v });
       }

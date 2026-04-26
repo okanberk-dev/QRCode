@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Eye, Loader2, Lock, Mail, RotateCcw, Save } from 'lucide-react';
+import { ArrowLeft, Eye, Loader2, Mail, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
+import MailFieldInput, { type MailFieldDef } from './MailFieldInput';
+import FormConfirmationEditor from './FormConfirmationEditor';
 
 // Schema-aware fields per template. Only string copy fields the admin
 // should edit; structural arrays (steps, resources, quickActions, quotes)
@@ -15,14 +17,9 @@ import Link from 'next/link';
 //    with 🔒 KVKK badge. Server-side enforcement is in `locked-fields.ts`,
 //    so UI bypass via curl/devtools still gets dropped.
 //  - `lockReason?: string` → user-facing tooltip explaining the lock
-type FieldDef = {
-  key: string;
-  label: string;
-  multiline?: boolean;
-  hint?: string;
-  locked?: boolean;
-  lockReason?: string;
-};
+// Re-exported via the shared MailFieldInput component so other editors
+// (e.g. FormConfirmationEditor) reuse the same field schema.
+type FieldDef = MailFieldDef;
 const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
   welcome: [
     { key: 'eyebrow', label: 'Eyebrow', hint: 'Üst köşedeki küçük etiket — örn. "Hoş geldin · Sayı bir"' },
@@ -144,6 +141,7 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'new-review': 'Yeni 5★ yorum',
   'weekly-report': 'Haftalık rapor',
   'customer-reply': 'Müşteri yanıtı',
+  'form-confirmation': 'Form onayı',
 };
 
 interface Props {
@@ -152,6 +150,16 @@ interface Props {
 }
 
 export default function MailTemplateEditor({ templateKey, locale }: Props) {
+  // form-confirmation has 4 nested formType variants — its own editor with
+  // tab UI, separate state per variant, save round-trips all 4 in one PATCH.
+  // Branching here keeps the flat editor (8 templates) untouched.
+  if (templateKey === 'form-confirmation') {
+    return <FormConfirmationEditor locale={locale} />;
+  }
+  return <FlatTemplateEditor templateKey={templateKey} locale={locale} />;
+}
+
+function FlatTemplateEditor({ templateKey, locale }: Props) {
   const router = useRouter();
   const fields = FIELDS_BY_TEMPLATE[templateKey] ?? [];
   const isEnglish = locale === 'en';
@@ -303,59 +311,14 @@ export default function MailTemplateEditor({ templateKey, locale }: Props) {
       ) : (
         <>
           <div className="space-y-4 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-            {fields.map((f) => {
-              const baseClass =
-                'mt-1.5 w-full rounded-xl border bg-white px-3 py-2 text-[14px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]';
-              const inputClass = f.locked
-                ? `${baseClass} border-red-200 bg-red-50/40 cursor-not-allowed opacity-70`
-                : `${baseClass} border-[#EDEDED]`;
-              const placeholder = f.locked
-                ? '(Bu alan KVKK / güvenlik kilitli — kod-içi varsayılan kullanılır)'
-                : '(Boş bırakırsan kod-içi varsayılan)';
-              return (
-                <div key={f.key}>
-                  <div className="flex items-center gap-2">
-                    <label htmlFor={f.key} className="block text-[13px] font-semibold text-[#0A0A0A]">
-                      {f.label}
-                    </label>
-                    {f.locked && (
-                      <span
-                        className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-700"
-                        title={f.lockReason ?? 'KVKK / güvenlik nedeniyle düzenlenemez'}
-                      >
-                        <Lock size={10} strokeWidth={2.5} />
-                        KVKK
-                      </span>
-                    )}
-                  </div>
-                  {f.hint && <p className="mt-0.5 text-[11px] text-[#9CA3AF]">{f.hint}</p>}
-                  {f.locked && f.lockReason && (
-                    <p className="mt-0.5 text-[11px] font-medium text-red-700">{f.lockReason}</p>
-                  )}
-                  {f.multiline ? (
-                    <textarea
-                      id={f.key}
-                      value={content[f.key] ?? ''}
-                      onChange={(e) => setContent((c) => ({ ...c, [f.key]: e.target.value }))}
-                      rows={3}
-                      disabled={f.locked}
-                      className={inputClass}
-                      placeholder={placeholder}
-                    />
-                  ) : (
-                    <input
-                      id={f.key}
-                      type="text"
-                      value={content[f.key] ?? ''}
-                      onChange={(e) => setContent((c) => ({ ...c, [f.key]: e.target.value }))}
-                      disabled={f.locked}
-                      className={inputClass}
-                      placeholder={placeholder}
-                    />
-                  )}
-                </div>
-              );
-            })}
+            {fields.map((f) => (
+              <MailFieldInput
+                key={f.key}
+                field={f}
+                value={content[f.key] ?? ''}
+                onChange={(next) => setContent((c) => ({ ...c, [f.key]: next }))}
+              />
+            ))}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">

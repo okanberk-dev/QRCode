@@ -1067,7 +1067,7 @@ Eski tarayıcı default isteklerini SVG'ye yönlendirir:
 
 **Next 16 hazırlığı**: `next lint` deprecated. ESLint CLI'a geçildi. `next/core-web-vitals` + `next/typescript` preset'leri aynen kalıyor; sadece lint runner değişti.
 
-### 21.26 DB-driven mail content (8 template, form-confirmation hariç)
+### 21.26 DB-driven mail content (9 template — tüm Pulse mailler)
 
 **Schema** (`prisma/schema.prisma` `MailTemplate`):
 - `key: String` — `'welcome' | 'newsletter' | 'trial-ending'` (MVP scope)
@@ -1150,3 +1150,47 @@ Idempotent. 6 satır upsert. Çağrıldığında **admin-edited content'i overri
 - Dynamic placeholder injection (`${firstName}`, `${restaurantName}` runtime)
 - Audit log (`MailTemplateRevision`)
 - Redis cache (gerekli değil şimdilik — 60s drift kabul)
+
+### 21.28 Phase 3 — `form-confirmation` 4-variant nested JSON
+
+`form-confirmation` template'i **4 formType variant** taşır (`contact / career / roi / newsletter`); her variant 14 string field içerir. Phase 2'de erteleme sebebi: tek-row düz JSON yapısı 4 variant'ı doğru modelleyemiyordu. Phase 3 çözümü: aynı `MailTemplate.content: Json` schema'sıyla nested JSON.
+
+**DB shape** (per locale row):
+```json
+{
+  "contact":    { "subject": "...", "preheader": "...", ... },
+  "career":     { ... },
+  "roi":        { ... },
+  "newsletter": { ... }
+}
+```
+
+**Loader** (`src/lib/email/copy-loader.ts`): `loadMailCopy<T>` defansif normalisation iki shape kabul eder — flat `string` (8 template) **veya** plain object of strings (form-confirmation). Array / null / number / nested-deeper yine drop edilir.
+
+**Render** (`src/lib/email/templates/form-confirmation.ts`): Async; iki seviyeli merge:
+```ts
+const merged = await loadMailCopy('form-confirmation', locale, FORM_COPY);
+const variantOverride = merged[formType] ?? {};
+const copy = { ...FORM_COPY[formType], ...variantOverride };
+```
+Admin sadece bir variant'ın bir field'ını override etse, kalan field'lar inline default'tan gelir.
+
+**API endpoint** (`/api/admin/mail-templates/[key]/[locale]`): PATCH validation `parsed.key === 'form-confirmation'` ise top-level değerlere plain object kabul eder, içindeki string'leri trim + drop empty + drop non-string. Diğer 8 template hâlâ flat-only.
+
+**Admin UI**:
+- Tek route: `/admin/mail-templates/form-confirmation/[locale]` — `MailTemplateEditor` `templateKey === 'form-confirmation'` branch'inde `<FormConfirmationEditor>` render eder.
+- `<FormConfirmationEditor>` 4 variant tab'ı (`İletişim / Kariyer / ROI / Bülten`) + her variant için aynı 14 field listesi.
+- State: `Record<FormType, Record<string, string>>` — her tab kendi state'ini tutar; "Kaydet" tüm 4 variant'ı tek PATCH'te gönderir.
+- Önizle / Test mail butonları aktif tab'ın variant'ını query string ile preview / send-test endpoint'ine geçirir.
+
+**`<MailFieldInput>`** (`src/components/admin/MailFieldInput.tsx`) — tek input render component; flat editor + variant editor aynı şeyi kullanır (DRY). Locked badge + multiline + hint hepsi tek yerde.
+
+**Liste sayfası**: `TEMPLATE_LABELS` 9 entry, grid otomatik 9 × 2 = 18 kart.
+
+**Seed**: 18 row upsert (16 mevcut + 2 nested form-confirmation).
+
+**Phase 4 backlog** (yapılmadı):
+- Dynamic placeholder injection (`${firstName}`, `${restaurantName}` runtime substitution)
+- Audit log (`MailTemplateRevision`)
+- Redis cache (gerekli olduğunda)
+- Per-field validation (max length, format) — şu an sadece trim + non-empty
