@@ -2,6 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderButton, renderEcgDivider, spacer } from '../components';
+import { loadMailCopy } from '../copy-loader';
 
 export interface NewsletterPost {
   title: string;
@@ -9,6 +10,13 @@ export interface NewsletterPost {
   url: string;
   category?: string | null;
   readMinutes?: number | null;
+}
+
+export interface NewsletterStat {
+  /** Big metric, e.g. '%96' or '+184%' */
+  value: string;
+  /** Caption under the metric, e.g. 'sessiz kalır' */
+  label: string;
 }
 
 export interface NewsletterParams {
@@ -26,12 +34,17 @@ export interface NewsletterParams {
   customIntro?: string | null;
   /** Override the subject line. Falls back to the locale-specific default. */
   customSubject?: string | null;
+  /** Stats band cells. When omitted (default), the band is hidden. JSX
+   *  prototype shipped with `+184% / 1.4s / %96` placeholders that looked
+   *  identical month over month — surfacing real metrics is gated behind
+   *  caller intent now. */
+  stats?: NewsletterStat[];
 }
 
-export function renderNewsletter(
+export async function renderNewsletter(
   params: NewsletterParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const issueLabel = params.issueNumber ? `Pulse #${String(params.issueNumber).padStart(2, '0')}` : 'Pulse';
   const subject = params.customSubject?.trim() || (isTr
@@ -52,7 +65,7 @@ export function renderNewsletter(
   const featured: NewsletterPost | undefined = params.featured ?? params.posts[0];
   const restPosts = params.featured ? params.posts : params.posts.slice(1);
 
-  const copy = isTr ? {
+  const inlineDefault = isTr ? {
     eyebrowTop: `${monthLabel} · Aylık bülten`,
     titleA: 'Sessiz misafiri',
     titleAccent: 'duyabilmek',
@@ -62,11 +75,6 @@ export function renderNewsletter(
     featuredEyebrow: 'Kapak yazısı',
     listEyebrow: 'Bu sayıda',
     statsTitle: 'Bu ayın küçük rakamları',
-    stats: [
-      { v: '%96', k: 'sessiz kalır' },
-      { v: '+184%', k: 'organik yorum' },
-      { v: '1.4s', k: 'ortalama yanıt' },
-    ],
     futureLabel: 'Önümüzdeki sayıda',
     futureBody: 'Otel sektörü vakası, yeni heatmap görselleri, OAuth entegrasyonları.',
     exploreCta: 'Tüm sayıları gör →',
@@ -84,11 +92,6 @@ export function renderNewsletter(
     featuredEyebrow: 'Cover story',
     listEyebrow: 'In this issue',
     statsTitle: 'Small numbers, this month',
-    stats: [
-      { v: '96%', k: 'stay silent' },
-      { v: '+184%', k: 'organic reviews' },
-      { v: '1.4s', k: 'avg response' },
-    ],
     futureLabel: 'Next issue',
     futureBody: 'Hotel sector case, new heatmap visuals, OAuth integrations.',
     exploreCta: 'Browse all issues →',
@@ -97,6 +100,11 @@ export function renderNewsletter(
     featuredReadTime: '12 min read',
     featuredOpen: 'Open article →',
   };
+
+  // DB-driven copy override (mail_templates row by key+locale). Missing
+  // fields fall through to the inline default above. Cron's per-call DB
+  // hit is amortised by 60s process-local cache in copy-loader.
+  const copy = await loadMailCopy('newsletter', locale, inlineDefault);
 
   const exploreUrl = params.exploreUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/${isTr ? 'tr' : 'en'}/blog`;
   const editorNoteUrl = featured?.url ?? exploreUrl;
@@ -149,13 +157,28 @@ export function renderNewsletter(
     `;
   }).join('');
 
-  // Stats band
-  const statCells = copy.stats.map((s, i) => `
-    <td class="stack-col" valign="top" style="width:33.33%;padding:0 16px;${i === 0 ? 'padding-left:0;' : ''}${i < copy.stats.length - 1 ? `border-right:1px solid ${PULSE.n200};` : 'padding-right:0;'}">
-      <div style="font-family:${FONTS.heading};font-size:32px;font-weight:500;letter-spacing:-0.025em;color:${PULSE.graphite};line-height:1;">${s.v}</div>
-      <div style="margin-top:6px;font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};">${s.k}</div>
-    </td>
-  `).join('');
+  // Stats band — opsiyonel. Caller `params.stats` geçerse render edilir,
+  // yoksa block tamamen gizlenir. JSX prototip değerleri (+184% / 1.4s)
+  // gerçek metrik üretmediği için her ay aynı görünmesindense yokluğu
+  // tercih edildi.
+  const statsList = params.stats ?? [];
+  const statsBlock = statsList.length > 0 ? `
+    <tr>
+      <td class="bz-pad" style="padding:32px 40px 16px;">
+        <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:28px;">
+          ${renderEyebrow(copy.statsTitle)}
+          ${spacer(14)}
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
+            <tr>${statsList.map((s, i) => `
+              <td class="stack-col" valign="top" style="width:${(100 / statsList.length).toFixed(2)}%;padding:0 16px;${i === 0 ? 'padding-left:0;' : ''}${i < statsList.length - 1 ? `border-right:1px solid ${PULSE.n200};` : 'padding-right:0;'}">
+                <div style="font-family:${FONTS.heading};font-size:32px;font-weight:500;letter-spacing:-0.025em;color:${PULSE.graphite};line-height:1;">${escapeHtml(s.value)}</div>
+                <div style="margin-top:6px;font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};">${escapeHtml(s.label)}</div>
+              </td>
+            `).join('')}</tr>
+          </table>
+        </div>
+      </td>
+    </tr>` : '';
 
   // Custom title/intro override the default Pulse copy. When admin authors a
   // campaign with its own headline, the lime-highlight styling falls away and
@@ -196,19 +219,9 @@ export function renderNewsletter(
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${postRows}</table>
         </td>
       </tr>` : ''}
+      ${statsBlock}
       <tr>
-        <td class="bz-pad" style="padding:32px 40px 16px;">
-          <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:28px;">
-            ${renderEyebrow(copy.statsTitle)}
-            ${spacer(14)}
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
-              <tr>${statCells}</tr>
-            </table>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:8px 40px 36px;">
+        <td class="bz-pad" style="padding:${statsBlock ? '8px' : '32px'} 40px 36px;">
           ${renderEyebrow(copy.futureLabel)}
           ${spacer(8)}
           ${renderP(copy.futureBody, { size: 13, color: PULSE.n600 })}

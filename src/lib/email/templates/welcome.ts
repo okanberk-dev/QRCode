@@ -2,6 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderButton, renderEcgDivider, spacer } from '../components';
+import { loadMailCopy } from '../copy-loader';
 
 export interface WelcomeParams {
   firstName?: string | null;
@@ -9,10 +10,10 @@ export interface WelcomeParams {
   demoUrl?: string;
 }
 
-export function renderWelcome(
+export async function renderWelcome(
   params: WelcomeParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const name = params.firstName ? escapeHtml(params.firstName) : (isTr ? 'merhaba' : 'hi');
   const subject = isTr ? 'Hoş geldin — ilk QR kodun 4 adım uzakta' : 'Welcome — your first QR is 4 steps away';
@@ -20,7 +21,7 @@ export function renderWelcome(
     ? 'Hesabını aktive ettik. Sıradaki adım: işletme bilgilerini doldurmak.'
     : 'Your account is active. Next: fill out your business details.';
 
-  const copy = isTr ? {
+  const inlineDefault = isTr ? {
     eyebrow: 'Hoş geldin · Sayı bir',
     titleHi: `Merhaba ${name}.`,
     titleSub: 'Şimdi başlıyoruz.',
@@ -65,6 +66,12 @@ export function renderWelcome(
       { t: 'Inviting your team to the panel', s: 'Help · 2 min', icon: '◇' },
     ],
   };
+
+  // DB-driven copy override. Admin edits land in `mail_templates` and merge
+  // over the inline default; missing fields stay default. titleHi keeps
+  // ${name} interpolation because firstName is per-recipient — admins can
+  // tweak the surrounding copy but the greeting stays personalised.
+  const copy = await loadMailCopy('welcome', locale, inlineDefault);
 
   const demoUrl = params.demoUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/${isTr ? 'tr' : 'en'}/how-it-works`;
 

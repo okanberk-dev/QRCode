@@ -506,6 +506,29 @@ model NewsletterCampaign {
   @@map("newsletter_campaigns")
 }
 
+// Admin-editable copy for selected mail templates (welcome, newsletter,
+// trial-ending in MVP). Each (key, locale) pair holds a JSON content blob
+// keyed by the inline `copy = {...}` field names. Render functions merge
+// DB content over their inline default — missing fields gracefully fall
+// back to code, so a partial / corrupt row never breaks send.
+model MailTemplate {
+  id          String   @id @default(cuid())
+  key         String   // e.g. 'welcome' | 'newsletter' | 'trial-ending'
+  locale      String   // 'tr' | 'en'
+  content     Json     // { eyebrow: '...', cta: '...', ... }
+  // editable=false reserved for KVKK/legal copy that admins shouldn't tweak.
+  // MVP: every row is editable; flag exists so Phase 2 can lock specific
+  // fields without a schema migration.
+  editable    Boolean  @default(true)
+  updatedById String?  @map("updated_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  @@unique([key, locale])
+  @@index([key])
+  @@map("mail_templates")
+}
+
 model ROIRequest {
   id             String   @id @default(cuid())
   email          String?

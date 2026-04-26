@@ -689,3 +689,57 @@ Tasarımda var ama backend'i olmayan / sadece UI olarak tamamlanacak öğeler. H
 - `npx prisma generate` `FeedbackReply.source` ve `NewsletterCampaign` ScalarFieldEnum'ları doğru
 - E2E lokal kontrol checklist (CLAUDE.md §21.15): 9 template browser + 4 mail client smoke test
 - NewsletterCampaign E2E: yeni kampanya + Şimdi gönder → sent status, sentCount dolu, scheduledAt geçen scheduled campaign cron'da yakalanıyor
+
+---
+
+## Phase 16.4 — Mail Hardcoded Cleanup + DB-Driven Content (MVP) (2026-04)
+
+**Kapsam**: PR #74 sonrası audit ortaya 4 sabit içerik daha çıkardı; ayrıca admin "mail copy'lerini panelden düzenle" istedi. Tek PR'da 2 paralel iş:
+
+### Faz 1 — Hardcoded cleanup (4 item)
+
+- `newsletter.ts` stats band → opsiyonel `params.stats?: NewsletterStat[]`. Cron geçirmediğinden default'ta band gizlenir (eski `+184%/1.4s` her ay aynıydı).
+- `weekly-report.ts` 3. hücre `'1.4s'` placeholder → kaldırıldı, 2-col layout. Backend tracking yokken yanıltıcı placeholder göstermeyiz.
+- `customer-reply.ts` `defaultActions` (3 Kadıköy örneği) silindi. `params.actions` boş → "Aldığımız aksiyonlar" kart gizlenir.
+- `trial-ending.ts` fiyat fallback → comment ile işaretlendi (Faz 2 backlog).
+
+### Faz 2 — DB-Driven Mail Content (MVP)
+
+**Yeni dosyalar**:
+- `prisma/schema.prisma` — `MailTemplate { key, locale, content: Json, editable, updatedById, ... }` `@@unique([key, locale])`
+- `src/lib/email/copy-loader.ts` — `loadMailCopy<T>(key, locale, fallback)` + 60s process-local cache + `invalidateMailCopyCache`
+- `src/app/api/admin/mail-templates/route.ts` — GET grid (seeded/not-seeded)
+- `src/app/api/admin/mail-templates/[key]/[locale]/route.ts` — GET + PATCH + DELETE
+- `src/app/admin/mail-templates/page.tsx` — list grid
+- `src/app/admin/mail-templates/[key]/[locale]/page.tsx` — edit page wrapper
+- `src/components/admin/MailTemplateEditor.tsx` — schema-aware form (FIELDS_BY_TEMPLATE map)
+- `scripts/seed-mail-templates.ts` — idempotent seed (welcome/newsletter/trial-ending × tr/en = 6 row)
+
+**Değişen**:
+- `src/lib/email/templates/welcome.ts` — `renderWelcome` async, `await loadMailCopy('welcome', ...)`
+- `src/lib/email/templates/newsletter.ts` — `renderNewsletter` async + DB merge + statsBlock opsiyonel
+- `src/lib/email/templates/trial-ending.ts` — `renderTrialEnding` async + DB merge + price fallback yorum
+- `src/lib/email/templates/weekly-report.ts` — `stats` array 2-col
+- `src/lib/email/templates/customer-reply.ts` — `defaultActions` silindi, gizli kart
+- `src/lib/email.ts` — `sendWelcomeEmail`, `sendNewsletterEmail`, `sendTrialEndingEmail` artık `await renderXxx(...)`
+- `src/components/admin/AdminSidebar.tsx` — "Mail İçerikleri" satırı (FileEdit icon, superadmin)
+- `CLAUDE.md` §21.26 (yeni)
+
+**Backend etkisi**:
+- `prisma db push` deploy'da `mail_templates` tablosu sync olur. Boş olduğu için mevcut mailler inline default ile çalışmaya devam eder (backwards compatible).
+- 3 render fonksiyonu async oldu → her mail send'de DB query (60s cache ile amortise). Cron throttle (120ms) zaten DB-friendly.
+- Admin yeni route + sidebar + editor — superadmin only.
+
+**Verification**:
+- `npx tsc --noEmit` zero error
+- `npx eslint .` 0 error
+- `prisma generate` `MailTemplate` field'ları tanır
+- Seed script: `DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts` → 6 row upsert
+- E2E (deploy sonrası): `/admin/mail-templates` 6 kart, edit sayfa form, test mail butonu, varsayılana dön
+
+**Phase 2 backlog** (yapılmadı):
+- 6 kalan template DB-driven (forgot-password, form-confirmation, low-rating-alert, new-review, weekly-report, customer-reply)
+- `${firstName}`, `${restaurantName}` runtime placeholder injection
+- Field-level `editable: false` flag (KVKK lock)
+- Audit log table
+- Redis cache layer (multi-instance Vercel drift fix)

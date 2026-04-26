@@ -58,11 +58,6 @@ export function renderCustomerReply(
     mapsEyebrow: 'Yol tarifi',
     sentLine: 'Bu yanıt',
     sentSuffix: 'ile gönderildi',
-    defaultActions: [
-      ['Kahveyi yeniden ısıtmak yerine taze yapma kuralı', 'Artık her durumda yeni demleme yapıyoruz.'],
-      ['Vardiya başında bar–salon koordinasyonu', 'Boş saatlerde bile garson 90 saniyede masada.'],
-      ['Geri bildirimi tüm ekibe aktardık', 'Pazartesi briefingimizde okuduk ve teşekkür ettik.'],
-    ] as Array<[string, string]>,
   } : {
     headerEyebrow: 'For you · Personal reply',
     ownerLabel: 'OWNER',
@@ -80,25 +75,20 @@ export function renderCustomerReply(
     mapsEyebrow: 'Directions',
     sentLine: 'Sent via',
     sentSuffix: '',
-    defaultActions: [
-      ['Fresh brew rule for any returned coffee', 'No re-warming, ever — fresh pour every time.'],
-      ['Bar–floor coordination at shift start', 'Server within 90 seconds even on quiet hours.'],
-      ['Feedback shared with the whole team', 'Read in Monday briefing, with thanks.'],
-    ] as Array<[string, string]>,
   };
 
   const message = escapeHtml(params.message).replace(/\n\s*\n/g, '</p><p style="font-family:' + FONTS.body + ';font-size:15px;line-height:1.7;color:' + PULSE.n700 + ';margin:14px 0 0;letter-spacing:-0.005em;">').replace(/\n/g, '<br>');
 
-  // Actions card — JSX:57-91. Default to 3-item hardcoded list if not overridden.
-  const actionItems: Array<[string, string]> = (() => {
-    if (Array.isArray(params.actions)) {
-      return params.actions.map((title) => {
-        const desc = params.actionDescriptions?.[title] ?? '';
-        return [title, desc] as [string, string];
-      });
-    }
-    return copy.defaultActions;
-  })();
+  // Actions card — JSX prototipinde Kadıköy Bistro hikayesine özel 3 sabit
+  // örnek ("kahve / vardiya / briefing") vardı. Gerçek müşteri yanıtında
+  // restoran kendi gerçek aksiyonlarını param.actions ile geçirir; aksi
+  // durumda bu kart **gizlenir** — varsayılan generic 3 cümle gönderilirse
+  // içerik müşteri için anlamsız kalıyordu.
+  const actionItems: Array<[string, string]> = Array.isArray(params.actions)
+    ? params.actions
+        .filter((t): t is string => typeof t === 'string' && t.trim().length > 0)
+        .map((title) => [title, params.actionDescriptions?.[title] ?? ''] as [string, string])
+    : [];
 
   const actionsBlock = actionItems.length ? `
     <tr>

@@ -864,7 +864,9 @@ Send başlamadan campaign `'sending'`, bitince `'sent'` + `sentAt` + counts. Eve
 2. `npx prisma generate` (stub DATABASE_URL ile, gerçek DB'siz)
 3. `npx prisma validate` (schema syntax)
 4. `npx tsc --noEmit -p tsconfig.json` (zero error)
-5. `npx next lint --max-warnings 0` (lint)
+5. `npx eslint .` (lint, max-warnings flag yok)
+
+**Trigger**: `on.pull_request` (branch filter YOK — stacked PR'lar (base ≠ main) da koşsun, CLAUDE.md §21.22). Push event sadece `main` branch'inde tetiklenir (zaten merge sonrası verifiy için). Eski `branches: [main]` filter PR base'i `claude/*` olunca CI'ı tamamen atlıyordu — düzeltildi.
 
 Concurrency cancel-in-progress: aynı PR'a yeni commit gelince eski run iptal. Workflow ~2-3 dk sürer. Local geliştirici için aynı 4 komutu local'de koşmak yeterli — CI sadece "review öncesi son güvenlik ağı".
 
@@ -1064,3 +1066,64 @@ Eski tarayıcı default isteklerini SVG'ye yönlendirir:
 **CI komut**: `npx eslint .` (max-warnings flag'i yok). Yeni error → fail. Mevcut warning → görünür ama bloke etmez.
 
 **Next 16 hazırlığı**: `next lint` deprecated. ESLint CLI'a geçildi. `next/core-web-vitals` + `next/typescript` preset'leri aynen kalıyor; sadece lint runner değişti.
+
+### 21.26 DB-driven mail content (welcome / newsletter / trial-ending)
+
+**Schema** (`prisma/schema.prisma` `MailTemplate`):
+- `key: String` — `'welcome' | 'newsletter' | 'trial-ending'` (MVP scope)
+- `locale: String` — `'tr' | 'en'`
+- `content: Json` — flat object: render fonksiyonunun inline `copy = isTr ? {...} : {...}` field'larıyla aynı isimler
+- `editable: Boolean @default(true)` — KVKK/legal copy için Phase 2'de field-level lock
+- `updatedById: String?` + `updatedAt: DateTime` — audit
+- `@@unique([key, locale])` — bir (template, dil) için tek satır
+
+**Helper** (`src/lib/email/copy-loader.ts`):
+```ts
+loadMailCopy<T>(key, locale, fallback) → Promise<T>
+```
+- DB'den `mailTemplate.findUnique` → JSON content çeker
+- `{...fallback, ...dbContent}` shallow merge → admin sadece istediği field'ı override eder, kalan default kalır
+- Process-local cache (60 sn TTL) — `Map<string, CacheEntry>`. Vercel serverless cold start'ta sıfırlanır, kabul edilen drift.
+- DB error → fallback (mail kırılmaz). `console.error` ile log düşer.
+- `invalidateMailCopyCache(key, locale)` — admin PATCH/DELETE sonrası cache bust
+
+**Render fonksiyonu pattern** (welcome/newsletter/trial-ending):
+```ts
+export async function renderXxx(params, locale): Promise<{...}> {
+  const inlineDefault = isTr ? {...} : {...};
+  const copy = await loadMailCopy('xxx', locale, inlineDefault);
+  // copy artık DB-merge'lı; render aynen devam
+}
+```
+3 render fonksiyonu artık `async` — sender'lar `await renderXxx(...)` çağırır.
+
+**Admin UI**:
+- `/admin/mail-templates` (liste) — 3×2 = 6 kart grid, seeded/not-seeded durumu
+- `/admin/mail-templates/[key]/[locale]` (edit form) — `MailTemplateEditor.tsx` schema-bilinçli alan listesi (`FIELDS_BY_TEMPLATE` map'i her template için input + textarea field'ları + hint'ler tanımlar)
+- Eylemler: **Önizle** (yeni tab dev preview), **Test mail at** (admin'in kendi e-postasına), **Kaydet** (PATCH), **Varsayılana dön** (DELETE → kod-içi default)
+- Sidebar: "Mail İçerikleri" (FileEdit icon, superadmin)
+
+**API**:
+- `GET /api/admin/mail-templates` — full grid (seeded/not seeded)
+- `GET /api/admin/mail-templates/[key]/[locale]` — tek template content
+- `PATCH /api/admin/mail-templates/[key]/[locale]` — content upsert + cache invalidate. Empty string field'lar drop edilir (admin "varsayılana dön" istediği field için).
+- `DELETE /api/admin/mail-templates/[key]/[locale]` — full revert + cache invalidate
+
+**Seed** (`scripts/seed-mail-templates.ts`):
+```bash
+DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts
+```
+Idempotent. 6 satır upsert. Çağrıldığında **admin-edited content'i override eder** — operator "kod default'larına geri dön" istediğinde çalıştırılır.
+
+**Phase 2 backlog** (yapılmadı, gelecek scope):
+- Kalan 6 template DB-driven (forgot-password, form-confirmation, low-rating-alert, new-review, weekly-report, customer-reply)
+- Dynamic placeholder injection: `${firstName}`, `${restaurantName}` gibi runtime substitution. Şu an `welcome.titleHi` `Merhaba ${name}.` interpolation render fonksiyonunda yapılıyor; admin override edemez (per-recipient personalization).
+- `editable: false` field-level flag + UI read-only (KVKK metinleri için)
+- Audit log (`MailTemplateRevision { templateId, content, editedAt, editorId }`)
+- Redis-backed cache (multi-instance Vercel'de drift sıfır)
+
+**Faz 1 hardcoded cleanup** (aynı PR):
+- Newsletter `stats` array'i → `params.stats?` opsiyonel param. Cron geçirmediği için band gizlenir (eski `+184% / 1.4s` placeholder'ları yok).
+- Weekly-report 3. stat hücre (`'1.4s'` response time) kaldırıldı → 3-col → 2-col layout. Backend tracking eklendiğinde tekrar `stats.push({...})` ile geri açılır.
+- Customer-reply `defaultActions` (3 sabit Kadıköy hikayesi) silindi. `params.actions` undefined/empty → "Aldığımız aksiyonlar" kart gizlenir.
+- Trial-ending fiyat fallback yorumla işaretlendi (Faz 2'de DB-driven olabilir).
