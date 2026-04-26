@@ -25,6 +25,12 @@ export interface MailFieldDef {
   locked?: boolean;
   lockReason?: string;
   placeholders?: readonly string[];
+  /**
+   * Logical grouping for the editor UI. Fields with the same `group`
+   * value are rendered under a shared section header (e.g. "Başlık · 3
+   * alan"). Optional — falls through to a single ungrouped list.
+   */
+  group?: string;
 }
 
 interface Props {
