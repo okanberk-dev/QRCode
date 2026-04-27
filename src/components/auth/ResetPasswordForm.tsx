@@ -7,6 +7,7 @@ import { ArrowRight, Check, Eye, EyeOff, Loader2 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
 import RecaptchaNotice from '@/components/RecaptchaNotice';
+import { AlertBanner } from '@/components/ui';
 
 interface Props {
   locale: Locale;
@@ -85,11 +86,7 @@ export default function ResetPasswordForm({ locale }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {error && (
-        <div className="bg-[#FEF2F2] text-[#B91C1C] p-4 rounded-xl text-[13px] font-medium border border-[#FECACA] text-center">
-          {error}
-        </div>
-      )}
+      {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
       {!urlToken && (
         <div className="space-y-2">
