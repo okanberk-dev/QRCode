@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ip = getClientIp(req.headers);
-  const limit = rateLimit(`newsletter:${ip}`, 10, 10 * 60 * 1000);
+  const limit = await rateLimit(`newsletter:${ip}`, 10, 10 * 60 * 1000);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'rate_limited', retryAfter: limit.retryAfterSeconds },

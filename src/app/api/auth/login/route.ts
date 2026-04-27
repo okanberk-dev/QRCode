@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Burst-protection: 10 attempts per IP per 10 minutes and a tighter 5 per email.
-    const ipLimit = rateLimit(`user-login:ip:${ip}`, 10, 10 * 60 * 1000);
-    const emailLimit = rateLimit(`user-login:email:${email.toLowerCase()}`, 5, 10 * 60 * 1000);
+    const ipLimit = await rateLimit(`user-login:ip:${ip}`, 10, 10 * 60 * 1000);
+    const emailLimit = await rateLimit(`user-login:email:${email.toLowerCase()}`, 5, 10 * 60 * 1000);
     if (!ipLimit.allowed || !emailLimit.allowed) {
       const retry = Math.max(ipLimit.retryAfterSeconds, emailLimit.retryAfterSeconds);
       return NextResponse.json(

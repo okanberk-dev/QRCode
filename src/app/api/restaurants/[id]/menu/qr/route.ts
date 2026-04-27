@@ -39,7 +39,7 @@ export async function GET(
     }
   }
 
-  const rl = rateLimit(`qr:menu:${access.actor!.id}`, 120, 60 * 1000);
+  const rl = await rateLimit(`qr:menu:${access.actor!.id}`, 120, 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Çok fazla QR isteği. Lütfen biraz bekleyin.' },

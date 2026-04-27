@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Defence-in-depth: per-IP and per-username throttles before DB/bcrypt work.
-    const ipLimit = rateLimit(ipKey, 8, 10 * 60 * 1000);
-    const userLimit = rateLimit(userKey, 5, 10 * 60 * 1000);
+    const ipLimit = await rateLimit(ipKey, 8, 10 * 60 * 1000);
+    const userLimit = await rateLimit(userKey, 5, 10 * 60 * 1000);
     if (!ipLimit.allowed || !userLimit.allowed) {
       const retry = Math.max(ipLimit.retryAfterSeconds, userLimit.retryAfterSeconds);
       blockKey(lockKey, LOCKOUT_WINDOW_MS);
@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
       await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_INCORRECT');
     }
 
-    const failedLimit = rateLimit(failedKey, 3, 10 * 60 * 1000);
+    const failedLimit = await rateLimit(failedKey, 3, 10 * 60 * 1000);
     if (!failedLimit.allowed) {
       blockKey(lockKey, LOCKOUT_WINDOW_MS);
     }

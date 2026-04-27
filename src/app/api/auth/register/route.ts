@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const ip = getClientIp(req.headers);
 
     // Rate limit: 5 registrations per IP per 30 minutes
-    const ipLimit = rateLimit(`register:ip:${ip}`, 5, 30 * 60 * 1000);
+    const ipLimit = await rateLimit(`register:ip:${ip}`, 5, 30 * 60 * 1000);
     if (!ipLimit.allowed) {
       return NextResponse.json(
         { error: 'Çok fazla kayıt denemesi. Lütfen bir süre sonra tekrar deneyin.' },

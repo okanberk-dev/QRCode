@@ -66,7 +66,7 @@ export async function notifyOpsOfMailFailure(params: OpsAlertParams): Promise<vo
   // Same template + recipient combo within 5 min → drop subsequent
   // alerts. The first one is enough to know the system is on fire.
   const key = `ops-alert:${params.template}`;
-  const limit = rateLimit(key, OPS_RATE_LIMIT_PER_WINDOW, OPS_RATE_LIMIT_WINDOW_MS);
+  const limit = await rateLimit(key, OPS_RATE_LIMIT_PER_WINDOW, OPS_RATE_LIMIT_WINDOW_MS);
   if (!limit.allowed) {
     console.warn(`[ops-alert] rate-limited for ${params.template} (retry in ${limit.retryAfterSeconds}s)`);
     return;

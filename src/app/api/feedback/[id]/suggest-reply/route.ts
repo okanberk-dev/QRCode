@@ -22,7 +22,7 @@ export async function POST(
   // requests across team members. Falls back to actor.id only when we can't
   // resolve an owner (e.g. unattached superadmin).
   const ownerKey = (await resolveOwnerUserId(actor)) ?? actor.id;
-  const limit = rateLimit(`ai-suggest:${ownerKey}`, 30, 60_000);
+  const limit = await rateLimit(`ai-suggest:${ownerKey}`, 30, 60_000);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'rate_limited', retryAfter: limit.retryAfterSeconds },

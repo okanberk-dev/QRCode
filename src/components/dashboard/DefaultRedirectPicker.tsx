@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Check, Loader2 } from 'lucide-react';
+import { AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { PlatformChip, PLATFORMS, type PlatformId } from '@/components/ui';
 
 // Maps the UI platform key (used by `<PlatformChip>` and the Pulse design
@@ -16,6 +16,18 @@ const STORAGE_VALUE: Record<PlatformId, string> = {
   tripadvisor: 'tripadvisor',
   foursquare: 'foursquare',
   custom: 'custom',
+};
+
+// Reverse map: stored value → display label. Used for the orphan warning when
+// a stored default refers to a platform whose URL has been cleared since.
+const STORAGE_LABEL: Record<string, string> = {
+  google: 'Google',
+  yemeksepeti: 'Yemeksepeti',
+  getir: 'Getir',
+  trendyol_go: 'Trendyol GO',
+  tripadvisor: 'Tripadvisor',
+  foursquare: 'Foursquare',
+  custom: 'Custom',
 };
 
 interface DefaultRedirectPickerProps {
@@ -38,11 +50,9 @@ export default function DefaultRedirectPicker({
   const [isPending, startTransition] = useTransition();
   const [pendingId, setPendingId] = useState<PlatformId | null>(null);
 
-  const handleSelect = (uiKey: PlatformId) => {
-    const storageValue = STORAGE_VALUE[uiKey];
-    if (selected === storageValue) return; // no-op
+  const persistDefault = (next: string | null, uiKey: PlatformId | null) => {
     const previous = selected;
-    setSelected(storageValue); // optimistic
+    setSelected(next); // optimistic
     setPendingId(uiKey);
     setError(null);
 
@@ -51,7 +61,7 @@ export default function DefaultRedirectPicker({
         const res = await fetch(`/api/restaurants/${restaurantId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ defaultRedirectPlatform: storageValue }),
+          body: JSON.stringify({ defaultRedirectPlatform: next }),
         });
         if (!res.ok) {
           const data = await res.json().catch(() => null);
@@ -69,6 +79,21 @@ export default function DefaultRedirectPicker({
       }
     });
   };
+
+  const handleSelect = (uiKey: PlatformId) => {
+    const storageValue = STORAGE_VALUE[uiKey];
+    if (selected === storageValue) return; // no-op
+    persistDefault(storageValue, uiKey);
+  };
+
+  // Detect orphan default: the stored value refers to a platform whose URL
+  // has been cleared since (so it's not in `enabledPlatforms` anymore). In
+  // that case, the public review surface silently falls back to Google —
+  // which the owner has no way to discover unless we surface it here.
+  const enabledStorageValues = enabledPlatforms.map((id) => STORAGE_VALUE[id]);
+  const isOrphan =
+    selected !== null && selected !== '' && !enabledStorageValues.includes(selected);
+  const orphanLabel = isOrphan ? STORAGE_LABEL[selected] || selected : null;
 
   return (
     <>
@@ -111,6 +136,43 @@ export default function DefaultRedirectPicker({
           })
         )}
       </div>
+      {/* Orphan default warning — stored platform's URL was cleared since the
+          default was set. Surfaced as actionable amber notice so the owner
+          can either re-add the URL or pick a new default. */}
+      {isOrphan && (
+        <div
+          role="alert"
+          className="mt-3 flex items-start gap-2.5 rounded-[12px] px-3 py-2.5"
+          style={{
+            background: '#FFFBEB',
+            border: '1px solid #FDE68A',
+            color: '#92400E',
+          }}
+        >
+          <AlertTriangle size={14} strokeWidth={2.25} className="mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <div className="text-[12px] font-semibold leading-tight">
+              {isTr
+                ? `Varsayılan "${orphanLabel}" — URL'i boş`
+                : `Default "${orphanLabel}" — URL is empty`}
+            </div>
+            <div className="text-[11px] leading-snug mt-0.5" style={{ color: '#78350F' }}>
+              {isTr
+                ? 'Bu platformun bağlantısı kaldırılmış. Yüksek puanlı yorumlar şu an Google\'a düşüyor. URL\'i geri ekleyin ya da varsayılanı temizleyin.'
+                : "This platform's URL was removed. High-rated reviews now fall back to Google. Re-add the URL or clear the default."}
+            </div>
+            <button
+              type="button"
+              onClick={() => persistDefault(null, null)}
+              disabled={isPending}
+              className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold underline disabled:opacity-50"
+              style={{ color: '#92400E' }}
+            >
+              {isTr ? 'Varsayılanı temizle' : 'Clear default'}
+            </button>
+          </div>
+        </div>
+      )}
       {error && (
         <p
           role="alert"

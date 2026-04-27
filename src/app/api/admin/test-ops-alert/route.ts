@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
   const adminId = admin.id ?? admin.userId ?? 'unknown';
-  const limit = rateLimit(`ops-alert-test:${adminId}`, 3, 60 * 60 * 1000);
+  const limit = await rateLimit(`ops-alert-test:${adminId}`, 3, 60 * 60 * 1000);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'rate_limited', retryAfter: limit.retryAfterSeconds },
