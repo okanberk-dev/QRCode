@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { getNewsletterSourceLabel } from '@/lib/newsletter-sources';
+import { PageHeader, StatCard } from '@/components/ui';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 type Status = 'all' | 'active' | 'cancelled';
@@ -176,28 +177,17 @@ export default function AdminNewslettersPage() {
   const totalPages = data?.meta.totalPages ?? 1;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-8">
-      {/* Header */}
-      <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <p className="pulse-eyebrow text-[#737373]">PANEL / BÜLTEN</p>
-            <h1
-              className="mt-1 flex items-center gap-3 text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              <Mail size={22} strokeWidth={2} />
-              Bülten Aboneleri
-            </h1>
-            <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252] max-w-[560px]">
-              Pulse aylık bültenine kayıtlı kullanıcılar. KVKK uyumlu — tek tıkla iptal token\&apos;ı her abonede tutulur.
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+    <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow="BÜLTEN ABONELERİ"
+        title="Bülten aboneleri"
+        description="Pulse aylık bültenine kayıtlı kullanıcılar. KVKK uyumlu — tek tıkla iptal token'ı her abonede tutulur."
+        actions={
+          <>
             <button
               onClick={fetchData}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+              className="bz-btn-ghost"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
               Yenile
@@ -205,7 +195,7 @@ export default function AdminNewslettersPage() {
             <button
               onClick={downloadCsv}
               disabled={exporting || (data?.meta.total ?? 0) === 0}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+              className="bz-btn-ghost"
             >
               {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
               CSV İndir
@@ -213,23 +203,23 @@ export default function AdminNewslettersPage() {
             <button
               onClick={triggerNewsletter}
               disabled={sending || (data?.summary.active ?? 0) === 0}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#C6F24E] px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] active:scale-95 disabled:opacity-50"
+              className="bz-btn-lime"
             >
               {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={2} />}
               Şimdi gönder
             </button>
-          </div>
-        </div>
+          </>
+        }
+      />
 
-        {data && (
-          <div className="mt-5 grid gap-3 grid-cols-2 sm:grid-cols-4">
-            <SummaryCard icon={<Users size={14} />} label="Toplam Abone" value={data.summary.total.toLocaleString('tr-TR')} />
-            <SummaryCard icon={<Mail size={14} />} label="Aktif" value={data.summary.active.toLocaleString('tr-TR')} accent />
-            <SummaryCard icon={<X size={14} />} label="İptal" value={data.summary.cancelled.toLocaleString('tr-TR')} />
-            <SummaryCard icon={<TrendingDown size={14} />} label="İptal Oranı" value={`%${data.summary.cancelRate.toFixed(1)}`} />
-          </div>
-        )}
-      </div>
+      {data && (
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+          <StatCard label="Toplam abone" value={data.summary.total.toLocaleString('tr-TR')} icon={<Users size={14} />} />
+          <StatCard label="Aktif" value={data.summary.active.toLocaleString('tr-TR')} icon={<Mail size={14} />} accent="#C6F24E" />
+          <StatCard label="İptal" value={data.summary.cancelled.toLocaleString('tr-TR')} icon={<X size={14} />} />
+          <StatCard label="İptal oranı" value={`%${data.summary.cancelRate.toFixed(1)}`} icon={<TrendingDown size={14} />} />
+        </div>
+      )}
 
       {/* Filters */}
       <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
@@ -424,18 +414,6 @@ export default function AdminNewslettersPage() {
           </>
         )}
       </div>
-    </div>
-  );
-}
-
-function SummaryCard({ icon, label, value, accent = false }: { icon: React.ReactNode; label: string; value: string; accent?: boolean }) {
-  return (
-    <div className={`rounded-2xl border p-4 ${accent ? 'border-[#C6F24E] bg-[#EAF9B8]/40' : 'border-[#EDEDED] bg-[#FAFAFA]'}`}>
-      <p className="flex items-center gap-1.5 pulse-eyebrow text-[#737373]">
-        {icon}
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-[#0A0A0A]">{value}</p>
     </div>
   );
 }

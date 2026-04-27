@@ -690,6 +690,33 @@ input::-webkit-inner-spin-button {
   font-weight: 600;
 }
 
+/* ── Skip-to-content link (a11y baseline for panel shells) ──
+ * Hidden until keyboard-focused; lands above the panel chrome
+ * so screen-reader / keyboard-only users can jump past the
+ * sidebar straight to the page content. Anchor target: any
+ * element with id="panel-main-content".
+ */
+.bz-skip-link {
+  position: absolute;
+  left: 12px;
+  top: -40px;
+  z-index: 200;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #0A0A0A;
+  color: #C6F24E;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  text-decoration: none;
+  transition: top 120ms ease;
+}
+.bz-skip-link:focus {
+  top: 12px;
+  outline: 2px solid #C6F24E;
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bz-pulse-dot, .bz-fade-in, .bz-skeleton {
     animation: none !important;

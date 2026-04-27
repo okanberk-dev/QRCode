@@ -79,16 +79,25 @@ export default async function AdminLayout({
 
   return (
     <AdminTranslationProvider initialLocale={adminLocale as any}>
-      <div className="flex flex-col lg:flex-row min-h-[100dvh] lg:h-screen bg-[#FFFFFF] lg:overflow-hidden font-sans selection:bg-[#C6F24E]/30">
+      <div className="flex flex-col lg:flex-row min-h-[100dvh] lg:h-screen bg-[#FFFFFF] lg:overflow-hidden font-sans selection:bg-[#C6F24E]/30 relative">
+        {showSidebar && (
+          <a href="#panel-main-content" className="bz-skip-link">
+            {adminLocale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
+          </a>
+        )}
         {showSidebar && <AdminSidebar />}
-        <div className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-28 lg:pb-0 pt-2 sm:pt-6'}`}>
+        <main
+          id="panel-main-content"
+          tabIndex={-1}
+          className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-28 lg:pb-0 pt-2 sm:pt-6'}`}
+        >
           <div className={showSidebar ? "max-w-7xl mx-auto w-full" : "w-full max-w-full"}>
             {showSidebar && announcements.length > 0 && (
               <AnnouncementBanner announcements={announcements} locale={adminLocale} />
             )}
             {children}
           </div>
-        </div>
+        </main>
         {showSidebar && <AdminMobileNav />}
       </div>
     </AdminTranslationProvider>

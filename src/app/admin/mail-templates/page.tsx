@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FileEdit, Loader2, ArrowRight, BellRing } from 'lucide-react';
+import { Badge, PageHeader } from '@/components/ui';
 
 interface GridCell {
   key: string;
@@ -81,42 +82,40 @@ export default function MailTemplatesIndexPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 md:p-8">
-      <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <p className="pulse-eyebrow text-[#737373]">PANEL / MAIL İÇERİKLERİ</p>
-            <h1
-              className="mt-1 flex items-center gap-3 text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              <FileEdit size={22} strokeWidth={2} />
-              Mail İçerikleri
-            </h1>
-            <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252] max-w-[640px]">
-              9 mail template'inin içerik alanlarını burada düzenleyebilirsin.
-              Boş bıraktığın alanlar otomatik kod-içi varsayılana düşer.
-              Değişiklikler 1 dakika içinde tüm gönderimlere yansır.
-            </p>
-          </div>
+    <div className="mx-auto max-w-[1100px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow="MAIL İÇERİKLERİ"
+        title="Mail içerikleri"
+        description="9 mail template'inin içerik alanlarını burada düzenleyebilirsin. Boş bıraktığın alanlar otomatik kod-içi varsayılana düşer. Değişiklikler 1 dakika içinde tüm gönderimlere yansır."
+        actions={
           <button
             type="button"
             onClick={onTestOpsAlert}
             disabled={opsTesting}
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+            className="bz-btn-ghost"
             title="Ops alert pipeline'ı test et — RESEND_API_KEY'e dokunmaz, sadece notifyOpsOfMailFailure'ı tetikler"
           >
             {opsTesting ? <Loader2 size={14} className="animate-spin" /> : <BellRing size={14} />}
             Ops alert testi
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700">{error}</div>
+        <div
+          className="px-4 py-3 rounded-xl text-xs font-medium"
+          style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}
+        >
+          {error}
+        </div>
       )}
       {opsResult && (
-        <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8] p-4 text-xs font-semibold text-[#0A0A0A]">{opsResult}</div>
+        <div
+          className="px-4 py-3 rounded-xl text-xs font-medium"
+          style={{ background: '#EAF9B8', border: '1px solid #D9EE7A', color: '#4D5C00' }}
+        >
+          {opsResult}
+        </div>
       )}
 
       {loading ? (
@@ -129,22 +128,37 @@ export default function MailTemplatesIndexPage() {
             <Link
               key={`${cell.key}-${cell.locale}`}
               href={`/admin/mail-templates/${cell.key}/${cell.locale}`}
-              className="group rounded-2xl border border-[#EDEDED] bg-white p-5 hover:border-[#C6F24E] hover:shadow-sm transition-all"
+              className="group bz-card p-5 hover:border-[#C6F24E] transition-colors block"
             >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-[#0A0A0A]">{TEMPLATE_LABELS[cell.key] ?? cell.key}</p>
-                <span className="pulse-eyebrow rounded-full bg-[#FAFAFA] px-2 py-0.5 text-[#525252]">{cell.locale.toUpperCase()}</span>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-[#0A0A0A] truncate">
+                  {TEMPLATE_LABELS[cell.key] ?? cell.key}
+                </p>
+                <Badge kind="ghost">{cell.locale.toUpperCase()}</Badge>
               </div>
-              <p className="mt-1 text-[12px] text-[#737373]">{LOCALE_LABELS[cell.locale] ?? cell.locale}</p>
-              <div className="mt-4 flex items-center justify-between">
+              <p className="mt-1 text-[12px] text-[#737373]">
+                {LOCALE_LABELS[cell.locale] ?? cell.locale}
+              </p>
+              <div className="mt-4 flex items-center justify-between gap-2">
                 {cell.seeded ? (
-                  <span className="text-[11px] text-[#525252]">
-                    Son güncelleme: {cell.updatedAt ? new Date(cell.updatedAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                  <span className="text-[11px] text-[#525252] truncate">
+                    Son güncelleme:{' '}
+                    {cell.updatedAt
+                      ? new Date(cell.updatedAt).toLocaleDateString('tr-TR', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : '—'}
                   </span>
                 ) : (
-                  <span className="pulse-eyebrow text-[#9CA3AF]">Henüz oluşturulmadı (kod varsayılanı)</span>
+                  <Badge kind="ghost">Kod varsayılanı</Badge>
                 )}
-                <ArrowRight size={14} className="text-[#9CA3AF] group-hover:text-[#0A0A0A] transition-colors" />
+                <ArrowRight
+                  size={14}
+                  className="shrink-0 text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors"
+                />
               </div>
             </Link>
           ))}
