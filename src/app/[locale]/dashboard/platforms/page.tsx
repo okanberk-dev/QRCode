@@ -220,7 +220,7 @@ export default async function PlatformsPage({
                   <Badge kind="lime">{isTr ? 'Varsayılan' : 'Default'}</Badge>
                 )}
                 {p.enabled && p.url && (
-                  <Badge kind="ok">{isTr ? 'Bağlandı' : 'Connected'}</Badge>
+                  <Badge kind="ok">{isTr ? 'Doğrulandı' : 'Verified'}</Badge>
                 )}
                 {!p.enabled && p.url && (
                   <Badge kind="warn">{isTr ? 'Doğrulanmadı' : 'Unverified'}</Badge>
@@ -240,7 +240,7 @@ export default async function PlatformsPage({
               )}
             </div>
             <div className="text-left md:text-right" style={{ minWidth: 90 }}>
-              <Eyebrow>{isTr ? 'Bu ay yönlendirme' : 'Monthly redirects'}</Eyebrow>
+              <Eyebrow>{isTr ? 'Bu ay tıklanma' : 'This month'}</Eyebrow>
               <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
                 {p.monthlyClicks}
               </div>
