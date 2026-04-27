@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import { PageHeader } from '@/components/ui';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
 
 interface ApiKey {
@@ -179,28 +180,23 @@ function AdminApiBody() {
   };
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'PANEL / API & WEBHOOK' : 'PANEL / API & WEBHOOKS'}
-          </p>
-          <h1
-            className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            {isTr ? 'API anahtarları & webhook\'lar' : 'API keys & webhooks'}
-          </h1>
-          <p className="mt-1 max-w-[560px] text-[13px] text-[#525252]">
-            {isTr
-              ? 'Kişisel API anahtarlarını yönet, webhook uç noktalarını tanımla, teslimat aktivitesini izle.'
-              : 'Manage personal API tokens, define webhook endpoints, track delivery activity.'}
-          </p>
-        </div>
-        {notice && (
-          <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">{notice}</span>
-        )}
-      </header>
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+      <PageHeader
+        eyebrow={isTr ? 'API & WEBHOOK' : 'API & WEBHOOKS'}
+        title={isTr ? 'API anahtarları & webhook\'lar' : 'API keys & webhooks'}
+        description={
+          isTr
+            ? 'Kişisel API anahtarlarını yönet, webhook uç noktalarını tanımla, teslimat aktivitesini izle.'
+            : 'Manage personal API tokens, define webhook endpoints, track delivery activity.'
+        }
+        actions={
+          notice ? (
+            <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">
+              {notice}
+            </span>
+          ) : null
+        }
+      />
 
       {newToken && (
         <section className="rounded-2xl border border-[#C6F24E] bg-[#F7FFE4] p-4">

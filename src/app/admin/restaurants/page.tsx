@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus, Store, Loader2, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, ArrowRight, Crown, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
+import { EmptyState, PageHeader, type TabItem, Tabs } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -187,71 +188,54 @@ export default function RestaurantsPage() {
     );
   }
 
+  const statusTabs: TabItem[] = [
+    { id: 'active', label: 'Aktif' },
+    { id: 'passive', label: 'Pasif' },
+    { id: 'all', label: 'Tümü' },
+  ];
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
-      {/* Header */}
-      <div className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
-        <div className="flex flex-col gap-5 p-6 sm:p-8 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0 space-y-2">
-            <p className="pulse-eyebrow text-[#737373]">Panel · İşletmeler</p>
-            <h1
-              className="text-[28px] font-medium tracking-[-0.025em] text-[#0A0A0A] sm:text-[34px]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              İşletmeler
-            </h1>
-            <p className="max-w-[540px] text-[13px] leading-relaxed text-[#525252] sm:text-[14px]">
-              Restoran, kafe, otel, klinik veya mağaza fark etmeden tüm işletmeleri tek panelden yönetin. Sahip ataması, aktiflik, menü yayını ve QR akışları burada görünür.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-5 py-3 text-[13px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:bg-[#A8D62E] active:scale-95"
-          >
-            <Plus size={16} strokeWidth={2.25} className="transition-transform group-hover:rotate-90" />
-            Yeni İşletme
+    <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow="İŞLETMELER"
+        title={`${restaurants.length} kayıtlı işletme`}
+        description="Restoran, kafe, otel, klinik veya mağaza fark etmeden tüm işletmeleri tek panelden yönet. Sahip ataması, aktiflik, menü yayını ve QR akışları burada görünür."
+        actions={
+          <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
+            <Plus size={14} strokeWidth={2} />
+            Yeni işletme
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Filters and Search */}
       <div className="flex flex-col items-stretch justify-between gap-3 md:flex-row md:items-center">
-        <div className="inline-flex shrink-0 items-center rounded-full border border-[#EDEDED] bg-white p-1 shadow-sm">
-          {(['active', 'passive', 'all'] as const).map((key) => {
-            const labels = { active: 'Aktif', passive: 'Pasif', all: 'Tümü' };
-            const isActive = statusFilter === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setStatusFilter(key)}
-                className={`rounded-full px-4 py-1.5 text-[12px] font-medium transition-all ${
-                  isActive
-                    ? 'bg-[#0A0A0A] text-white shadow-sm'
-                    : 'text-[#525252] hover:text-[#0A0A0A]'
-                }`}
-              >
-                {labels[key]}
-              </button>
-            );
-          })}
-        </div>
+        <Tabs
+          items={statusTabs}
+          active={statusFilter}
+          onChange={(id) => setStatusFilter(id as 'active' | 'passive' | 'all')}
+          ariaLabel="Status filter"
+          className="md:w-auto"
+        />
 
-        <div className="relative w-full max-w-md">
-          <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3]" size={16} strokeWidth={2} />
+        <div className="relative w-full md:max-w-md">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A3A3A3]" size={14} strokeWidth={2} />
           <input
             type="text"
             placeholder="İşletme, URL, kategori veya sahip ara..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-full border border-[#EDEDED] bg-white py-2.5 pl-11 pr-4 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="bz-input"
+            style={{ paddingLeft: 36, paddingRight: searchTerm ? 36 : 12 }}
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#737373] hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bz-btn-icon"
               aria-label="Aramayı temizle"
+              style={{ width: 28, height: 28 }}
             >
-              <X size={14} strokeWidth={2.25} />
+              <X size={12} strokeWidth={2} />
             </button>
           )}
         </div>
@@ -259,30 +243,23 @@ export default function RestaurantsPage() {
 
       {/* Restaurant Cards Grid */}
       {restaurants.length === 0 ? (
-        <div className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white p-10 text-center shadow-sm sm:p-16">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
-            <Store size={28} strokeWidth={2} />
-          </div>
-          <h3 className="text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
-            Henüz işletme yok
-          </h3>
-          <p className="mx-auto mt-2 max-w-[420px] text-[13px] leading-relaxed text-[#525252]">
-            İlk işletmenizi ekleyin — QR kodu, menüsü ve geri bildirim akışı dakikalar içinde hazır olur.
-          </p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95"
-          >
-            <Plus size={16} strokeWidth={2.25} />
-            İşletme Ekle
-          </button>
-        </div>
+        <EmptyState
+          icon={<Store size={22} />}
+          title="Henüz işletme yok"
+          body="İlk işletmenizi ekleyin — QR kodu, menüsü ve geri bildirim akışı dakikalar içinde hazır olur."
+          action={
+            <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
+              <Plus size={14} strokeWidth={2} />
+              İşletme ekle
+            </button>
+          }
+        />
       ) : filteredRestaurants.length === 0 ? (
-        <div className="rounded-3xl border border-[#EDEDED] bg-white p-10 text-center shadow-sm">
-          <p className="text-[14px] text-[#525252]">
-            "<span className="font-medium text-[#0A0A0A]">{searchTerm}</span>" için işletme bulunamadı.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Search size={22} />}
+          title="Sonuç bulunamadı"
+          body={`"${searchTerm}" için işletme bulunamadı. Farklı bir arama terimi deneyin.`}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
           {filteredRestaurants.map((r) => {

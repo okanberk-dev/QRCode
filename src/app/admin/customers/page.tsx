@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Download, Loader2, Mail, MapPin, Phone, RefreshCw, Search, Star, Store, Users, X } from 'lucide-react';
+import { PageHeader, StatCard } from '@/components/ui';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 
@@ -165,28 +166,17 @@ export default function AdminCustomersPage() {
   const totalPages = data?.meta.totalPages ?? 1;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-8">
-      {/* Header */}
-      <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <p className="pulse-eyebrow text-[#737373]">PANEL / MÜŞTERİLER</p>
-            <h1
-              className="mt-1 flex items-center gap-3 text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              <Users size={22} strokeWidth={2} />
-              Müşteriler
-            </h1>
-            <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252] max-w-[560px]">
-              QR üzerinden geri bildirim bırakmış restoran müşterilerinin birleşik listesi. KVKK onayı olanlar gösterilir.
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+    <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow="MÜŞTERİLER"
+        title="Müşteriler"
+        description="QR üzerinden geri bildirim bırakmış restoran müşterilerinin birleşik listesi. KVKK onayı olanlar gösterilir."
+        actions={
+          <>
             <button
               onClick={fetchData}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-50"
+              className="bz-btn-ghost"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
               Yenile
@@ -194,26 +184,35 @@ export default function AdminCustomersPage() {
             <button
               onClick={downloadCsv}
               disabled={exporting || (data?.meta.total ?? 0) === 0}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#0A0A0A] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+              className="bz-btn-primary"
             >
               {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
               CSV İndir
             </button>
-          </div>
-        </div>
+          </>
+        }
+      />
 
-        {data && (
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <SummaryCard icon={<Users size={14} />} label="Tekil Müşteri" value={data.summary.customers.toLocaleString('tr-TR')} />
-            <SummaryCard icon={<Mail size={14} />} label="Toplam Feedback" value={data.summary.feedbacks.toLocaleString('tr-TR')} />
-            <SummaryCard
-              icon={<Star size={14} />}
-              label="Ortalama Puan"
-              value={data.summary.avgRating !== null ? data.summary.avgRating.toFixed(2) : '—'}
-            />
-          </div>
-        )}
-      </div>
+      {data && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatCard
+            label="Tekil müşteri"
+            value={data.summary.customers.toLocaleString('tr-TR')}
+            icon={<Users size={14} />}
+          />
+          <StatCard
+            label="Toplam feedback"
+            value={data.summary.feedbacks.toLocaleString('tr-TR')}
+            icon={<Mail size={14} />}
+          />
+          <StatCard
+            label="Ortalama puan"
+            value={data.summary.avgRating !== null ? data.summary.avgRating.toFixed(2) : '—'}
+            icon={<Star size={14} />}
+            accent="#C6F24E"
+          />
+        </div>
+      )}
 
       {/* Filters */}
       <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
@@ -425,18 +424,6 @@ export default function AdminCustomersPage() {
           </>
         )}
       </div>
-    </div>
-  );
-}
-
-function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] p-4">
-      <p className="flex items-center gap-1.5 pulse-eyebrow text-[#737373]">
-        {icon}
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-[#0A0A0A]">{value}</p>
     </div>
   );
 }

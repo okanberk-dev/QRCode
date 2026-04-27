@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, User, Key, Check, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import { PageHeader } from '@/components/ui';
 
 export default function AdminProfilePage() {
   const { t } = useAdminTranslation();
@@ -91,15 +92,12 @@ export default function AdminProfilePage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-4xl mx-auto space-y-6 sm:space-y-10">
-      <div className="space-y-4">
-        <h1 className="text-2xl sm:text-3xl md:text-[40px] font-semibold text-[#0A0A0A] leading-[1.1] sm:leading-[0.9] tracking-tighter uppercase italic break-words">
-          Profilim
-        </h1>
-        <p className="text-[15px] sm:text-[17px] text-[#1A1A1A] font-bold italic">
-          Hesap bilgilerinizi ve parolanızı güncelleyin
-        </p>
-      </div>
+    <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+      <PageHeader
+        eyebrow="PROFİL"
+        title="Profilim"
+        description="Hesap bilgilerinizi ve parolanızı güncelleyin."
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
         {/* Sidebar Info */}

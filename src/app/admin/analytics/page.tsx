@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, HelpCircle, Loader2, Star, TrendingUp } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import ExportReportButton from '@/components/dashboard/ExportReportButton';
+import { PageHeader } from '@/components/ui';
 
 interface TrendPoint {
   date: string;
@@ -109,35 +110,38 @@ export default function AdminAnalyticsPage() {
   const maxWordValue = wordCloud.length > 0 ? wordCloud[0].value : 1;
 
   return (
-    <div className="space-y-4 overflow-hidden">
-      <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="min-w-0">
-          <p className="pulse-eyebrow text-[#737373]">{isTr ? 'PANEL / ANALİZ' : 'PANEL / ANALYTICS'}</p>
-          <h1 className="mt-1 text-[22px] font-medium leading-tight tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
-            {isTr ? 'Analitik & raporlama' : 'Analytics & reporting'}
-          </h1>
-        </div>
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
-          <div className="grid grid-cols-3 rounded-lg border border-[#EDEDED] bg-white p-0.5 sm:inline-flex">
-            {(['7d', '30d', '90d'] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => setRange(r)}
-                className={`pulse-eyebrow rounded-md px-3 py-1.5 transition-colors ${
-                  range === r ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:bg-[#F5F5F5]'
-                }`}
-              >
-                {r.toUpperCase()}
-              </button>
-            ))}
-          </div>
-          <ExportReportButton
-            label={isTr ? 'CSV indir' : 'Export CSV'}
-            format="csv"
-            range={range}
-          />
-        </div>
-      </header>
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4 overflow-hidden">
+      <PageHeader
+        eyebrow={isTr ? 'ANALİZ' : 'ANALYTICS'}
+        title={isTr ? 'Analitik & raporlama' : 'Analytics & reporting'}
+        description={
+          isTr
+            ? 'Aralık seçici ile günlük, haftalık ve aylık metrikleri karşılaştır. CSV export ile raporu dışarı aktar.'
+            : 'Compare daily, weekly, and monthly metrics with the range picker. Export reports as CSV.'
+        }
+        actions={
+          <>
+            <div className="grid grid-cols-3 rounded-lg border border-[#EDEDED] bg-white p-0.5 sm:inline-flex">
+              {(['7d', '30d', '90d'] as const).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRange(r)}
+                  className={`pulse-eyebrow rounded-md px-3 py-1.5 transition-colors ${
+                    range === r ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:bg-[#F5F5F5]'
+                  }`}
+                >
+                  {r.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <ExportReportButton
+              label={isTr ? 'CSV indir' : 'Export CSV'}
+              format="csv"
+              range={range}
+            />
+          </>
+        }
+      />
 
       {loading ? (
         <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20 text-[#737373]">

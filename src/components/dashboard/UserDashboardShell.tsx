@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ChevronDown, Crown, LayoutDashboard, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -50,6 +50,8 @@ function useTopBar(locale: Locale, pathname: string | null) {
   if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / KONUMLAR' : 'PANEL / LOCATIONS', title: isTr ? 'Konumlar' : 'Locations' };
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
   if (rest.startsWith('/leads')) return { breadcrumb: isTr ? 'PANEL / MÜŞTERİLER' : 'PANEL / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
+  if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORMLAR' : 'PANEL / PLATFORMS', title: isTr ? 'Platform bağlantıları' : 'Review platforms' };
+  if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
   if (rest.startsWith('/profile')) return { breadcrumb: isTr ? 'AYARLAR / HESAP' : 'SETTINGS / ACCOUNT', title: isTr ? 'Ayarlar' : 'Settings' };
   return null;
@@ -79,17 +81,23 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       trialLeft: isTr ? 'gün kaldı' : 'days left',
       more: isTr ? 'Daha fazla' : 'More',
       leads: isTr ? 'Müşteri Listesi' : 'Customer List',
+      platforms: isTr ? 'Platform bağlantıları' : 'Review platforms',
+      announcements: isTr ? 'Duyurular' : 'Announcements',
+      notifications: isTr ? 'Bildirimler' : 'Notifications',
     };
   }, [locale]);
 
   const navItems = [
     { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
-    { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
+    { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks, badge: workspace?.feedbackCount && workspace.feedbackCount > 0 ? workspace.feedbackCount : undefined },
     { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
+    { href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
     { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
-    { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
+    { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
+    { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
+    { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
     { href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
 
@@ -102,8 +110,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   ];
   const moreSheetItems = [
     { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
+    { href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
+    { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
     { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
     { href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
@@ -177,23 +187,36 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       </div>
 
       {/* Nav */}
-      <div className="flex-1 space-y-0.5 overflow-y-auto px-3">
+      <div className="flex-1 space-y-0.5 overflow-y-auto px-3 py-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
           const Icon = item.icon;
+          const badge = 'badge' in item ? item.badge : undefined;
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setDrawerOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
+              aria-current={isActive ? 'page' : undefined}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition-all ${
                 isActive
                   ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
                   : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
               }`}
             >
               <Icon size={16} strokeWidth={2} />
-              <span>{item.label}</span>
+              <span className="flex-1 truncate">{item.label}</span>
+              {badge !== undefined && badge !== 0 && (
+                <span
+                  className="text-[10px] font-semibold rounded-full px-2 py-0.5"
+                  style={{
+                    background: isActive ? 'rgba(10,10,10,0.1)' : 'rgba(198,242,78,0.2)',
+                    color: isActive ? '#0A0A0A' : '#C6F24E',
+                  }}
+                >
+                  {badge}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -310,6 +333,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                   ⌘K
                 </span>
               </div>
+              <Link
+                href={`/${locale}/dashboard/announcements`}
+                aria-label={copy.notifications}
+                className="bz-btn-icon"
+              >
+                <Bell size={16} strokeWidth={2} />
+              </Link>
               <Link
                 href={`/${locale}/dashboard/profile`}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors"

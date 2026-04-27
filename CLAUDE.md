@@ -1612,11 +1612,176 @@ Yeni makale yazarken **EN ilk taslak değildir**: TR primary, EN paralel çeviri
 
 ---
 
-## 23. Public QR Generator Sayfası (`/solutions/qr-generator`)
+## 23. Pulse 2026-04 Panel Redesign — Admin & Business Panel Foundation
+
+Claude Design "buaze" handoff bundle (`.design-pulse-2026/`, 2026-04-27 günü çekildi) admin paneli ve business/restaurant owner paneli için ekran-ekran spec'ler içeriyor. Pulse marka kimliği (graphite/lime/pure white) §11'den birebir korunuyor — yeni system §11 token'larının yanında **panel-scope `bz-*` utility class'ları** ile uygulanıyor.
+
+**Kapsam disiplini:**
+- `bz-*` class'ları **sadece** `src/components/admin/**`, `src/app/admin/**`, `src/components/dashboard/**`, `src/app/[locale]/dashboard/**` altında kullanılır
+- Marketing surface'leri (landing, blog, help center, auth) hâlâ `pulse-*` class'larını kullanır — değişiklik yok
+- Iki sistem **paralel**, ortak palet (#0A0A0A / #C6F24E / #FFFFFF / #EDEDED) — drift riski yok ama yeni panel kodu `bz-*` tercih etmelidir
+
+### 23.1 Token mapping
+
+Mevcut `--color-brand-*` (Tailwind v4 `@theme {}`) ile design'ın `bz-*` token'ları birebir aynı renk değerlerine map olur. Tablodan referans:
+
+| Design token (`bz-*` CSS var) | Pulse Tailwind token | Hex |
+|---|---|---|
+| `--bz-bg` | `--color-brand-pure` | `#FFFFFF` |
+| `--bz-bg-soft` | `--color-brand-n50` | `#FAFAFA` |
+| `--bz-bg-mute` | `--color-brand-n100` | `#F2F2F2` |
+| `--bz-bg-dark` | `--color-brand-graphite` | `#0A0A0A` |
+| `--bz-bg-dark2` | `--color-brand-n800` | `#1A1A1A` |
+| `--bz-line` | `--color-brand-n200` | `#EDEDED` |
+| `--bz-fg` | `--color-text-main` | `#0A0A0A` |
+| `--bz-fg-3` | `--color-text-muted` | `#525252` |
+| `--bz-fg-4` | `--color-text-light` | `#737373` |
+| `--bz-lime` | `--color-brand-lime` | `#C6F24E` |
+| `--bz-lime-dark` | `--color-brand-lime-deep` | `#A8D62E` |
+| `--bz-lime-tint` | `--color-brand-lime-soft` | `#EAF9B8` |
+
+CSS variable formunda yeniden tanımlamadık — hex değer doğrudan `bz-*` class içinde kullanılıyor (mevcut `pulse-*` pattern'iyle aynı). Tek-source-of-truth değişikliği gerekirse `globals.css` `bz-*` block'u + `@theme {}` aynı anda güncellenir.
+
+### 23.2 Panel utility class envanteri (`globals.css`)
+
+| Class | Amaç | Kullanım örneği |
+|---|---|---|
+| `.bz-card` | Beyaz kart + EDEDED border + 16px radius | `<div className="bz-card p-5">` |
+| `.bz-card-soft` | FAFAFA bg variant — vurgu kartları | Default redirect picker |
+| `.bz-divider` | `border-top: 1px solid #EDEDED` | Liste ayırıcı |
+| `.bz-h-tight` / `.bz-h-tight-2` | Space Grotesk + tight tracking heading | `bz-h-tight text-[18px]` |
+| `.bz-mono` | JetBrains Mono | `bz-mono` sayı sütunlarda |
+| `.bz-wordmark` + `.dot` | "buaze." wordmark, lime nokta | Sidebar logo metni |
+| `.bz-btn-primary` | Graphite pill CTA (hover #1A1A1A) | "QR oluştur" |
+| `.bz-btn-lime` | Lime CTA (hover #A8D62E) | "Plan yönet" |
+| `.bz-btn-ghost` | Outlined neutral pill | "Düzenle" / "Dışa aktar" |
+| `.bz-btn-icon` | 32x32 square icon button | Toolbar bell, more |
+| `.bz-badge` + `--ok / --off / --warn / --danger / --info / --lime / --ghost` | Status pills with optional dot | `<Badge kind="lime">Default</Badge>` |
+| `.bz-input` | Standart form input — lime focus ring | `<input className="bz-input">` |
+| `.bz-table` (`+--compact`) | Responsive panel table — uppercase th, hover row tint | List sayfaları |
+| `.bz-avatar` | Graphite bg + lime initial chip | Sidebar user, list rows |
+| `.bz-skeleton` | Shimmer loader | Loading placeholders |
+| `.bz-tabs` + `.bz-tab` | Underline tab strip — `aria-selected` semantik | Feedback inbox tabları |
+| `.bz-pulse-dot` | 1.6s pulse ECG dot | "Canlı" indicators |
+| `.bz-fade-in` | 320ms fade-up | Modal & screen entrance |
+| `.bz-side-item-active` | Sidebar lime active highlight | Active nav link |
+
+Hepsi `prefers-reduced-motion: reduce` altında animasyon devre dışı.
+
+### 23.3 Reusable React primitives (`src/components/ui/`)
+
+| Component | Amaç |
+|---|---|
+| `Eyebrow` | `pulse-eyebrow` JetBrains Mono uppercase label |
+| `Badge` | Tek satır status pill (`kind` prop + dot) |
+| `Avatar` | Initial chip (size, color, fg konfigüre) |
+| `StatCard` (+ `StatCardSkeleton`) | 4-stat grid kartı: label + value + delta + icon + accent dot |
+| `EmptyState` | Empty/zero-result placeholder (icon + title + body + action) |
+| `ErrorState` | Kırmızı border error card + Tekrar dene button |
+| `Sparkline` | Inline SVG line chart (recharts'sız — küçük trendler için) |
+| `BarChart` | Kompakt SVG bar chart (peak vurgu) |
+| `Toggle` | A11y switch (sm/md size) |
+| `ProgressBar` | `role="progressbar"` + `aria-valuenow` |
+| `Skeleton` (+ `TableSkeleton` + `CardSkeleton`) | Shimmer placeholder primitives |
+| `Modal` | Backdrop-blur dialog: ESC handler, body scroll lock, sm:bottom-sheet |
+| `Field` | Label + hint + error wrapper |
+| `RadioCard` | Büyük tıklanabilir radio (default/platform seçimleri) |
+| `Tabs` (+ `TabItem`) | `role="tablist"` + `aria-selected` + Arrow keys keyboard nav |
+| `PlatformChip` | Brand chip + label (Google/Yemeksepeti/Getir/Trendyol/Tripadvisor/Foursquare/Custom) |
+| `PLATFORMS` | Platform config map (label/short/color/urlHost) |
+| `BuazeWordmark` | "buaze." text logo |
+| `LegendDot` | Chart legend swatch |
+| `StarRow` | 5-star inline display (lucide Star) |
+| `PageHeader` | Eyebrow + h1 + description + actions (panel page üstü) |
+
+Barrel: `import { StatCard, Badge, Modal } from '@/components/ui'`.
+
+### 23.4 Icon mapping (`src/components/ui/icons.ts`)
+
+Design `Icon.X` identifier'ları lucide-react adlarına map'lendi (re-export). Yeni icon ihtiyaçında `icons.ts`'ye ekle — aynı zamanda `lucide-react`'tan direkt import edilebilir, ortak yere eklemek opsiyonel ama keşfedilebilirlik için tercih edilir.
+
+Kritik mappings: `Icon.qr`→`QrCode`, `Icon.inbox`→`Inbox`, `Icon.chart`→`BarChart3`, `Icon.utensils`→`UtensilsCrossed`, `Icon.message`→`MessageSquareText`, `Icon.dashboard`→`LayoutDashboard`, `Icon.share`→`Share2`, `Icon.link`→`Link2`.
+
+### 23.5 Sayfa-route mapping (admin + owner)
+
+**Owner / Business Panel** (`src/app/[locale]/dashboard/**`):
+
+| Route | Design page | Mevcut/Yeni |
+|---|---|---|
+| `/` (dashboard) | OwnerDashboard | Mevcut + OnboardingNudge eklendi (Phase 1.2) |
+| `/feedbacks` | OwnerFeedback | Mevcut — sonraki faz görsel polish |
+| `/qr` | OwnerQR | Mevcut — sonraki faz |
+| `/platforms` | OwnerPlatforms | **Yeni** (Phase 1.2) |
+| `/analytics` | OwnerAnalytics | Mevcut |
+| `/menu` (hub) | OwnerMenu hub | Mevcut |
+| `/restaurants/[id]/menu` | OwnerMenu builder | Mevcut |
+| `/restaurants/[id]/menu/analytics` | MenuAnalytics | Mevcut |
+| `/leads` | OwnerLeads | Mevcut |
+| `/announcements` | (tasarımda yok) | **Yeni** (Phase 1.2) — read-only sistem duyuruları |
+| `/guide` | (tasarımda yok) | Mevcut |
+| `/profile` | OwnerSettings | Mevcut |
+| `/restaurants` (list) | (tasarımda yok) | Mevcut |
+
+**Admin Panel** (`src/app/admin/**`):
+
+| Route | Design page | Mevcut/Yeni |
+|---|---|---|
+| `/admin/dashboard` | AdminDashboard | Mevcut |
+| `/admin/restaurants` | AdminBusinesses | Mevcut |
+| `/admin/restaurants/[id]` | Restaurant detail | Mevcut |
+| `/admin/reviews` | AdminReviews | Mevcut |
+| `/admin/qr` | AdminQR | Mevcut |
+| `/admin/members` | Owners list | Mevcut |
+| `/admin/users` | Admins list | Mevcut |
+| `/admin/customers` | Customers | Mevcut |
+| `/admin/blog` (+new + [id]) | AdminBlog | Mevcut |
+| `/admin/announcements` | AdminAnnouncements | Mevcut |
+| `/admin/plans` | (tasarımda yok) | **Yeni** (Phase 2) — plan dağılımı + plan tier kartları, Iyzico stub |
+| `/admin/site-settings` | AdminSiteSettings | Mevcut |
+| `/admin/newsletters` (+ campaigns) | (tasarımda yok) | Mevcut |
+| `/admin/mail-templates` (+ [key]/[locale]) | (tasarımda yok) | Mevcut |
+| `/admin/api` | (tasarımda yok) | Mevcut |
+| `/admin/profile` | (tasarımda yok) | Mevcut |
+| `/admin/leads` | (tasarımda yok) | Mevcut |
+| `/admin/trial-expired` | (tasarımda yok) | Mevcut |
+| `/admin/dev/mail-preview` | (tasarımda yok) | Mevcut |
+
+### 23.6 Yeni panel sayfası eklerken checklist
+
+1. **Token kullan:** `bz-card`, `bz-btn-primary`, `bz-input`, `bz-table`, `bz-tabs`, `bz-badge`, `bz-avatar`, `bz-skeleton`. Inline hex sadece bunlar yetmediğinde.
+2. **Primitive'lerden compose et:** `import { StatCard, Badge, EmptyState, Modal, Tabs, PlatformChip, PageHeader } from '@/components/ui'`. Mevcut compose'u önce dene; yeni component yazma 3+ tekrar olmadıkça (CLAUDE.md §7).
+3. **Icon:** `lucide-react`'tan direkt import veya `@/components/ui/icons` re-export. Aynı icon adı tutarlı kullanılır.
+4. **Page header:** `<PageHeader eyebrow="..." title="..." description="..." actions={...} />`.
+5. **Loading:** `<TableSkeleton rows={6} cols={5}>` veya `<StatCardSkeleton />` veya custom `<Skeleton />`.
+6. **Empty:** `<EmptyState icon title body action />`.
+7. **Error:** `<ErrorState onRetry={...} />`.
+8. **Mobile breakpoints:** `flex-col md:flex-row`, `grid-cols-2 lg:grid-cols-4`, table → card list pattern (`hidden md:table` + `md:hidden card list`).
+9. **A11y:** `aria-current="page"` aktif link, `<Tabs>` `aria-selected` doğal, `<Modal>` `aria-modal` set, form `<Field>` label-input pair.
+10. **CLAUDE.md güncelle:** Yeni sayfa eklersen §23.5 tablosuna ekle.
+
+### 23.7 Phase log
+
+- **Phase 0 (PR #97, branch `claude/implement-panel-ui-design-H8hvu`)**: Foundation — `bz-*` token block (`globals.css`), 22 reusable primitive (`src/components/ui/`), icon mapping (`icons.ts`), `.design-pulse-2026/` referans bundle, CLAUDE.md §23.
+- **Phase 1.1 (aynı PR)**: `UserDashboardShell.tsx` polish — nav'a `platforms` + `announcements` eklendi, badge slot, topbar bell icon. `AdminSidebar.tsx` polish — `aria-current="page"` eklendi, sidebar'a `Abonelikler` (admin/plans) link'i eklendi.
+- **Phase 1.2 (aynı PR)**: Owner Dashboard'a `<OnboardingNudge />` (5-step gradient dark card). Yeni route'lar: `/[locale]/dashboard/platforms` (default redirect picker + platform list + KVKK compliance note), `/[locale]/dashboard/announcements` (read-only sistem duyuruları list).
+- **Phase 2 (aynı PR)**: `/admin/plans` yeni route — plan dağılımı (StatCard + ProgressBar), son katılan ödeyen müşteriler listesi (Avatar + Badge), 3 plan tier kartı (Starter/Growth/Pro, Growth highlight'lı dark card), Iyzico roadmap notu. AdminAnnouncements + AdminBlog list sayfaları PageHeader + Tabs + bz-card + Badge primitive'lerine migrate edildi.
+- **Phase 3.1 (aynı PR)**: AdminMembers + AdminUsers + AdminCustomers sayfalarının chrome'u (header, badges, summary tiles) primitive'lere migrate edildi. PLAN_LABELS color map → PLAN_BADGE → `<Badge kind>`. Mobile pill'ler ve desktop role/status badge'ler tutarlı `<Badge>` kullanır. SummaryCard helper kaldırıldı, yerine `<StatCard>` primitive kullanıldı.
+- **Phase 3.2 (aynı PR)**: AdminBusinesses (`/admin/restaurants`) header → PageHeader + lime CTA, status filter pills → semantic `<Tabs>` (role=tablist), search input → bz-input, empty state → `<EmptyState>` primitive (zero-results variants ayrı). Mevcut card grid + accent rail + status toggle korundu. OwnerGuide header → PageHeader (tek-line refactor, mevcut step cards intact).
+- **Phase 3.3 (aynı PR)**: AdminDashboard'a `<AdminOverviewWidgets />` eklendi — Recently joined (Avatar + plan Badge ile son 4 kayıt, /api/admin/members'tan client-side fetch) + Needs attention (trial expiring/expired, inactive, no-business, stale empty buckets — sayım hesaplaması client-side derived, ek API yok). Skeleton loading. Tasarımdaki "AdminDashboard" sağ-rail widget'larıyla 1:1 hizalı. Superadmin'e özel render. OwnerProfile + OwnerQR header'ları → `<PageHeader>` primitive (tab content intact).
+- **Phase 3.4 (aynı PR)**: AdminProfile + AdminApi + AdminSiteSettings + AdminAnalytics header'ları → `<PageHeader>` primitive. AdminAnalytics'de range picker + Export CSV butonu actions slot'unda. AdminSiteSettings'de "Superadmin" lime Badge actions slot'unda. AdminProfile'da italic/uppercase tuhaf header sade Pulse hierarchy'ye geçti. Tüm sayfalarda max-width + page padding standardize (`max-w-[1100px-1200px]` + `px-4 sm:px-7 py-6 lg:py-8`).
+- **Phase 3.5 (sonraki PR'lar)**: OwnerQR grid/list view + create modal (mevcut single-QR generator korunur, ek "QR yönetimi" tab'ı), OwnerMenu builder progressive migration, OwnerFeedback split-pane filter tabs Tabs primitive'ine geçiş, mobile breakpoint regression sweep, a11y audit (focus rings, ARIA roles, skip-to-content). Backend dokunulmuyor.
+
+### 23.8 Dokunulmayan eski Pulse
+
+`.design/` v1 (CLAUDE.md §16), `.pulse-*` CSS class'ları, `.bz-fade-up / .bz-scale-in / .bz-float / .animate-marquee / .animate-slide-in / .pulse-heartbeat` keyframe'ler korundu — marketing/blog/help center hâlâ kullanıyor. Yeni panel kodu için **`bz-*` panel system tercih edilir**, ama mixed kullanım marketing'de OK.
+
+---
+
+## 24. Public QR Generator Sayfası (`/solutions/qr-generator`)
 
 Footer'da "Ücretsiz QR üret" linki bu sayfaya bağlanır. Marketing aracı — login gerektirmez, backend dokunmaz, tamamen client-side. Tasarım kaynağı: `.design/site/site-more.jsx` `QRGeneratorPage` (line 7-92).
 
-### 23.1 Yapı (1:1 design parity, 2026-04)
+### 24.1 Yapı (1:1 design parity, 2026-04)
 
 | Katman | Dosya | İçerik |
 |---|---|---|
@@ -1645,7 +1810,7 @@ Footer'da "Ücretsiz QR üret" linki bu sayfaya bağlanır. Marketing aracı —
   - Bottom: "BUAZE · TARA ✦ PAYLAŞ" (mono 10px, opacity 0.6)
 - 2-col download row: PNG (`bg-[#0A0A0A]` dark pill) + PDF (`border-[#0A0A0A]` outline pill)
 
-### 23.2 4 tema paleti (`TEMPLATES` constant, `QRGeneratorForm.tsx:14`)
+### 24.2 4 tema paleti (`TEMPLATES` constant, `QRGeneratorForm.tsx:14`)
 
 | Tema | Card BG | Foreground | Border | Eyebrow opacity |
 |---|---|---|---|---|
@@ -1656,7 +1821,7 @@ Footer'da "Ücretsiz QR üret" linki bu sayfaya bağlanır. Marketing aracı —
 
 QR canvas her zaman `#0A0A0A` dark + `#FFFFFF` light (tarama uyumluluğu için sabit). Tema değişimi sadece outer card + text + footer/eyebrow rengini etkiler.
 
-### 23.3 PDF download (no-dep paterni)
+### 24.3 PDF download (no-dep paterni)
 
 CLAUDE.md §7 minimum-dependency disiplinine uyumlu: `jspdf` / `pdf-lib` eklenmedi. Bunun yerine `window.open()` + canvas dataURL + `window.print()` paterni:
 
@@ -1668,7 +1833,7 @@ CLAUDE.md §7 minimum-dependency disiplinine uyumlu: `jspdf` / `pdf-lib` eklenme
 
 **XSS guard**: businessName ve message kullanıcı input'u — yeni pencere HTML'ine yazılmadan önce `escapeHtml()` ile sanitize edilir (`QRGeneratorForm.tsx:23-26`).
 
-### 23.4 Design parity karar tablosu (kalkan kararlar)
+### 24.4 Design parity karar tablosu (kalkan kararlar)
 
 | Karar | Sebep |
 |---|---|
@@ -1680,11 +1845,11 @@ CLAUDE.md §7 minimum-dependency disiplinine uyumlu: `jspdf` / `pdf-lib` eklenme
 | PDF download eklendi (`window.print` paterni) | Design'da "PDF olarak" butonu var. |
 | Hero'daki SVG grid pattern **silindi** | Design hero'su sade, pattern yok. |
 
-### 23.5 Çağıranlar
+### 24.5 Çağıranlar
 
 `MarketingFooter.tsx:45,82` + `MarketingNavbarClient.tsx:124` + `MobileBottomNav.tsx:57` — 4 yerden link verilir. Component'in public API'si değişmedi (`{ locale: Locale }`), call site'ları dokunulmaz.
 
-### 23.6 Yeni tema veya alan eklerken
+### 24.6 Yeni tema veya alan eklerken
 
 - **Yeni tema**: `TEMPLATES` const'ına entry ekle (`QRGeneratorForm.tsx:14`) + form'daki tasarım pill grid'ine 5. button ekle. PDF print template'i `palette.card / fg / border / eyebrow` field'larını okur, otomatik uyumlu.
 - **Yeni form alanı**: 4-field stack zaten yoğun; eklemek gerekirse design'a sadık kal — yeni alan preview'a görünür değer katıyor mu? Aksi halde scope creep.
