@@ -73,7 +73,7 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, isActive, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, menuLogoUrl, userId } = body;
+    const { name, slug, category, address, phone, googlePlaceId, googleReviewUrl, notificationEmail, primaryColor, isActive, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, menuLogoUrl, userId } = body;
 
     // Validate slug if provided
     if (slug) {
@@ -123,6 +123,7 @@ export async function PUT(
         ...(address !== undefined && { address: address || null }),
         ...(phone !== undefined && { phone: phone || null }),
         ...(googlePlaceId !== undefined && { googlePlaceId: googlePlaceId || null }),
+        ...(googleReviewUrl !== undefined && { googleReviewUrl: googleReviewUrl || null }),
         ...(notificationEmail !== undefined && { notificationEmail: notificationEmail || null }),
         ...(primaryColor !== undefined && { primaryColor }),
         ...(isActive !== undefined && { isActive }),

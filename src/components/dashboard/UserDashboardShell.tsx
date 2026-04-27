@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -49,6 +49,7 @@ function useTopBar(locale: Locale, pathname: string | null) {
   if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
   if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / KONUMLAR' : 'PANEL / LOCATIONS', title: isTr ? 'Konumlar' : 'Locations' };
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
+  if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / ENTEGRASYONLAR' : 'PANEL / INTEGRATIONS', title: isTr ? 'Entegrasyonlar' : 'Integrations' };
   if (rest.startsWith('/leads')) return { breadcrumb: isTr ? 'PANEL / MÜŞTERİLER' : 'PANEL / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
   if (rest.startsWith('/profile')) return { breadcrumb: isTr ? 'AYARLAR / HESAP' : 'SETTINGS / ACCOUNT', title: isTr ? 'Ayarlar' : 'Settings' };
@@ -72,6 +73,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       restaurants: isTr ? 'İşletmeler' : 'Locations',
       qr: 'QR',
       menu: isTr ? 'Menü' : 'Menu',
+      integrations: isTr ? 'Entegrasyonlar' : 'Integrations',
       guide: isTr ? 'Kılavuz' : 'Guide',
       profile: isTr ? 'Ayarlar' : 'Settings',
       logout: isTr ? 'Çıkış' : 'Logout',
@@ -89,6 +91,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
+    { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
     { href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
@@ -103,6 +106,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const moreSheetItems = [
     { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
+    { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
     { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
     { href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },

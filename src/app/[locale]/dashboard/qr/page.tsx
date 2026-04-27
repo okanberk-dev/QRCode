@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
+import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, RefreshCw } from 'lucide-react';
 import { copyToClipboard } from '@/lib/clipboard';
-import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import PlatformLogo, { type PlatformId } from '@/components/marketing/PlatformLogo';
 
 const PLATFORM_LOGO_ID: Record<string, PlatformId> = {
@@ -19,14 +18,6 @@ interface Restaurant {
   slug: string;
   name: string;
   primaryColor?: string;
-}
-
-interface QrHistoryItem {
-  id: string;
-  qrUrl: string;
-  tableNumber: string | null;
-  platform: string | null;
-  createdAt: string;
 }
 
 const PLATFORM_BADGE: Record<string, { label: string; bg: string }> = {
@@ -49,14 +40,10 @@ export default function DashboardQrPage() {
   const [qrSvg, setQrSvg] = useState('');
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [history, setHistory] = useState<QrHistoryItem[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
   const [qrError, setQrError] = useState('');
   const [useBrandColor, setUseBrandColor] = useState(true);
   const [customDark, setCustomDark] = useState('#000000');
   const [selectedPlatform, setSelectedPlatform] = useState('');
-  const [duplicateWarning, setDuplicateWarning] = useState(false);
   
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
   const safeEnvAppUrl = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
@@ -137,65 +124,8 @@ export default function DashboardQrPage() {
         genel: 'General (No Platform)',
       };
 
-  const LS_KEY = (id: string) => `qr_history_${id}`;
-
-  const readLocalHistory = (restaurantId: string): QrHistoryItem[] => {
-    try {
-      return JSON.parse(localStorage.getItem(LS_KEY(restaurantId)) || '[]');
-    } catch {
-      return [];
-    }
-  };
-
-  const saveToLocalHistory = (restaurantId: string, item: QrHistoryItem) => {
-    try {
-      const existing = readLocalHistory(restaurantId);
-      const updated = [item, ...existing.filter((e) => e.id !== item.id)].slice(0, 50);
-      localStorage.setItem(LS_KEY(restaurantId), JSON.stringify(updated));
-    } catch {}
-  };
-
-  const fetchHistory = async (restaurantId: string) => {
-    if (!restaurantId) {
-      setHistory([]);
-      return;
-    }
-
-    setHistoryLoading(true);
-    try {
-      const response = await fetch(`/api/restaurants/${restaurantId}/qr/history`);
-      const apiItems: QrHistoryItem[] = response.ok ? (await response.json()) : [];
-      const localItems = readLocalHistory(restaurantId);
-
-      const seen = new Set<string>();
-      const merged: QrHistoryItem[] = [];
-      for (const item of [...apiItems, ...localItems]) {
-        if (!seen.has(item.id)) {
-          seen.add(item.id);
-          merged.push(item);
-        }
-      }
-      merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setHistory(merged.slice(0, 50));
-    } catch {
-      setHistory(readLocalHistory(restaurantId));
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
-
   const generateQr = async () => {
     if (!selectedId) return;
-
-    // Check for duplicate
-    const dup = history.find(h =>
-      (h.tableNumber || '') === (tableNumber || '') &&
-      (h.platform || '') === (selectedPlatform || '')
-    );
-    if (dup) {
-      setDuplicateWarning(true);
-      setTimeout(() => setDuplicateWarning(false), 4000);
-    }
 
     setGenerating(true);
     setQrError('');
@@ -220,16 +150,6 @@ export default function DashboardQrPage() {
 
       const svg = await response.text();
       setQrSvg(svg);
-
-      const newItem: QrHistoryItem = {
-        id: `local_${Date.now()}`,
-        qrUrl: qrTargetUrl,
-        tableNumber: tableNumber || null,
-        platform: selectedPlatform || null,
-        createdAt: new Date().toISOString(),
-      };
-      saveToLocalHistory(selectedId, newItem);
-      setTimeout(() => fetchHistory(selectedId), 200);
     } catch (error) {
       console.error(error);
       setQrError('Bağlantı hatası. İnternet bağlantınızı kontrol edin.');
@@ -243,12 +163,6 @@ export default function DashboardQrPage() {
       generateQr();
     }
   }, [selectedId, tableNumber, activeDark, selectedPlatform]);
-
-  useEffect(() => {
-    if (selectedId) {
-      fetchHistory(selectedId);
-    }
-  }, [selectedId]);
 
   const downloadQr = async (format: 'svg' | 'png') => {
     if (!selectedId) return;
@@ -306,13 +220,6 @@ export default function DashboardQrPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     }
-  };
-
-  const copyHistoryItem = (item: QrHistoryItem) => {
-    if (!item.qrUrl) return;
-    copyToClipboard(item.qrUrl);
-    setCopiedId(item.id);
-    setTimeout(() => setCopiedId(null), 1800);
   };
 
   if (loading) {
@@ -647,52 +554,9 @@ export default function DashboardQrPage() {
             </button>
           </div>
 
-          <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <h2 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.history}</h2>
-              {historyLoading && <Loader2 className="h-5 w-5 animate-spin text-[#0A0A0A]" />}
-            </div>
-
-            <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
-              {history.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FFFFFF] px-4 py-8 text-center text-sm font-bold text-[#1A1A1A]">
-                  {copy.noHistory}
-                </div>
-              ) : (
-                history.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3">
-                    <div className="shrink-0 rounded-lg bg-white border border-[#EDEDED] px-2.5 py-1.5 text-center min-w-[60px]">
-                      <p className="pulse-eyebrow text-[#737373]">
-                        {new Date(item.createdAt).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'short' })}
-                      </p>
-                      <p
-                        className="text-[12px] font-semibold text-[#0A0A0A] tabular-nums mt-0.5"
-                        style={{ fontFamily: 'var(--font-heading)' }}
-                      >
-                        {new Date(item.createdAt).toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-[12px] font-medium text-[#0A0A0A] font-mono">{item.qrUrl}</p>
-                        <CopyUrlButton url={item.qrUrl} className="h-5 w-5 shrink-0" />
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-[11px] text-[#737373]">
-                          {item.tableNumber ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}` : (locale === 'tr' ? 'Genel QR' : 'General QR')}
-                        </p>
-                        {item.platform && PLATFORM_BADGE[item.platform] && (
-                          <span className={`px-1.5 py-0.5 rounded pulse-eyebrow text-white ${PLATFORM_BADGE[item.platform].bg}`}>
-                            {PLATFORM_BADGE[item.platform].label}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+          {/* Single-QR concept (2026-04 user request) — only the canonical
+              QR is exposed in the panel. Past generations live in DB but
+              are not surfaced here; one location = one QR. */}
         </div>
 
         <div className="order-1 lg:order-2 space-y-3">
@@ -700,12 +564,6 @@ export default function DashboardQrPage() {
             <span className="pulse-eyebrow text-[#737373]">
               {locale === 'tr' ? 'CANLI ÖNİZLEME' : 'LIVE PREVIEW'}
             </span>
-            {duplicateWarning && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 pulse-eyebrow">
-                <AlertCircle size={11} strokeWidth={2} />
-                {locale === 'tr' ? 'ZATEN MEVCUT' : 'ALREADY EXISTS'}
-              </div>
-            )}
           </div>
 
           {/* Two-up preview: QR card + phone screen mockup (stacks on narrow viewports) */}
