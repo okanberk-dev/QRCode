@@ -196,7 +196,7 @@ export default async function DashboardPage({
 
   return (
     <div
-      className="mx-auto max-w-[1200px] space-y-8 px-4 py-8 sm:px-8 lg:py-10"
+      className="mx-auto max-w-[1200px] space-y-6 px-4 sm:px-7 py-6 lg:py-8"
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <PageHeader
