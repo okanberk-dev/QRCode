@@ -237,14 +237,22 @@ export default async function PlatformsPage({
   return (
     <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
-        eyebrow={isTr ? 'PLATFORM BAĞLANTILARI' : 'REVIEW PLATFORMS'}
-        title={isTr ? 'Yorum platformları' : 'Review platforms'}
-        description={
-          isTr
-            ? '4–5 yıldızlı yorumlarda müşteriler aşağıdaki platformlardan birine yönlendirilir. QR\'ınız bir platforma sabitlenmediyse, varsayılan platform kullanılır.'
-            : "4–5 star ratings redirect customers to one of the platforms below. If a QR isn't pinned, the default platform is used."
-        }
+        eyebrow={isTr ? 'İŞLETME PANELİ' : 'OWNER PANEL'}
+        title="platforms"
       />
+
+      {/* Section header — design 1:1: eyebrow + paragraph (no second h1) */}
+      <div className="mb-5">
+        <Eyebrow>{isTr ? 'PLATFORM BAĞLANTILARI' : 'REVIEW PLATFORMS'}</Eyebrow>
+        <p
+          className="mt-1.5 max-w-[620px]"
+          style={{ fontSize: 13, color: '#525252', lineHeight: 1.55 }}
+        >
+          {isTr
+            ? '4–5 yıldızlı yorumlarda müşteriler aşağıdaki platformlardan birine yönlendirilir. QR\'ınız bir platforma sabitlenmediyse, varsayılan platform kullanılır.'
+            : "4–5 star ratings redirect customers to one of the platforms below. If a QR isn't pinned, the default platform is used."}
+        </p>
+      </div>
 
       {/* Mobile-only — design's MOwnerPlatforms dark default card (1:1).
           Prominent display of the active default platform; md+ uses the

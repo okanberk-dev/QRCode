@@ -4,9 +4,15 @@ import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
-import { Calendar } from 'lucide-react';
-import ExportReportButton from '@/components/dashboard/ExportReportButton';
-import { Eyebrow, PageHeader } from '@/components/ui';
+import {
+  BarChart,
+  Eyebrow,
+  PageHeader,
+  PlatformChip,
+  PLATFORMS,
+  StatCard,
+  type PlatformId,
+} from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +27,56 @@ export async function generateMetadata({
     robots: { index: false, follow: false },
   };
 }
+
+const STOP_WORDS = new Set([
+  've', 'çok', 'bir', 'için', 'ile', 'ama', 'gibi', 'daha', 'olan',
+  'olur', 'oldu', 'the', 'and', 'was', 'very', 'were', 'are', 'this',
+  'that', 'they', 'have', 'had', 'from', 'then', 'with', 'which', 'just',
+]);
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-zçğıöşüA-ZÇĞİÖŞÜ\s]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length >= 4 && !STOP_WORDS.has(w));
+}
+
+function pctDelta(curr: number, prev: number): { value: string; kind: 'up' | 'down' | 'neutral' } {
+  if (prev === 0) {
+    if (curr === 0) return { value: '0%', kind: 'neutral' };
+    return { value: 'Yeni', kind: 'up' };
+  }
+  const pct = Math.round(((curr - prev) / prev) * 1000) / 10;
+  return {
+    value: `${pct >= 0 ? '+' : ''}${pct}%`,
+    kind: pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral',
+  };
+}
+
+function ppDelta(currPct: number, prevPct: number, invertGood = false): { value: string; kind: 'up' | 'down' | 'neutral' } {
+  const diff = currPct - prevPct;
+  const rounded = Math.round(diff * 10) / 10;
+  const sign = rounded >= 0 ? '+' : '';
+  // For "low rating rate" lower is better → invert good direction
+  const isPositive = invertGood ? rounded < 0 : rounded > 0;
+  const isNegative = invertGood ? rounded > 0 : rounded < 0;
+  return {
+    value: `${sign}${rounded}pp`,
+    kind: isPositive ? 'up' : isNegative ? 'down' : 'neutral',
+  };
+}
+
+const DAY_LABELS_TR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+const DAY_LABELS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+const PLATFORM_DISPLAY: Array<{ id: PlatformId; key: string }> = [
+  { id: 'google', key: 'google' },
+  { id: 'yemeksepeti', key: 'yemeksepeti' },
+  { id: 'tripadvisor', key: 'tripadvisor' },
+  { id: 'getir', key: 'getir' },
+  { id: 'trendyol_go', key: 'trendyol_go' },
+];
 
 export default async function AnalyticsPage({
   params,
@@ -39,149 +95,151 @@ export default async function AnalyticsPage({
 
   const user = await prisma.user.findUnique({
     where: { id: payload.userId },
-    include: {
-      restaurants: {
-        select: { id: true, name: true },
-      },
-    },
+    include: { restaurants: { select: { id: true } } },
   });
   if (!user) redirect(`/${locale}/auth/login`);
 
   const restaurantIds = user.restaurants.map((r) => r.id);
 
-  // Aggregate data across user's restaurants for the last 90 days
-  const since = new Date();
-  since.setDate(since.getDate() - 90);
+  const now = Date.now();
+  const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now - 60 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
 
-  const feedbacks = restaurantIds.length
-    ? await prisma.feedback.findMany({
-        where: {
-          restaurantId: { in: restaurantIds },
-          createdAt: { gte: since },
-        },
-        select: {
-          rating: true,
-          platform: true,
-          comment: true,
-          createdAt: true,
-          restaurantId: true,
-        },
-      })
-    : [];
+  // Aggregate queries — 30d window for KPIs + chart, 7d for day distribution.
+  const [
+    feedbacks30d,
+    feedbacksPrev30d,
+    feedbacks7d,
+    redirected30d,
+    redirectedPrev30d,
+    lowRated30d,
+    lowRatedPrev30d,
+    feedbacksWithComments,
+  ] = restaurantIds.length
+    ? await Promise.all([
+        // 30-day total scans (proxy: feedback count)
+        prisma.feedback.findMany({
+          where: { restaurantId: { in: restaurantIds }, createdAt: { gte: thirtyDaysAgo } },
+          select: { rating: true, platform: true, createdAt: true },
+        }),
+        prisma.feedback.count({
+          where: {
+            restaurantId: { in: restaurantIds },
+            createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
+          },
+        }),
+        prisma.feedback.findMany({
+          where: { restaurantId: { in: restaurantIds }, createdAt: { gte: sevenDaysAgo } },
+          select: { createdAt: true },
+        }),
+        prisma.feedback.count({
+          where: {
+            restaurantId: { in: restaurantIds },
+            createdAt: { gte: thirtyDaysAgo },
+            rating: { gte: 4 },
+            platform: { not: null },
+          },
+        }),
+        prisma.feedback.count({
+          where: {
+            restaurantId: { in: restaurantIds },
+            createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
+            rating: { gte: 4 },
+            platform: { not: null },
+          },
+        }),
+        prisma.feedback.count({
+          where: {
+            restaurantId: { in: restaurantIds },
+            createdAt: { gte: thirtyDaysAgo },
+            rating: { lte: 3 },
+          },
+        }),
+        prisma.feedback.count({
+          where: {
+            restaurantId: { in: restaurantIds },
+            createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
+            rating: { lte: 3 },
+          },
+        }),
+        // Sentiment data — 90 days for richer signal
+        prisma.feedback.findMany({
+          where: {
+            restaurantId: { in: restaurantIds },
+            createdAt: { gte: new Date(now - 90 * 24 * 60 * 60 * 1000) },
+            comment: { not: null },
+          },
+          select: { rating: true, comment: true },
+        }),
+      ])
+    : [[], 0, [], 0, 0, 0, 0, []];
 
-  // NPS calculation (5 = promoter, 3-4 = passive, 1-2 = detractor)
-  const total = feedbacks.length;
-  const promoters = feedbacks.filter((f) => f.rating >= 5).length;
-  const neutrals = feedbacks.filter((f) => f.rating === 3 || f.rating === 4).length;
-  const detractors = feedbacks.filter((f) => f.rating <= 2).length;
-  const pctPromoter = total ? Math.round((promoters / total) * 100) : 0;
-  const pctNeutral = total ? Math.round((neutrals / total) * 100) : 0;
-  const pctDetractor = total ? Math.round((detractors / total) * 100) : 0;
-  const nps = total ? pctPromoter - pctDetractor : 0;
+  // KPI calculations
+  const scans30dCount = feedbacks30d.length;
+  const reviews30dCount = scans30dCount; // same proxy as feedback count
+  const reviewsPrev30dCount = feedbacksPrev30d;
+  const scansDelta = pctDelta(scans30dCount, feedbacksPrev30d);
+  const reviewsDelta = pctDelta(reviews30dCount, reviewsPrev30dCount);
 
-  // 12-week trend (simple avg rating bucket)
-  const weeks = 12;
-  const buckets: Array<{ label: string; avg: number }> = [];
-  for (let i = weeks - 1; i >= 0; i--) {
-    const end = new Date();
-    end.setDate(end.getDate() - i * 7);
-    const start = new Date(end);
-    start.setDate(start.getDate() - 7);
-    const slice = feedbacks.filter((f) => f.createdAt >= start && f.createdAt < end);
-    const avg = slice.length ? slice.reduce((a, f) => a + f.rating, 0) / slice.length : 0;
-    buckets.push({
-      label: start.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { month: 'short' }).toUpperCase(),
-      avg,
-    });
-  }
+  const redirectRate = scans30dCount > 0 ? Math.round((redirected30d / scans30dCount) * 100) : 0;
+  const prevRedirectRate = feedbacksPrev30d > 0 ? Math.round((redirectedPrev30d / feedbacksPrev30d) * 100) : 0;
+  const redirectDelta = ppDelta(redirectRate, prevRedirectRate);
 
-  // Build SVG polyline for trend
-  const trendMax = 5;
-  const trendPoints = buckets
-    .map((b, i) => {
-      const x = (i / (weeks - 1)) * 320;
-      const y = 150 - (b.avg / trendMax) * 130;
-      return `${x},${y}`;
-    })
-    .join(' ');
+  const lowRatingRate = scans30dCount > 0 ? Math.round((lowRated30d / scans30dCount) * 100) : 0;
+  const prevLowRatingRate = feedbacksPrev30d > 0 ? Math.round((lowRatedPrev30d / feedbacksPrev30d) * 100) : 0;
+  // Düşük puan oranı için "good = lower" — invertGood true (azalış up arrow)
+  const lowRatingDelta = ppDelta(lowRatingRate, prevLowRatingRate, true);
 
-  // Platform / source distribution
-  const sourceMap = new Map<string, number>();
-  feedbacks.forEach((f) => {
-    const key = (f.platform || (isTr ? 'buaze' : 'buaze')).toLowerCase();
-    sourceMap.set(key, (sourceMap.get(key) || 0) + 1);
+  // 30-day daily distribution (etkileşim chart)
+  const interactionData: { label: string; value: number }[] = Array.from({ length: 30 }, (_, i) => {
+    const dayStart = new Date();
+    dayStart.setHours(0, 0, 0, 0);
+    dayStart.setDate(dayStart.getDate() - (29 - i));
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+    const count = feedbacks30d.filter(
+      (f) => f.createdAt >= dayStart && f.createdAt < dayEnd,
+    ).length;
+    return {
+      label: '', // design'da label yok — sadece bar
+      value: count,
+    };
   });
-  const sources = Array.from(sourceMap.entries())
-    .map(([k, v]) => ({ key: k, label: k.charAt(0).toUpperCase() + k.slice(1), value: v, pct: total ? Math.round((v / total) * 100) : 0 }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 6);
 
-  const sourceColor = (key: string) =>
-    key.includes('google')
-      ? '#C6F24E'
-      : key.includes('yemek')
-        ? '#FA0050'
-        : key.includes('getir')
-          ? '#5D3EBD'
-          : key.includes('trendyol')
-            ? '#F27A1A'
-            : '#0A0A0A';
+  // Platform paylaşımı (30-day)
+  const platformShare = PLATFORM_DISPLAY.map((p) => {
+    const count = feedbacks30d.filter(
+      (f) => (f.platform || '').toLowerCase() === p.key && f.rating >= 4,
+    ).length;
+    return { id: p.id, key: p.key, count };
+  })
+    .filter((p) => p.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 4);
+  const totalRedirects = platformShare.reduce((a, p) => a + p.count, 0);
 
-  // Sentiment word cloud (1:1 design `OwnerAnalytics` "Duygu analizi") —
-  // tone derived from the source rating: words from rating ≥ 4 land in
-  // the positive bucket, rating ≤ 2 in the negative bucket. Rating = 3
-  // is treated as neutral and skipped (no signal). When the same word
-  // appears in both buckets the larger count wins; total count = both.
-  const stopWords = new Set([
-    've',
-    'çok',
-    'bir',
-    'için',
-    'ile',
-    'ama',
-    'gibi',
-    'daha',
-    'olan',
-    'olur',
-    'oldu',
-    'the',
-    'and',
-    'was',
-    'very',
-    'were',
-    'are',
-    'this',
-    'that',
-    'they',
-    'have',
-    'had',
-    'from',
-    'then',
-    'with',
-    'which',
-    'just',
-  ]);
+  // Günlük dağılım (7-day day-of-week)
+  const dayLabels = isTr ? DAY_LABELS_TR : DAY_LABELS_EN;
+  const dayBuckets: number[] = Array(7).fill(0);
+  for (const f of feedbacks7d) {
+    const jsDay = f.createdAt.getDay();
+    const idx = jsDay === 0 ? 6 : jsDay - 1;
+    dayBuckets[idx] = (dayBuckets[idx] || 0) + 1;
+  }
+  const dayData = dayBuckets.map((v, i) => ({ label: dayLabels[i], value: v }));
 
-  const tokenize = (text: string): string[] =>
-    text
-      .toLowerCase()
-      .replace(/[^a-zçğıöşüA-ZÇĞİÖŞÜ\s]/g, ' ')
-      .split(/\s+/)
-      .filter((w) => w.length >= 4 && !stopWords.has(w));
-
+  // Duygu analizi (sentiment word chips) — 90 day window
   const posFreq = new Map<string, number>();
   const negFreq = new Map<string, number>();
-  feedbacks.forEach((f) => {
+  feedbacksWithComments.forEach((f) => {
     if (!f.comment) return;
-    if (f.rating === 3) return; // neutral — skipped
+    if (f.rating === 3) return;
     const target = f.rating >= 4 ? posFreq : negFreq;
     tokenize(f.comment).forEach((w) =>
       target.set(w, (target.get(w) || 0) + 1),
     );
   });
-
-  // Merge — every distinct word becomes one cloud token, tone decided
-  // by the larger bucket.
   const allWords = new Set<string>([...posFreq.keys(), ...negFreq.keys()]);
   const sentimentThemes = Array.from(allWords)
     .map((label) => {
@@ -196,321 +254,139 @@ export default async function AnalyticsPage({
     .sort((a, b) => b.count - a.count)
     .slice(0, 14);
 
-  // Static fallback if not enough sentiment signal yet — the design's
-  // sample shape (positive + negative mix) is preserved.
-  const staticThemes: Array<{ label: string; count: number; tone: 'pos' | 'neg' }> = isTr
-    ? [
-        { label: 'lezzetli', count: 32, tone: 'pos' },
-        { label: 'servis', count: 28, tone: 'pos' },
-        { label: 'temiz', count: 24, tone: 'pos' },
-        { label: 'mekan', count: 22, tone: 'pos' },
-        { label: 'kibar', count: 18, tone: 'pos' },
-        { label: 'manzara', count: 14, tone: 'pos' },
-        { label: 'tatlı', count: 12, tone: 'pos' },
-        { label: 'soğuk', count: 10, tone: 'neg' },
-        { label: 'pahalı', count: 9, tone: 'neg' },
-        { label: 'yavaş', count: 7, tone: 'neg' },
-        { label: 'hijyen', count: 5, tone: 'neg' },
-      ]
-    : [
-        { label: 'tasty', count: 32, tone: 'pos' },
-        { label: 'service', count: 28, tone: 'pos' },
-        { label: 'clean', count: 24, tone: 'pos' },
-        { label: 'venue', count: 22, tone: 'pos' },
-        { label: 'kind', count: 18, tone: 'pos' },
-        { label: 'view', count: 14, tone: 'pos' },
-        { label: 'dessert', count: 12, tone: 'pos' },
-        { label: 'cold', count: 10, tone: 'neg' },
-        { label: 'pricey', count: 9, tone: 'neg' },
-        { label: 'slow', count: 7, tone: 'neg' },
-        { label: 'hygiene', count: 5, tone: 'neg' },
-      ];
-
-  const displayThemes = sentimentThemes.length >= 5 ? sentimentThemes : staticThemes;
-
-  // Per-location performance table (instead of "staff" which doesn't exist as a feature yet)
-  const perLocation = user.restaurants.map((r) => {
-    const slice = feedbacks.filter((f) => f.restaurantId === r.id);
-    const avg = slice.length ? slice.reduce((a, f) => a + f.rating, 0) / slice.length : 0;
-    return {
-      id: r.id,
-      name: r.name,
-      count: slice.length,
-      avg,
-      status:
-        avg >= 4.7 ? 'top' : avg >= 4.2 ? 'ok' : avg > 0 ? 'warn' : 'empty',
-    };
-  });
-
-  const tabs = isTr
-    ? ['Genel', 'Duygu', 'Konum', 'Kaynak', 'Zaman']
-    : ['Overall', 'Sentiment', 'Location', 'Source', 'Time'];
-
   return (
-    <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
       <PageHeader
-        eyebrow={isTr ? 'ANALİTİK' : 'ANALYTICS'}
-        title={isTr ? 'İşletme analitiği' : 'Business analytics'}
-        description={
-          isTr
-            ? 'NPS skoru, platform yönlendirme ve günlük etkileşim trendlerini tek panelde gör.'
-            : 'NPS score, platform redirects, and daily interaction trends in a single panel.'
-        }
+        eyebrow={isTr ? 'İŞLETME PANELİ' : 'OWNER PANEL'}
+        title="analytics"
       />
 
-      {/* Top controls — tabs + date range + export */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {tabs.map((tab, i) => (
-            <button
-              key={tab}
-              type="button"
-              className={`rounded-lg border px-3.5 py-2 text-[13px] font-medium transition-colors ${
-                i === 0
-                  ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                  : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A]'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors"
-          >
-            <Calendar size={12} strokeWidth={2} />
-            {isTr ? 'Son 90 gün' : 'Last 90 days'}
-          </button>
-          <ExportReportButton
-            label={isTr ? 'Rapor indir' : 'Download report'}
-            format="csv"
-            range="90d"
-          />
-        </div>
+      {/* 4 KPI cards (1:1 design OwnerAnalytics line 370-374) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <StatCard
+          label={isTr ? '30 gün taranma' : '30d scans'}
+          value={scans30dCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          delta={scansDelta.value}
+          deltaKind={scansDelta.kind}
+          deltaSuffix={isTr ? 'son 7 gün' : 'last 7 days'}
+        />
+        <StatCard
+          label={isTr ? '30 gün yorum' : '30d reviews'}
+          value={reviews30dCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          delta={reviewsDelta.value}
+          deltaKind={reviewsDelta.kind}
+          deltaSuffix={isTr ? 'son 7 gün' : 'last 7 days'}
+        />
+        <StatCard
+          label={isTr ? 'Yönlendirme oranı' : 'Redirect rate'}
+          value={`${redirectRate}%`}
+          delta={redirectDelta.value}
+          deltaKind={redirectDelta.kind}
+          deltaSuffix={isTr ? 'son 7 gün' : 'last 7 days'}
+        />
+        <StatCard
+          label={isTr ? 'Düşük puan oranı' : 'Low rating rate'}
+          value={`${lowRatingRate}%`}
+          delta={lowRatingDelta.value}
+          deltaKind={lowRatingDelta.kind}
+          deltaSuffix={isTr ? 'son 7 gün' : 'last 7 days'}
+        />
       </div>
 
-      {/* NPS scoreboard (big dark card) — AdminAnalytics §542-576 */}
-      <section className="rounded-2xl bg-[#0A0A0A] p-6 sm:p-8 text-white">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.4fr_1fr]">
-          <div>
-            <div className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'NPS SKORU · 90 GÜN' : 'NPS · 90 DAYS'}
-            </div>
-            <div className="mt-2.5 flex items-baseline gap-4">
-              <span
-                className="text-[96px] sm:text-[120px] font-medium leading-[0.85] tracking-[-0.04em] text-[#C6F24E] bz-h-tight"
-              >
-                {total ? nps : '—'}
-              </span>
-              <div className="min-w-0">
-                <div className="text-[16px] sm:text-[18px] font-medium">
-                  {total
-                    ? nps >= 70
-                      ? isTr ? 'Mükemmel' : 'Excellent'
-                      : nps >= 50
-                        ? isTr ? 'Çok iyi' : 'Great'
-                        : nps >= 30
-                          ? isTr ? 'İyi' : 'Good'
-                          : nps >= 0
-                            ? isTr ? 'Gelişmeli' : 'Needs work'
-                            : isTr ? 'Dikkat' : 'Attention'
-                    : isTr ? 'Henüz veri yok' : 'No data yet'}
-                </div>
-                <div className="text-[12px] text-white/60 mt-1">
-                  {total ? `${total} ${isTr ? 'yorum değerlendirildi' : 'reviews analyzed'}` : isTr ? 'Yorum topladıkça güncellenecek' : 'Updates as reviews arrive'}
-                </div>
-              </div>
-            </div>
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              {[
-                { k: isTr ? 'Destekçi' : 'Promoters', v: pctPromoter, c: '#C6F24E' },
-                { k: isTr ? 'Nötr' : 'Neutral', v: pctNeutral, c: '#737373' },
-                { k: isTr ? 'Eleştiren' : 'Detractors', v: pctDetractor, c: '#DC2626' },
-              ].map((s) => (
-                <div key={s.k}>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-white/60">{s.k}</span>
-                    <span className="font-semibold">{s.v}%</span>
-                  </div>
-                  <div className="mt-1.5 h-1 rounded-full bg-[#1A1A1A]">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${s.v}%`, background: s.c }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'TREND · 12 HAFTA' : 'TREND · 12 WEEKS'}
-            </div>
-            <svg viewBox="0 0 320 150" className="w-full mt-2" aria-hidden>
-              <polyline
-                points={trendPoints}
-                fill="none"
-                stroke="#C6F24E"
-                strokeWidth="2.5"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-              {buckets.map((b, i) => {
-                const x = (i / (weeks - 1)) * 320;
-                const y = 150 - (b.avg / trendMax) * 130;
-                if (i % 3 !== 0) return null;
-                return <circle key={i} cx={x} cy={y} r="3" fill="#C6F24E" />;
-              })}
-            </svg>
-            <div className="mt-2 flex justify-between text-[10px] text-white/50 font-mono">
-              {[0, 3, 6, 9, 11].map((i) => (
-                <span key={i}>{buckets[i]?.label ?? ''}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Sentiment word cloud + source distribution */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
+      {/* 2-col 2fr/1fr: 30 günlük etkileşim + Platform paylaşımı */}
+      <div className="grid gap-3.5 lg:grid-cols-[2fr_1fr]">
         <section className="bz-card p-5 sm:p-6">
-          <Eyebrow>{isTr ? 'DUYGU ANALİZİ' : 'SENTIMENT'}</Eyebrow>
-          <h3
-            className="bz-h-tight text-[18px] text-[#0A0A0A] mt-1"
-          >
-            {isTr ? 'Yorumlardan çıkan kelimeler' : 'Words from reviews'}
-          </h3>
-          <p className="pulse-eyebrow text-[#737373] mt-1">
-            {sentimentThemes.length >= 5
-              ? isTr
-                ? 'Pozitif: 4–5 yıldız · Negatif: 1–2 yıldız yorumlardan'
-                : 'Positive: 4–5★ · Negative: 1–2★ reviews'
-              : isTr
-                ? 'Demo · daha fazla yorum geldikçe gerçek veri görünür'
-                : 'Demo · real data appears as more reviews come in'}
-          </p>
-          <div className="mt-5 flex flex-wrap gap-2 items-center">
-            {displayThemes.map((tag) => {
-              const isPos = tag.tone === 'pos';
-              const size = 12 + Math.min(tag.count / 4, 8);
-              return (
-                <span
-                  key={tag.label}
-                  className="inline-flex items-center gap-1.5 rounded-full"
-                  style={{
-                    padding: '5px 12px',
-                    background: isPos ? '#EAF9B8' : '#FEF2F2',
-                    color: isPos ? '#3D4D00' : '#991B1B',
-                    fontSize: `${size}px`,
-                    fontWeight: 500,
-                  }}
-                >
-                  {tag.label}
-                  <span style={{ opacity: 0.6, fontSize: 10 }}>{tag.count}</span>
-                </span>
-              );
-            })}
+          <Eyebrow>{isTr ? '30 GÜNLÜK ETKİLEŞİM' : '30-DAY INTERACTION'}</Eyebrow>
+          <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
+            {isTr ? 'Taranma · Yorum · Yönlendirme' : 'Scans · Reviews · Redirects'}
           </div>
+          <BarChart data={interactionData} height={180} />
         </section>
 
         <section className="bz-card p-5 sm:p-6">
-          <h3
-            className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
-          >
-            {isTr ? 'Kaynak dağılımı' : 'Source distribution'}
-          </h3>
-          <div className="mt-4 space-y-3">
-            {sources.length === 0 ? (
-              <p className="text-[13px] text-[#737373]">
-                {isTr ? 'Henüz yorum yok.' : 'No reviews yet.'}
+          <Eyebrow>{isTr ? 'PLATFORM PAYLAŞIMI' : 'PLATFORM SHARE'}</Eyebrow>
+          <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
+            {totalRedirects} {isTr ? 'yönlendirme' : 'redirects'}
+          </div>
+          <div className="mt-3.5 flex flex-col gap-3">
+            {platformShare.length === 0 ? (
+              <p className="text-[12px] text-[#737373]">
+                {isTr ? 'Henüz yönlendirme yok.' : 'No redirects yet.'}
               </p>
             ) : (
-              sources.map((s) => (
-                <div key={s.key}>
-                  <div className="flex justify-between text-[12px] font-medium">
-                    <span>{s.label}</span>
-                    <span>{s.pct}%</span>
-                  </div>
-                  <div className="mt-1.5 h-2 rounded-full bg-[#F5F5F5]">
+              platformShare.map((p) => {
+                const pct = totalRedirects > 0 ? Math.round((p.count / totalRedirects) * 100) : 0;
+                return (
+                  <div key={p.key}>
+                    <div className="flex items-center justify-between text-[12px] mb-1">
+                      <span className="inline-flex items-center gap-2">
+                        <PlatformChip id={p.id} size={16} />
+                        {PLATFORMS[p.id].label}
+                      </span>
+                      <span className="bz-mono font-semibold">{p.count}</span>
+                    </div>
                     <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${s.pct}%`, background: sourceColor(s.key) }}
-                    />
+                      className="rounded-[3px] overflow-hidden"
+                      style={{ height: 6, background: '#F5F5F5' }}
+                    >
+                      <div
+                        className="h-full rounded-[3px]"
+                        style={{ width: `${pct}%`, background: PLATFORMS[p.id].color }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </section>
       </div>
 
-      {/* Location performance table — design's staff table repurposed */}
-      <section className="bz-card p-5 sm:p-6">
-        <h3
-          className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
-        >
-          {isTr ? 'Konum performansı' : 'Location performance'}
-        </h3>
-        {perLocation.length === 0 ? (
-          <p className="mt-4 text-[13px] text-[#737373]">
-            {isTr ? 'Henüz bir işletmeniz yok.' : 'No locations yet.'}
-          </p>
-        ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full border-collapse text-[13px]">
-              <thead>
-                <tr className="pulse-eyebrow text-[#737373] text-left">
-                  <th className="py-2.5 pr-4 font-medium">{isTr ? 'KONUM' : 'LOCATION'}</th>
-                  <th className="py-2.5 pr-4 font-medium">{isTr ? 'YORUM' : 'REVIEWS'}</th>
-                  <th className="py-2.5 pr-4 font-medium">{isTr ? 'ORT. PUAN' : 'AVG. RATING'}</th>
-                  <th className="py-2.5 pr-4 font-medium">{isTr ? 'PAY' : 'SHARE'}</th>
-                  <th className="py-2.5 font-medium">{isTr ? 'DURUM' : 'STATUS'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {perLocation.map((p) => {
-                  const share = total ? Math.round((p.count / total) * 100) : 0;
-                  const statusMap = {
-                    top: { label: isTr ? 'ZİRVEDE' : 'TOP', bg: 'bg-[#EAF9B8]', fg: 'text-[#0A0A0A]' },
-                    ok: { label: isTr ? 'NORMAL' : 'OK', bg: 'bg-[#F5F5F5]', fg: 'text-[#525252]' },
-                    warn: { label: isTr ? 'DİKKAT' : 'WATCH', bg: 'bg-[#FEE2E2]', fg: 'text-[#DC2626]' },
-                    empty: { label: isTr ? 'YENİ' : 'NEW', bg: 'bg-[#F5F5F5]', fg: 'text-[#737373]' },
-                  } as const;
-                  const status = statusMap[p.status as keyof typeof statusMap];
-                  return (
-                    <tr key={p.id} className="border-t border-[#F5F5F5]">
-                      <td className="py-3.5 pr-4">
-                        <span className="inline-flex items-center gap-2">
-                          <span
-                            className="flex h-6 w-6 items-center justify-center rounded-full bg-[#F5F5F5] text-[10px] font-semibold bz-h-tight"
-                          >
-                            {p.name.charAt(0).toUpperCase()}
-                          </span>
-                          <span className="font-semibold">{p.name}</span>
-                        </span>
-                      </td>
-                      <td className="py-3.5 pr-4 font-mono text-[12px] text-[#525252]">{p.count}</td>
-                      <td className="py-3.5 pr-4">
-                        <span className="font-semibold">{p.avg > 0 ? p.avg.toFixed(1) : '—'}</span>{' '}
-                        <span className="text-[#C6F24E]">★</span>
-                      </td>
-                      <td className="py-3.5 pr-4 font-mono text-[12px] text-[#737373]">{share}%</td>
-                      <td className="py-3.5">
-                        <span className={`pulse-eyebrow rounded px-1.5 py-0.5 ${status.bg} ${status.fg}`}>
-                          {status.label}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      {/* 2-col 1fr/1fr: Günlük dağılım + Duygu analizi */}
+      <div className="grid gap-3.5 lg:grid-cols-2">
+        <section className="bz-card p-5 sm:p-6">
+          <Eyebrow>{isTr ? 'GÜNLÜK DAĞILIM' : 'DAY DISTRIBUTION'}</Eyebrow>
+          <div className="bz-h-tight mt-1 mb-3" style={{ fontSize: 18 }}>
+            {isTr ? 'Hangi günler en çok yorum geliyor?' : 'When are reviews coming in?'}
           </div>
-        )}
-      </section>
+          <BarChart data={dayData} height={140} />
+        </section>
+
+        <section className="bz-card p-5 sm:p-6">
+          <Eyebrow>{isTr ? 'DUYGU ANALİZİ' : 'SENTIMENT'}</Eyebrow>
+          <div className="bz-h-tight mt-1 mb-3.5" style={{ fontSize: 18 }}>
+            {isTr ? 'Yorumlardan çıkan kelimeler' : 'Words from reviews'}
+          </div>
+          {sentimentThemes.length === 0 ? (
+            <p className="text-[12px] text-[#737373]">
+              {isTr ? 'Henüz yeterli yorum yok.' : 'Not enough comments yet.'}
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2 items-center">
+              {sentimentThemes.map((tag) => {
+                const isPos = tag.tone === 'pos';
+                const size = 12 + Math.min(tag.count / 4, 8);
+                return (
+                  <span
+                    key={tag.label}
+                    className="inline-flex items-center gap-1.5 rounded-full"
+                    style={{
+                      padding: '5px 12px',
+                      background: isPos ? '#EAF9B8' : '#FEF2F2',
+                      color: isPos ? '#3D4D00' : '#991B1B',
+                      fontSize: `${size}px`,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {tag.label}
+                    <span style={{ opacity: 0.6, fontSize: 10 }}>{tag.count}</span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
