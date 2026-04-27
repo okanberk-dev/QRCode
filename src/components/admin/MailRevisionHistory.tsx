@@ -33,8 +33,8 @@ const EDIT_TYPE_LABELS: Record<string, string> = {
 const EDIT_TYPE_BG: Record<string, string> = {
   created: 'bg-[#EAF9B8] text-[#0A0A0A]',
   updated: 'bg-[#FAFAFA] text-[#0A0A0A]',
-  deleted: 'bg-red-100 text-red-700',
-  reverted: 'bg-amber-100 text-amber-800',
+  deleted: 'bg-[#FEF2F2] text-[#991B1B]',
+  reverted: 'bg-[#FFFBEB] text-[#92400E]',
 };
 
 function formatDate(iso: string): string {
@@ -141,7 +141,7 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
         </div>
 
         {error && (
-          <div className="m-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">{error}</div>
+          <div className="m-4 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3 text-xs font-semibold text-[#991B1B]">{error}</div>
         )}
 
         {loading ? (

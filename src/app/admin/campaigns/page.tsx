@@ -136,7 +136,7 @@ function AdminCampaignsBody() {
                     <p className="pulse-eyebrow text-[#737373]">
                       {PLACEMENT_LABEL[c.placement][isTr ? 'tr' : 'en']} · {c.count}
                     </p>
-                    <h3 className="mt-1 text-[16px] font-semibold text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+                    <h3 className="mt-1 text-[16px] font-semibold text-[#0A0A0A]">
                       {c.name}
                     </h3>
                     {c.restaurantName && <p className="mt-0.5 text-[12px] text-[#737373]">{c.restaurantName}</p>}

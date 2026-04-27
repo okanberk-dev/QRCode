@@ -418,7 +418,7 @@ export default function AdminReviewsPage() {
                   <p className="pulse-eyebrow text-[#737373]">
                     {active.restaurant?.name || (isTr ? 'İşletme' : 'Location')} · {timeAgo(active.createdAt, isTr)}
                   </p>
-                  <h2 className="mt-0.5 text-[20px] font-semibold text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+                  <h2 className="mt-0.5 text-[20px] font-semibold text-[#0A0A0A]">
                     {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
                   </h2>
                   <div className="mt-1 flex flex-wrap items-center gap-2">

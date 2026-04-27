@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, Mail, Plus, ShieldCheck, Users as UsersIcon } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, Modal } from '@/components/ui';
 
 interface TeamMember {
   id: string;
@@ -24,7 +24,7 @@ const ROLE_STYLE: Record<TeamMember['role'], { tr: string; en: string; cls: stri
 const STATUS_STYLE: Record<TeamMember['status'], { tr: string; en: string; cls: string }> = {
   active: { tr: 'AKTİF', en: 'ACTIVE', cls: 'bg-[#EAF9B8] text-[#0A0A0A]' },
   invited: { tr: 'DAVET EDİLDİ', en: 'INVITED', cls: 'bg-[#F5F5F5] text-[#737373]' },
-  revoked: { tr: 'İPTAL', en: 'REVOKED', cls: 'bg-red-50 text-red-700' },
+  revoked: { tr: 'İPTAL', en: 'REVOKED', cls: 'bg-[#FEF2F2] text-[#991B1B]' },
 };
 
 export default function AdminTeamPage() {
@@ -181,56 +181,57 @@ function AdminTeamBody() {
       )}
 
       {showInvite && (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={() => setShowInvite(false)}>
-          <div className="w-full max-w-md rounded-t-2xl border border-[#EDEDED] bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-2xl sm:pb-5" onClick={(e) => e.stopPropagation()}>
+        <Modal
+          size={440}
+          onClose={() => setShowInvite(false)}
+          title={
             <div className="flex items-center gap-2">
               <Mail size={18} className="text-[#0A0A0A]" />
-              <h3 className="text-[18px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
-                {isTr ? 'Yeni üye davet et' : 'Invite new member'}
-              </h3>
+              <span>{isTr ? 'Yeni üye davet et' : 'Invite new member'}</span>
             </div>
-            <div className="mt-4 space-y-3">
-              <label className="block">
-                <span className="pulse-eyebrow text-[#737373]">{isTr ? 'E-POSTA' : 'EMAIL'}</span>
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="name@company.com"
-                  className="mt-1 w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]"
-                />
-              </label>
-              <label className="block">
-                <span className="pulse-eyebrow text-[#737373]">{isTr ? 'ROL' : 'ROLE'}</span>
-                <select
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value as TeamMember['role'])}
-                  className="mt-1 w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]"
-                >
-                  <option value="manager">{isTr ? 'Yönetici' : 'Manager'}</option>
-                  <option value="staff">{isTr ? 'Personel' : 'Staff'}</option>
-                  <option value="owner">{isTr ? 'Sahip' : 'Owner'}</option>
-                </select>
-              </label>
-            </div>
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setShowInvite(false)}
-                className="rounded-lg border border-[#EDEDED] bg-white px-4 py-2 text-[12px] font-medium text-[#525252] hover:bg-[#F5F5F5]"
+          }
+        >
+          <div className="space-y-3">
+            <label className="block">
+              <span className="pulse-eyebrow text-[#737373]">{isTr ? 'E-POSTA' : 'EMAIL'}</span>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="name@company.com"
+                className="mt-1 w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]"
+              />
+            </label>
+            <label className="block">
+              <span className="pulse-eyebrow text-[#737373]">{isTr ? 'ROL' : 'ROLE'}</span>
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value as TeamMember['role'])}
+                className="mt-1 w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]"
               >
-                {isTr ? 'İptal' : 'Cancel'}
-              </button>
-              <button
-                onClick={onInvite}
-                disabled={sending || !inviteEmail.trim()}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-40"
-              >
-                {sending ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
-                {isTr ? 'Davet gönder' : 'Send invite'}
-              </button>
-            </div>
+                <option value="manager">{isTr ? 'Yönetici' : 'Manager'}</option>
+                <option value="staff">{isTr ? 'Personel' : 'Staff'}</option>
+                <option value="owner">{isTr ? 'Sahip' : 'Owner'}</option>
+              </select>
+            </label>
           </div>
-        </div>
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button
+              onClick={() => setShowInvite(false)}
+              className="rounded-lg border border-[#EDEDED] bg-white px-4 py-2 text-[12px] font-medium text-[#525252] hover:bg-[#F5F5F5]"
+            >
+              {isTr ? 'İptal' : 'Cancel'}
+            </button>
+            <button
+              onClick={onInvite}
+              disabled={sending || !inviteEmail.trim()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-40"
+            >
+              {sending ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
+              {isTr ? 'Davet gönder' : 'Send invite'}
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   );

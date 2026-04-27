@@ -320,8 +320,7 @@ export default function DashboardRestaurantsPage() {
                       <div key={x.l} className="min-w-0">
                         <div className="pulse-eyebrow text-[#737373]">{x.l}</div>
                         <div
-                          className={`mt-1.5 text-[16px] sm:text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] truncate ${x.mono ? 'font-mono text-[13px] sm:text-[13px]' : ''}`}
-                          style={{ fontFamily: x.mono ? 'var(--font-mono)' : 'var(--font-heading)' }}
+                          className={`mt-1.5 text-[16px] sm:text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] truncate ${x.mono ? 'font-mono text-[13px] sm:text-[13px]' : 'font-heading'}`}
                         >
                           {x.v}
                           {x.star && <span className="text-[#C6F24E] ml-1 text-[12px]"> ★</span>}

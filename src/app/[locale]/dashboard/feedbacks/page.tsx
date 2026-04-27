@@ -390,8 +390,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span
-                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${avatarBg}`}
-                            style={{ fontFamily: 'var(--font-heading)' }}
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-heading text-[10px] font-semibold ${avatarBg}`}
                           >
                             {initials(r.customerName)}
                           </span>

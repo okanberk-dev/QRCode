@@ -378,10 +378,7 @@ export default function AdminAnnouncementsPage() {
                 {editing ? <Pencil size={18} className="text-[#0A0A0A]" strokeWidth={2} /> : <Plus size={18} className="text-[#0A0A0A]" strokeWidth={2} />}
               </div>
               <div className="min-w-0">
-                <h2
-                  className="text-[18px] font-medium tracking-[-0.015em] text-[#0A0A0A] truncate"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
+                <h2 className="text-[18px] font-medium tracking-[-0.015em] text-[#0A0A0A] truncate">
                   {editing ? 'Duyuruyu düzenle' : 'Yeni duyuru'}
                 </h2>
                 <p className="pulse-eyebrow text-[#737373] mt-0.5">

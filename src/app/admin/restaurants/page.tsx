@@ -398,7 +398,7 @@ export default function RestaurantsPage() {
           title={
             <div>
               <p className="pulse-eyebrow text-[#737373]">Yeni Kayıt</p>
-              <h2 className="mt-1 text-[22px] font-medium tracking-[-0.015em] text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+              <h2 className="mt-1 text-[22px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
                 İşletme Ekle
               </h2>
               <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">

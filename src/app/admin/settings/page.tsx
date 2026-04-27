@@ -212,7 +212,7 @@ function Placeholder({
         <Icon size={20} strokeWidth={2} />
       </div>
       <div>
-        <h2 className="text-[20px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+        <h2 className="text-[20px] font-medium text-[#0A0A0A]">
           {title}
         </h2>
         <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-[#525252]">{body}</p>
@@ -240,7 +240,7 @@ function AccountPanel({ isTr }: { isTr: boolean }) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-[20px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+        <h2 className="text-[20px] font-medium text-[#0A0A0A]">
           {isTr ? 'Hesap' : 'Account'}
         </h2>
         <p className="mt-1 text-[13px] text-[#525252]">

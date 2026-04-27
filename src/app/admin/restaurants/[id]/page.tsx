@@ -733,7 +733,7 @@ function Metric({ icon, label, value }: { icon: ReactNode; label: string; value:
         {icon}
         <p className="pulse-eyebrow">{label}</p>
       </div>
-      <p className="mt-2 text-[22px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+      <p className="mt-2 font-heading text-[22px] font-medium text-[#0A0A0A]">
         {value}
       </p>
     </div>

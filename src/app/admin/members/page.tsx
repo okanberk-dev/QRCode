@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, X, Check, AlertTriangle, Crown, RefreshCw, Store, ToggleLeft, ToggleRight } from 'lucide-react';
-import { AlertBanner, Badge, type BadgeKind, PageHeader } from '@/components/ui';
+import { Loader2, Check, AlertTriangle, Crown, RefreshCw, Store, ToggleLeft, ToggleRight } from 'lucide-react';
+import { AlertBanner, Badge, type BadgeKind, Modal, PageHeader } from '@/components/ui';
 
 interface Member {
   id: string;
@@ -225,99 +225,96 @@ export default function MembersPage() {
 
       {/* Edit Modal */}
       {editingMember && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-md max-h-[92dvh] overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:pb-0">
-            <div className="p-6 border-b border-[#EDEDED] flex items-center justify-between">
+        <Modal
+          size={440}
+          onClose={() => setEditingMember(null)}
+          title={
+            <div>
+              <p className="pulse-eyebrow text-[#737373]">Düzenle</p>
+              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+                İşletme sahibini düzenle
+              </h2>
+              <p className="mt-1 text-[12px] text-[#525252]">{editingMember.email}</p>
+            </div>
+          }
+        >
+          <div className="space-y-6">
+            {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+
+            {/* Plan */}
+            <div className="space-y-2">
+              <label className="pulse-eyebrow text-[#737373]">Plan</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['trial', 'monthly', 'yearly', 'free'] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setEditPlan(p)}
+                    className={`py-3 rounded-xl border pulse-eyebrow transition-all ${
+                      editPlan === p
+                        ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+                        : 'bg-white text-[#525252] border-[#EDEDED] hover:border-[#0A0A0A]'
+                    }`}
+                  >
+                    {PLAN_BADGE[p]?.label.toUpperCase() || p.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Trial End Date */}
+            {editPlan === 'trial' && (
+              <div className="space-y-2">
+                <label className="pulse-eyebrow text-[#737373]">Deneme bitiş tarihi</label>
+                <input
+                  type="date"
+                  value={editTrialEndsAt}
+                  onChange={(e) => setEditTrialEndsAt(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-[#EDEDED] bg-white focus:ring-2 focus:ring-[#C6F24E] focus:border-[#0A0A0A] outline-none text-[13px]"
+                />
+              </div>
+            )}
+
+            {/* Active toggle */}
+            <div className="flex items-center justify-between p-4 bg-[#FAFAFA] rounded-2xl border border-[#EDEDED]">
               <div>
-                <h2 className="text-xl font-semibold text-[#0A0A0A] uppercase tracking-tight">İşletme Sahibini Düzenle</h2>
-                <p className="text-xs text-[#1A1A1A] font-bold mt-1">{editingMember.email}</p>
+                <p className="text-[13px] font-medium text-[#0A0A0A]">Hesap durumu</p>
+                <p className="text-[11px] text-[#737373] mt-0.5">{editIsActive ? 'Kullanıcı sisteme girebilir.' : 'Kullanıcı erişimi engellendi.'}</p>
               </div>
               <button
-                onClick={() => setEditingMember(null)}
-                className="p-2 text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#EDEDED] rounded-xl transition-all"
+                type="button"
+                onClick={() => setEditIsActive((v) => !v)}
+                aria-pressed={editIsActive}
+                aria-label={editIsActive ? 'Aktif - tıklayarak devre dışı bırak' : 'Devre dışı - tıklayarak etkinleştir'}
+                className={`transition-all duration-200 active:scale-95 ${editIsActive ? 'text-[#A8D62E] hover:text-[#0A0A0A]' : 'text-[#737373] hover:text-[#0A0A0A]'}`}
               >
-                <X size={20} strokeWidth={2} />
+                {editIsActive
+                  ? <ToggleRight size={36} strokeWidth={1.5} />
+                  : <ToggleLeft size={36} strokeWidth={1.5} />}
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
-              {error && <AlertBanner kind="danger">{error}</AlertBanner>}
-
-              {/* Plan */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Plan</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['trial', 'monthly', 'yearly', 'free'] as const).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setEditPlan(p)}
-                      className={`py-3 rounded-xl border-2 pulse-eyebrow transition-all ${
-                        editPlan === p
-                          ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                          : 'bg-white text-[#1A1A1A] border-[#EDEDED] hover:border-[#6B7280]'
-                      }`}
-                    >
-                      {PLAN_BADGE[p]?.label.toUpperCase() || p.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Trial End Date */}
-              {editPlan === 'trial' && (
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Deneme Bitiş Tarihi</label>
-                  <input
-                    type="date"
-                    value={editTrialEndsAt}
-                    onChange={(e) => setEditTrialEndsAt(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-bold"
-                  />
-                </div>
-              )}
-
-              {/* Active toggle */}
-              <div className="flex items-center justify-between p-4 bg-[#FFFFFF] rounded-2xl border border-[#EDEDED]">
-                <div>
-                  <p className="text-sm font-semibold text-[#0A0A0A]">Hesap Durumu</p>
-                  <p className="text-xs font-bold text-[#1A1A1A] mt-0.5">{editIsActive ? 'Kullanıcı sisteme girebilir.' : 'Kullanıcı erişimi engellendi.'}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setEditIsActive((v) => !v)}
-                  aria-pressed={editIsActive}
-                  aria-label={editIsActive ? 'Aktif - tıklayarak devre dışı bırak' : 'Devre dışı - tıklayarak etkinleştir'}
-                  className={`transition-all duration-200 active:scale-95 ${editIsActive ? 'text-[#A8D62E] hover:text-[#8CB81E]' : 'text-[#6B7280] hover:text-[#0A0A0A]'}`}
-                >
-                  {editIsActive
-                    ? <ToggleRight size={36} strokeWidth={1.5} />
-                    : <ToggleLeft size={36} strokeWidth={1.5} />}
-                </button>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingMember(null)}
-                  className="flex-1 py-3 rounded-xl border border-[#EDEDED] text-sm font-semibold text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
-                >
-                  İPTAL
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex-1 py-3 rounded-xl bg-[#0A0A0A] text-white text-sm font-semibold hover:bg-[#1A1A1A] disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
-                >
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2} />}
-                  KAYDET
-                </button>
-              </div>
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setEditingMember(null)}
+                className="flex-1 py-3 rounded-full border border-[#EDEDED] text-[13px] font-medium text-[#525252] hover:bg-[#FAFAFA] transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 py-3 rounded-full bg-[#0A0A0A] text-white text-[13px] font-semibold hover:bg-[#1A1A1A] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              >
+                {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2} />}
+                Kaydet
+              </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

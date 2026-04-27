@@ -90,10 +90,7 @@ export default function AdminCampaignsPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <p className="pulse-eyebrow text-[#737373]">PANEL / BÜLTEN</p>
-            <h1
-              className="mt-1 flex items-center gap-3 text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
+            <h1 className="mt-1 flex items-center gap-3 text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]">
               <Mail size={22} strokeWidth={2} />
               Bülten Kampanyaları
             </h1>
