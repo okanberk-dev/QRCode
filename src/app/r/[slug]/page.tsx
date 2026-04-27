@@ -2,17 +2,7 @@
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
-import Link from 'next/link';
-import {
-  Star,
-  ArrowRight,
-  ArrowUpRight,
-  Check,
-  X,
-  ShieldCheck,
-  Mail,
-  Loader2,
-} from 'lucide-react';
+import { Star, ArrowRight, Check, X, ShieldCheck, Mail, Loader2 } from 'lucide-react';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
@@ -83,7 +73,6 @@ function ReviewContent() {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [comment, setComment] = useState('');
   // KVKK işareti default true — submit-gate olarak işlev görür ("kullanıcı
   // formu submitliyorsa veri işleme rızası action implies consent doktrinine
@@ -154,64 +143,71 @@ function ReviewContent() {
   const targetPlatformUrl = platformUrls[platformParam] || googleUrl;
   const fallbackPlatformId = platformParam in platformUrls ? platformParam : 'google';
 
-  const isHigh = rating >= 4;
   const isLow = rating > 0 && rating <= 3;
   const visibleRating = hover || rating;
   const labels = RATING_LABELS[locale] ?? RATING_LABELS.tr;
 
+  // High-rating handler factored out so it can be triggered both from a
+  // direct star tap (4-5 → instant redirect, design 1:1) and defensively from
+  // the "Devam et" button. Accepts the selected rating explicitly so it works
+  // before React state has flushed.
+  const triggerHighRedirect = (selectedRating: number) => {
+    // Log the high rating (fire-and-forget) — preserves analytics & redirect attribution
+    try {
+      fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: selectedRating,
+          source: sourceParam,
+          branch: restaurant.name,
+          tableNumber: tableParam,
+          comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT,
+          restaurantSlug: slug,
+          platform: platformParam || null,
+        }),
+      });
+    } catch (e) {
+      console.error('Failed to log high rating', e);
+    }
+
+    if (targetPlatformUrl) {
+      setRedirecting({ url: targetPlatformUrl, platformId: fallbackPlatformId });
+      setTimeout(() => {
+        window.location.href = targetPlatformUrl;
+      }, 2200);
+      return;
+    }
+    // No platform URL configured — drop straight to thanks
+    setStep(3);
+  };
+
   const handleStarClick = (star: number) => {
     setRating(star);
+    // 4-5 yıldız tap → tasarım UX'i: doğrudan platforma yönlendir, "Devam et"
+    // gerekmez. 200ms delay yıldız fill animasyonunu görmek için.
+    if (star >= 4 && !redirecting) {
+      setTimeout(() => triggerHighRedirect(star), 200);
+    }
   };
 
   const handleContinue = async () => {
     if (rating === 0) return;
-
-    if (isHigh) {
-      // Log the high rating (fire-and-forget) — preserves analytics & redirect attribution
-      try {
-        fetch('/api/feedback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            rating,
-            source: sourceParam,
-            branch: restaurant.name,
-            tableNumber: tableParam,
-            comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT,
-            restaurantSlug: slug,
-            platform: platformParam || null,
-          }),
-        });
-      } catch (e) {
-        console.error('Failed to log high rating', e);
-      }
-
-      if (targetPlatformUrl) {
-        setRedirecting({ url: targetPlatformUrl, platformId: fallbackPlatformId });
-        setTimeout(() => {
-          window.location.href = targetPlatformUrl;
-        }, 2200);
-        return;
-      }
-      // No platform URL configured — drop straight to thanks
-      setStep(3);
+    if (rating >= 4) {
+      // Defensive — star tap handler should have triggered this already.
+      if (!redirecting) triggerHighRedirect(rating);
       return;
     }
-
     setStep(2);
   };
 
   const handleLowSubmit = async () => {
     if (!comment.trim()) {
-      setError(t('feedback_error_comment'));
-      return;
-    }
-    if (!name.trim()) {
-      setError(t('feedback_error_name'));
-      return;
-    }
-    if (!phone.trim() && !email.trim()) {
-      setError(t('feedback_error_contact'));
+      setError(
+        locale === 'tr'
+          ? 'Lütfen deneyimini birkaç cümleyle anlat.'
+          : 'Please describe your experience in a few words.',
+      );
       return;
     }
     if (!kvkk) {
@@ -228,7 +224,7 @@ function ReviewContent() {
         body: JSON.stringify({
           name: name.trim() || null,
           email: email.trim() || null,
-          phone: phone.trim() || null,
+          phone: null,
           comment: comment.trim(),
           hasKvkkConsent: kvkk,
           hasMarketingConsent: marketing,
@@ -269,15 +265,23 @@ function ReviewContent() {
         />
       )}
 
-      <div className="mx-auto flex min-h-[100dvh] max-w-[420px] flex-col px-6 pb-10 pt-8 sm:px-4">
-        {/* Brand header */}
-        <header className="mb-6 text-center sm:mb-8">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-[26px] font-bold text-[#0A0A0A] shadow-[0_8px_24px_rgba(0,0,0,0.35)]" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
+      <div className="mx-auto flex min-h-[100dvh] max-w-[360px] flex-col px-6 pb-10 pt-2">
+        {/* Brand header — design padding 32/0/28 */}
+        <header className="text-center" style={{ padding: '32px 0 28px' }}>
+          <div
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-[26px] font-bold text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
             {initial}
           </div>
-          <h1 className="mt-4 text-[22px] font-bold text-white" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>{restaurant.name}</h1>
+          <h1
+            className="text-[22px] font-bold text-white"
+            style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em', marginTop: 14 }}
+          >
+            {restaurant.name}
+          </h1>
           {restaurant.address && (
-            <p className="mt-1 text-[12px] text-white/55">{restaurant.address}</p>
+            <p className="text-[12px] text-white/55" style={{ marginTop: 4 }}>{restaurant.address}</p>
           )}
         </header>
 
@@ -300,7 +304,7 @@ function ReviewContent() {
                   : 'Your opinion matters. Just a few seconds.'}
               </p>
 
-              <div className="flex items-center justify-center gap-1.5 py-4">
+              <div className="flex items-center justify-center gap-1.5" style={{ padding: '16px 0' }}>
                 {[1, 2, 3, 4, 5].map((s) => {
                   const active = s <= visibleRating;
                   return (
@@ -316,22 +320,25 @@ function ReviewContent() {
                     >
                       <Star
                         size={42}
-                        strokeWidth={1.5}
-                        className={
-                          active
-                            ? 'fill-[#C6F24E] text-[#C6F24E]'
-                            : 'fill-transparent text-[#E5E5E5]'
-                        }
+                        strokeWidth={0}
+                        fill={active ? '#C6F24E' : '#E5E5E5'}
+                        className={active ? 'text-[#C6F24E]' : 'text-[#E5E5E5]'}
                       />
                     </button>
                   );
                 })}
               </div>
 
-              <div className="mb-4 min-h-[20px] text-center text-[13px] text-[#525252]">
-                {visibleRating > 0 ? labels[visibleRating - 1] : ''}
-              </div>
+              {/* Rating label — design 1:1: yalnızca rating > 0 iken render edilir */}
+              {visibleRating > 0 && (
+                <div className="bz-fade-in mb-4 text-center text-[13px] text-[#525252]" style={{ minHeight: 20 }}>
+                  {labels[visibleRating - 1]}
+                </div>
+              )}
 
+              {/* Devam et: 1-3 yıldız akışı için. 4-5 yıldız tap doğrudan
+                  redirect'i tetikler; bu buton onlar için redundant ama
+                  tasarımda görünür kalıyor (aria-disabled rating === 0). */}
               <button
                 type="button"
                 onClick={handleContinue}
@@ -344,81 +351,28 @@ function ReviewContent() {
             </div>
           )}
 
-          {step === 2 && isHigh && (
-            <div className="text-center">
-              <div className="mb-2 text-[48px] leading-none">🎉</div>
-              <h2 className="bz-h-tight-2 text-[22px]">
-                {locale === 'tr' ? 'Çok teşekkürler!' : 'Thank you so much!'}
-              </h2>
-              <p className="mx-auto mt-2 mb-4 max-w-[300px] text-[13px] leading-[1.6] text-[#525252]">
-                {locale === 'tr'
-                  ? "Yorumunu Google'da paylaşır mısın? Diğer müşterilerin de görmesi bizim için çok değerli."
-                  : 'Would you share your review on Google? It really helps other customers find us.'}
-              </p>
-              {googleUrl ? (
-                <a
-                  href={googleUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => {
-                    // If the user manually clicks Google, log the high rating
-                    try {
-                      fetch('/api/feedback', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          rating,
-                          source: sourceParam,
-                          branch: restaurant.name,
-                          tableNumber: tableParam,
-                          comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT,
-                          restaurantSlug: slug,
-                          platform: 'google',
-                        }),
-                      });
-                    } catch {}
-                  }}
-                  className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0A0A0A] px-4 py-4 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
-                >
-                  <PlatformChip id="google" size={20} />
-                  {locale === 'tr' ? "Google'da yorum bırak" : 'Review on Google'}
-                  <ArrowUpRight size={14} />
-                </a>
-              ) : (
-                <p className="rounded-xl bg-[#FAFAFA] px-4 py-3 text-[12px] text-[#737373]">
-                  {locale === 'tr'
-                    ? 'Yönlendirilebilecek bir platform bulunamadı.'
-                    : 'No platform link is available.'}
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={() => setStep(3)}
-                className="mt-3 cursor-pointer border-0 bg-transparent text-[12px] text-[#737373] hover:text-[#0A0A0A]"
-              >
-                {locale === 'tr' ? 'Belki sonra' : 'Maybe later'}
-              </button>
-            </div>
-          )}
+          {/* 4-5 yıldız "Çok teşekkürler" ara ekranı KASTEN kaldırıldı —
+              tasarım UX'ine göre yıldız tap'inde doğrudan platforma yönlendir.
+              triggerHighRedirect() bunu yapar; redirecting overlay görünür. */}
 
           {step === 2 && isLow && (
             <div>
               <span className="pulse-eyebrow text-[#737373]">
                 {locale === 'tr' ? '2. ADIM' : 'STEP 2'}
               </span>
-              <h2 className="bz-h-tight-2 mt-1.5 text-[20px]">
+              <h2 className="bz-h-tight-2 text-[20px]" style={{ marginTop: 6 }}>
                 {locale === 'tr' ? 'Bize biraz daha anlatır mısın?' : 'Tell us a little more'}
               </h2>
-              <p className="mt-2 mb-4 text-[12.5px] leading-[1.55] text-[#525252]">
+              <p className="text-[12.5px] leading-[1.55] text-[#525252]" style={{ margin: '8px 0 18px' }}>
                 {locale === 'tr'
-                  ? 'Geri bildirimin yalnızca işletme yönetimine iletilecek. Daha iyisini sunabilmemiz için yardım et.'
-                  : 'Your feedback goes directly to management — help us do better.'}
+                  ? 'Geri bildirimin yalnızca işletme yönetimine iletilecek.'
+                  : 'Your feedback goes directly to management.'}
               </p>
 
               <div className="flex flex-col gap-2.5">
                 <input
                   className="bz-input"
-                  placeholder={t('feedback_name_placeholder')}
+                  placeholder={locale === 'tr' ? 'Adın (opsiyonel)' : 'Your name (optional)'}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
@@ -426,18 +380,10 @@ function ReviewContent() {
                 <input
                   className="bz-input"
                   type="email"
-                  placeholder={t('feedback_email_placeholder')}
+                  placeholder={locale === 'tr' ? 'E-posta (opsiyonel)' : 'Email (optional)'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
-                />
-                <input
-                  className="bz-input"
-                  type="tel"
-                  placeholder={t('feedback_phone_placeholder')}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  autoComplete="tel"
                 />
                 <textarea
                   className="bz-input"
@@ -447,40 +393,54 @@ function ReviewContent() {
                   rows={4}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  style={{ resize: 'none' }}
+                  style={{ resize: 'none', fontFamily: 'inherit' }}
                 />
 
-                <ConsentRow
-                  checked={kvkk}
-                  onToggle={() => setKvkk((v) => !v)}
-                  required
-                  onOpenLegal={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowLegal('kvkk');
-                  }}
-                  label={
-                    locale === 'tr'
+                {/* KVKK + marketing onayları — design 1:1 sade <label> stili */}
+                <label
+                  className="flex gap-2 cursor-pointer"
+                  style={{ fontSize: 11.5, color: '#525252', lineHeight: 1.5, alignItems: 'flex-start' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={kvkk}
+                    onChange={(e) => setKvkk(e.target.checked)}
+                    style={{ marginTop: 2 }}
+                    aria-required="true"
+                  />
+                  <span>
+                    {locale === 'tr'
                       ? 'KVKK kapsamında verilerimin işletmeyle paylaşılmasını kabul ediyorum.'
-                      : 'I consent to sharing my data with the business under KVKK.'
-                  }
-                  legalLabel={locale === 'tr' ? 'Aydınlatma metnini oku' : 'Read the privacy notice'}
-                />
-                <ConsentRow
-                  checked={marketing}
-                  onToggle={() => setMarketing((v) => !v)}
-                  onOpenLegal={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowLegal('marketing');
-                  }}
-                  label={
-                    locale === 'tr'
+                      : 'I consent to sharing my data with the business under KVKK.'}{' '}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowLegal('kvkk');
+                      }}
+                      className="underline text-[#0A0A0A] hover:text-[#A8D62E]"
+                    >
+                      {locale === 'tr' ? 'Aydınlatma metni' : 'Privacy notice'}
+                    </button>
+                  </span>
+                </label>
+                <label
+                  className="flex gap-2 cursor-pointer"
+                  style={{ fontSize: 11.5, color: '#525252', lineHeight: 1.5, alignItems: 'flex-start' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={marketing}
+                    onChange={(e) => setMarketing(e.target.checked)}
+                    style={{ marginTop: 2 }}
+                  />
+                  <span>
+                    {locale === 'tr'
                       ? 'Kampanya ve duyurulardan haberdar olmak istiyorum (opsiyonel).'
-                      : "I'd like to receive promotions and announcements (optional)."
-                  }
-                  legalLabel={locale === 'tr' ? 'İletişim iznini oku' : 'Read marketing consent'}
-                />
+                      : "I'd like to receive promotions and announcements (optional)."}
+                  </span>
+                </label>
 
                 <input
                   type="text"
@@ -521,34 +481,34 @@ function ReviewContent() {
           )}
 
           {step === 3 && (
-            <div className="py-4 text-center">
+            <div className="bz-fade-in text-center" style={{ padding: '20px 0' }}>
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#C6F24E]">
                 <Check size={28} strokeWidth={3} className="text-[#0A0A0A]" />
               </div>
-              <h2 className="bz-h-tight-2 mt-4 text-[22px]">{t('feedback_thank_you')}</h2>
-              <p className="mx-auto mt-2 max-w-[280px] text-[13px] leading-[1.6] text-[#525252]">
+              <h2 className="bz-h-tight-2 text-[22px]" style={{ marginTop: 18 }}>
+                {locale === 'tr' ? 'Teşekkürler!' : 'Thank you!'}
+              </h2>
+              <p className="text-[13px] leading-[1.6] text-[#525252]" style={{ margin: '8px 0 0' }}>
                 {locale === 'tr'
-                  ? 'Geri bildirimin alındı. Tekrar görüşmek üzere.'
-                  : 'Your feedback has been received. See you soon.'}
+                  ? 'Geri bildirimin alındı.'
+                  : 'Your feedback has been received.'}
               </p>
             </div>
           )}
         </section>
 
-        {/* Buaze badge + legal links */}
-        <footer className="mt-auto pt-8 text-center">
-          <div className="flex items-center justify-center gap-4 text-[10px] text-white/40" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            <Link href={`/${locale}/privacy`} className="transition-colors hover:text-white/70">
-              {locale === 'tr' ? 'Gizlilik' : 'Privacy'}
-            </Link>
-            <span aria-hidden="true">·</span>
-            <Link href={`/${locale}/terms`} className="transition-colors hover:text-white/70">
-              {locale === 'tr' ? 'Kullanım' : 'Terms'}
-            </Link>
-          </div>
-          <div className="mt-3 text-[10px] text-white/40" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Powered by Buaze
-          </div>
+        {/* Buaze badge — design 1:1 sade tek satır */}
+        <footer
+          className="text-center text-white/40"
+          style={{
+            marginTop: 22,
+            fontSize: 10,
+            fontFamily: 'var(--font-mono)',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          POWERED BY BUAZE
         </footer>
       </div>
 
@@ -610,66 +570,6 @@ function RedirectingOverlay({
           }
         }
       `}</style>
-    </div>
-  );
-}
-
-function ConsentRow({
-  checked,
-  onToggle,
-  label,
-  legalLabel,
-  onOpenLegal,
-  required = false,
-}: {
-  checked: boolean;
-  onToggle: () => void;
-  label: string;
-  legalLabel: string;
-  onOpenLegal: (e: React.MouseEvent) => void;
-  required?: boolean;
-}) {
-  return (
-    <div
-      onClick={onToggle}
-      role="checkbox"
-      aria-checked={checked}
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === ' ' || e.key === 'Enter') {
-          e.preventDefault();
-          onToggle();
-        }
-      }}
-      className={`flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 text-[11.5px] leading-[1.5] text-[#525252] transition-colors focus:outline-none focus-visible:border-[#0A0A0A] ${
-        checked
-          ? 'border-[#C6F24E] bg-[#EAF9B8]/30'
-          : 'border-[#EDEDED] bg-white hover:border-[#D4D4D4]'
-      }`}
-    >
-      <span
-        aria-hidden="true"
-        className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors ${
-          checked ? 'border-[#0A0A0A] bg-[#0A0A0A]' : 'border-[#D4D4D4] bg-white'
-        }`}
-      >
-        {checked && <Check size={11} strokeWidth={3} className="text-white" />}
-      </span>
-      <span className="flex-1">
-        {required && (
-          <span className="mr-1 inline-block rounded bg-[#0A0A0A] px-1 py-[1px] align-middle text-[8px] font-semibold uppercase tracking-wider text-white">
-            *
-          </span>
-        )}
-        {label}{' '}
-        <button
-          type="button"
-          onClick={onOpenLegal}
-          className="font-medium text-[#0A0A0A] underline underline-offset-2 hover:text-[#525252]"
-        >
-          {legalLabel}
-        </button>
-      </span>
     </div>
   );
 }
