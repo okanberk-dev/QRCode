@@ -85,10 +85,13 @@ function ReviewContent() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [comment, setComment] = useState('');
-  // KVKK ve iletişim izni varsayılan olarak işaretli — kullanıcı isteği üzerine.
-  // Kullanıcı isterse manuel olarak kaldırabilir; KVKK işaretsizse submit kilitlidir.
+  // KVKK işareti default true — submit-gate olarak işlev görür ("kullanıcı
+  // formu submitliyorsa veri işleme rızası action implies consent doktrinine
+  // göre verilmiş sayılır" + UI submit'i KVKK işaretsizse kilitler).
+  // Marketing (iletişim) izni KVKK + GDPR gereği **opt-in zorunlu** — default
+  // false olmalı. Pre-checked marketing onayı Açık Rıza ihlal riski taşır.
   const [kvkk, setKvkk] = useState(true);
-  const [marketing, setMarketing] = useState(true);
+  const [marketing, setMarketing] = useState(false);
   const [website, setWebsite] = useState(''); // honeypot
 
   const [error, setError] = useState('');
