@@ -79,8 +79,10 @@ function ReviewContent() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [comment, setComment] = useState('');
-  const [kvkk, setKvkk] = useState(false);
-  const [marketing, setMarketing] = useState(false);
+  // KVKK ve iletişim izni varsayılan olarak işaretli — kullanıcı isteği üzerine.
+  // Kullanıcı isterse manuel olarak kaldırabilir; KVKK işaretsizse submit kilitlidir.
+  const [kvkk, setKvkk] = useState(true);
+  const [marketing, setMarketing] = useState(true);
   const [website, setWebsite] = useState(''); // honeypot
 
   const [error, setError] = useState('');
