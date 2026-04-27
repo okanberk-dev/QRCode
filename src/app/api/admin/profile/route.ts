@@ -25,9 +25,11 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    // Check if actor is AdminUser
+    // Check if actor is AdminUser. Explicit select keeps this resilient
+    // to schema/DB drift on unrelated columns (CLAUDE.md §14.1).
     const adminUser = await prisma.adminUser.findUnique({
-      where: { id: actor.id }
+      where: { id: actor.id },
+      select: { passwordHash: true },
     });
 
     if (!adminUser) {

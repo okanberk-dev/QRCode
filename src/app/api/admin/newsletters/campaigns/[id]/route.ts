@@ -14,7 +14,26 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
   const { id } = await params;
-  const campaign = await prisma.newsletterCampaign.findUnique({ where: { id } });
+  // Explicit select — drift-resilient (CLAUDE.md §14.1). Admin campaign
+  // detail page consumes every field; pinning them future-proofs against
+  // schema columns added before `prisma db push` runs in deploy.
+  const campaign = await prisma.newsletterCampaign.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      title: true,
+      intro: true,
+      postIds: true,
+      locale: true,
+      status: true,
+      scheduledAt: true,
+      sentAt: true,
+      sentCount: true,
+      failedCount: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
   if (!campaign) return ApiErrors.notFound();
 
   return NextResponse.json({ campaign });
@@ -26,7 +45,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
   const { id } = await params;
-  const existing = await prisma.newsletterCampaign.findUnique({ where: { id } });
+  // Status check only — minimal select (CLAUDE.md §14.1).
+  const existing = await prisma.newsletterCampaign.findUnique({
+    where: { id },
+    select: { status: true },
+  });
   if (!existing) return ApiErrors.notFound();
   // Sent campaigns are immutable — preserve a faithful audit log of what
   // was actually delivered. Scheduled/draft can still be edited until they
@@ -61,7 +84,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
   const { id } = await params;
-  const existing = await prisma.newsletterCampaign.findUnique({ where: { id } });
+  // Status check only — minimal select (CLAUDE.md §14.1).
+  const existing = await prisma.newsletterCampaign.findUnique({
+    where: { id },
+    select: { status: true },
+  });
   if (!existing) return ApiErrors.notFound();
   // Only drafts can be deleted. Scheduled campaigns must be downgraded to
   // draft first (intentional friction so a misclick doesn\'t purge an

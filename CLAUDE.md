@@ -458,6 +458,21 @@ Tüm cron'lar `Authorization: Bearer ${CRON_SECRET}` zorunlu; Vercel Cron config
 
 Her deploy'da schema sync edilir → `P2022 column does not exist` hatası oluşmaz (daha önce `/api/restaurants` 500 bug'ına sebep olmuştu).
 
+**Defensive coding kuralı (Faz 6 sweep, 2026-04):** `prisma.X.findUnique({ where: ... })` çağrılarına **her zaman explicit `select`** ekle. Prisma'da select'siz findUnique tüm sütunları çeker; schema'da olup henüz DB'ye sync olmamış bir sütun (deploy race, manual SQL, preview env, dev branch) varsa `P2022` ile 500 atar. Explicit select ilgisiz sütunları sorgudan çıkardığı için drift'e bağışıklık sağlar.
+
+**Faz 6'da süpürülen 11 callsite (8 dosya):**
+- `admin/profile` (PUT) — `select: { passwordHash }`
+- `admin/users` POST içi tx — 2 existence check, `select: { id }`
+- `admin/blog/[id]` GET — tam alan listesi (admin edit form full read)
+- `admin/mail-templates/[key]/[locale]` GET — tam alan listesi
+- `admin/mail-templates/.../revisions/[id]/revert` — `{ templateKey, locale, content }`
+- `admin/newsletters/campaigns/[id]` — GET tam alanlar; PATCH ve DELETE `{ status }` only
+- `admin/login` — hotfix migration `{ id }`; auth fetch `{ id, passwordHash, role, restaurantId }`
+
+Public path (`/api/restaurants?slug=`) zaten Faz 1'de süpürüldü (PR #118). Sweep'in dışında kalan callsite: `prisma.X.create()` — INSERT yolu zaten o anda schema↔DB ile yazıyor, SELECT-only drift senaryosu uygulanmaz.
+
+**Yeni route eklerken:** `findUnique`'e `select: { ... }` ekle. Sonradan field eklersen `select`'i de güncelle. Lint kuralı bunu zorlamıyor; code review checklist.
+
 **Zorunlu Vercel env var'ları:**
 - `DATABASE_URL` — Supabase pooler (port 6543)
 - `DIRECT_URL` — Supabase direct connection (port 5432) — `prisma db push` bunu kullanır. **Yoksa build fail eder.**

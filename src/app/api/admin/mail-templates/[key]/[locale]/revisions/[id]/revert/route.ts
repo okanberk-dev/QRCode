@@ -46,6 +46,9 @@ export async function POST(
 
   const revision = await prisma.mailTemplateRevision.findUnique({
     where: { id: revisionId },
+    // Explicit select — drift-resilient (CLAUDE.md §14.1). Only the
+    // three fields below are read downstream.
+    select: { templateKey: true, locale: true, content: true },
   });
   if (!revision) {
     return NextResponse.json({ error: 'revision_not_found' }, { status: 404 });

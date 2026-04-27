@@ -57,7 +57,11 @@ export async function POST(req: NextRequest) {
     // Only AdminUser accounts can authenticate to /admin.
     // HOTFIX: Migrate old 'admin' row to 'oknbrk' automatically
     try {
-      const existing = await prisma.adminUser.findUnique({ where: { username: 'admin' } });
+      // Hotfix migration — only `id` is read downstream (CLAUDE.md §14.1).
+      const existing = await prisma.adminUser.findUnique({
+        where: { username: 'admin' },
+        select: { id: true },
+      });
       if (existing) {
         await prisma.adminUser.update({ where: { id: existing.id }, data: { username: 'oknbrk' } });
       }
@@ -78,8 +82,18 @@ export async function POST(req: NextRequest) {
 
     let admin = null;
     try {
+      // Auth path — explicit select keeps login resilient to schema drift
+      // on unrelated columns (CLAUDE.md §14.1). Pinned fields are exactly
+      // those consumed downstream: passwordHash for bcrypt, id/role/
+      // restaurantId for the JWT payload.
       admin = await prisma.adminUser.findUnique({
-        where: { username: normalizedUsername }
+        where: { username: normalizedUsername },
+        select: {
+          id: true,
+          passwordHash: true,
+          role: true,
+          restaurantId: true,
+        },
       });
     } catch (dbError) {
       console.error("Database check failed, using fallback:", dbError);

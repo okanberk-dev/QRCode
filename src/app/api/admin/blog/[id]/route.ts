@@ -22,7 +22,27 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   try {
     const { id } = await params;
-    const post = await prisma.blogPost.findUnique({ where: { id } });
+    // Explicit select — admin blog edit form consumes every field, but
+    // pinning them keeps this route resilient to schema/DB drift on
+    // unrelated columns added in future migrations (CLAUDE.md §14.1).
+    const post = await prisma.blogPost.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        slug: true,
+        locale: true,
+        title: true,
+        description: true,
+        content: true,
+        date: true,
+        readTime: true,
+        author: true,
+        coverImage: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
     if (!post) {
       return ApiErrors.notFound('Blog yazısı bulunamadı');
     }

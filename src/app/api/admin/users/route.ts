@@ -84,7 +84,12 @@ export async function POST(req: NextRequest) {
 
     try {
       const newUser = await prisma.$transaction(async (tx) => {
-        const existingUser = await tx.adminUser.findUnique({ where: { username } });
+        // Existence check only — minimal select keeps this resilient to
+        // schema/DB drift (CLAUDE.md §14.1).
+        const existingUser = await tx.adminUser.findUnique({
+          where: { username },
+          select: { id: true },
+        });
         if (existingUser) {
           throw Object.assign(new Error('USERNAME_TAKEN'), { apiCode: 'USERNAME_TAKEN' });
         }
@@ -102,7 +107,10 @@ export async function POST(req: NextRequest) {
           });
           finalRestaurantId = rest.id;
         } else if (restaurantId) {
-          const rest = await tx.restaurant.findUnique({ where: { id: restaurantId } });
+          const rest = await tx.restaurant.findUnique({
+            where: { id: restaurantId },
+            select: { id: true },
+          });
           if (!rest) {
             throw Object.assign(new Error('INVALID_RESTAURANT'), { apiCode: 'INVALID_RESTAURANT' });
           }
