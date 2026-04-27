@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Loader2, Store, User, ShieldCheck, Search } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
-import { AlertBanner, Badge, Modal, PageHeader, TableSkeleton } from '@/components/ui';
+import { AlertBanner, Badge, Modal, PageHeader, TableSkeleton, useConfirmDialog } from '@/components/ui';
 
 interface User {
   id: string;
@@ -30,6 +30,7 @@ export default function UsersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [pageNotice, setPageNotice] = useState<string | null>(null);
+  const [confirmDialog, askConfirm] = useConfirmDialog();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -168,9 +169,7 @@ export default function UsersPage() {
     setIsSubmitting(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bu yöneticiyi silmek istediğinize emin misiniz?')) return;
-    
+  const doDelete = async (id: string) => {
     try {
       const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
       const data = await res.json();
@@ -183,6 +182,17 @@ export default function UsersPage() {
       console.error(e);
       setPageNotice('Bağlantı hatası oluştu, lütfen tekrar deneyin.');
     }
+  };
+
+  const handleDelete = (id: string) => {
+    askConfirm({
+      title: 'Yöneticiyi sil?',
+      body: 'Bu yöneticinin erişimi geri alınamaz şekilde kapatılacak.',
+      confirmLabel: 'Sil',
+      cancelLabel: 'İptal',
+      variant: 'danger',
+      onConfirm: () => doDelete(id),
+    });
   };
 
   if (loading && users.length === 0) {
@@ -284,14 +294,14 @@ export default function UsersPage() {
                     <div className="flex items-center justify-end gap-2 sm:gap-3">
                       <button
                         onClick={() => handleEdit(user)}
-                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-[#0A0A0A] bg-white border border-[#EDEDED] rounded-xl hover:bg-[#C6F24E] active:translate-y-1 active:shadow-none transition-all"
+                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-[#0A0A0A] bg-white border border-[#EDEDED] rounded-xl hover:bg-[#C6F24E] active:translate-y-1 active:shadow-none transition-all"
                         title="Düzenle"
                       >
                         <Plus className="rotate-45" size={18} strokeWidth={2} />
                       </button>
                       <button
                         onClick={() => handleDelete(user.id)}
-                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#ef4444] border border-[#EDEDED] rounded-xl hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
+                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#ef4444] border border-[#EDEDED] rounded-xl hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
                         title="Sil"
                       >
                         <Trash2 size={18} strokeWidth={2} />
@@ -457,6 +467,7 @@ export default function UsersPage() {
             </form>
         </Modal>
       )}
+      {confirmDialog}
     </div>
   );
 }

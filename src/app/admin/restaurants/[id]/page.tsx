@@ -6,7 +6,7 @@ import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, 
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner } from '@/components/ui';
+import { AlertBanner, useConfirmDialog } from '@/components/ui';
 
 interface Owner {
   id: string;
@@ -38,6 +38,7 @@ export default function RestaurantDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [confirmDialog, askConfirm] = useConfirmDialog();
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -191,8 +192,18 @@ export default function RestaurantDetailPage() {
     setMenuSaving(null);
   };
 
-  const handleDelete = async () => {
-    if (!confirm('DİKKAT: Bu işletme kalıcı olarak silinecek ve geri alınamayacaktır. QR, yorum, menü ve analitik verileri de silinir. Onaylıyor musunuz?')) return;
+  const handleDelete = () => {
+    askConfirm({
+      title: 'İşletmeyi kalıcı olarak sil?',
+      body: 'DİKKAT: Bu işletme kalıcı olarak silinecek ve geri alınamayacak. QR, yorum, menü ve analitik verileri de silinir.',
+      confirmLabel: 'Kalıcı sil',
+      cancelLabel: 'İptal',
+      variant: 'danger',
+      onConfirm: doDelete,
+    });
+  };
+
+  const doDelete = async () => {
     setDeleting(true);
     try {
       await fetch(`/api/restaurants/${id}`, { method: 'DELETE' });
@@ -701,6 +712,7 @@ export default function RestaurantDetailPage() {
           </div>
         </div>
       </form>
+      {confirmDialog}
     </div>
   );
 }

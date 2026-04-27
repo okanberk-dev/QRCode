@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Loader2, Save, Trash2 } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, PageHeader } from '@/components/ui';
+import { AlertBanner, ConfirmDialog, PageHeader } from '@/components/ui';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
 
@@ -95,11 +95,10 @@ export default function DashboardRestaurantDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(locale === 'tr' ? 'Bu işletme pasife alınacak. Devam edilsin mi?' : 'This location will be deactivated. Continue?')) {
-      return;
-    }
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const handleDelete = async () => {
+    setConfirmDelete(false);
     setDeleting(true);
     try {
       const response = await fetch(`/api/restaurants/${id}`, { method: 'DELETE' });
@@ -337,7 +336,7 @@ export default function DashboardRestaurantDetailPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => setConfirmDelete(true)}
             disabled={deleting}
             className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#FECACA] bg-[#FEF2F2] px-5 py-2.5 text-[13px] font-medium text-[#DC2626] hover:bg-[#FEE2E2] disabled:opacity-60 transition-colors"
           >
@@ -365,6 +364,22 @@ export default function DashboardRestaurantDetailPage() {
           </div>
         </div>
       </form>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title={locale === 'tr' ? 'İşletmeyi pasife al?' : 'Deactivate location?'}
+        body={
+          locale === 'tr'
+            ? 'Bu işletme pasife alınacak. Müşteriler artık QR\'ı tarayamaz; istediğin zaman tekrar aktifleştirebilirsin.'
+            : 'This location will be deactivated. Customers can no longer scan its QR; you can reactivate any time.'
+        }
+        confirmLabel={locale === 'tr' ? 'Pasife al' : 'Deactivate'}
+        cancelLabel={locale === 'tr' ? 'İptal' : 'Cancel'}
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

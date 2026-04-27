@@ -14,7 +14,7 @@ import {
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import PublicMenuView, { type MenuCategoryView, type MenuItemView, type RestaurantView } from '@/components/menu/PublicMenuView';
-import { Modal } from '@/components/ui';
+import { Modal, useConfirmDialog } from '@/components/ui';
 import { MENU_BADGES, MENU_THEMES, type MenuBadge, type MenuTheme } from '@/lib/validations';
 import { formatPrice, parsePriceInput } from '@/lib/format';
 import { compressImage } from '@/lib/client-image';
@@ -63,6 +63,7 @@ export default function RestaurantMenuBuilderPage() {
   const [publishBusy, setPublishBusy] = useState(false);
   const [themeSaving, setThemeSaving] = useState(false);
   const [qrModal, setQrModal] = useState(false);
+  const [confirmDialog, askConfirm] = useConfirmDialog();
 
   const copy = useMemo(
     () => ({
@@ -318,8 +319,18 @@ export default function RestaurantMenuBuilderPage() {
     setBusy(false);
   };
 
-  const deleteCategory = async (categoryId: string) => {
-    if (!confirm(copy.deleteCategoryConfirm)) return;
+  const deleteCategory = (categoryId: string) => {
+    askConfirm({
+      title: isTr ? 'Kategori silinsin mi?' : 'Delete category?',
+      body: copy.deleteCategoryConfirm,
+      confirmLabel: isTr ? 'Sil' : 'Delete',
+      cancelLabel: isTr ? 'İptal' : 'Cancel',
+      variant: 'danger',
+      onConfirm: () => doDeleteCategory(categoryId),
+    });
+  };
+
+  const doDeleteCategory = async (categoryId: string) => {
     setError(null);
     try {
       const res = await fetch(`/api/restaurants/${id}/menu/categories/${categoryId}`, { method: 'DELETE' });
@@ -404,8 +415,18 @@ export default function RestaurantMenuBuilderPage() {
     setBusy(false);
   };
 
-  const deleteItem = async (itemId: string) => {
-    if (!confirm(copy.deleteItemConfirm)) return;
+  const deleteItem = (itemId: string) => {
+    askConfirm({
+      title: isTr ? 'Ürün silinsin mi?' : 'Delete item?',
+      body: copy.deleteItemConfirm,
+      confirmLabel: isTr ? 'Sil' : 'Delete',
+      cancelLabel: isTr ? 'İptal' : 'Cancel',
+      variant: 'danger',
+      onConfirm: () => doDeleteItem(itemId),
+    });
+  };
+
+  const doDeleteItem = async (itemId: string) => {
     setError(null);
     try {
       const res = await fetch(`/api/restaurants/${id}/menu/items/${itemId}`, { method: 'DELETE' });
@@ -804,6 +825,9 @@ export default function RestaurantMenuBuilderPage() {
           onClose={() => setQrModal(false)}
         />
       )}
+
+      {/* Imperative confirm dialog (deleteCategory + deleteItem) */}
+      {confirmDialog}
     </div>
   );
 }
