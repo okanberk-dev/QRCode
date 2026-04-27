@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { verifyJwt } from '@/lib/auth';
@@ -61,7 +62,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 });
     }
 
-    const updateData: any = {};
+    const updateData: Prisma.UserUpdateInput = {};
 
     if (name) updateData.name = name.trim();
     

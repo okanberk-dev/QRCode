@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(req: NextRequest) {
 
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: any = {};
+  let body: Record<string, unknown> = {};
   try {
     body = await req.json();
   } catch {
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     // available as a fallback hint. We keep the prisma lookup so the
     // username is logged on the response (operator sees who triggered).
     const adminRow = await prisma.adminUser.findUnique({
-      where: { id: admin.id ?? admin.userId },
+      where: { id: String(admin.id ?? admin.userId ?? '') },
       select: { username: true },
     });
     const recipient =

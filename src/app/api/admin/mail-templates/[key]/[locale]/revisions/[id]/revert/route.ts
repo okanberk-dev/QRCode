@@ -31,7 +31,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ key: string; locale: string; id: string }> },
 ) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
@@ -60,7 +60,8 @@ export async function POST(
     return NextResponse.json({ error: 'revision_mismatch' }, { status: 400 });
   }
 
-  const adminId = admin.id ?? admin.userId ?? null;
+  const adminIdRaw = admin.id ?? admin.userId ?? null;
+  const adminId = typeof adminIdRaw === 'string' ? adminIdRaw : null;
   // Strip any locked fields that may have been allowed by a prior schema.
   const rawContent = (revision.content ?? {}) as Record<string, unknown>;
   const safeContent = stripLockedFields(rawKey, rawContent) as Prisma.InputJsonValue;

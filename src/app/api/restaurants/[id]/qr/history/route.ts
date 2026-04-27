@@ -35,9 +35,9 @@ export async function GET(
         },
       });
       return NextResponse.json(history, { status: 200 });
-    } catch (innerError: any) {
+    } catch (innerError) {
       // Only swallow the case where the table hasn't been migrated yet.
-      if (innerError?.code === 'P2021') {
+      if ((innerError as { code?: string })?.code === 'P2021') {
         return NextResponse.json([], { status: 200 });
       }
       throw innerError;

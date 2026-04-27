@@ -29,7 +29,7 @@ import {
 import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import type { Locale } from '@/lib/translations';
+import type { Locale, Translations } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
 import WatchDemoButton from './WatchDemoButton';
 
@@ -38,7 +38,7 @@ interface MarketingNavbarProps {
   // The server wrapper passes the entire `t` object; we keep the signature
   // permissive and only use a few keys via locale ternaries (mirrors the
   // pattern in MarketingFooter).
-  t: any;
+  t: Translations;
   isLoggedIn?: boolean;
   logoUrl?: string | null;
 }

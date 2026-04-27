@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sendFeedbackNotification } from '@/lib/email';
 import { getPanelActorFromRequest } from '@/lib/auth';
@@ -16,7 +17,7 @@ function parseAspectRating(value: unknown): number | null {
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get('x-forwarded-for') || (req as any).ip || 'unknown';
+    const ip = req.headers.get('x-forwarded-for') || (req as unknown as { ip?: string }).ip || 'unknown';
 
     // Layered defense:
     // 1) Upstash rate limit (fast, distributed) — short-circuits abuse
@@ -169,7 +170,7 @@ export async function GET(req: NextRequest) {
   const skip = (page - 1) * limit;
 
   // Build filter query
-  const where: any = {};
+  const where: Prisma.FeedbackWhereInput = {};
 
   // KVKK filter
   if (kvkkFilter === 'true') {
@@ -214,20 +215,24 @@ export async function GET(req: NextRequest) {
 
   // Date filter (supports today/1, month, numeric days, all)
   // UTC-based to stay consistent regardless of server timezone.
+  const createdAtBase: Prisma.DateTimeFilter =
+    where.createdAt && typeof where.createdAt === 'object' && !(where.createdAt instanceof Date)
+      ? (where.createdAt as Prisma.DateTimeFilter)
+      : {};
   if (daysParam === 'today' || daysParam === '1') {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-    where.createdAt = { ...where.createdAt, gte: today };
+    where.createdAt = { ...createdAtBase, gte: today };
   } else if (daysParam === 'month') {
     const now = new Date();
     const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
-    where.createdAt = { ...where.createdAt, gte: firstOfMonth };
+    where.createdAt = { ...createdAtBase, gte: firstOfMonth };
   } else if (daysParam && daysParam !== 'all') {
     const days = parseInt(daysParam);
     if (Number.isFinite(days) && days > 0) {
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - days);
-      where.createdAt = { ...where.createdAt, gte: pastDate };
+      where.createdAt = { ...createdAtBase, gte: pastDate };
     }
   }
 
@@ -256,7 +261,7 @@ export async function GET(req: NextRequest) {
     // includes throws and would otherwise break every panel page that
     // renders a feedback list. We try three tiers of degradation so the
     // inbox keeps rendering even if just one of the new tables is missing.
-    let feedbacks: any[];
+    let feedbacks: Array<Record<string, unknown>>;
     let joinsAvailable = true;
     let tagsAvailable = true;
     try {
@@ -310,16 +315,26 @@ export async function GET(req: NextRequest) {
 
     const total = await prisma.feedback.count({ where });
 
-    const data = feedbacks.map((f: any) => ({
-      ...f,
-      customerName: f.name,
-      customerEmail: f.email,
-      isReplied: joinsAvailable ? (f._count?.replies ?? 0) > 0 : false,
-      isFlagged: joinsAvailable ? Boolean(f.flag) : false,
-      isAssigned: joinsAvailable ? Boolean(f.assignment) : false,
-      assigneeId: joinsAvailable ? f.assignment?.assigneeId ?? null : null,
-      tags: joinsAvailable && tagsAvailable ? (f.tags ?? []) : [],
-    }));
+    const data = feedbacks.map((raw) => {
+      const f = raw as Record<string, unknown> & {
+        name?: string;
+        email?: string;
+        _count?: { replies?: number };
+        flag?: unknown;
+        assignment?: { assigneeId?: string | null };
+        tags?: unknown[];
+      };
+      return {
+        ...f,
+        customerName: f.name,
+        customerEmail: f.email,
+        isReplied: joinsAvailable ? (f._count?.replies ?? 0) > 0 : false,
+        isFlagged: joinsAvailable ? Boolean(f.flag) : false,
+        isAssigned: joinsAvailable ? Boolean(f.assignment) : false,
+        assigneeId: joinsAvailable ? f.assignment?.assigneeId ?? null : null,
+        tags: joinsAvailable && tagsAvailable ? (f.tags ?? []) : [],
+      };
+    });
 
     return NextResponse.json({
       data,

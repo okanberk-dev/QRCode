@@ -11,7 +11,7 @@ const ALLOWED_LOCALES = new Set(['tr', 'en', 'both']);
 const CREATE_STATUSES = new Set(['draft', 'scheduled']);
 
 export async function GET(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
@@ -47,11 +47,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
-  let body: any = {};
+  let body: Record<string, unknown> = {};
   try {
     body = await req.json();
   } catch {
@@ -81,7 +81,7 @@ export interface ValidatedCampaign {
   };
 }
 
-export function validateCampaignInput(body: any): ValidatedCampaign | { error: string } {
+export function validateCampaignInput(body: Record<string, unknown>): ValidatedCampaign | { error: string } {
   const title = typeof body.title === 'string' ? body.title.trim() : '';
   if (!title || title.length > 200) return { error: 'invalid_title' };
 
@@ -99,7 +99,7 @@ export function validateCampaignInput(body: any): ValidatedCampaign | { error: s
   if (!CREATE_STATUSES.has(requestedStatus)) return { error: 'invalid_status' };
 
   let scheduledAt: Date | null = null;
-  if (body.scheduledAt) {
+  if (body.scheduledAt && (typeof body.scheduledAt === 'string' || typeof body.scheduledAt === 'number')) {
     const d = new Date(body.scheduledAt);
     if (Number.isNaN(d.getTime())) return { error: 'invalid_scheduledAt' };
     if (d.getTime() < Date.now() - 60_000) return { error: 'scheduledAt_in_past' };

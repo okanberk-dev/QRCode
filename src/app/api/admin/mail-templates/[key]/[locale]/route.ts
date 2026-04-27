@@ -31,7 +31,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ key: string; locale: string }> },
 ) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
@@ -79,7 +79,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ key: string; locale: string }> },
 ) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
@@ -166,7 +166,8 @@ export async function PATCH(
   // against curl bypass and stale UI states. See locked-fields.ts.
   const safeCleaned = stripLockedFields(parsed.key, cleaned);
 
-  const adminId = admin.id ?? admin.userId ?? null;
+  const adminIdRaw = admin.id ?? admin.userId ?? null;
+  const adminId = typeof adminIdRaw === 'string' ? adminIdRaw : null;
   const contentJson = safeCleaned as Prisma.InputJsonValue;
 
   // Phase 5 — upsert + revision write in a single transaction so the
@@ -231,7 +232,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ key: string; locale: string }> },
 ) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
@@ -244,7 +245,8 @@ export async function DELETE(
   // that's still alive (or vice versa). Schema's `onDelete: SetNull` on
   // revisions keeps the audit row reachable via (templateKey, locale)
   // after the template row is gone — revert can re-create from history.
-  const adminId = admin.id ?? admin.userId ?? null;
+  const adminIdRaw = admin.id ?? admin.userId ?? null;
+  const adminId = typeof adminIdRaw === 'string' ? adminIdRaw : null;
   try {
     await prisma.$transaction(async (tx) => {
       // Delete first so a missing row throws P2025 before we insert the

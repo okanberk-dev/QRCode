@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 const MAX_EXPORT_ROWS = 10_000;
 
 export async function GET(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 

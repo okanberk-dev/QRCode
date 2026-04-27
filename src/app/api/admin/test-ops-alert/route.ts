@@ -17,11 +17,11 @@ export const dynamic = 'force-dynamic';
  * Rate-limited 3 / hour / admin so a stuck button can't bomb ops.
  */
 export async function POST(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
-  const adminId = admin.id ?? admin.userId ?? 'unknown';
+  const adminId = String(admin.id ?? admin.userId ?? 'unknown');
   const limit = await rateLimit(`ops-alert-test:${adminId}`, 3, 60 * 60 * 1000);
   if (!limit.allowed) {
     return NextResponse.json(
@@ -32,10 +32,10 @@ export async function POST(req: NextRequest) {
 
   await notifyOpsOfMailFailure({
     template: '__manual_test',
-    recipient: admin.email ?? 'unknown@admin',
+    recipient: (typeof admin.email === 'string' ? admin.email : 'unknown@admin'),
     reason: 'Manual smoke test triggered from /admin/mail-templates',
     metadata: {
-      triggeredBy: admin.email ?? adminId,
+      triggeredBy: (typeof admin.email === 'string' ? admin.email : null) ?? adminId,
       timestamp: new Date().toISOString(),
       env: process.env.NODE_ENV,
     },

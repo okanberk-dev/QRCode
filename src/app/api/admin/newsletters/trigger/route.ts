@@ -20,7 +20,7 @@ export const maxDuration = 60;
  * uses this when "Şimdi gönder" mode is selected.
  */
 export async function POST(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
