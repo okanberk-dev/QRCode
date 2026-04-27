@@ -249,7 +249,7 @@ export default async function BlogPostPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero · lime bg + eyebrow + title + author row + ECG decoration ─── */}
-      <section className="relative overflow-hidden bg-[#C6F24E] px-6 sm:px-10 pt-12 sm:pt-16 pb-16 sm:pb-24">
+      <section className="relative overflow-hidden bg-[#C6F24E] px-5 sm:px-10 pt-[60px] sm:pt-16 pb-[60px] sm:pb-24">
         <svg
           aria-hidden
           viewBox="0 0 300 200"
@@ -284,7 +284,7 @@ export default async function BlogPostPage({
               {(isTr ? 'BUAZE' : 'BUAZE')} · {post.readTime.toUpperCase()}
             </div>
             <h1
-              className="mt-3 sm:mt-4 text-[36px] sm:text-[48px] lg:text-[56px] font-medium leading-[1] tracking-[-0.03em] text-[#0A0A0A]"
+              className="mt-3 sm:mt-4 text-[32px] sm:text-[48px] lg:text-[56px] font-medium leading-[1] tracking-[-0.03em] text-[#0A0A0A]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {post.title}
@@ -309,12 +309,12 @@ export default async function BlogPostPage({
       </section>
 
       {/* ─── Content grid · main article + sticky TOC/author sidebar ─── */}
-      <section className="px-6 sm:px-10 py-[60px]">
+      <section className="px-5 sm:px-10 py-[60px]">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-10 lg:gap-12">
           {/* Main column */}
           <div>
             {/* Lead (description) */}
-            <p className="text-[18px] sm:text-[20px] leading-[1.6] text-[#0A0A0A]">
+            <p className="text-[16px] sm:text-[20px] leading-[1.6] text-[#0A0A0A]">
               {post.description}
             </p>
 

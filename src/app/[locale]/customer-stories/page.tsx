@@ -74,18 +74,18 @@ export default async function CustomerStoriesPage({
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
 
-      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-10">
+      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-10">
         <div className="max-w-[1200px] mx-auto">
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Başarı hikayeleri' : 'Customer stories'}
           </span>
           <h1
-            className="mt-3 text-[40px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]"
+            className="mt-3 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Rakam konuşur.' : 'Numbers do the talking.'}
           </h1>
-          <p className="mt-4 text-[16px] text-[#525252] max-w-[560px] leading-[1.6]">
+          <p className="mt-4 text-[15px] sm:text-[16px] text-[#525252] max-w-[560px] leading-[1.6]">
             {isTr
               ? '2.400\'den fazla işletme Buaze ile nabzını dinliyor. İşte bir kısmı.'
               : 'More than 2,400 businesses are listening to their pulse with Buaze. Here are a few.'}
@@ -93,7 +93,7 @@ export default async function CustomerStoriesPage({
         </div>
       </section>
 
-      <section className="px-6 sm:px-10 pb-20">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {stories.map((st, i) => (
             <article
@@ -109,14 +109,14 @@ export default async function CustomerStoriesPage({
                   {st.s.toUpperCase()}
                 </span>
                 <h3
-                  className="mt-2 text-[28px] sm:text-[30px] font-medium leading-none tracking-[-0.02em] text-[#0A0A0A]"
+                  className="mt-2 text-[24px] sm:text-[30px] font-medium leading-none tracking-[-0.02em] text-[#0A0A0A]"
                   style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {st.b}
                 </h3>
                 <div className="mt-auto flex items-baseline gap-2.5 pt-6">
                   <span
-                    className="text-[48px] sm:text-[56px] font-medium leading-none tracking-[-0.035em] text-[#0A0A0A]"
+                    className="text-[40px] sm:text-[56px] font-medium leading-none tracking-[-0.035em] text-[#0A0A0A]"
                     style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     {st.m}
@@ -150,17 +150,17 @@ export default async function CustomerStoriesPage({
         </div>
       </section>
 
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[900px] mx-auto text-center">
           <h2
-            className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
+            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr
               ? 'Bir sonraki başarı hikayesi sizinki olsun.'
               : 'Let the next story be yours.'}
           </h2>
-          <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
+          <p className="mt-4 text-[15px] sm:text-[16px] text-white/70 max-w-[560px] mx-auto">
             {isTr
               ? '14 gün ücretsiz · Kredi kartı istemiyoruz · Hızlı kurulum'
               : '14-day free trial · No credit card · Fast setup'}

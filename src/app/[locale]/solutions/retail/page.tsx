@@ -91,14 +91,14 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero — dark (1:1 .design/site/site-pages4.jsx:246-267) */}
-      <section className="bg-[#0A0A0A] px-6 sm:px-10 pt-[72px] pb-10 sm:pt-20 text-white">
+      <section className="bg-[#0A0A0A] px-5 sm:px-10 pt-[60px] pb-10 sm:pt-20 text-white">
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-12 lg:grid-cols-[1.2fr_1fr]">
           <div>
             <span className="pulse-eyebrow text-[#C6F24E]">
               {isTr ? 'SEKTÖR · PERAKENDE & MAĞAZA' : 'SECTOR · RETAIL & STORE'}
             </span>
             <h1
-              className="mt-3 text-[44px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-white"
+              className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-white"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? (
@@ -123,7 +123,7 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
                 </>
               )}
             </h1>
-            <p className="mt-[18px] max-w-[500px] text-[16px] leading-[1.6] text-[#A3A3A3]">
+            <p className="mt-[18px] max-w-[500px] text-[15px] sm:text-[16px] leading-[1.6] text-[#A3A3A3]">
               {isTr
                 ? "Müşteri kasadan çıkarken fişinin altındaki QR'ı tarar. Google ve Yandex'e yönlendirilir. Çok mağaza, tek panel."
                 : 'Customers scan the QR under their receipt on the way out — routed to Google and Yandex. Multi-store, one panel.'}
@@ -198,12 +198,12 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
       </section>
 
       {/* Stats */}
-      <section className="px-6 sm:px-10 py-14 sm:py-16">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
         <div className="mx-auto max-w-[1200px] grid grid-cols-2 gap-5 md:grid-cols-4">
           {stats.map((s) => (
             <div
               key={s.label}
-              className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6"
+              className="bz-card p-5 sm:p-6"
             >
               <div
                 className="text-[32px] sm:text-[36px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A]"
@@ -218,7 +218,7 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
       </section>
 
       {/* 3-feature grid */}
-      <section className="px-6 sm:px-10 pb-20 sm:pb-24">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
         <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 md:grid-cols-3">
           {features.map((f) => (
             <div
@@ -238,10 +238,10 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
       </section>
 
       {/* CTA band */}
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="mx-auto max-w-[900px] text-center">
           <h2
-            className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
+            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Mağaza ağınızı itibara çevirin.' : 'Turn your store network into reputation.'}

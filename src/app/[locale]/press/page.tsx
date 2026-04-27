@@ -245,7 +245,7 @@ export default async function PressPage({
               { label: isTr ? 'Orta (3-4 cümle)' : 'Medium (3-4 sentences)', text: boilerplates.medium },
               { label: isTr ? 'Uzun (paragraf)' : 'Long (paragraph)', text: boilerplates.long },
             ].map((b) => (
-              <article key={b.label} className="bg-[#FAFAFA] border border-[#EDEDED] rounded-2xl p-5 sm:p-7">
+              <article key={b.label} className="bz-card-soft p-5 sm:p-7">
                 <span className="pulse-eyebrow text-[#737373]">{b.label}</span>
                 <p className="mt-3 text-[15px] sm:text-[16px] text-[#0A0A0A] leading-[1.7]">
                   {b.text}
@@ -271,7 +271,7 @@ export default async function PressPage({
                 .slice(0, 2)
                 .toUpperCase();
               return (
-                <div key={p.name} className="flex items-center gap-5 bg-white border border-[#EDEDED] rounded-2xl p-6">
+                <div key={p.name} className="flex items-center gap-5 bz-card p-6">
                   <div
                     aria-hidden="true"
                     className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]"
@@ -312,7 +312,7 @@ export default async function PressPage({
             <a
               href="/favicon.svg"
               download
-              className="bg-white border border-[#EDEDED] rounded-2xl p-6 flex flex-col items-center justify-center gap-4 hover:bg-[#FAFAFA] transition-colors"
+              className="bz-card p-6 flex flex-col items-center justify-center gap-4 hover:bg-[#FAFAFA] transition-colors"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={logoSrc} alt="Buaze logo" className="h-20 w-auto" />
@@ -322,7 +322,7 @@ export default async function PressPage({
               </div>
             </a>
 
-            <div className="bg-white border border-[#EDEDED] rounded-2xl p-6">
+            <div className="bz-card p-6">
               <span className="pulse-eyebrow text-[#737373]">
                 {isTr ? 'Renk paleti' : 'Colour palette'}
               </span>
@@ -371,7 +371,7 @@ export default async function PressPage({
                   href={p.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center justify-between gap-3 bg-white border border-[#EDEDED] rounded-2xl p-5 hover:border-[#0A0A0A] transition-colors"
+                  className="group flex items-center justify-between gap-3 bz-card p-5 hover:border-[#0A0A0A] transition-colors"
                 >
                   <div>
                     <div className="text-[15px] font-semibold text-[#0A0A0A] tracking-[-0.01em]">

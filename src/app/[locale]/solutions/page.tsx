@@ -145,7 +145,7 @@ export default async function SolutionsOverviewPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-14 sm:pt-20 pb-14 sm:pb-20">
+      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-20 pb-[60px] sm:pb-20">
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
@@ -181,7 +181,7 @@ export default async function SolutionsOverviewPage({
                 {isTr ? 'ÇÖZÜMLER' : 'SOLUTIONS'}
               </span>
             </div>
-            <h1 className="text-[40px] sm:text-[60px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+            <h1 className="text-[38px] sm:text-[60px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? (
                 <>
                   Dört adım, tek panel.{' '}
@@ -200,7 +200,7 @@ export default async function SolutionsOverviewPage({
                 </>
               )}
             </h1>
-            <p className="text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[640px]">
+            <p className="text-[15px] sm:text-[18px] text-[#525252] leading-[1.6] max-w-[640px]">
               {isTr
                 ? 'Her yorum bir işarettir. Buaze, QR ile topladığınız sinyalleri tek panelde toplar, ekibinize yönlendirir ve itibarınızı büyütür.'
                 : 'Every review is a signal. Buaze collects the pulses you capture via QR into one dashboard, routes them to your team, and grows your reputation.'}
@@ -225,13 +225,13 @@ export default async function SolutionsOverviewPage({
       </section>
 
       {/* ─── Capabilities (4 solutions) ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[1200px] mx-auto">
-          <div className="mb-14 max-w-[720px]">
+          <div className="mb-10 sm:mb-14 max-w-[720px]">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Ne sunuyoruz' : 'What we offer'}
             </span>
-            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[26px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? 'Sinyalden etkiye.' : 'From signal to impact.'}
             </h2>
           </div>
@@ -240,7 +240,7 @@ export default async function SolutionsOverviewPage({
             {capabilities.map((cap, i) => (
               <div
                 key={cap.eyebrow}
-                className={`bg-[#FAFAFA] border border-[#EDEDED] rounded-3xl p-8 sm:p-12 grid grid-cols-1 ${
+                className={`bz-card-soft p-6 sm:p-12 grid grid-cols-1 ${
                   i % 2 === 0 ? 'lg:grid-cols-[1.1fr_1fr]' : 'lg:grid-cols-[1fr_1.1fr]'
                 } gap-8 lg:gap-12 items-center`}
               >
@@ -248,7 +248,7 @@ export default async function SolutionsOverviewPage({
                   <span className="pulse-eyebrow text-[#A8D62E]">
                     {String(i + 1).padStart(2, '0')} · {cap.eyebrow}
                   </span>
-                  <h3 className="mt-4 text-[26px] sm:text-[36px] font-medium text-[#0A0A0A] tracking-[-0.025em] leading-[1.1]">
+                  <h3 className="mt-4 text-[22px] sm:text-[36px] font-medium text-[#0A0A0A] tracking-[-0.025em] leading-[1.1]">
                     {cap.title}
                   </h3>
                   <p className="mt-4 text-[15px] sm:text-[16px] text-[#525252] leading-[1.65] max-w-[520px]">
@@ -272,12 +272,12 @@ export default async function SolutionsOverviewPage({
       </section>
 
       {/* ─── Numbers strip ─── */}
-      <section className="bg-[#C6F24E] border-y border-[#A8D62E] px-6 sm:px-10 py-14">
+      <section className="bg-[#C6F24E] border-y border-[#A8D62E] px-5 sm:px-10 py-12 sm:py-14">
         <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {numbers.map((item, i) => (
             <div key={i}>
               <div
-                className="text-[36px] sm:text-[52px] font-medium text-[#0A0A0A] leading-none tracking-[-0.03em]"
+                className="text-[28px] sm:text-[52px] font-medium text-[#0A0A0A] leading-none tracking-[-0.03em]"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {item.num}
@@ -289,14 +289,14 @@ export default async function SolutionsOverviewPage({
       </section>
 
       {/* ─── Sectors ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[1200px] mx-auto">
-          <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div className="mb-10 sm:mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
               <span className="pulse-eyebrow text-[#737373]">
                 {isTr ? 'Sektörler' : 'Industries'}
               </span>
-              <h2 className="mt-4 text-[32px] sm:text-[44px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
+              <h2 className="mt-4 text-[26px] sm:text-[44px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
                 {isTr ? 'Her sektör için, tam oturur.' : 'Fits every sector, perfectly.'}
               </h2>
             </div>
@@ -312,7 +312,7 @@ export default async function SolutionsOverviewPage({
               <Link
                 key={sector.slug}
                 href={`${base}/solutions/${sector.slug}`}
-                className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
+                className="group flex items-center gap-3 bz-card p-4 hover:border-[#C6F24E] transition-colors"
               >
                 <span className="shrink-0 w-10 h-10 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
                   {sector.icon}
@@ -331,14 +331,14 @@ export default async function SolutionsOverviewPage({
       </section>
 
       {/* ─── QR Tool callout ─── */}
-      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-16 sm:py-20">
-        <div className="max-w-[1000px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden">
+      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-20">
+        <div className="max-w-[1000px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-6 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden">
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#C6F24E]/15 rounded-full blur-[80px] pointer-events-none" />
           <div className="relative max-w-[520px] text-center lg:text-left">
             <span className="pulse-eyebrow text-[#C6F24E]">
               {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
             </span>
-            <h3 className="mt-3 text-[26px] sm:text-[32px] font-medium text-white tracking-[-0.02em] leading-tight">
+            <h3 className="mt-3 text-[24px] sm:text-[32px] font-medium text-white tracking-[-0.02em] leading-tight">
               {isTr ? 'Saniyede QR oluştur.' : 'Generate a QR in seconds.'}
             </h3>
             <p className="mt-3 text-[15px] text-white/70 leading-[1.6]">
@@ -358,12 +358,12 @@ export default async function SolutionsOverviewPage({
       </section>
 
       {/* ─── CTA ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[800px] mx-auto text-center">
-          <h2 className="text-[36px] sm:text-[52px] font-medium leading-[1.04] tracking-[-0.035em] text-[#0A0A0A]">
+          <h2 className="text-[28px] sm:text-[52px] font-medium leading-[1.04] tracking-[-0.035em] text-[#0A0A0A]">
             {isTr ? 'Çözümü bugün devreye al.' : 'Put the solution to work today.'}
           </h2>
-          <p className="mt-5 text-[16px] text-[#525252] max-w-[480px] mx-auto">
+          <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[480px] mx-auto">
             {isTr ? '14 gün ücretsiz. Kredi kartı gerekmez. Kurulum 2 dakika.' : '14-day free trial. No card required. 2-minute setup.'}
           </p>
           <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">

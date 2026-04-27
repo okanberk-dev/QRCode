@@ -69,6 +69,17 @@
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Mobile bottom-nav reserved height — used by sticky overlays
+     (StickyCtaBar, SocialProofToast) so they stack above the bar
+     without manually duplicating the env() math. Reset to 0 at md+
+     where MobileBottomNav is hidden. */
+  --mobile-nav-h: calc(68px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  :root {
+    --mobile-nav-h: 0px;
+  }
 }
 
 body {
