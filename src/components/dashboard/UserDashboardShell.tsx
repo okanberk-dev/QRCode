@@ -155,6 +155,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       groupSetup: isTr ? 'Yapılandırma' : 'Setup',
       groupInsight: isTr ? 'İçgörü' : 'Insight',
       groupInfo: isTr ? 'Bilgi' : 'Info',
+      workspace: isTr ? 'BUAZE PANELİ' : 'BUAZE PANEL',
     };
   }, [locale]);
 
@@ -460,48 +461,55 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           </div>
         </div>
 
-        {/* Desktop top bar (breadcrumb + title + search pill + avatar) */}
-        {topBar && (
-          <div className="hidden lg:flex items-center justify-between gap-4 border-b border-[#EDEDED] bg-white px-7 py-3.5">
-            <div className="min-w-0">
-              <p className="pulse-eyebrow text-[#737373]">{topBar.breadcrumb}</p>
-              <h1
-                className="mt-1 text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-none truncate bz-h-tight"
-              >
-                {topBar.title}
-              </h1>
-            </div>
-            <div className="flex items-center gap-2.5 shrink-0">
-              <div
-                className="hidden xl:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#737373] cursor-not-allowed select-none"
-                aria-hidden
-                title={locale === 'tr' ? 'Yakında: komut paleti' : 'Coming soon: command palette'}
-              >
-                <Search size={12} strokeWidth={2} />
-                <span>{locale === 'tr' ? 'Yorum, konum, ekip ara…' : 'Search reviews, locations, team…'}</span>
-                <span
-                  className="ml-1 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252] bz-mono"
+        {/* Desktop top bar — always render (Pulse 2026-04 shell.jsx 1:1
+            design); breadcrumb + title slot opsiyonel, search/bell/avatar
+            sabit chrome. Step 12: conditional `{topBar && ...}` kaldırıldı,
+            page-level <PageHeader> primitive zaten her sayfada başlık taşır. */}
+        <div className="hidden lg:flex items-center justify-between gap-4 border-b border-[#EDEDED] bg-white px-7 py-3.5">
+          <div className="min-w-0">
+            {topBar ? (
+              <>
+                <p className="pulse-eyebrow text-[#737373]">{topBar.breadcrumb}</p>
+                <h1
+                  className="mt-1 text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-none truncate bz-h-tight"
                 >
-                  ⌘K
-                </span>
-              </div>
-              <Link
-                href={`/${locale}/dashboard/announcements`}
-                aria-label={copy.notifications}
-                className="bz-btn-icon"
-              >
-                <Bell size={16} strokeWidth={2} />
-              </Link>
-              <Link
-                href={`/${locale}/dashboard/profile`}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors bz-h-tight"
-                aria-label={displayName}
-              >
-                {initial}
-              </Link>
-            </div>
+                  {topBar.title}
+                </h1>
+              </>
+            ) : (
+              <p className="pulse-eyebrow text-[#737373]">{copy.workspace}</p>
+            )}
           </div>
-        )}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div
+              className="hidden xl:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#737373] cursor-not-allowed select-none"
+              aria-hidden
+              title={locale === 'tr' ? 'Yakında: komut paleti' : 'Coming soon: command palette'}
+            >
+              <Search size={12} strokeWidth={2} />
+              <span>{locale === 'tr' ? 'Yorum, konum, ekip ara…' : 'Search reviews, locations, team…'}</span>
+              <span
+                className="ml-1 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252] bz-mono"
+              >
+                ⌘K
+              </span>
+            </div>
+            <Link
+              href={`/${locale}/dashboard/announcements`}
+              aria-label={copy.notifications}
+              className="bz-btn-icon"
+            >
+              <Bell size={16} strokeWidth={2} />
+            </Link>
+            <Link
+              href={`/${locale}/dashboard/profile`}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors bz-h-tight"
+              aria-label={displayName}
+            >
+              {initial}
+            </Link>
+          </div>
+        </div>
 
         <main
           id="panel-main-content"

@@ -192,7 +192,6 @@ export default function AdminBlogPage() {
                   <th>Başlık</th>
                   <th>Yazar</th>
                   <th>Yayın tarihi</th>
-                  <th>Görüntülenme</th>
                   <th>Durum</th>
                   <th aria-label="İşlemler" />
                 </tr>
@@ -213,7 +212,6 @@ export default function AdminBlogPage() {
                     </td>
                     <td>{post.author}</td>
                     <td>{post.date || '—'}</td>
-                    <td className="bz-mono">—</td>
                     <td>
                       {post.isActive ? (
                         <Badge kind="ok">Yayında</Badge>
