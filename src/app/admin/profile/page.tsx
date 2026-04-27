@@ -2,12 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2, User, Key, Check, ShieldCheck, AlertCircle } from 'lucide-react';
-import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { PageHeader } from '@/components/ui';
 
 export default function AdminProfilePage() {
-  const { t } = useAdminTranslation();
-  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -76,7 +73,7 @@ export default function AdminProfilePage() {
       } else {
         setError(data.error || 'Güncelleme sırasında hata oluştu.');
       }
-    } catch (err) {
+    } catch {
       setError('Bağlantı hatası.');
     } finally {
       setSaving(false);

@@ -162,7 +162,7 @@ export default function UsersPage() {
         setIsManualSlug(false);
         fetchData();
       }
-    } catch (e) {
+    } catch {
       setError('Bağlantı hatası oluştu, lütfen tekrar deneyin.');
     }
     setIsSubmitting(false);

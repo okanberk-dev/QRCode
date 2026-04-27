@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Check, Copy, Download, LayoutGrid, List as ListIcon, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
+import { Check, Copy, Download, LayoutGrid, List as ListIcon, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, AlertCircle } from 'lucide-react';
 import { AlertBanner, PageHeader } from '@/components/ui';
 import { copyToClipboard } from '@/lib/clipboard';
 import PlatformLogo, { type PlatformId } from '@/components/marketing/PlatformLogo';
@@ -49,7 +49,6 @@ export default function DashboardQrPage() {
   const [qrSvg, setQrSvg] = useState('');
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [qrError, setQrError] = useState('');
@@ -310,13 +309,6 @@ export default function DashboardQrPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     }
-  };
-
-  const copyHistoryItem = (item: QrHistoryItem) => {
-    if (!item.qrUrl) return;
-    copyToClipboard(item.qrUrl);
-    setCopiedId(item.id);
-    setTimeout(() => setCopiedId(null), 1800);
   };
 
   if (loading) {

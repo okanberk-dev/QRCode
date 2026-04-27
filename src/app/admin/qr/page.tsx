@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Download, Loader2, QrCode, Mail, RefreshCw, Copy, Check, Printer, Plus, Minus, Palette, Layers, AlertCircle } from 'lucide-react';
+import { Download, Loader2, QrCode, RefreshCw, Copy, Check, Printer, Plus, Minus, Palette, Layers, AlertCircle } from 'lucide-react';
 import { Suspense } from 'react';
 import { AlertBanner, Eyebrow, PageHeader } from '@/components/ui';
 
@@ -266,7 +266,7 @@ function QRPageContent() {
         setBatchItems(data.items || []);
         fetchHistory(selectedId);
       }
-    } catch (e) {
+    } catch {
       setBatchError('Bağlantı hatası.');
     }
     setBatchLoading(false);

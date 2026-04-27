@@ -1,4 +1,4 @@
-import { Sparkles, Star, ShieldCheck, TrendingUp, QrCode, Lock, Heart, BarChart3 } from 'lucide-react';
+import { Sparkles, Star, QrCode, Lock, Heart, BarChart3 } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
 import { IllusAesthetic } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   const title = locale === 'tr'
     ? 'Estetik Klinik İtibar Yönetimi — Buaze'
     : 'Aesthetic Clinic Reputation Management — Buaze';

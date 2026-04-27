@@ -1,4 +1,4 @@
-import { Stethoscope, Star, ShieldCheck, TrendingUp, QrCode, Users, BarChart3, Lock, Smile } from 'lucide-react';
+import { Stethoscope, Star, TrendingUp, QrCode, BarChart3, Lock, Smile } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
 import { IllusDentist } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   const title = locale === 'tr'
     ? 'Diş Kliniği İtibar Yönetimi — Buaze'
     : 'Dental Clinic Reputation Management — Buaze';

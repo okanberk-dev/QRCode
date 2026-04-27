@@ -69,7 +69,6 @@ export default function AdminAnalyticsPage() {
   const distSum = Object.values(distribution).reduce((a, b) => a + b, 0) || 1;
   const promoters = Number(distribution['5']) || 0;
   const detractors = (Number(distribution['1']) || 0) + (Number(distribution['2']) || 0);
-  const passives = (Number(distribution['3']) || 0) + (Number(distribution['4']) || 0);
   const promoterPct = Math.round((promoters / distSum) * 100);
   const detractorPct = Math.round((detractors / distSum) * 100);
   const passivePct = Math.max(0, 100 - promoterPct - detractorPct);

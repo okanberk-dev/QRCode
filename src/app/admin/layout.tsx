@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileNav from '@/components/admin/AdminMobileNav';
@@ -56,7 +55,7 @@ export default async function AdminLayout({
       payload = await verifyJwt(token);
       isAuthenticated = !!payload && isAdminRole(payload.role);
     }
-  } catch (e) {
+  } catch {
     isAuthenticated = false;
   }
 

@@ -1,4 +1,4 @@
-import { Bed, Star, ShieldCheck, TrendingUp, QrCode, Users, Heart, BarChart3 } from 'lucide-react';
+import { Bed, Star, ShieldCheck, TrendingUp, QrCode, Heart, BarChart3 } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
 import { IllusBoutique } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   const title = locale === 'tr'
     ? 'Butik Otel İtibar Yönetimi — Buaze'
     : 'Boutique Hotel Reputation Management — Buaze';
