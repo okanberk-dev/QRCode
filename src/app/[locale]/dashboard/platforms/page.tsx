@@ -67,6 +67,33 @@ export default async function PlatformsPage({
     },
   });
 
+  // Phase 1 — design's "Bu ay" / "This month" metric per platform card.
+  // Counts high-rating (≥4) feedbacks recorded in the last 30 days that
+  // were tagged with a platform — i.e. redirected to that external review
+  // surface. Schema unchanged: Feedback.platform is already populated by
+  // the public review flow (see /r/[slug]/page.tsx).
+  const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const platformCounts = restaurants.length
+    ? await prisma.feedback.groupBy({
+        by: ['platform'],
+        where: {
+          restaurantId: { in: restaurants.map((r) => r.id) },
+          createdAt: { gte: monthAgo },
+          rating: { gte: 4 },
+          platform: { not: null },
+        },
+        _count: { _all: true },
+      })
+    : [];
+  const clicksByPlatform = new Map<string, number>(
+    platformCounts.map((row) => [row.platform ?? '', row._count._all]),
+  );
+  const platformClicks = (uiKey: PlatformId): number => {
+    // UI uses 'trendyol' but Feedback.platform stores 'trendyol_go' (CLAUDE.md §5).
+    if (uiKey === 'trendyol') return clicksByPlatform.get('trendyol_go') ?? 0;
+    return clicksByPlatform.get(uiKey) ?? 0;
+  };
+
   // Aggregate the *first* configured URL per platform (multi-restaurant
   // platforms management gets its own per-location page later — Phase 4).
   const firstUrl = (
@@ -85,28 +112,28 @@ export default async function PlatformsPage({
       url: firstUrl('googleReviewUrl'),
       enabled: Boolean(firstUrl('googleReviewUrl')),
       isDefault: Boolean(firstUrl('googleReviewUrl')),
-      monthlyClicks: 0,
+      monthlyClicks: platformClicks('google'),
     },
     {
       id: 'yemeksepeti',
       url: firstUrl('yemekSepetiUrl'),
       enabled: Boolean(firstUrl('yemekSepetiUrl')),
       isDefault: false,
-      monthlyClicks: 0,
+      monthlyClicks: platformClicks('yemeksepeti'),
     },
     {
       id: 'getir',
       url: firstUrl('getirYemekUrl'),
       enabled: Boolean(firstUrl('getirYemekUrl')),
       isDefault: false,
-      monthlyClicks: 0,
+      monthlyClicks: platformClicks('getir'),
     },
     {
       id: 'trendyol',
       url: firstUrl('trendyolYemekUrl'),
       enabled: Boolean(firstUrl('trendyolYemekUrl')),
       isDefault: false,
-      monthlyClicks: 0,
+      monthlyClicks: platformClicks('trendyol'),
     },
   ];
 
@@ -213,7 +240,7 @@ export default async function PlatformsPage({
               )}
             </div>
             <div className="text-left md:text-right" style={{ minWidth: 90 }}>
-              <Eyebrow>{isTr ? 'Bu ay tıklanma' : 'This month'}</Eyebrow>
+              <Eyebrow>{isTr ? 'Bu ay yönlendirme' : 'Monthly redirects'}</Eyebrow>
               <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
                 {p.monthlyClicks}
               </div>
