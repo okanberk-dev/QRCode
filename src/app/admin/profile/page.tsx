@@ -137,7 +137,7 @@ export default function AdminProfilePage() {
                 <div className="w-8 h-8 rounded-lg bg-[#FFFFFF] border border-[#EDEDED] flex items-center justify-center shadow-md">
                   <User size={16} strokeWidth={2} />
                 </div>
-                <h3 className="text-lg font-semibold text-[#0A0A0A] uppercase tracking-tighter italic">Hesap Bilgileri</h3>
+                <h3 className="bz-h-tight" style={{ fontSize: 18 }}>Hesap bilgileri</h3>
               </div>
 
               <div className="space-y-2">
@@ -155,7 +155,7 @@ export default function AdminProfilePage() {
                 <div className="w-8 h-8 rounded-lg bg-[#FFFFFF] border border-[#EDEDED] flex items-center justify-center shadow-md">
                   <Key size={16} strokeWidth={2} />
                 </div>
-                <h3 className="text-lg font-semibold text-[#0A0A0A] uppercase tracking-tighter italic">Şifre Değiştir</h3>
+                <h3 className="bz-h-tight" style={{ fontSize: 18 }}>Şifre değiştir</h3>
               </div>
 
               <div className="space-y-6">

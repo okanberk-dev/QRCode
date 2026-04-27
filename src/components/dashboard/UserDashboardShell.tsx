@@ -271,7 +271,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   );
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] lg:flex lg:h-screen lg:overflow-hidden">
+    <div className="min-h-screen bg-[#FFFFFF] lg:flex lg:h-screen lg:overflow-hidden relative">
+      <a href="#panel-main-content" className="bz-skip-link">
+        {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
+      </a>
       {/* Desktop sidebar */}
       <aside className="hidden h-full w-64 shrink-0 border-r border-white/5 lg:flex">
         <SidebarContent />
@@ -352,7 +355,11 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           </div>
         )}
 
-        <main className="min-w-0 flex-1 overflow-x-hidden pb-24 lg:pb-0">
+        <main
+          id="panel-main-content"
+          tabIndex={-1}
+          className="min-w-0 flex-1 overflow-x-hidden pb-24 lg:pb-0"
+        >
           {announcements.length > 0 && (
             <AnnouncementBanner announcements={announcements} locale={locale} />
           )}
