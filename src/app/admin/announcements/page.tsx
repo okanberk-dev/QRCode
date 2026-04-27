@@ -538,7 +538,7 @@ export default function AdminAnnouncementsPage() {
                   <button
                     type="button"
                     onClick={() => setForm(f => ({ ...f, status: f.status === 'published' ? 'draft' : 'published' }))}
-                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.status === 'published' ? 'bg-emerald-500' : 'bg-[#C9D0DB]'}`}
+                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.status === 'published' ? 'bg-[#C6F24E]' : 'bg-[#C9D0DB]'}`}
                   >
                     <span className={`absolute top-1 left-1 w-4.5 h-4.5 bg-white rounded-full transition-all duration-300 ${form.status === 'published' ? 'translate-x-5.5' : ''}`} />
                   </button>

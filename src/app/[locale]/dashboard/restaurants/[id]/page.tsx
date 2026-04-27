@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Loader2, Save, Trash2 } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { PageHeader } from '@/components/ui';
+import { AlertBanner, PageHeader } from '@/components/ui';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
 
@@ -148,19 +148,22 @@ export default function DashboardRestaurantDetailPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">{error}</div>
+        <AlertBanner kind="danger" onDismiss={() => setError('')}>
+          {error}
+        </AlertBanner>
       )}
       {success && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-medium text-emerald-700">{success}</div>
+        <AlertBanner kind="success" onDismiss={() => setSuccess('')}>
+          {success}
+        </AlertBanner>
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
-        <div className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+        <div className="bz-card p-6 sm:p-7">
           <div className="mb-6 flex items-center gap-3">
             <div className="h-5 w-1.5 rounded-full" style={{ backgroundColor: formData.primaryColor }} />
             <h2
-              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
             >
               {locale === 'tr' ? 'Temel Bilgiler' : 'Basics'}
             </h2>
@@ -249,12 +252,11 @@ export default function DashboardRestaurantDetailPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+        <div className="bz-card p-6 sm:p-7">
           <div className="mb-6 flex items-center gap-3">
             <ExternalLink size={16} strokeWidth={2} className="text-[#0A0A0A]" />
             <h2
-              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
             >
               {locale === 'tr' ? 'Harici Bağlantılar ve Bildirimler' : 'External Links & Notifications'}
             </h2>
@@ -337,7 +339,7 @@ export default function DashboardRestaurantDetailPage() {
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-5 py-2.5 text-[13px] font-medium text-red-600 hover:bg-red-100 disabled:opacity-60 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#FECACA] bg-[#FEF2F2] px-5 py-2.5 text-[13px] font-medium text-[#DC2626] hover:bg-[#FEE2E2] disabled:opacity-60 transition-colors"
           >
             {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 size={14} strokeWidth={2} />}
             {locale === 'tr' ? 'Pasife al' : 'Deactivate'}

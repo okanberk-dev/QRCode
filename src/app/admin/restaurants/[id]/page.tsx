@@ -214,8 +214,8 @@ export default function RestaurantDetailPage() {
   const menuStateTone = !menuEnabled
     ? { dot: 'bg-[#A3A3A3]', text: 'text-[#737373]' }
     : menuPublished
-    ? { dot: 'bg-emerald-500', text: 'text-emerald-700' }
-    : { dot: 'bg-amber-500', text: 'text-amber-700' };
+    ? { dot: 'bg-[#16A34A]', text: 'text-[#166534]' }
+    : { dot: 'bg-[#D97706]', text: 'text-[#92400E]' };
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const feedbackUrl = `${origin}/r/${formData.slug}`;
   const menuUrl = `${origin}/menu/${formData.slug}`;
@@ -249,8 +249,8 @@ export default function RestaurantDetailPage() {
                   {formData.name || 'İşletme Düzenle'}
                 </h1>
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#737373]">
-                  <span className={`inline-flex items-center gap-1.5 ${formData.isActive ? 'text-emerald-700' : 'text-[#737373]'}`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${formData.isActive ? 'bg-emerald-500' : 'bg-[#A3A3A3]'}`} aria-hidden />
+                  <span className={`inline-flex items-center gap-1.5 ${formData.isActive ? 'text-[#166534]' : 'text-[#737373]'}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${formData.isActive ? 'bg-[#16A34A]' : 'bg-[#A3A3A3]'}`} aria-hidden />
                     <span className="font-medium">{formData.isActive ? 'Aktif' : 'Pasif'}</span>
                   </span>
                   <span className="h-1 w-1 rounded-full bg-[#EDEDED]" aria-hidden />
@@ -363,7 +363,7 @@ export default function RestaurantDetailPage() {
             onClick={() => saveMenuSetting({ menuEnabled: !menuEnabled })}
             disabled={menuSaving !== null}
             className={`flex items-center justify-between gap-3 rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-60 disabled:hover:translate-y-0 ${
-              menuEnabled ? 'border-emerald-200 bg-emerald-50/60' : 'border-[#EDEDED] bg-white'
+              menuEnabled ? 'border-[#BBF7D0] bg-[#F0FDF4]/60' : 'border-[#EDEDED] bg-white'
             }`}
           >
             <div className="min-w-0">
@@ -373,7 +373,7 @@ export default function RestaurantDetailPage() {
               </p>
             </div>
             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all ${
-              menuEnabled ? 'bg-emerald-500 text-white' : 'bg-[#EDEDED] text-[#737373]'
+              menuEnabled ? 'bg-[#16A34A] text-white' : 'bg-[#EDEDED] text-[#737373]'
             }`}>
               {menuEnabled ? <Eye size={15} strokeWidth={2.25} /> : <EyeOff size={15} strokeWidth={2.25} />}
             </div>
@@ -674,7 +674,7 @@ export default function RestaurantDetailPage() {
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2.5 text-[13px] font-medium text-red-600 transition-all hover:border-red-300 hover:bg-red-50 active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-[#FECACA] bg-white px-4 py-2.5 text-[13px] font-medium text-[#DC2626] transition-all hover:border-[#FCA5A5] hover:bg-[#FEF2F2] active:scale-95 disabled:opacity-50"
           >
             <Trash2 size={14} strokeWidth={2} />
             {deleting ? 'Siliniyor…' : 'İşletmeyi Sil'}

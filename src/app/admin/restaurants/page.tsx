@@ -31,8 +31,8 @@ interface Owner {
 
 function menuStatus(r: Pick<Restaurant, 'menuEnabled' | 'menuPublished'>) {
   if (!r.menuEnabled) return { label: 'Kapalı', dot: 'bg-[#A3A3A3]', text: 'text-[#737373]' };
-  if (!r.menuPublished) return { label: 'Taslak', dot: 'bg-amber-500', text: 'text-amber-700' };
-  return { label: 'Yayında', dot: 'bg-emerald-500', text: 'text-emerald-700' };
+  if (!r.menuPublished) return { label: 'Taslak', dot: 'bg-[#D97706]', text: 'text-[#92400E]' };
+  return { label: 'Yayında', dot: 'bg-[#16A34A]', text: 'text-[#166534]' };
 }
 
 export default function RestaurantsPage() {
@@ -305,7 +305,7 @@ export default function RestaurantsPage() {
                     <button
                       onClick={() => toggleActive(r.id, r.isActive)}
                       className={`shrink-0 rounded-lg p-1 transition-all hover:bg-[#F5F5F5] active:scale-90 ${
-                        r.isActive ? 'text-emerald-600' : 'text-[#A3A3A3]'
+                        r.isActive ? 'text-[#16A34A]' : 'text-[#A3A3A3]'
                       }`}
                       title={r.isActive ? 'Pasifleştir' : 'Aktifleştir'}
                     >

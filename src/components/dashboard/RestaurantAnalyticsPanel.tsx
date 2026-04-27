@@ -137,13 +137,10 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+      <div className="bz-card p-5 sm:p-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h2
-              className="text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
+            <h2 className="bz-h-tight text-[20px] sm:text-[22px] text-[#0A0A0A]">
               {copy.title}
             </h2>
             <p className="mt-1.5 text-[13px] text-[#525252] leading-[1.55]">{copy.subtitle}</p>
@@ -188,7 +185,7 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
       </div>
 
       {loading && !stats ? (
-        <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-[#EDEDED] bg-white">
+        <div className="flex min-h-[280px] items-center justify-center bz-card">
           <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
         </div>
       ) : stats ? (
@@ -196,13 +193,13 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
           <StatsCards stats={stats} />
 
           {stats.aspects && (
-            <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+            <div className="bz-card p-5 sm:p-6">
               <div className="mb-4 flex items-center gap-3 sm:mb-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
                   <SlidersHorizontal size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-[16px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.aspects}</h3>
+                  <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">{copy.aspects}</h3>
                   <p className="mt-0.5 text-xs font-bold text-[#1A1A1A]">{copy.aspectsSub}</p>
                 </div>
               </div>
@@ -211,13 +208,13 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
           )}
 
           {stats.googleConversion && (
-            <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+            <div className="bz-card p-5 sm:p-6">
               <div className="mb-4 flex items-center gap-3 sm:mb-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
                   <TrendingUp size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-[16px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.google}</h3>
+                  <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">{copy.google}</h3>
                   <p className="mt-0.5 text-xs font-bold text-[#1A1A1A]">{copy.googleSub}</p>
                 </div>
               </div>
@@ -230,13 +227,13 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
           )}
 
           {stats.platformDistribution && stats.platformDistribution.length > 0 && (
-            <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+            <div className="bz-card p-5 sm:p-6">
               <div className="mb-4 flex items-center gap-3 sm:mb-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
                   <Layers size={20} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-[16px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.platforms}</h3>
+                  <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">{copy.platforms}</h3>
                   <p className="mt-0.5 text-xs font-bold text-[#1A1A1A]">{copy.platformsSub}</p>
                 </div>
               </div>
@@ -245,33 +242,33 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
           )}
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-            <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+            <div className="bz-card p-5 sm:p-6">
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
                   <TrendingUp size={20} strokeWidth={2} />
                 </div>
-                <h3 className="text-[16px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.trends}</h3>
+                <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">{copy.trends}</h3>
               </div>
               <TrendsChart data={stats.trends} />
             </div>
 
-            <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+            <div className="bz-card p-5 sm:p-6">
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#A8D62E]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
                   <Calendar size={20} strokeWidth={2} />
                 </div>
-                <h3 className="text-[16px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.rating}</h3>
+                <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">{copy.rating}</h3>
               </div>
               <RatingChart distribution={stats.distribution} totalCount={stats.totalCount} />
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+          <div className="bz-card p-5 sm:p-6">
             <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
                 <BarChart3 size={20} strokeWidth={2} />
               </div>
-              <h3 className="text-[16px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.days}</h3>
+              <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">{copy.days}</h3>
             </div>
             <DayDistributionChart data={stats.dayDistribution} />
           </div>

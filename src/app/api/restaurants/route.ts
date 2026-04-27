@@ -32,6 +32,9 @@ export async function GET(req: NextRequest) {
           trendyolYemekUrl: true,
           primaryColor: true,
           isActive: true,
+          // `defaultRedirectPlatform` powers the public review surface's
+          // auto-redirect behaviour for high ratings — public-safe.
+          defaultRedirectPlatform: true,
         },
       });
 
