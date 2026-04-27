@@ -1,10 +1,11 @@
 'use client';
 
 import { use } from 'react';
-import { ArrowLeft, BookOpen, QrCode, Star, ShieldCheck, Zap, MessageSquare, Printer, Settings } from 'lucide-react';
+import { QrCode, Star, ShieldCheck, Zap, MessageSquare, Printer, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { PageHeader } from '@/components/ui';
 
 export default function GuidePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = use(params);
@@ -49,35 +50,16 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
   const isTr = locale === 'tr';
 
   return (
-    <div
-      className="mx-auto max-w-[1100px] space-y-8 px-4 py-8 sm:px-8 lg:py-10"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
-      <header>
-        <Link
-          href={`/${locale}/dashboard`}
-          className="inline-flex items-center gap-1.5 pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
-        >
-          <ArrowLeft size={12} strokeWidth={2} />
-          {isTr ? 'PANEL' : 'PANEL'}
-        </Link>
-
-        <div className="mt-4 flex items-center gap-2">
-          <BookOpen size={14} strokeWidth={2} className="text-[#0A0A0A]" />
-          <span className="pulse-eyebrow text-[#737373]">{isTr ? 'REHBER' : 'GUIDE'}</span>
-        </div>
-        <h1
-          className="mt-2 text-[28px] sm:text-[36px] font-medium tracking-[-0.025em] leading-[1.05] text-[#0A0A0A]"
-          style={{ fontFamily: 'var(--font-heading)' }}
-        >
-          {isTr ? 'Kullanım kılavuzu' : 'User guide'}
-        </h1>
-        <p className="mt-3 max-w-[620px] text-[14px] text-[#525252] leading-[1.6]">
-          {isTr
+    <div className="mx-auto max-w-[1100px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow={isTr ? 'KILAVUZ' : 'GUIDE'}
+        title={isTr ? 'Kullanım kılavuzu' : 'User guide'}
+        description={
+          isTr
             ? 'Buaze platformunu en verimli şekilde kullanmanız için hazırladığımız adım adım başlangıç rehberi.'
-            : 'A step-by-step startup guide to help you use the Buaze platform most efficiently.'}
-        </p>
-      </header>
+            : 'A step-by-step startup guide to help you use the Buaze platform most efficiently.'
+        }
+      />
 
       {/* Steps grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
