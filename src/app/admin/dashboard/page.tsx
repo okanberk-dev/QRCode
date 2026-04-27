@@ -168,8 +168,9 @@ export default function AdminDashboard() {
       {/* ─── Welcome Banner ─── */}
       <div className="bg-[#0A0A0A] text-white rounded-2xl sm:rounded-2xl border border-white/10 p-4 sm:p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-3 sm:space-y-4 min-w-0">
-          <div className="inline-flex items-center gap-2 bg-[#C6F24E]/10 text-[#C6F24E] px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:pulse-eyebrow">
-            ✦ CANLI PANEL
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#C6F24E]/30 bg-[#C6F24E]/10 px-3 py-1 sm:px-4 sm:py-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C6F24E] bz-pulse-dot" aria-hidden="true" />
+            <span className="pulse-eyebrow text-[#C6F24E]">{isSuperAdmin ? 'SUPERADMIN' : 'PANEL'}</span>
           </div>
           <h1 className="text-xl sm:text-4xl font-semibold text-white tracking-tight leading-tight break-words">
             {t('welcome')}, {displayName} 👋

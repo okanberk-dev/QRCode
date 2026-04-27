@@ -10,6 +10,7 @@ import { Building2, QrCode, ArrowRight, Star, Calendar, ShieldCheck, TrendingUp 
 import RestaurantAnalyticsPanel from '@/components/dashboard/RestaurantAnalyticsPanel';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
+import { PageHeader } from '@/components/ui';
 
 export async function generateMetadata({
   params,
@@ -198,22 +199,14 @@ export default async function DashboardPage({
       className="mx-auto max-w-[1200px] space-y-8 px-4 py-8 sm:px-8 lg:py-10"
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
-      {/* Header */}
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'ANA SAYFA / GENEL BAKIŞ' : 'HOME / OVERVIEW'}
-          </p>
-          <h1
-            className="mt-2 text-[26px] sm:text-[34px] font-medium tracking-[-0.025em] leading-[1.05] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            {isTr
-              ? `Merhaba ${displayName} — bugün nabız güçlü.`
-              : `Hi ${displayName} — the pulse is strong today.`}
-          </h1>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow={isTr ? 'ANA SAYFA / GENEL BAKIŞ' : 'HOME / OVERVIEW'}
+        title={
+          isTr
+            ? `Merhaba ${displayName} — bugün nabız güçlü.`
+            : `Hi ${displayName} — the pulse is strong today.`
+        }
+      />
 
       <OnboardingNudge locale={locale} steps={onboardingSteps} />
 

@@ -15,7 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, Badge } from '@/components/ui';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
 
 interface ApiKey {
@@ -299,12 +299,17 @@ function AdminApiBody() {
                   <Webhook size={14} className="text-[#0A0A0A]" />
                   <p className="pulse-eyebrow text-[#737373]">WEBHOOKS</p>
                 </div>
-                <button
-                  onClick={() => alert(isTr ? 'Yakında bağlanacak.' : 'Coming soon.')}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#F5F5F5]"
-                >
-                  <Plus size={12} /> {isTr ? 'Endpoint ekle' : 'Add endpoint'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <Badge kind="ghost">{isTr ? 'Yakında' : 'Coming soon'}</Badge>
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-3 py-1.5 text-[12px] font-semibold text-[#A3A3A3]"
+                  >
+                    <Plus size={12} /> {isTr ? 'Endpoint ekle' : 'Add endpoint'}
+                  </button>
+                </div>
               </div>
               <div className="divide-y divide-[#EDEDED]">
                 {webhooks.map((w) => (
