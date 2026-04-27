@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Loader2, Save, Upload, Image as ImageIcon, Check, AlertCircle, X, Globe, Sparkles } from 'lucide-react';
+import { Badge, PageHeader } from '@/components/ui';
 
 type Lang = 'tr' | 'en';
 
@@ -115,26 +116,18 @@ export default function SiteSettingsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-5xl mx-auto space-y-6 pb-32">
-      {/* ─── Header ─── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">PANEL / SİTE AYARLARI</p>
-          <h1
-            className="mt-1 text-[28px] sm:text-[36px] font-medium text-[#0A0A0A] tracking-tight"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            Site Ayarları
-          </h1>
-          <p className="text-[14px] text-[#525252] mt-1.5 max-w-[560px]">
-            SEO metadatası, logo ve favicon — her değişiklik tüm site genelinde yansır.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 rounded-full border border-[#C6F24E]/60 bg-[#EAF9B8] px-3 py-1.5">
-          <Sparkles size={14} className="text-[#0A0A0A]" />
-          <span className="pulse-eyebrow text-[#0A0A0A]">SUPERADMIN</span>
-        </div>
-      </div>
+    <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-5 pb-32">
+      <PageHeader
+        eyebrow="SİTE AYARLARI"
+        title="Site ayarları"
+        description="SEO metadatası, logo ve favicon — her değişiklik tüm site genelinde yansır."
+        actions={
+          <Badge kind="lime">
+            <Sparkles size={11} strokeWidth={2} />
+            Superadmin
+          </Badge>
+        }
+      />
 
       {/* ─── Notifications ─── */}
       {error && (
