@@ -60,8 +60,8 @@ export default async function BoutiqueHotelsSolutionPage({ params }: { params: P
       icon: <BarChart3 size={24} />,
       title: isTr ? 'Misafir Hikayesi Oluştur' : 'Create Guest Story',
       desc: isTr
-        ? 'Check-out sonrası memnun misafiri TripAdvisor, Google ve Booking\'e yönlendirin. Kişisel deneyimini paylaşmasını kolaylaştırın.'
-        : 'After check-out, direct satisfied guests to TripAdvisor, Google and Booking. Make it easy for them to share their personal experience.',
+        ? 'Check-out sonrası her misafire TripAdvisor, Google ve Booking yorum bağlantılarını sunun. Hangi platformda paylaşacağına misafir karar verir; siz sadece kolaylığı sağlarsınız.'
+        : 'After check-out, offer every guest the TripAdvisor, Google and Booking review links. The guest chooses where to share — you just remove the friction.',
     },
   ];
 
@@ -95,7 +95,7 @@ export default async function BoutiqueHotelsSolutionPage({ params }: { params: P
     },
     {
       q: isTr ? 'TripAdvisor\'a yönlendirme yapabilir miyim?' : 'Can I direct guests to TripAdvisor?',
-      a: isTr ? 'Evet. Memnun misafirler geri bildirim sonunda Google, TripAdvisor veya Booking\'e yönlendirilebilir. Platform tercihini siz belirlersiniz.' : 'Yes. Satisfied guests can be directed to Google, TripAdvisor or Booking at the end of the feedback flow. You decide the platform preference.',
+      a: isTr ? 'Evet. Her misafir geri bildirim akışında Google, TripAdvisor veya Booking yorum bağlantılarını görebilir. Hangi platformların gösterileceğini siz seçersiniz; misafir hangisinde yorum yazacağına kendisi karar verir.' : 'Yes. Every guest can see Google, TripAdvisor and Booking review links in the feedback flow. You choose which platforms to surface; the guest decides where to post.',
     },
   ];
 

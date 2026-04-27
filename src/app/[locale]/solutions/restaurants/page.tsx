@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : 'Restaurant & Café Reputation Management — Buaze';
   const description =
     locale === 'tr'
-      ? "Masaya QR koy, ilk hafta Google yorumun 10 kat artsın. Memnun müşteriyi Google'a, memnun olmayanı ekibine yönlendiriyoruz."
-      : 'Put a QR on the table and watch Google reviews multiply 10x in the first week. Happy customers route to Google, unhappy ones to your team.';
+      ? 'Masaya QR koy, ilk hafta Google yorumun 10 kat artsın. Her misafire Google bağlantısı sunulur; isteyen ek olarak işletmene özel geri bildirim de gönderir.'
+      : 'Put a QR on the table and watch Google reviews multiply 10x in the first week. Every guest gets the Google review link; private feedback is an optional extra step.';
   return {
     title,
     description,
@@ -100,8 +100,8 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
             </h1>
             <p className="mt-5 max-w-[520px] text-[16px] leading-[1.55] text-[#525252] sm:text-[17px]">
               {isTr
-                ? "Masaya QR koy, ilk hafta Google yorumun 10 kat artsın. Memnun müşteriyi Google'a, memnun olmayanı ekibine yönlendiriyoruz. 1.200+ restoran ve kafe Buaze'i tercih ediyor."
-                : 'Put a QR on the table and watch Google reviews grow 10x in the first week. We route happy customers to Google and unhappy ones to your team. Trusted by 1,200+ restaurants and cafés.'}
+                ? "Masaya QR koy, ilk hafta Google yorumun 10 kat artsın. Her misafire Google bağlantısını sunuyoruz; ek olarak isteyen, ekibine özel geri bildirim de gönderebiliyor. 1.200+ restoran ve kafe Buaze'i tercih ediyor."
+                : 'Put a QR on the table and watch Google reviews grow 10x in the first week. Every guest gets the Google review link; anyone who wants to share private feedback with your team can do so in the same flow. Trusted by 1,200+ restaurants and cafés.'}
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link

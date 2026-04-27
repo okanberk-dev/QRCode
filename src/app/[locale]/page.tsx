@@ -179,8 +179,8 @@ export default async function LandingPage({
       num: '02',
       title: isTr ? 'Yönet' : 'Manage',
       body: isTr
-        ? 'Tüm yorumları tek panelden yanıtla. Olumsuzu ekibine ata, olumluyu Google\'da yayına taşı.'
-        : 'Reply to every review from one panel. Route negatives to your team, push positives to Google.',
+        ? 'Hem Google\'a düşen yorumları hem de işletmene özel gönderilen geri bildirimleri tek panelden yanıtla.'
+        : 'Reply to every review — public Google posts and private guest feedback — from one shared inbox.',
       Ill: IllusInbox,
     },
     {
@@ -209,13 +209,13 @@ export default async function LandingPage({
 
   const policyBlocks = isTr
     ? [
-        { n: '01', t: 'Tercih gönderimi', d: 'QR müşteriyi önce gerçek geri bildirime yönlendirir.' },
-        { n: '02', t: 'Şeffaf akış', d: 'Negatif yorumları süzmez; içeride çözüme aktarır.' },
+        { n: '01', t: 'Google önce', d: 'Her misafire önce Google yorum bağlantısı sunulur — yıldıza göre dallandırma yok.' },
+        { n: '02', t: 'Şeffaf akış', d: 'Negatif yorumlar süzülmez veya engellenmez; isteyen Google\'a yazar, isteyen ek olarak işletmeye özel geri bildirim de bırakır.' },
         { n: '03', t: 'Kural motoru', d: 'Her kampanya Google politikasına göre otomatik denetlenir.' },
       ]
     : [
-        { n: '01', t: 'Preference-first', d: 'The QR routes the customer to real feedback first.' },
-        { n: '02', t: 'Transparent flow', d: 'Negative reviews aren\'t filtered; they reach your team for resolution.' },
+        { n: '01', t: 'Google first', d: 'Every guest sees the public Google review link first — no rating-based gating.' },
+        { n: '02', t: 'Transparent flow', d: 'Negative reviews are never filtered or blocked; private feedback to your team is an optional extra step in the same flow.' },
         { n: '03', t: 'Rule engine', d: 'Every campaign is auto-audited against Google policy.' },
       ];
 

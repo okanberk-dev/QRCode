@@ -483,11 +483,11 @@ export default function DashboardQrPage() {
               <span>
                 {locale === 'tr' ? (
                   <>
-                    Google politikalarına <b>%100 uyumlu</b>. Olumsuz yorumlar gizlenmez; süzülmez — sadece iç yönetime atanır.
+                    <b>Önemli:</b> Müşteriler her zaman Google&apos;da yorum yazabilmeli. Buaze&apos;in özel geri bildirim kanalı opsiyonel bir ek adımdır; müşterinin kamuya açık yorum hakkını engellemek veya caydırmak Google politikalarına aykırıdır.
                   </>
                 ) : (
                   <>
-                    <b>100% compliant</b> with Google policy. Negative reviews are never hidden or filtered — only routed to internal management.
+                    <b>Important:</b> Customers must always be able to leave a public Google review. Buaze&apos;s private feedback channel is an optional extra step; never block, hide or discourage a customer from posting a public review — that violates Google policy.
                   </>
                 )}
               </span>
