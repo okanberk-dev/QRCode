@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Building2, QrCode, ArrowRight, Star, Calendar, ShieldCheck, TrendingUp } from 'lucide-react';
 import RestaurantAnalyticsPanel from '@/components/dashboard/RestaurantAnalyticsPanel';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
+import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 
 export async function generateMetadata({
   params,
@@ -123,6 +124,44 @@ export default async function DashboardPage({
   const displayName = user.name?.trim() || (isTr ? 'İşletmeci' : 'there');
   const activeQr = user.restaurants.filter((r) => r.isActive).length;
 
+  // Onboarding nudge — derive setup completeness from existing data signals.
+  // Backend shape unchanged; we just project booleans the UI can read.
+  const hasRestaurant = user.restaurants.length > 0;
+  const hasActiveRestaurant = user.restaurants.some((r) => r.isActive);
+  const hasReviews = totalReviews > 0;
+  const onboardingSteps: OnboardingStep[] = [
+    {
+      id: 1,
+      label: isTr ? 'İşletme profilini tamamla' : 'Complete business profile',
+      done: !!user.name && hasRestaurant,
+      href: `/${locale}/dashboard/profile`,
+    },
+    {
+      id: 2,
+      label: isTr ? 'İlk işletmeyi ekle' : 'Add first business',
+      done: hasRestaurant,
+      href: `/${locale}/dashboard/restaurants`,
+    },
+    {
+      id: 3,
+      label: isTr ? 'İlk QR kodunu oluştur' : 'Generate first QR code',
+      done: hasActiveRestaurant,
+      href: `/${locale}/dashboard/qr`,
+    },
+    {
+      id: 4,
+      label: isTr ? 'Yorum platform bağlantılarını ekle' : 'Add review platform links',
+      done: hasReviews,
+      href: `/${locale}/dashboard/platforms`,
+    },
+    {
+      id: 5,
+      label: isTr ? 'Müşteri yorumlarını izle' : 'Track customer feedback',
+      done: hasReviews,
+      href: `/${locale}/dashboard/feedbacks`,
+    },
+  ];
+
   type Kpi = { label: string; value: number; sub: string; icon: React.ReactNode; href?: string };
   const kpis: Kpi[] = [
     {
@@ -175,6 +214,8 @@ export default async function DashboardPage({
           </h1>
         </div>
       </header>
+
+      <OnboardingNudge locale={locale} steps={onboardingSteps} />
 
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
