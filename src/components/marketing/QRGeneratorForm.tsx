@@ -2,30 +2,42 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import QRCodeLib from 'qrcode';
-import {
-  Link2,
-  Download,
-  Copy,
-  Check,
-  AlertCircle,
-  QrCode,
-  Sparkles,
-} from 'lucide-react';
+import { AlertCircle, Download } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 
 interface QRGeneratorFormProps {
   locale: Locale;
 }
 
+type TemplateKey = 'beyaz' | 'lime' | 'koyu' | 'minimal';
+
+const TEMPLATES: Record<TemplateKey, { card: string; fg: string; border: string; eyebrow: string }> = {
+  beyaz: { card: '#FFFFFF', fg: '#0A0A0A', border: '#E5E5E5', eyebrow: 'rgba(10,10,10,0.55)' },
+  lime: { card: '#C6F24E', fg: '#0A0A0A', border: 'transparent', eyebrow: 'rgba(10,10,10,0.6)' },
+  koyu: { card: '#0A0A0A', fg: '#FFFFFF', border: 'transparent', eyebrow: 'rgba(255,255,255,0.55)' },
+  minimal: { card: '#FAFAFA', fg: '#0A0A0A', border: '#EDEDED', eyebrow: 'rgba(10,10,10,0.55)' },
+};
+
 const DEFAULT_URL = 'https://buaze.com';
+
+const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string),
+  );
 
 export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
   const isTr = locale === 'tr';
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [url, setUrl] = useState<string>(DEFAULT_URL);
-  const [submittedUrl, setSubmittedUrl] = useState<string>(DEFAULT_URL);
+
+  const defaultMessage = isTr ? 'Deneyiminizi paylaşın' : 'Share your experience';
+
+  const [businessName, setBusinessName] = useState('');
+  const [url, setUrl] = useState(DEFAULT_URL);
+  const [message, setMessage] = useState(defaultMessage);
+  const [template, setTemplate] = useState<TemplateKey>('lime');
+
+  const [submittedUrl, setSubmittedUrl] = useState(DEFAULT_URL);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const normalizeUrl = useCallback((raw: string): string => {
@@ -55,7 +67,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
         if (err) {
           setError(isTr ? 'QR kodu oluşturulamadı' : 'Could not generate QR code');
         }
-      }
+      },
     );
   }, [submittedUrl, isTr]);
 
@@ -75,17 +87,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
     }
   };
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(submittedUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Copying is a nice-to-have; ignore permission errors.
-    }
-  };
-
-  const handleDownload = () => {
+  const handlePngDownload = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const link = document.createElement('a');
@@ -101,156 +103,278 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
     link.click();
   };
 
+  const handlePdfDownload = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL('image/png');
+    const palette = TEMPLATES[template];
+    const safeBiz = escapeHtml((businessName || 'BUAZE').toUpperCase().slice(0, 60));
+    const safeMsg = escapeHtml(message || defaultMessage);
+    const safeFooter = isTr ? 'BUAZE · TARA &#10022; PAYLAŞ' : 'BUAZE · SCAN &#10022; SHARE';
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.document.write(`<!DOCTYPE html>
+<html lang="${isTr ? 'tr' : 'en'}">
+<head>
+<meta charset="utf-8" />
+<title>${safeBiz} QR</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; }
+  .card { background: ${palette.card}; color: ${palette.fg}; border: 1px solid ${palette.border === 'transparent' ? palette.card : palette.border}; padding: 56px 40px; border-radius: 24px; width: 100%; max-width: 520px; aspect-ratio: 3 / 4; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; }
+  .eyebrow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.2em; color: ${palette.eyebrow}; }
+  h1 { font-size: 38px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin: 12px 0 0; white-space: pre-line; }
+  .qr-wrap { background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 1px 0 rgba(10,10,10,0.05); }
+  .qr-wrap img { display: block; width: 200px; height: 200px; }
+  .footer { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.18em; color: ${palette.eyebrow}; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .card { box-shadow: none; }
+    @page { size: A5 portrait; margin: 12mm; }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div>
+      <div class="eyebrow">${safeBiz}</div>
+      <h1>${safeMsg}</h1>
+    </div>
+    <div class="qr-wrap"><img src="${dataUrl}" alt="QR" /></div>
+    <div class="footer">${safeFooter}</div>
+  </div>
+  <script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 250); });</script>
+</body>
+</html>`);
+    printWindow.document.close();
+  };
+
+  const palette = TEMPLATES[template];
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-10 items-start">
-      {/* ─── Form side ─── */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
+      {/* ─── 1. Form (FAFAFA card) ─── */}
       <form
         onSubmit={handleSubmit}
-        className="lg:col-span-3 space-y-6 order-2 lg:order-1"
         aria-label={isTr ? 'QR kod oluşturma formu' : 'QR code generator form'}
+        className="bg-[#FAFAFA] border border-[#EDEDED] rounded-[18px] p-6 sm:p-8 order-2 lg:order-1"
       >
-        <div className="space-y-2.5">
-          <label
-            htmlFor="qr-url"
-            className="pulse-eyebrow text-[#737373] flex items-center gap-1.5"
-          >
-            <Link2 size={12} aria-hidden className="text-[#0A0A0A]" />
-            {isTr ? 'Web sitesi adresi' : 'Website URL'}
-          </label>
-          <input
-            id="qr-url"
-            name="url"
-            type="url"
-            inputMode="url"
-            autoComplete="url"
-            required
-            value={url}
-            onChange={(e) => {
-              setUrl(e.target.value);
-              if (error) setError(null);
-            }}
-            placeholder="https://example.com/menu"
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? 'qr-url-error' : 'qr-url-hint'}
-            className={`w-full px-4 sm:px-5 py-3.5 sm:py-4 text-[15px] sm:text-[16px] bg-white rounded-2xl border text-[#0A0A0A] placeholder:text-[#A3A3A3] focus:outline-none transition-colors ${
-              error
-                ? 'border-[#DC2626] focus:border-[#DC2626]'
-                : 'border-[#EDEDED] focus:border-[#0A0A0A]'
-            }`}
-          />
-          {error ? (
-            <p
-              id="qr-url-error"
-              role="alert"
-              className="text-[13px] text-[#DC2626] flex items-center gap-1.5"
-            >
-              <AlertCircle size={14} aria-hidden />
-              {error}
-            </p>
-          ) : (
-            <p id="qr-url-hint" className="text-[12px] sm:text-[13px] text-[#737373]">
-              {isTr
-                ? 'Menü, rezervasyon veya bilgi sayfası gibi herhangi bir genel bağlantıyı yapıştırın.'
-                : 'Paste any public link — a menu, reservation page, or info page.'}
-            </p>
-          )}
-        </div>
-
-        <button
-          type="submit"
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] font-medium text-[14px] sm:text-[15px] px-6 py-3.5 sm:py-4 rounded-full hover:bg-[#A8D62E] transition-colors"
+        <h2
+          className="text-[22px] sm:text-[24px] font-semibold text-[#0A0A0A] tracking-[-0.015em] mb-5"
+          style={{ fontFamily: 'var(--font-heading)' }}
         >
-          <Sparkles size={16} aria-hidden />
-          {isTr ? 'QR Kodu Oluştur' : 'Generate QR Code'}
-        </button>
+          {isTr ? '1. Bilgilerini gir' : '1. Enter your details'}
+        </h2>
 
-        {/* Helper list */}
-        <ul className="pt-5 space-y-2.5 border-t border-[#EDEDED]">
-          {[
-            isTr ? 'Yalnızca bu URL için benzersiz QR' : 'A QR dedicated to this URL only',
-            isTr ? 'Yüksek çözünürlüklü PNG indirme' : 'High-resolution PNG download',
-            isTr ? 'Süresiz çalışır — ücret yoktur' : 'Works forever — no fees',
-          ].map((item) => (
-            <li
-              key={item}
-              className="flex items-start gap-2.5 text-[13px] sm:text-[14px] text-[#525252]"
+        <div className="flex flex-col gap-[18px]">
+          {/* İşletme adı */}
+          <div>
+            <label htmlFor="qr-biz" className="pulse-eyebrow text-[#737373] block">
+              {isTr ? 'İŞLETME ADI' : 'BUSINESS NAME'}
+            </label>
+            <input
+              id="qr-biz"
+              type="text"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              placeholder={isTr ? 'Ark Bistro' : 'Ark Bistro'}
+              maxLength={60}
+              className="mt-1.5 w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] text-[15px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none focus:border-[#0A0A0A] transition-colors"
+            />
+          </div>
+
+          {/* URL */}
+          <div>
+            <label htmlFor="qr-url" className="pulse-eyebrow text-[#737373] block">
+              {isTr ? 'GOOGLE YORUM LİNKİ' : 'GOOGLE REVIEW LINK'}
+            </label>
+            <input
+              id="qr-url"
+              type="url"
+              inputMode="url"
+              autoComplete="url"
+              required
+              value={url}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                if (error) setError(null);
+              }}
+              placeholder="g.page/r/CZEa4X..."
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'qr-url-error' : undefined}
+              className={`mt-1.5 w-full px-4 py-3.5 bg-white rounded-[10px] border text-[14px] text-[#525252] placeholder:text-[#A3A3A3] outline-none transition-colors font-mono ${
+                error
+                  ? 'border-[#DC2626] focus:border-[#DC2626]'
+                  : 'border-[#E5E5E5] focus:border-[#0A0A0A]'
+              }`}
+              style={{ fontFamily: 'var(--font-mono)' }}
+            />
+            {error && (
+              <p
+                id="qr-url-error"
+                role="alert"
+                className="mt-1.5 text-[13px] text-[#DC2626] flex items-center gap-1.5"
+              >
+                <AlertCircle size={14} aria-hidden />
+                {error}
+              </p>
+            )}
+          </div>
+
+          {/* Ön yazı */}
+          <div>
+            <label htmlFor="qr-msg" className="pulse-eyebrow text-[#737373] block">
+              {isTr ? 'ÖN YAZI' : 'HEADLINE'}
+            </label>
+            <input
+              id="qr-msg"
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={defaultMessage}
+              maxLength={48}
+              className="mt-1.5 w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] text-[14px] text-[#525252] placeholder:text-[#A3A3A3] outline-none focus:border-[#0A0A0A] transition-colors"
+            />
+          </div>
+
+          {/* Tasarım şablonu */}
+          <div>
+            <label className="pulse-eyebrow text-[#737373] block">
+              {isTr ? 'TASARIM ŞABLONU' : 'DESIGN TEMPLATE'}
+            </label>
+            <div
+              role="radiogroup"
+              aria-label={isTr ? 'Tasarım şablonu' : 'Design template'}
+              className="mt-2.5 grid grid-cols-4 gap-2"
             >
-              <span className="flex-shrink-0 mt-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
-                <Check size={10} strokeWidth={3} aria-hidden />
-              </span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
+              {(
+                [
+                  { k: 'beyaz', l: isTr ? 'Beyaz' : 'White' },
+                  { k: 'lime', l: 'Lime' },
+                  { k: 'koyu', l: isTr ? 'Koyu' : 'Dark' },
+                  { k: 'minimal', l: 'Minimal' },
+                ] as { k: TemplateKey; l: string }[]
+              ).map((t) => {
+                const active = template === t.k;
+                return (
+                  <button
+                    key={t.k}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setTemplate(t.k)}
+                    className={`px-2 py-2.5 rounded-[8px] text-[12px] font-medium transition-colors ${
+                      active
+                        ? 'border-2 border-[#0A0A0A]'
+                        : 'border border-[#E5E5E5] hover:border-[#0A0A0A]'
+                    }`}
+                    style={{
+                      background: t.k === 'lime' ? '#C6F24E' : t.k === 'koyu' ? '#0A0A0A' : t.k === 'minimal' ? '#FAFAFA' : '#FFFFFF',
+                      color: t.k === 'koyu' ? '#FFFFFF' : '#0A0A0A',
+                    }}
+                  >
+                    {t.l}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="mt-2 w-full inline-flex items-center justify-center gap-2 px-5 py-[14px] bg-[#0A0A0A] text-white rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
+          >
+            {isTr ? 'QR kodu oluştur' : 'Generate QR code'}
+            <span aria-hidden>→</span>
+          </button>
+        </div>
       </form>
 
-      {/* ─── Preview side ─── */}
-      <figure
-        className="lg:col-span-2 bg-white border border-[#EDEDED] rounded-2xl shadow-[0_8px_24px_rgba(10,10,10,0.04)] p-5 sm:p-6 space-y-4 order-1 lg:order-2"
-      >
-        <div className="flex items-center justify-between gap-2">
-          <div className="inline-flex items-center gap-1.5 bg-[#EAF9B8] border border-[#C6F24E] rounded-full px-2.5 py-1">
-            <QrCode size={11} aria-hidden className="text-[#0A0A0A]" />
-            <span className="pulse-eyebrow text-[#0A0A0A] text-[10px]">
-              {isTr ? 'Canlı önizleme' : 'Live preview'}
-            </span>
-          </div>
-          <span
-            aria-live="polite"
-            className={`pulse-eyebrow text-[10px] transition-opacity ${
-              isGenerating ? 'opacity-100 text-[#737373]' : 'opacity-0'
-            }`}
-          >
-            {isTr ? 'Oluşturuluyor…' : 'Generating…'}
-          </span>
-        </div>
+      {/* ─── 2. Preview ─── */}
+      <div className="order-1 lg:order-2">
+        <h2
+          className="text-[22px] sm:text-[24px] font-semibold text-[#0A0A0A] tracking-[-0.015em] mb-5"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >
+          {isTr ? '2. Önizle ve indir' : '2. Preview & download'}
+        </h2>
 
-        <div className="relative bg-white border border-[#EDEDED] rounded-2xl p-3 sm:p-4 aspect-square flex items-center justify-center">
-          <canvas
-            ref={canvasRef}
-            className="w-full h-full max-w-[360px] max-h-[360px]"
-            role="img"
-            aria-label={
-              isTr
-                ? `"${submittedUrl}" adresi için QR kodu`
-                : `QR code for "${submittedUrl}"`
-            }
-          />
-        </div>
+        <figure
+          className="rounded-[18px] flex flex-col items-center justify-between text-center transition-colors"
+          style={{
+            background: palette.card,
+            color: palette.fg,
+            border: palette.border === 'transparent' ? '1px solid transparent' : `1px solid ${palette.border}`,
+            aspectRatio: '3 / 4',
+            padding: 'clamp(20px, 5vw, 40px)',
+          }}
+        >
+          <div>
+            <div
+              className="pulse-eyebrow"
+              style={{ color: palette.eyebrow, fontSize: 10, letterSpacing: '0.2em' }}
+            >
+              {(businessName || 'BUAZE').toUpperCase().slice(0, 28)}
+            </div>
+            <div
+              className="mt-2.5 leading-[1.02] tracking-[-0.03em] whitespace-pre-line"
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontSize: 'clamp(22px, 4vw, 38px)',
+                fontWeight: 500,
+                color: palette.fg,
+              }}
+            >
+              {message || defaultMessage}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-[0_1px_0_rgba(10,10,10,0.05)]">
+            <canvas
+              ref={canvasRef}
+              className="block w-[120px] h-[120px] sm:w-[160px] sm:h-[160px]"
+              role="img"
+              aria-label={
+                isTr ? `"${submittedUrl}" adresi için QR kodu` : `QR code for "${submittedUrl}"`
+              }
+            />
+          </div>
+
+          <div
+            className="pulse-eyebrow"
+            style={{ color: palette.eyebrow, fontSize: 10, letterSpacing: '0.18em' }}
+          >
+            {isTr ? 'BUAZE · TARA ✦ PAYLAŞ' : 'BUAZE · SCAN ✦ SHARE'}
+          </div>
+        </figure>
 
         <figcaption
-          className="text-center font-mono text-[11px] sm:text-[12px] text-[#737373] break-all px-1 leading-relaxed"
+          className="mt-3 font-mono text-[11px] sm:text-[12px] text-[#737373] break-all leading-relaxed text-center px-1"
           style={{ fontFamily: 'var(--font-mono)' }}
+          aria-live="polite"
         >
-          {submittedUrl}
+          {isGenerating ? (isTr ? 'Oluşturuluyor…' : 'Generating…') : submittedUrl}
         </figcaption>
 
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="mt-3.5 grid grid-cols-2 gap-2.5">
           <button
             type="button"
-            onClick={handleDownload}
-            className="inline-flex items-center justify-center gap-1.5 bg-[#0A0A0A] text-white font-medium text-[13px] px-3 py-3 rounded-full hover:bg-[#1A1A1A] transition-colors"
+            onClick={handlePngDownload}
+            className="inline-flex items-center justify-center gap-1.5 bg-[#0A0A0A] text-white text-[13px] font-medium px-4 py-3 rounded-full hover:bg-[#1A1A1A] transition-colors"
           >
             <Download size={13} aria-hidden />
-            PNG
+            {isTr ? 'PNG indir' : 'PNG download'}
           </button>
           <button
             type="button"
-            onClick={handleCopy}
-            className="inline-flex items-center justify-center gap-1.5 bg-white text-[#0A0A0A] font-medium text-[13px] px-3 py-3 rounded-full border border-[#EDEDED] hover:border-[#0A0A0A] transition-colors"
-            aria-label={isTr ? 'Bağlantıyı kopyala' : 'Copy link'}
+            onClick={handlePdfDownload}
+            className="inline-flex items-center justify-center gap-1.5 bg-white text-[#0A0A0A] text-[13px] font-medium px-4 py-3 rounded-full border border-[#0A0A0A] hover:bg-[#FAFAFA] transition-colors"
           >
-            {copied ? (
-              <Check size={13} aria-hidden className="text-[#A8D62E]" />
-            ) : (
-              <Copy size={13} aria-hidden />
-            )}
-            <span className="truncate">
-              {copied ? (isTr ? 'Kopyalandı' : 'Copied') : (isTr ? 'Kopyala' : 'Copy')}
-            </span>
+            {isTr ? 'PDF olarak' : 'As PDF'}
           </button>
         </div>
-      </figure>
+      </div>
     </div>
   );
 }
