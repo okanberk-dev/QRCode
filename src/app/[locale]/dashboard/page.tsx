@@ -6,11 +6,11 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
 import Link from 'next/link';
-import { Building2, QrCode, ArrowRight, Star, ShieldCheck, TrendingUp } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Building2, Inbox, QrCode, ShieldCheck, Star } from 'lucide-react';
 import RestaurantAnalyticsPanel from '@/components/dashboard/RestaurantAnalyticsPanel';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
-import { BarChart, Eyebrow, PageHeader } from '@/components/ui';
+import { BarChart, Eyebrow, LegendDot, PageHeader, Sparkline, StatCard } from '@/components/ui';
 
 export async function generateMetadata({
   params,
@@ -166,13 +166,96 @@ export default async function DashboardPage({
     .sort((a, b) => b.avg - a.avg || b.count - a.count)
     .slice(0, 5);
 
+  // Star distribution across all locations (Pulse 2026-04 design OwnerDashboard
+  // "Puan dağılımı" card — large total + 5 star bars).
+  const starGroups = restIds.length
+    ? await prisma.feedback.groupBy({
+        by: ['rating'],
+        where: { restaurantId: { in: restIds } },
+        _count: { _all: true },
+      })
+    : [];
+  const starCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  for (const g of starGroups) {
+    if (g.rating >= 1 && g.rating <= 5) starCounts[g.rating] = g._count._all;
+  }
+  const starTotal = Object.values(starCounts).reduce((a, b) => a + b, 0);
+  const starRows = [5, 4, 3, 2, 1].map((star) => ({
+    star,
+    count: starCounts[star],
+    pct: starTotal > 0 ? (starCounts[star] / starTotal) * 100 : 0,
+  }));
+
+  // QR performance — most recently generated QR codes per (restaurant, table,
+  // platform). Real scan tracking yok; sparkline buckets daily feedback
+  // counts in last 7 days for the QR's restaurant as a proxy.
+  const qrPerfRows = restIds.length
+    ? await prisma.qrGeneration.findMany({
+        where: { restaurantId: { in: restIds }, type: 'feedback' },
+        orderBy: { createdAt: 'desc' },
+        take: 25,
+        select: {
+          id: true,
+          tableNumber: true,
+          platform: true,
+          createdAt: true,
+          restaurant: { select: { name: true, id: true } },
+        },
+      })
+    : [];
+
+  // Per-restaurant 7-day sparkline (one fetch keyed by restaurantId).
+  const trendByRestaurant = restIds.length
+    ? await prisma.feedback.findMany({
+        where: { restaurantId: { in: restIds }, createdAt: { gte: sevenDaysAgo } },
+        select: { restaurantId: true, createdAt: true },
+      })
+    : [];
+  const sparklineByRestaurant = new Map<string, number[]>();
+  for (const r of restIds) sparklineByRestaurant.set(r, Array(7).fill(0));
+  for (const f of trendByRestaurant) {
+    if (!f.restaurantId) continue;
+    const dayIdx = Math.floor((Date.now() - f.createdAt.getTime()) / 86400000);
+    if (dayIdx >= 0 && dayIdx < 7) {
+      const arr = sparklineByRestaurant.get(f.restaurantId);
+      if (arr) arr[6 - dayIdx] = (arr[6 - dayIdx] || 0) + 1;
+    }
+  }
+
+  const seenKeys = new Set<string>();
+  const qrPerfTop: Array<{
+    id: string;
+    name: string;
+    platform: string | null;
+    sparkline: number[];
+    restaurantId: string;
+  }> = [];
+  for (const q of qrPerfRows) {
+    const key = `${q.restaurant.id}::${q.tableNumber || ''}::${q.platform || ''}`;
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
+    const restName = q.restaurant.name;
+    const label = q.tableNumber
+      ? `${restName} · ${isTrLocale ? 'Masa' : 'Table'} ${q.tableNumber}`
+      : q.platform
+        ? `${restName} · ${q.platform}`
+        : restName;
+    qrPerfTop.push({
+      id: q.id,
+      name: label,
+      platform: q.platform,
+      sparkline: sparklineByRestaurant.get(q.restaurant.id) || Array(7).fill(0),
+      restaurantId: q.restaurant.id,
+    });
+    if (qrPerfTop.length >= 5) break;
+  }
+
   const trialDaysLeft = user.trialEndsAt
     ? Math.max(0, Math.ceil((user.trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
 
   const isTr = locale === 'tr';
   const displayName = user.name?.trim() || (isTr ? 'İşletmeci' : 'there');
-  const activeQr = user.restaurants.filter((r) => r.isActive).length;
 
   // Weighted average rating across the operator's locations
   const totalRatedCount = restaurantRatings.reduce((a, r) => a + r._count._all, 0);
@@ -218,38 +301,28 @@ export default async function DashboardPage({
     },
   ];
 
-  type Kpi = { label: string; value: string | number; sub: string; icon: React.ReactNode; href?: string; accent?: boolean };
-  const kpis: Kpi[] = [
-    {
-      label: isTr ? 'Toplam yorum' : 'Total reviews',
-      value: totalReviews,
-      sub: isTr ? 'Tüm işletmeler' : 'All locations',
-      icon: <Star size={14} strokeWidth={2} />,
-      href: `/${locale}/dashboard/feedbacks`,
-    },
-    {
-      label: isTr ? 'Ortalama puan' : 'Avg rating',
-      value: avgRating > 0 ? avgRating.toFixed(1) : '—',
-      sub: isTr ? `${totalRatedCount} yorum üzerinden` : `across ${totalRatedCount} reviews`,
-      icon: <Star size={14} strokeWidth={2} fill="currentColor" />,
-      href: `/${locale}/dashboard/feedbacks`,
-      accent: true,
-    },
-    {
-      label: isTr ? 'Aktif QR' : 'Active QR',
-      value: activeQr,
-      sub: isTr ? `${user.restaurants.length} konum` : `${user.restaurants.length} locations`,
-      icon: <QrCode size={14} strokeWidth={2} />,
-      href: `/${locale}/dashboard/qr`,
-    },
-    {
-      label: isTr ? 'Yönlendirme' : 'Redirects',
-      value: redirectCount,
-      sub: isTr ? '4+ yıldızdan platforma' : '4+ stars sent to platform',
-      icon: <ShieldCheck size={14} strokeWidth={2} />,
-      href: `/${locale}/dashboard/platforms`,
-    },
-  ];
+  // 7-day aggregate footer for the trend card (design's 3-stat row beneath
+  // BarChart). Total scans proxy = total feedbacks last 7d. Avg rating + redirect
+  // rate computed across same window.
+  const last7Total = trendByRestaurant.length;
+  const last7Reviews = restIds.length
+    ? await prisma.feedback.aggregate({
+        where: { restaurantId: { in: restIds }, createdAt: { gte: sevenDaysAgo } },
+        _avg: { rating: true },
+      })
+    : { _avg: { rating: null as number | null } };
+  const last7AvgRating = last7Reviews._avg.rating ?? 0;
+  const last7Redirected = restIds.length
+    ? await prisma.feedback.count({
+        where: {
+          restaurantId: { in: restIds },
+          createdAt: { gte: sevenDaysAgo },
+          rating: { gte: 4 },
+          platform: { not: null },
+        },
+      })
+    : 0;
+  const last7RedirectPct = last7Total > 0 ? Math.round((last7Redirected / last7Total) * 100) : 0;
 
   return (
     <div
@@ -328,57 +401,220 @@ export default async function DashboardPage({
         ))}
       </div>
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
-        {kpis.map((k) => {
-          const inner = (
-            <>
-              <div className="flex items-center justify-between">
-                <span className="pulse-eyebrow text-[#737373]">{k.label}</span>
-                <span
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                    k.accent ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#EAF9B8] text-[#0A0A0A]'
-                  }`}
-                >
-                  {k.icon}
-                </span>
-              </div>
-              <div
-                className="mt-4 text-[30px] sm:text-[38px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A] tabular-nums bz-h-tight"
-              >
-                {k.value}
-              </div>
-              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-[#737373]">
-                <TrendingUp size={11} strokeWidth={2} className="text-[#16A34A]" />
-                <span>{k.sub}</span>
-              </div>
-            </>
-          );
-          return k.href ? (
-            <Link
-              key={k.label}
-              href={k.href}
-              className="block bz-card p-5 transition-colors hover:border-[#C6F24E]"
-            >
-              {inner}
-            </Link>
-          ) : (
-            <div key={k.label} className="bz-card p-5">
-              {inner}
-            </div>
-          );
-        })}
+      {/* 4-stat KPI grid (1:1 Pulse 2026-04 OwnerDashboard — admin chrome ile aynı StatCard primitive'i) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <StatCard
+          label={isTr ? 'Toplam yorum' : 'Total reviews'}
+          value={totalReviews.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          delta={isTr ? 'Tüm işletmeler' : 'All locations'}
+          deltaKind="neutral"
+          icon={<Inbox size={14} strokeWidth={2} />}
+        />
+        <StatCard
+          label={isTr ? 'Ortalama puan' : 'Avg rating'}
+          value={avgRating > 0 ? avgRating.toFixed(1) : '—'}
+          delta={`${totalRatedCount} ${isTr ? 'yorum' : 'reviews'}`}
+          deltaKind="neutral"
+          icon={<Star size={14} strokeWidth={2} fill="#C6F24E" stroke="#C6F24E" />}
+          accent="#C6F24E"
+        />
+        <StatCard
+          label={isTr ? 'QR taranma' : 'QR scans'}
+          value={scans30d.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          delta={isTr ? 'Son 30 gün' : 'Last 30 days'}
+          deltaKind="neutral"
+          icon={<QrCode size={14} strokeWidth={2} />}
+        />
+        <StatCard
+          label={isTr ? 'Platforma yönlendirme' : 'Platform redirects'}
+          value={redirectCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          delta={isTr ? '4+ yıldız' : '4+ stars'}
+          deltaKind="neutral"
+          icon={<ArrowUpRight size={14} strokeWidth={2} />}
+        />
       </div>
 
-      {/* 7-day trend BarChart (1:1 design OwnerDashboard inline chart) */}
-      <section className="bz-card p-5 sm:p-6">
-        <Eyebrow>{isTrLocale ? 'SON 7 GÜN' : 'LAST 7 DAYS'}</Eyebrow>
-        <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
-          {isTrLocale ? 'Yorum trendi' : 'Review trend'}
-        </div>
-        <BarChart data={trendData} height={140} />
-      </section>
+      {/* Etkileşim eğilimi + Puan dağılımı (1:1 design 2fr 1fr split) */}
+      <div className="grid gap-3.5 lg:grid-cols-[2fr_1fr]">
+        <section className="bz-card p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+            <div>
+              <Eyebrow>{isTr ? 'Etkileşim eğilimi' : 'Interaction trend'}</Eyebrow>
+              <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
+                {isTr ? 'Son 7 gün' : 'Last 7 days'}
+              </div>
+            </div>
+            <div className="flex gap-3 sm:gap-4">
+              <LegendDot color="#0A0A0A" label={isTr ? 'Taranma' : 'Scans'} />
+              <LegendDot color="#C6F24E" label={isTr ? 'Puan' : 'Rating'} />
+            </div>
+          </div>
+          <BarChart data={trendData} height={140} />
+          <div className="mt-5 pt-3.5 border-t border-[#EDEDED] grid grid-cols-3 gap-2 text-[12px] text-[#525252]">
+            <span>
+              <strong className="text-[#0A0A0A]">{last7Total}</strong>{' '}
+              <span className="hidden sm:inline">{isTr ? 'toplam taranma' : 'total scans'}</span>
+              <span className="sm:hidden">{isTr ? 'taranma' : 'scans'}</span>
+            </span>
+            <span>
+              <strong className="text-[#0A0A0A]">{last7AvgRating > 0 ? last7AvgRating.toFixed(1) : '—'}</strong>{' '}
+              <span className="hidden sm:inline">{isTr ? 'ort. puan' : 'avg rating'}</span>
+              <span className="sm:hidden">{isTr ? 'puan' : 'rating'}</span>
+            </span>
+            <span>
+              <strong className="text-[#0A0A0A]">{last7RedirectPct}%</strong>{' '}
+              <span className="hidden sm:inline">{isTr ? 'yönlendirme oranı' : 'redirect rate'}</span>
+              <span className="sm:hidden">{isTr ? 'yönlend.' : 'redirect'}</span>
+            </span>
+          </div>
+        </section>
 
+        <section className="bz-card p-5 sm:p-6">
+          <Eyebrow>{isTr ? 'Puan dağılımı' : 'Rating distribution'}</Eyebrow>
+          <div className="bz-h-tight-2 mt-2" style={{ fontSize: 32 }}>
+            {avgRating > 0 ? avgRating.toFixed(1) : '—'}
+            <span style={{ fontSize: 14, color: '#737373', fontWeight: 400 }}> / 5</span>
+          </div>
+          <div className="mt-4 flex flex-col gap-2">
+            {starRows.map((r) => {
+              const barColor = r.star >= 4 ? '#0A0A0A' : r.star === 3 ? '#A3A3A3' : '#DC2626';
+              return (
+                <div key={r.star} className="flex items-center gap-2.5 text-[12px]">
+                  <span className="w-3 text-[#525252]" style={{ fontWeight: 600 }}>
+                    {r.star}
+                  </span>
+                  <Star size={11} className="text-[#C6F24E]" fill="#C6F24E" />
+                  <div className="flex-1 h-1.5 bg-[#F5F5F5] rounded-[3px] overflow-hidden">
+                    <div
+                      className="h-full rounded-[3px]"
+                      style={{ width: `${r.pct}%`, background: barColor }}
+                    />
+                  </div>
+                  <span className="w-9 text-right text-[#737373] tabular-nums">
+                    {r.count}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+
+      {/* Son yorumlar + QR performansı (1:1 design 1fr 1fr split) */}
+      {(latestFeedbacks.length > 0 || qrPerfTop.length > 0) && (
+        <div className="grid gap-3.5 lg:grid-cols-2">
+          {latestFeedbacks.length > 0 && (
+            <section className="bz-card">
+              <div className="flex items-center justify-between p-5">
+                <div>
+                  <Eyebrow>{isTr ? 'Son yorumlar' : 'Recent reviews'}</Eyebrow>
+                  <div className="bz-h-tight mt-1" style={{ fontSize: 16 }}>
+                    {isTr ? 'Gelen kutusu' : 'Inbox'}
+                  </div>
+                </div>
+                <Link
+                  href={`/${locale}/dashboard/feedbacks`}
+                  className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5"
+                >
+                  {isTr ? 'Tümü' : 'View all'}
+                  <ArrowRight size={12} strokeWidth={2} />
+                </Link>
+              </div>
+              <div className="border-t border-[#EDEDED]">
+                {latestFeedbacks.map((fb) => {
+                  const initials = (fb.name || fb.restaurant?.name || 'M').charAt(0).toUpperCase();
+                  const high = fb.rating >= 4;
+                  return (
+                    <div
+                      key={fb.id}
+                      className="flex items-start gap-3 px-5 py-3.5 border-b border-[#F5F5F5] last:border-b-0"
+                    >
+                      <div
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold shrink-0"
+                        style={{
+                          background: high ? '#0A0A0A' : '#DC2626',
+                          color: high ? '#C6F24E' : '#fff',
+                        }}
+                      >
+                        {initials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex justify-between items-center gap-2">
+                          <span className="text-[13px] font-semibold truncate">
+                            {fb.name || fb.restaurant?.name || (isTr ? 'Anonim' : 'Anonymous')}
+                          </span>
+                          <span className="flex gap-px shrink-0">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                size={11}
+                                className={s <= fb.rating ? 'text-[#C6F24E]' : 'text-[#E5E5E5]'}
+                                fill={s <= fb.rating ? '#C6F24E' : '#E5E5E5'}
+                              />
+                            ))}
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate text-[12.5px] text-[#525252] leading-[1.5]">
+                          {fb.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
+                        </p>
+                        <div className="mt-1 flex gap-2.5 text-[10.5px] text-[#A3A3A3]">
+                          <span>{fb.restaurant?.name ?? (isTr ? 'İşletme' : 'Location')}</span>
+                          <span>·</span>
+                          <span>
+                            {new Date(fb.createdAt).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
+                              day: '2-digit',
+                              month: 'short',
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {qrPerfTop.length > 0 && (
+            <section className="bz-card">
+              <div className="p-5">
+                <Eyebrow>{isTr ? 'QR performansı' : 'QR performance'}</Eyebrow>
+                <div className="bz-h-tight mt-1" style={{ fontSize: 16 }}>
+                  {isTr ? 'En aktif QR kodları' : 'Most active QRs'}
+                </div>
+              </div>
+              <div className="border-t border-[#EDEDED]">
+                {qrPerfTop.map((q) => (
+                  <div
+                    key={q.id}
+                    className="flex items-center gap-3 px-5 py-3.5 border-b border-[#F5F5F5] last:border-b-0"
+                  >
+                    <div
+                      className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0"
+                      style={{ background: '#0A0A0A' }}
+                    >
+                      <QrCode size={18} className="text-[#C6F24E]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-semibold truncate">{q.name}</div>
+                      <div className="mt-0.5 text-[11px] text-[#737373] truncate">
+                        {q.platform
+                          ? q.platform
+                          : isTr
+                            ? 'Genel'
+                            : 'General'}
+                      </div>
+                    </div>
+                    <Sparkline values={q.sparkline} w={56} h={20} color="#0A0A0A" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      )}
+
+      {/* Detaylı analitik (operasyonel detay — tasarım grid'inin altında) */}
       <RestaurantAnalyticsPanel
         locale={locale}
         restaurants={user.restaurants.map((restaurant) => ({
@@ -387,111 +623,39 @@ export default async function DashboardPage({
         }))}
       />
 
-      {/* Latest feedbacks + Location performance (AdminDashboard row design) */}
-      {(latestFeedbacks.length > 0 || locationPerf.length > 0) && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
-          {latestFeedbacks.length > 0 && (
-            <section className="bz-card p-6 sm:p-7">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2
-                    className="text-[18px] font-semibold tracking-[-0.015em] bz-h-tight"
+      {/* Konum performansı (sade liste — tasarımda yok ama owner için faydalı) */}
+      {locationPerf.length > 0 && (
+        <section className="bz-card p-6 sm:p-7">
+          <div>
+            <Eyebrow>{isTr ? 'Konum performansı' : 'Location performance'}</Eyebrow>
+            <div className="bz-h-tight mt-1" style={{ fontSize: 16 }}>
+              {isTr ? 'Puana göre' : 'By rating'}
+            </div>
+          </div>
+          <ul className="mt-4 divide-y divide-[#EDEDED]">
+            {locationPerf.map((loc) => (
+              <li key={loc.id} className="flex items-center justify-between gap-3 py-3">
+                <div className="min-w-0">
+                  <Link
+                    href={`/${locale}/dashboard/restaurants/${loc.id}`}
+                    className="block truncate text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
                   >
-                    {isTr ? 'Son yorumlar' : 'Latest reviews'}
-                  </h2>
-                  <p className="pulse-eyebrow text-[#737373] mt-1">
-                    {isTr ? 'Son 3 · tüm işletmeler' : 'Last 3 · all locations'}
-                  </p>
+                    {loc.name}
+                  </Link>
+                  <div className="pulse-eyebrow text-[#737373] mt-0.5">
+                    {loc.count} {isTr ? 'yorum' : 'reviews'}
+                  </div>
                 </div>
-                <Link
-                  href={`/${locale}/dashboard/feedbacks`}
-                  className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
-                >
-                  {isTr ? 'Tümünü gör' : 'See all'}
-                  <ArrowRight size={13} strokeWidth={2} />
-                </Link>
-              </div>
-
-              <ul className="mt-5 divide-y divide-[#EDEDED]">
-                {latestFeedbacks.map((fb) => {
-                  const initials = (fb.restaurant?.name || 'B').charAt(0).toUpperCase();
-                  const badgeBg = fb.rating >= 4 ? 'bg-[#C6F24E]' : fb.rating <= 2 ? 'bg-[#FEE2E2]' : 'bg-[#F5F5F5]';
-                  const badgeFg = fb.rating <= 2 ? 'text-[#DC2626]' : 'text-[#0A0A0A]';
-                  return (
-                    <li key={fb.id} className="grid grid-cols-[36px_1fr_auto] items-start gap-3 py-4">
-                      <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-full font-heading text-[12px] font-semibold ${badgeBg} ${badgeFg}`}
-                      >
-                        {initials}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[13px] font-semibold text-[#0A0A0A] truncate">
-                            {fb.restaurant?.name ?? (isTr ? 'İşletme' : 'Location')}
-                          </span>
-                          <span className="text-[#C6F24E] text-[11px] tracking-wide">
-                            {'★'.repeat(fb.rating)}
-                            <span className="text-[#D4D4D4]">{'★'.repeat(5 - fb.rating)}</span>
-                          </span>
-                        </div>
-                        <p className="mt-1 line-clamp-1 text-[13px] text-[#525252] leading-[1.55]">
-                          {fb.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
-                        </p>
-                      </div>
-                      <span className="pulse-eyebrow text-[#737373] whitespace-nowrap">
-                        {new Date(fb.createdAt).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
-                          day: '2-digit',
-                          month: 'short',
-                        })}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
-
-          {/* Konum performansı — AdminDashboard right column */}
-          {locationPerf.length > 0 && (
-            <section className="bz-card p-6 sm:p-7">
-              <div>
-                <h2
-                  className="text-[18px] font-semibold tracking-[-0.015em] bz-h-tight"
-                >
-                  {isTr ? 'Konum performansı' : 'Location performance'}
-                </h2>
-                <p className="pulse-eyebrow text-[#737373] mt-1">
-                  {isTr ? 'Bu ay · puana göre' : 'This month · by rating'}
-                </p>
-              </div>
-              <ul className="mt-5 divide-y divide-[#EDEDED]">
-                {locationPerf.map((loc) => (
-                  <li key={loc.id} className="flex items-center justify-between gap-3 py-3">
-                    <div className="min-w-0">
-                      <Link
-                        href={`/${locale}/dashboard/restaurants/${loc.id}`}
-                        className="block truncate text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
-                      >
-                        {loc.name}
-                      </Link>
-                      <div className="pulse-eyebrow text-[#737373] mt-0.5">
-                        {loc.count} {isTr ? 'yorum' : 'reviews'}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <span
-                        className="text-[18px] font-semibold tabular-nums text-[#0A0A0A] bz-h-tight"
-                      >
-                        {loc.avg > 0 ? loc.avg.toFixed(1) : '—'}
-                      </span>
-                      <span className="text-[#C6F24E] text-[13px]">★</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="bz-h-tight text-[18px] tabular-nums">
+                    {loc.avg > 0 ? loc.avg.toFixed(1) : '—'}
+                  </span>
+                  <Star size={14} className="text-[#C6F24E]" fill="#C6F24E" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* Restaurants */}
