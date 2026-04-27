@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store, X } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
+import { PageHeader } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -216,45 +217,29 @@ export default function DashboardRestaurantsPage() {
   );
 
   return (
-    <div
-      className="mx-auto max-w-[1200px] space-y-6 px-4 py-8 sm:px-8 lg:py-10"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
-      {/* Header */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">
-            {locale === 'tr' ? 'PANEL / KONUMLAR' : 'PANEL / LOCATIONS'}
-          </p>
-          <h1
-            className="mt-2 text-[26px] sm:text-[32px] font-medium tracking-[-0.025em] leading-[1.05] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            {copy.title}
-          </h1>
-          <p className="mt-2 max-w-[560px] text-[14px] text-[#525252] leading-[1.55]">
-            {copy.subtitle}
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
-        >
-          <Plus size={14} strokeWidth={2} />
-          {copy.add}
-        </button>
-      </header>
+    <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow={locale === 'tr' ? 'KONUMLAR' : 'LOCATIONS'}
+        title={copy.title}
+        description={copy.subtitle}
+        actions={
+          <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
+            <Plus size={14} strokeWidth={2} />
+            {copy.add}
+          </button>
+        }
+      />
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
+        <Search className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#A3A3A3]" />
         <input
           type="text"
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder={copy.search}
-          className="w-full rounded-full border border-[#EDEDED] bg-white py-3 pl-11 pr-5 text-[14px] text-[#0A0A0A] placeholder:text-[#737373] outline-none transition-all focus:border-[#C6F24E]"
+          className="bz-input"
+          style={{ paddingLeft: 36 }}
         />
       </div>
 

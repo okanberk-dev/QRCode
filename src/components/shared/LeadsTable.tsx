@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Loader2, User, Phone, Mail, Calendar, Store, MapPin, Download } from 'lucide-react';
+import { PageHeader } from '@/components/ui';
 
 interface Feedback {
   id: string;
@@ -79,36 +80,23 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
   };
 
   return (
-    <div
-      className="mx-auto max-w-[1200px] space-y-6 px-4 py-8 sm:px-8 lg:py-10"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
-      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">
-            {isSuperAdmin ? 'ADMİN / MÜŞTERİLER' : 'PANEL / MÜŞTERİLER'}
-          </p>
-          <h1
-            className="mt-2 text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em] leading-[1.05]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            {title}
-          </h1>
-          <p className="mt-2 max-w-[560px] text-[14px] text-[#525252] leading-[1.55]">{subtitle}</p>
-        </div>
-        <button
-          onClick={exportToCSV}
-          className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
-        >
-          <Download size={14} strokeWidth={2} />
-          CSV indir
-        </button>
-      </header>
+    <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow="MÜŞTERİLER"
+        title={title}
+        description={subtitle}
+        actions={
+          <button onClick={exportToCSV} className="bz-btn-primary">
+            <Download size={14} strokeWidth={2} />
+            CSV indir
+          </button>
+        }
+      />
 
-      {/* Search pill */}
+      {/* Search */}
       <div className="relative">
         <Search
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-[#737373]"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
           size={14}
           strokeWidth={2}
         />
@@ -117,7 +105,8 @@ export default function LeadsTable({ apiPath, title, subtitle, isSuperAdmin = fa
           placeholder="İsim, e-posta, telefon veya işletme ara..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full rounded-full border border-[#EDEDED] bg-white py-3 pl-11 pr-5 text-[14px] text-[#0A0A0A] placeholder:text-[#737373] outline-none transition-all focus:border-[#C6F24E]"
+          className="bz-input"
+          style={{ paddingLeft: 36 }}
         />
       </div>
 
