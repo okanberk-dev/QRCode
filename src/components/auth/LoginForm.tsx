@@ -7,6 +7,7 @@ import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
 import RecaptchaNotice from '@/components/RecaptchaNotice';
+import { AlertBanner } from '@/components/ui';
 
 interface LoginFormProps {
   locale: Locale;
@@ -162,17 +163,8 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-      {error && (
-        <div className="bg-[#FEF2F2] text-[#B91C1C] p-4 rounded-xl text-[13px] font-medium border border-[#FECACA] text-center">
-          {error}
-        </div>
-      )}
-
-      {notice && !error && (
-        <div className="bg-[#EAF9B8] text-[#0A0A0A] p-3 rounded-xl text-[12px] font-medium border border-[#C6F24E] text-center">
-          {notice}
-        </div>
-      )}
+      {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+      {notice && !error && <AlertBanner kind="lime">{notice}</AlertBanner>}
 
       <button
         type="button"
