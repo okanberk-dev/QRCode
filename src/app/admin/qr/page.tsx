@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Download, Loader2, QrCode, Mail, RefreshCw, Copy, Check, Printer, Plus, Minus, Palette, Layers, AlertCircle } from 'lucide-react';
 import { Suspense } from 'react';
+import { Eyebrow, PageHeader } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -408,35 +409,30 @@ function QRPageContent() {
   const placementLabel = tableNumber ? `M${tableNumber.padStart(2, '0')}` : 'GENEL';
 
   return (
-    <div className="p-3 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-8">
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0A0A0A] p-5 text-white shadow-2xl sm:p-8 md:p-10">
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-2">
-            <p className="pulse-eyebrow text-[#C6F24E]">QR OLUŞTUR / YENİ KAMPANYA</p>
-            <h1
-              className="text-[28px] sm:text-[40px] font-medium text-white tracking-[-0.025em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+      <PageHeader
+        eyebrow="QR YÖNETİMİ"
+        title="QR kodu oluştur"
+        description="İşletmenize özel QR kartları hazırlayın, platform bazında ölçümleyin ve masa aralıklarını tek yerden yönetin."
+      />
+
+      {/* Live preview pills (3-up summary of current selection) */}
+      <div className="grid grid-cols-3 gap-2.5">
+        {[
+          { label: 'İşletme', value: selectedRestaurant?.name || 'Seçilmedi' },
+          { label: 'Yerleşim', value: tableNumber ? `Masa ${tableNumber}` : 'Genel' },
+          { label: 'Platform', value: platformLabel },
+        ].map((item) => (
+          <div key={item.label} className="bz-card-soft p-3">
+            <Eyebrow>{item.label}</Eyebrow>
+            <p
+              className="mt-1 truncate text-[13px] font-semibold text-[#0A0A0A]"
+              title={item.value}
             >
-              QR kodu oluştur
-            </h1>
-            <p className="text-white/75 text-[13px] sm:text-[15px] font-medium leading-relaxed max-w-[640px]">
-              İşletmenize özel QR kartları hazırlayın, platform bazında ölçümleyin ve masa aralıklarını tek yerden yönetin.
+              {item.value}
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:min-w-[360px]">
-            {[
-              { label: 'İşletme', value: selectedRestaurant?.name || 'Seçilmedi' },
-              { label: 'Yerleşim', value: tableNumber ? `Masa ${tableNumber}` : 'Genel' },
-              { label: 'Platform', value: platformLabel },
-            ].map((item) => (
-              <div key={item.label} className="rounded-xl border border-white/10 bg-white/10 px-3 py-3 backdrop-blur">
-                <p className="pulse-eyebrow text-white/45">{item.label}</p>
-                <p className="mt-1 truncate text-[12px] font-semibold text-white" title={item.value}>{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#C6F24E]/20 blur-3xl" />
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.85fr)] gap-6">

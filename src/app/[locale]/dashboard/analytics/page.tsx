@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { Calendar } from 'lucide-react';
 import ExportReportButton from '@/components/dashboard/ExportReportButton';
+import { PageHeader } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -206,10 +207,17 @@ export default async function AnalyticsPage({
     : ['Overall', 'Sentiment', 'Location', 'Source', 'Time'];
 
   return (
-    <div
-      className="mx-auto max-w-[1200px] space-y-4 px-4 py-8 sm:px-8 lg:py-10"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
+    <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow={isTr ? 'ANALİTİK' : 'ANALYTICS'}
+        title={isTr ? 'İşletme analitiği' : 'Business analytics'}
+        description={
+          isTr
+            ? 'NPS skoru, platform yönlendirme ve günlük etkileşim trendlerini tek panelde gör.'
+            : 'NPS score, platform redirects, and daily interaction trends in a single panel.'
+        }
+      />
+
       {/* Top controls — tabs + date range + export */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-1.5 overflow-x-auto pb-1">

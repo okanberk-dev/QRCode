@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Loader2, Save, Trash2 } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
+import { PageHeader } from '@/components/ui';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
 
@@ -125,36 +126,26 @@ export default function DashboardRestaurantDetailPage() {
   }
 
   return (
-    <div
-      className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-8 lg:py-10"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
-      <div className="flex items-center gap-3">
-        <Link
-          href={`/${locale}/dashboard/restaurants`}
-          className="rounded-full border border-[#EDEDED] bg-white p-2.5 hover:border-[#0A0A0A] transition-colors"
-          aria-label="back"
-        >
-          <ArrowLeft size={16} strokeWidth={2} />
-        </Link>
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">
-            {locale === 'tr' ? 'KONUMLAR / DETAY' : 'LOCATIONS / DETAIL'}
-          </p>
-          <h1
-            className="mt-1 text-[24px] sm:text-[28px] font-semibold text-[#0A0A0A] tracking-[-0.02em] leading-[1.1]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            {formData.name || (locale === 'tr' ? 'İşletme' : 'Location')}
-          </h1>
-          <div className="mt-0.5 flex items-center gap-1.5">
-            <p className="pulse-eyebrow text-[#737373]">/{formData.slug}</p>
+    <div className="mx-auto max-w-[1100px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <Link
+        href={`/${locale}/dashboard/restaurants`}
+        className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors"
+      >
+        <ArrowLeft size={12} strokeWidth={2} />
+        {locale === 'tr' ? 'Konumlara dön' : 'Back to locations'}
+      </Link>
+      <PageHeader
+        eyebrow={locale === 'tr' ? 'KONUM DETAYI' : 'LOCATION DETAIL'}
+        title={formData.name || (locale === 'tr' ? 'İşletme' : 'Location')}
+        description={
+          <span className="inline-flex items-center gap-1.5">
+            <span className="bz-mono" style={{ fontSize: 12 }}>/{formData.slug}</span>
             <CopyUrlButton
               url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${formData.slug}`}
             />
-          </div>
-        </div>
-      </div>
+          </span>
+        }
+      />
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">{error}</div>
