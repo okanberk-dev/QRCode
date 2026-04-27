@@ -12,6 +12,7 @@ import AspectBreakdown from '@/components/admin/AspectBreakdown';
 import GoogleConversionPanel from '@/components/admin/GoogleConversionPanel';
 import PlatformDistribution from '@/components/admin/PlatformDistribution';
 import AdminOverviewWidgets from '@/components/admin/AdminOverviewWidgets';
+import { PageHeader } from '@/components/ui';
 
 // Recharts components must be dynamic for SSR compatibility
 const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), { ssr: false, loading: () => <div className="h-[300px] w-full bg-[#FFFFFF] animate-pulse rounded-2xl" /> });
@@ -163,36 +164,22 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="p-3 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-8 sm:space-y-10 pb-32">
+    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-5 sm:space-y-6 pb-32">
 
-      {/* ─── Welcome Banner ─── */}
-      <div className="bg-[#0A0A0A] text-white rounded-2xl sm:rounded-2xl border border-white/10 p-4 sm:p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-8 relative overflow-hidden shadow-2xl">
-        <div className="relative z-10 space-y-3 sm:space-y-4 min-w-0">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#C6F24E]/30 bg-[#C6F24E]/10 px-3 py-1 sm:px-4 sm:py-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#C6F24E] bz-pulse-dot" aria-hidden="true" />
-            <span className="pulse-eyebrow text-[#C6F24E]">{isSuperAdmin ? 'SUPERADMIN' : 'PANEL'}</span>
-          </div>
-          <h1 className="text-xl sm:text-4xl font-semibold text-white tracking-tight leading-tight break-words">
-            {t('welcome')}, {displayName} 👋
-          </h1>
-          <p className="text-white/85 text-sm sm:text-[17px] font-medium max-w-md">Gerçek zamanlı verilerle işletmenizin nabzını tutun.</p>
-        </div>
-
-        {/* Satisfaction Rate Badge */}
-        {satisfactionRate !== null && (
-          <div className="bg-white rounded-xl sm:rounded-2xl px-4 sm:px-6 md:px-10 py-4 sm:py-6 md:py-8 text-center flex-shrink-0 relative z-10 shadow-lg border border-[#EDEDED] self-stretch md:self-auto">
-            <div className="flex items-center gap-2 justify-center mb-1.5 sm:mb-2">
-              <TrendingUp size={20} className="text-[#C6F24E]" strokeWidth={2} />
-              <span className="text-[10px] sm:text-[11px] pulse-eyebrow text-[#737373]">{t('satisfaction')}</span>
-            </div>
-            <p className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#0A0A0A] tracking-tighter">{satisfactionRate}%</p>
-            <p className="text-[9px] sm:text-[10px] text-[#1A1A1A] mt-1.5 sm:mt-2 font-semibold uppercase tracking-wider">POZİTİF / TOPLAM</p>
-          </div>
-        )}
-      </div>
+      {/* ─── Header (1:1 design AdminDashboard pattern: lime SUPERADMIN eyebrow + h1) ─── */}
+      <PageHeader
+        eyebrow={isSuperAdmin ? 'SUPERADMIN' : 'PANEL'}
+        eyebrowColor="#C6F24E"
+        title={`${t('welcome')}, ${displayName}`}
+        description={
+          satisfactionRate !== null
+            ? `Gerçek zamanlı verilerle işletmenizin nabzını tutun. ${t('satisfaction')}: %${satisfactionRate}`
+            : 'Gerçek zamanlı verilerle işletmenizin nabzını tutun.'
+        }
+      />
 
       {/* ─── Toolbar ─── */}
-      <div className="flex flex-col md:flex-row md:items-center md:flex-wrap gap-2 sm:gap-3 md:gap-4 bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
+      <div className="bz-card flex flex-col md:flex-row md:items-center md:flex-wrap gap-2 sm:gap-3 md:gap-4 p-4 sm:p-6 shadow-sm">
         <label className="flex items-center gap-2 w-full md:w-auto md:flex-1 md:max-w-[220px]">
           <Calendar size={16} strokeWidth={2} className="text-[#6B7280] shrink-0" />
           <select
@@ -285,13 +272,13 @@ export default function AdminDashboard() {
 
       {/* ─── Aspect Breakdown: Food / Service / Atmosphere ─── */}
       {stats?.aspects && (
-        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
+        <div className="bz-card p-4 sm:p-6 md:p-8 shadow-sm">
           <div className="mb-4 sm:mb-6 flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EAF9B8] text-[#0A0A0A] flex items-center justify-center">
               <SlidersHorizontal size={20} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">Kategori Analizi</h3>
+              <h3 className="bz-h-tight text-lg sm:text-xl text-[#0A0A0A]">Kategori Analizi</h3>
               <p className="text-[11px] sm:text-xs font-bold text-[#1A1A1A] mt-0.5">
                 Yemek, servis ve atmosfer puanlarınızı karşılaştırın.
               </p>
@@ -303,13 +290,13 @@ export default function AdminDashboard() {
 
       {/* ─── Google Review Conversion ─── */}
       {stats?.googleConversion && (
-        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
+        <div className="bz-card p-4 sm:p-6 md:p-8 shadow-sm">
           <div className="mb-4 sm:mb-6 flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EAF9B8] text-[#0A0A0A] flex items-center justify-center">
               <TrendingUp size={20} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">
+              <h3 className="bz-h-tight text-lg sm:text-xl text-[#0A0A0A]">
                 {locale === 'en' ? 'Google Review Conversion' : 'Google Yorum Dönüşümü'}
               </h3>
               <p className="text-[11px] sm:text-xs font-bold text-[#1A1A1A] mt-0.5">
@@ -329,13 +316,13 @@ export default function AdminDashboard() {
 
       {/* ─── Platform Distribution ─── */}
       {stats?.platformDistribution && stats.platformDistribution.length > 0 && (
-        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
+        <div className="bz-card p-4 sm:p-6 md:p-8 shadow-sm">
           <div className="mb-4 sm:mb-6 flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EAF9B8] text-[#0A0A0A] flex items-center justify-center">
               <Layers size={20} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">
+              <h3 className="bz-h-tight text-lg sm:text-xl text-[#0A0A0A]">
                 {locale === 'en' ? 'Platform Distribution' : 'Platform Dağılımı'}
               </h3>
               <p className="text-[11px] sm:text-xs font-bold text-[#1A1A1A] mt-0.5">
@@ -351,21 +338,21 @@ export default function AdminDashboard() {
 
       {/* ─── Advanced Charts ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
-        <div className="lg:col-span-2 bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] overflow-hidden min-h-[260px] sm:min-h-[350px] md:min-h-[400px]">
+        <div className="lg:col-span-2 bz-card p-4 sm:p-6 md:p-8 overflow-hidden min-h-[260px] sm:min-h-[350px] md:min-h-[400px]">
           <div className="flex items-center gap-3 mb-6 sm:mb-8">
-            <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-[#EAF9B8] text-[#0A0A0A] flex items-center justify-center">
               <TrendingUp size={20} strokeWidth={2} />
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">Trend Analizi</h3>
+            <h3 className="bz-h-tight text-lg sm:text-xl text-[#0A0A0A]">Trend Analizi</h3>
           </div>
           {stats && <TrendsChart data={stats.trends} />}
         </div>
-        <div className="lg:col-span-1 bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] overflow-hidden min-h-[260px] sm:min-h-[350px] md:min-h-[400px]">
+        <div className="lg:col-span-1 bz-card p-4 sm:p-6 md:p-8 overflow-hidden min-h-[260px] sm:min-h-[350px] md:min-h-[400px]">
           <div className="flex items-center gap-3 mb-6 sm:mb-8">
-            <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+            <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-[#FAFAFA] text-[#0A0A0A] flex items-center justify-center border border-[#EDEDED]">
               <BarChart3 size={20} strokeWidth={2} />
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">Günlük Dağılım</h3>
+            <h3 className="bz-h-tight text-lg sm:text-xl text-[#0A0A0A]">Günlük Dağılım</h3>
           </div>
           {stats && <DayDistributionChart data={stats.dayDistribution} />}
         </div>
@@ -375,22 +362,22 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left column: WordCloud + Breakdown */}
         <div className="lg:col-span-1 space-y-4 sm:space-y-6">
-           <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
+           <div className="bz-card p-4 sm:p-6 md:p-8 shadow-sm">
              <div className="flex items-center gap-3 mb-6 sm:mb-8">
-               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EAF9B8] text-[#A8D62E] flex items-center justify-center">
+               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EAF9B8] text-[#0A0A0A] flex items-center justify-center">
                  <Calendar size={20} strokeWidth={2} />
                </div>
-               <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">Puan Dağılımı</h3>
+               <h3 className="bz-h-tight text-lg sm:text-xl text-[#0A0A0A]">Puan Dağılımı</h3>
              </div>
              {stats && <RatingChart distribution={stats.distribution} totalCount={stats.totalCount} />}
            </div>
 
-           <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
+           <div className="bz-card p-4 sm:p-6 md:p-8 shadow-sm">
              <div className="flex items-center gap-3 mb-6 sm:mb-8">
-               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center">
+               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EAF9B8] text-[#0A0A0A] flex items-center justify-center">
                  <TrendingUp size={20} strokeWidth={2} />
                </div>
-               <h3 className="text-lg sm:text-xl font-semibold text-[#0A0A0A]">Anahtar Kelimeler</h3>
+               <h3 className="bz-h-tight text-lg sm:text-xl text-[#0A0A0A]">Anahtar Kelimeler</h3>
              </div>
              {stats && <WordCloud words={stats.wordCloud} />}
            </div>
@@ -400,7 +387,7 @@ export default function AdminDashboard() {
         <div ref={feedbackTableRef} className="lg:col-span-2 space-y-4 sm:space-y-6 scroll-mt-6">
           <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-[#EDEDED] space-y-3 sm:space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <h3 className="text-lg sm:text-xl font-bold text-[#0A0A0A] tracking-tight">İşletme Günlüğü</h3>
+              <h3 className="bz-h-tight text-lg sm:text-xl text-[#0A0A0A]">İşletme Günlüğü</h3>
               <div className="relative w-full sm:max-w-xs">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" strokeWidth={2} />
                 <input
