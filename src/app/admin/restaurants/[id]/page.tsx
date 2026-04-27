@@ -135,6 +135,7 @@ export default function RestaurantDetailPage() {
     setSaving(true);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { userId, ...rest } = formData;
       const payload = owners.length > 0 ? formData : rest;
       const res = await fetch(`/api/restaurants/${id}`, {
@@ -153,7 +154,7 @@ export default function RestaurantDetailPage() {
 
       setSuccess('İşletme başarıyla güncellendi.');
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
+    } catch {
       setError('Bağlantı hatası');
     }
     setSaving(false);
@@ -196,7 +197,7 @@ export default function RestaurantDetailPage() {
     try {
       await fetch(`/api/restaurants/${id}`, { method: 'DELETE' });
       router.push('/admin/restaurants');
-    } catch (e) {
+    } catch {
       setError('Silme başarısız');
       setDeleting(false);
     }

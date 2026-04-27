@@ -3,14 +3,12 @@
 import { use } from 'react';
 import { QrCode, Star, ShieldCheck, Zap, MessageSquare, Printer, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { PageHeader } from '@/components/ui';
 
 export default function GuidePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = use(params);
   const locale: Locale = rawLocale === 'en' ? 'en' : 'tr';
-  const t = getTranslations(locale);
 
   const steps = [
     {

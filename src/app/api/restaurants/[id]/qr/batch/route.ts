@@ -92,7 +92,7 @@ export async function POST(
     for (let t = from; t <= to; t += 1) {
       const table = String(t);
       const qrUrl = `${appUrl}/r/${restaurant.slug}?source=qr&table=${encodeURIComponent(table)}`;
-      // eslint-disable-next-line no-await-in-loop
+       
       const svg = await QRCode.toString(qrUrl, {
         type: 'svg',
         width,

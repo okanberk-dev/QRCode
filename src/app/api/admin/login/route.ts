@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
           }
         });
       }
-    } catch (e) {
+    } catch {
       // Ignored if table doesn't exist
     }
 
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
       let payloadRole: 'superadmin' | 'manager' = 'superadmin';
       let payloadRestaurantId = null;
       let payloadId = 'env-admin';
-      let payloadUsername = normalizedUsername;
+      const payloadUsername = normalizedUsername;
 
       if (admin) {
         payloadRole = admin.role === 'manager' ? 'manager' : 'superadmin';

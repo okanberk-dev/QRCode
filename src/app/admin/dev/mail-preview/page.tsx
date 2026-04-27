@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, Loader2, Mail, Send } from 'lucide-react';
+import { Eye, Loader2, Send } from 'lucide-react';
 import { AlertBanner, PageHeader } from '@/components/ui';
 
 const TEMPLATES = [

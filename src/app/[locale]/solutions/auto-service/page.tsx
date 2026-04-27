@@ -1,4 +1,4 @@
-import { Car, Star, ShieldCheck, TrendingUp, QrCode, Users, Wrench, BarChart3 } from 'lucide-react';
+import { Car, Star, ShieldCheck, TrendingUp, QrCode, Wrench, BarChart3 } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
 import { IllusAuto } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   const title = locale === 'tr'
     ? 'Oto Servis & Tamir İtibar Yönetimi — Buaze'
     : 'Auto Service & Repair Reputation Management — Buaze';

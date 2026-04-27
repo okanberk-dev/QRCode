@@ -1,4 +1,4 @@
-import { Check, X, ShieldAlert } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
@@ -12,7 +12,6 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   return {
     title: (locale === 'tr' ? 'Buaze vs Bireysel QR | Akıllı İtibar Yönetimi' : 'Buaze vs Individual QR | Smart Reputation Management') + ' | Buaze',
     description: locale === 'tr' 

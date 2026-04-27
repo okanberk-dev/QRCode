@@ -45,7 +45,6 @@ export default async function PricingPage({
 }) {
   const { locale } = await params;
   const t = getTranslations(locale);
-  const base = `/${locale}`;
   const isTr = locale === 'tr';
 
   const faqs = [

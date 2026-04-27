@@ -1,4 +1,4 @@
-import { GraduationCap, Star, ShieldCheck, TrendingUp, QrCode, Users, BookOpen, BarChart3 } from 'lucide-react';
+import { GraduationCap, Star, TrendingUp, QrCode, BookOpen, BarChart3 } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
 import { IllusSchool } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   const title = locale === 'tr'
     ? 'Okul & Eğitim Kurumu İtibar Yönetimi — Buaze'
     : 'School & Educational Institution Reputation Management — Buaze';

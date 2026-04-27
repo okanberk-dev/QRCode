@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { FileEdit, Loader2, ArrowRight, BellRing } from 'lucide-react';
+import { Loader2, ArrowRight, BellRing } from 'lucide-react';
 import { AlertBanner, Badge, PageHeader } from '@/components/ui';
 
 interface GridCell {

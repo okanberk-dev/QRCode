@@ -4,13 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft, ArrowDown, ArrowUp, BarChart3, Eye, Info, Loader2, Lightbulb,
-  MousePointerClick, RefreshCw, Sparkles, TrendingDown, TrendingUp, UtensilsCrossed, X,
+  ArrowLeft, BarChart3, Eye, Info, Loader2, Lightbulb,
+  MousePointerClick, RefreshCw, Sparkles, TrendingDown, TrendingUp, X,
 } from 'lucide-react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar,
 } from 'recharts';
-import { formatPrice } from '@/lib/format';
 import { formatPct } from '@/lib/analytics-heuristics';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner } from '@/components/ui';
@@ -391,7 +390,7 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
   );
 }
 
-function TopProductsTable({ rows, copy, isTr }: { rows: ProductRow[]; copy: any; isTr: boolean }) {
+function TopProductsTable({ rows, copy }: { rows: ProductRow[]; copy: any; isTr: boolean }) {
   return (
     <div className="bz-card p-5 shadow-sm sm:p-6">
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.topProducts}</h2>

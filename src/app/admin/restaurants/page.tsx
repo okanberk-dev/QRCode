@@ -47,12 +47,6 @@ interface Owner {
   isActive: boolean;
 }
 
-function menuStatus(r: Pick<Restaurant, 'menuEnabled' | 'menuPublished'>) {
-  if (!r.menuEnabled) return { label: 'Kapalı', dot: 'bg-[#A3A3A3]', text: 'text-[#737373]' };
-  if (!r.menuPublished) return { label: 'Taslak', dot: 'bg-[#D97706]', text: 'text-[#92400E]' };
-  return { label: 'Yayında', dot: 'bg-[#16A34A]', text: 'text-[#166534]' };
-}
-
 function hasKvkk(r: Restaurant): boolean {
   return !!(r.kvkkText && r.kvkkText.trim().length > 0);
 }
@@ -171,7 +165,7 @@ export default function RestaurantsPage() {
       setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googlePlaceId: '', address: '', city: '', phone: '', primaryColor: '#C6F24E', userId: '' });
       setIsManualSlug(false);
       fetchRestaurants();
-    } catch (err) {
+    } catch {
       setError('Bağlantı hatası');
     }
     setCreating(false);

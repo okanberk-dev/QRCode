@@ -83,7 +83,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     return NextResponse.json(user);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Kullanıcı güncellenemedi' }, { status: 500 });
   }
 }
@@ -117,7 +117,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Kullanıcı silinemedi' }, { status: 500 });
   }
 }
