@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Megaphone, X, Save, Loader2, AlertTriangle, Info, CheckCircle2, AlertOctagon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Megaphone, Save, Loader2, AlertTriangle, Info, CheckCircle2, AlertOctagon } from 'lucide-react';
 import {
   AlertBanner,
   Badge,
   type BadgeKind,
   EmptyState,
+  Modal,
   PageHeader,
   Tabs,
   type TabItem,
@@ -368,27 +369,29 @@ export default function AdminAnnouncementsPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-[#0A0A0A]/60 backdrop-blur-md z-60 flex items-start justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl sm:rounded-2xl w-full max-w-3xl my-4 sm:my-8 shadow-2xl border border-[#EDEDED] overflow-hidden">
-            <div className="flex items-center justify-between p-4 sm:p-6 md:p-8 border-b border-[#FFFFFF] gap-3">
-              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 bg-[#C6F24E]/10 rounded-2xl flex items-center justify-center">
-                  {editing ? <Pencil size={20} className="text-[#C6F24E]" strokeWidth={2} /> : <Plus size={20} className="text-[#C6F24E]" strokeWidth={2} />}
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-lg sm:text-xl font-semibold text-[#0A0A0A] truncate">{editing ? 'Duyuruyu Düzenle' : 'Yeni Duyuru'}</h2>
-                  <p className="text-[#6B7280] text-[10px] sm:text-xs font-semibold mt-0.5">İşletme panellerinde gösterilecek</p>
-                </div>
+        <Modal
+          size={760}
+          onClose={() => setShowForm(false)}
+          title={
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 shrink-0 bg-[#EAF9B8] rounded-xl flex items-center justify-center">
+                {editing ? <Pencil size={18} className="text-[#0A0A0A]" strokeWidth={2} /> : <Plus size={18} className="text-[#0A0A0A]" strokeWidth={2} />}
               </div>
-              <button
-                onClick={() => setShowForm(false)}
-                className="w-10 h-10 shrink-0 flex items-center justify-center text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#FFFFFF] rounded-xl transition-all"
-              >
-                <X size={20} strokeWidth={2} />
-              </button>
+              <div className="min-w-0">
+                <h2
+                  className="text-[18px] font-medium tracking-[-0.015em] text-[#0A0A0A] truncate"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {editing ? 'Duyuruyu düzenle' : 'Yeni duyuru'}
+                </h2>
+                <p className="pulse-eyebrow text-[#737373] mt-0.5">
+                  İşletme panellerinde gösterilecek
+                </p>
+              </div>
             </div>
-
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6">
+          }
+        >
+            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
               {/* Title */}
               <div>
                 <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BAŞLIK</label>
@@ -543,26 +546,25 @@ export default function AdminAnnouncementsPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-6 border-t border-[#FFFFFF]">
+              <div className="flex items-center justify-end gap-2 pt-5 border-t border-[#EDEDED]">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-8 py-3.5 text-[#6B7280] hover:text-[#0A0A0A] font-semibold text-xs  transition-all"
+                  className="bz-btn-ghost"
                 >
-                  İPTAL
+                  İptal
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex items-center gap-2 px-10 py-3.5 bg-[#0A0A0A] text-white rounded-xl font-semibold text-xs  hover:bg-[#1A1A1A] transition-all shadow-xl shadow-[#EDEDED] disabled:opacity-50 active:scale-95"
+                  className="bz-btn-primary disabled:opacity-50"
                 >
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                  {editing ? 'GÜNCELLE' : 'KAYDET'}
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {editing ? 'Güncelle' : 'Kaydet'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

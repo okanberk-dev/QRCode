@@ -49,6 +49,14 @@ function QRPageContent() {
   const [exporting, setExporting] = useState(false);
   const [qrError, setQrError] = useState('');
   const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const [actionNotice, setActionNotice] = useState<{ kind: 'danger' | 'warn'; text: string } | null>(null);
+
+  const showActionNotice = (text: string, kind: 'danger' | 'warn' = 'danger') => {
+    setActionNotice({ kind, text });
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => setActionNotice(null), 5000);
+    }
+  };
 
   // Customisation
   const [useBrandColor, setUseBrandColor] = useState(false);
@@ -218,7 +226,7 @@ function QRPageContent() {
     const res = await fetch(`/api/restaurants/${selectedId}/qr?${buildQuery(format).toString()}`);
     if (!res.ok) {
       const err = await res.json().catch(() => null);
-      alert(err?.error || 'QR indirilemedi.');
+      showActionNotice(err?.error || 'QR indirilemedi.');
       return;
     }
     const blob = await res.blob();
@@ -343,7 +351,7 @@ function QRPageContent() {
       const res = await fetch(`/api/restaurants/${selectedId}/qr?${q.toString()}`);
       if (!res.ok) {
         const err = await res.json().catch(() => null);
-        alert(err?.error || 'QR indirilemedi.');
+        showActionNotice(err?.error || 'QR indirilemedi.');
         return;
       }
       const blob = await res.blob();
@@ -354,7 +362,7 @@ function QRPageContent() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert('QR indirilemedi.');
+      showActionNotice('QR indirilemedi.');
     }
   };
 
@@ -365,7 +373,7 @@ function QRPageContent() {
       const res = await fetch(`/api/restaurants/${selectedId}/qr/export`);
       if (!res.ok) {
         const err = await res.json().catch(() => null);
-        alert(err?.error || 'Dışa aktarma başarısız.');
+        showActionNotice(err?.error || 'Dışa aktarma başarısız.');
         return;
       }
       const blob = await res.blob();
@@ -390,7 +398,7 @@ function QRPageContent() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Bağlantı hatası.');
+      showActionNotice('Bağlantı hatası.');
     } finally {
       setExporting(false);
     }
@@ -415,6 +423,12 @@ function QRPageContent() {
         title="QR kodu oluştur"
         description="İşletmenize özel QR kartları hazırlayın, platform bazında ölçümleyin ve masa aralıklarını tek yerden yönetin."
       />
+
+      {actionNotice && (
+        <AlertBanner kind={actionNotice.kind} onDismiss={() => setActionNotice(null)}>
+          {actionNotice.text}
+        </AlertBanner>
+      )}
 
       {/* Live preview pills (3-up summary of current selection) */}
       <div className="grid grid-cols-3 gap-2.5">
