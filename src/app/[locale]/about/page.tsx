@@ -6,6 +6,7 @@ import { IllusLighthouse } from '@/components/marketing/PulseIllustrations';
 export const dynamic = 'force-dynamic';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { getSiteSettings } from '@/lib/site-settings';
 
 export async function generateMetadata({
   params,
@@ -45,6 +46,7 @@ export default async function AboutPage({
   const { locale } = await params;
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
+  const settings = await getSiteSettings();
 
   // /about is the canonical entity description for Buaze (the company).
   // We expose a richer @graph than the rest of the site so search engines and
@@ -97,7 +99,11 @@ export default async function AboutPage({
           'https://twitter.com/buaze',
           'https://www.linkedin.com/company/buaze',
           'https://www.youtube.com/@buaze',
-        ],
+          settings.wikidataUrl,
+          settings.g2Url,
+          settings.crunchbaseUrl,
+          settings.capterraUrl,
+        ].filter((u): u is string => typeof u === 'string' && u.length > 0),
         contactPoint: [
           {
             '@type': 'ContactPoint',

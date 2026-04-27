@@ -69,6 +69,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
         { label: isTr ? 'Vaka çalışmaları' : 'Case studies', href: `${base}/customer-stories` },
         { label: 'Blog', href: `${base}/blog` },
         { label: isTr ? 'Kariyer' : 'Careers', href: `${base}/careers`, badge: isTr ? '5 POZİSYON' : '5 ROLES' },
+        { label: isTr ? 'Basın kiti' : 'Press kit', href: `${base}/press` },
         { label: isTr ? 'İletişim' : 'Contact', href: `${base}/contact` },
       ],
     },

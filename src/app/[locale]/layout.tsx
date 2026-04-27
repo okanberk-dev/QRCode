@@ -141,14 +141,19 @@ export default async function LocaleLayout({
       logo: s.logoUrl || `${siteUrl}/favicon.svg`,
       description: locale === 'tr' ? s.descriptionTr : s.descriptionEn,
       // sameAs disambiguates the Buaze SaaS entity from the Securidaca
-      // longipedunculata plant (Chichewa "buaze") in dictionaries. Add a
-      // Wikidata Q-id and Crunchbase URL here once the entries exist.
+      // longipedunculata plant (Chichewa "buaze") in dictionaries. Social
+      // profiles are fixed; Wikidata / G2 / Crunchbase / Capterra come from
+      // SiteSettings so ops can plug them in without a code deploy.
       sameAs: [
         'https://www.instagram.com/buazerating',
         'https://twitter.com/buaze',
         'https://www.linkedin.com/company/buaze',
         'https://www.youtube.com/@buaze',
-      ],
+        s.wikidataUrl,
+        s.g2Url,
+        s.crunchbaseUrl,
+        s.capterraUrl,
+      ].filter((u): u is string => typeof u === 'string' && u.length > 0),
       contactPoint: [
         {
           '@type': 'ContactPoint',
