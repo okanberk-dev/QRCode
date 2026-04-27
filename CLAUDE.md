@@ -1747,6 +1747,12 @@ Kritik mappings: `Icon.qr`→`QrCode`, `Icon.inbox`→`Inbox`, `Icon.chart`→`B
 | `/admin/trial-expired` | (tasarımda yok) | Mevcut |
 | `/admin/dev/mail-preview` | (tasarımda yok) | Mevcut |
 
+**Public Surface** (panel'den ayrı, ama design'da var):
+
+| Route | Design page | Mevcut/Yeni |
+|---|---|---|
+| `/r/[slug]` | PublicReview | Mevcut — Phase 10.1'de tam yeniden inşa edildi (dark bg + 3 step card + bz-* primitives) |
+
 ### 23.6 Yeni panel sayfası eklerken checklist
 
 1. **Token kullan:** `bz-card`, `bz-btn-primary`, `bz-input`, `bz-table`, `bz-tabs`, `bz-badge`, `bz-avatar`, `bz-skeleton`. Inline hex sadece bunlar yetmediğinde.
@@ -1777,7 +1783,8 @@ Kritik mappings: `Icon.qr`→`QrCode`, `Icon.inbox`→`Inbox`, `Icon.chart`→`B
 - **Phase 8.1 (PR #103, branch `claude/phase-8-alert-banner`)**: Yeni `<AlertBanner>` primitive (`src/components/ui/AlertBanner.tsx`, kind: info/success/warn/danger/lime, opsiyonel onDismiss). 8 sayfada inline alert div'leri tek-satır component çağrısına geçti (announcements, blog, mail-templates, dev/mail-preview, members, customers, users, NewsletterCampaignEditor). **Bonus:** favicon `?v=3` cache-busting (root + locale layouts + manifest) — eski favicon görünme sorunu için.
 - **Phase 8.2 (PR #104, branch `claude/phase-8-page-header-batch`)**: 7 panel sayfası custom `<header>` + h1 + pulse-eyebrow → `<PageHeader>` primitive. admin/settings, billing, notifications, team, campaigns, reviews + dashboard/restaurants. Page wrapper'lar `mx-auto max-w-[1100-1400px] px-4 sm:px-7 py-6 lg:py-8` standardize.
 - **Phase 8.3 (PR #105, branch `claude/phase-8-input-polish`)**: Final cleanup — admin/qr (3 banner), admin/site-settings (3 banner + INPUT const → bz-input), admin/restaurants list + detail (3 banner), admin/page login (1 banner) → AlertBanner primitive. site-settings'in INPUT const'ı `bz-input`'e refactor edildi (8+ field tek değişiklikle). Token-driven hue tutarlılığı %95+ seviyeye ulaştı.
-- **Phase 9+ (sonraki PR'lar)**: `<Tabs variant="vertical">` primitive (OwnerProfile 8-tab sidebar için), mobile breakpoint regression sweep (5 sayfada Tailwind rule fix), OwnerMenu builder DnD görsel chrome (2 banner + publish badge), CLAUDE.md final consolidation.
+- **Phase 9 (PR #106, branch `claude/phase-9-...`)**: `<Tabs variant="vertical">` primitive (OwnerProfile 8-tab sidebar), mobile breakpoint regression sweep (5 sayfa Tailwind rule fix), OwnerMenu builder görsel chrome (DnD logic intact). Ayrıntı için PR description.
+- **Phase 10.1 (PR #107, branch `claude/phase-10-public-review-redesign`)**: Public review surface (`/r/[slug]`) tam yeniden inşa — `.design-pulse-2026/.../admin-and-public.jsx` `PublicReview` ile 1:1. Dark `#0A0A0A` zemin + brand header (logo card initial + isim + adres) + tek beyaz card (24px radius) + 3 step (rating → high redirect/low form → thanks) + `POWERED BY BUAZE` mono footer. Yıldızlar lime-fill on select, `bz-h-tight-2` heading, `bz-input` form alanları, `bz-btn-primary` CTA, `bz-fade-in` step transition, `bz-btn-icon` modal close. KVKK/marketing legal modal token-driven yenilendi (ESC + body scroll lock + backdrop click). Yüksek puan + `?platform=` QR akışında auto-redirect overlay korundu — `<PlatformChip>` ile platform-aware görsel ve `bzProgress` 2.2s lime progress bar. Honeypot + recaptcha + KVKK/contact validation backend kontratı dokunulmadı. Legacy `StarRating.tsx`, `FeedbackForm.tsx`, `ThankYou.tsx` (zero callers post-refactor) silindi — `/r/[slug]/page.tsx` artık tek-dosya orchestration. Sayfa `/r/[slug]` tasarım kapsamına dahil edildi (§23.5'te eskiden listede yoktu, çünkü panel-only kapsam).
 
 ### 23.8 Dokunulmayan eski Pulse
 

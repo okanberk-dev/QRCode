@@ -1,13 +1,23 @@
 'use client';
 
-import { useState, useEffect, Suspense, useRef } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
-import { Star, ChevronRight, X } from 'lucide-react';
-import StarRating from '@/components/StarRating';
-import FeedbackForm, { FeedbackFormHandle } from '@/components/FeedbackForm';
-import ThankYou from '@/components/ThankYou';
+import Link from 'next/link';
+import {
+  Star,
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  X,
+  ShieldCheck,
+  Mail,
+  Loader2,
+} from 'lucide-react';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
+import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import RecaptchaNotice from '@/components/RecaptchaNotice';
+import { PlatformChip } from '@/components/ui';
 
 interface RestaurantData {
   id: string;
@@ -24,284 +34,722 @@ interface RestaurantData {
   isActive: boolean;
 }
 
-interface ReviewPlatform {
-  name: string;
-  url: string;
-  color: string;
-  icon: string;
-}
+const RATING_LABELS: Record<Locale, string[]> = {
+  tr: ['Çok kötü', 'Kötü', 'İdare eder', 'İyi', 'Mükemmel'],
+  en: ['Terrible', 'Poor', 'Okay', 'Good', 'Excellent'],
+};
 
-function SlugContent() {
+function ReviewContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
-  const formRef = useRef<FeedbackFormHandle>(null);
 
-  // --- Platform from QR ---
   const platformParam = searchParams.get('platform') || 'google';
+  const sourceParam = searchParams.get('source') || 'qr';
+  const tableParam = searchParams.get('table') || '';
 
-  // --- Locale Handling ---
   const [locale, setLocale] = useState<Locale>('tr');
   useEffect(() => {
     const hl = searchParams.get('hl') as Locale;
     if (hl && locales.includes(hl)) {
       setLocale(hl);
-    } else {
-      const browserLang = navigator.language.split('-')[0] as Locale;
-      if (locales.includes(browserLang)) {
-        setLocale(browserLang);
-      }
+      return;
     }
+    const browserLang = navigator.language.split('-')[0] as Locale;
+    if (locales.includes(browserLang)) setLocale(browserLang);
   }, [searchParams]);
 
-  const t = (key: any) => {
-    const trans = getTranslations(locale);
-    return (trans as any)[key] || key;
-  };
+  const t = useCallback(
+    (key: string): string => {
+      const trans = getTranslations(locale) as Record<string, string>;
+      return trans[key] || key;
+    },
+    [locale],
+  );
 
   const [restaurant, setRestaurant] = useState<RestaurantData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isNotFound, setIsNotFound] = useState(false);
 
-  const [rating, setRating] = useState<number>(0);
-  const [formSubmitted, setFormSubmitted] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [comment, setComment] = useState('');
+  const [kvkk, setKvkk] = useState(false);
+  const [marketing, setMarketing] = useState(false);
+  const [website, setWebsite] = useState(''); // honeypot
+
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState<{ url: string; platformId: string } | null>(null);
+  const [showLegal, setShowLegal] = useState<'kvkk' | 'marketing' | null>(null);
 
   useEffect(() => {
-    const fetchRestaurant = async () => {
+    let cancelled = false;
+    (async () => {
       try {
         const res = await fetch(`/api/restaurants?slug=${slug}`);
+        if (cancelled) return;
         if (res.ok) {
-          const data = await res.json();
-          setRestaurant(data);
+          setRestaurant(await res.json());
         } else {
           setIsNotFound(true);
         }
       } catch {
-        setIsNotFound(true);
+        if (!cancelled) setIsNotFound(true);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
     };
-    fetchRestaurant();
   }, [slug]);
 
-  const googleUrl = restaurant?.googlePlaceId
+  useEffect(() => {
+    if (showLegal) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [showLegal]);
+
+  if (loading) return <DarkLoader />;
+  if (isNotFound || !restaurant) return notFound();
+
+  const googleUrl = restaurant.googlePlaceId
     ? restaurant.googlePlaceId.startsWith('http')
       ? restaurant.googlePlaceId
       : `https://search.google.com/local/writereview?placeid=${restaurant.googlePlaceId}`
     : null;
 
-  // Build available review platforms
-  const platforms: ReviewPlatform[] = [];
-  if (googleUrl) platforms.push({ name: 'Google', url: googleUrl, color: '#4285F4', icon: 'G' });
-  if (restaurant?.getirYemekUrl) platforms.push({ name: 'Getir Yemek', url: restaurant.getirYemekUrl, color: '#5D3EBC', icon: '🛵' });
-  if (restaurant?.yemekSepetiUrl) platforms.push({ name: 'Yemek Sepeti', url: restaurant.yemekSepetiUrl, color: '#FA0050', icon: '🍽️' });
-  if (restaurant?.trendyolYemekUrl) platforms.push({ name: 'Trendyol Yemek', url: restaurant.trendyolYemekUrl, color: '#F27A1A', icon: '🧡' });
+  const platformUrls: Record<string, string | null> = {
+    google: googleUrl,
+    yemeksepeti: restaurant.yemekSepetiUrl,
+    getir: restaurant.getirYemekUrl,
+    trendyol_go: restaurant.trendyolYemekUrl,
+  };
 
-  const handleRatingChange = async (newRating: number) => {
-    if (!restaurant) return;
-    setRating(newRating);
+  const targetPlatformUrl = platformUrls[platformParam] || googleUrl;
+  const fallbackPlatformId = platformParam in platformUrls ? platformParam : 'google';
 
-    if (newRating >= 4) {
-      // Log the high rating
+  const isHigh = rating >= 4;
+  const isLow = rating > 0 && rating <= 3;
+  const visibleRating = hover || rating;
+  const labels = RATING_LABELS[locale] ?? RATING_LABELS.tr;
+
+  const handleStarClick = (star: number) => {
+    setRating(star);
+  };
+
+  const handleContinue = async () => {
+    if (rating === 0) return;
+
+    if (isHigh) {
+      // Log the high rating (fire-and-forget) — preserves analytics & redirect attribution
       try {
         fetch('/api/feedback', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            rating: newRating,
-            source: searchParams.get('source') || 'qr',
+            rating,
+            source: sourceParam,
             branch: restaurant.name,
-            tableNumber: searchParams.get('table') || '',
+            tableNumber: tableParam,
             comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT,
             restaurantSlug: slug,
             platform: platformParam || null,
-          })
+          }),
         });
       } catch (e) {
         console.error('Failed to log high rating', e);
       }
 
-      // If platform is specified from QR, redirect directly to that platform
-      if (platformParam) {
-        const platformUrls: Record<string, string | null> = {
-          google: googleUrl,
-          yemeksepeti: restaurant.yemekSepetiUrl,
-          getir: restaurant.getirYemekUrl,
-          trendyol_go: restaurant.trendyolYemekUrl,
-        };
-        const targetUrl = platformUrls[platformParam];
-        if (targetUrl) {
-          setIsRedirecting(true);
-          setTimeout(() => {
-            window.location.href = targetUrl;
-          }, 2200);
-          return;
-        }
-      }
-      
-      // Auto-redirect to first available platform or show thank you
-      if (platforms.length >= 1) {
-        setIsRedirecting(true);
+      if (targetPlatformUrl) {
+        setRedirecting({ url: targetPlatformUrl, platformId: fallbackPlatformId });
         setTimeout(() => {
-          window.location.href = platforms[0].url;
+          window.location.href = targetPlatformUrl;
         }, 2200);
-      } else {
-        setIsRedirecting(true);
-        setTimeout(() => {
-          setIsRedirecting(false);
-          setFormSubmitted(true);
-        }, 2200);
+        return;
       }
+      // No platform URL configured — drop straight to thanks
+      setStep(3);
+      return;
+    }
+
+    setStep(2);
+  };
+
+  const handleLowSubmit = async () => {
+    if (!comment.trim()) {
+      setError(t('feedback_error_comment'));
+      return;
+    }
+    if (!name.trim()) {
+      setError(t('feedback_error_name'));
+      return;
+    }
+    if (!phone.trim() && !email.trim()) {
+      setError(t('feedback_error_contact'));
+      return;
+    }
+    if (!kvkk) {
+      setError(t('feedback_error_kvkk'));
+      return;
+    }
+    setError('');
+    setSubmitting(true);
+    try {
+      const recaptchaToken = await getRecaptchaToken('feedback_submit');
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim() || null,
+          email: email.trim() || null,
+          phone: phone.trim() || null,
+          comment: comment.trim(),
+          hasKvkkConsent: kvkk,
+          hasMarketingConsent: marketing,
+          rating,
+          source: sourceParam,
+          branch: restaurant.name,
+          tableNumber: tableParam,
+          restaurantSlug: slug,
+          platform: platformParam || null,
+          aspects: null,
+          website,
+          recaptchaToken,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setError(result.error || t('feedback_error_comment'));
+        setSubmitting(false);
+        return;
+      }
+      setStep(3);
+    } catch {
+      setError(locale === 'tr' ? 'Bağlantı hatası. İnternetinizi kontrol edin.' : 'Connection error. Check your internet.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const showForm = rating > 0 && rating <= 3 && !formSubmitted;
-  const showThankYou = formSubmitted;
-
-  // --- Loading State ---
-  if (loading) {
-    return (
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full border-4 border-[#FFFFFF] border-t-[#C6F24E] animate-spin" />
-            <div className="absolute inset-0 m-auto w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                <Star className="text-[#0A0A0A] w-4 h-4 fill-[#C6F24E]" />
-            </div>
-          </div>
-          <p className="text-sm font-bold text-[#6B7280] tracking-widest uppercase animate-pulse">BUAZE</p>
-        </div>
-      </div>
-    );
-  }
-
-  // --- Not Found State ---
-  if (isNotFound || !restaurant) {
-    return notFound();
-  }
+  const initial = restaurant.name.charAt(0).toUpperCase();
 
   return (
-    <main className="flex flex-col min-h-[100dvh] bg-white text-[#0A0A0A] selection:bg-blue-100 selection:text-blue-900">
-      
-      {/* ═══════ High Rating Redirect Overlay ═══════ */}
-      {isRedirecting && (
-        <div className="fixed inset-0 bg-white z-60 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
-          <div className="mb-10 scale-125">
-            <div className="w-24 h-24 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-6 relative">
-              <svg viewBox="0 0 48 48" className="w-12 h-12 relative z-10 animate-in zoom-in-50 duration-700">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-              </svg>
-              <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-20" />
-            </div>
-            <div className="flex flex-col gap-3">
-              <h2 className="text-2xl font-bold text-[#0A0A0A]">{t('feedback_redirecting')}</h2>
-              <p className="text-sm text-[#6B7280] font-medium px-4">{t('feedback_redirect_sub')}</p>
-            </div>
-          </div>
-          
-          <div className="w-[min(100%,16rem)] h-1.5 bg-[#EDEDED] rounded-full overflow-hidden mb-4">
-            <div className="h-full bg-[#C6F24E] rounded-full animate-[progressBar_2s_linear_forwards]" />
-          </div>
-          
-          <style jsx>{`
-            @keyframes progressBar {
-              0% { width: 0%; }
-              100% { width: 100%; }
-            }
-          `}</style>
-        </div>
+    <main className="min-h-[100dvh] bg-[#0A0A0A] text-white">
+      {redirecting && (
+        <RedirectingOverlay
+          locale={locale}
+          platformId={redirecting.platformId}
+          restaurantName={restaurant.name}
+        />
       )}
 
-      {/* ═══════ Google-Style Sticky Header ═══════ */}
-      <div className="sticky top-0 bg-white border-b border-[#EDEDED] z-50">
-        <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => rating > 0 ? (formSubmitted ? window.location.reload() : setRating(0)) : window.history.back()}
-              aria-label="Kapat"
-              className="inline-flex items-center justify-center h-11 w-11 -ml-2 text-[#6B7280] hover:bg-[#EDEDED] rounded-full focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/25 transition-all"
+      <div className="mx-auto flex min-h-[100dvh] max-w-[420px] flex-col px-6 pb-10 pt-8 sm:px-4">
+        {/* Brand header */}
+        <header className="mb-6 text-center sm:mb-8">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-[26px] font-medium text-[#0A0A0A] shadow-[0_8px_24px_rgba(0,0,0,0.35)]" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
+            {initial}
+          </div>
+          <h1 className="bz-h-tight mt-4 text-[22px] text-white">{restaurant.name}</h1>
+          {restaurant.address && (
+            <p className="mt-1 text-[12px] text-white/55">{restaurant.address}</p>
+          )}
+        </header>
+
+        {/* White card */}
+        <section
+          key={step}
+          className="bz-fade-in rounded-[24px] bg-white p-6 text-[#0A0A0A] shadow-[0_12px_40px_rgba(0,0,0,0.5)]"
+        >
+          {step === 1 && (
+            <div>
+              <span className="pulse-eyebrow text-[#737373]">
+                {locale === 'tr' ? '1. ADIM' : 'STEP 1'}
+              </span>
+              <h2 className="bz-h-tight-2 mt-1.5 text-[22px]">
+                {locale === 'tr' ? 'Deneyimini puanla' : 'Rate your experience'}
+              </h2>
+              <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">
+                {locale === 'tr'
+                  ? 'Senin görüşün önemli. Birkaç saniyeni alıyoruz.'
+                  : 'Your opinion matters. Just a few seconds.'}
+              </p>
+
+              <div className="flex items-center justify-center gap-1.5 py-4">
+                {[1, 2, 3, 4, 5].map((s) => {
+                  const active = s <= visibleRating;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => handleStarClick(s)}
+                      onMouseEnter={() => setHover(s)}
+                      onMouseLeave={() => setHover(0)}
+                      aria-label={`${s} ${locale === 'tr' ? 'yıldız' : 'star'}`}
+                      aria-pressed={rating === s}
+                      className="rounded-full p-1.5 transition-transform active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    >
+                      <Star
+                        size={42}
+                        strokeWidth={1.5}
+                        className={
+                          active
+                            ? 'fill-[#C6F24E] text-[#C6F24E]'
+                            : 'fill-transparent text-[#E5E5E5]'
+                        }
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mb-4 min-h-[20px] text-center text-[13px] text-[#525252]">
+                {visibleRating > 0 ? labels[visibleRating - 1] : ''}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleContinue}
+                disabled={rating === 0}
+                className="bz-btn-primary w-full justify-center py-3.5 text-[14px]"
+              >
+                {locale === 'tr' ? 'Devam et' : 'Continue'}
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          )}
+
+          {step === 2 && isHigh && (
+            <div className="text-center">
+              <div className="mb-2 text-[48px] leading-none">🎉</div>
+              <h2 className="bz-h-tight-2 text-[22px]">
+                {locale === 'tr' ? 'Çok teşekkürler!' : 'Thank you so much!'}
+              </h2>
+              <p className="mx-auto mt-2 mb-4 max-w-[300px] text-[13px] leading-[1.6] text-[#525252]">
+                {locale === 'tr'
+                  ? "Yorumunu Google'da paylaşır mısın? Diğer müşterilerin de görmesi bizim için çok değerli."
+                  : 'Would you share your review on Google? It really helps other customers find us.'}
+              </p>
+              {googleUrl ? (
+                <a
+                  href={googleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    // If the user manually clicks Google, log the high rating
+                    try {
+                      fetch('/api/feedback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          rating,
+                          source: sourceParam,
+                          branch: restaurant.name,
+                          tableNumber: tableParam,
+                          comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT,
+                          restaurantSlug: slug,
+                          platform: 'google',
+                        }),
+                      });
+                    } catch {}
+                  }}
+                  className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0A0A0A] px-4 py-4 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                >
+                  <PlatformChip id="google" size={20} />
+                  {locale === 'tr' ? "Google'da yorum bırak" : 'Review on Google'}
+                  <ArrowUpRight size={14} />
+                </a>
+              ) : (
+                <p className="rounded-xl bg-[#FAFAFA] px-4 py-3 text-[12px] text-[#737373]">
+                  {locale === 'tr'
+                    ? 'Yönlendirilebilecek bir platform bulunamadı.'
+                    : 'No platform link is available.'}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                className="mt-3 cursor-pointer border-0 bg-transparent text-[12px] text-[#737373] hover:text-[#0A0A0A]"
+              >
+                {locale === 'tr' ? 'Belki sonra' : 'Maybe later'}
+              </button>
+            </div>
+          )}
+
+          {step === 2 && isLow && (
+            <div>
+              <span className="pulse-eyebrow text-[#737373]">
+                {locale === 'tr' ? '2. ADIM' : 'STEP 2'}
+              </span>
+              <h2 className="bz-h-tight-2 mt-1.5 text-[20px]">
+                {locale === 'tr' ? 'Bize biraz daha anlatır mısın?' : 'Tell us a little more'}
+              </h2>
+              <p className="mt-2 mb-4 text-[12.5px] leading-[1.55] text-[#525252]">
+                {locale === 'tr'
+                  ? 'Geri bildirimin yalnızca işletme yönetimine iletilecek. Daha iyisini sunabilmemiz için yardım et.'
+                  : 'Your feedback goes directly to management — help us do better.'}
+              </p>
+
+              <div className="flex flex-col gap-2.5">
+                <input
+                  className="bz-input"
+                  placeholder={t('feedback_name_placeholder')}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                />
+                <input
+                  className="bz-input"
+                  type="email"
+                  placeholder={t('feedback_email_placeholder')}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                />
+                <input
+                  className="bz-input"
+                  type="tel"
+                  placeholder={t('feedback_phone_placeholder')}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  autoComplete="tel"
+                />
+                <textarea
+                  className="bz-input"
+                  placeholder={
+                    locale === 'tr' ? 'Deneyimini bizimle paylaş…' : 'Share your experience…'
+                  }
+                  rows={4}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  style={{ resize: 'none' }}
+                />
+
+                <ConsentRow
+                  checked={kvkk}
+                  onToggle={() => setKvkk((v) => !v)}
+                  required
+                  onOpenLegal={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowLegal('kvkk');
+                  }}
+                  label={
+                    locale === 'tr'
+                      ? 'KVKK kapsamında verilerimin işletmeyle paylaşılmasını kabul ediyorum.'
+                      : 'I consent to sharing my data with the business under KVKK.'
+                  }
+                  legalLabel={locale === 'tr' ? 'Aydınlatma metnini oku' : 'Read the privacy notice'}
+                />
+                <ConsentRow
+                  checked={marketing}
+                  onToggle={() => setMarketing((v) => !v)}
+                  onOpenLegal={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowLegal('marketing');
+                  }}
+                  label={
+                    locale === 'tr'
+                      ? 'Kampanya ve duyurulardan haberdar olmak istiyorum (opsiyonel).'
+                      : "I'd like to receive promotions and announcements (optional)."
+                  }
+                  legalLabel={locale === 'tr' ? 'İletişim iznini oku' : 'Read marketing consent'}
+                />
+
+                <input
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  className="pointer-events-none absolute -z-10 opacity-0"
+                  aria-hidden="true"
+                />
+
+                {error && (
+                  <div className="flex items-center gap-2 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
+                    <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#991B1B]" />
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleLowSubmit}
+                  disabled={submitting || !kvkk}
+                  className="bz-btn-primary mt-1 w-full justify-center py-3.5 text-[14px]"
+                >
+                  {submitting ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <>
+                      {locale === 'tr' ? 'Geri bildirimi gönder' : 'Submit feedback'}
+                      <ArrowRight size={14} />
+                    </>
+                  )}
+                </button>
+
+                <RecaptchaNotice locale={locale} className="mt-2 text-center text-[10px]" />
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="py-4 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#C6F24E]">
+                <Check size={28} strokeWidth={3} className="text-[#0A0A0A]" />
+              </div>
+              <h2 className="bz-h-tight-2 mt-4 text-[22px]">{t('feedback_thank_you')}</h2>
+              <p className="mx-auto mt-2 max-w-[280px] text-[13px] leading-[1.6] text-[#525252]">
+                {locale === 'tr'
+                  ? 'Geri bildirimin alındı. Tekrar görüşmek üzere.'
+                  : 'Your feedback has been received. See you soon.'}
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* Buaze badge + legal links */}
+        <footer className="mt-auto pt-8 text-center">
+          <div className="flex items-center justify-center gap-4 text-[10px] text-white/40" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <Link href={`/${locale}/privacy`} className="transition-colors hover:text-white/70">
+              {locale === 'tr' ? 'Gizlilik' : 'Privacy'}
+            </Link>
+            <span aria-hidden="true">·</span>
+            <Link href={`/${locale}/terms`} className="transition-colors hover:text-white/70">
+              {locale === 'tr' ? 'Kullanım' : 'Terms'}
+            </Link>
+          </div>
+          <div className="mt-3 text-[10px] text-white/40" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Powered by Buaze
+          </div>
+        </footer>
+      </div>
+
+      {showLegal && (
+        <LegalModal kind={showLegal} t={t} onClose={() => setShowLegal(null)} locale={locale} />
+      )}
+    </main>
+  );
+}
+
+function DarkLoader() {
+  return (
+    <main className="flex min-h-[100dvh] items-center justify-center bg-[#0A0A0A] text-white">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-12 w-12 rounded-full border-2 border-white/15 border-t-[#C6F24E] animate-spin" />
+        <span
+          className="text-[10px] text-white/40"
+          style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}
+        >
+          Buaze
+        </span>
+      </div>
+    </main>
+  );
+}
+
+function RedirectingOverlay({
+  locale,
+  platformId,
+  restaurantName,
+}: {
+  locale: Locale;
+  platformId: string;
+  restaurantName: string;
+}) {
+  return (
+    <div className="bz-fade-in fixed inset-0 z-[60] flex flex-col items-center justify-center bg-[#0A0A0A] px-6 text-center">
+      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
+        <PlatformChip id={platformId} size={48} />
+      </div>
+      <h2 className="bz-h-tight-2 mb-2 text-[22px] text-white">
+        {locale === 'tr' ? 'Yönlendiriliyorsun…' : 'Redirecting…'}
+      </h2>
+      <p className="mb-6 max-w-[280px] text-[13px] text-white/60">
+        {locale === 'tr'
+          ? `${restaurantName} için değerlendirmeni paylaşmak üzeresin.`
+          : `You're about to share your review for ${restaurantName}.`}
+      </p>
+      <div className="h-1 w-[180px] overflow-hidden rounded-full bg-white/10">
+        <div className="h-full bg-[#C6F24E] animate-[bzProgress_2.2s_linear_forwards]" style={{ width: 0 }} />
+      </div>
+      <style jsx>{`
+        @keyframes bzProgress {
+          from {
+            width: 0;
+          }
+          to {
+            width: 100%;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function ConsentRow({
+  checked,
+  onToggle,
+  label,
+  legalLabel,
+  onOpenLegal,
+  required = false,
+}: {
+  checked: boolean;
+  onToggle: () => void;
+  label: string;
+  legalLabel: string;
+  onOpenLegal: (e: React.MouseEvent) => void;
+  required?: boolean;
+}) {
+  return (
+    <div
+      onClick={onToggle}
+      role="checkbox"
+      aria-checked={checked}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
+      className={`flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 text-[11.5px] leading-[1.5] text-[#525252] transition-colors focus:outline-none focus-visible:border-[#0A0A0A] ${
+        checked
+          ? 'border-[#C6F24E] bg-[#EAF9B8]/30'
+          : 'border-[#EDEDED] bg-white hover:border-[#D4D4D4]'
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors ${
+          checked ? 'border-[#0A0A0A] bg-[#0A0A0A]' : 'border-[#D4D4D4] bg-white'
+        }`}
+      >
+        {checked && <Check size={11} strokeWidth={3} className="text-white" />}
+      </span>
+      <span className="flex-1">
+        {required && (
+          <span className="mr-1 inline-block rounded bg-[#0A0A0A] px-1 py-[1px] align-middle text-[8px] font-semibold uppercase tracking-wider text-white">
+            *
+          </span>
+        )}
+        {label}{' '}
+        <button
+          type="button"
+          onClick={onOpenLegal}
+          className="font-medium text-[#0A0A0A] underline underline-offset-2 hover:text-[#525252]"
+        >
+          {legalLabel}
+        </button>
+      </span>
+    </div>
+  );
+}
+
+function LegalModal({
+  kind,
+  t,
+  onClose,
+  locale,
+}: {
+  kind: 'kvkk' | 'marketing';
+  t: (key: string) => string;
+  onClose: () => void;
+  locale: Locale;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      className="bz-fade-in fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="legal-title"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[520px] overflow-hidden rounded-[20px] bg-white text-[#0A0A0A] shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
+      >
+        <header className="flex items-center justify-between border-b border-[#EDEDED] px-6 py-4">
+          <div className="flex items-center gap-3">
+            <span
+              className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+                kind === 'kvkk' ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'bg-[#F0FDF4] text-[#166534]'
+              }`}
             >
-              <X size={22} strokeWidth={2} />
-            </button>
-            <div className="flex flex-col">
-               <h1 className="text-[14px] font-bold text-[#0A0A0A] tracking-tight leading-tight">{t('feedback_post_title') || 'Yorum Yaz'}</h1>
+              {kind === 'kvkk' ? <ShieldCheck size={18} /> : <Mail size={18} />}
+            </span>
+            <div>
+              <h3 id="legal-title" className="bz-h-tight text-[15px]">
+                {kind === 'kvkk'
+                  ? locale === 'tr'
+                    ? 'KVKK Aydınlatma Metni'
+                    : 'KVKK Privacy Notice'
+                  : locale === 'tr'
+                    ? 'İletişim İzni'
+                    : 'Marketing Consent'}
+              </h3>
+              <p
+                className="text-[9px] uppercase tracking-[0.2em] text-[#737373]"
+                style={{ fontFamily: 'var(--font-mono)' }}
+              >
+                Legal & Privacy
+              </p>
             </div>
           </div>
-          
-          <div className="flex items-center gap-3">
-            {!showForm && !showThankYou && (
-               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0A0A0A] to-[#1A1A1A] flex items-center justify-center text-white text-xs font-bold border border-[#EDEDED] shadow-sm ring-1 ring-[#EDEDED]">
-                  {restaurant.name.charAt(0).toUpperCase()}
-               </div>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={locale === 'tr' ? 'Kapat' : 'Close'}
+            className="bz-btn-icon"
+          >
+            <X size={18} />
+          </button>
+        </header>
+        <div className="max-h-[60vh] overflow-y-auto px-6 py-5">
+          <p className="whitespace-pre-wrap text-[13px] leading-[1.65] text-[#1A1A1A]">
+            {kind === 'kvkk' ? t('feedback_kvkk_text') : t('feedback_marketing_text')}
+          </p>
+          <p
+            className="mt-5 border-t border-[#EDEDED] pt-3 text-[10px] uppercase tracking-[0.2em] text-[#737373]"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            {kind === 'kvkk' ? t('feedback_kvkk_footer') : t('feedback_marketing_footer')}
+          </p>
         </div>
+        <footer className="flex justify-end border-t border-[#EDEDED] bg-[#FAFAFA] px-6 py-4">
+          <button type="button" onClick={onClose} className="bz-btn-primary px-6 py-2.5 text-[13px]">
+            {locale === 'tr' ? 'Kapat' : 'Close'}
+          </button>
+        </footer>
       </div>
-
-      {/* ═══════ Main Content Area ═══════ */}
-      <div className="max-w-xl mx-auto w-full px-6 py-6 flex-1">
-        
-        {!showThankYou && (
-          <div className="mb-8">
-            <StarRating 
-              rating={rating} 
-              onRatingChange={handleRatingChange} 
-              t={t} 
-              platform={platformParam || 'google'} 
-            />
-          </div>
-        )}
-
-        {showForm && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <FeedbackForm
-              ref={formRef}
-              rating={Number(rating)}
-              onSuccess={() => setFormSubmitted(true)}
-              restaurantSlug={slug}
-              restaurantName={restaurant.name}
-              platform={platformParam || 'google'}
-              t={t}
-            />
-          </div>
-        )}
-
-        {showThankYou && (
-            <ThankYou rating={rating} googleReviewUrl={googleUrl} t={t} />
-        )}
-      </div>
-
-      {/* ═══════ Footer ═══════ */}
-      <footer className="py-10 px-6 mt-auto bg-[#FFFFFF]/30">
-        <div className="max-w-xl mx-auto flex flex-col items-center gap-6">
-          <div className="flex gap-6">
-            <a href={`/${locale}/privacy`} className="text-[10px] font-bold text-[#A3A3A3] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">{locale === 'tr' ? 'GİZLİLİK' : 'PRIVACY'}</a>
-            <a href={`/${locale}/terms`} className="text-[10px] font-bold text-[#A3A3A3] hover:text-[#0A0A0A] transition-colors tracking-widest uppercase">{locale === 'tr' ? 'KULLANIM' : 'TERMS'}</a>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold text-[#A3A3A3] tracking-[0.2em]">POWERED BY</span>
-            <a href="https://buaze.com" className="text-[10px] font-semibold text-[#6B7280] hover:text-[#0A0A0A] transition-colors tracking-tighter uppercase">BUAZE</a>
-          </div>
-        </div>
-      </footer>
-    </main>
+    </div>
   );
 }
 
 export default function SlugPage() {
   return (
-    <Suspense fallback={
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-6">
-          <div className="w-16 h-16 rounded-full border-4 border-[#FFFFFF] border-t-[#C6F24E] animate-spin" />
-        </div>
-      </div>
-    }>
-      <SlugContent />
+    <Suspense fallback={<DarkLoader />}>
+      <ReviewContent />
     </Suspense>
   );
 }
