@@ -337,14 +337,12 @@ export default function DashboardQrPage() {
           <section className="bz-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold bz-h-tight"
               >
                 1
               </div>
               <h2
-                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
               >
                 {locale === 'tr' ? 'Kampanya detayları' : 'Campaign details'}
               </h2>
@@ -441,14 +439,12 @@ export default function DashboardQrPage() {
           <section className="bz-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold bz-h-tight"
               >
                 2
               </div>
               <h2
-                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
               >
                 {locale === 'tr' ? 'Akış' : 'Flow'}
               </h2>
@@ -475,8 +471,7 @@ export default function DashboardQrPage() {
                     {locale === 'tr' ? 'ADIM' : 'STEP'} {s.n}
                   </div>
                   <div
-                    className="mt-1.5 text-[14px] font-semibold text-[#0A0A0A]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
+                    className="mt-1.5 text-[14px] font-semibold text-[#0A0A0A] bz-h-tight"
                   >
                     {s.t}
                   </div>
@@ -507,14 +502,12 @@ export default function DashboardQrPage() {
           <section className="bz-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold bz-h-tight"
               >
                 3
               </div>
               <h2
-                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
               >
                 {locale === 'tr' ? 'Tasarım' : 'Design'}
               </h2>
@@ -747,8 +740,7 @@ export default function DashboardQrPage() {
                     .slice(0, 22)}
                 </div>
                 <div
-                  className="mt-2 text-[20px] font-medium leading-[1] tracking-[-0.02em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="mt-2 text-[20px] font-medium leading-[1] tracking-[-0.02em] text-[#0A0A0A] bz-h-tight"
                 >
                   {locale === 'tr' ? 'Deneyiminizi paylaşın.' : 'Share your experience.'}
                 </div>
@@ -779,8 +771,7 @@ export default function DashboardQrPage() {
                   {(selectedRestaurant?.name || 'BUAZE').toUpperCase().slice(0, 18)}
                 </div>
                 <div
-                  className="text-[14px] font-medium text-[#0A0A0A] tracking-[-0.015em] leading-[1.15]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="text-[14px] font-medium text-[#0A0A0A] tracking-[-0.015em] leading-[1.15] bz-h-tight"
                 >
                   {locale === 'tr' ? 'Deneyiminiz nasıldı?' : 'How was your experience?'}
                 </div>

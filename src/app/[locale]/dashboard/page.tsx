@@ -222,8 +222,7 @@ export default async function DashboardPage({
                 </span>
               </div>
               <div
-                className="mt-4 text-[30px] sm:text-[38px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A] tabular-nums"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="mt-4 text-[30px] sm:text-[38px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A] tabular-nums bz-h-tight"
               >
                 {k.value}
               </div>
@@ -265,8 +264,7 @@ export default async function DashboardPage({
               <div className="flex items-center justify-between">
                 <div>
                   <h2
-                    className="text-[18px] font-semibold tracking-[-0.015em]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
+                    className="text-[18px] font-semibold tracking-[-0.015em] bz-h-tight"
                   >
                     {isTr ? 'Son yorumlar' : 'Latest reviews'}
                   </h2>
@@ -328,8 +326,7 @@ export default async function DashboardPage({
             <section className="bz-card p-6 sm:p-7">
               <div>
                 <h2
-                  className="text-[18px] font-semibold tracking-[-0.015em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="text-[18px] font-semibold tracking-[-0.015em] bz-h-tight"
                 >
                   {isTr ? 'Konum performansı' : 'Location performance'}
                 </h2>
@@ -353,8 +350,7 @@ export default async function DashboardPage({
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <span
-                        className="text-[18px] font-semibold tabular-nums text-[#0A0A0A]"
-                        style={{ fontFamily: 'var(--font-heading)' }}
+                        className="text-[18px] font-semibold tabular-nums text-[#0A0A0A] bz-h-tight"
                       >
                         {loc.avg > 0 ? loc.avg.toFixed(1) : '—'}
                       </span>
@@ -372,8 +368,7 @@ export default async function DashboardPage({
       <section className="space-y-5">
         <div className="flex items-center justify-between">
           <h2
-            className="text-[20px] sm:text-[22px] font-semibold tracking-[-0.015em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="text-[20px] sm:text-[22px] font-semibold tracking-[-0.015em] bz-h-tight"
           >
             {t.dash_restaurants}
           </h2>
@@ -392,8 +387,7 @@ export default async function DashboardPage({
               <Building2 size={22} className="text-[#737373]" />
             </div>
             <p
-              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
             >
               {t.dash_no_restaurant}
             </p>
@@ -420,8 +414,7 @@ export default async function DashboardPage({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <h3
-                      className="truncate text-[17px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
+                      className="truncate text-[17px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
                     >
                       {restaurant.name}
                     </h3>
@@ -447,8 +440,7 @@ export default async function DashboardPage({
                   <Star size={14} className="text-[#C6F24E]" fill="currentColor" />
                   <span className="text-[13px] text-[#525252]">
                     <span
-                      className="font-semibold text-[#0A0A0A]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
+                      className="font-semibold text-[#0A0A0A] bz-h-tight"
                     >
                       {restaurant._count.feedbacks}
                     </span>{' '}
@@ -484,8 +476,7 @@ export default async function DashboardPage({
                 {isTr ? 'GROWTH' : 'GROWTH'}
               </span>
               <h3
-                className="mt-3 text-[24px] sm:text-[30px] font-medium tracking-[-0.02em] leading-[1.15]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="mt-3 text-[24px] sm:text-[30px] font-medium tracking-[-0.02em] leading-[1.15] bz-h-tight"
               >
                 {isTr ? 'Kesintisiz itibar yönetimi.' : 'Uninterrupted reputation management.'}
               </h3>

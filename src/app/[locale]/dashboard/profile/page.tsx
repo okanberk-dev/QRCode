@@ -187,8 +187,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
             <form onSubmit={handleSubmit} className="space-y-4">
               <section className="bz-card p-6 sm:p-7">
                 <h2
-                  className="text-[20px] font-semibold tracking-[-0.015em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="text-[20px] font-semibold tracking-[-0.015em] bz-h-tight"
                 >
                   {isTr ? 'Kişisel bilgiler' : 'Personal info'}
                 </h2>
@@ -236,8 +235,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
                 <div className="flex items-center gap-2">
                   <Key size={14} strokeWidth={2} className="text-[#0A0A0A]" />
                   <h2
-                    className="text-[18px] font-semibold tracking-[-0.015em]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
+                    className="text-[18px] font-semibold tracking-[-0.015em] bz-h-tight"
                   >
                     {isTr ? 'Şifre değiştir' : 'Change password'}
                   </h2>
@@ -301,8 +299,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
           {activeTab === 'brand' && (
             <section className="bz-card p-6 sm:p-7">
               <h2
-                className="text-[20px] font-semibold tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[20px] font-semibold tracking-[-0.015em] bz-h-tight"
               >
                 {isTr ? 'Marka kimliği' : 'Brand identity'}
               </h2>
@@ -314,8 +311,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
                   <span className="pulse-eyebrow text-[#737373]">LOGO</span>
                   <div className="mt-2 h-24 border border-dashed border-[#E5E5E5] rounded-lg bg-[#FAFAFA] flex items-center justify-center px-4">
                     <span
-                      className="text-[22px] font-semibold tracking-[-0.02em]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
+                      className="text-[22px] font-semibold tracking-[-0.02em] bz-h-tight"
                     >
                       {(formData.name || 'buaze').split(' ')[0].toLowerCase()}
                       <span className="bg-[#C6F24E] px-1 rounded">·</span>
@@ -350,8 +346,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
                     </span>
                     <div className="mt-2 px-4 py-2.5 border border-[#EDEDED] rounded-lg flex justify-between items-center">
                       <span
-                        className="text-[15px] font-medium"
-                        style={{ fontFamily: 'var(--font-heading)' }}
+                        className="text-[15px] font-medium bz-h-tight"
                       >
                         Space Grotesk
                       </span>
@@ -369,8 +364,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
           {activeTab === 'integrations' && (
             <section className="bz-card p-6 sm:p-7">
               <h2
-                className="text-[20px] font-semibold tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[20px] font-semibold tracking-[-0.015em] bz-h-tight"
               >
                 {isTr ? 'Google Business Profile' : 'Google Business Profile'}
               </h2>
@@ -406,8 +400,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
                     {isTr ? 'AKTİF PLAN' : 'ACTIVE PLAN'}
                   </span>
                   <div
-                    className="mt-2 text-[28px] sm:text-[32px] font-medium tracking-[-0.02em]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
+                    className="mt-2 text-[28px] sm:text-[32px] font-medium tracking-[-0.02em] bz-h-tight"
                   >
                     {isTr ? 'Trial · 14 gün ücretsiz' : 'Trial · 14-day free'}
                   </div>
@@ -434,8 +427,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
                 <Cog size={22} className="text-[#737373]" strokeWidth={2} />
               </div>
               <h3
-                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
               >
                 {tabs.find((t) => t.k === activeTab)?.l}
               </h3>

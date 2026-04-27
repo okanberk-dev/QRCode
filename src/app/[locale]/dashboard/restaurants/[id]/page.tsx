@@ -163,8 +163,7 @@ export default function DashboardRestaurantDetailPage() {
           <div className="mb-6 flex items-center gap-3">
             <div className="h-5 w-1.5 rounded-full" style={{ backgroundColor: formData.primaryColor }} />
             <h2
-              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
             >
               {locale === 'tr' ? 'Temel Bilgiler' : 'Basics'}
             </h2>
@@ -257,8 +256,7 @@ export default function DashboardRestaurantDetailPage() {
           <div className="mb-6 flex items-center gap-3">
             <ExternalLink size={16} strokeWidth={2} className="text-[#0A0A0A]" />
             <h2
-              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
             >
               {locale === 'tr' ? 'Harici Bağlantılar ve Bildirimler' : 'External Links & Notifications'}
             </h2>

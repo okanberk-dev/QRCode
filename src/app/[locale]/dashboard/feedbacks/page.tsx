@@ -455,15 +455,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           <>
             <div className="flex items-start gap-4">
               <div
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0A0A0A] text-[18px] font-semibold text-[#C6F24E]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0A0A0A] text-[18px] font-semibold text-[#C6F24E] bz-h-tight"
               >
                 {initials(active.customerName)}
               </div>
               <div className="flex-1 min-w-0">
                 <h2
-                  className="text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
                 >
                   {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
                 </h2>
@@ -535,8 +533,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             <div className="mt-6 rounded-xl bg-[#0A0A0A] p-5 text-white">
               <div className="flex items-center gap-2">
                 <span
-                  className="flex h-5 w-5 items-center justify-center rounded bg-[#C6F24E] text-[10px] font-bold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="flex h-5 w-5 items-center justify-center rounded bg-[#C6F24E] text-[10px] font-bold text-[#0A0A0A] bz-h-tight"
                 >
                   AI
                 </span>
@@ -675,8 +672,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               <Inbox size={22} strokeWidth={2} />
             </div>
             <p
-              className="text-[16px] font-semibold text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[16px] font-semibold text-[#0A0A0A] bz-h-tight"
             >
               {isTr ? 'Bir yorum seç' : 'Select a review'}
             </p>
@@ -696,8 +692,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           <div className="mt-3 rounded-xl border border-[#EDEDED] bg-white p-5">
             <p className="text-[12px] text-[#737373]">{isTr ? 'Toplam ziyaret' : 'Total visits'}</p>
             <div
-              className="text-[32px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[32px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A] bz-h-tight"
             >
               1
             </div>
@@ -705,8 +700,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               <div>
                 <p className="pulse-eyebrow text-[#737373]">{isTr ? 'ORT. PUAN' : 'AVG. RATING'}</p>
                 <p
-                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A] bz-h-tight"
                 >
                   {active.rating.toFixed(1)} <span className="text-[#C6F24E]">★</span>
                 </p>
@@ -714,8 +708,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               <div>
                 <p className="pulse-eyebrow text-[#737373]">{isTr ? 'SADAKAT' : 'LOYALTY'}</p>
                 <p
-                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A] bz-h-tight"
                 >
                   {active.rating >= 4 ? (isTr ? 'Yüksek' : 'High') : isTr ? 'Orta' : 'Mid'}
                 </p>

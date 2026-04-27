@@ -111,8 +111,7 @@ export default function DashboardMenuSelectPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p
-                  className="truncate text-[15px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="truncate text-[15px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
                 >
                   {r.name}
                 </p>

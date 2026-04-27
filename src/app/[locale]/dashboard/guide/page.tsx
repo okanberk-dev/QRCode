@@ -73,8 +73,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
             </div>
             <div className="space-y-2">
               <h3
-                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
               >
                 {step.title}
               </h3>
@@ -97,8 +96,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
         <div>
           <span className="pulse-eyebrow text-[#C6F24E]">{isTr ? 'İPUÇLARI' : 'PRO TIPS'}</span>
           <h2
-            className="mt-3 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="mt-3 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em] bz-h-tight"
           >
             {isTr ? 'Önemli ipuçları' : 'Key tactics'}
           </h2>

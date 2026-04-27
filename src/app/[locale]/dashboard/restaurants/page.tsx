@@ -244,8 +244,7 @@ export default function DashboardRestaurantsPage() {
             <Store size={22} className="text-[#737373]" strokeWidth={2} />
           </div>
           <h2
-            className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
           >
             {copy.emptyTitle}
           </h2>
@@ -274,8 +273,7 @@ export default function DashboardRestaurantsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3
-                        className="truncate text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.02em] leading-tight"
-                        style={{ fontFamily: 'var(--font-heading)' }}
+                        className="truncate text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.02em] leading-tight bz-h-tight"
                       >
                         {restaurant.name}
                       </h3>
@@ -376,8 +374,7 @@ export default function DashboardRestaurantsPage() {
           <div className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_20px_60px_rgba(10,10,10,0.2)] sm:rounded-2xl sm:pb-0">
             <div className="relative border-b border-[#EDEDED] p-5 sm:p-6 md:p-7">
               <h2
-                className="text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] pr-10"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] pr-10 bz-h-tight"
               >
                 {copy.add}
               </h2>
