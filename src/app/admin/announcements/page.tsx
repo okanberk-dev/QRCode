@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Megaphone, Save, Loader2, AlertTriangle, Info, CheckCircle2, AlertOctagon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Megaphone, Save, Loader2 } from 'lucide-react';
 import {
   AlertBanner,
   Badge,
@@ -62,14 +62,11 @@ const EMPTY_FORM: FormState = {
   isDismissible: true,
 };
 
-const SEVERITY_META: Record<
-  Severity,
-  { label: string; kind: BadgeKind; icon: typeof Info; iconBg: string; iconFg: string }
-> = {
-  info: { label: 'Bilgi', kind: 'info', icon: Info, iconBg: '#EFF6FF', iconFg: '#2563EB' },
-  success: { label: 'Başarı', kind: 'ok', icon: CheckCircle2, iconBg: '#F0FDF4', iconFg: '#16A34A' },
-  warning: { label: 'Uyarı', kind: 'warn', icon: AlertTriangle, iconBg: '#FFFBEB', iconFg: '#D97706' },
-  critical: { label: 'Kritik', kind: 'danger', icon: AlertOctagon, iconBg: '#FEF2F2', iconFg: '#DC2626' },
+const SEVERITY_META: Record<Severity, { label: string; kind: BadgeKind }> = {
+  info: { label: 'Bilgi', kind: 'info' },
+  success: { label: 'Başarı', kind: 'ok' },
+  warning: { label: 'Uyarı', kind: 'warn' },
+  critical: { label: 'Kritik', kind: 'danger' },
 };
 
 const toLocalInputDateTime = (iso: string | null): string => {
@@ -255,7 +252,6 @@ export default function AdminAnnouncementsPage() {
         <div className="flex flex-col gap-2.5">
           {filtered.map(a => {
             const sev = SEVERITY_META[a.severity];
-            const SevIcon = sev.icon;
             const isLive =
               a.status === 'published' &&
               (!a.endDate || new Date(a.endDate) >= new Date()) &&
@@ -263,66 +259,63 @@ export default function AdminAnnouncementsPage() {
             return (
               <article
                 key={a.id}
-                className="bz-card p-5"
-                style={{ opacity: a.status === 'published' ? 1 : 0.7 }}
+                className="bz-card"
+                style={{ padding: 20, opacity: a.status === 'published' ? 1 : 0.7 }}
               >
-                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                  <div
-                    className="flex shrink-0 items-center justify-center"
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      background: sev.iconBg,
-                      color: sev.iconFg,
-                    }}
-                    aria-hidden="true"
-                  >
-                    <SevIcon size={20} strokeWidth={2} />
-                  </div>
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                      {isLive ? (
+                        <Badge kind="ok">Yayında</Badge>
+                      ) : a.status === 'draft' ? (
+                        <Badge kind="ghost">Taslak</Badge>
+                      ) : (
+                        <Badge kind="warn">Planlı</Badge>
+                      )}
                       <Badge kind={sev.kind}>{sev.label}</Badge>
-                      <Badge kind={isLive ? 'ok' : a.status === 'draft' ? 'ghost' : 'off'}>
-                        {isLive ? 'Yayında' : a.status === 'draft' ? 'Taslak' : 'Planlı'}
-                      </Badge>
                       <Badge kind="ghost">
                         {a.locale === 'all' ? 'Tüm diller' : a.locale.toUpperCase()}
                       </Badge>
                       {a.priority !== 0 && <Badge kind="info">#P{a.priority}</Badge>}
                     </div>
-                    <h3 className="bz-h-tight" style={{ fontSize: 16 }}>
+                    <div className="bz-h-tight mb-1.5" style={{ fontSize: 16 }}>
                       {a.title}
-                    </h3>
-                    <p className="mt-1.5" style={{ fontSize: 13, color: '#525252', lineHeight: 1.55 }}>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 13, color: '#525252', lineHeight: 1.55 }}>
                       {a.message}
                     </p>
-                    {(a.startDate || a.endDate) && (
-                      <p
-                        className="mt-2 bz-mono"
-                        style={{ fontSize: 11, color: '#737373' }}
-                      >
-                        {a.startDate
-                          ? new Date(a.startDate).toLocaleString('tr-TR', {
-                              day: '2-digit',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : '—'}{' '}
-                        →{' '}
-                        {a.endDate
-                          ? new Date(a.endDate).toLocaleString('tr-TR', {
-                              day: '2-digit',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : '∞'}
-                      </p>
-                    )}
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#A3A3A3]">
+                      <span>
+                        {new Date(a.createdAt).toLocaleDateString('tr-TR', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </span>
+                      {(a.startDate || a.endDate) && (
+                        <span className="bz-mono">
+                          {a.startDate
+                            ? new Date(a.startDate).toLocaleString('tr-TR', {
+                                day: '2-digit',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '—'}{' '}
+                          →{' '}
+                          {a.endDate
+                            ? new Date(a.endDate).toLocaleString('tr-TR', {
+                                day: '2-digit',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '∞'}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0" style={{ gap: 4 }}>
                     <button
                       onClick={() => openEdit(a)}
                       className="bz-btn-icon"
@@ -335,15 +328,13 @@ export default function AdminAnnouncementsPage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleDelete(a.id)}
-                          className="px-3 py-1.5 rounded-full text-[11px] font-semibold text-white"
-                          style={{ background: '#DC2626' }}
+                          className="rounded-full bg-[#FEF2F2] px-3 py-1.5 text-[11px] font-semibold text-[#991B1B] hover:bg-[#FECACA]"
                         >
                           Sil
                         </button>
                         <button
                           onClick={() => setDeleteConfirm(null)}
-                          className="px-3 py-1.5 rounded-full text-[11px] font-medium"
-                          style={{ background: '#F2F2F2', color: '#525252' }}
+                          className="rounded-full bg-[#F2F2F2] px-3 py-1.5 text-[11px] font-medium text-[#525252] hover:bg-[#EDEDED]"
                         >
                           İptal
                         </button>
@@ -354,9 +345,8 @@ export default function AdminAnnouncementsPage() {
                         className="bz-btn-icon"
                         title="Sil"
                         aria-label="Sil"
-                        style={{ color: '#DC2626' }}
                       >
-                        <Trash2 size={14} strokeWidth={2} />
+                        <Trash2 size={14} strokeWidth={2} className="text-[#991B1B]" />
                       </button>
                     )}
                   </div>

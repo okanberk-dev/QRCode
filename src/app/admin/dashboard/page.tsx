@@ -52,19 +52,25 @@ export default async function AdminDashboardPage() {
   if (!payload || !isAdminRole(payload.role as string | undefined)) redirect('/admin');
 
   const now = new Date();
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
   const twelveWeeksAgo = new Date(now.getTime() - 12 * 7 * 24 * 60 * 60 * 1000);
 
   // Aggregate queries — kept narrow so the dashboard stays a strategic
   // overview (review-monitoring lives on /admin/reviews).
   const [
     totalBusinesses,
+    newBusinesses24h,
     monthlyReviews,
+    previousMonthReviews,
     owners,
     restaurantsForGrowth,
   ] = await Promise.all([
     prisma.restaurant.count(),
+    prisma.restaurant.count({ where: { createdAt: { gte: oneDayAgo } } }),
     prisma.feedback.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+    prisma.feedback.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
     prisma.user.findMany({
       where: { role: 'restaurant_owner' },
       select: { plan: true, trialEndsAt: true, isActive: true },
@@ -74,6 +80,13 @@ export default async function AdminDashboardPage() {
       select: { createdAt: true },
     }),
   ]);
+
+  // Trend computations — mirrors design StatCard delta pattern (+X%, +N(24s))
+  const reviewsDeltaPct = previousMonthReviews > 0
+    ? Math.round(((monthlyReviews - previousMonthReviews) / previousMonthReviews) * 1000) / 10
+    : monthlyReviews > 0 ? 100 : 0;
+  const reviewsDeltaKind: 'up' | 'down' | 'neutral' =
+    reviewsDeltaPct > 0 ? 'up' : reviewsDeltaPct < 0 ? 'down' : 'neutral';
 
   const activeTrials = owners.filter(
     (o) => o.plan === 'trial' && o.trialEndsAt && o.trialEndsAt > now,
@@ -127,30 +140,34 @@ export default async function AdminDashboardPage() {
         <StatCard
           label="Toplam işletme"
           value={totalBusinesses}
-          delta={`${totalOwners} sahip`}
-          deltaKind="neutral"
+          delta={`+${newBusinesses24h}`}
+          deltaKind={newBusinesses24h > 0 ? 'up' : 'neutral'}
+          deltaSuffix="(24s)"
           icon={<Store size={14} strokeWidth={2} />}
         />
         <StatCard
           label="Aylık MRR"
           value={`₺${mrr.toLocaleString('tr-TR')}`}
-          delta="Iyzico bağlantısı bekleniyor"
+          delta="Iyzico"
           deltaKind="neutral"
+          deltaSuffix="bağlantısı bekleniyor"
           icon={<CreditCard size={14} strokeWidth={2} />}
           accent="#C6F24E"
         />
         <StatCard
           label="Aktif denemeler"
           value={activeTrials}
-          delta="14 gün ort."
+          delta="14 gün"
           deltaKind="neutral"
+          deltaSuffix="ortalama"
           icon={<Crown size={14} strokeWidth={2} />}
         />
         <StatCard
           label="Aylık yorum"
           value={monthlyReviews.toLocaleString('tr-TR')}
-          delta="Son 30 gün"
-          deltaKind="neutral"
+          delta={`${reviewsDeltaPct >= 0 ? '+' : ''}${reviewsDeltaPct}%`}
+          deltaKind={reviewsDeltaKind}
+          deltaSuffix="son 30 gün"
           icon={<MessageSquare size={14} strokeWidth={2} />}
         />
       </div>
