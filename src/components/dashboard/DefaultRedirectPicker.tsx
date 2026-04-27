@@ -14,6 +14,7 @@ const STORAGE_VALUE: Record<PlatformId, string> = {
   trendyol: 'trendyol_go',
   trendyol_go: 'trendyol_go',
   tripadvisor: 'tripadvisor',
+  airbnb: 'airbnb',
   foursquare: 'foursquare',
   custom: 'custom',
 };
@@ -26,6 +27,7 @@ const STORAGE_LABEL: Record<string, string> = {
   getir: 'Getir',
   trendyol_go: 'Trendyol GO',
   tripadvisor: 'Tripadvisor',
+  airbnb: 'Airbnb',
   foursquare: 'Foursquare',
   custom: 'Custom',
 };

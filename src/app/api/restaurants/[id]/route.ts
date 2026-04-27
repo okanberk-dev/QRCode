@@ -96,6 +96,11 @@ export async function PUT(
       yemekSepetiEnabled,
       getirEnabled,
       trendyolEnabled,
+      // Konaklama segmenti (Step 11)
+      tripAdvisorUrl,
+      airbnbUrl,
+      tripAdvisorEnabled,
+      airbnbEnabled,
     } = body;
 
     // Phase 12.6 — defaultRedirectPlatform whitelist. NULL or '' = clear
@@ -172,6 +177,10 @@ export async function PUT(
         ...(yemekSepetiEnabled !== undefined && { yemekSepetiEnabled: Boolean(yemekSepetiEnabled) }),
         ...(getirEnabled !== undefined && { getirEnabled: Boolean(getirEnabled) }),
         ...(trendyolEnabled !== undefined && { trendyolEnabled: Boolean(trendyolEnabled) }),
+        ...(tripAdvisorUrl !== undefined && { tripAdvisorUrl: tripAdvisorUrl || null }),
+        ...(airbnbUrl !== undefined && { airbnbUrl: airbnbUrl || null }),
+        ...(tripAdvisorEnabled !== undefined && { tripAdvisorEnabled: Boolean(tripAdvisorEnabled) }),
+        ...(airbnbEnabled !== undefined && { airbnbEnabled: Boolean(airbnbEnabled) }),
         ...(menuLogoUrl !== undefined && { menuLogoUrl: menuLogoUrl || null }),
         ...(defaultRedirectPlatform !== undefined && {
           defaultRedirectPlatform: defaultRedirectPlatform || null,
