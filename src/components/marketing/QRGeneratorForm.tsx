@@ -305,39 +305,51 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
         </h2>
 
         <figure
-          className="rounded-[18px] flex flex-col items-center justify-between text-center transition-colors"
+          className="rounded-[18px] flex flex-col items-center justify-between text-center transition-colors mx-auto w-full max-w-[420px]"
           style={{
             background: palette.card,
             color: palette.fg,
             border: palette.border === 'transparent' ? '1px solid transparent' : `1px solid ${palette.border}`,
+            // 3:4 ratio capped between 360-560px so the card never collapses
+            // (long messages were pushing the QR off-centre on small screens)
+            // and never balloons on tablet portrait.
             aspectRatio: '3 / 4',
-            padding: 'clamp(20px, 5vw, 40px)',
+            minHeight: 360,
+            maxHeight: 560,
+            padding: 'clamp(18px, 5vw, 40px)',
+            gap: 12,
           }}
         >
-          <div>
+          <div className="w-full min-w-0">
             <div
-              className="pulse-eyebrow"
+              className="pulse-eyebrow truncate"
               style={{ color: palette.eyebrow, fontSize: 10, letterSpacing: '0.2em' }}
             >
               {(businessName || 'BUAZE').toUpperCase().slice(0, 28)}
             </div>
             <div
-              className="mt-2.5 leading-[1.02] tracking-[-0.03em] whitespace-pre-line"
+              className="mt-2.5 leading-[1.02] tracking-[-0.03em] whitespace-pre-line break-words"
               style={{
                 fontFamily: 'var(--font-heading)',
-                fontSize: 'clamp(22px, 4vw, 38px)',
+                fontSize: 'clamp(20px, 4vw, 38px)',
                 fontWeight: 500,
                 color: palette.fg,
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
               }}
             >
               {message || defaultMessage}
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-[0_1px_0_rgba(10,10,10,0.05)]">
+          <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-[0_1px_0_rgba(10,10,10,0.05)] shrink-0">
             <canvas
               ref={canvasRef}
-              className="block w-[120px] h-[120px] sm:w-[160px] sm:h-[160px]"
+              className="block w-[128px] h-[128px] sm:w-[160px] sm:h-[160px]"
+              width={480}
+              height={480}
               role="img"
               aria-label={
                 isTr ? `"${submittedUrl}" adresi için QR kodu` : `QR code for "${submittedUrl}"`
@@ -346,7 +358,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           </div>
 
           <div
-            className="pulse-eyebrow"
+            className="pulse-eyebrow truncate w-full"
             style={{ color: palette.eyebrow, fontSize: 10, letterSpacing: '0.18em' }}
           >
             {isTr ? 'BUAZE · TARA ✦ PAYLAŞ' : 'BUAZE · SCAN ✦ SHARE'}
