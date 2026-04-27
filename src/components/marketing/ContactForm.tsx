@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Send, Loader2, Check, X } from 'lucide-react';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
 import RecaptchaNotice from '@/components/RecaptchaNotice';
+import { AlertBanner } from '@/components/ui';
 
 interface ContactFormProps {
   t: {
@@ -128,11 +129,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
             <input id="contact-website" name="website" type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
           </div>
 
-          {error && (
-            <div className="bg-[#FEF2F2] text-[#B91C1C] px-4 py-3 rounded-xl text-[13px] font-medium border border-[#FECACA]">
-              {error}
-            </div>
-          )}
+          {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
