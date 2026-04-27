@@ -5,7 +5,6 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/components/ui';
 import { copyToClipboard } from '@/lib/clipboard';
-import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import PlatformLogo, { type PlatformId } from '@/components/marketing/PlatformLogo';
 
 const PLATFORM_LOGO_ID: Record<string, PlatformId> = {
@@ -642,45 +641,82 @@ export default function DashboardQrPage() {
               {historyLoading && <Loader2 className="h-5 w-5 animate-spin text-[#0A0A0A]" />}
             </div>
 
-            <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
-              {history.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FFFFFF] px-4 py-8 text-center text-sm font-bold text-[#1A1A1A]">
-                  {copy.noHistory}
+            {history.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] px-4 py-10 text-center">
+                <div
+                  className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#EDEDED] text-[#737373]"
+                  aria-hidden="true"
+                >
+                  <QrCode size={18} strokeWidth={2} />
                 </div>
-              ) : (
-                history.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3">
-                    <div className="shrink-0 rounded-lg bg-white border border-[#EDEDED] px-2.5 py-1.5 text-center min-w-[60px]">
-                      <p className="pulse-eyebrow text-[#737373]">
-                        {new Date(item.createdAt).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'short' })}
-                      </p>
-                      <p
-                        className="text-[12px] font-semibold text-[#0A0A0A] tabular-nums mt-0.5"
-                        style={{ fontFamily: 'var(--font-heading)' }}
-                      >
-                        {new Date(item.createdAt).toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-[12px] font-medium text-[#0A0A0A] font-mono">{item.qrUrl}</p>
-                        <CopyUrlButton url={item.qrUrl} className="h-5 w-5 shrink-0" />
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-[11px] text-[#737373]">
-                          {item.tableNumber ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}` : (locale === 'tr' ? 'Genel QR' : 'General QR')}
-                        </p>
-                        {item.platform && PLATFORM_BADGE[item.platform] && (
-                          <span className={`px-1.5 py-0.5 rounded pulse-eyebrow text-white ${PLATFORM_BADGE[item.platform].bg}`}>
-                            {PLATFORM_BADGE[item.platform].label}
+                <p className="text-[13px] text-[#525252]">{copy.noHistory}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {history.map((item) => {
+                  const platformMeta = item.platform ? PLATFORM_BADGE[item.platform] : null;
+                  const dateStr = new Date(item.createdAt).toLocaleDateString(
+                    locale === 'tr' ? 'tr-TR' : 'en-US',
+                    { day: '2-digit', month: 'short', year: '2-digit' },
+                  );
+                  return (
+                    <div
+                      key={item.id}
+                      className="bz-card p-4 flex flex-col gap-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="bz-h-tight" style={{ fontSize: 14 }}>
+                            {item.tableNumber
+                              ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}`
+                              : (locale === 'tr' ? 'Genel QR' : 'General QR')}
+                          </div>
+                          <div className="pulse-eyebrow text-[#737373] mt-0.5">{dateStr}</div>
+                        </div>
+                        {platformMeta && (
+                          <span
+                            className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-semibold text-white ${platformMeta.bg}`}
+                            style={{ letterSpacing: '0.04em' }}
+                          >
+                            {platformMeta.label}
                           </span>
                         )}
                       </div>
+                      <div
+                        className="rounded-lg bg-[#FAFAFA] border border-[#EDEDED] px-3 py-2.5 truncate text-[11px] font-mono text-[#525252]"
+                        title={item.qrUrl}
+                      >
+                        {item.qrUrl}
+                      </div>
+                      <div
+                        className="grid grid-cols-2 gap-2 pt-2"
+                        style={{ borderTop: '1px solid #EDEDED' }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(item.qrUrl)}
+                          className="bz-btn-ghost"
+                          style={{ padding: '6px 10px', fontSize: 11 }}
+                        >
+                          <Copy size={12} strokeWidth={2} />
+                          {copy.copy}
+                        </button>
+                        <a
+                          href={item.qrUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bz-btn-ghost"
+                          style={{ padding: '6px 10px', fontSize: 11 }}
+                        >
+                          <Download size={12} strokeWidth={2} />
+                          {locale === 'tr' ? 'Aç' : 'Open'}
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 

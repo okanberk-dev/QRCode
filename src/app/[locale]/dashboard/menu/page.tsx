@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, ChevronRight, UtensilsCrossed } from 'lucide-react';
+import { PageHeader } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -77,23 +78,12 @@ export default function DashboardMenuSelectPage() {
   }
 
   return (
-    <div
-      className="mx-auto max-w-[1100px] space-y-6 px-4 py-8 sm:px-8 lg:py-10"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
-      <header>
-        <p className="pulse-eyebrow text-[#737373]">
-          {locale === 'tr' ? 'PANEL / MENÜ' : 'PANEL / MENU'}
-        </p>
-        <h1
-          className="mt-2 flex items-center gap-2 text-[26px] sm:text-[32px] font-medium tracking-[-0.025em] leading-[1.05] text-[#0A0A0A]"
-          style={{ fontFamily: 'var(--font-heading)' }}
-        >
-          <UtensilsCrossed size={24} strokeWidth={2} className="text-[#0A0A0A]" />
-          {copy.title}
-        </h1>
-        <p className="mt-2 text-[14px] text-[#525252] leading-[1.55]">{copy.subtitle}</p>
-      </header>
+    <div className="mx-auto max-w-[1100px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow={locale === 'tr' ? 'MENÜ' : 'MENU'}
+        title={copy.title}
+        description={copy.subtitle}
+      />
 
       {restaurants.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-10 text-center">
