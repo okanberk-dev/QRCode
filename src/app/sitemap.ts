@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/prisma';
+import { HELP_CATEGORIES } from '@/lib/help-categories';
+import { STATIC_HELP_ARTICLES } from '@/lib/help-articles';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
@@ -10,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages = [
     { path: '', priority: 1.0, changefreq: 'weekly' as const },
     { path: '/blog', priority: 0.9, changefreq: 'weekly' as const },
+    { path: '/help', priority: 0.85, changefreq: 'weekly' as const },
     { path: '/solutions/restaurants', priority: 0.9, changefreq: 'monthly' as const },
     { path: '/solutions/hotels', priority: 0.9, changefreq: 'monthly' as const },
     { path: '/solutions/healthcare', priority: 0.9, changefreq: 'monthly' as const },
@@ -93,6 +96,59 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   } catch (error) {
     console.error('Sitemap menu fetch error:', error);
   }
+
+  // Help center category URLs (both locales, alternates linked)
+  HELP_CATEGORIES.forEach((cat) => {
+    sitemapEntries.push({
+      url: `${baseUrl}/tr/help/category/${cat.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+      alternates: {
+        languages: {
+          tr: `${baseUrl}/tr/help/category/${cat.slug}`,
+          en: `${baseUrl}/en/help/category/${cat.slug}`,
+        },
+      },
+    });
+    sitemapEntries.push({
+      url: `${baseUrl}/en/help/category/${cat.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    });
+  });
+
+  // Help articles — DB takes precedence; static array fills gaps so the
+  // sitemap is never empty in preview deploys without prisma db push.
+  const seenArticleKeys = new Set<string>();
+  try {
+    const dbArticles = await prisma.helpArticle.findMany({
+      where: { isPublished: true },
+      select: { slug: true, locale: true, updatedAt: true },
+    });
+    dbArticles.forEach((a) => {
+      seenArticleKeys.add(`${a.locale}:${a.slug}`);
+      sitemapEntries.push({
+        url: `${baseUrl}/${a.locale}/help/${a.slug}`,
+        lastModified: a.updatedAt,
+        changeFrequency: 'monthly',
+        priority: a.locale === 'tr' ? 0.7 : 0.6,
+      });
+    });
+  } catch (error) {
+    console.error('Sitemap help articles fetch error:', error);
+  }
+  STATIC_HELP_ARTICLES.forEach((a) => {
+    const key = `${a.locale}:${a.slug}`;
+    if (seenArticleKeys.has(key)) return;
+    sitemapEntries.push({
+      url: `${baseUrl}/${a.locale}/help/${a.slug}`,
+      lastModified: a.updatedAt,
+      changeFrequency: 'monthly',
+      priority: a.locale === 'tr' ? 0.7 : 0.6,
+    });
+  });
 
   // TR-only legal pages
   const trOnlyPages = ['/kvkk', '/gizlilik', '/acik-riza', '/ticari-ileti'];
