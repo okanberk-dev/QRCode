@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Loader2, User, Key, Check, ShieldCheck, AlertCircle, Palette, Plug, Cog, Users, CreditCard, Bell, Code, Globe } from 'lucide-react';
+import { Loader2, User, Key, Check, ShieldCheck, Palette, Plug, Cog, Users, CreditCard, Bell, Code, Globe } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import { PageHeader, Tabs, type TabItem } from '@/components/ui';
+import { AlertBanner, PageHeader, Tabs, type TabItem } from '@/components/ui';
 
 type SettingsTab = 'account' | 'brand' | 'integrations' | 'rules' | 'team' | 'billing' | 'notifications' | 'api';
 
@@ -173,16 +173,14 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
         {/* Tab content */}
         <div className="min-w-0 space-y-4">
           {error && (
-            <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-[13px] font-medium">
-              <AlertCircle size={16} strokeWidth={2} />
+            <AlertBanner kind="danger" onDismiss={() => setError('')}>
               {error}
-            </div>
+            </AlertBanner>
           )}
           {success && (
-            <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-[13px] font-medium">
-              <Check size={16} strokeWidth={2} />
+            <AlertBanner kind="success" onDismiss={() => setSuccess('')}>
               {success}
-            </div>
+            </AlertBanner>
           )}
 
           {activeTab === 'account' && (

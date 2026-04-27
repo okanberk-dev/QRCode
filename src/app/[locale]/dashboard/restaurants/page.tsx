@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store, X } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { PageHeader } from '@/components/ui';
+import { AlertBanner, ErrorState, PageHeader } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -195,17 +195,13 @@ export default function DashboardRestaurantsPage() {
 
   if (fetchError) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-8">
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-10 text-center">
-          <p className="pulse-eyebrow text-red-500">{locale === 'tr' ? 'HATA' : 'ERROR'}</p>
-          <p className="mt-2 text-[16px] font-semibold text-red-700">{fetchError}</p>
-          <button
-            onClick={fetchRestaurants}
-            className="mt-5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
-          >
-            {locale === 'tr' ? 'Tekrar dene' : 'Retry'}
-          </button>
-        </div>
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
+        <ErrorState
+          title={locale === 'tr' ? 'Hata' : 'Error'}
+          body={fetchError}
+          onRetry={fetchRestaurants}
+          retryLabel={locale === 'tr' ? 'Tekrar dene' : 'Retry'}
+        />
       </div>
     );
   }
@@ -400,9 +396,9 @@ export default function DashboardRestaurantsPage() {
 
             <form onSubmit={handleCreate} className="space-y-5 overflow-y-auto p-5 sm:p-6 md:p-7">
               {createError && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">
+                <AlertBanner kind="danger" onDismiss={() => setCreateError('')}>
                   {createError}
-                </div>
+                </AlertBanner>
               )}
 
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -499,7 +495,7 @@ export default function DashboardRestaurantsPage() {
                     value={formData.getirYemekUrl}
                     onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
                     placeholder="https://getir.com/yemek/..."
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-purple-600"
+                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                   />
                 </label>
 
@@ -510,7 +506,7 @@ export default function DashboardRestaurantsPage() {
                     value={formData.yemekSepetiUrl}
                     onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
                     placeholder="https://www.yemeksepeti.com/..."
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-pink-600"
+                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                   />
                 </label>
 
@@ -521,7 +517,7 @@ export default function DashboardRestaurantsPage() {
                     value={formData.trendyolYemekUrl}
                     onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
                     placeholder="https://www.trendyol.com/..."
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-orange-500"
+                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                   />
                 </label>
 

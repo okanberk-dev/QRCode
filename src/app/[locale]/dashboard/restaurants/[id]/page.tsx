@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Loader2, Save, Trash2 } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { PageHeader } from '@/components/ui';
+import { AlertBanner, PageHeader } from '@/components/ui';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
 
@@ -148,10 +148,14 @@ export default function DashboardRestaurantDetailPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">{error}</div>
+        <AlertBanner kind="danger" onDismiss={() => setError('')}>
+          {error}
+        </AlertBanner>
       )}
       {success && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-medium text-emerald-700">{success}</div>
+        <AlertBanner kind="success" onDismiss={() => setSuccess('')}>
+          {success}
+        </AlertBanner>
       )}
 
       <form onSubmit={handleSave} className="space-y-6">

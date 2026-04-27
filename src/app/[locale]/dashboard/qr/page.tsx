@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
-import { PageHeader } from '@/components/ui';
+import { AlertBanner, PageHeader } from '@/components/ui';
 import { copyToClipboard } from '@/lib/clipboard';
 import PlatformLogo, { type PlatformId } from '@/components/marketing/PlatformLogo';
 
@@ -830,16 +830,18 @@ export default function DashboardQrPage() {
 
           {/* Error state fallback */}
           {qrError && !qrSvg && (
-            <div className="flex flex-col items-center gap-2 text-center px-4 py-4 rounded-xl bg-red-50 border border-red-200">
-              <p className="pulse-eyebrow text-red-500">{qrError}</p>
-              <button
-                type="button"
-                onClick={generateQr}
-                className="pulse-eyebrow text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E] transition-colors"
-              >
-                {locale === 'tr' ? 'TEKRAR DENE' : 'RETRY'}
-              </button>
-            </div>
+            <AlertBanner kind="danger">
+              <div className="flex flex-col gap-1">
+                <span>{qrError}</span>
+                <button
+                  type="button"
+                  onClick={generateQr}
+                  className="pulse-eyebrow self-start text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E] transition-colors"
+                >
+                  {locale === 'tr' ? 'TEKRAR DENE' : 'RETRY'}
+                </button>
+              </div>
+            </AlertBanner>
           )}
 
           {!selectedId && !qrError && (

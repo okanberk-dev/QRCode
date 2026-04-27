@@ -23,7 +23,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
       linkText: locale === 'tr' ? 'QR Oluşturucuyu Aç' : 'Open QR Generator'
     },
     {
-      icon: <Printer size={32} className="text-[#3b82f6]" />,
+      icon: <Printer size={32} className="text-[#0A0A0A]" />,
       title: locale === 'tr' ? '2. Basın ve Sergileyin' : '2. Print and Display',
       desc: locale === 'tr'
         ? 'Oluşturulan QR kodu yüksek çözünürlükte indirin. Masalara, menülere veya kasa yanına müşterilerinizin kolayca görebileceği şekilde yerleştirin.'
@@ -37,7 +37,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
         : 'When customers scan the QR code, they reach the feedback screen in seconds. Strengthen your digital reputation with organic interaction.',
     },
     {
-      icon: <ShieldCheck size={32} className="text-[#10b981]" />,
+      icon: <ShieldCheck size={32} className="text-[#0A0A0A]" />,
       title: locale === 'tr' ? '4. Operasyonel Takip' : '4. Operational Monitoring',
       desc: locale === 'tr'
         ? 'Tüm geri bildirimler yapılandırılmış bir veri akışına dönüştürülür ve doğrudan panelinize düşer. Deneyimi anlık takip ederek marka itibarınızı koruyun.'
