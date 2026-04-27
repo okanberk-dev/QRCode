@@ -116,17 +116,17 @@ export default async function QRGeneratorPage({
 
       <main>
         {/* ─── Hero (design 1:1: site-more.jsx:13-21) ─── */}
-        <section className="px-6 sm:px-10 lg:px-12 pt-[60px] pb-10 text-center">
+        <section className="px-5 sm:px-10 lg:px-12 pt-[60px] pb-10 text-center">
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
           </span>
           <h1
-            className="mt-3 text-[40px] sm:text-[56px] lg:text-[68px] font-medium leading-[1] tracking-[-0.035em] text-[#0A0A0A]"
+            className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[1.02] sm:leading-[1] tracking-[-0.035em] text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'QR kod oluşturucu.' : 'QR code generator.'}
           </h1>
-          <p className="mx-auto mt-3.5 max-w-[560px] text-[16px] leading-[1.6] text-[#525252]">
+          <p className="mx-auto mt-3.5 max-w-[560px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">
             {isTr
               ? 'Hesap açmadan, ücretsiz, sınırsız QR kod üret. Markana göre özelleştir, PDF olarak indir.'
               : 'Generate unlimited QR codes for free — no account required. Customize to your brand, download as PDF.'}
@@ -136,7 +136,7 @@ export default async function QRGeneratorPage({
         {/* ─── Generator (design 1:1: site-more.jsx:23-87) ─── */}
         <section
           aria-label={isTr ? 'QR kod oluşturucu' : 'QR code generator'}
-          className="px-6 sm:px-10 lg:px-12 pt-5 pb-20"
+          className="px-5 sm:px-10 lg:px-12 pt-5 pb-20"
         >
           <div className="max-w-[1200px] mx-auto">
             <QRGeneratorForm locale={locale} />
