@@ -451,6 +451,9 @@ model BlogPost {
   author      String
   coverImage  String   @map("cover_image")
   isActive    Boolean  @default(true) @map("is_active")
+  // Public page view counter — fire-and-forget incremented when the post
+  // renders at /[locale]/blog/[slug]. Default 0 keeps existing rows safe.
+  viewCount   Int      @default(0) @map("view_count")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

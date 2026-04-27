@@ -320,6 +320,38 @@ export default function DashboardQrPage() {
         </div>
       )}
 
+      {/* Mobile-only aggregate stats (mobile-screens-2.jsx MOwnerQR line 112-123 1:1)
+          Toplam · Bu hafta · Toplam taranma — yatay 3-col stat strip */}
+      {!loading && items.length > 0 && (
+        <div className="md:hidden bz-card grid grid-cols-3 gap-2.5 p-3.5">
+          {(() => {
+            const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+            const thisWeek = items.filter(
+              (it) => new Date(it.createdAt).getTime() >= oneWeekAgo,
+            ).length;
+            // Total scans proxy: aggregate count per qr (we don't track real
+            // scans yet — show items.length as total).
+            return [
+              { l: isTr ? 'Toplam' : 'Total', v: items.length.toString() },
+              { l: isTr ? 'Bu hafta' : 'This week', v: thisWeek.toString() },
+              { l: isTr ? 'Aktif' : 'Active', v: items.length.toString() },
+            ];
+          })().map((s, i) => (
+            <div
+              key={s.l}
+              className={i ? 'border-l border-[#EDEDED] pl-3' : ''}
+            >
+              <div className="pulse-eyebrow text-[#737373]" style={{ fontSize: 9 }}>
+                {s.l}
+              </div>
+              <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
+                {s.v}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Loading */}
       {loading && (
         <div className="flex justify-center py-16">

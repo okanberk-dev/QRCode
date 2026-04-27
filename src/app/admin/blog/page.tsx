@@ -27,6 +27,7 @@ interface BlogPost {
   author: string;
   coverImage: string;
   isActive: boolean;
+  viewCount?: number;
 }
 
 export default function AdminBlogPage() {
@@ -112,7 +113,6 @@ export default function AdminBlogPage() {
       <PageHeader
         eyebrow="BLOG"
         title="İçerik yönetimi"
-        description="Yazıları listele, düzenle ve yeni içerikleri tam sayfa editörde hazırla."
         actions={
           <>
             <button
@@ -192,6 +192,7 @@ export default function AdminBlogPage() {
                   <th>Başlık</th>
                   <th>Yazar</th>
                   <th>Yayın tarihi</th>
+                  <th>Görüntülenme</th>
                   <th>Durum</th>
                   <th aria-label="İşlemler" />
                 </tr>
@@ -212,6 +213,9 @@ export default function AdminBlogPage() {
                     </td>
                     <td>{post.author}</td>
                     <td>{post.date || '—'}</td>
+                    <td className="bz-mono">
+                      {(post.viewCount ?? 0).toLocaleString('tr-TR')}
+                    </td>
                     <td>
                       {post.isActive ? (
                         <Badge kind="ok">Yayında</Badge>

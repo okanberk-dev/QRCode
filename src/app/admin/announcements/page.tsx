@@ -199,7 +199,6 @@ export default function AdminAnnouncementsPage() {
       <PageHeader
         eyebrow="SİSTEM DUYURULARI"
         title="Tüm işletmelere ulaş"
-        description="İşletme panellerinin üstünde planlı ve kritik duyurular göster. Severity, locale ve zaman aralığı bazlı yayınlama destekler."
         actions={
           <button onClick={openNew} className="bz-btn-primary">
             <Plus size={14} strokeWidth={2} />
@@ -272,11 +271,14 @@ export default function AdminAnnouncementsPage() {
                       ) : (
                         <Badge kind="warn">Planlı</Badge>
                       )}
-                      <Badge kind={sev.kind}>{sev.label}</Badge>
+                      {/* Audience chip — design 1:1 (locale-bazlı) */}
                       <Badge kind="ghost">
-                        {a.locale === 'all' ? 'Tüm diller' : a.locale.toUpperCase()}
+                        {a.locale === 'all' ? 'all' : a.locale.toLowerCase()}
                       </Badge>
-                      {a.priority !== 0 && <Badge kind="info">#P{a.priority}</Badge>}
+                      {/* Severity badge sadece 'critical' ise göster (vurgu) */}
+                      {a.severity === 'critical' && (
+                        <Badge kind={sev.kind}>{sev.label}</Badge>
+                      )}
                     </div>
                     <div className="bz-h-tight mb-1.5" style={{ fontSize: 16 }}>
                       {a.title}
