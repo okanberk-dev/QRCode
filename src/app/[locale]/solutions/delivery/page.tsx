@@ -93,42 +93,42 @@ export default async function DeliveryPage({
   const flow = isTr
     ? [
         {
-          s: '5 ★',
-          t: 'Google + kampanya',
-          d: 'En memnun müşteri Google işletme profiline yönlendirilir + tekrar sipariş için kupon.',
+          s: '01',
+          t: 'Kamuya açık yorum',
+          d: 'Her müşteriye Google işletme profili ve sipariş verdiği paket platformunun yorum bağlantısı tek QR\'da sunulur. Hangisinde yazacağına müşteri karar verir.',
           bg: 'bg-[#C6F24E]',
         },
         {
-          s: '4 ★',
-          t: 'Paket platformu',
-          d: 'Sipariş verilen platforma geri götürülür; yorum bırakması kolaylaştırılır.',
+          s: '02',
+          t: 'Opsiyonel özel kanal',
+          d: 'İsteyen müşteri aynı akışta işletmene özel geri bildirim de bırakır. Bu adım opsiyoneldir; kamuya açık yorum hakkını engellemez.',
           bg: 'bg-[#EAF9B8]',
         },
         {
-          s: '1-3 ★',
-          t: 'Özel feedback',
-          d: 'Müşteri halka açık alanlara gitmez, size özel form doldurur. Düşük puan halka yayılmaz.',
-          bg: 'bg-[#FEE2E2]',
+          s: '03',
+          t: 'Sadakat kuponu',
+          d: 'Yorumu tamamlayan müşteriye tekrar sipariş için kupon önerebilirsin — yıldıza göre değil, tüm tamamlananlara aynı şekilde.',
+          bg: 'bg-[#FAFAFA]',
         },
       ]
     : [
         {
-          s: '5 ★',
-          t: 'Google + campaign',
-          d: 'Happiest customer goes to your Google Business Profile + a coupon for the next order.',
+          s: '01',
+          t: 'Public review',
+          d: 'Every customer sees the Google Business Profile link and the delivery platform review link they ordered from — all from one QR. They choose where to post.',
           bg: 'bg-[#C6F24E]',
         },
         {
-          s: '4 ★',
-          t: 'Delivery platform',
-          d: 'Routed back to the platform where they ordered — review flow is made easy.',
+          s: '02',
+          t: 'Optional private channel',
+          d: 'Anyone who also wants to share private feedback with your business can do so in the same flow. This step is optional and never blocks the public review path.',
           bg: 'bg-[#EAF9B8]',
         },
         {
-          s: '1-3 ★',
-          t: 'Private feedback',
-          d: 'Customer fills in your private form instead of public platforms. Low ratings stay in-house.',
-          bg: 'bg-[#FEE2E2]',
+          s: '03',
+          t: 'Loyalty coupon',
+          d: 'Offer a coupon for the next order to anyone who completes the flow — applied uniformly, not based on rating.',
+          bg: 'bg-[#FAFAFA]',
         },
       ];
 
@@ -136,13 +136,13 @@ export default async function DeliveryPage({
     ? [
         { k: '+312%', l: 'Yemeksepeti yorum artışı · 60 gün' },
         { k: '4.8', l: 'Ortalama Getir puanı · 3. ay' },
-        { k: '-68%', l: 'Negatif halka açık yorum' },
+        { k: '+184%', l: 'Toplam yorum hacmi · ilk 90 gün' },
         { k: '18sn', l: 'Ortalama tarama–yorum süresi' },
       ]
     : [
         { k: '+312%', l: 'Yemeksepeti review growth · 60 days' },
         { k: '4.8', l: 'Average Getir score · month 3' },
-        { k: '-68%', l: 'Negative public reviews' },
+        { k: '+184%', l: 'Total review volume · first 90 days' },
         { k: '18s', l: 'Average scan-to-review time' },
       ];
 
@@ -294,8 +294,8 @@ export default async function DeliveryPage({
             </h2>
             <p className="mt-4 text-[15px] text-[#525252] leading-[1.6]">
               {isTr
-                ? 'Memnun müşteri doğrudan yüksek puan verdiği platforma gider. Memnun olmayan, size özel feedback formuna. Böylece düşük puanlar halka açık yerlerde değil, kendi panelinizde karşılanır.'
-                : 'Happy customers go straight to the platform where they rate high. Unhappy ones land on your private feedback form. Low ratings stay in-house, not public.'}
+                ? 'Her misafire kendi platformunun (Yemeksepeti, Getir, Trendyol GO, Google) yorum bağlantısı tek QR\'da sunulur. İsteyen aynı akışta işletmene özel geri bildirim de bırakır — yıldıza göre dallandırma yok.'
+                : 'Every guest gets a one-tap link to their platform of choice (Yemeksepeti, Getir, Trendyol GO, Google) from a single QR. Anyone who also wants to send private feedback can do so in the same flow — no rating-based gating.'}
             </p>
           </div>
 

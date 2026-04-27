@@ -208,7 +208,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     ],
     checklist: ['Düşük puan bildirimi açık.', 'Sorumlu kişi atandı.', 'Yanıt taslağı kısa ve empatik.', 'Müşteriye dönüş yapıldı.', 'Benzer etiketler haftalık raporda incelendi.'],
     faq: [
-      { q: 'Negatif geri bildirim Google’a gider mi?', a: 'Buaze düşük puanı önce dahili formda toplar. Google politikalarına uyum için kullanıcıyı yanıltan veya zorlayan bir akış oluşturulmamalıdır.' },
+      { q: 'Negatif geri bildirim Google’a gider mi?', a: 'Müşteri her zaman Google yorum bağlantısını görür; isteyen ek olarak işletmene özel geri bildirim de bırakır. Düşük puanlı bir müşterinin Google\'a yorum yazmasını engellemek, görsel olarak gizlemek veya caydırmak Google politikalarına aykırıdır — bunu asla yapmayın.' },
       { q: 'Her düşük puana cevap yazmalı mıyım?', a: 'Evet. Kısa bile olsa sahiplenen bir yanıt, tekrar eden müşteriler ve ekip içi öğrenme için değerlidir.' },
     ],
   }),
@@ -222,7 +222,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     ],
     checklist: ['Low-rating notifications are enabled.', 'An owner is assigned.', 'The response draft is short and empathetic.', 'The customer has been contacted.', 'Recurring tags are reviewed weekly.'],
     faq: [
-      { q: 'Do negative submissions go to Google?', a: 'Buaze captures low ratings privately first. To stay compliant, never create misleading or coercive review flows.' },
+      { q: 'Do negative submissions go to Google?', a: 'Customers always see the public Google review link first; whether to also share private feedback with your team is their choice. Never block, hide or discourage a customer from posting negative reviews on Google — that violates Google policy.' },
       { q: 'Should every low rating receive a response?', a: 'Yes. Even a short ownership-based response helps customer recovery and internal learning.' },
     ],
   }),

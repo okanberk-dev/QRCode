@@ -66,12 +66,12 @@ export default async function HowItWorksPage({
       id: '02',
       title: isTr ? 'Müşteri yorum bırakır' : 'Customer leaves a review',
       desc: isTr
-        ? 'Müşteri kodu tarar, bir formda 1-5 puan ve kısa bir not bırakır. Memnunsa Google\'a yönlenir, değilse ekibine iletilir — kriz büyümeden çözülür.'
-        : 'The customer scans the code and leaves a 1-5 rating and a short note. Happy ones go to Google; unhappy ones reach your team — a crisis solved before it grows.',
+        ? 'Müşteri QR\'ı tarar, doğrudan Google yorum bağlantısını görür. İsterse aynı akışta sana özel geri bildirim de bırakır; yıldıza göre kapı kapatmıyoruz.'
+        : 'The customer scans the QR and sees the public Google review link first. They can optionally also leave private feedback for your team in the same flow — no rating-based gating.',
       Ill: IllusInbox,
       perks: isTr
-        ? ['Anlık bildirim', 'Akıllı yönlendirme', 'Google uyumlu akış', 'Özel feedback formu']
-        : ['Live notifications', 'Smart routing', 'Google-compliant flow', 'Private feedback form'],
+        ? ['Anlık bildirim', 'Tek tıkla Google bağlantısı', 'Google uyumlu akış', 'Opsiyonel özel geri bildirim']
+        : ['Live notifications', 'One-tap Google link', 'Google-compliant flow', 'Optional private feedback'],
     },
     {
       id: '03',

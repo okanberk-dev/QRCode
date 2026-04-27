@@ -50,7 +50,7 @@ export default async function FaqPage({
     ? [
         {
           q: "Buaze Google'ın politikalarına uyumlu mu?",
-          a: 'Evet. Gatekeeping yapmıyoruz — her müşteri istediği yere yorum bırakabilir. Sadece memnun müşterilere kolay bir yol gösteriyoruz.',
+          a: 'Evet. Her müşteriye Google yorum bağlantısı sunulur; yıldıza göre dallandırma yapmıyoruz. İsteyen müşteri ek olarak işletmeye özel geri bildirim de gönderebilir, fakat bu opsiyoneldir ve Google\'a yorum yazmasını engellemez.',
         },
         {
           q: 'Kurulum ne kadar sürer?',
@@ -84,7 +84,7 @@ export default async function FaqPage({
     : [
         {
           q: "Is Buaze compliant with Google's policies?",
-          a: "Yes. We don't gatekeep — every customer can leave a review anywhere they want. We just show satisfied customers an easy path.",
+          a: "Yes. Every customer is offered the Google review link with no rating-based branching. Anyone who also wants to share private feedback can do so in the same flow — but that step is optional and never blocks the public Google path.",
         },
         {
           q: 'How long does setup take?',

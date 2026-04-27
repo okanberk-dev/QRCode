@@ -93,8 +93,8 @@ export default function CustomerTestimonials({ locale }: CustomerTestimonialsPro
       initials: 'SB',
       link: `/${locale}/case-study/pizza-locale`,
       quote: isTr
-        ? "Akıllı bildirim sistemi ve olumsuz yorum filtresi Pizza Locale için gerçek bir dönüm noktası oldu. Krizleri büyümeden çözme şansı veriyor."
-        : "The smart notification system and negative review filter have been a real turning point for Pizza Locale. It gives us the chance to resolve crises before they grow.",
+        ? "Akıllı bildirim sistemi ve özel geri bildirim kanalı Pizza Locale için gerçek bir dönüm noktası oldu. Krizleri büyümeden çözme şansı veriyor."
+        : "The smart notification system and private feedback channel have been a real turning point for Pizza Locale. It gives us the chance to resolve crises before they grow.",
     }
   ];
 

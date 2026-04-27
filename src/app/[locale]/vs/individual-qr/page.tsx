@@ -78,8 +78,8 @@ export default async function VsIndividualQrPage({
       rows={rows}
       argumentTitle={locale === 'tr' ? 'Ücretsiz QR Kodların Gizli Maliyeti' : 'The Hidden Cost of Free QR Codes'}
       argumentDesc={locale === 'tr'
-        ? 'Ücretsiz oluşturulan statik QR kodları bir kez basıldıktan sonra değiştirilemez. Google Maps linkiniz güncellendiğinde veya şube yapınız değiştiğinde tüm baskıları çöpe atmanız gerekir.\nEn kritiği: Statik kodlar "akıllı filtreleme" yapamaz. Memnun olmayan bir müşteriyi anlık dijital operasyonla yakalamak yerine doğrudan Google\'a göndererek puanınızın düşmesine zemin hazırlarsınız.'
-        : 'Static QR codes created for free cannot be changed once printed. When your Google Maps link is updated or your branch structure changes, you have to throw away all prints.\nMost critically: Static codes cannot perform "smart filtering." Instead of catching an unhappy customer with an instant digital operation, you pave the way for your score to drop by sending them directly to Google.'}
+        ? 'Ücretsiz oluşturulan statik QR kodları bir kez basıldıktan sonra değiştirilemez. Google Maps linkiniz güncellendiğinde veya şube yapınız değiştiğinde tüm baskıları çöpe atmanız gerekir.\nEn kritiği: Statik QR\'larda servis kurtarma kanalı yok. Misafir Google\'a yorum bırakırken aynı akışta işletmene özel geri bildirim de gönderemez; servis sorunlarını ekibine ulaşmadan önce kamuya açık ortamda öğrenirsin.'
+        : 'Static QR codes created for free cannot be changed once printed. When your Google Maps link is updated or your branch structure changes, you have to throw away all prints.\nMost critically: Static QR codes have no service-recovery channel. A guest can leave a Google review, but cannot also share private feedback with your team in the same flow — so you learn about service issues in public, not internally.'}
     />
   );
 }

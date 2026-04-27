@@ -59,13 +59,13 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
     ? [
         { t: 'Tedavi sonrası anket', d: 'Randevu sisteminden otomatik tetiklenebilir. Hastaya SMS/QR ile gönderilir.' },
         { t: 'Doktor bazlı raporlama', d: 'Her hekimin bireysel memnuniyet skoru ve yorum dağılımı ayrı görünür.' },
-        { t: "Google'a yönlendirme", d: "Memnun hasta Google'a, şikayet eden hasta iç forma — KVKK uyumlu akış." },
+        { t: "Google bağlantısı + opsiyonel iç kanal", d: "Her hastaya Google yorum bağlantısı sunulur; isteyen aynı akışta kliniğe özel geri bildirim de bırakır — KVKK ve Google politikalarıyla uyumlu." },
         { t: 'Çok dilli destek', d: 'Medikal turizm için otomatik dil tespiti, Arapça dahil 12 dil.' },
       ]
     : [
         { t: 'Post-treatment survey', d: 'Auto-triggered from your scheduling system; delivered to the patient via SMS/QR.' },
         { t: 'Per-doctor reporting', d: 'Each clinician sees their own satisfaction score and review distribution.' },
-        { t: 'Google redirect', d: 'Happy patients route to Google, complaints stay internal — KVKK-compliant flow.' },
+        { t: 'Google link + optional private channel', d: 'Every patient sees the public Google review link; private feedback to the clinic is an optional extra step in the same flow — KVKK and Google policy compliant.' },
         { t: 'Multilingual support', d: 'Auto language detection for medical tourism — 12 languages including Arabic.' },
       ];
 
