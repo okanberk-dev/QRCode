@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
+import { getErrorCode } from '@/lib/api-errors';
 
 export async function GET(
   req: NextRequest,
