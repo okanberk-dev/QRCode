@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Download, Loader2, QrCode, Mail, RefreshCw, Copy, Check, Printer, Plus, Minus, Palette, Layers, AlertCircle } from 'lucide-react';
 import { Suspense } from 'react';
-import { Eyebrow, PageHeader } from '@/components/ui';
+import { AlertBanner, Eyebrow, PageHeader } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -770,9 +770,7 @@ function QRPageContent() {
                   </div>
 
                   {batchError && (
-                    <div className="bg-red-50 text-red-600 p-3 rounded-xl text-[11px] font-semibold text-center  border border-red-200">
-                      {batchError}
-                    </div>
+                    <AlertBanner kind="danger">{batchError}</AlertBanner>
                   )}
 
                   <button
@@ -953,10 +951,12 @@ function QRPageContent() {
             </div>
 
             {duplicateWarning && (
-              <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-700">
-                <AlertCircle size={14} strokeWidth={2} />
+              <AlertBanner
+                kind="warn"
+                icon={<AlertCircle size={14} strokeWidth={2} className="mt-0.5" />}
+              >
                 Bu kombinasyonla daha önce QR oluşturuldu.
-              </div>
+              </AlertBanner>
             )}
 
             <div className="grid gap-3 min-[440px]:grid-cols-2">
