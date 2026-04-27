@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
+import { Check, Copy, Download, LayoutGrid, List as ListIcon, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
 import { AlertBanner, PageHeader } from '@/components/ui';
 import { copyToClipboard } from '@/lib/clipboard';
 import PlatformLogo, { type PlatformId } from '@/components/marketing/PlatformLogo';
@@ -57,6 +57,10 @@ export default function DashboardQrPage() {
   const [customDark, setCustomDark] = useState('#000000');
   const [selectedPlatform, setSelectedPlatform] = useState('');
   const [duplicateWarning, setDuplicateWarning] = useState(false);
+  // Phase 12.3 — design's OwnerQR shows a Grid/List view toggle on the
+  // saved-QR list (`Son üretilenler` / `Recent QR codes`). Grid is the
+  // current 3-col card layout; List is a compact horizontal row.
+  const [historyView, setHistoryView] = useState<'grid' | 'list'>('grid');
   
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
   const safeEnvAppUrl = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
@@ -629,9 +633,48 @@ export default function DashboardQrPage() {
           </div>
 
           <div className="bz-card p-5 sm:p-7">
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <h2 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.history}</h2>
-              {historyLoading && <Loader2 className="h-5 w-5 animate-spin text-[#0A0A0A]" />}
+            <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <h2 className="bz-h-tight text-[18px] text-[#0A0A0A]">{copy.history}</h2>
+                {historyLoading && <Loader2 className="h-5 w-5 animate-spin text-[#0A0A0A]" />}
+              </div>
+              {history.length > 0 && (
+                <div
+                  className="inline-flex rounded-lg p-1"
+                  style={{ background: '#FAFAFA', border: '1px solid #EDEDED' }}
+                  role="tablist"
+                  aria-label={locale === 'tr' ? 'Görünüm türü' : 'View mode'}
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={historyView === 'grid'}
+                    onClick={() => setHistoryView('grid')}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      historyView === 'grid'
+                        ? 'bg-[#0A0A0A] text-white'
+                        : 'text-[#525252] hover:text-[#0A0A0A]'
+                    }`}
+                  >
+                    <LayoutGrid size={12} strokeWidth={2} />
+                    {locale === 'tr' ? 'Izgara' : 'Grid'}
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={historyView === 'list'}
+                    onClick={() => setHistoryView('list')}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      historyView === 'list'
+                        ? 'bg-[#0A0A0A] text-white'
+                        : 'text-[#525252] hover:text-[#0A0A0A]'
+                    }`}
+                  >
+                    <ListIcon size={12} strokeWidth={2} />
+                    {locale === 'tr' ? 'Liste' : 'List'}
+                  </button>
+                </div>
+              )}
             </div>
 
             {history.length === 0 ? (
@@ -644,7 +687,7 @@ export default function DashboardQrPage() {
                 </div>
                 <p className="text-[13px] text-[#525252]">{copy.noHistory}</p>
               </div>
-            ) : (
+            ) : historyView === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {history.map((item) => {
                   const platformMeta = item.platform ? PLATFORM_BADGE[item.platform] : null;
@@ -703,6 +746,76 @@ export default function DashboardQrPage() {
                         >
                           <Download size={12} strokeWidth={2} />
                           {locale === 'tr' ? 'Aç' : 'Open'}
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              // List mode (1:1 design's "Liste" view) — compact horizontal
+              // rows for fast scanning across many QR codes.
+              <div
+                className="flex flex-col"
+                style={{ borderTop: '1px solid #EDEDED' }}
+                role="list"
+              >
+                {history.map((item) => {
+                  const platformMeta = item.platform ? PLATFORM_BADGE[item.platform] : null;
+                  const dateStr = new Date(item.createdAt).toLocaleDateString(
+                    locale === 'tr' ? 'tr-TR' : 'en-US',
+                    { day: '2-digit', month: 'short', year: '2-digit' },
+                  );
+                  return (
+                    <div
+                      key={item.id}
+                      role="listitem"
+                      className="flex items-center gap-3 py-3 flex-wrap sm:flex-nowrap"
+                      style={{ borderBottom: '1px solid #EDEDED' }}
+                    >
+                      <div className="min-w-0 sm:flex-1 sm:basis-[180px]">
+                        <div className="bz-h-tight" style={{ fontSize: 13 }}>
+                          {item.tableNumber
+                            ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}`
+                            : (locale === 'tr' ? 'Genel QR' : 'General QR')}
+                        </div>
+                        <div className="pulse-eyebrow text-[#737373] mt-0.5">{dateStr}</div>
+                      </div>
+                      {platformMeta ? (
+                        <span
+                          className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-semibold text-white ${platformMeta.bg}`}
+                          style={{ letterSpacing: '0.04em' }}
+                        >
+                          {platformMeta.label}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 pulse-eyebrow text-[#A3A3A3]">—</span>
+                      )}
+                      <div
+                        className="flex-1 min-w-0 truncate text-[11px] font-mono text-[#525252] hidden md:block"
+                        title={item.qrUrl}
+                      >
+                        {item.qrUrl}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(item.qrUrl)}
+                          className="bz-btn-icon"
+                          aria-label={copy.copy}
+                          title={copy.copy}
+                        >
+                          <Copy size={13} strokeWidth={2} />
+                        </button>
+                        <a
+                          href={item.qrUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bz-btn-icon"
+                          aria-label={locale === 'tr' ? 'Aç' : 'Open'}
+                          title={locale === 'tr' ? 'Aç' : 'Open'}
+                        >
+                          <Download size={13} strokeWidth={2} />
                         </a>
                       </div>
                     </div>
