@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { Badge, EmptyState, PageHeader } from '@/components/ui';
 
 interface BlogPost {
   id: string;
@@ -108,52 +109,46 @@ export default function AdminBlogPage() {
   const draftCount = posts.length - activeCount;
 
   return (
-    <div className="min-h-screen flex-1 bg-[#FFFFFF] px-4 py-6 text-[#0A0A0A] sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-7">
-        <header className="flex flex-col gap-5 border-b border-[#EDEDED] pb-7 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="pulse-eyebrow text-[#737373]">İÇERİK YÖNETİMİ</p>
-            <h1 className="mt-2 text-4xl font-medium tracking-[-0.055em] text-[#0A0A0A] sm:text-5xl">
-              Blog yazıları
-            </h1>
-            <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-[#737373]">
-              Yazıları listeleyin, düzenleyin ve yeni içerikleri tam sayfa editörde hazırlayın.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+      <PageHeader
+        eyebrow="BLOG"
+        title="İçerik yönetimi"
+        description="Yazıları listele, düzenle ve yeni içerikleri tam sayfa editörde hazırla."
+        actions={
+          <>
             <button
               onClick={handleSeed}
               disabled={seeding}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-[#EDEDED] px-5 py-3 text-sm font-semibold text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:opacity-50 transition-colors"
+              className="bz-btn-ghost"
             >
-              {seeding ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+              {seeding ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
               Örnekleri aktar
             </button>
-            <Link
-              href="/admin/blog/new"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-6 py-3 text-sm font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
-            >
-              <Plus size={17} />
+            <Link href="/admin/blog/new" className="bz-btn-primary">
+              <Plus size={14} strokeWidth={2} />
               Yeni yazı
             </Link>
-          </div>
-        </header>
+          </>
+        }
+      />
 
-        <section className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[24px] border border-[#EDEDED] bg-[#FAFAFA] p-5">
-            <p className="text-3xl font-medium tracking-[-0.04em]">{posts.length}</p>
-            <p className="mt-1 text-xs font-semibold text-[#737373]">Toplam yazı</p>
-          </div>
-          <div className="rounded-[24px] border border-[#EDEDED] bg-[#EAF9B8] p-5">
-            <p className="text-3xl font-medium tracking-[-0.04em]">{activeCount}</p>
-            <p className="mt-1 text-xs font-semibold text-[#0A0A0A]/65">Yayında</p>
-          </div>
-          <div className="rounded-[24px] border border-[#EDEDED] bg-white p-5">
-            <p className="text-3xl font-medium tracking-[-0.04em]">{draftCount}</p>
-            <p className="mt-1 text-xs font-semibold text-[#737373]">Taslak</p>
-          </div>
-        </section>
+      <section className="grid gap-3 sm:grid-cols-3">
+        <div className="bz-card p-5">
+          <p className="pulse-eyebrow" style={{ color: '#737373' }}>Toplam yazı</p>
+          <p className="bz-h-tight-2 mt-2" style={{ fontSize: 28 }}>{posts.length}</p>
+        </div>
+        <div
+          className="p-5"
+          style={{ background: '#EAF9B8', borderRadius: 16, border: '1px solid #D9EE7A' }}
+        >
+          <p className="pulse-eyebrow" style={{ color: '#4D5C00' }}>Yayında</p>
+          <p className="bz-h-tight-2 mt-2" style={{ fontSize: 28 }}>{activeCount}</p>
+        </div>
+        <div className="bz-card-soft p-5">
+          <p className="pulse-eyebrow" style={{ color: '#737373' }}>Taslak</p>
+          <p className="bz-h-tight-2 mt-2" style={{ fontSize: 28 }}>{draftCount}</p>
+        </div>
+      </section>
 
         <section className="grid gap-3 rounded-[24px] border border-[#EDEDED] bg-white p-3 shadow-sm lg:grid-cols-[minmax(260px,1fr)_auto] lg:items-center">
           <div className="relative">
@@ -202,20 +197,17 @@ export default function AdminBlogPage() {
             <Loader2 size={32} className="animate-spin text-[#A8D62E]" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-[28px] border border-[#EDEDED] bg-[#FAFAFA] px-6 py-16 text-center">
-            <BookOpen size={42} className="mx-auto text-[#A3A3A3]" />
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em]">Yazı bulunamadı</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm font-medium leading-6 text-[#737373]">
-              Filtreleri temizleyin veya yeni bir blog yazısı oluşturun.
-            </p>
-            <Link
-              href="/admin/blog/new"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#C6F24E] px-5 py-3 text-sm font-semibold text-[#0A0A0A] hover:bg-[#A8D62E]"
-            >
-              Yeni yazı oluştur
-              <ArrowRight size={16} />
-            </Link>
-          </div>
+          <EmptyState
+            icon={<BookOpen size={22} />}
+            title="Yazı bulunamadı"
+            body="Filtreleri temizleyin veya yeni bir blog yazısı oluşturun."
+            action={
+              <Link href="/admin/blog/new" className="bz-btn-primary">
+                Yeni yazı oluştur
+                <ArrowRight size={14} strokeWidth={2} />
+              </Link>
+            }
+          />
         ) : (
           <div className="space-y-3">
             {filtered.map(post => (
@@ -240,15 +232,11 @@ export default function AdminBlogPage() {
                 </Link>
 
                 <Link href={`/admin/blog/${post.id}`} className="min-w-0">
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-[#FAFAFA] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#737373]">
-                      {post.locale}
-                    </span>
-                    <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
-                      post.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-[#EDEDED] text-[#737373]'
-                    }`}>
+                  <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                    <Badge kind="ghost">{post.locale.toUpperCase()}</Badge>
+                    <Badge kind={post.isActive ? 'ok' : 'off'}>
                       {post.isActive ? 'Yayında' : 'Taslak'}
-                    </span>
+                    </Badge>
                   </div>
                   <h2 className="truncate text-lg font-medium tracking-[-0.025em] text-[#0A0A0A]">
                     {post.title}
@@ -310,7 +298,6 @@ export default function AdminBlogPage() {
             ))}
           </div>
         )}
-      </div>
     </div>
   );
 }
