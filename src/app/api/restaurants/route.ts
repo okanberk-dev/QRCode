@@ -42,7 +42,18 @@ export async function GET(req: NextRequest) {
         return ApiErrors.notFound('İşletme bulunamadı');
       }
 
-      return NextResponse.json(restaurant);
+      // Edge cache: restaurant data rarely changes (owner edits its
+      // platform URLs / default platform a few times a month at most), but
+      // every `/r/[slug]` page load fetches it. Cache 60s fresh + 5min
+      // stale-while-revalidate at the Vercel CDN — read-heavy public
+      // surface (~1000 review-flows/day) goes from 1000 Postgres hits to
+      // ~24 (one per minute, edge-shared). Owner updates take up to ~6min
+      // worst case to propagate; documented in CLAUDE.md §19.4.
+      return NextResponse.json(restaurant, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      });
     } catch (error: any) {
       console.error('Restaurant lookup error:', {
         slug,
