@@ -66,7 +66,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
         {steps.map((step, idx) => (
           <div
             key={idx}
-            className="bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-7 space-y-4 hover:border-[#C6F24E] transition-colors"
+            className="bz-card p-6 sm:p-7 space-y-4 hover:border-[#C6F24E] transition-colors"
           >
             <div className="w-11 h-11 rounded-xl bg-[#EAF9B8] flex items-center justify-center text-[#0A0A0A]">
               {step.icon}

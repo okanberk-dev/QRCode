@@ -185,7 +185,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
 
           {activeTab === 'account' && (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+              <section className="bz-card p-6 sm:p-7">
                 <h2
                   className="text-[20px] font-semibold tracking-[-0.015em]"
                   style={{ fontFamily: 'var(--font-heading)' }}
@@ -232,7 +232,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+              <section className="bz-card p-6 sm:p-7">
                 <div className="flex items-center gap-2">
                   <Key size={14} strokeWidth={2} className="text-[#0A0A0A]" />
                   <h2
@@ -299,7 +299,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
           )}
 
           {activeTab === 'brand' && (
-            <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+            <section className="bz-card p-6 sm:p-7">
               <h2
                 className="text-[20px] font-semibold tracking-[-0.015em]"
                 style={{ fontFamily: 'var(--font-heading)' }}
@@ -367,7 +367,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
           )}
 
           {activeTab === 'integrations' && (
-            <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+            <section className="bz-card p-6 sm:p-7">
               <h2
                 className="text-[20px] font-semibold tracking-[-0.015em]"
                 style={{ fontFamily: 'var(--font-heading)' }}

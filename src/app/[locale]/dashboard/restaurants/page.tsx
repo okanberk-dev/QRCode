@@ -267,7 +267,7 @@ export default function DashboardRestaurantsPage() {
             return (
               <div
                 key={restaurant.id}
-                className={`overflow-hidden rounded-2xl border border-[#EDEDED] bg-white transition-colors ${!restaurant.isActive ? 'opacity-70' : 'hover:border-[#C6F24E]'}`}
+                className={`overflow-hidden bz-card transition-colors ${!restaurant.isActive ? 'opacity-70' : 'hover:border-[#C6F24E]'}`}
               >
                 <div className="p-5 sm:p-6">
                   {/* Header — name + address + trend badge (AdminLocations design) */}

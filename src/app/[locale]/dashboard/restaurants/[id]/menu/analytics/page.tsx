@@ -183,7 +183,7 @@ export default function MenuAnalyticsPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-8">
+      <div className="flex flex-col gap-4 bz-card p-5 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-1">
             <Link
@@ -275,11 +275,11 @@ export default function MenuAnalyticsPage() {
       )}
 
       {loading && !data ? (
-        <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20">
+        <div className="flex items-center justify-center bz-card p-20">
           <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
         </div>
       ) : !data ? null : !hasAnyData ? (
-        <div className="rounded-2xl border border-[#EDEDED] bg-white p-16 text-center shadow-sm">
+        <div className="bz-card p-16 text-center shadow-sm">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#FFFFFF]">
             <Sparkles size={26} strokeWidth={2} className="text-[#6B7280]" />
           </div>
@@ -357,7 +357,7 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
   // ~7 labels on 7-day, ~6 labels on 30-day, ~6 labels on 90-day.
   const tickInterval = trend.length <= 7 ? 0 : trend.length <= 30 ? 5 : Math.floor(trend.length / 6);
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="bz-card p-5 shadow-sm sm:p-6">
       <div className="mb-4">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.trends}</h2>
       </div>
@@ -392,7 +392,7 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
 
 function TopProductsTable({ rows, copy, isTr }: { rows: ProductRow[]; copy: any; isTr: boolean }) {
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="bz-card p-5 shadow-sm sm:p-6">
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.topProducts}</h2>
       {rows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
@@ -437,7 +437,7 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) 
     .slice(0, 8)
     .map((r) => ({ name: truncate(r.categoryName), fullName: r.categoryName, clicks: r.clicks, views: r.views }));
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="bz-card p-5 shadow-sm sm:p-6">
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.topCategories}</h2>
       {dataRows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
@@ -464,7 +464,7 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) 
 
 function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any }) {
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="bz-card p-5 shadow-sm sm:p-6">
       <div className="mb-4">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.lowInterest}</h2>
         <p className="mt-1 text-xs font-medium text-[#6B7280]">{copy.lowInterestSub}</p>
@@ -509,7 +509,7 @@ function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any })
 
 function UpsellInsights({ insights, copy }: { insights: Insight[]; copy: any }) {
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="bz-card p-5 shadow-sm sm:p-6">
       <div className="mb-4">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.upsell}</h2>
         <p className="mt-1 text-xs font-medium text-[#6B7280]">{copy.upsellSub}</p>

@@ -101,7 +101,7 @@ export default function DashboardMenuSelectPage() {
             <Link
               key={r.id}
               href={`/${locale}/dashboard/restaurants/${r.id}/menu`}
-              className="flex items-center gap-4 rounded-2xl border border-[#EDEDED] bg-white p-4 transition-colors hover:border-[#C6F24E]"
+              className="flex items-center gap-4 bz-card p-4 transition-colors hover:border-[#C6F24E]"
             >
               <div
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[15px] font-semibold text-white"

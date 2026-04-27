@@ -237,12 +237,12 @@ export default async function DashboardPage({
             <Link
               key={k.label}
               href={k.href}
-              className="block rounded-2xl border border-[#EDEDED] bg-white p-5 transition-colors hover:border-[#C6F24E]"
+              className="block bz-card p-5 transition-colors hover:border-[#C6F24E]"
             >
               {inner}
             </Link>
           ) : (
-            <div key={k.label} className="rounded-2xl border border-[#EDEDED] bg-white p-5">
+            <div key={k.label} className="bz-card p-5">
               {inner}
             </div>
           );
@@ -261,7 +261,7 @@ export default async function DashboardPage({
       {(latestFeedbacks.length > 0 || locationPerf.length > 0) && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
           {latestFeedbacks.length > 0 && (
-            <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+            <section className="bz-card p-6 sm:p-7">
               <div className="flex items-center justify-between">
                 <div>
                   <h2
@@ -325,7 +325,7 @@ export default async function DashboardPage({
 
           {/* Konum performansı — AdminDashboard right column */}
           {locationPerf.length > 0 && (
-            <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+            <section className="bz-card p-6 sm:p-7">
               <div>
                 <h2
                   className="text-[18px] font-semibold tracking-[-0.015em]"
@@ -415,7 +415,7 @@ export default async function DashboardPage({
             {user.restaurants.map((restaurant) => (
               <div
                 key={restaurant.id}
-                className="rounded-2xl border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#C6F24E]"
+                className="bz-card p-6 transition-colors hover:border-[#C6F24E]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">

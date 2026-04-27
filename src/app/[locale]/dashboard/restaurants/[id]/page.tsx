@@ -159,7 +159,7 @@ export default function DashboardRestaurantDetailPage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
-        <div className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+        <div className="bz-card p-6 sm:p-7">
           <div className="mb-6 flex items-center gap-3">
             <div className="h-5 w-1.5 rounded-full" style={{ backgroundColor: formData.primaryColor }} />
             <h2
@@ -253,7 +253,7 @@ export default function DashboardRestaurantDetailPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+        <div className="bz-card p-6 sm:p-7">
           <div className="mb-6 flex items-center gap-3">
             <ExternalLink size={16} strokeWidth={2} className="text-[#0A0A0A]" />
             <h2

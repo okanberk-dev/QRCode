@@ -838,7 +838,7 @@ function CategoryModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.description}>
@@ -846,10 +846,10 @@ function CategoryModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full resize-none bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
-        <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
+        <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
           <input type="checkbox" checked={isVisible} onChange={(e) => setIsVisible(e.target.checked)} className="h-4 w-4 accent-[#C6F24E]" />
           <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.visible}</span>
         </label>
@@ -945,7 +945,7 @@ function ItemModal({
             required
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           >
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -957,7 +957,7 @@ function ItemModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.description}>
@@ -965,7 +965,7 @@ function ItemModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full resize-none bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.price}>
@@ -976,7 +976,7 @@ function ItemModal({
               value={priceInput}
               onChange={(e) => setPriceInput(e.target.value)}
               placeholder="0,00"
-              className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 pr-12 text-[15px] tabular-nums text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+              className="w-full bz-card px-4 py-3 pr-12 text-[15px] tabular-nums text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
               style={{ fontFamily: 'var(--font-mono)' }}
             />
             <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[13px] font-medium text-[#A3A3A3]">₺</span>
@@ -1060,11 +1060,11 @@ function ItemModal({
           </div>
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
+          <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
             <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="h-4 w-4 accent-[#C6F24E]" />
             <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.available}</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
+          <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
             <input type="checkbox" checked={isOutOfStock} onChange={(e) => setIsOutOfStock(e.target.checked)} className="h-4 w-4 accent-red-500" />
             <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.outOfStock}</span>
           </label>

@@ -337,7 +337,7 @@ export default async function AnalyticsPage({
 
       {/* Theme cloud + source distribution */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+        <section className="bz-card p-5 sm:p-6">
           <h3
             className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
             style={{ fontFamily: 'var(--font-heading)' }}
@@ -372,7 +372,7 @@ export default async function AnalyticsPage({
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+        <section className="bz-card p-5 sm:p-6">
           <h3
             className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
             style={{ fontFamily: 'var(--font-heading)' }}
@@ -405,7 +405,7 @@ export default async function AnalyticsPage({
       </div>
 
       {/* Location performance table — design's staff table repurposed */}
-      <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+      <section className="bz-card p-5 sm:p-6">
         <h3
           className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
           style={{ fontFamily: 'var(--font-heading)' }}

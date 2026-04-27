@@ -334,7 +334,7 @@ export default function DashboardQrPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.3fr_1fr]">
         <div className="order-2 lg:order-1 space-y-4">
           {/* ═════ Step 1 — Kampanya detayları ═════ */}
-          <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+          <section className="bz-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
@@ -438,7 +438,7 @@ export default function DashboardQrPage() {
           </section>
 
           {/* ═════ Step 2 — Akış ═════ */}
-          <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+          <section className="bz-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
@@ -504,7 +504,7 @@ export default function DashboardQrPage() {
           </section>
 
           {/* ═════ Step 3 — Tasarım ═════ */}
-          <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+          <section className="bz-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
@@ -635,7 +635,7 @@ export default function DashboardQrPage() {
             </button>
           </div>
 
-          <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
+          <div className="bz-card p-5 sm:p-7">
             <div className="mb-5 flex items-center justify-between gap-3">
               <h2 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.history}</h2>
               {historyLoading && <Loader2 className="h-5 w-5 animate-spin text-[#0A0A0A]" />}
