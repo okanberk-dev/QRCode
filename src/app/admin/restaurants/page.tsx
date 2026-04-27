@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink } from 'lucide-react';
+import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download } from 'lucide-react';
 import Link from 'next/link';
 import { AlertBanner, Avatar, Badge, type BadgeKind, EmptyState, Modal, PageHeader, type TabItem, Tabs } from '@/components/ui';
 
@@ -56,6 +56,7 @@ export default function RestaurantsPage() {
   const [owners, setOwners] = useState<Owner[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'active' | 'passive' | 'all'>('active');
+  const [planFilter, setPlanFilter] = useState<'all' | 'pro' | 'growth' | 'starter' | 'trial'>('all');
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -75,11 +76,12 @@ export default function RestaurantsPage() {
   const [isManualSlug, setIsManualSlug] = useState(false);
   const [showGoogleInfo, setShowGoogleInfo] = useState(false);
 
-  const fetchRestaurants = async (filter?: string) => {
+  const fetchRestaurants = async (filter?: string, planArg?: string) => {
     setLoading(true);
     try {
       const currentFilter = filter || statusFilter;
-      const res = await fetch(`/api/restaurants?status=${currentFilter}`);
+      const currentPlan = planArg ?? planFilter;
+      const res = await fetch(`/api/restaurants?status=${currentFilter}&plan=${currentPlan}`);
       if (res.ok) {
         const result = await res.json();
         // Handle both older array response and newer { data, meta } shape.
@@ -112,7 +114,7 @@ export default function RestaurantsPage() {
 
   useEffect(() => {
     fetchRestaurants();
-  }, [statusFilter]);
+  }, [statusFilter, planFilter]);
 
   useEffect(() => {
     fetchOwners();
@@ -205,11 +207,51 @@ export default function RestaurantsPage() {
     );
   }
 
+  // Primary tabs — plan-bazlı (1:1 design AdminBusinesses, line 102-107)
+  const planTabs: TabItem[] = [
+    { id: 'all', label: `Tümü (${restaurants.length})` },
+    { id: 'pro', label: 'Pro' },
+    { id: 'growth', label: 'Growth' },
+    { id: 'starter', label: 'Starter' },
+    { id: 'trial', label: 'Trial' },
+  ];
+
+  // Secondary control — operational status (preserved for "Pasif işletmeleri
+  // gör" use case; design'da tek tab ama mevcut operatör akışı için kritik)
   const statusTabs: TabItem[] = [
     { id: 'active', label: 'Aktif' },
     { id: 'passive', label: 'Pasif' },
-    { id: 'all', label: 'Tümü' },
+    { id: 'all', label: 'Hepsi' },
   ];
+
+  // CSV export — design `Dışa aktar` button (1:1, line 96)
+  const handleExport = () => {
+    const headers = ['İşletme', 'Tür', 'Şehir', 'Plan', 'Yorum', 'Puan', 'Durum', 'Sahip', 'E-posta', 'Slug'];
+    const rows = filteredRestaurants.map((r) => [
+      r.name,
+      r.category,
+      r.city || '',
+      r.user?.plan || '',
+      String(r._count.feedbacks),
+      r.avgRating != null ? r.avgRating.toFixed(1) : '',
+      r.isActive ? 'Aktif' : 'Pasif',
+      r.user?.name || '',
+      r.user?.email || '',
+      r.slug,
+    ]);
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `isletmeler_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
@@ -218,14 +260,28 @@ export default function RestaurantsPage() {
         title={`${restaurants.length} kayıtlı işletme`}
         description="Restoran, kafe, otel, klinik veya mağaza fark etmeden tüm işletmeleri tek panelden yönet. Sahip ataması, aktiflik, menü yayını ve QR akışları burada görünür."
         actions={
-          <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
-            <Plus size={14} strokeWidth={2} />
-            Yeni işletme
-          </button>
+          <>
+            <button onClick={handleExport} className="bz-btn-ghost">
+              <Download size={14} strokeWidth={2} />
+              Dışa aktar
+            </button>
+            <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
+              <Plus size={14} strokeWidth={2} />
+              Yeni işletme
+            </button>
+          </>
         }
       />
 
-      {/* Filters and Search */}
+      {/* Primary filter — plan tabs (1:1 design) */}
+      <Tabs
+        items={planTabs}
+        active={planFilter}
+        onChange={(id) => setPlanFilter(id as 'all' | 'pro' | 'growth' | 'starter' | 'trial')}
+        ariaLabel="Plan filter"
+      />
+
+      {/* Secondary control — status + search */}
       <div className="flex flex-col items-stretch justify-between gap-3 md:flex-row md:items-center">
         <Tabs
           items={statusTabs}

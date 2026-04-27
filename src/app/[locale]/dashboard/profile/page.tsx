@@ -33,13 +33,42 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
     confirmPassword: '',
   });
 
+  // İşletme profili (design 1:1 OwnerSettings Card 1) — owner'ın ilk
+  // restoranının kimliği. Owner birden çok restorana sahipse `restaurants`
+  // sayfasından her birinin detayı yönetilir.
+  const [businessData, setBusinessData] = useState({
+    id: '' as string,
+    name: '',
+    category: 'Restoran',
+    address: '',
+    phone: '',
+  });
+  const [savingBusiness, setSavingBusiness] = useState(false);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch('/api/user/profile');
-        if (res.ok) {
-          const data = await res.json();
+        const [profileRes, restRes] = await Promise.all([
+          fetch('/api/user/profile'),
+          fetch('/api/restaurants'),
+        ]);
+        if (profileRes.ok) {
+          const data = await profileRes.json();
           setFormData((prev) => ({ ...prev, name: data.name || '', email: data.email || '' }));
+        }
+        if (restRes.ok) {
+          const restJson = await restRes.json();
+          const list = Array.isArray(restJson) ? restJson : restJson?.data || [];
+          if (list.length > 0) {
+            const first = list[0];
+            setBusinessData({
+              id: first.id || '',
+              name: first.name || '',
+              category: first.category || 'Restoran',
+              address: first.address || '',
+              phone: first.phone || '',
+            });
+          }
         }
       } catch (e) {
         console.error(e);
@@ -49,6 +78,37 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
     };
     fetchProfile();
   }, []);
+
+  const handleBusinessSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!businessData.id) return;
+    setSavingBusiness(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await fetch(`/api/restaurants/${businessData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: businessData.name,
+          category: businessData.category,
+          address: businessData.address,
+          phone: businessData.phone,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data?.error || (isTr ? 'İşletme bilgileri güncellenemedi.' : 'Failed to update business.'));
+      } else {
+        setSuccess(isTr ? 'İşletme bilgileri güncellendi.' : 'Business info updated.');
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch {
+      setError(isTr ? 'Bir hata oluştu.' : 'An error occurred.');
+    } finally {
+      setSavingBusiness(false);
+    }
+  };
 
   const handleLocaleChange = async (newLocale: string) => {
     try {
@@ -154,13 +214,96 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
         </AlertBanner>
       )}
 
-      {/* Card 1 — Hesap (design's "İŞLETME PROFİLİ" reframed for user-level
-          identity). Holds login + notification identity + password change. */}
+      {/* Card 1 — İŞLETME PROFİLİ (1:1 design OwnerSettings Card 1) */}
+      {businessData.id && (
+        <form onSubmit={handleBusinessSubmit} className="space-y-3.5">
+          <section className="bz-card p-6 sm:p-7">
+            <Eyebrow>{isTr ? 'İŞLETME PROFİLİ' : 'BUSINESS PROFILE'}</Eyebrow>
+            <div className="bz-h-tight mt-1 mb-5" style={{ fontSize: 18 }}>
+              {isTr ? 'Genel bilgiler' : 'General info'}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <label className="space-y-1.5 block">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'İŞLETME ADI' : 'BUSINESS NAME'}
+                </span>
+                <input
+                  type="text"
+                  required
+                  value={businessData.name}
+                  onChange={(e) => setBusinessData((p) => ({ ...p, name: e.target.value }))}
+                  className={inputCls}
+                />
+              </label>
+              <label className="space-y-1.5 block">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'İŞLETME TÜRÜ' : 'BUSINESS TYPE'}
+                </span>
+                <select
+                  value={businessData.category}
+                  onChange={(e) => setBusinessData((p) => ({ ...p, category: e.target.value }))}
+                  className={`${inputCls} cursor-pointer`}
+                >
+                  <option value="Restoran">{isTr ? 'Restoran' : 'Restaurant'}</option>
+                  <option value="Klinik">{isTr ? 'Klinik' : 'Clinic'}</option>
+                  <option value="Güzellik salonu">{isTr ? 'Güzellik salonu' : 'Beauty salon'}</option>
+                  <option value="Otel">{isTr ? 'Otel' : 'Hotel'}</option>
+                  <option value="Mağaza">{isTr ? 'Mağaza' : 'Shop'}</option>
+                  <option value="Kafe">{isTr ? 'Kafe' : 'Cafe'}</option>
+                </select>
+              </label>
+              <label className="space-y-1.5 block">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'ADRES' : 'ADDRESS'}
+                </span>
+                <input
+                  type="text"
+                  value={businessData.address}
+                  onChange={(e) => setBusinessData((p) => ({ ...p, address: e.target.value }))}
+                  className={inputCls}
+                />
+              </label>
+              <label className="space-y-1.5 block">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'TELEFON' : 'PHONE'}
+                </span>
+                <input
+                  type="tel"
+                  value={businessData.phone}
+                  onChange={(e) => setBusinessData((p) => ({ ...p, phone: e.target.value }))}
+                  className={inputCls}
+                />
+              </label>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="submit"
+                disabled={savingBusiness}
+                className="bz-btn-primary disabled:opacity-40"
+              >
+                {savingBusiness ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    {isTr ? 'Kaydediliyor…' : 'Saving…'}
+                  </>
+                ) : (
+                  <>
+                    <Check size={14} strokeWidth={2} />
+                    {isTr ? 'İşletmeyi kaydet' : 'Save business'}
+                  </>
+                )}
+              </button>
+            </div>
+          </section>
+        </form>
+      )}
+
+      {/* Card 2 — HESAP (existing user identity + password change) */}
       <form onSubmit={handleSubmit} className="space-y-3.5">
         <section className="bz-card p-6 sm:p-7">
           <Eyebrow>{isTr ? 'HESAP' : 'ACCOUNT'}</Eyebrow>
           <div className="bz-h-tight mt-1 mb-5" style={{ fontSize: 18 }}>
-            {isTr ? 'Genel bilgiler' : 'General info'}
+            {isTr ? 'Kullanıcı kimliği' : 'User identity'}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <label className="space-y-1.5 block">

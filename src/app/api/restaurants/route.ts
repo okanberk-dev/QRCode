@@ -77,11 +77,15 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, parseInt(adminParams.get('page') || '1'));
     const limit = Math.min(100, Math.max(1, parseInt(adminParams.get('limit') || '20')));
     const status = adminParams.get('status') || 'active';
+    // Optional plan filter (Pulse 2026-04 design AdminBusinesses tab — pro |
+    // growth | starter | trial | all). Joins through `user.plan` because
+    // plan lives on the owner User row, not on Restaurant. 'all' = unfiltered.
+    const planFilter = adminParams.get('plan') || 'all';
     const skip = (page - 1) * limit;
 
     const where: Prisma.RestaurantWhereInput = {};
     const scopedIds = await getScopedRestaurantIds(actor);
-    
+
     if (scopedIds !== null) {
       where.id = { in: scopedIds };
     }
@@ -92,6 +96,15 @@ export async function GET(req: NextRequest) {
       where.isActive = false;
     }
     // 'all' means no filter on isActive
+
+    // Plan filter — join user.plan. Restaurants without a user (orphans) are
+    // excluded from any specific plan filter; 'all' still includes them.
+    if (planFilter !== 'all') {
+      const ALLOWED_PLANS = new Set(['pro', 'growth', 'starter', 'trial', 'monthly', 'yearly', 'free']);
+      if (ALLOWED_PLANS.has(planFilter)) {
+        where.user = { plan: planFilter };
+      }
+    }
 
     const [restaurants, total] = await Promise.all([
       prisma.restaurant.findMany({

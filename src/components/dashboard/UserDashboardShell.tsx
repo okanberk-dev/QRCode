@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Layers, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Sparkles, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -170,50 +170,21 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const feedbackBadge =
     workspace?.feedbackCount && workspace.feedbackCount > 0 ? workspace.feedbackCount : undefined;
 
+  // Flat 10-item nav (Pulse 2026-04 design ownerNav 1:1, shell.jsx line 12-23).
+  // Previously grouped Setup/Insight/Info — flattened for design parity.
+  // `restaurants` (multi-location yönetim) design'da explicit yok; flat list
+  // sonuna ek item olarak korunur (11 toplam).
   const navItems: Nav[] = [
-    // Daily core — kept flat at the top.
     { type: 'item', href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
     { type: 'item', href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks, badge: feedbackBadge },
     { type: 'item', href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
-
-    // Setup — configuration done occasionally (locations, menu, redirects).
-    {
-      type: 'group',
-      id: 'setup',
-      icon: Sparkles,
-      label: copy.groupSetup,
-      children: [
-        { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
-        { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
-        { href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
-      ],
-    },
-
-    // Insight — periodic review, not daily.
-    {
-      type: 'group',
-      id: 'insight',
-      icon: Layers,
-      label: copy.groupInsight,
-      children: [
-        { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
-        { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
-      ],
-    },
-
-    // Info — read-only references.
-    {
-      type: 'group',
-      id: 'info',
-      icon: BookOpen,
-      label: copy.groupInfo,
-      children: [
-        { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
-        { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
-      ],
-    },
-
-    // Settings — flat at the bottom.
+    { type: 'item', href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
+    { type: 'item', href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
+    { type: 'item', href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
+    { type: 'item', href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
+    { type: 'item', href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
+    { type: 'item', href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
+    { type: 'item', href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
     { type: 'item', href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
 
