@@ -120,9 +120,30 @@ export async function GET(req: NextRequest) {
       prisma.restaurant.count({ where }),
     ]);
 
-    return NextResponse.json({ 
-      data: restaurants, 
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) } 
+    // Compute avgRating per restaurant — single groupBy aggregate (no N+1).
+    // AdminBusinesses table column "Puan" needs this; null means no feedbacks yet.
+    const restaurantIds = restaurants.map((r) => r.id);
+    const avgGroups = restaurantIds.length
+      ? await prisma.feedback.groupBy({
+          by: ['restaurantId'],
+          where: { restaurantId: { in: restaurantIds } },
+          _avg: { rating: true },
+        })
+      : [];
+    const avgByRestaurant = new Map<string, number>(
+      avgGroups
+        .filter((g) => g._avg.rating !== null)
+        .map((g) => [g.restaurantId, g._avg.rating as number] as [string, number]),
+    );
+
+    const enriched = restaurants.map((r) => ({
+      ...r,
+      avgRating: avgByRestaurant.get(r.id) ?? null,
+    }));
+
+    return NextResponse.json({
+      data: enriched,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
     });
   } catch (error) {
     console.error('Failed to fetch restaurants:', error);
@@ -143,7 +164,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, userId: bodyUserId } = body;
+    const { name, slug, category, address, city, kvkkText, phone, googlePlaceId, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, userId: bodyUserId } = body;
 
     if (!name || !slug) {
       return ApiErrors.badRequest('Ad ve slug zorunludur', 'MISSING_FIELDS');
@@ -189,6 +210,8 @@ export async function POST(req: NextRequest) {
         slug,
         category: category || 'Restoran',
         address: address || null,
+        city: typeof city === 'string' && city.trim() ? city.trim() : null,
+        kvkkText: typeof kvkkText === 'string' && kvkkText.trim() ? kvkkText : null,
         phone: phone || null,
         googlePlaceId: googlePlaceId || null,
         notificationEmail: notificationEmail || null,

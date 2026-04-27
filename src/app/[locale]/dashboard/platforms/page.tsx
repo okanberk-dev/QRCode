@@ -15,6 +15,7 @@ import {
   type PlatformId,
 } from '@/components/ui';
 import DefaultRedirectPicker from '@/components/dashboard/DefaultRedirectPicker';
+import PlatformEnableToggle from '@/components/dashboard/PlatformEnableToggle';
 
 export async function generateMetadata({
   params,
@@ -32,8 +33,16 @@ export const dynamic = 'force-dynamic';
 
 interface PlatformRow {
   id: PlatformId;
+  // Owner's pick of which schema field stores this platform's URL — used by
+  // PlatformEnableToggle to know which `*Enabled` flag to PATCH.
+  schemaKey: 'google' | 'yemekSepeti' | 'getir' | 'trendyol';
   url: string | null;
+  /** Effective enabled = URL configured AND owner-flag is true */
   enabled: boolean;
+  /** Owner-set flag (independent of URL presence) */
+  enabledFlag: boolean;
+  /** True iff a URL is configured (toggle gating) */
+  hasUrl: boolean;
   isDefault: boolean;
   monthlyClicks: number;
 }
@@ -65,6 +74,10 @@ export default async function PlatformsPage({
       yemekSepetiUrl: true,
       getirYemekUrl: true,
       trendyolYemekUrl: true,
+      googleEnabled: true,
+      yemekSepetiEnabled: true,
+      getirEnabled: true,
+      trendyolEnabled: true,
       defaultRedirectPlatform: true,
     },
   });
@@ -121,11 +134,25 @@ export default async function PlatformsPage({
         ? (storedDefault as PlatformId)
         : null;
 
+  // Owner's per-platform enable flag from the *first* restaurant — same
+  // single-restaurant assumption as `firstUrl`. Multi-location ownership
+  // gets per-restaurant flags via the detail page (out of scope here).
+  const flagOf = (
+    key: 'googleEnabled' | 'yemekSepetiEnabled' | 'getirEnabled' | 'trendyolEnabled',
+  ): boolean => {
+    if (!firstRestaurant) return true;
+    const v = (firstRestaurant as Record<string, unknown>)[key];
+    return v === undefined ? true : Boolean(v);
+  };
+
   const platforms: PlatformRow[] = [
     {
       id: 'google',
+      schemaKey: 'google',
       url: firstUrl('googleReviewUrl'),
-      enabled: Boolean(firstUrl('googleReviewUrl')),
+      hasUrl: Boolean(firstUrl('googleReviewUrl')),
+      enabledFlag: flagOf('googleEnabled'),
+      enabled: Boolean(firstUrl('googleReviewUrl')) && flagOf('googleEnabled'),
       isDefault:
         storedDefaultUiKey === 'google' ||
         // Legacy back-compat: when no explicit default has been picked,
@@ -135,22 +162,31 @@ export default async function PlatformsPage({
     },
     {
       id: 'yemeksepeti',
+      schemaKey: 'yemekSepeti',
       url: firstUrl('yemekSepetiUrl'),
-      enabled: Boolean(firstUrl('yemekSepetiUrl')),
+      hasUrl: Boolean(firstUrl('yemekSepetiUrl')),
+      enabledFlag: flagOf('yemekSepetiEnabled'),
+      enabled: Boolean(firstUrl('yemekSepetiUrl')) && flagOf('yemekSepetiEnabled'),
       isDefault: storedDefaultUiKey === 'yemeksepeti',
       monthlyClicks: platformClicks('yemeksepeti'),
     },
     {
       id: 'getir',
+      schemaKey: 'getir',
       url: firstUrl('getirYemekUrl'),
-      enabled: Boolean(firstUrl('getirYemekUrl')),
+      hasUrl: Boolean(firstUrl('getirYemekUrl')),
+      enabledFlag: flagOf('getirEnabled'),
+      enabled: Boolean(firstUrl('getirYemekUrl')) && flagOf('getirEnabled'),
       isDefault: storedDefaultUiKey === 'getir',
       monthlyClicks: platformClicks('getir'),
     },
     {
       id: 'trendyol',
+      schemaKey: 'trendyol',
       url: firstUrl('trendyolYemekUrl'),
-      enabled: Boolean(firstUrl('trendyolYemekUrl')),
+      hasUrl: Boolean(firstUrl('trendyolYemekUrl')),
+      enabledFlag: flagOf('trendyolEnabled'),
+      enabled: Boolean(firstUrl('trendyolYemekUrl')) && flagOf('trendyolEnabled'),
       isDefault: storedDefaultUiKey === 'trendyol',
       monthlyClicks: platformClicks('trendyol'),
     },
@@ -254,6 +290,19 @@ export default async function PlatformsPage({
               </div>
             </div>
             <div className="flex items-center gap-2.5 shrink-0">
+              {firstRestaurant && (
+                <PlatformEnableToggle
+                  restaurantId={firstRestaurant.id}
+                  platformKey={p.schemaKey}
+                  initialEnabled={p.enabledFlag}
+                  hasUrl={p.hasUrl}
+                  ariaLabel={
+                    isTr
+                      ? `${PLATFORMS[p.id].label} platformunu aç/kapat`
+                      : `Toggle ${PLATFORMS[p.id].label} platform`
+                  }
+                />
+              )}
               <Link
                 href={editLink}
                 className="bz-btn-ghost"

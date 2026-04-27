@@ -65,6 +65,7 @@ export default async function AdminDashboardPage() {
     monthlyReviews,
     previousMonthReviews,
     owners,
+    ownersThirtyDaysAgo,
     restaurantsForGrowth,
   ] = await Promise.all([
     prisma.restaurant.count(),
@@ -74,6 +75,15 @@ export default async function AdminDashboardPage() {
     prisma.user.findMany({
       where: { role: 'restaurant_owner' },
       select: { plan: true, trialEndsAt: true, isActive: true },
+    }),
+    // 30-day-old MRR snapshot proxy: paying owners (non-trial/free) who
+    // existed before the 30d window. We don't track plan-switch history, so
+    // this is approximate — assumes today's plan reflects past 30d state for
+    // these owners. Good enough for a directional trend; detailed MRR
+    // accounting will land with Iyzico billing.
+    prisma.user.findMany({
+      where: { role: 'restaurant_owner', createdAt: { lt: thirtyDaysAgo } },
+      select: { plan: true },
     }),
     prisma.restaurant.findMany({
       where: { createdAt: { gte: twelveWeeksAgo } },
@@ -94,12 +104,20 @@ export default async function AdminDashboardPage() {
 
   // Estimated MRR — sum of plan prices for non-trial owners.
   // Iyzico bağlantısı geldiğinde gerçek invoice toplamı kullanılır.
-  const mrr = owners.reduce((acc, o) => {
-    const plan = (o.plan || 'trial').toLowerCase();
-    if (plan === 'trial' || plan === 'free') return acc;
-    const matched = Object.keys(PLAN_PRICES).find((k) => plan.includes(k));
-    return acc + (matched ? PLAN_PRICES[matched] : 0);
-  }, 0);
+  const computeMrr = (rows: { plan: string | null }[]) =>
+    rows.reduce((acc, o) => {
+      const plan = (o.plan || 'trial').toLowerCase();
+      if (plan === 'trial' || plan === 'free') return acc;
+      const matched = Object.keys(PLAN_PRICES).find((k) => plan.includes(k));
+      return acc + (matched ? PLAN_PRICES[matched] : 0);
+    }, 0);
+  const mrr = computeMrr(owners);
+  const mrrThirtyDaysAgo = computeMrr(ownersThirtyDaysAgo);
+  const mrrDeltaPct = mrrThirtyDaysAgo > 0
+    ? Math.round(((mrr - mrrThirtyDaysAgo) / mrrThirtyDaysAgo) * 1000) / 10
+    : mrr > 0 ? 100 : 0;
+  const mrrDeltaKind: 'up' | 'down' | 'neutral' =
+    mrrDeltaPct > 0 ? 'up' : mrrDeltaPct < 0 ? 'down' : 'neutral';
 
   // Plan distribution — 4 buckets per design AdminDashboard.
   const totalOwners = owners.length;
@@ -148,9 +166,9 @@ export default async function AdminDashboardPage() {
         <StatCard
           label="Aylık MRR"
           value={`₺${mrr.toLocaleString('tr-TR')}`}
-          delta="Iyzico"
-          deltaKind="neutral"
-          deltaSuffix="bağlantısı bekleniyor"
+          delta={mrrThirtyDaysAgo > 0 ? `${mrrDeltaPct >= 0 ? '+' : ''}${mrrDeltaPct}%` : 'Yeni'}
+          deltaKind={mrrDeltaKind}
+          deltaSuffix="son 30 gün"
           icon={<CreditCard size={14} strokeWidth={2} />}
           accent="#C6F24E"
         />
