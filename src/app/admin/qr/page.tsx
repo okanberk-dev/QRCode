@@ -749,7 +749,7 @@ function QRPageContent() {
                 className="w-full flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-[#EAF9B8] text-[#0A0A0A] flex items-center justify-center">
                     <Layers size={20} strokeWidth={2} />
                   </div>
                   <div className="text-left">

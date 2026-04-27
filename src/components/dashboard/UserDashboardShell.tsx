@@ -159,8 +159,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
           <BuazeLogo size={32} variant="on-dark" imageUrl={logoUrl} />
           <span
-            className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none bz-h-tight"
           >
             buaze<span className="text-[#C6F24E]">.</span>
           </span>
@@ -171,8 +170,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       <div className="px-3 pb-3">
         <div className="flex items-center gap-2.5 rounded-lg bg-[#1A1A1A] px-3 py-2.5">
           <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold bz-h-tight"
           >
             {primaryInitial}
           </div>
@@ -231,8 +229,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         <p className="mt-2 text-[12px] text-white/70 leading-[1.45]">
           {quotaLabel}:{' '}
           <span
-            className="font-semibold text-white"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="font-semibold text-white bz-h-tight"
           >
             {quotaValue}
           </span>
@@ -249,8 +246,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       <div className="border-t border-white/10 bg-black/20 p-3">
         <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-white/5 px-2.5 py-2">
           <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] border border-white/10"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] border border-white/10 bz-h-tight"
           >
             {initial}
           </div>
@@ -286,8 +282,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           <Link href={`/${locale}/dashboard`} className="flex items-center gap-2">
             <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
             <span
-              className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A] bz-h-tight"
             >
               buaze<span className="text-[#C6F24E]">.</span>
             </span>
@@ -301,8 +296,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             )}
             <button
               onClick={() => setDrawerOpen((v) => !v)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E] bz-h-tight"
             >
               {drawerOpen ? <X size={18} strokeWidth={2} /> : <span>{initial}</span>}
             </button>
@@ -315,8 +309,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             <div className="min-w-0">
               <p className="pulse-eyebrow text-[#737373]">{topBar.breadcrumb}</p>
               <h1
-                className="mt-1 text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-none truncate"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="mt-1 text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-none truncate bz-h-tight"
               >
                 {topBar.title}
               </h1>
@@ -330,8 +323,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 <Search size={12} strokeWidth={2} />
                 <span>{locale === 'tr' ? 'Yorum, konum, ekip ara…' : 'Search reviews, locations, team…'}</span>
                 <span
-                  className="ml-1 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252]"
-                  style={{ fontFamily: 'var(--font-mono)' }}
+                  className="ml-1 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252] bz-mono"
                 >
                   ⌘K
                 </span>
@@ -345,8 +337,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               </Link>
               <Link
                 href={`/${locale}/dashboard/profile`}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors bz-h-tight"
                 aria-label={displayName}
               >
                 {initial}

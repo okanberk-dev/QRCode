@@ -244,10 +244,10 @@ export default function UsersPage() {
               {users.filter(u =>
                 u.username.toLowerCase().includes(searchTerm.toLowerCase())
               ).map(user => (
-                <tr key={user.id} className="hover:bg-blue-50/50 transition-all border-b border-[#EDEDED] group">
+                <tr key={user.id} className="hover:bg-[#EAF9B8]/30 transition-all border-b border-[#EDEDED] group">
                   <td className="px-3 py-4 sm:px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 shrink-0 rounded-xl bg-[#FFFFFF] border border-[#EDEDED] flex items-center justify-center text-[#6B7280] group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors">
+                      <div className="w-10 h-10 shrink-0 rounded-xl bg-[#FFFFFF] border border-[#EDEDED] flex items-center justify-center text-[#525252] group-hover:text-[#0A0A0A] group-hover:bg-[#EAF9B8] transition-colors">
                         <User size={18} strokeWidth={2} />
                       </div>
                       <div className="min-w-0 flex-1">
