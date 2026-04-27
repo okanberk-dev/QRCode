@@ -465,6 +465,37 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* ─────────────────────────────────────────────────────────────
+ * Mobile redesign 2026-04 (CLAUDE.md §25) — utilities lifted
+ * from .design buaze-mobil bundle (`buaze.html` global block).
+ * Marketing surfaces share these so safe-area / scrollbar / drawer
+ * patterns stay consistent across nav, footer, and content scrolls.
+ * ───────────────────────────────────────────────────────────── */
+
+/* Hidden scrollbar — horizontal chip strips, drawers, mobile category nav */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* iOS notch / home-indicator safe-area utilities — used by sticky bottom
+ * nav and right-anchored drawers. Composes with Tailwind padding classes. */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pl-safe { padding-left:  env(safe-area-inset-left,  0px); }
+.pr-safe { padding-right: env(safe-area-inset-right, 0px); }
+
+/* Smooth accordion body — used by mobile nav drawer sections so
+ * expand/collapse glides instead of hard-cutting. Capped at 720px to
+ * cover the longest section (8-item solutions list with CTA). */
+.accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.accordion-body.open { max-height: 720px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion-body { transition: none; }
+}
+
 /* Hide scrollbar for clean inputs */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {

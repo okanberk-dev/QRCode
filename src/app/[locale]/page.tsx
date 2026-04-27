@@ -246,7 +246,7 @@ export default async function LandingPage({
       <section className="px-5 pb-16 pt-16 sm:px-8 sm:pb-20 sm:pt-20 lg:px-16 lg:pb-20 lg:pt-24">
         <div className="mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-8 sm:gap-12 md:grid-cols-2 lg:gap-16">
           <div className="flex flex-col gap-5 sm:gap-7">
-            <h1 className="bz-fade-up bz-d1 text-[40px] font-medium leading-[1.05] tracking-[-0.04em] text-[#0A0A0A] text-balance sm:text-[64px] sm:leading-[0.96] lg:text-[76px] lg:leading-[0.92]">
+            <h1 className="bz-fade-up bz-d1 text-[38px] font-medium leading-[1.05] tracking-[-0.04em] text-[#0A0A0A] text-balance sm:text-[64px] sm:leading-[0.96] lg:text-[76px] lg:leading-[0.92]">
               {heroHeadline}
             </h1>
 
