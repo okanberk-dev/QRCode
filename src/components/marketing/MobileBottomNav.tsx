@@ -111,20 +111,23 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
                 >
                   <item.Icon
                     size={20}
-                    strokeWidth={active ? 2.25 : 2}
+                    strokeWidth={2}
                     className={active ? 'text-[#0A0A0A]' : 'text-[#737373]'}
                   />
                   <span
-                    className={`text-[10px] leading-none tracking-tight ${
-                      active ? 'font-medium text-[#0A0A0A]' : 'font-medium text-[#737373]'
+                    className={`text-[10px] font-medium leading-none tracking-tight ${
+                      active ? 'text-[#0A0A0A]' : 'text-[#737373]'
                     }`}
                   >
                     {item.label}
                   </span>
+                  {/* Active indicator — centered via left:50% + translateX(-50%);
+                      design buaze-mobil/layout.jsx:549 uses 32×2 with subtle
+                      2px bottom corners (`borderRadius:'0 0 2px 2px'`). */}
                   {active && (
                     <span
                       aria-hidden="true"
-                      className="absolute top-0 w-8 h-[2px] bg-[#0A0A0A] rounded-b-full"
+                      className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-[#0A0A0A] rounded-b-[2px]"
                     />
                   )}
                 </Link>
