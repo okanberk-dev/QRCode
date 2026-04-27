@@ -122,7 +122,7 @@ export default async function PricingPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-24 pb-14 sm:pb-20">
+      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-24 pb-14 sm:pb-20">
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
@@ -140,7 +140,7 @@ export default async function PricingPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Fiyatlar' : 'Pricing'}
           </span>
-          <h1 className="mt-5 text-[40px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+          <h1 className="mt-5 text-[38px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.95] sm:leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
             {isTr ? (
               <>
                 Basit. Şeffaf.
@@ -174,7 +174,7 @@ export default async function PricingPage({
       </section>
 
       {/* ─── Pricing Cards (client component with monthly/yearly toggle) ─── */}
-      <section className="px-6 sm:px-10 pb-20 sm:pb-28">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-28">
         <div className="max-w-[1200px] mx-auto">
           <PricingPlans
             locale={locale}
@@ -186,7 +186,7 @@ export default async function PricingPage({
       </section>
 
       {/* ─── Platform Integrations ─── */}
-      <section className="px-6 sm:px-10 py-14 sm:py-16 border-b border-[#EDEDED]">
+      <section className="px-5 sm:px-10 py-12 sm:py-16 border-b border-[#EDEDED]">
         <div className="max-w-[1200px] mx-auto text-center">
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Global platformlarla entegre' : 'Integrated with global platforms'}
@@ -206,13 +206,13 @@ export default async function PricingPage({
       </section>
 
       {/* ─── Comparison Table ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[960px] mx-auto">
           <div className="text-center mb-12">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Detaylı karşılaştırma' : 'Deep comparison'}
             </span>
-            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? 'Plan özelliklerini yan yana görün.' : 'See plan features side by side.'}
             </h2>
           </div>
@@ -259,7 +259,7 @@ export default async function PricingPage({
       </section>
 
       {/* ─── Testimonials ─── */}
-      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
           {testimonials.map((ts, i) => (
             <div key={i} className="bg-white p-8 rounded-3xl border border-[#EDEDED]">

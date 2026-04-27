@@ -66,13 +66,13 @@ export default async function BlogIndexPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Header */}
-      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-10">
+      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-10">
         <div className="max-w-[1200px] mx-auto">
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'BLOG' : 'BLOG'}
           </span>
           <h1
-            className="mt-3 text-[44px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+            className="mt-3 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'İtibar kütüphanesi.' : 'The reputation library.'}
@@ -102,7 +102,7 @@ export default async function BlogIndexPage({
       </section>
 
       {posts.length === 0 ? (
-        <section className="px-6 sm:px-10 pb-20">
+        <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
           <div className="max-w-[1200px] mx-auto py-16 text-center text-[15px] text-[#737373]">
             {isTr ? 'Henüz blog yazısı yok.' : 'No blog posts yet.'}
           </div>
@@ -111,7 +111,7 @@ export default async function BlogIndexPage({
         <>
           {/* Featured post — 1.5fr / 1fr split · cover image if uploaded, else lime pad with chart */}
           {featured && (
-            <section className="px-6 sm:px-10 pt-5">
+            <section className="px-5 sm:px-10 pt-5">
               <div className="max-w-[1200px] mx-auto">
                 <Link
                   href={`${base}/blog/${featured.slug}`}
@@ -194,7 +194,7 @@ export default async function BlogIndexPage({
 
           {/* Rest grid — 3-col · cover image if uploaded, else colored pad fallback */}
           {rest.length > 0 && (
-            <section className="px-6 sm:px-10 pt-8 pb-20 sm:pb-24">
+            <section className="px-5 sm:px-10 pt-8 pb-[60px] sm:pb-24">
               <div className="max-w-[1200px] mx-auto grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {rest.map((p, i) => (
                   <Link
