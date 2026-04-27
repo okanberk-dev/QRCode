@@ -35,7 +35,7 @@ function extFromMime(mime: string): string {
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req.headers);
-  const limit = rateLimit(`careers-apply:${ip}`, 5, 30 * 60 * 1000);
+  const limit = await rateLimit(`careers-apply:${ip}`, 5, 30 * 60 * 1000);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'rate_limited', retryAfter: limit.retryAfterSeconds },

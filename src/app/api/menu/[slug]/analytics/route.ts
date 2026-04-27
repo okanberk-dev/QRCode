@@ -53,7 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     return NextResponse.json({ error: 'Geçersiz olay listesi' }, { status: 400 });
   }
 
-  const rl = rateLimit(`menu:analytics:${sessionId}`, 300, 60 * 1000);
+  const rl = await rateLimit(`menu:analytics:${sessionId}`, 300, 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Too many events' },

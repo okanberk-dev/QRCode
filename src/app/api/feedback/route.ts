@@ -6,6 +6,7 @@ import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/validations';
 import { ApiErrors } from '@/lib/api-errors';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { rateLimit } from '@/lib/rate-limit';
 
 function parseAspectRating(value: unknown): number | null {
   const n = typeof value === 'number' ? value : Number(value);
@@ -16,8 +17,21 @@ function parseAspectRating(value: unknown): number | null {
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for') || (req as any).ip || 'unknown';
-    
-    // Serverless-safe Database Rate limiting: Max 3 submissions per IP per 10 mins
+
+    // Layered defense:
+    // 1) Upstash rate limit (fast, distributed) — short-circuits abuse
+    //    before we hit Postgres. 5 submissions / IP / minute.
+    const fastLimit = await rateLimit(`feedback:ip:${ip}`, 5, 60 * 1000);
+    if (!fastLimit.allowed) {
+      return ApiErrors.tooManyRequests(
+        'Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.',
+        'RATE_LIMIT_EXCEEDED',
+        fastLimit.retryAfterSeconds || 60,
+      );
+    }
+
+    // 2) DB rate limit (final hard cap, persistent across instances even
+    //    when Upstash is misconfigured). 3 submissions / IP / 10 minutes.
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
     const recentSubmissions = await prisma.feedback.count({
       where: {

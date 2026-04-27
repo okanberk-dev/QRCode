@@ -26,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // 60 uploads/min/user. Normal workflow is well below this; abuse needs a
   // bigger ceiling.
-  const rl = rateLimit(`menu:upload:${gate.actor!.id}`, 60, 60 * 1000);
+  const rl = await rateLimit(`menu:upload:${gate.actor!.id}`, 60, 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Çok fazla yükleme. Lütfen birazdan tekrar deneyin.' },

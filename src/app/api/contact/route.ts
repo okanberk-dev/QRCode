@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMail, sendFormConfirmationEmail } from '@/lib/email';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 // Must stay in sync with ContactForm.tsx — form under this dwell time is bot-like.
 const MIN_FILL_MS = 2500;
@@ -17,6 +18,18 @@ function esc(value: unknown): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit before parsing body — 3 contact form submissions per IP
+    // per 10 min. Resend mail send is per-submission so an unbounded form
+    // = unbounded mail spend.
+    const ip = getClientIp(req.headers);
+    const limit = await rateLimit(`contact:ip:${ip}`, 3, 10 * 60 * 1000);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: 'Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.' },
+        { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds || 600) } },
+      );
+    }
+
     const body = await req.json();
     const { name, email, phone, business, message, kvkk, marketing, website, renderedAt } = body;
 

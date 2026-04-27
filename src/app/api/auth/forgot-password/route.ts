@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Rate limiting: 5 per IP per 10 min, 3 per email per 30 min
-    const ipLimit = rateLimit(`pwr:ip:${ip}`, 5, 10 * 60 * 1000);
-    const emailLimit = rateLimit(`pwr:email:${email}`, 3, 30 * 60 * 1000);
+    const ipLimit = await rateLimit(`pwr:ip:${ip}`, 5, 10 * 60 * 1000);
+    const emailLimit = await rateLimit(`pwr:email:${email}`, 3, 30 * 60 * 1000);
     if (!ipLimit.allowed || !emailLimit.allowed) {
       const retry = Math.max(ipLimit.retryAfterSeconds, emailLimit.retryAfterSeconds);
       return NextResponse.json(

@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ip = getClientIp(req.headers);
-    const ipLimit = rateLimit(`google-auth:ip:${ip}`, 10, 10 * 60 * 1000);
+    const ipLimit = await rateLimit(`google-auth:ip:${ip}`, 10, 10 * 60 * 1000);
     if (!ipLimit.allowed) {
       return NextResponse.json(
         { error: 'Çok fazla deneme. Lütfen bir süre sonra tekrar deneyin.' },

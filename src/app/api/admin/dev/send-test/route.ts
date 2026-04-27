@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   // mails/sec; this stops a misclick or a stuck "Test mail" button from
   // exhausting the daily quota.
   const adminId = admin.id ?? admin.userId ?? 'unknown';
-  const limit = rateLimit(`mail-test:${adminId}`, 10, 5 * 60 * 1000);
+  const limit = await rateLimit(`mail-test:${adminId}`, 10, 5 * 60 * 1000);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'rate_limited', retryAfter: limit.retryAfterSeconds },

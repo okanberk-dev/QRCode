@@ -28,7 +28,7 @@ export async function POST(
   }
 
   // Tight rate limit: batch operations are the main abuse surface.
-  const rl = rateLimit(`qr:batch:${actor.id}`, 5, 60 * 1000);
+  const rl = await rateLimit(`qr:batch:${actor.id}`, 5, 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Çok fazla toplu istek. Lütfen biraz bekleyin.' },

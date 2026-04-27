@@ -18,6 +18,8 @@ const optional = [
   ['SUPABASE_URL', 'careers attachment uploads return 503'],
   ['SUPABASE_SERVICE_ROLE_KEY', 'careers attachment uploads return 503'],
   ['SUPABASE_STORAGE_BUCKET', 'careers attachment uploads return 503'],
+  ['KV_REST_API_URL', 'rate limiter falls back to per-instance in-memory mode'],
+  ['KV_REST_API_TOKEN', 'rate limiter falls back to per-instance in-memory mode'],
 ];
 
 const missing = [];
