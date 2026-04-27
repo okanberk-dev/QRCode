@@ -279,15 +279,19 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
             <div className="flex items-start gap-4">
               <Link
                 href="/admin/blog"
-                className="mt-1 flex h-10 w-10 items-center justify-center rounded-full border border-[#EDEDED] text-[#737373] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors"
+                className="mt-1 bz-btn-icon"
+                aria-label="Geri"
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={16} strokeWidth={2} />
               </Link>
-              <div>
+              <div className="min-w-0">
                 <p className="pulse-eyebrow text-[#737373]">
                   {mode === 'edit' ? 'BLOG DÜZENLE' : 'YENİ BLOG'}
                 </p>
-                <h1 className="mt-1 text-2xl font-medium tracking-[-0.04em] text-[#0A0A0A] sm:text-3xl">
+                <h1
+                  className="bz-h-tight-2 mt-1 truncate"
+                  style={{ fontSize: 22, lineHeight: 1.1 }}
+                >
                   {form.title || 'Başlıksız yazı'}
                 </h1>
               </div>
@@ -304,17 +308,17 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 href={form.slug ? `/${form.locale}/blog/${form.slug}` : '/admin/blog'}
                 target={form.slug ? '_blank' : undefined}
                 rel={form.slug ? 'noopener noreferrer' : undefined}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#EDEDED] px-5 py-3 text-sm font-semibold text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors"
+                className="bz-btn-ghost"
               >
-                <Eye size={16} />
+                <Eye size={14} strokeWidth={2} />
                 Önizle
               </Link>
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3 text-sm font-semibold text-white hover:bg-[#1A1A1A] disabled:opacity-50 transition-colors"
+                className="bz-btn-primary"
               >
-                {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2} />}
                 Kaydet
               </button>
             </div>

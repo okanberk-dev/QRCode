@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Calendar, Send, Save, Eye, ArrowLeft, Mail, Trash2 } from 'lucide-react';
+import { Badge, PageHeader } from '@/components/ui';
 import Link from 'next/link';
 
 interface BlogPostOption {
@@ -214,41 +215,43 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
   const canSubmit = value.title.trim().length > 0 && value.intro.trim().length > 0 && value.postIds.length > 0 && !saving && !isImmutable;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6 md:p-8">
-      <div className="flex items-center justify-between">
-        <Link
-          href="/admin/newsletters/campaigns"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[#525252] hover:text-[#0A0A0A]"
-        >
-          <ArrowLeft size={14} />
-          Kampanyalara dön
-        </Link>
-        {isEdit && initial?.status && (
-          <span className="pulse-eyebrow rounded-full bg-[#FAFAFA] px-3 py-1 text-[#525252]">
-            Durum: {initial.status}
-          </span>
-        )}
-      </div>
+    <div className="mx-auto max-w-[1100px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <Link
+        href="/admin/newsletters/campaigns"
+        className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors"
+      >
+        <ArrowLeft size={12} strokeWidth={2} />
+        Kampanyalara dön
+      </Link>
 
-      <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-        <p className="pulse-eyebrow text-[#737373]">PANEL / BÜLTEN / KAMPANYA</p>
-        <h1
-          className="mt-1 flex items-center gap-3 text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
-          style={{ fontFamily: 'var(--font-heading)' }}
-        >
-          <Mail size={22} strokeWidth={2} />
-          {isEdit ? 'Kampanyayı düzenle' : 'Yeni kampanya'}
-        </h1>
-        <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252] max-w-[560px]">
-          Aylık bülten için özel başlık + intro + blog yazıları. Kaydedip taslakta tutabilir, ileri tarihe zamanlayabilir veya hemen gönderebilirsin.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="BÜLTEN KAMPANYASI"
+        title={isEdit ? 'Kampanyayı düzenle' : 'Yeni kampanya'}
+        description="Aylık bülten için özel başlık + intro + blog yazıları. Kaydedip taslakta tutabilir, ileri tarihe zamanlayabilir veya hemen gönderebilirsin."
+        actions={
+          isEdit && initial?.status ? (
+            <Badge kind={initial.status === 'sent' ? 'ok' : initial.status === 'sending' ? 'warn' : 'ghost'}>
+              Durum: {initial.status}
+            </Badge>
+          ) : null
+        }
+      />
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700">{error}</div>
+        <div
+          className="px-4 py-3 rounded-xl text-xs font-medium"
+          style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}
+        >
+          {error}
+        </div>
       )}
       {info && (
-        <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8] p-4 text-xs font-semibold text-[#0A0A0A]">{info}</div>
+        <div
+          className="px-4 py-3 rounded-xl text-xs font-medium"
+          style={{ background: '#EAF9B8', border: '1px solid #D9EE7A', color: '#4D5C00' }}
+        >
+          {info}
+        </div>
       )}
 
       {isImmutable && (
