@@ -339,7 +339,7 @@ export default function DashboardRestaurantDetailPage() {
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-5 py-2.5 text-[13px] font-medium text-red-600 hover:bg-red-100 disabled:opacity-60 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#FECACA] bg-[#FEF2F2] px-5 py-2.5 text-[13px] font-medium text-[#DC2626] hover:bg-[#FEE2E2] disabled:opacity-60 transition-colors"
           >
             {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 size={14} strokeWidth={2} />}
             {locale === 'tr' ? 'Pasife al' : 'Deactivate'}

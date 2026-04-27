@@ -14,6 +14,7 @@ import {
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import PublicMenuView, { type MenuCategoryView, type MenuItemView, type RestaurantView } from '@/components/menu/PublicMenuView';
+import { Modal } from '@/components/ui';
 import { MENU_BADGES, MENU_THEMES, type MenuBadge, type MenuTheme } from '@/lib/validations';
 import { formatPrice, parsePriceInput } from '@/lib/format';
 import { compressImage } from '@/lib/client-image';
@@ -489,15 +490,15 @@ export default function RestaurantMenuBuilderPage() {
   }
   if (!restaurant) {
     return (
-      <div className="p-10 text-center text-sm font-bold text-red-600">{error ?? 'Yüklenemedi'}</div>
+      <div className="p-10 text-center text-sm font-bold text-[#DC2626]">{error ?? 'Yüklenemedi'}</div>
     );
   }
 
   const status = !restaurant.menuEnabled
     ? { label: copy.disabled, dot: 'bg-[#737373]', text: 'text-[#737373]' }
     : restaurant.menuPublished
-    ? { label: copy.published, dot: 'bg-emerald-500', text: 'text-emerald-700' }
-    : { label: copy.draft, dot: 'bg-amber-500', text: 'text-amber-700' };
+    ? { label: copy.published, dot: 'bg-[#16A34A]', text: 'text-[#166534]' }
+    : { label: copy.draft, dot: 'bg-[#D97706]', text: 'text-[#92400E]' };
 
   if (previewMode) {
     return (
@@ -600,7 +601,7 @@ export default function RestaurantMenuBuilderPage() {
                 disabled={publishBusy || !restaurant.menuEnabled}
                 className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-medium shadow-sm transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
                   restaurant.menuPublished
-                    ? 'bg-amber-50 text-amber-800 ring-1 ring-amber-200 hover:bg-amber-100'
+                    ? 'bg-[#FFFBEB] text-[#92400E] ring-1 ring-[#FDE68A] hover:bg-[#FEF3C7]'
                     : 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
                 }`}
               >
@@ -825,7 +826,7 @@ function CategoryModal({
   const [isVisible, setIsVisible] = useState(data.isVisible ?? true);
 
   return (
-    <Modal title={mode === 'create' ? copy.addCategory : copy.editCategory} onClose={onClose}>
+    <Modal size={620} title={mode === 'create' ? copy.addCategory : copy.editCategory} onClose={onClose}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -916,7 +917,7 @@ function ItemModal({
   };
 
   return (
-    <Modal title={mode === 'create' ? copy.addItem : copy.editItem} onClose={onClose}>
+    <Modal size={680} title={mode === 'create' ? copy.addItem : copy.editItem} onClose={onClose}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -1080,26 +1081,6 @@ function ItemModal({
   );
 }
 
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-6">
-      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-[#EDEDED] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:rounded-3xl sm:pb-0">
-        <div className="relative border-b border-[#EDEDED] px-6 py-5 sm:px-8 sm:py-6">
-          <h2 className="pr-10 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A] sm:text-[22px]">{title}</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
-          >
-            <X size={18} strokeWidth={2} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-6 py-5 sm:px-8 sm:py-7">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
@@ -1186,7 +1167,7 @@ function SortableCategoryRow({
             {!category.isVisible && (
               <>
                 <span className="h-0.5 w-0.5 rounded-full bg-[#EDEDED]" aria-hidden />
-                <span className="inline-flex items-center gap-1 text-amber-700">
+                <span className="inline-flex items-center gap-1 text-[#92400E]">
                   <EyeOff size={10} strokeWidth={2.25} />
                   {copy.hidden}
                 </span>
@@ -1204,7 +1185,7 @@ function SortableCategoryRow({
         </button>
         <button
           onClick={onToggleVisible}
-          className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${category.isVisible ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-amber-600'}`}
+          className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${category.isVisible ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-[#D97706]'}`}
           title={copy.toggleVisible}
           aria-label={copy.toggleVisible}
         >
@@ -1213,7 +1194,7 @@ function SortableCategoryRow({
         <button onClick={onEdit} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A]" title={copy.editCategory} aria-label={copy.editCategory}>
           <Edit2 size={14} strokeWidth={2} />
         </button>
-        <button onClick={onDelete} className="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50" title={copy.delete} aria-label={copy.delete}>
+        <button onClick={onDelete} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#DC2626] transition-colors hover:bg-[#FEF2F2]" title={copy.delete} aria-label={copy.delete}>
           <Trash2 size={14} strokeWidth={2} />
         </button>
       </div>
@@ -1285,7 +1266,7 @@ function SortableItemRow({
               </span>
             )}
             {item.isOutOfStock && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600 ring-1 ring-red-100">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[10px] font-medium text-[#991B1B] ring-1 ring-[#FECACA]">
                 <AlertTriangle size={10} strokeWidth={2.25} />
                 {copy.outOfStock}
               </span>
@@ -1327,7 +1308,7 @@ function SortableItemRow({
         </button>
         <button
           onClick={onToggleAvailable}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isAvailable ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-amber-600'}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isAvailable ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-[#D97706]'}`}
           title={copy.toggleVisible}
           aria-label={copy.toggleVisible}
         >
@@ -1335,7 +1316,7 @@ function SortableItemRow({
         </button>
         <button
           onClick={onToggleOutOfStock}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isOutOfStock ? 'text-red-500' : 'text-[#525252] hover:text-[#0A0A0A]'}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isOutOfStock ? 'text-[#DC2626]' : 'text-[#525252] hover:text-[#0A0A0A]'}`}
           title={copy.toggleOutOfStock}
           aria-label={copy.toggleOutOfStock}
         >
@@ -1344,7 +1325,7 @@ function SortableItemRow({
         <button onClick={onEdit} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A]" aria-label={copy.editItem || 'Edit'}>
           <Edit2 size={16} strokeWidth={2} />
         </button>
-        <button onClick={onDelete} className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50" aria-label={copy.delete}>
+        <button onClick={onDelete} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#DC2626] transition-colors hover:bg-[#FEF2F2]" aria-label={copy.delete}>
           <Trash2 size={16} strokeWidth={2} />
         </button>
       </div>
@@ -1683,7 +1664,7 @@ function MenuQrModal({
   };
 
   return (
-    <Modal title={copy.menuQr} onClose={onClose}>
+    <Modal size={520} title={copy.menuQr} onClose={onClose}>
       <div className="space-y-5">
         <div className="flex items-center justify-center rounded-3xl bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 ring-1 ring-[#EDEDED] sm:p-8">
           {previewSvg ? (
@@ -1693,7 +1674,7 @@ function MenuQrModal({
             />
           ) : err ? (
             <div className="flex aspect-square w-full max-w-[240px] flex-col items-center justify-center gap-2 text-center">
-              <AlertTriangle size={24} strokeWidth={2} className="text-red-600" />
+              <AlertTriangle size={24} strokeWidth={2} className="text-[#DC2626]" />
               <p className="text-[13px] text-red-700">{err}</p>
             </div>
           ) : (

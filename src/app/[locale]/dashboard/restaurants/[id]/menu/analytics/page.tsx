@@ -13,6 +13,7 @@ import {
 import { formatPrice } from '@/lib/format';
 import { formatPct } from '@/lib/analytics-heuristics';
 import type { Locale } from '@/lib/translations';
+import { AlertBanner } from '@/components/ui';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 
@@ -269,9 +270,9 @@ export default function MenuAnalyticsPage() {
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold uppercase tracking-widest text-red-700">
+        <AlertBanner kind="danger" onDismiss={() => setError(null)}>
           {error}
-        </div>
+        </AlertBanner>
       )}
 
       {loading && !data ? (
@@ -335,7 +336,7 @@ function OverviewCards({ overview, copy }: { overview: AnalyticsResponse['overvi
             </div>
             <p className="mt-2 text-3xl font-semibold tracking-tight text-[#0A0A0A]">{c.fmt(c.value)}</p>
             {c.delta !== null && c.delta !== undefined && (
-              <div className={`mt-1 inline-flex items-center gap-1 text-[11px] font-bold ${deltaPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+              <div className={`mt-1 inline-flex items-center gap-1 text-[11px] font-bold ${deltaPositive ? 'text-[#166534]' : 'text-[#991B1B]'}`}>
                 {deltaPositive ? <TrendingUp size={11} strokeWidth={2.5} /> : <TrendingDown size={11} strokeWidth={2.5} />}
                 {c.pctDelta ? `${c.delta >= 0 ? '+' : ''}${(c.delta * 100).toFixed(1)} pp` : `${c.delta >= 0 ? '+' : ''}${(c.delta * 100).toFixed(1)} %`}
                 <span className="font-medium text-[#6B7280]">· {copy.previousPeriod}</span>
@@ -491,9 +492,9 @@ function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any })
                   <td className="py-3 pr-2 text-[#1A1A1A]">{r.categoryName ?? '—'}</td>
                   <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.views)}</td>
                   <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.clicks)}</td>
-                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-red-600">{formatPct(r.ctr, 1)}</td>
+                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#991B1B]">{formatPct(r.ctr, 1)}</td>
                   <td className="py-3 pr-2">
-                    <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-amber-700">
+                    <span className="inline-flex rounded-full bg-[#FFFBEB] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-[#92400E]">
                       {copy.statusLabels[r.status]}
                     </span>
                   </td>

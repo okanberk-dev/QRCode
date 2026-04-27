@@ -258,10 +258,10 @@ function ReviewContent() {
       <div className="mx-auto flex min-h-[100dvh] max-w-[420px] flex-col px-6 pb-10 pt-8 sm:px-4">
         {/* Brand header */}
         <header className="mb-6 text-center sm:mb-8">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-[26px] font-medium text-[#0A0A0A] shadow-[0_8px_24px_rgba(0,0,0,0.35)]" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-[26px] font-bold text-[#0A0A0A] shadow-[0_8px_24px_rgba(0,0,0,0.35)]" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
             {initial}
           </div>
-          <h1 className="bz-h-tight mt-4 text-[22px] text-white">{restaurant.name}</h1>
+          <h1 className="mt-4 text-[22px] font-bold text-white" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>{restaurant.name}</h1>
           {restaurant.address && (
             <p className="mt-1 text-[12px] text-white/55">{restaurant.address}</p>
           )}

@@ -312,7 +312,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       {/* ============ LEFT — review list ============ */}
       <aside className="flex max-h-[55vh] w-full flex-shrink-0 flex-col border-b border-[#EDEDED] bg-white lg:max-h-none lg:w-[340px] lg:border-b-0 lg:border-r">
         {degraded && (
-          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-[11px] font-medium text-amber-900">
+          <div className="border-b border-[#FDE68A] bg-[#FFFBEB] px-4 py-2 text-[11px] font-medium text-[#92400E]">
             {isTr
               ? `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — DB senkronizasyonu bekleniyor.`
               : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — DB sync pending.`}

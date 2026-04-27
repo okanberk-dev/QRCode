@@ -719,7 +719,7 @@ export default function DashboardQrPage() {
               {locale === 'tr' ? 'CANLI ÖNİZLEME' : 'LIVE PREVIEW'}
             </span>
             {duplicateWarning && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 pulse-eyebrow">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E] pulse-eyebrow">
                 <AlertCircle size={11} strokeWidth={2} />
                 {locale === 'tr' ? 'ZATEN MEVCUT' : 'ALREADY EXISTS'}
               </div>
