@@ -83,8 +83,21 @@ export default async function HelpCenterPage({
     }));
   }
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım Merkezi' : 'Help Center', item: `https://buaze.com/${locale}/help` },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero */}
