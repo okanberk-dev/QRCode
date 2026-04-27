@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { ArrowLeft, Eye, History, Loader2, Mail, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import MailFieldInput, { type MailFieldDef } from './MailFieldInput';
@@ -168,7 +167,6 @@ export default function MailTemplateEditor({ templateKey, locale }: Props) {
 }
 
 function FlatTemplateEditor({ templateKey, locale }: Props) {
-  const router = useRouter();
   const fields = FIELDS_BY_TEMPLATE[templateKey] ?? [];
   const isEnglish = locale === 'en';
 

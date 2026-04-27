@@ -1,6 +1,6 @@
 'use client';
 
-import { MapPin, Info } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 
 interface BusinessSummaryProps {
   name: string;

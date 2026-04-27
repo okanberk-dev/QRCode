@@ -1,7 +1,7 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderP, renderButton, renderAvatarCircle, renderStatusPill, spacer } from '../components';
+import { renderButton, renderAvatarCircle, renderStatusPill, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 

@@ -296,7 +296,7 @@ export default function RestaurantDetailPage() {
               <Link2 size={18} strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="pulse-eyebrow text-[#737373]">Detay URL'leri</p>
+              <p className="pulse-eyebrow text-[#737373]">Detay URL&apos;leri</p>
               <h2 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Müşteri ve yönetim bağlantıları</h2>
             </div>
           </div>

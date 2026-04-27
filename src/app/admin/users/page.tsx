@@ -415,7 +415,7 @@ export default function UsersPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Sistem URL'i (Otomatik) *</label>
+                        <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Sistem URL&apos;i (Otomatik) *</label>
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-semibold text-[#6B7280]">buaze.com/r/</span>
                           <input

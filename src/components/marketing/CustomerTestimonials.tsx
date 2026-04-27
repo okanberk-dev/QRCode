@@ -36,7 +36,7 @@ function Testimonial({ quote, name, role, company, avatarUrl, initials, link, lo
       </div>
       
       <blockquote className="mb-8 text-[15px] italic leading-relaxed text-[#0A0A0A] sm:text-[16px]">
-        "{quote}"
+        &ldquo;{quote}&rdquo;
       </blockquote>
 
       <div className="mt-auto flex items-center gap-3 border-t border-[#EDEDED] pt-5">
