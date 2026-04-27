@@ -154,11 +154,15 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
-      {/* ─── 1. Form (FAFAFA card) ─── */}
+      {/* ─── 1. Form (FAFAFA card) ───
+          On mobile, form comes first (DOM order) so the user can see the
+          numbered "1. Bilgilerini gir" → "2. Önizle ve indir" sequence in
+          natural reading order. Desktop keeps the design's left/right split
+          via `lg:order-*`. */}
       <form
         onSubmit={handleSubmit}
         aria-label={isTr ? 'QR kod oluşturma formu' : 'QR code generator form'}
-        className="bg-[#FAFAFA] border border-[#EDEDED] rounded-[18px] p-6 sm:p-8 order-2 lg:order-1"
+        className="bg-[#FAFAFA] border border-[#EDEDED] rounded-[18px] p-6 sm:p-8 lg:order-1"
       >
         <h2
           className="text-[22px] sm:text-[24px] font-semibold text-[#0A0A0A] tracking-[-0.015em] mb-5"
@@ -246,7 +250,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
             <div
               role="radiogroup"
               aria-label={isTr ? 'Tasarım şablonu' : 'Design template'}
-              className="mt-2.5 grid grid-cols-4 gap-2"
+              className="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2"
             >
               {(
                 [
@@ -292,7 +296,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
       </form>
 
       {/* ─── 2. Preview ─── */}
-      <div className="order-1 lg:order-2">
+      <div className="lg:order-2">
         <h2
           className="text-[22px] sm:text-[24px] font-semibold text-[#0A0A0A] tracking-[-0.015em] mb-5"
           style={{ fontFamily: 'var(--font-heading)' }}
