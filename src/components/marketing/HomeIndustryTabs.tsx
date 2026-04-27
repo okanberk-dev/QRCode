@@ -99,7 +99,7 @@ export default function HomeIndustryTabs({ locale }: Props) {
 
   return (
     <div>
-      <div className="overflow-x-auto">
+      <div className="no-scrollbar overflow-x-auto">
         <div className="flex min-w-max gap-2 border-b border-[#EDEDED] pb-3 sm:min-w-0 sm:flex-wrap sm:border-b-0 sm:pb-0">
           {SECTORS.map((sector, idx) => (
             <button

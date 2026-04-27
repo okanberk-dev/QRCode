@@ -84,12 +84,14 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
             const active = isActive(item.href);
 
             if ('center' in item && item.center) {
-              // Prominent center CTA — flat Pulse circle with lime glow
+              // Prominent center CTA — flat Pulse circle with lime glow.
+              // 52x52 + -20mt + shadow blur 16 mirrors design buaze-mobil
+              // bundle (layout.jsx:534) so the FAB lifts above the bar.
               return (
                 <li key={item.href} className="flex-1 flex items-start justify-center -mt-5">
                   <Link
                     href={item.href}
-                    className="flex items-center justify-center w-12 h-12 rounded-full bg-[#C6F24E] shadow-[0_4px_12px_rgba(198,242,78,0.45)] hover:bg-[#A8D62E] transition-colors"
+                    className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_4px_16px_rgba(198,242,78,0.5)] hover:bg-[#A8D62E] transition-colors"
                     aria-label={item.label}
                   >
                     <item.Icon size={22} className="text-[#0A0A0A]" strokeWidth={2} />
