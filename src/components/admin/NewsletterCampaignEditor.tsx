@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Calendar, Send, Save, Eye, ArrowLeft, Mail, Trash2 } from 'lucide-react';
-import { Badge, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, PageHeader } from '@/components/ui';
 import Link from 'next/link';
 
 interface BlogPostOption {
@@ -237,22 +237,8 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
         }
       />
 
-      {error && (
-        <div
-          className="px-4 py-3 rounded-xl text-xs font-medium"
-          style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}
-        >
-          {error}
-        </div>
-      )}
-      {info && (
-        <div
-          className="px-4 py-3 rounded-xl text-xs font-medium"
-          style={{ background: '#EAF9B8', border: '1px solid #D9EE7A', color: '#4D5C00' }}
-        >
-          {info}
-        </div>
-      )}
+      {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+      {info && <AlertBanner kind="lime">{info}</AlertBanner>}
 
       {isImmutable && (
         <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 text-xs text-[#525252]">

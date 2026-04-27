@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Download, Loader2, Mail, MapPin, Phone, RefreshCw, Search, Star, Store, Users, X } from 'lucide-react';
-import { PageHeader, StatCard } from '@/components/ui';
+import { AlertBanner, PageHeader, StatCard } from '@/components/ui';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 
@@ -275,11 +275,7 @@ export default function AdminCustomersPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
       <div className="overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-sm">
         {loading && !data ? (

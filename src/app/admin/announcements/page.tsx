@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Pencil, Trash2, Megaphone, X, Save, Loader2, AlertTriangle, Info, CheckCircle2, AlertOctagon } from 'lucide-react';
 import {
+  AlertBanner,
   Badge,
   type BadgeKind,
   EmptyState,
@@ -220,30 +221,15 @@ export default function AdminAnnouncementsPage() {
 
       {/* Alerts */}
       {error && (
-        <div
-          className="mt-3.5 flex items-center justify-between px-4 py-3 rounded-xl"
-          style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}
-        >
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+        <div className="mt-3.5">
+          <AlertBanner kind="danger" onDismiss={() => setError('')}>
             {error}
-          </div>
-          <button
-            onClick={() => setError('')}
-            className="bz-btn-icon"
-            aria-label="Hatayı kapat"
-          >
-            <X size={16} />
-          </button>
+          </AlertBanner>
         </div>
       )}
       {success && (
-        <div
-          className="mt-3.5 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium"
-          style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#166534' }}
-        >
-          <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-          {success}
+        <div className="mt-3.5">
+          <AlertBanner kind="success">{success}</AlertBanner>
         </div>
       )}
 

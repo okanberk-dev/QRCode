@@ -3,6 +3,7 @@
  * Used by admin panel + business panel only. Marketing/blog/help center
  * surfaces continue to use `pulse-*` utilities and existing components.
  */
+export { AlertBanner, type AlertKind } from "./AlertBanner";
 export { Avatar } from "./Avatar";
 export { Badge, type BadgeKind } from "./Badge";
 export { BarChart } from "./BarChart";

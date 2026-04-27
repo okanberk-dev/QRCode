@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Loader2, Store, User, ShieldCheck, Search, X } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
-import { Badge, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, PageHeader } from '@/components/ui';
 
 interface User {
   id: string;
@@ -316,11 +316,7 @@ export default function UsersPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-5 sm:p-8 md:p-10 space-y-5 sm:space-y-6 md:space-y-8 overflow-y-auto no-scrollbar">
-              {error && (
-                <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-xs font-bold border border-red-200 text-center ">
-                  {error}
-                </div>
-              )}
+              {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                 <div className="space-y-2">
