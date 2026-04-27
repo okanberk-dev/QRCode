@@ -1,71 +1,118 @@
-import { Clock, Zap, CheckCircle } from 'lucide-react';
+import { Clock, Zap, Check } from 'lucide-react';
 import Link from 'next/link';
+import { Badge } from '@/components/ui';
 
 export default function TrialExpiredPage() {
   return (
-    <div className="flex-1 flex items-center justify-center min-h-screen bg-[#FFFFFF] p-6">
+    <div className="flex min-h-screen flex-1 items-center justify-center bg-[#FAFAFA] p-6">
       <div className="w-full max-w-md">
-        {/* Card */}
-        <div className="bg-white rounded-3xl border border-[#EDEDED] overflow-hidden">
-          {/* Top banner */}
+        <div className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-[0_8px_24px_rgba(10,10,10,0.04)]">
+          {/* Top dark hero */}
           <div className="bg-[#0A0A0A] px-8 py-8 text-center text-white">
-            <div className="w-16 h-16 bg-[#C6F24E]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C6F24E]/20">
               <Clock size={32} className="text-[#C6F24E]" />
             </div>
-            <h1 className="text-xl font-semibold text-white mb-1">Deneme Süreniz Doldu</h1>
-            <p className="text-white/65 text-sm">14 günlük ücretsiz deneme süreniz sona ermiştir</p>
+            <h1 className="bz-h-tight-2 mb-1 text-[22px] text-white">
+              Deneme süreniz doldu
+            </h1>
+            <p className="text-[13px] leading-[1.55] text-white/65">
+              14 günlük ücretsiz deneme süreniz sona ermiştir
+            </p>
           </div>
 
           {/* Content */}
-          <div className="p-8">
-            <p className="text-[#1A1A1A] text-sm text-center leading-relaxed mb-6">
-              Buaze&apos;yi kullanmaya devam etmek için bir plan seçin. Tüm değerlendirme verileriniz ve restoran ayarlarınız güvende.
+          <div className="space-y-6 p-8">
+            <p className="text-center text-[13px] leading-[1.65] text-[#525252]">
+              Buaze&apos;yi kullanmaya devam etmek için bir plan seçin. Tüm
+              değerlendirme verileriniz ve restoran ayarlarınız güvende.
             </p>
 
             {/* Plan options */}
-            <div className="space-y-3 mb-6">
-              <div className="border-2 border-[#C6F24E] rounded-2xl p-4 bg-[#C6F24E]/5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-[#0A0A0A]">Aylık Plan</span>
-                  <span className="bg-[#C6F24E] text-[#0A0A0A] text-xs font-semibold px-2 py-0.5 rounded-full">Popüler</span>
+            <div className="space-y-3">
+              <div className="rounded-2xl border-2 border-[#C6F24E] bg-[#EAF9B8]/40 p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="bz-h-tight text-[15px] text-[#0A0A0A]">
+                    Aylık Plan
+                  </span>
+                  <Badge kind="lime">Popüler</Badge>
                 </div>
-                <p className="text-2xl font-semibold text-[#0A0A0A]">₺299 <span className="text-sm font-normal text-[#6B7280]">/ ay</span></p>
-                <div className="mt-3 space-y-1.5">
-                  {['Sınırsız QR Kodu', 'Anlık E-posta Bildirimleri', 'Detaylı Analitik', 'Google Yorum Yönlendirme'].map(f => (
-                    <div key={f} className="flex items-center gap-2 text-xs text-[#1A1A1A]">
-                      <CheckCircle size={13} className="text-green-500 flex-shrink-0" />
+                <p
+                  className="text-[26px] text-[#0A0A0A]"
+                  style={{ fontFamily: 'var(--font-heading)', fontWeight: 500, letterSpacing: '-0.025em' }}
+                >
+                  ₺299
+                  <span className="ml-1 text-[13px] font-normal text-[#737373]">
+                    / ay
+                  </span>
+                </p>
+                <ul className="mt-3 space-y-1.5">
+                  {[
+                    'Sınırsız QR kodu',
+                    'Anlık e-posta bildirimleri',
+                    'Detaylı analitik',
+                    'Google yorum yönlendirme',
+                  ].map((f) => (
+                    <li
+                      key={f}
+                      className="flex items-center gap-2 text-[12.5px] text-[#1A1A1A]"
+                    >
+                      <Check
+                        size={13}
+                        strokeWidth={2.5}
+                        className="shrink-0 text-[#A8D62E]"
+                      />
                       {f}
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
 
-              <div className="border border-[#EDEDED] rounded-2xl p-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-[#0A0A0A]">Yıllık Plan</span>
-                  <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">%30 İndirim</span>
+              <div className="rounded-2xl border border-[#EDEDED] bg-white p-4">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="bz-h-tight text-[15px] text-[#0A0A0A]">
+                    Yıllık Plan
+                  </span>
+                  <Badge kind="ok">%30 indirim</Badge>
                 </div>
-                <p className="text-2xl font-semibold text-[#0A0A0A]">₺209 <span className="text-sm font-normal text-[#6B7280]">/ ay (yıllık)</span></p>
+                <p
+                  className="text-[26px] text-[#0A0A0A]"
+                  style={{ fontFamily: 'var(--font-heading)', fontWeight: 500, letterSpacing: '-0.025em' }}
+                >
+                  ₺209
+                  <span className="ml-1 text-[13px] font-normal text-[#737373]">
+                    / ay (yıllık)
+                  </span>
+                </p>
               </div>
             </div>
 
             {/* CTA */}
             <a
               href="mailto:hello@buaze.com?subject=Plan Yükseltme Talebi"
-              className="flex items-center justify-center gap-2 w-full bg-[#0A0A0A] hover:bg-[#1f2937] text-white font-bold py-3.5 rounded-2xl text-sm transition-all shadow-lg hover:shadow-xl"
+              className="bz-btn-primary flex w-full items-center justify-center gap-2 py-3.5 text-[14px]"
             >
               <Zap size={16} className="text-[#C6F24E]" />
-              Planı Yükselt — hello@buaze.com
+              Planı yükselt — hello@buaze.com
             </a>
 
-            <p className="text-xs text-center text-[#6B7280] mt-4">
-              Sorularınız için <a href="mailto:hello@buaze.com" className="underline hover:text-[#1A1A1A]">hello@buaze.com</a> adresine yazabilirsiniz.
+            <p className="text-center text-[12px] text-[#737373]">
+              Sorularınız için{' '}
+              <a
+                href="mailto:hello@buaze.com"
+                className="font-medium text-[#0A0A0A] underline underline-offset-2 hover:text-[#525252]"
+              >
+                hello@buaze.com
+              </a>{' '}
+              adresine yazabilirsiniz.
             </p>
           </div>
         </div>
 
-        <div className="text-center mt-6">
-          <Link href="/admin" className="text-xs text-[#6B7280] hover:text-[#1A1A1A] underline">
+        <div className="mt-6 text-center">
+          <Link
+            href="/admin"
+            className="text-[12px] text-[#737373] underline underline-offset-2 hover:text-[#0A0A0A]"
+          >
             Farklı hesapla giriş yap
           </Link>
         </div>
