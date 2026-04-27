@@ -63,6 +63,23 @@ export async function PUT(req: NextRequest) {
   if (body.faviconUrl !== undefined) updates.push({ key: SITE_SETTINGS_KEYS.faviconUrl, value: body.faviconUrl });
   if (body.logoUrl !== undefined) updates.push({ key: SITE_SETTINGS_KEYS.logoUrl, value: body.logoUrl });
 
+  // Entity-disambiguation profile URLs (audit §9 / §10). Each is independently
+  // optional and trim-then-null-on-empty so an admin can clear a value with
+  // an empty string just like the existing logo/favicon fields.
+  const profileUrlFields: Array<keyof SiteSettings> = [
+    'g2Url',
+    'wikidataUrl',
+    'crunchbaseUrl',
+    'capterraUrl',
+  ];
+  for (const field of profileUrlFields) {
+    if (body[field] !== undefined) {
+      const raw = body[field];
+      const value = typeof raw === 'string' ? raw.trim() || null : raw;
+      updates.push({ key: SITE_SETTINGS_KEYS[field as keyof typeof SITE_SETTINGS_KEYS], value: value as string | null });
+    }
+  }
+
   if (updates.length === 0) return ApiErrors.badRequest('Güncellenecek alan yok');
 
   try {

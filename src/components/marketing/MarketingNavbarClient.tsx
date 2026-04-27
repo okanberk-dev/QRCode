@@ -126,7 +126,7 @@ export default function MarketingNavbarClient({
       icon: <QrCode size={16} />,
     },
     {
-      href: `${base}/features/ai-copilot`,
+      href: `${base}/features/pulse-ai`,
       label: 'Buaze Pulse AI',
       sub: isTr ? 'Yanıtı saniyede yaz' : 'Drafts in seconds',
       icon: <Sparkles size={16} />,
@@ -384,7 +384,7 @@ export default function MarketingNavbarClient({
                       : 'Buaze Pulse AI reply drafts for every review.'}
                   </p>
                   <Link
-                    href={`${base}/features/ai-copilot`}
+                    href={`${base}/features/pulse-ai`}
                     onClick={() => setOpen(null)}
                     className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-3 py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E]"
                   >

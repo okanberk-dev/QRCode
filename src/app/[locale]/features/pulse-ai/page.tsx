@@ -29,16 +29,16 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/features/ai-copilot`,
+      canonical: `https://buaze.com/${locale}/features/pulse-ai`,
       languages: {
-        tr: 'https://buaze.com/tr/features/ai-copilot',
-        en: 'https://buaze.com/en/features/ai-copilot',
+        tr: 'https://buaze.com/tr/features/pulse-ai',
+        en: 'https://buaze.com/en/features/pulse-ai',
       },
     },
   };
 }
 
-export default async function AiCoPilotPage({
+export default async function PulseAiPage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;

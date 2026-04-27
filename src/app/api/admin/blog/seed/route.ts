@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
+import { parseBlogDate } from '@/lib/blog-date';
 
 async function requireSuperadmin(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
@@ -216,10 +217,16 @@ export async function GET(req: NextRequest) {
   try {
     let seeded = 0;
     for (const post of [...BLOG_POSTS_TR, ...BLOG_POSTS_EN]) {
+      // Spread `createdAt` per post by parsing the human-readable `date`
+      // string. Without this every reseed collapses every post into one day,
+      // which makes `BlogPosting.dateModified` look identical for the whole
+      // archive (audit Section 8.2).
+      const parsed = parseBlogDate(post.date);
+      const createdAt = parsed ?? undefined;
       await prisma.blogPost.upsert({
         where: { slug_locale: { slug: post.slug, locale: post.locale } },
         update: { ...post },
-        create: { ...post },
+        create: { ...post, ...(createdAt ? { createdAt } : {}) },
       });
       seeded++;
     }

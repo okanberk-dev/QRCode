@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
 import { Loader2, Save, Upload, Image as ImageIcon, Check, AlertCircle, X, Globe, Sparkles } from 'lucide-react';
 import { AlertBanner, Badge, PageHeader } from '@/components/ui';
 
@@ -17,6 +18,10 @@ interface SiteSettings {
   ogImageUrl: string | null;
   faviconUrl: string | null;
   logoUrl: string | null;
+  g2Url: string | null;
+  wikidataUrl: string | null;
+  crunchbaseUrl: string | null;
+  capterraUrl: string | null;
 }
 
 const CARD = 'bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-8';
@@ -258,6 +263,68 @@ export default function SiteSettingsPage() {
             uploading={uploading === 'favicon'}
             previewClass="aspect-square w-full max-w-[128px] bg-[#FFFFFF] rounded-xl p-3 border border-[#EDEDED]"
           />
+        </div>
+      </div>
+
+      {/* ─── Kart 3: Entity Profile URLs ─── */}
+      <div className={CARD}>
+        <div className="mb-6">
+          <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">
+            Varlık Profili URL&apos;leri
+          </h2>
+          <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
+            Buaze&apos;in dış kaynak profillerine bağlantı. Doluysa ana sayfadaki Organization JSON-LD&apos;ye <code className="bg-[#FAFAFA] px-1 rounded text-[11px]">sameAs</code> olarak girer ve <Link className="underline" href="/tr/press">basın kiti</Link> sayfasında gösterilir. Boş alanlar atlanır.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className={LABEL}>G2 Listing</label>
+            <input
+              type="url"
+              className={INPUT}
+              value={settings.g2Url ?? ''}
+              onChange={(e) => update('g2Url', e.target.value || null)}
+              placeholder="https://www.g2.com/products/buaze"
+            />
+            <p className={HINT}>SaaS karşılaştırma sayfaları + AI search.</p>
+          </div>
+
+          <div>
+            <label className={LABEL}>Wikidata Q-ID URL</label>
+            <input
+              type="url"
+              className={INPUT}
+              value={settings.wikidataUrl ?? ''}
+              onChange={(e) => update('wikidataUrl', e.target.value || null)}
+              placeholder="https://www.wikidata.org/wiki/Q123456789"
+            />
+            <p className={HINT}>Knowledge Graph + LLM eğitim datası.</p>
+          </div>
+
+          <div>
+            <label className={LABEL}>Crunchbase</label>
+            <input
+              type="url"
+              className={INPUT}
+              value={settings.crunchbaseUrl ?? ''}
+              onChange={(e) => update('crunchbaseUrl', e.target.value || null)}
+              placeholder="https://www.crunchbase.com/organization/buaze"
+            />
+            <p className={HINT}>Şirket entity sinyali.</p>
+          </div>
+
+          <div>
+            <label className={LABEL}>Capterra</label>
+            <input
+              type="url"
+              className={INPUT}
+              value={settings.capterraUrl ?? ''}
+              onChange={(e) => update('capterraUrl', e.target.value || null)}
+              placeholder="https://www.capterra.com/p/123456/Buaze"
+            />
+            <p className={HINT}>SaaS yazılım dizini.</p>
+          </div>
         </div>
       </div>
 

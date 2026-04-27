@@ -12,6 +12,15 @@ export interface SiteSettings {
   ogImageUrl: string | null;
   faviconUrl: string | null;
   logoUrl: string | null;
+  // Entity-disambiguation profile URLs. Surfaced as `sameAs` on the site
+  // Organization schema and as outbound links on the press kit. Each field
+  // is independently optional — empty values are dropped from the schema.
+  // (audit §9: brand-as-dictionary-word disambiguation, §10: GEO/AI
+  // entity recognition.)
+  g2Url: string | null;
+  wikidataUrl: string | null;
+  crunchbaseUrl: string | null;
+  capterraUrl: string | null;
 }
 
 export const SITE_SETTINGS_DEFAULTS: SiteSettings = {
@@ -47,6 +56,10 @@ export const SITE_SETTINGS_DEFAULTS: SiteSettings = {
   ogImageUrl: null,
   faviconUrl: null,
   logoUrl: null,
+  g2Url: null,
+  wikidataUrl: null,
+  crunchbaseUrl: null,
+  capterraUrl: null,
 };
 
 const KEY_PREFIX = 'site.';
@@ -62,6 +75,10 @@ export const SITE_SETTINGS_KEYS = {
   ogImageUrl: `${KEY_PREFIX}og_image_url`,
   faviconUrl: `${KEY_PREFIX}favicon_url`,
   logoUrl: `${KEY_PREFIX}logo_url`,
+  g2Url: `${KEY_PREFIX}g2_url`,
+  wikidataUrl: `${KEY_PREFIX}wikidata_url`,
+  crunchbaseUrl: `${KEY_PREFIX}crunchbase_url`,
+  capterraUrl: `${KEY_PREFIX}capterra_url`,
 } as const;
 
 function parseKeywords(raw: string | undefined): string[] | null {
@@ -89,6 +106,10 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       ogImageUrl: map[SITE_SETTINGS_KEYS.ogImageUrl] || null,
       faviconUrl: map[SITE_SETTINGS_KEYS.faviconUrl] || null,
       logoUrl: map[SITE_SETTINGS_KEYS.logoUrl] || null,
+      g2Url: map[SITE_SETTINGS_KEYS.g2Url] || null,
+      wikidataUrl: map[SITE_SETTINGS_KEYS.wikidataUrl] || null,
+      crunchbaseUrl: map[SITE_SETTINGS_KEYS.crunchbaseUrl] || null,
+      capterraUrl: map[SITE_SETTINGS_KEYS.capterraUrl] || null,
     };
   } catch {
     return SITE_SETTINGS_DEFAULTS;

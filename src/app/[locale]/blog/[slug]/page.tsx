@@ -5,6 +5,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import { sanitizeBlogContent } from '@/lib/blog-content';
+import { blogDateToIso } from '@/lib/blog-date';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
@@ -191,8 +192,17 @@ export default async function BlogPostPage({
         addressCountry: 'TR',
       },
     },
-    datePublished: post.date,
-    dateModified: post.updatedAt?.toISOString?.() || post.date,
+    // Google Article schema requires ISO 8601. `post.date` is the human-
+    // readable form ("March 15, 2026" / "15 Mart 2026"); fall back to the
+    // DB createdAt if parsing fails.
+    datePublished:
+      blogDateToIso(post.date)
+      ?? post.createdAt?.toISOString?.()
+      ?? post.date,
+    dateModified:
+      post.updatedAt?.toISOString?.()
+      ?? blogDateToIso(post.date)
+      ?? post.date,
     inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
     isAccessibleForFree: true,
     articleSection: isTr ? 'İtibar Yönetimi' : 'Reputation Management',

@@ -43,7 +43,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
       title: isTr ? 'Ürün' : 'Product',
       items: [
         { label: isTr ? 'QR Stüdyosu' : 'QR Studio', href: `${base}/solutions/qr-generator` },
-        { label: 'Buaze Pulse AI', href: `${base}/features/ai-copilot` },
+        { label: 'Buaze Pulse AI', href: `${base}/features/pulse-ai` },
         { label: isTr ? 'Yorum Yönetimi' : 'Review Management', href: `${base}/features` },
         { label: isTr ? 'Analitik & Raporlar' : 'Analytics & Reports', href: `${base}/features` },
         { label: isTr ? 'Entegrasyonlar' : 'Integrations', href: `${base}/integrations` },
@@ -69,6 +69,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
         { label: isTr ? 'Vaka çalışmaları' : 'Case studies', href: `${base}/customer-stories` },
         { label: 'Blog', href: `${base}/blog` },
         { label: isTr ? 'Kariyer' : 'Careers', href: `${base}/careers`, badge: isTr ? '5 POZİSYON' : '5 ROLES' },
+        { label: isTr ? 'Basın kiti' : 'Press kit', href: `${base}/press` },
         { label: isTr ? 'İletişim' : 'Contact', href: `${base}/contact` },
       ],
     },
