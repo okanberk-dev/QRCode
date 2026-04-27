@@ -396,7 +396,7 @@ export default function DashboardRestaurantsPage() {
                 <label className="space-y-2 sm:col-span-2">
                   <span className="ml-1 pulse-eyebrow text-[#737373]">URL Slug</span>
                   <div className="flex items-center gap-2 sm:gap-3 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-3 sm:px-4">
-                    <span className="shrink-0 text-[11px] sm:text-xs font-black text-[#1A1A1A]">buaze.com/r/</span>
+                    <span className="shrink-0 font-mono text-[11px] sm:text-xs text-[#737373]">buaze.com/r/</span>
                     <input
                       type="text"
                       required
@@ -418,11 +418,11 @@ export default function DashboardRestaurantsPage() {
                         <MapPin size={15} strokeWidth={2} className="text-[#0A0A0A]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[12px] sm:text-[13px] font-black uppercase tracking-wide text-[#0A0A0A] leading-tight">
-                          {locale === 'tr' ? 'Google Yorum Bağlantısı' : 'Google Review Link'}
-                          <span className="ml-1 text-[#C6F24E]">*</span>
+                        <p className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
+                          {locale === 'tr' ? 'Google yorum bağlantısı' : 'Google review link'}
+                          <span className="ml-1 text-[#A8D62E]">*</span>
                         </p>
-                        <p className="mt-0.5 text-[10px] font-bold text-[#1A1A1A] leading-tight">
+                        <p className="mt-0.5 text-[11px] text-[#737373] leading-snug">
                           {locale === 'tr' ? 'Olumlu yorumlar bu bağlantıya yönlendirilir' : 'Positive reviews are redirected to this link'}
                         </p>
                       </div>
@@ -438,8 +438,8 @@ export default function DashboardRestaurantsPage() {
                   </div>
 
                   {showGoogleInfo && (
-                    <div className="mb-3 rounded-xl border border-[#EDEDED] bg-white p-3.5 text-xs font-bold text-[#1A1A1A] leading-relaxed">
-                      <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#0A0A0A]">
+                    <div className="mb-3 rounded-xl border border-[#EDEDED] bg-white p-3.5 text-[12px] text-[#525252] leading-relaxed">
+                      <p className="pulse-eyebrow mb-2 text-[#0A0A0A]">
                         {locale === 'tr' ? 'Nasıl alınır?' : 'How to get it?'}
                       </p>
                       <ol className="ml-4 list-decimal space-y-1">
@@ -451,7 +451,7 @@ export default function DashboardRestaurantsPage() {
                         href="https://www.google.com/maps"
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-3 inline-flex items-center gap-1.5 text-[#C6F24E] font-black text-[11px] uppercase tracking-widest underline underline-offset-2"
+                        className="pulse-eyebrow mt-3 inline-flex items-center gap-1.5 text-[#0A0A0A] underline underline-offset-2"
                       >
                         <ExternalLink size={12} strokeWidth={2} />
                         {locale === 'tr' ? "Google Haritalar'ı Aç" : 'Open Google Maps'}
@@ -550,7 +550,7 @@ export default function DashboardRestaurantsPage() {
                       onChange={(event) => setFormData((prev) => ({ ...prev, primaryColor: event.target.value }))}
                       className="h-10 w-12 cursor-pointer rounded-xl border-0 bg-transparent"
                     />
-                    <span className="text-sm font-black text-[#0A0A0A]">{formData.primaryColor}</span>
+                    <span className="font-mono text-sm text-[#0A0A0A]">{formData.primaryColor}</span>
                   </div>
                 </label>
               </div>

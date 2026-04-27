@@ -571,7 +571,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                       replyNotice.tone === 'success'
                         ? 'bg-[#EAF9B8] text-[#0A0A0A]'
                         : replyNotice.tone === 'error'
-                          ? 'bg-red-50 text-red-700'
+                          ? 'bg-[#FEF2F2] text-[#991B1B]'
                           : 'bg-[#F5F5F5] text-[#525252]'
                     }`}
                   >
