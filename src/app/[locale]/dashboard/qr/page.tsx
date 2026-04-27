@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
+import { PageHeader } from '@/components/ui';
 import { copyToClipboard } from '@/lib/clipboard';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import PlatformLogo, { type PlatformId } from '@/components/marketing/PlatformLogo';
@@ -324,24 +325,12 @@ export default function DashboardQrPage() {
   }
 
   return (
-    <div
-      className="mx-auto max-w-[1200px] space-y-6 px-4 py-8 sm:px-8 lg:py-10"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
-      <header>
-        <p className="pulse-eyebrow text-[#737373]">
-          {locale === 'tr' ? 'PANEL / QR OLUŞTUR' : 'PANEL / CREATE QR'}
-        </p>
-        <h1
-          className="mt-2 text-[26px] sm:text-[32px] font-medium tracking-[-0.025em] leading-[1.05] text-[#0A0A0A]"
-          style={{ fontFamily: 'var(--font-heading)' }}
-        >
-          {copy.title}
-        </h1>
-        <p className="mt-2 max-w-[620px] text-[14px] text-[#525252] leading-[1.55]">
-          {copy.subtitle}
-        </p>
-      </header>
+    <div className="mx-auto max-w-[1200px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow={locale === 'tr' ? 'QR YÖNETİMİ' : 'QR MANAGEMENT'}
+        title={copy.title}
+        description={copy.subtitle}
+      />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.3fr_1fr]">
         <div className="order-2 lg:order-1 space-y-4">

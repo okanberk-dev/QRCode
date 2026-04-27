@@ -11,6 +11,7 @@ import WordCloud from '@/components/admin/WordCloud';
 import AspectBreakdown from '@/components/admin/AspectBreakdown';
 import GoogleConversionPanel from '@/components/admin/GoogleConversionPanel';
 import PlatformDistribution from '@/components/admin/PlatformDistribution';
+import AdminOverviewWidgets from '@/components/admin/AdminOverviewWidgets';
 
 // Recharts components must be dynamic for SSR compatibility
 const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), { ssr: false, loading: () => <div className="h-[300px] w-full bg-[#FFFFFF] animate-pulse rounded-2xl" /> });
@@ -243,6 +244,11 @@ export default function AdminDashboard() {
       <div className="w-full">
         {stats && <StatsCards stats={stats} />}
       </div>
+
+      {/* ─── Recently joined + Needs attention (1:1 design AdminDashboard right-rail) ─── */}
+      {isSuperAdmin && (
+        <AdminOverviewWidgets locale={locale as 'tr' | 'en'} />
+      )}
 
       {/* ─── Quick Actions ─── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

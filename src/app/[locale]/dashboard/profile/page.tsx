@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { Loader2, User, Key, Check, ShieldCheck, AlertCircle, Palette, Plug, Cog, Users, CreditCard, Bell, Code, Globe } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { PageHeader } from '@/components/ui';
 
 type SettingsTab = 'account' | 'brand' | 'integrations' | 'rules' | 'team' | 'billing' | 'notifications' | 'api';
 
@@ -115,10 +116,16 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
   ];
 
   return (
-    <div
-      className="mx-auto max-w-[1200px] px-4 py-8 sm:px-8 lg:py-10"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+      <PageHeader
+        eyebrow={isTr ? 'AYARLAR' : 'SETTINGS'}
+        title={isTr ? 'Hesap ve işletme ayarları' : 'Account & business settings'}
+        description={
+          isTr
+            ? 'Kişisel bilgiler, marka kimliği, entegrasyonlar, ekip ve fatura ayarlarını tek yerden yönet.'
+            : 'Manage personal info, brand identity, integrations, team, and billing settings in one place.'
+        }
+      />
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6 lg:gap-8">
         {/* Tab sidebar */}
         <aside className="flex flex-row lg:flex-col gap-1 lg:gap-0.5 overflow-x-auto lg:overflow-visible">
