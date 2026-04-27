@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, Flag, Inbox, Loader2, Mail, Search, Send, Sparkles, Star, UserPlus } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { buildReplyTemplate } from '@/lib/scaffolding';
+import { PageHeader } from '@/components/ui';
 
 type Source = 'openai' | 'template' | 'template-fallback' | null;
 type Tone = 'success' | 'info' | 'error';
@@ -289,16 +290,21 @@ export default function AdminReviewsPage() {
         : 'bg-[#F5F5F5] text-[#0A0A0A]';
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">{isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS'}</p>
-          <h1 className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
-            {isTr ? 'Yorum gelen kutusu' : 'Review inbox'}
-          </h1>
-        </div>
-        {notice && <span className={`pulse-eyebrow rounded-full px-3 py-1.5 ${noticeTone}`}>{notice.msg}</span>}
-      </header>
+    <div className="mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <PageHeader
+        eyebrow={isTr ? 'YORUMLAR' : 'REVIEWS'}
+        title={isTr ? 'Yorum gelen kutusu' : 'Review inbox'}
+        description={
+          isTr
+            ? 'Tüm restoranlardan gelen yorumları tek panelden incele, yanıtla, işaretle veya sahibi atan.'
+            : 'Inspect, reply, flag, or assign reviews from all restaurants in one inbox.'
+        }
+        actions={
+          notice ? (
+            <span className={`pulse-eyebrow rounded-full px-3 py-1.5 ${noticeTone}`}>{notice.msg}</span>
+          ) : null
+        }
+      />
 
       {degraded && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-900">

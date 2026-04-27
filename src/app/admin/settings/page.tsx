@@ -15,6 +15,7 @@ import {
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
+import { PageHeader } from '@/components/ui';
 
 type TabId = 'account' | 'brand' | 'integrations' | 'automation' | 'team' | 'billing' | 'notifications' | 'api';
 
@@ -43,13 +44,16 @@ function AdminSettingsBody() {
   ];
 
   return (
-    <div className="space-y-4">
-      <header>
-        <p className="pulse-eyebrow text-[#737373]">{isTr ? 'PANEL / AYARLAR' : 'PANEL / SETTINGS'}</p>
-        <h1 className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
-          {isTr ? 'Çalışma alanı ayarları' : 'Workspace settings'}
-        </h1>
-      </header>
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <PageHeader
+        eyebrow={isTr ? 'AYARLAR' : 'SETTINGS'}
+        title={isTr ? 'Çalışma alanı ayarları' : 'Workspace settings'}
+        description={
+          isTr
+            ? 'Hesap, marka, entegrasyon, ekip ve fatura tercihlerini buradan yönet.'
+            : 'Manage account, brand, integrations, team, and billing preferences.'
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-[220px_1fr]">
         <aside className="rounded-2xl border border-[#EDEDED] bg-white p-2">

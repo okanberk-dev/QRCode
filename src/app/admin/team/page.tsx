@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, Mail, Plus, ShieldCheck, Users as UsersIcon } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
+import { PageHeader } from '@/components/ui';
 
 interface TeamMember {
   id: string;
@@ -100,24 +101,28 @@ function AdminTeamBody() {
   };
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">{isTr ? 'PANEL / EKİP' : 'PANEL / TEAM'}</p>
-          <h1 className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
-            {isTr ? 'Ekip & roller' : 'Team & roles'}
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          {notice && <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">{notice}</span>}
-          <button
-            onClick={() => setShowInvite(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E]"
-          >
-            <Plus size={12} /> {isTr ? 'Üye davet et' : 'Invite member'}
-          </button>
-        </div>
-      </header>
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <PageHeader
+        eyebrow={isTr ? 'EKİP' : 'TEAM'}
+        title={isTr ? 'Ekip & roller' : 'Team & roles'}
+        description={
+          isTr
+            ? 'İşletmen için ekip üyelerini davet et, rollerini ata ve erişimi yönet.'
+            : 'Invite team members for your business, assign roles, and manage access.'
+        }
+        actions={
+          <>
+            {notice && (
+              <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">
+                {notice}
+              </span>
+            )}
+            <button onClick={() => setShowInvite(true)} className="bz-btn-lime">
+              <Plus size={14} strokeWidth={2} /> {isTr ? 'Üye davet et' : 'Invite member'}
+            </button>
+          </>
+        }
+      />
 
       {loading ? (
         <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20 text-[#737373]">
