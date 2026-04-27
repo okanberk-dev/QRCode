@@ -5,6 +5,7 @@ import { CreditCard, Download, FileText, Loader2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
+import { PageHeader } from '@/components/ui';
 
 interface BillingSummary {
   plan: string;
@@ -57,13 +58,16 @@ function AdminBillingBody() {
   const usedPct = summary ? Math.min(100, Math.round((summary.quota.used / Math.max(1, summary.quota.limit)) * 100)) : 0;
 
   return (
-    <div className="space-y-4">
-      <header>
-        <p className="pulse-eyebrow text-[#737373]">{isTr ? 'PANEL / FATURALANDIRMA' : 'PANEL / BILLING'}</p>
-        <h1 className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
-          {isTr ? 'Plan & faturalar' : 'Plan & invoices'}
-        </h1>
-      </header>
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <PageHeader
+        eyebrow={isTr ? 'FATURALANDIRMA' : 'BILLING'}
+        title={isTr ? 'Plan & faturalar' : 'Plan & invoices'}
+        description={
+          isTr
+            ? 'Mevcut planını yönet, fatura geçmişini indir ve aylık kullanım metriklerini takip et.'
+            : 'Manage your plan, download invoice history, and track monthly usage metrics.'
+        }
+      />
 
       {loading ? (
         <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20 text-[#737373]">

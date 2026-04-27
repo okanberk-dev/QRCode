@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, Plus, QrCode, Sparkles } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
+import { PageHeader } from '@/components/ui';
 
 interface Campaign {
   id: string;
@@ -89,26 +90,29 @@ function AdminCampaignsBody() {
   };
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">{isTr ? 'PANEL / KAMPANYALAR' : 'PANEL / CAMPAIGNS'}</p>
-          <h1 className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
-            {isTr ? 'QR kampanyaları' : 'QR campaigns'}
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          {notice && <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">{notice}</span>}
-          <button
-            onClick={onCreate}
-            disabled={creating}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-50"
-          >
-            {creating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-            {isTr ? 'Yeni kampanya' : 'New campaign'}
-          </button>
-        </div>
-      </header>
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <PageHeader
+        eyebrow={isTr ? 'KAMPANYALAR' : 'CAMPAIGNS'}
+        title={isTr ? 'QR kampanyaları' : 'QR campaigns'}
+        description={
+          isTr
+            ? 'Belirli platformlara veya masa setlerine yönelik QR kampanyaları oluştur ve etkileşimi izle.'
+            : 'Create QR campaigns targeting specific platforms or table sets and track engagement.'
+        }
+        actions={
+          <>
+            {notice && (
+              <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">
+                {notice}
+              </span>
+            )}
+            <button onClick={onCreate} disabled={creating} className="bz-btn-lime">
+              {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} strokeWidth={2} />}
+              {isTr ? 'Yeni kampanya' : 'New campaign'}
+            </button>
+          </>
+        }
+      />
 
       {loading ? (
         <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20 text-[#737373]">
