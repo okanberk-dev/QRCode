@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Store, Loader2, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, ArrowRight, Crown, Link2 } from 'lucide-react';
+import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, EmptyState, Modal, PageHeader, type TabItem, Tabs } from '@/components/ui';
+import { AlertBanner, Avatar, Badge, type BadgeKind, EmptyState, Modal, PageHeader, type TabItem, Tabs } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -17,8 +16,27 @@ interface Restaurant {
   menuEnabled: boolean;
   menuPublished: boolean;
   createdAt: string;
+  city?: string | null;
+  kvkkText?: string | null;
+  avgRating?: number | null;
   user: { id: string; email: string; name: string | null; plan: string; isActive: boolean } | null;
   _count: { feedbacks: number; menuItems: number; qrGenerations?: number; adminUsers?: number };
+}
+
+const PLAN_BADGE: Record<string, { label: string; kind: BadgeKind }> = {
+  trial: { label: 'Trial', kind: 'warn' },
+  monthly: { label: 'Aylık', kind: 'info' },
+  yearly: { label: 'Yıllık', kind: 'ok' },
+  pro: { label: 'Pro', kind: 'lime' },
+  growth: { label: 'Growth', kind: 'info' },
+  starter: { label: 'Starter', kind: 'ghost' },
+  free: { label: 'Ücretsiz', kind: 'ghost' },
+};
+
+function planBadge(plan: string | undefined | null) {
+  if (!plan) return PLAN_BADGE.trial;
+  const lower = plan.toLowerCase();
+  return PLAN_BADGE[lower] || { label: plan, kind: 'ghost' as BadgeKind };
 }
 
 interface Owner {
@@ -33,6 +51,10 @@ function menuStatus(r: Pick<Restaurant, 'menuEnabled' | 'menuPublished'>) {
   if (!r.menuEnabled) return { label: 'Kapalı', dot: 'bg-[#A3A3A3]', text: 'text-[#737373]' };
   if (!r.menuPublished) return { label: 'Taslak', dot: 'bg-[#D97706]', text: 'text-[#92400E]' };
   return { label: 'Yayında', dot: 'bg-[#16A34A]', text: 'text-[#166534]' };
+}
+
+function hasKvkk(r: Restaurant): boolean {
+  return !!(r.kvkkText && r.kvkkText.trim().length > 0);
 }
 
 export default function RestaurantsPage() {
@@ -261,133 +283,10 @@ export default function RestaurantsPage() {
           body={`"${searchTerm}" için işletme bulunamadı. Farklı bir arama terimi deneyin.`}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {filteredRestaurants.map((r) => {
-            const ms = menuStatus(r);
-            return (
-              <div
-                key={r.id}
-                className={`group relative overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#A3A3A3] hover:shadow-lg ${
-                  !r.isActive ? 'opacity-75' : ''
-                }`}
-              >
-                {/* Subtle accent rail (theme color) */}
-                <div className="absolute inset-x-0 top-0 h-[3px]" style={{ backgroundColor: r.primaryColor }} aria-hidden />
-
-                <div className="space-y-5 p-5 sm:p-6">
-                  {/* Header: avatar + name + active toggle */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 flex-1 items-center gap-3">
-                      <div
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-[18px] font-semibold text-white shadow-sm ring-1 ring-black/5"
-                        style={{ backgroundColor: r.primaryColor }}
-                      >
-                        {r.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3
-                          className="truncate text-[17px] font-medium leading-tight tracking-[-0.015em] text-[#0A0A0A]"
-                          title={r.name}
-                        >
-                          {r.name}
-                        </h3>
-                        <div className="mt-0.5 flex items-center gap-1.5">
-                          <span className="truncate font-mono text-[12px] text-[#737373]" style={{ fontFamily: 'var(--font-mono)' }}>
-                            /{r.slug}
-                          </span>
-                          <CopyUrlButton
-                            url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${r.slug}`}
-                            className="h-6 w-6"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => toggleActive(r.id, r.isActive)}
-                      className={`shrink-0 rounded-lg p-1 transition-all hover:bg-[#F5F5F5] active:scale-90 ${
-                        r.isActive ? 'text-[#16A34A]' : 'text-[#A3A3A3]'
-                      }`}
-                      title={r.isActive ? 'Pasifleştir' : 'Aktifleştir'}
-                    >
-                      {r.isActive ? <ToggleRight size={32} strokeWidth={1.75} /> : <ToggleLeft size={32} strokeWidth={1.75} />}
-                    </button>
-                  </div>
-
-                  {/* Stats strip */}
-                  <div className="grid grid-cols-2 gap-3 rounded-2xl bg-[#FAFAFA] p-3 ring-1 ring-[#EDEDED] sm:grid-cols-3 md:grid-cols-4">
-                    <div className="min-w-0">
-                      <p className="pulse-eyebrow text-[#737373]">Kategori</p>
-                      <p className="mt-1 truncate text-[13px] font-medium text-[#0A0A0A]" title={r.category}>
-                        {r.category}
-                      </p>
-                    </div>
-                    <div className="min-w-0 border-x border-[#EDEDED] px-3">
-                      <p className="pulse-eyebrow text-[#737373]">Yorum</p>
-                      <p className="mt-1 text-[15px] font-medium tabular-nums text-[#0A0A0A]" style={{ fontFamily: 'var(--font-mono)' }}>
-                        {r._count.feedbacks}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="pulse-eyebrow text-[#737373]">QR</p>
-                      <p className="mt-1 text-[15px] font-medium tabular-nums text-[#0A0A0A]" style={{ fontFamily: 'var(--font-mono)' }}>
-                        {r._count.qrGenerations ?? 0}
-                      </p>
-                    </div>
-                    <div className="min-w-0 border-l border-[#EDEDED] pl-3">
-                      <p className="pulse-eyebrow text-[#737373]">Menü</p>
-                      <div className="mt-1 flex items-center gap-1.5">
-                        <span className={`inline-flex items-center gap-1 text-[12px] font-medium ${ms.text}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${ms.dot}`} aria-hidden />
-                          {ms.label}
-                        </span>
-                        <span className="text-[12px] text-[#737373]">· {r._count.menuItems}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-[#EDEDED] bg-white p-3">
-                    <p className="pulse-eyebrow text-[#737373]">İşletme Sahibi</p>
-                    <div className="mt-2 flex min-w-0 items-center gap-2">
-                      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${r.user ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'bg-[#F5F5F5] text-[#737373]'}`}>
-                        <Crown size={13} strokeWidth={2} />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] font-medium text-[#0A0A0A]">{r.user?.name || r.user?.email || 'Sahip atanmamış'}</p>
-                        <p className="truncate text-[11px] text-[#737373]">{r.user?.email || 'Detay sayfasından işletme sahibi seçilebilir.'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/admin/restaurants/${r.id}`}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95"
-                    >
-                      Düzenle
-                      <ArrowRight size={13} strokeWidth={2.25} className="transition-transform group-hover:translate-x-0.5" />
-                    </Link>
-                    <Link
-                      href={`/admin/restaurants/${r.id}/menu`}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
-                    >
-                      <UtensilsCrossed size={13} strokeWidth={2.25} />
-                      Menü
-                    </Link>
-                    <Link
-                      href={`/admin/qr?restaurant=${r.id}`}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#525252] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] hover:text-[#0A0A0A] active:scale-90"
-                      title="QR Kod"
-                      aria-label="QR Kod"
-                    >
-                      <Link2 size={14} strokeWidth={2} />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <RestaurantTable
+          rows={filteredRestaurants}
+          onToggle={toggleActive}
+        />
       )}
 
       {/* Create Modal */}
@@ -601,6 +500,175 @@ export default function RestaurantsPage() {
             </form>
         </Modal>
       )}
+    </div>
+  );
+}
+
+interface RestaurantTableProps {
+  rows: Restaurant[];
+  onToggle: (id: string, currentStatus: boolean) => void;
+}
+
+function RestaurantTable({ rows, onToggle }: RestaurantTableProps) {
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  return (
+    <div className="bz-card overflow-hidden">
+      {/* Desktop: bz-table (1:1 design AdminBusinesses) */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="bz-table">
+          <thead>
+            <tr>
+              <th>İşletme</th>
+              <th>Tür</th>
+              <th>Şehir</th>
+              <th>Plan</th>
+              <th>Şube</th>
+              <th>Yorum</th>
+              <th>Puan</th>
+              <th>KVKK</th>
+              <th>Durum</th>
+              <th aria-label="İşlemler" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const plan = planBadge(r.user?.plan);
+              const kvkkOk = hasKvkk(r);
+              return (
+                <tr key={r.id}>
+                  <td>
+                    <div className="flex items-center gap-2.5">
+                      <Avatar name={r.name} size={28} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
+                      <div className="min-w-0">
+                        <div className="font-semibold text-[#0A0A0A] truncate" title={r.name}>{r.name}</div>
+                        <div className="text-[11px] text-[#737373] truncate">{r.user?.name || r.user?.email || 'Sahip atanmamış'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span className="text-[12px] text-[#525252] capitalize">{r.category}</span></td>
+                  <td>{r.city || '—'}</td>
+                  <td><Badge kind={plan.kind}>{plan.label}</Badge></td>
+                  <td className="bz-mono">1</td>
+                  <td className="bz-mono">{r._count.feedbacks}</td>
+                  <td>
+                    {r.avgRating ? (
+                      <span className="inline-flex items-center gap-1 font-semibold">
+                        <Star size={11} className="text-[#C6F24E] fill-[#C6F24E]" />
+                        {r.avgRating.toFixed(1)}
+                      </span>
+                    ) : '—'}
+                  </td>
+                  <td>{kvkkOk ? <Badge kind="ok">Tam</Badge> : <Badge kind="danger">Eksik</Badge>}</td>
+                  <td>
+                    {r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}
+                  </td>
+                  <td>
+                    <div className="relative inline-block">
+                      <button
+                        className="bz-btn-icon"
+                        onClick={() => setOpenMenu(openMenu === r.id ? null : r.id)}
+                        aria-label="İşlemler"
+                        aria-expanded={openMenu === r.id}
+                      >
+                        <MoreHorizontal size={14} strokeWidth={2} />
+                      </button>
+                      {openMenu === r.id && (
+                        <div
+                          className="absolute right-0 top-9 z-20 w-48 rounded-xl border border-[#EDEDED] bg-white shadow-lg"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Link
+                            href={`/admin/restaurants/${r.id}`}
+                            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                            onClick={() => setOpenMenu(null)}
+                          >
+                            Düzenle
+                          </Link>
+                          <Link
+                            href={`/admin/restaurants/${r.id}/menu`}
+                            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                            onClick={() => setOpenMenu(null)}
+                          >
+                            <UtensilsCrossed size={13} strokeWidth={2} />
+                            Menü
+                          </Link>
+                          <Link
+                            href={`/admin/qr?restaurant=${r.id}`}
+                            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                            onClick={() => setOpenMenu(null)}
+                          >
+                            <Link2 size={13} strokeWidth={2} />
+                            QR yönetimi
+                          </Link>
+                          <button
+                            onClick={() => { onToggle(r.id, r.isActive); setOpenMenu(null); }}
+                            className="flex w-full items-center gap-2 border-t border-[#EDEDED] px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                          >
+                            {r.isActive ? <ToggleRight size={13} strokeWidth={2} /> : <ToggleLeft size={13} strokeWidth={2} />}
+                            {r.isActive ? 'Duraklat' : 'Aktifleştir'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile: card list */}
+      <div className="divide-y divide-[#EDEDED] md:hidden">
+        {rows.map((r) => {
+          const plan = planBadge(r.user?.plan);
+          const kvkkOk = hasKvkk(r);
+          return (
+            <article key={r.id} className="p-4 space-y-2.5">
+              <div className="flex items-center gap-3">
+                <Avatar name={r.name} size={32} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-[#0A0A0A] truncate" title={r.name}>{r.name}</div>
+                  <div className="text-[11px] text-[#737373] truncate">{r.user?.name || r.user?.email || 'Sahip atanmamış'}</div>
+                </div>
+                <button
+                  onClick={() => onToggle(r.id, r.isActive)}
+                  className={r.isActive ? 'text-[#16A34A]' : 'text-[#A3A3A3]'}
+                  aria-label={r.isActive ? 'Pasifleştir' : 'Aktifleştir'}
+                >
+                  {r.isActive ? <ToggleRight size={28} strokeWidth={1.75} /> : <ToggleLeft size={28} strokeWidth={1.75} />}
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge kind={plan.kind}>{plan.label}</Badge>
+                {r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}
+                {kvkkOk ? <Badge kind="ok">KVKK</Badge> : <Badge kind="danger">KVKK eksik</Badge>}
+                <Badge kind="ghost">{r.category}</Badge>
+              </div>
+              <div className="flex items-center gap-3 text-[12px] text-[#525252]">
+                <span><span className="text-[#737373]">Yorum:</span> <span className="bz-mono">{r._count.feedbacks}</span></span>
+                <span><span className="text-[#737373]">Şube:</span> <span className="bz-mono">1</span></span>
+                {r.avgRating && (
+                  <span className="inline-flex items-center gap-1">
+                    <Star size={11} className="text-[#C6F24E] fill-[#C6F24E]" />
+                    {r.avgRating.toFixed(1)}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <Link href={`/admin/restaurants/${r.id}`} className="bz-btn-primary flex-1 text-center justify-center">Düzenle</Link>
+                <Link href={`/admin/restaurants/${r.id}/menu`} className="bz-btn-ghost" aria-label="Menü">
+                  <UtensilsCrossed size={14} strokeWidth={2} />
+                </Link>
+                <Link href={`/admin/qr?restaurant=${r.id}`} className="bz-btn-ghost" aria-label="QR">
+                  <Link2 size={14} strokeWidth={2} />
+                </Link>
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </div>
   );
 }
