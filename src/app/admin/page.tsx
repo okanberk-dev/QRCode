@@ -8,6 +8,7 @@ import { getRecaptchaToken } from '@/lib/recaptcha-client';
 import RecaptchaNotice from '@/components/RecaptchaNotice';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import { type Locale, locales, defaultLocale } from '@/lib/translations';
+import { AlertBanner } from '@/components/ui';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -90,8 +91,8 @@ export default function AdminLogin() {
 
             <div className="rounded-[28px] border border-[#EDEDED] bg-white p-6 shadow-[0_24px_70px_-42px_rgba(10,10,10,0.45)] sm:p-8">
               {error && (
-                <div className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-                  {error}
+                <div className="mb-5">
+                  <AlertBanner kind="danger">{error}</AlertBanner>
                 </div>
               )}
 

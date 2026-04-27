@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Loader2, Save, Upload, Image as ImageIcon, Check, AlertCircle, X, Globe, Sparkles } from 'lucide-react';
-import { Badge, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, PageHeader } from '@/components/ui';
 
 type Lang = 'tr' | 'en';
 
@@ -21,7 +21,7 @@ interface SiteSettings {
 
 const CARD = 'bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-8';
 const LABEL = 'block text-[12px] font-semibold text-[#1A1A1A] uppercase tracking-wider mb-2';
-const INPUT = 'w-full px-4 py-3 bg-[#FFFFFF] border border-[#EDEDED] rounded-xl text-[14px] font-medium text-[#0A0A0A] focus:outline-none focus:border-[#C6F24E] focus:bg-white transition-colors';
+const INPUT = 'bz-input';
 const HINT = 'text-[11px] font-medium text-[#6B7280] mt-1';
 
 export default function SiteSettingsPage() {
@@ -107,10 +107,9 @@ export default function SiteSettingsPage() {
   if (!settings) {
     return (
       <div className="p-8">
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-6 font-bold flex items-center gap-3">
-          <AlertCircle size={20} />
+        <AlertBanner kind="danger" icon={<AlertCircle size={14} strokeWidth={2} className="mt-0.5" />}>
           {error || 'Ayarlar yüklenemedi.'}
-        </div>
+        </AlertBanner>
       </div>
     );
   }
@@ -131,16 +130,14 @@ export default function SiteSettingsPage() {
 
       {/* ─── Notifications ─── */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-4 font-bold text-[14px] flex items-center gap-3">
-          <AlertCircle size={18} />
+        <AlertBanner kind="danger" icon={<AlertCircle size={14} strokeWidth={2} className="mt-0.5" />}>
           {error}
-        </div>
+        </AlertBanner>
       )}
       {success && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl p-4 font-bold text-[14px] flex items-center gap-3">
-          <Check size={18} />
+        <AlertBanner kind="success" icon={<Check size={14} strokeWidth={2} className="mt-0.5" />}>
           {success}
-        </div>
+        </AlertBanner>
       )}
 
       {/* ─── Kart 1: SEO Metadata ─── */}
