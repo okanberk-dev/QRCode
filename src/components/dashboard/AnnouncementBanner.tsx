@@ -21,25 +21,39 @@ interface Props {
   locale: Locale;
 }
 
-const SEVERITY_STYLES: Record<DashboardAnnouncement['severity'], { wrap: string; accent: string; icon: typeof Info }> = {
+// Palette aligned with AlertBanner primitive (src/components/ui/AlertBanner.tsx
+// KIND_PALETTE) so dashboard-top announcements share the same visual language
+// as inline alerts elsewhere in the panel.
+const SEVERITY_STYLES: Record<
+  DashboardAnnouncement['severity'],
+  { bg: string; border: string; text: string; accent: string; icon: typeof Info }
+> = {
   info: {
-    wrap: 'bg-slate-50 border-slate-200 text-slate-900',
-    accent: 'bg-slate-500/10 text-slate-700',
+    bg: '#EFF6FF',
+    border: '#BFDBFE',
+    text: '#1E40AF',
+    accent: 'rgba(37, 99, 235, 0.12)',
     icon: Info,
   },
   success: {
-    wrap: 'bg-emerald-50 border-emerald-200 text-emerald-950',
-    accent: 'bg-emerald-500/10 text-emerald-700',
+    bg: '#F0FDF4',
+    border: '#BBF7D0',
+    text: '#166534',
+    accent: 'rgba(22, 163, 74, 0.12)',
     icon: CheckCircle2,
   },
   warning: {
-    wrap: 'bg-amber-50 border-amber-200 text-amber-950',
-    accent: 'bg-amber-500/15 text-amber-800',
+    bg: '#FFFBEB',
+    border: '#FDE68A',
+    text: '#92400E',
+    accent: 'rgba(217, 119, 6, 0.15)',
     icon: AlertTriangle,
   },
   critical: {
-    wrap: 'bg-red-50 border-red-200 text-red-950',
-    accent: 'bg-red-500/10 text-red-700',
+    bg: '#FEF2F2',
+    border: '#FECACA',
+    text: '#991B1B',
+    accent: 'rgba(220, 38, 38, 0.12)',
     icon: AlertOctagon,
   },
 };
@@ -107,20 +121,26 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
     return (
       <div
         key={a.id}
-        className={`relative flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 border rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 ${style.wrap} ${compact ? '' : 'shadow-sm'}`}
+        className={`relative flex flex-col gap-3 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-3.5 ${
+          compact ? '' : 'shadow-sm'
+        }`}
+        style={{ background: style.bg, borderColor: style.border, color: style.text }}
         role={a.severity === 'critical' ? 'alert' : 'status'}
       >
-        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${style.accent}`}>
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+          style={{ background: style.accent, color: style.text }}
+        >
           <Icon size={18} strokeWidth={2} />
         </div>
         <div className="min-w-0 flex-1">
           <p
-            className="text-[14px] font-semibold tracking-[-0.01em] leading-tight"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="bz-h-tight text-[14px] leading-tight"
+            style={{ color: style.text }}
           >
             {a.title}
           </p>
-          <p className="text-[13px] leading-snug opacity-80 mt-0.5">{a.message}</p>
+          <p className="mt-0.5 text-[13px] leading-snug opacity-80">{a.message}</p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-center">
           {a.ctaText && a.ctaLink && (
@@ -128,7 +148,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
               href={a.ctaLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2 rounded-full bg-[#0A0A0A] text-white text-[12px] font-medium hover:bg-[#1A1A1A] transition-colors whitespace-nowrap"
+              className="bz-btn-primary whitespace-nowrap px-4 py-2 text-[12px]"
             >
               {a.ctaText}
             </a>
@@ -138,7 +158,8 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
               type="button"
               onClick={() => dismiss(a)}
               aria-label={copy.dismiss}
-              className="h-8 w-8 rounded-xl text-current/70 hover:bg-black/5 flex items-center justify-center transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
+              style={{ color: style.text }}
             >
               <X size={16} strokeWidth={2} />
             </button>
