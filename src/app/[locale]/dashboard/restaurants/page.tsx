@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store, X } from 'lucide-react';
+import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, ErrorState, PageHeader } from '@/components/ui';
+import { AlertBanner, ErrorState, Modal, PageHeader } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -370,28 +370,12 @@ export default function DashboardRestaurantsPage() {
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-          <div className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_20px_60px_rgba(10,10,10,0.2)] sm:rounded-2xl sm:pb-0">
-            <div className="relative border-b border-[#EDEDED] p-5 sm:p-6 md:p-7">
-              <h2
-                className="text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] pr-10 bz-h-tight"
-              >
-                {copy.add}
-              </h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setCreateError('');
-                }}
-                className="absolute right-5 top-5 rounded-lg p-2 text-[#525252] transition-all hover:bg-[#FAFAFA]"
-                aria-label="close"
-              >
-                <X size={18} strokeWidth={2} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreate} className="space-y-5 overflow-y-auto p-5 sm:p-6 md:p-7">
+        <Modal
+          size={680}
+          onClose={() => { setShowCreateModal(false); setCreateError(''); }}
+          title={copy.add}
+        >
+            <form onSubmit={handleCreate} className="space-y-5">
               {createError && (
                 <AlertBanner kind="danger" onDismiss={() => setCreateError('')}>
                   {createError}
@@ -590,8 +574,7 @@ export default function DashboardRestaurantsPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
