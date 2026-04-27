@@ -4,13 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft, ArrowDown, ArrowUp, BarChart3, Eye, Info, Loader2, Lightbulb,
-  MousePointerClick, RefreshCw, Sparkles, TrendingDown, TrendingUp, UtensilsCrossed, X,
+  ArrowLeft, BarChart3, Eye, Info, Loader2, Lightbulb,
+  MousePointerClick, RefreshCw, Sparkles, TrendingDown, TrendingUp, X,
 } from 'lucide-react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar,
 } from 'recharts';
-import { formatPrice } from '@/lib/format';
 import { formatPct } from '@/lib/analytics-heuristics';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner } from '@/components/ui';
@@ -72,6 +71,71 @@ interface AnalyticsResponse {
   categories: { id: string; name: string }[];
 }
 
+function buildCopy(isTr: boolean) {
+  return {
+    back: isTr ? 'Menü Düzenleyici' : 'Menu Editor',
+    title: isTr ? 'Menü Analitiği' : 'Menu Analytics',
+    subtitle: isTr
+      ? 'En ilgi çeken ürünleri, kategori performansını ve menü iyileştirme fırsatlarını takip edin.'
+      : 'Track your most engaging products, category performance, and menu improvement opportunities.',
+    range7: isTr ? 'Son 7 gün' : 'Last 7 days',
+    range30: isTr ? 'Son 30 gün' : 'Last 30 days',
+    range90: isTr ? 'Son 90 gün' : 'Last 90 days',
+    rangeAll: isTr ? 'Tüm zamanlar' : 'All time',
+    allCategories: isTr ? 'Tüm kategoriler' : 'All categories',
+    allSources: isTr ? 'Tüm kaynaklar' : 'All sources',
+    refresh: isTr ? 'Yenile' : 'Refresh',
+    resetFilters: isTr ? 'Filtreleri temizle' : 'Reset filters',
+    allTimeTrendNote: isTr
+      ? 'Zaman içi grafik "Son 7/30/90 gün" seçildiğinde görüntülenir.'
+      : 'Trend chart appears when a 7/30/90-day range is selected.',
+    kpiMenuViews: isTr ? 'Menü Görüntülenme' : 'Menu Views',
+    kpiProductViews: isTr ? 'Ürün Görüntülenme' : 'Product Views',
+    kpiCategoryClicks: isTr ? 'Kategori Tıklamaları' : 'Category Interactions',
+    kpiClickRate: isTr ? 'Ürün Tıklama Oranı' : 'Product Click Rate',
+    previousPeriod: isTr ? 'önceki döneme göre' : 'vs previous period',
+    topProducts: isTr ? 'En Çok Görüntülenen Ürünler' : 'Top Viewed Products',
+    topProductsEmpty: isTr ? 'Henüz yeterli veri yok.' : 'Not enough data yet.',
+    topCategories: isTr ? 'En Çok Tıklanan Kategoriler' : 'Top Clicked Categories',
+    lowInterest: isTr ? 'Düşük İlgili Ürünler' : 'Low Interest Products',
+    lowInterestSub: isTr
+      ? 'Görüntülenmesi yüksek ama tıklama oranı düşük ürünler — görsel veya açıklamayı gözden geçirmeyi değerlendirin.'
+      : 'Products with solid exposure but weak engagement — consider improving photos or descriptions.',
+    upsell: isTr ? 'Upsell Fırsatları' : 'Upsell Opportunities',
+    upsellSub: isTr
+      ? 'Kurallı analizlerle menü düzenini ve sunumu iyileştirme önerileri.'
+      : 'Rule-based suggestions to improve menu flow and presentation.',
+    trends: isTr ? 'Zaman İçinde Menü Performansı' : 'Menu Performance Over Time',
+    columns: {
+      rank: '#',
+      product: isTr ? 'Ürün' : 'Product',
+      category: isTr ? 'Kategori' : 'Category',
+      views: isTr ? 'Görüntülenme' : 'Views',
+      clicks: isTr ? 'Tıklama' : 'Clicks',
+      ctr: isTr ? 'TO' : 'CTR',
+      share: isTr ? 'Pay' : 'Share',
+      status: isTr ? 'Durum' : 'Status',
+    },
+    emptyHeadline: isTr ? 'Henüz yeterli veri yok' : 'Not enough data yet',
+    emptyBody: isTr
+      ? 'Müşterileriniz menüyle etkileşim kurdukça içgörüler burada belirmeye başlayacak.'
+      : 'As customers interact with your menu, insights will appear here.',
+    statusLabels: {
+      low_interest: isTr ? 'Düşük İlgi' : 'Low Interest',
+      needs_review: isTr ? 'Gözden Geçir' : 'Needs Review',
+      check_description: isTr ? 'Açıklama/Görsel' : 'Check Description',
+    } as Record<LowInterestRow['status'], string>,
+    sourceLabels: {
+      qr: 'QR',
+      direct: isTr ? 'Doğrudan' : 'Direct',
+      table: isTr ? 'Masa' : 'Table',
+      link: isTr ? 'Bağlantı' : 'Link',
+      delivery: isTr ? 'Teslimat' : 'Delivery',
+    } as Record<string, string>,
+  };
+}
+type Copy = ReturnType<typeof buildCopy>;
+
 export default function MenuAnalyticsPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -85,62 +149,7 @@ export default function MenuAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const copy = useMemo(
-    () => ({
-      back: isTr ? 'Menü Düzenleyici' : 'Menu Editor',
-      title: isTr ? 'Menü Analitiği' : 'Menu Analytics',
-      subtitle: isTr
-        ? 'En ilgi çeken ürünleri, kategori performansını ve menü iyileştirme fırsatlarını takip edin.'
-        : 'Track your most engaging products, category performance, and menu improvement opportunities.',
-      range7: isTr ? 'Son 7 gün' : 'Last 7 days',
-      range30: isTr ? 'Son 30 gün' : 'Last 30 days',
-      range90: isTr ? 'Son 90 gün' : 'Last 90 days',
-      rangeAll: isTr ? 'Tüm zamanlar' : 'All time',
-      allCategories: isTr ? 'Tüm kategoriler' : 'All categories',
-      allSources: isTr ? 'Tüm kaynaklar' : 'All sources',
-      refresh: isTr ? 'Yenile' : 'Refresh',
-      resetFilters: isTr ? 'Filtreleri temizle' : 'Reset filters',
-      allTimeTrendNote: isTr
-        ? 'Zaman içi grafik "Son 7/30/90 gün" seçildiğinde görüntülenir.'
-        : 'Trend chart appears when a 7/30/90-day range is selected.',
-      kpiMenuViews: isTr ? 'Menü Görüntülenme' : 'Menu Views',
-      kpiProductViews: isTr ? 'Ürün Görüntülenme' : 'Product Views',
-      kpiCategoryClicks: isTr ? 'Kategori Tıklamaları' : 'Category Interactions',
-      kpiClickRate: isTr ? 'Ürün Tıklama Oranı' : 'Product Click Rate',
-      previousPeriod: isTr ? 'önceki döneme göre' : 'vs previous period',
-      topProducts: isTr ? 'En Çok Görüntülenen Ürünler' : 'Top Viewed Products',
-      topProductsEmpty: isTr ? 'Henüz yeterli veri yok.' : 'Not enough data yet.',
-      topCategories: isTr ? 'En Çok Tıklanan Kategoriler' : 'Top Clicked Categories',
-      lowInterest: isTr ? 'Düşük İlgili Ürünler' : 'Low Interest Products',
-      lowInterestSub: isTr
-        ? 'Görüntülenmesi yüksek ama tıklama oranı düşük ürünler — görsel veya açıklamayı gözden geçirmeyi değerlendirin.'
-        : 'Products with solid exposure but weak engagement — consider improving photos or descriptions.',
-      upsell: isTr ? 'Upsell Fırsatları' : 'Upsell Opportunities',
-      upsellSub: isTr
-        ? 'Kurallı analizlerle menü düzenini ve sunumu iyileştirme önerileri.'
-        : 'Rule-based suggestions to improve menu flow and presentation.',
-      trends: isTr ? 'Zaman İçinde Menü Performansı' : 'Menu Performance Over Time',
-      columns: {
-        rank: '#', product: isTr ? 'Ürün' : 'Product', category: isTr ? 'Kategori' : 'Category',
-        views: isTr ? 'Görüntülenme' : 'Views', clicks: isTr ? 'Tıklama' : 'Clicks',
-        ctr: isTr ? 'TO' : 'CTR', share: isTr ? 'Pay' : 'Share', status: isTr ? 'Durum' : 'Status',
-      },
-      emptyHeadline: isTr ? 'Henüz yeterli veri yok' : 'Not enough data yet',
-      emptyBody: isTr
-        ? 'Müşterileriniz menüyle etkileşim kurdukça içgörüler burada belirmeye başlayacak.'
-        : 'As customers interact with your menu, insights will appear here.',
-      statusLabels: {
-        low_interest: isTr ? 'Düşük İlgi' : 'Low Interest',
-        needs_review: isTr ? 'Gözden Geçir' : 'Needs Review',
-        check_description: isTr ? 'Açıklama/Görsel' : 'Check Description',
-      } as Record<LowInterestRow['status'], string>,
-      sourceLabels: {
-        qr: 'QR', direct: isTr ? 'Doğrudan' : 'Direct', table: isTr ? 'Masa' : 'Table',
-        link: isTr ? 'Bağlantı' : 'Link', delivery: isTr ? 'Teslimat' : 'Delivery',
-      } as Record<string, string>,
-    }),
-    [isTr],
-  );
+  const copy = useMemo(() => buildCopy(isTr), [isTr]);
 
   const fetchAnalytics = useCallback(async () => {
     if (!id) return;
@@ -316,7 +325,7 @@ export default function MenuAnalyticsPage() {
 
 // ──────────────────────────────────────────────────────────────────────────
 
-function OverviewCards({ overview, copy }: { overview: AnalyticsResponse['overview']; copy: any }) {
+function OverviewCards({ overview, copy }: { overview: AnalyticsResponse['overview']; copy: Copy }) {
   const cards = [
     { label: copy.kpiMenuViews, value: overview.totalMenuViews, delta: overview.compare?.menuViews, icon: Eye, fmt: fmtNum },
     { label: copy.kpiProductViews, value: overview.totalProductViews, delta: overview.compare?.productViews, icon: Eye, fmt: fmtNum },
@@ -349,7 +358,7 @@ function OverviewCards({ overview, copy }: { overview: AnalyticsResponse['overvi
   );
 }
 
-function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; copy: any; isTr: boolean }) {
+function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; copy: Copy; isTr: boolean }) {
   const dateFmt = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { month: 'short', day: 'numeric' });
@@ -391,7 +400,7 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
   );
 }
 
-function TopProductsTable({ rows, copy, isTr }: { rows: ProductRow[]; copy: any; isTr: boolean }) {
+function TopProductsTable({ rows, copy }: { rows: ProductRow[]; copy: Copy; isTr: boolean }) {
   return (
     <div className="bz-card p-5 shadow-sm sm:p-6">
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.topProducts}</h2>
@@ -429,7 +438,7 @@ function TopProductsTable({ rows, copy, isTr }: { rows: ProductRow[]; copy: any;
   );
 }
 
-function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) {
+function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: Copy }) {
   // Truncate long category names so the YAxis label column doesn't push the
   // bars off the right edge on narrow screens.
   const truncate = (name: string) => (name.length > 14 ? `${name.slice(0, 13)}…` : name);
@@ -463,7 +472,7 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) 
   );
 }
 
-function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any }) {
+function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: Copy }) {
   return (
     <div className="bz-card p-5 shadow-sm sm:p-6">
       <div className="mb-4">
@@ -508,7 +517,7 @@ function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any })
   );
 }
 
-function UpsellInsights({ insights, copy }: { insights: Insight[]; copy: any }) {
+function UpsellInsights({ insights, copy }: { insights: Insight[]; copy: Copy }) {
   return (
     <div className="bz-card p-5 shadow-sm sm:p-6">
       <div className="mb-4">

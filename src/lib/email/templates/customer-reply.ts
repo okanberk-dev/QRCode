@@ -88,7 +88,6 @@ export async function renderCustomerReply(
     ownerName: ownerName,
   };
   const copy = deepSubstitute(merged, vars, 'html');
-  const copyText = deepSubstitute(merged, vars, 'text');
 
   const message = escapeHtml(params.message).replace(/\n\s*\n/g, '</p><p style="font-family:' + FONTS.body + ';font-size:15px;line-height:1.7;color:' + PULSE.n700 + ';margin:14px 0 0;letter-spacing:-0.005em;">').replace(/\n/g, '<br>');
 

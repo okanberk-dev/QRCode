@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileNav from '@/components/admin/AdminMobileNav';
@@ -49,14 +48,14 @@ export default async function AdminLayout({
   const adminLocale = (cookieStore.get('ADMIN_LOCALE')?.value === 'en' ? 'en' : 'tr') as 'tr' | 'en';
 
   let isAuthenticated = false;
-  let payload: any = null;
+  let payload: Awaited<ReturnType<typeof verifyJwt>> = null;
 
   try {
     if (token) {
       payload = await verifyJwt(token);
       isAuthenticated = !!payload && isAdminRole(payload.role);
     }
-  } catch (e) {
+  } catch {
     isAuthenticated = false;
   }
 
@@ -78,7 +77,7 @@ export default async function AdminLayout({
   const announcements = showSidebar ? await fetchActiveAnnouncements(adminLocale) : [];
 
   return (
-    <AdminTranslationProvider initialLocale={adminLocale as any}>
+    <AdminTranslationProvider initialLocale={adminLocale}>
       <div className="flex flex-col lg:flex-row min-h-[100dvh] lg:h-screen bg-[#FFFFFF] lg:overflow-hidden font-sans selection:bg-[#C6F24E]/30 relative">
         {showSidebar && (
           <a href="#panel-main-content" className="bz-skip-link">

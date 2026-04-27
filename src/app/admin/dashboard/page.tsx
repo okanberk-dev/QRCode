@@ -52,22 +52,38 @@ export default async function AdminDashboardPage() {
   if (!payload || !isAdminRole(payload.role as string | undefined)) redirect('/admin');
 
   const now = new Date();
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
   const twelveWeeksAgo = new Date(now.getTime() - 12 * 7 * 24 * 60 * 60 * 1000);
 
   // Aggregate queries — kept narrow so the dashboard stays a strategic
   // overview (review-monitoring lives on /admin/reviews).
   const [
     totalBusinesses,
+    newBusinesses24h,
     monthlyReviews,
+    previousMonthReviews,
     owners,
+    ownersThirtyDaysAgo,
     restaurantsForGrowth,
   ] = await Promise.all([
     prisma.restaurant.count(),
+    prisma.restaurant.count({ where: { createdAt: { gte: oneDayAgo } } }),
     prisma.feedback.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+    prisma.feedback.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
     prisma.user.findMany({
       where: { role: 'restaurant_owner' },
       select: { plan: true, trialEndsAt: true, isActive: true },
+    }),
+    // 30-day-old MRR snapshot proxy: paying owners (non-trial/free) who
+    // existed before the 30d window. We don't track plan-switch history, so
+    // this is approximate — assumes today's plan reflects past 30d state for
+    // these owners. Good enough for a directional trend; detailed MRR
+    // accounting will land with Iyzico billing.
+    prisma.user.findMany({
+      where: { role: 'restaurant_owner', createdAt: { lt: thirtyDaysAgo } },
+      select: { plan: true },
     }),
     prisma.restaurant.findMany({
       where: { createdAt: { gte: twelveWeeksAgo } },
@@ -75,18 +91,33 @@ export default async function AdminDashboardPage() {
     }),
   ]);
 
+  // Trend computations — mirrors design StatCard delta pattern (+X%, +N(24s))
+  const reviewsDeltaPct = previousMonthReviews > 0
+    ? Math.round(((monthlyReviews - previousMonthReviews) / previousMonthReviews) * 1000) / 10
+    : monthlyReviews > 0 ? 100 : 0;
+  const reviewsDeltaKind: 'up' | 'down' | 'neutral' =
+    reviewsDeltaPct > 0 ? 'up' : reviewsDeltaPct < 0 ? 'down' : 'neutral';
+
   const activeTrials = owners.filter(
     (o) => o.plan === 'trial' && o.trialEndsAt && o.trialEndsAt > now,
   ).length;
 
   // Estimated MRR — sum of plan prices for non-trial owners.
   // Iyzico bağlantısı geldiğinde gerçek invoice toplamı kullanılır.
-  const mrr = owners.reduce((acc, o) => {
-    const plan = (o.plan || 'trial').toLowerCase();
-    if (plan === 'trial' || plan === 'free') return acc;
-    const matched = Object.keys(PLAN_PRICES).find((k) => plan.includes(k));
-    return acc + (matched ? PLAN_PRICES[matched] : 0);
-  }, 0);
+  const computeMrr = (rows: { plan: string | null }[]) =>
+    rows.reduce((acc, o) => {
+      const plan = (o.plan || 'trial').toLowerCase();
+      if (plan === 'trial' || plan === 'free') return acc;
+      const matched = Object.keys(PLAN_PRICES).find((k) => plan.includes(k));
+      return acc + (matched ? PLAN_PRICES[matched] : 0);
+    }, 0);
+  const mrr = computeMrr(owners);
+  const mrrThirtyDaysAgo = computeMrr(ownersThirtyDaysAgo);
+  const mrrDeltaPct = mrrThirtyDaysAgo > 0
+    ? Math.round(((mrr - mrrThirtyDaysAgo) / mrrThirtyDaysAgo) * 1000) / 10
+    : mrr > 0 ? 100 : 0;
+  const mrrDeltaKind: 'up' | 'down' | 'neutral' =
+    mrrDeltaPct > 0 ? 'up' : mrrDeltaPct < 0 ? 'down' : 'neutral';
 
   // Plan distribution — 4 buckets per design AdminDashboard.
   const totalOwners = owners.length;
@@ -122,35 +153,71 @@ export default async function AdminDashboardPage() {
         description="Buaze platformunun strateji panosu. Operasyonel günlük yorum izleme için Yorumlar sekmesine geç."
       />
 
+      {/* Mobile-only "SİSTEM NABZI" hero (Pulse 2026-04 mobile-screens-2.jsx
+          MAdminHome line 419-435 1:1). Desktop'ta KPI grid + business growth +
+          plan distribution daha zengin görünüm sağlar. */}
+      <section className="md:hidden rounded-[20px] bg-[#0A0A0A] p-[18px] text-white">
+        <span className="pulse-eyebrow text-[#C6F24E]">SİSTEM NABZI</span>
+        <div className="bz-h-tight-2 mt-2" style={{ fontSize: 32 }}>
+          ₺{mrr.toLocaleString('tr-TR')}
+        </div>
+        <div className="text-[12px] text-white/60">
+          Aylık tekrarlayan gelir
+          {mrrThirtyDaysAgo > 0 && (
+            <>
+              {' · '}
+              <span className={mrrDeltaKind === 'up' ? 'text-[#C6F24E]' : mrrDeltaKind === 'down' ? 'text-[#FB7185]' : ''}>
+                {mrrDeltaPct >= 0 ? '+' : ''}
+                {mrrDeltaPct}%
+              </span>
+            </>
+          )}
+        </div>
+        <div className="mt-3.5 grid grid-cols-2 gap-2.5">
+          <div className="rounded-[10px] bg-white/[0.04] p-3">
+            <div className="pulse-eyebrow text-[8px] text-white/45">İŞLETME</div>
+            <div className="bz-h-tight mt-1 text-[18px]">{totalBusinesses}</div>
+          </div>
+          <div className="rounded-[10px] bg-white/[0.04] p-3">
+            <div className="pulse-eyebrow text-[8px] text-white/45">AKTİF DENEMELER</div>
+            <div className="bz-h-tight mt-1 text-[18px]">{activeTrials}</div>
+          </div>
+        </div>
+      </section>
+
       {/* 4-stat KPI grid (1:1 design AdminDashboard) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <StatCard
           label="Toplam işletme"
           value={totalBusinesses}
-          delta={`${totalOwners} sahip`}
-          deltaKind="neutral"
+          delta={`+${newBusinesses24h}`}
+          deltaKind={newBusinesses24h > 0 ? 'up' : 'neutral'}
+          deltaSuffix="(24s)"
           icon={<Store size={14} strokeWidth={2} />}
         />
         <StatCard
           label="Aylık MRR"
           value={`₺${mrr.toLocaleString('tr-TR')}`}
-          delta="Iyzico bağlantısı bekleniyor"
-          deltaKind="neutral"
+          delta={mrrThirtyDaysAgo > 0 ? `${mrrDeltaPct >= 0 ? '+' : ''}${mrrDeltaPct}%` : 'Yeni'}
+          deltaKind={mrrDeltaKind}
+          deltaSuffix="son 30 gün"
           icon={<CreditCard size={14} strokeWidth={2} />}
           accent="#C6F24E"
         />
         <StatCard
           label="Aktif denemeler"
           value={activeTrials}
-          delta="14 gün ort."
+          delta="14 gün"
           deltaKind="neutral"
+          deltaSuffix="ortalama"
           icon={<Crown size={14} strokeWidth={2} />}
         />
         <StatCard
           label="Aylık yorum"
           value={monthlyReviews.toLocaleString('tr-TR')}
-          delta="Son 30 gün"
-          deltaKind="neutral"
+          delta={`${reviewsDeltaPct >= 0 ? '+' : ''}${reviewsDeltaPct}%`}
+          deltaKind={reviewsDeltaKind}
+          deltaSuffix="son 30 gün"
           icon={<MessageSquare size={14} strokeWidth={2} />}
         />
       </div>

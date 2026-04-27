@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Check, Copy, Download, LayoutGrid, List as ListIcon, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
+import { Check, Copy, Download, LayoutGrid, List as ListIcon, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, AlertCircle } from 'lucide-react';
 import { AlertBanner, PageHeader } from '@/components/ui';
 import { copyToClipboard } from '@/lib/clipboard';
 import PlatformLogo, { type PlatformId } from '@/components/marketing/PlatformLogo';
@@ -49,7 +49,6 @@ export default function DashboardQrPage() {
   const [qrSvg, setQrSvg] = useState('');
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [qrError, setQrError] = useState('');
@@ -310,13 +309,6 @@ export default function DashboardQrPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     }
-  };
-
-  const copyHistoryItem = (item: QrHistoryItem) => {
-    if (!item.qrUrl) return;
-    copyToClipboard(item.qrUrl);
-    setCopiedId(item.id);
-    setTimeout(() => setCopiedId(null), 1800);
   };
 
   if (loading) {
@@ -632,7 +624,126 @@ export default function DashboardQrPage() {
             </button>
           </div>
 
-          <div className="bz-card p-5 sm:p-7">
+          {/* Mobile-only — design's MOwnerQR aggregate stats card (1:1).
+              Renders above the history list on mobile only; desktop uses the
+              existing card chrome below. */}
+          {history.length > 0 && (
+            <div
+              className="bz-card md:hidden grid grid-cols-3 gap-2.5 p-4"
+              aria-label={locale === 'tr' ? 'QR özet' : 'QR summary'}
+            >
+              {[
+                {
+                  l: locale === 'tr' ? 'Toplam' : 'Total',
+                  v: history.length.toString(),
+                },
+                {
+                  l: locale === 'tr' ? 'Bu hafta' : 'This week',
+                  v: history.filter((item) => {
+                    const days = (Date.now() - new Date(item.createdAt).getTime()) / 86400000;
+                    return days <= 7;
+                  }).length.toString(),
+                },
+                {
+                  l: locale === 'tr' ? 'Aktif' : 'Active',
+                  v: history.length.toString(),
+                },
+              ].map((s, i) => (
+                <div
+                  key={i}
+                  className={i ? 'pl-3 border-l border-[#EDEDED]' : ''}
+                >
+                  <div className="pulse-eyebrow text-[#737373]" style={{ fontSize: 9 }}>
+                    {s.l}
+                  </div>
+                  <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
+                    {s.v}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Mobile-only — design's MOwnerQR compact horizontal card list (1:1).
+              md+ uses the existing grid/list toggle below. */}
+          {history.length > 0 && (
+            <div className="md:hidden flex flex-col gap-2.5">
+              {history.map((item) => {
+                const platformMeta = item.platform ? PLATFORM_BADGE[item.platform] : null;
+                return (
+                  <div
+                    key={`m-${item.id}`}
+                    className="bz-card p-3.5 flex items-center gap-3"
+                  >
+                    {/* QR thumbnail — 64x64 white card with mini SVG */}
+                    <div
+                      className="shrink-0 flex items-center justify-center bg-white border border-[#EDEDED]"
+                      style={{ width: 64, height: 64, borderRadius: 10 }}
+                    >
+                      {qrSvg ? (
+                        <div
+                          className="h-[52px] w-[52px] [&>svg]:h-full [&>svg]:w-full"
+                          dangerouslySetInnerHTML={{ __html: qrSvg }}
+                        />
+                      ) : (
+                        <QrCode size={28} className="text-[#A3A3A3]" strokeWidth={1.5} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="bz-h-tight truncate" style={{ fontSize: 13 }}>
+                        {item.tableNumber
+                          ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}`
+                          : (locale === 'tr' ? 'Genel QR' : 'General QR')}
+                      </div>
+                      <div className="text-[10.5px] text-[#737373] mt-0.5 truncate">
+                        {selectedRestaurant?.name || ''}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        {platformMeta ? (
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-semibold text-white ${platformMeta.bg}`}
+                            style={{ letterSpacing: '0.04em' }}
+                          >
+                            {platformMeta.label}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-[#A3A3A3]">
+                            {locale === 'tr' ? 'Genel' : 'Default'}
+                          </span>
+                        )}
+                        <span
+                          className="text-[10.5px] text-[#525252] bz-mono"
+                          style={{ fontWeight: 600 }}
+                        >
+                          {new Date(item.createdAt).toLocaleDateString(
+                            locale === 'tr' ? 'tr-TR' : 'en-US',
+                            { day: '2-digit', month: 'short' },
+                          )}
+                        </span>
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ background: '#16A34A' }}
+                          aria-label={locale === 'tr' ? 'Aktif' : 'Active'}
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(item.qrUrl)}
+                      className="bz-btn-icon shrink-0"
+                      aria-label={copy.copy}
+                      title={copy.copy}
+                      style={{ width: 32, height: 32 }}
+                    >
+                      <Copy size={14} strokeWidth={2} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="bz-card p-5 sm:p-7 hidden md:block">
             <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3">
                 <h2 className="bz-h-tight text-[18px] text-[#0A0A0A]">{copy.history}</h2>

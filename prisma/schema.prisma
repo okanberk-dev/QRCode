@@ -38,11 +38,31 @@ model Restaurant {
   address           String?
   phone             String?
   workingHours      String?   @map("working_hours")
+  // City (Pulse 2026-04 admin AdminBusinesses table). Null until owner fills
+  // it in. Free-text Turkish city name; not validated against TR-IL list yet.
+  city              String?   @map("city")
+  // KVKK aydınlatma metni (TEXT — uzun, @db.Text zorunlu). Doluysa admin
+  // tablosunda "Tam" badge'i; boş ise "Eksik" görünür.
+  kvkkText          String?   @map("kvkk_text") @db.Text
   googlePlaceId     String?   @map("google_place_id")
   googleReviewUrl   String?   @map("google_review_url")
   getirYemekUrl     String?   @map("getir_yemek_url")
   yemekSepetiUrl    String?   @map("yemek_sepeti_url")
   trendyolYemekUrl  String?   @map("trendyol_yemek_url")
+  // Otel/konaklama segmenti için Tripadvisor + Airbnb URL'leri. Null =
+  // henüz bağlanmadı; UI "Henüz bağlanmadı" gösterir.
+  tripAdvisorUrl    String?   @map("tripadvisor_url")
+  airbnbUrl         String?   @map("airbnb_url")
+  // Per-platform enable flag — owner panelde toggle ile manuel kapatılabilir.
+  // URL doluyken toggle off ise platform "passive" (varsayılana fallback).
+  // Default true; URL boşsa UI yine "Henüz bağlanmadı" gösterir (enabled
+  // = URL_var AND flag=true türetilir).
+  googleEnabled       Boolean @default(true) @map("google_enabled")
+  yemekSepetiEnabled  Boolean @default(true) @map("yemeksepeti_enabled")
+  getirEnabled        Boolean @default(true) @map("getir_enabled")
+  trendyolEnabled     Boolean @default(true) @map("trendyol_enabled")
+  tripAdvisorEnabled  Boolean @default(true) @map("tripadvisor_enabled")
+  airbnbEnabled       Boolean @default(true) @map("airbnb_enabled")
   // Owner's chosen fallback platform when a QR has no explicit ?platform=
   // query string. NULL → Google fallback (legacy default). Values mirror
   // Feedback.platform: google | yemeksepeti | getir | trendyol_go.

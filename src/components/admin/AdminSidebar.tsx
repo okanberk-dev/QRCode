@@ -209,70 +209,32 @@ export default function AdminSidebar() {
   ];
 
   if (role === 'superadmin') {
-    // Group: Kullanıcılar — 3 user-related panels
-    menuItems.push({
-      type: 'group',
-      id: 'users',
-      icon: Users,
-      label: locale === 'en' ? 'Users' : 'Kullanıcılar',
-      roles: ['superadmin'],
-      children: [
-        { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri' },
-        { href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler' },
-        { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler' },
-      ],
-    });
-
-    // Group: Mail — 3-4 mail-related panels (dev preview only on local)
-    const mailChildren: Array<{ href: string; icon: typeof LayoutDashboard; label: string }> = [
-      { href: '/admin/newsletters', icon: Mail, label: locale === 'en' ? 'Newsletter Subscribers' : 'Bülten Aboneleri' },
-      { href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Newsletter Campaigns' : 'Bülten Kampanyaları' },
-      { href: '/admin/mail-templates', icon: FileEdit, label: locale === 'en' ? 'Mail Templates' : 'Mail İçerikleri' },
-    ];
+    // Flat 12-item nav (Pulse 2026-04 design AdminSidebar 1:1, shell.jsx
+    // line 26-39). Previously grouped into Kullanıcılar/Mail/İçerik
+    // collapsibles — flattened for design parity.
+    menuItems.push(
+      { type: 'item', href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri', roles: ['superadmin'] },
+      { type: 'item', href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler', roles: ['superadmin'] },
+      { type: 'item', href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler', roles: ['superadmin'] },
+      { type: 'item', href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog', roles: ['superadmin'] },
+      { type: 'item', href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular', roles: ['superadmin'] },
+      { type: 'item', href: '/admin/plans', icon: CreditCard, label: locale === 'en' ? 'Subscriptions' : 'Abonelikler', roles: ['superadmin'] },
+      { type: 'item', href: '/admin/site-settings', icon: Settings, label: locale === 'en' ? 'Site Settings' : 'Site Ayarları', roles: ['superadmin'] },
+      // Mail/newsletter — design'da explicit yok ama mevcut feature; flat
+      // listin sonunda admin tools olarak korunur.
+      { type: 'item', href: '/admin/newsletters', icon: Mail, label: locale === 'en' ? 'Newsletter' : 'Bülten Aboneleri', roles: ['superadmin'] },
+      { type: 'item', href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Campaigns' : 'Bülten Kampanyaları', roles: ['superadmin'] },
+      { type: 'item', href: '/admin/mail-templates', icon: FileEdit, label: locale === 'en' ? 'Mail Templates' : 'Mail İçerikleri', roles: ['superadmin'] },
+    );
     if (process.env.NODE_ENV !== 'production') {
-      mailChildren.push({
+      menuItems.push({
+        type: 'item',
         href: '/admin/dev/mail-preview',
         icon: Mail,
         label: locale === 'en' ? 'Mail Preview (dev)' : 'Mail Önizleme (dev)',
+        roles: ['superadmin'],
       });
     }
-    menuItems.push({
-      type: 'group',
-      id: 'mail',
-      icon: Mail,
-      label: locale === 'en' ? 'Mail' : 'Mail',
-      roles: ['superadmin'],
-      children: mailChildren,
-    });
-
-    // Group: İçerik — blog + announcements
-    menuItems.push({
-      type: 'group',
-      id: 'content',
-      icon: BookOpen,
-      label: locale === 'en' ? 'Content' : 'İçerik',
-      roles: ['superadmin'],
-      children: [
-        { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog Yönetimi' },
-        { href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular' },
-      ],
-    });
-
-    menuItems.push({
-      type: 'item',
-      href: '/admin/plans',
-      icon: CreditCard,
-      label: locale === 'en' ? 'Subscriptions' : 'Abonelikler',
-      roles: ['superadmin'],
-    });
-
-    menuItems.push({
-      type: 'item',
-      href: '/admin/site-settings',
-      icon: Settings,
-      label: locale === 'en' ? 'Site Settings' : 'Site Ayarları',
-      roles: ['superadmin'],
-    });
   }
 
   menuItems.push({

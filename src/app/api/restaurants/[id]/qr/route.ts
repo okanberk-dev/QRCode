@@ -154,7 +154,7 @@ export async function GET(
         ...qrOptions,
       });
 
-      return new NextResponse(pngBuffer as any, {
+      return new NextResponse(new Uint8Array(pngBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'image/png',

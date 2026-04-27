@@ -336,8 +336,8 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
                     <>
                       <p>
                         <strong className="text-[#0A0A0A] font-medium">1. Veri Sorumlusunun Kimliği:</strong> Buaze
-                        olarak (bundan böyle "Şirket" olarak anılacaktır), 6698 sayılı Kişisel Verilerin Korunması
-                        Kanunu ("KVKK") uyarınca veri sorumlusu sıfatıyla kişisel verilerinizi işlemekteyiz.
+                        olarak (bundan böyle &quot;Şirket&quot; olarak anılacaktır), 6698 sayılı Kişisel Verilerin Korunması
+                        Kanunu (&quot;KVKK&quot;) uyarınca veri sorumlusu sıfatıyla kişisel verilerinizi işlemekteyiz.
                       </p>
                       <p>
                         <strong className="text-[#0A0A0A] font-medium">2. İşlenen Kişisel Verileriniz ve İşlenme Amaçları:</strong>{' '}
@@ -357,7 +357,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
                   ) : (
                     <>
                       <p>
-                        <strong className="text-[#0A0A0A] font-medium">1. Data Controller:</strong> As Buaze (hereinafter the "Company"), we process your personal data in our capacity as the data controller in accordance with applicable data protection laws, including GDPR and KVKK.
+                        <strong className="text-[#0A0A0A] font-medium">1. Data Controller:</strong> As Buaze (hereinafter the &quot;Company&quot;), we process your personal data in our capacity as the data controller in accordance with applicable data protection laws, including GDPR and KVKK.
                       </p>
                       <p>
                         <strong className="text-[#0A0A0A] font-medium">2. Processed Personal Data and Purposes:</strong> Data you provide via our contact forms (name, email, phone, message content) is processed strictly for evaluating your requests, getting in touch, providing support services, and managing our service processes.
@@ -395,7 +395,7 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
                         Your contact information will be processed strictly for this purpose and utilized exclusively in marketing activities.
                       </p>
                       <p>
-                        You can revoke this consent and stop the messages entirely free of charge at any time by clicking the "Unsubscribe" link in our emails or contacting us directly.
+                        You can revoke this consent and stop the messages entirely free of charge at any time by clicking the &quot;Unsubscribe&quot; link in our emails or contacting us directly.
                       </p>
                     </>
                   ))}

@@ -1,4 +1,4 @@
-import { Dumbbell, Star, ShieldCheck, TrendingUp, QrCode, Users, BarChart3, Zap, Timer } from 'lucide-react';
+import { Dumbbell, Star, TrendingUp, QrCode, Users, BarChart3, Timer } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
 import { IllusGym } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   const title = locale === 'tr'
     ? 'Spor Salonu & Fitness Merkezi İtibar Yönetimi — Buaze'
     : 'Gym & Fitness Center Reputation Management — Buaze';

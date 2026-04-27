@@ -1,4 +1,4 @@
-import { Home, Star, ShieldCheck, TrendingUp, QrCode, Users, Building2, BarChart3 } from 'lucide-react';
+import { Home, Star, TrendingUp, QrCode, Users, Building2, BarChart3 } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
 import { IllusRealEstate } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   const title = locale === 'tr'
     ? 'Gayrimenkul & Emlak Ofisi İtibar Yönetimi — Buaze'
     : 'Real Estate Agency Reputation Management — Buaze';

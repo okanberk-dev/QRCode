@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import type { Locale } from '@/lib/translations';
-import { AlertBanner } from '@/components/ui';
+import { AlertBanner, PlatformChip, type PlatformId } from '@/components/ui';
 
 type StepId = 'profile' | 'sector' | 'location' | 'platforms' | 'qr';
 
@@ -461,13 +461,18 @@ function PlatformStep({
   data: OnboardingState;
   update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
 }) {
-  const PLATFORMS = [
-    { id: 'google', label: 'Google', group: 'review' as const },
-    { id: 'yemeksepeti', label: 'Yemeksepeti', group: 'delivery' as const },
-    { id: 'getir', label: 'Getir', group: 'delivery' as const },
-    { id: 'trendyol_go', label: 'Trendyol GO', group: 'delivery' as const },
-    { id: 'tripadvisor', label: 'Tripadvisor', group: 'review' as const },
-    { id: 'yelp', label: 'Yelp', group: 'review' as const },
+  // Onboarding platform seçimi (Step 11). `chip` kanonik PlatformId — UI'da
+  // <PlatformChip> ile marka kutucuğu render eder. `group` segmentation:
+  // review (Google/Tripadvisor/Yelp), delivery (YS/Getir/Trendyol),
+  // hospitality (Airbnb otel + konaklama).
+  const PLATFORM_OPTIONS = [
+    { id: 'google', chip: 'google', label: 'Google', group: 'review' as const },
+    { id: 'tripadvisor', chip: 'tripadvisor', label: 'Tripadvisor', group: 'review' as const },
+    { id: 'yelp', chip: 'foursquare', label: 'Yelp', group: 'review' as const },
+    { id: 'yemeksepeti', chip: 'yemeksepeti', label: 'Yemeksepeti', group: 'delivery' as const },
+    { id: 'getir', chip: 'getir', label: 'Getir', group: 'delivery' as const },
+    { id: 'trendyol_go', chip: 'trendyol', label: 'Trendyol GO', group: 'delivery' as const },
+    { id: 'airbnb', chip: 'airbnb', label: 'Airbnb', group: 'hospitality' as const },
   ];
 
   const toggle = (id: string) => {
@@ -484,8 +489,13 @@ function PlatformStep({
           : 'Which platforms should we route high ratings to? Pick as many as you like.'}
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
-        {PLATFORMS.map((p) => {
+        {PLATFORM_OPTIONS.map((p) => {
           const on = data.platforms.includes(p.id);
+          const groupLabel = p.group === 'review'
+            ? isTr ? 'YORUM' : 'REVIEWS'
+            : p.group === 'delivery'
+              ? isTr ? 'PAKET' : 'DELIVERY'
+              : isTr ? 'KONAKLAMA' : 'HOSPITALITY';
           return (
             <button
               key={p.id}
@@ -497,13 +507,12 @@ function PlatformStep({
                   : 'border-[#EDEDED] bg-white hover:border-[#0A0A0A]'
               }`}
             >
-              <div>
-                <p className="text-[14px] font-semibold text-[#0A0A0A]">{p.label}</p>
-                <p className="pulse-eyebrow text-[#737373]">
-                  {p.group === 'review'
-                    ? isTr ? 'YORUM' : 'REVIEWS'
-                    : isTr ? 'PAKET' : 'DELIVERY'}
-                </p>
+              <div className="flex min-w-0 items-center gap-3">
+                <PlatformChip id={p.chip as PlatformId} size={32} />
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-[#0A0A0A] truncate">{p.label}</p>
+                  <p className="pulse-eyebrow text-[#737373]">{groupLabel}</p>
+                </div>
               </div>
               <span
                 className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${

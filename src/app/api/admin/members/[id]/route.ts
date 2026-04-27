@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 
@@ -19,7 +20,7 @@ export async function PUT(
     const { plan, isActive, trialEndsAt } = body;
 
     const validPlans = ['trial', 'monthly', 'yearly', 'free'];
-    const data: any = {};
+    const data: Prisma.UserUpdateInput = {};
 
     if (plan !== undefined) {
       if (!validPlans.includes(plan)) {

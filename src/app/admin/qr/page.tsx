@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Download, Loader2, QrCode, Mail, RefreshCw, Copy, Check, Printer, Plus, Minus, Palette, Layers, AlertCircle } from 'lucide-react';
+import { Download, Loader2, QrCode, RefreshCw, Copy, Check, Printer, Plus, Minus, Palette, Layers, AlertCircle } from 'lucide-react';
 import { Suspense } from 'react';
 import { AlertBanner, Eyebrow, PageHeader } from '@/components/ui';
 
@@ -41,7 +41,7 @@ function QRPageContent() {
   const [loading, setLoading] = useState(true);
   const [qrSvg, setQrSvg] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<{ role?: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [history, setHistory] = useState<QrHistoryItem[]>([]);
@@ -266,7 +266,7 @@ function QRPageContent() {
         setBatchItems(data.items || []);
         fetchHistory(selectedId);
       }
-    } catch (e) {
+    } catch {
       setBatchError('Bağlantı hatası.');
     }
     setBatchLoading(false);
@@ -582,7 +582,7 @@ function QRPageContent() {
               </div>
             </div>
             <p className="text-[13px] text-[#525252] mb-4">
-              Müşterinin QR'ı tarattıktan sonra izlediği yol — her adım tek panelden yönetilir.
+              Müşterinin QR&apos;ı tarattıktan sonra izlediği yol — her adım tek panelden yönetilir.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[

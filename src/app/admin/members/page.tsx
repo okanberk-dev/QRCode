@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2, Check, AlertTriangle, Crown, RefreshCw, Store, ToggleLeft, ToggleRight } from 'lucide-react';
-import { AlertBanner, Badge, type BadgeKind, Modal, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, type BadgeKind, Modal, PageHeader, TableSkeleton } from '@/components/ui';
 
 interface Member {
   id: string;
@@ -97,8 +97,9 @@ export default function MembersPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#0A0A0A] w-10 h-10" />
+      <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+        <PageHeader eyebrow="İŞLETME SAHİPLERİ" title="Yükleniyor…" />
+        <TableSkeleton rows={6} cols={5} />
       </div>
     );
   }

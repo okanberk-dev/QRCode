@@ -18,7 +18,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ key: string; locale: string }> },
 ) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 

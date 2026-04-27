@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const restaurantIdParam = req.nextUrl.searchParams.get('restaurantId');
-    const where: any = { branch: { not: null } };
+    const where: Prisma.FeedbackWhereInput = { branch: { not: null } };
 
     if (actor.role === 'superadmin') {
       if (restaurantIdParam && restaurantIdParam !== 'all') {
@@ -41,9 +42,9 @@ export async function GET(req: NextRequest) {
     });
 
     const branches = rows
-      .map((r: any) => (r.branch || '').trim())
-      .filter((b: string) => b.length > 0)
-      .sort((a: string, b: string) => a.localeCompare(b, 'tr'));
+      .map((r) => (r.branch || '').trim())
+      .filter((b) => b.length > 0)
+      .sort((a, b) => a.localeCompare(b, 'tr'));
 
     return NextResponse.json({ branches });
   } catch (error) {

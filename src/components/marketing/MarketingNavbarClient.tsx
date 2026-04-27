@@ -29,7 +29,7 @@ import {
 import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import type { Locale } from '@/lib/translations';
+import type { Locale, Translations } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
 import WatchDemoButton from './WatchDemoButton';
 
@@ -38,7 +38,7 @@ interface MarketingNavbarProps {
   // The server wrapper passes the entire `t` object; we keep the signature
   // permissive and only use a few keys via locale ternaries (mirrors the
   // pattern in MarketingFooter).
-  t: any;
+  t: Translations;
   isLoggedIn?: boolean;
   logoUrl?: string | null;
 }
@@ -54,7 +54,6 @@ interface NavItem {
 
 export default function MarketingNavbarClient({
   locale,
-  t,
   isLoggedIn,
   logoUrl,
 }: MarketingNavbarProps) {
@@ -68,7 +67,7 @@ export default function MarketingNavbarClient({
   const [open, setOpen] = useState<DropdownId>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSection, setMobileSection] = useState<DropdownId>(null);
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [, setLangMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -755,7 +754,6 @@ function DesktopDropdown({
 }
 
 function MobileSection({
-  id,
   label,
   tagline,
   open,

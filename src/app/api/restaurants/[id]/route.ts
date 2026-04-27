@@ -73,7 +73,35 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, isActive, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, menuLogoUrl, userId, defaultRedirectPlatform } = body;
+    const {
+      name,
+      slug,
+      category,
+      address,
+      city,
+      kvkkText,
+      phone,
+      googlePlaceId,
+      notificationEmail,
+      primaryColor,
+      isActive,
+      getirYemekUrl,
+      yemekSepetiUrl,
+      trendyolYemekUrl,
+      menuLogoUrl,
+      userId,
+      defaultRedirectPlatform,
+      // Per-platform enable flags (Pulse 2026-04 owner panel toggles)
+      googleEnabled,
+      yemekSepetiEnabled,
+      getirEnabled,
+      trendyolEnabled,
+      // Konaklama segmenti (Step 11)
+      tripAdvisorUrl,
+      airbnbUrl,
+      tripAdvisorEnabled,
+      airbnbEnabled,
+    } = body;
 
     // Phase 12.6 — defaultRedirectPlatform whitelist. NULL or '' = clear
     // (back to legacy Google fallback). Anything else must be one of the
@@ -131,6 +159,12 @@ export async function PUT(
         ...(slug !== undefined && { slug }),
         ...(category !== undefined && { category }),
         ...(address !== undefined && { address: address || null }),
+        ...(city !== undefined && {
+          city: typeof city === 'string' && city.trim() ? city.trim() : null,
+        }),
+        ...(kvkkText !== undefined && {
+          kvkkText: typeof kvkkText === 'string' && kvkkText.trim() ? kvkkText : null,
+        }),
         ...(phone !== undefined && { phone: phone || null }),
         ...(googlePlaceId !== undefined && { googlePlaceId: googlePlaceId || null }),
         ...(notificationEmail !== undefined && { notificationEmail: notificationEmail || null }),
@@ -139,6 +173,14 @@ export async function PUT(
         ...(getirYemekUrl !== undefined && { getirYemekUrl: getirYemekUrl || null }),
         ...(yemekSepetiUrl !== undefined && { yemekSepetiUrl: yemekSepetiUrl || null }),
         ...(trendyolYemekUrl !== undefined && { trendyolYemekUrl: trendyolYemekUrl || null }),
+        ...(googleEnabled !== undefined && { googleEnabled: Boolean(googleEnabled) }),
+        ...(yemekSepetiEnabled !== undefined && { yemekSepetiEnabled: Boolean(yemekSepetiEnabled) }),
+        ...(getirEnabled !== undefined && { getirEnabled: Boolean(getirEnabled) }),
+        ...(trendyolEnabled !== undefined && { trendyolEnabled: Boolean(trendyolEnabled) }),
+        ...(tripAdvisorUrl !== undefined && { tripAdvisorUrl: tripAdvisorUrl || null }),
+        ...(airbnbUrl !== undefined && { airbnbUrl: airbnbUrl || null }),
+        ...(tripAdvisorEnabled !== undefined && { tripAdvisorEnabled: Boolean(tripAdvisorEnabled) }),
+        ...(airbnbEnabled !== undefined && { airbnbEnabled: Boolean(airbnbEnabled) }),
         ...(menuLogoUrl !== undefined && { menuLogoUrl: menuLogoUrl || null }),
         ...(defaultRedirectPlatform !== undefined && {
           defaultRedirectPlatform: defaultRedirectPlatform || null,

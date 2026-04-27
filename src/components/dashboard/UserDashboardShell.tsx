@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Layers, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Sparkles, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -170,50 +170,21 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const feedbackBadge =
     workspace?.feedbackCount && workspace.feedbackCount > 0 ? workspace.feedbackCount : undefined;
 
+  // Flat 10-item nav (Pulse 2026-04 design ownerNav 1:1, shell.jsx line 12-23).
+  // Previously grouped Setup/Insight/Info — flattened for design parity.
+  // `restaurants` (multi-location yönetim) design'da explicit yok; flat list
+  // sonuna ek item olarak korunur (11 toplam).
   const navItems: Nav[] = [
-    // Daily core — kept flat at the top.
     { type: 'item', href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
     { type: 'item', href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks, badge: feedbackBadge },
     { type: 'item', href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
-
-    // Setup — configuration done occasionally (locations, menu, redirects).
-    {
-      type: 'group',
-      id: 'setup',
-      icon: Sparkles,
-      label: copy.groupSetup,
-      children: [
-        { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
-        { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
-        { href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
-      ],
-    },
-
-    // Insight — periodic review, not daily.
-    {
-      type: 'group',
-      id: 'insight',
-      icon: Layers,
-      label: copy.groupInsight,
-      children: [
-        { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
-        { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
-      ],
-    },
-
-    // Info — read-only references.
-    {
-      type: 'group',
-      id: 'info',
-      icon: BookOpen,
-      label: copy.groupInfo,
-      children: [
-        { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
-        { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
-      ],
-    },
-
-    // Settings — flat at the bottom.
+    { type: 'item', href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
+    { type: 'item', href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
+    { type: 'item', href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
+    { type: 'item', href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
+    { type: 'item', href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
+    { type: 'item', href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
+    { type: 'item', href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
     { type: 'item', href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
 
@@ -557,11 +528,14 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         </div>
       )}
 
-      {/* Mobile bottom nav — 4 primary tabs + More */}
+      {/* Mobile bottom nav — 4 primary tabs + More (1:1 mobile-screens-1.jsx MBottomNav) */}
       <nav
         aria-label={copy.dashboard}
-        className="fixed bottom-0 left-0 right-0 z-40 bg-[#0A0A0A]/95 border-t border-white/10 text-white backdrop-blur-md shadow-[0_-4px_20px_0_rgba(0,0,0,0.35)] lg:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#EDEDED] backdrop-blur-md shadow-[0_-4px_20px_0_rgba(10,10,10,0.06)] lg:hidden"
+        style={{
+          background: 'rgba(255,255,255,0.94)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
       >
         <ul className="flex items-stretch px-2 pt-2 pb-1.5">
           {bottomNavItems.map((item) => {
@@ -574,19 +548,17 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
                   className={`relative flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-colors ${
-                    isActive ? 'text-[#C6F24E]' : 'text-white/60 hover:text-white'
+                    isActive ? 'text-[#0A0A0A]' : 'text-[#737373] hover:text-[#0A0A0A]'
                   }`}
                 >
-                  {isActive && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#C6F24E] rounded-b-full"
-                    />
-                  )}
-                  <span className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-[#C6F24E]/15' : ''}`}>
-                    <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                  <span
+                    className={`flex h-7 w-[38px] items-center justify-center rounded-full transition-colors ${
+                      isActive ? 'bg-[#0A0A0A] text-[#C6F24E]' : 'text-[#737373]'
+                    }`}
+                  >
+                    <Icon size={16} strokeWidth={isActive ? 2.25 : 2} />
                   </span>
-                  <span className="pulse-eyebrow truncate max-w-full">{item.label}</span>
+                  <span className="pulse-eyebrow truncate max-w-full" style={{ fontSize: 9.5 }}>{item.label}</span>
                 </Link>
               </li>
             );
@@ -599,19 +571,17 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               aria-expanded={moreOpen}
               aria-haspopup="dialog"
               className={`relative flex w-full flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-colors ${
-                moreActive ? 'text-[#C6F24E]' : 'text-white/60 hover:text-white'
+                moreActive ? 'text-[#0A0A0A]' : 'text-[#737373] hover:text-[#0A0A0A]'
               }`}
             >
-              {moreActive && (
-                <span
-                  aria-hidden="true"
-                  className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#C6F24E] rounded-b-full"
-                />
-              )}
-              <span className={`p-2 rounded-lg transition-colors ${moreActive ? 'bg-[#C6F24E]/15' : ''}`}>
-                <MoreHorizontal size={18} strokeWidth={moreActive ? 2.5 : 2} />
+              <span
+                className={`flex h-7 w-[38px] items-center justify-center rounded-full transition-colors ${
+                  moreActive ? 'bg-[#0A0A0A] text-[#C6F24E]' : 'text-[#737373]'
+                }`}
+              >
+                <MoreHorizontal size={16} strokeWidth={moreActive ? 2.25 : 2} />
               </span>
-              <span className="pulse-eyebrow truncate max-w-full">{copy.more}</span>
+              <span className="pulse-eyebrow truncate max-w-full" style={{ fontSize: 9.5 }}>{copy.more}</span>
             </button>
           </li>
         </ul>

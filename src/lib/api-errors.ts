@@ -3,12 +3,12 @@ import { NextResponse } from 'next/server';
 export interface ApiErrorResponse {
   error: string;
   code: string;
-  details?: any;
+  details?: unknown;
 }
 
 export const ApiErrors = {
   // 400 Bad Request
-  badRequest(message = 'Geçersiz istek', code = 'BAD_REQUEST', details?: any) {
+  badRequest(message = 'Geçersiz istek', code = 'BAD_REQUEST', details?: unknown) {
     return NextResponse.json({ error: message, code, details }, { status: 400 });
   },
 
@@ -46,3 +46,22 @@ export const ApiErrors = {
     return NextResponse.json({ error: message, code }, { status: 500 });
   }
 };
+
+// Narrow an unknown thrown value to a Prisma-style error with `code` / `message`.
+export function getErrorCode(error: unknown): string | undefined {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = (error as { code?: unknown }).code;
+    return typeof code === 'string' ? code : undefined;
+  }
+  return undefined;
+}
+
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return 'Unknown error';
+}

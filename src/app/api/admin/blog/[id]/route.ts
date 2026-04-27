@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ApiErrors } from '@/lib/api-errors';
+import { ApiErrors, getErrorCode } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
 import { sanitizeBlogContent } from '@/lib/blog-content';
 
@@ -128,8 +128,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     return NextResponse.json({ post });
-  } catch (error: any) {
-    if (error?.code === 'P2025') {
+  } catch (error) {
+    if (getErrorCode(error) === 'P2025') {
       return ApiErrors.notFound('Blog yazısı bulunamadı');
     }
     console.error('[API blog PUT]', error);
@@ -146,8 +146,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const { id } = await params;
     await prisma.blogPost.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    if (error?.code === 'P2025') {
+  } catch (error) {
+    if (getErrorCode(error) === 'P2025') {
       return ApiErrors.notFound('Blog yazısı bulunamadı');
     }
     console.error('[API blog DELETE]', error);

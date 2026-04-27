@@ -189,7 +189,7 @@ export default async function CaseStudyPage({
               className="mt-6 text-[28px] font-medium leading-[1.35] tracking-tight text-white sm:text-[36px] lg:text-[44px]"
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
-              "{quoteText}"
+              &quot;{quoteText}&quot;
             </blockquote>
             {study.personName && (
               <div className="mt-8 flex items-center gap-4">

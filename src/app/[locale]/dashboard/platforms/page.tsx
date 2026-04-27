@@ -15,6 +15,7 @@ import {
   type PlatformId,
 } from '@/components/ui';
 import DefaultRedirectPicker from '@/components/dashboard/DefaultRedirectPicker';
+import PlatformEnableToggle from '@/components/dashboard/PlatformEnableToggle';
 
 export async function generateMetadata({
   params,
@@ -32,8 +33,16 @@ export const dynamic = 'force-dynamic';
 
 interface PlatformRow {
   id: PlatformId;
+  // Owner's pick of which schema field stores this platform's URL — used by
+  // PlatformEnableToggle to know which `*Enabled` flag to PATCH.
+  schemaKey: 'google' | 'yemekSepeti' | 'getir' | 'trendyol' | 'tripAdvisor' | 'airbnb';
   url: string | null;
+  /** Effective enabled = URL configured AND owner-flag is true */
   enabled: boolean;
+  /** Owner-set flag (independent of URL presence) */
+  enabledFlag: boolean;
+  /** True iff a URL is configured (toggle gating) */
+  hasUrl: boolean;
   isDefault: boolean;
   monthlyClicks: number;
 }
@@ -65,6 +74,14 @@ export default async function PlatformsPage({
       yemekSepetiUrl: true,
       getirYemekUrl: true,
       trendyolYemekUrl: true,
+      tripAdvisorUrl: true,
+      airbnbUrl: true,
+      googleEnabled: true,
+      yemekSepetiEnabled: true,
+      getirEnabled: true,
+      trendyolEnabled: true,
+      tripAdvisorEnabled: true,
+      airbnbEnabled: true,
       defaultRedirectPlatform: true,
     },
   });
@@ -99,7 +116,13 @@ export default async function PlatformsPage({
   // Aggregate the *first* configured URL per platform (multi-restaurant
   // platforms management gets its own per-location page later — Phase 4).
   const firstUrl = (
-    key: 'googleReviewUrl' | 'yemekSepetiUrl' | 'getirYemekUrl' | 'trendyolYemekUrl',
+    key:
+      | 'googleReviewUrl'
+      | 'yemekSepetiUrl'
+      | 'getirYemekUrl'
+      | 'trendyolYemekUrl'
+      | 'tripAdvisorUrl'
+      | 'airbnbUrl',
   ): string | null => {
     const found = restaurants.find((r) => Boolean(r[key]));
     return (found?.[key] as string | null | undefined) ?? null;
@@ -121,11 +144,31 @@ export default async function PlatformsPage({
         ? (storedDefault as PlatformId)
         : null;
 
+  // Owner's per-platform enable flag from the *first* restaurant — same
+  // single-restaurant assumption as `firstUrl`. Multi-location ownership
+  // gets per-restaurant flags via the detail page (out of scope here).
+  const flagOf = (
+    key:
+      | 'googleEnabled'
+      | 'yemekSepetiEnabled'
+      | 'getirEnabled'
+      | 'trendyolEnabled'
+      | 'tripAdvisorEnabled'
+      | 'airbnbEnabled',
+  ): boolean => {
+    if (!firstRestaurant) return true;
+    const v = (firstRestaurant as Record<string, unknown>)[key];
+    return v === undefined ? true : Boolean(v);
+  };
+
   const platforms: PlatformRow[] = [
     {
       id: 'google',
+      schemaKey: 'google',
       url: firstUrl('googleReviewUrl'),
-      enabled: Boolean(firstUrl('googleReviewUrl')),
+      hasUrl: Boolean(firstUrl('googleReviewUrl')),
+      enabledFlag: flagOf('googleEnabled'),
+      enabled: Boolean(firstUrl('googleReviewUrl')) && flagOf('googleEnabled'),
       isDefault:
         storedDefaultUiKey === 'google' ||
         // Legacy back-compat: when no explicit default has been picked,
@@ -135,24 +178,53 @@ export default async function PlatformsPage({
     },
     {
       id: 'yemeksepeti',
+      schemaKey: 'yemekSepeti',
       url: firstUrl('yemekSepetiUrl'),
-      enabled: Boolean(firstUrl('yemekSepetiUrl')),
+      hasUrl: Boolean(firstUrl('yemekSepetiUrl')),
+      enabledFlag: flagOf('yemekSepetiEnabled'),
+      enabled: Boolean(firstUrl('yemekSepetiUrl')) && flagOf('yemekSepetiEnabled'),
       isDefault: storedDefaultUiKey === 'yemeksepeti',
       monthlyClicks: platformClicks('yemeksepeti'),
     },
     {
       id: 'getir',
+      schemaKey: 'getir',
       url: firstUrl('getirYemekUrl'),
-      enabled: Boolean(firstUrl('getirYemekUrl')),
+      hasUrl: Boolean(firstUrl('getirYemekUrl')),
+      enabledFlag: flagOf('getirEnabled'),
+      enabled: Boolean(firstUrl('getirYemekUrl')) && flagOf('getirEnabled'),
       isDefault: storedDefaultUiKey === 'getir',
       monthlyClicks: platformClicks('getir'),
     },
     {
       id: 'trendyol',
+      schemaKey: 'trendyol',
       url: firstUrl('trendyolYemekUrl'),
-      enabled: Boolean(firstUrl('trendyolYemekUrl')),
+      hasUrl: Boolean(firstUrl('trendyolYemekUrl')),
+      enabledFlag: flagOf('trendyolEnabled'),
+      enabled: Boolean(firstUrl('trendyolYemekUrl')) && flagOf('trendyolEnabled'),
       isDefault: storedDefaultUiKey === 'trendyol',
       monthlyClicks: platformClicks('trendyol'),
+    },
+    {
+      id: 'tripadvisor',
+      schemaKey: 'tripAdvisor',
+      url: firstUrl('tripAdvisorUrl'),
+      hasUrl: Boolean(firstUrl('tripAdvisorUrl')),
+      enabledFlag: flagOf('tripAdvisorEnabled'),
+      enabled: Boolean(firstUrl('tripAdvisorUrl')) && flagOf('tripAdvisorEnabled'),
+      isDefault: false,
+      monthlyClicks: platformClicks('tripadvisor'),
+    },
+    {
+      id: 'airbnb',
+      schemaKey: 'airbnb',
+      url: firstUrl('airbnbUrl'),
+      hasUrl: Boolean(firstUrl('airbnbUrl')),
+      enabledFlag: flagOf('airbnbEnabled'),
+      enabled: Boolean(firstUrl('airbnbUrl')) && flagOf('airbnbEnabled'),
+      isDefault: false,
+      monthlyClicks: platformClicks('airbnb'),
     },
   ];
 
@@ -174,8 +246,76 @@ export default async function PlatformsPage({
         }
       />
 
+      {/* Mobile-only — design's MOwnerPlatforms dark default card (1:1).
+          Prominent display of the active default platform; md+ uses the
+          unified DefaultRedirectPicker card below. */}
+      {(() => {
+        const defaultPlatform = platforms.find((p) => p.isDefault) ?? null;
+        if (!defaultPlatform || !firstRestaurant) return null;
+        return (
+          <div
+            className="md:hidden bz-card p-4 mb-4"
+            style={{ background: '#0A0A0A', color: '#fff' }}
+          >
+            <div className="pulse-eyebrow" style={{ fontSize: 9, color: '#C6F24E' }}>
+              {isTr ? 'VARSAYILAN PLATFORM' : 'DEFAULT PLATFORM'}
+            </div>
+            <div className="flex items-center gap-2.5 mt-2.5">
+              <PlatformChip id={defaultPlatform.id} size={36} />
+              <div className="flex-1 min-w-0">
+                <div className="bz-h-tight" style={{ fontSize: 14 }}>
+                  {PLATFORMS[defaultPlatform.id].label}
+                </div>
+                {defaultPlatform.url ? (
+                  <div
+                    className="bz-mono truncate"
+                    style={{
+                      fontSize: 10.5,
+                      color: 'rgba(255,255,255,0.55)',
+                    }}
+                  >
+                    {defaultPlatform.url.replace(/^https?:\/\//, '')}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      fontSize: 10.5,
+                      color: 'rgba(255,255,255,0.55)',
+                    }}
+                  >
+                    {isTr ? 'Bağlanmadı' : 'Not connected'}
+                  </div>
+                )}
+              </div>
+              <a
+                href="#default-picker"
+                style={{
+                  background: '#C6F24E',
+                  color: '#0A0A0A',
+                  padding: '6px 12px',
+                  borderRadius: 8,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                }}
+              >
+                {isTr ? 'Değiştir' : 'Change'}
+              </a>
+            </div>
+            <div
+              className="mt-3"
+              style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}
+            >
+              {isTr
+                ? '4–5 yıldızlı yorumlar bu platforma yönlendirilir.'
+                : '4–5 star reviews are redirected to this platform.'}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Default redirect picker */}
-      <div className="bz-card-soft p-5 sm:p-6 mb-4">
+      <div id="default-picker" className="bz-card-soft p-5 sm:p-6 mb-4 scroll-mt-20">
         <div className="flex items-center gap-3 mb-3.5">
           <div
             className="flex items-center justify-center"
@@ -254,6 +394,19 @@ export default async function PlatformsPage({
               </div>
             </div>
             <div className="flex items-center gap-2.5 shrink-0">
+              {firstRestaurant && (
+                <PlatformEnableToggle
+                  restaurantId={firstRestaurant.id}
+                  platformKey={p.schemaKey}
+                  initialEnabled={p.enabledFlag}
+                  hasUrl={p.hasUrl}
+                  ariaLabel={
+                    isTr
+                      ? `${PLATFORMS[p.id].label} platformunu aç/kapat`
+                      : `Toggle ${PLATFORMS[p.id].label} platform`
+                  }
+                />
+              )}
               <Link
                 href={editLink}
                 className="bz-btn-ghost"

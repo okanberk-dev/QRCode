@@ -93,8 +93,9 @@ export async function POST(req: NextRequest) {
     }).catch((err) => console.error('[contact] confirmation mail failed', err));
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Contact form email failed:', error);
-    return NextResponse.json({ error: error?.message || 'E-posta gönderilirken bir hata oluştu.' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'E-posta gönderilirken bir hata oluştu.';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

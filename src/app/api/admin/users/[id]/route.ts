@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
@@ -19,7 +20,7 @@ async function writeAudit(entry: {
         actorSource: entry.actorSource,
         action: entry.action,
         targetId: entry.targetId ?? null,
-        payload: (entry.payload as any) ?? undefined,
+        payload: (entry.payload as Prisma.InputJsonValue | undefined) ?? undefined,
       },
     });
   } catch (err) {
@@ -28,7 +29,7 @@ async function writeAudit(entry: {
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin || admin.role !== 'superadmin') {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
   }
@@ -58,7 +59,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       select: { role: true, restaurantId: true },
     });
 
-    const data: any = { role, restaurantId: role === 'manager' ? restaurantId : null };
+    const data: Prisma.AdminUserUncheckedUpdateInput = { role, restaurantId: role === 'manager' ? restaurantId : null };
 
     if (password) {
       data.passwordHash = await bcrypt.hash(password, 12);
@@ -71,7 +72,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     await writeAudit({
-      actorId: admin.id,
+      actorId: String(admin.id),
       actorSource: 'admin',
       action: 'admin.users.update',
       targetId: id,
@@ -83,13 +84,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     return NextResponse.json(user);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Kullanıcı güncellenemedi' }, { status: 500 });
   }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin || admin.role !== 'superadmin') {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
   }
@@ -109,7 +110,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     await prisma.adminUser.delete({ where: { id } });
 
     await writeAudit({
-      actorId: admin.id,
+      actorId: String(admin.id),
       actorSource: 'admin',
       action: 'admin.users.delete',
       targetId: id,
@@ -117,7 +118,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Kullanıcı silinemedi' }, { status: 500 });
   }
 }

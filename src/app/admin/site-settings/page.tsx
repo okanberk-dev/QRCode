@@ -233,7 +233,7 @@ export default function SiteSettingsPage() {
         <div className="mb-6">
           <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">Marka Kimliği</h2>
           <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
-            Site genelinde (navbar, footer, auth sayfaları) görünen logo ve tarayıcı favicon'u.
+            Site genelinde (navbar, footer, auth sayfaları) görünen logo ve tarayıcı favicon&apos;u.
           </p>
         </div>
 

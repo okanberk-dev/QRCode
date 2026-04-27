@@ -1,7 +1,7 @@
 import '../globals.css';
 import { ContactFloat } from '@/components/marketing/ContactFloat';
 import type { Metadata } from 'next';
-import { getTranslations, type Locale } from '@/lib/translations';
+import { type Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { verifyJwt } from '@/lib/auth';
@@ -108,7 +108,6 @@ export default async function LocaleLayout({
   }
   const locale = rawLocale as Locale;
 
-  const t = getTranslations(locale);
   const s = await getSiteSettings();
   const siteUrl = 'https://buaze.com';
 

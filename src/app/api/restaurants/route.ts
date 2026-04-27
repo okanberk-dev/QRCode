@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
@@ -54,11 +55,12 @@ export async function GET(req: NextRequest) {
           'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
         },
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as { code?: string; message?: string };
       console.error('Restaurant lookup error:', {
         slug,
-        code: error?.code,
-        message: error?.message,
+        code: err?.code,
+        message: err?.message,
       });
       return ApiErrors.internalError('Sunucu hatası');
     }
@@ -75,11 +77,15 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, parseInt(adminParams.get('page') || '1'));
     const limit = Math.min(100, Math.max(1, parseInt(adminParams.get('limit') || '20')));
     const status = adminParams.get('status') || 'active';
+    // Optional plan filter (Pulse 2026-04 design AdminBusinesses tab — pro |
+    // growth | starter | trial | all). Joins through `user.plan` because
+    // plan lives on the owner User row, not on Restaurant. 'all' = unfiltered.
+    const planFilter = adminParams.get('plan') || 'all';
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.RestaurantWhereInput = {};
     const scopedIds = await getScopedRestaurantIds(actor);
-    
+
     if (scopedIds !== null) {
       where.id = { in: scopedIds };
     }
@@ -90,6 +96,15 @@ export async function GET(req: NextRequest) {
       where.isActive = false;
     }
     // 'all' means no filter on isActive
+
+    // Plan filter — join user.plan. Restaurants without a user (orphans) are
+    // excluded from any specific plan filter; 'all' still includes them.
+    if (planFilter !== 'all') {
+      const ALLOWED_PLANS = new Set(['pro', 'growth', 'starter', 'trial', 'monthly', 'yearly', 'free']);
+      if (ALLOWED_PLANS.has(planFilter)) {
+        where.user = { plan: planFilter };
+      }
+    }
 
     const [restaurants, total] = await Promise.all([
       prisma.restaurant.findMany({
@@ -120,9 +135,30 @@ export async function GET(req: NextRequest) {
       prisma.restaurant.count({ where }),
     ]);
 
-    return NextResponse.json({ 
-      data: restaurants, 
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) } 
+    // Compute avgRating per restaurant — single groupBy aggregate (no N+1).
+    // AdminBusinesses table column "Puan" needs this; null means no feedbacks yet.
+    const restaurantIds = restaurants.map((r) => r.id);
+    const avgGroups = restaurantIds.length
+      ? await prisma.feedback.groupBy({
+          by: ['restaurantId'],
+          where: { restaurantId: { in: restaurantIds } },
+          _avg: { rating: true },
+        })
+      : [];
+    const avgByRestaurant = new Map<string, number>(
+      avgGroups
+        .filter((g) => g._avg.rating !== null)
+        .map((g) => [g.restaurantId, g._avg.rating as number] as [string, number]),
+    );
+
+    const enriched = restaurants.map((r) => ({
+      ...r,
+      avgRating: avgByRestaurant.get(r.id) ?? null,
+    }));
+
+    return NextResponse.json({
+      data: enriched,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
     });
   } catch (error) {
     console.error('Failed to fetch restaurants:', error);
@@ -143,7 +179,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, userId: bodyUserId } = body;
+    const { name, slug, category, address, city, kvkkText, phone, googlePlaceId, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, tripAdvisorUrl, airbnbUrl, userId: bodyUserId } = body;
 
     if (!name || !slug) {
       return ApiErrors.badRequest('Ad ve slug zorunludur', 'MISSING_FIELDS');
@@ -189,6 +225,8 @@ export async function POST(req: NextRequest) {
         slug,
         category: category || 'Restoran',
         address: address || null,
+        city: typeof city === 'string' && city.trim() ? city.trim() : null,
+        kvkkText: typeof kvkkText === 'string' && kvkkText.trim() ? kvkkText : null,
         phone: phone || null,
         googlePlaceId: googlePlaceId || null,
         notificationEmail: notificationEmail || null,
@@ -196,13 +234,15 @@ export async function POST(req: NextRequest) {
         getirYemekUrl: getirYemekUrl || null,
         yemekSepetiUrl: yemekSepetiUrl || null,
         trendyolYemekUrl: trendyolYemekUrl || null,
+        tripAdvisorUrl: tripAdvisorUrl || null,
+        airbnbUrl: airbnbUrl || null,
         userId: ownerUserId,
       },
     });
 
     return NextResponse.json(restaurant, { status: 201 });
-  } catch (error: any) {
-    if (error?.code === 'P2002') {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return ApiErrors.conflict('Bu slug zaten kullanılıyor');
     }
     console.error('Failed to create restaurant:', error);

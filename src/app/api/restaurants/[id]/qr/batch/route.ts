@@ -38,15 +38,15 @@ export async function POST(
 
   const { id } = await params;
 
-  let body: any;
+  let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Geçersiz JSON' }, { status: 400 });
   }
 
-  const from = Number.parseInt(body?.from, 10);
-  const to = Number.parseInt(body?.to, 10);
+  const from = Number.parseInt(String(body?.from ?? ''), 10);
+  const to = Number.parseInt(String(body?.to ?? ''), 10);
 
   if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < from) {
     return NextResponse.json({ error: 'Geçerli bir masa aralığı girin (from <= to, >=1)' }, { status: 400 });
@@ -63,7 +63,7 @@ export async function POST(
   const dark = isValidHexColor(body?.dark) ? body.dark : '#000000';
   const light = isValidHexColor(body?.light) ? body.light : '#ffffff';
   let width = DEFAULT_BATCH_WIDTH;
-  const parsedWidth = Number.parseInt(body?.width, 10);
+  const parsedWidth = Number.parseInt(String(body?.width ?? ''), 10);
   if (Number.isFinite(parsedWidth) && parsedWidth >= MIN_BATCH_WIDTH && parsedWidth <= MAX_BATCH_WIDTH) {
     width = parsedWidth;
   }
@@ -92,7 +92,7 @@ export async function POST(
     for (let t = from; t <= to; t += 1) {
       const table = String(t);
       const qrUrl = `${appUrl}/r/${restaurant.slug}?source=qr&table=${encodeURIComponent(table)}`;
-      // eslint-disable-next-line no-await-in-loop
+       
       const svg = await QRCode.toString(qrUrl, {
         type: 'svg',
         width,

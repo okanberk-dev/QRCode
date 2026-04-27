@@ -15,7 +15,7 @@ const SUPPORTED_LOCALES = ['tr', 'en'] as const;
  * admin UI can show a button to create + seed defaults.
  */
 export async function GET(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
