@@ -5,7 +5,7 @@ import { CreditCard, Download, FileText, Loader2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, Badge } from '@/components/ui';
 
 interface BillingSummary {
   plan: string;
@@ -132,12 +132,17 @@ function AdminBillingBody() {
                   {isTr ? 'Henüz ödeme yöntemi eklenmedi.' : 'No payment method added yet.'}
                 </p>
               )}
-              <button
-                onClick={() => alert(isTr ? 'Yakında bağlanacak' : 'Coming soon')}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] font-medium text-[#525252] hover:border-[#0A0A0A]"
-              >
-                {isTr ? 'Yöntem ekle' : 'Add method'}
-              </button>
+              <div className="mt-4 flex items-center gap-2">
+                <Badge kind="ghost">{isTr ? 'Yakında' : 'Coming soon'}</Badge>
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-2 text-[12px] font-medium text-[#A3A3A3]"
+                >
+                  {isTr ? 'Yöntem ekle' : 'Add method'}
+                </button>
+              </div>
             </div>
           </section>
 
