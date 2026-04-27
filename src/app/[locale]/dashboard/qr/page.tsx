@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
-import { PageHeader } from '@/components/ui';
+import { Check, Copy, Download, LayoutGrid, List as ListIcon, Loader2, Minus, Palette, Plus, Printer, QrCode, RefreshCw, Layers, AlertCircle } from 'lucide-react';
+import { AlertBanner, PageHeader } from '@/components/ui';
 import { copyToClipboard } from '@/lib/clipboard';
 import PlatformLogo, { type PlatformId } from '@/components/marketing/PlatformLogo';
 
@@ -57,6 +57,10 @@ export default function DashboardQrPage() {
   const [customDark, setCustomDark] = useState('#000000');
   const [selectedPlatform, setSelectedPlatform] = useState('');
   const [duplicateWarning, setDuplicateWarning] = useState(false);
+  // Phase 12.3 — design's OwnerQR shows a Grid/List view toggle on the
+  // saved-QR list (`Son üretilenler` / `Recent QR codes`). Grid is the
+  // current 3-col card layout; List is a compact horizontal row.
+  const [historyView, setHistoryView] = useState<'grid' | 'list'>('grid');
   
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
   const safeEnvAppUrl = envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
@@ -334,17 +338,15 @@ export default function DashboardQrPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.3fr_1fr]">
         <div className="order-2 lg:order-1 space-y-4">
           {/* ═════ Step 1 — Kampanya detayları ═════ */}
-          <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+          <section className="bz-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold bz-h-tight"
               >
                 1
               </div>
               <h2
-                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
               >
                 {locale === 'tr' ? 'Kampanya detayları' : 'Campaign details'}
               </h2>
@@ -438,17 +440,15 @@ export default function DashboardQrPage() {
           </section>
 
           {/* ═════ Step 2 — Akış ═════ */}
-          <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+          <section className="bz-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold bz-h-tight"
               >
                 2
               </div>
               <h2
-                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
               >
                 {locale === 'tr' ? 'Akış' : 'Flow'}
               </h2>
@@ -475,8 +475,7 @@ export default function DashboardQrPage() {
                     {locale === 'tr' ? 'ADIM' : 'STEP'} {s.n}
                   </div>
                   <div
-                    className="mt-1.5 text-[14px] font-semibold text-[#0A0A0A]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
+                    className="mt-1.5 text-[14px] font-semibold text-[#0A0A0A] bz-h-tight"
                   >
                     {s.t}
                   </div>
@@ -504,17 +503,15 @@ export default function DashboardQrPage() {
           </section>
 
           {/* ═════ Step 3 — Tasarım ═════ */}
-          <section className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+          <section className="bz-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A] text-[13px] font-semibold bz-h-tight"
               >
                 3
               </div>
               <h2
-                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
               >
                 {locale === 'tr' ? 'Tasarım' : 'Design'}
               </h2>
@@ -635,10 +632,49 @@ export default function DashboardQrPage() {
             </button>
           </div>
 
-          <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <h2 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">{copy.history}</h2>
-              {historyLoading && <Loader2 className="h-5 w-5 animate-spin text-[#0A0A0A]" />}
+          <div className="bz-card p-5 sm:p-7">
+            <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <h2 className="bz-h-tight text-[18px] text-[#0A0A0A]">{copy.history}</h2>
+                {historyLoading && <Loader2 className="h-5 w-5 animate-spin text-[#0A0A0A]" />}
+              </div>
+              {history.length > 0 && (
+                <div
+                  className="inline-flex rounded-lg p-1"
+                  style={{ background: '#FAFAFA', border: '1px solid #EDEDED' }}
+                  role="tablist"
+                  aria-label={locale === 'tr' ? 'Görünüm türü' : 'View mode'}
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={historyView === 'grid'}
+                    onClick={() => setHistoryView('grid')}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      historyView === 'grid'
+                        ? 'bg-[#0A0A0A] text-white'
+                        : 'text-[#525252] hover:text-[#0A0A0A]'
+                    }`}
+                  >
+                    <LayoutGrid size={12} strokeWidth={2} />
+                    {locale === 'tr' ? 'Izgara' : 'Grid'}
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={historyView === 'list'}
+                    onClick={() => setHistoryView('list')}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      historyView === 'list'
+                        ? 'bg-[#0A0A0A] text-white'
+                        : 'text-[#525252] hover:text-[#0A0A0A]'
+                    }`}
+                  >
+                    <ListIcon size={12} strokeWidth={2} />
+                    {locale === 'tr' ? 'Liste' : 'List'}
+                  </button>
+                </div>
+              )}
             </div>
 
             {history.length === 0 ? (
@@ -651,7 +687,7 @@ export default function DashboardQrPage() {
                 </div>
                 <p className="text-[13px] text-[#525252]">{copy.noHistory}</p>
               </div>
-            ) : (
+            ) : historyView === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {history.map((item) => {
                   const platformMeta = item.platform ? PLATFORM_BADGE[item.platform] : null;
@@ -716,6 +752,76 @@ export default function DashboardQrPage() {
                   );
                 })}
               </div>
+            ) : (
+              // List mode (1:1 design's "Liste" view) — compact horizontal
+              // rows for fast scanning across many QR codes.
+              <div
+                className="flex flex-col"
+                style={{ borderTop: '1px solid #EDEDED' }}
+                role="list"
+              >
+                {history.map((item) => {
+                  const platformMeta = item.platform ? PLATFORM_BADGE[item.platform] : null;
+                  const dateStr = new Date(item.createdAt).toLocaleDateString(
+                    locale === 'tr' ? 'tr-TR' : 'en-US',
+                    { day: '2-digit', month: 'short', year: '2-digit' },
+                  );
+                  return (
+                    <div
+                      key={item.id}
+                      role="listitem"
+                      className="flex items-center gap-3 py-3 flex-wrap sm:flex-nowrap"
+                      style={{ borderBottom: '1px solid #EDEDED' }}
+                    >
+                      <div className="min-w-0 sm:flex-1 sm:basis-[180px]">
+                        <div className="bz-h-tight" style={{ fontSize: 13 }}>
+                          {item.tableNumber
+                            ? `${locale === 'tr' ? 'Masa' : 'Table'} ${item.tableNumber}`
+                            : (locale === 'tr' ? 'Genel QR' : 'General QR')}
+                        </div>
+                        <div className="pulse-eyebrow text-[#737373] mt-0.5">{dateStr}</div>
+                      </div>
+                      {platformMeta ? (
+                        <span
+                          className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-semibold text-white ${platformMeta.bg}`}
+                          style={{ letterSpacing: '0.04em' }}
+                        >
+                          {platformMeta.label}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 pulse-eyebrow text-[#A3A3A3]">—</span>
+                      )}
+                      <div
+                        className="flex-1 min-w-0 truncate text-[11px] font-mono text-[#525252] hidden md:block"
+                        title={item.qrUrl}
+                      >
+                        {item.qrUrl}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(item.qrUrl)}
+                          className="bz-btn-icon"
+                          aria-label={copy.copy}
+                          title={copy.copy}
+                        >
+                          <Copy size={13} strokeWidth={2} />
+                        </button>
+                        <a
+                          href={item.qrUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bz-btn-icon"
+                          aria-label={locale === 'tr' ? 'Aç' : 'Open'}
+                          title={locale === 'tr' ? 'Aç' : 'Open'}
+                        >
+                          <Download size={13} strokeWidth={2} />
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
@@ -726,7 +832,7 @@ export default function DashboardQrPage() {
               {locale === 'tr' ? 'CANLI ÖNİZLEME' : 'LIVE PREVIEW'}
             </span>
             {duplicateWarning && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 pulse-eyebrow">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E] pulse-eyebrow">
                 <AlertCircle size={11} strokeWidth={2} />
                 {locale === 'tr' ? 'ZATEN MEVCUT' : 'ALREADY EXISTS'}
               </div>
@@ -747,8 +853,7 @@ export default function DashboardQrPage() {
                     .slice(0, 22)}
                 </div>
                 <div
-                  className="mt-2 text-[20px] font-medium leading-[1] tracking-[-0.02em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="mt-2 text-[20px] font-medium leading-[1] tracking-[-0.02em] text-[#0A0A0A] bz-h-tight"
                 >
                   {locale === 'tr' ? 'Deneyiminizi paylaşın.' : 'Share your experience.'}
                 </div>
@@ -779,8 +884,7 @@ export default function DashboardQrPage() {
                   {(selectedRestaurant?.name || 'BUAZE').toUpperCase().slice(0, 18)}
                 </div>
                 <div
-                  className="text-[14px] font-medium text-[#0A0A0A] tracking-[-0.015em] leading-[1.15]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="text-[14px] font-medium text-[#0A0A0A] tracking-[-0.015em] leading-[1.15] bz-h-tight"
                 >
                   {locale === 'tr' ? 'Deneyiminiz nasıldı?' : 'How was your experience?'}
                 </div>
@@ -830,16 +934,18 @@ export default function DashboardQrPage() {
 
           {/* Error state fallback */}
           {qrError && !qrSvg && (
-            <div className="flex flex-col items-center gap-2 text-center px-4 py-4 rounded-xl bg-red-50 border border-red-200">
-              <p className="pulse-eyebrow text-red-500">{qrError}</p>
-              <button
-                type="button"
-                onClick={generateQr}
-                className="pulse-eyebrow text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E] transition-colors"
-              >
-                {locale === 'tr' ? 'TEKRAR DENE' : 'RETRY'}
-              </button>
-            </div>
+            <AlertBanner kind="danger">
+              <div className="flex flex-col gap-1">
+                <span>{qrError}</span>
+                <button
+                  type="button"
+                  onClick={generateQr}
+                  className="pulse-eyebrow self-start text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E] transition-colors"
+                >
+                  {locale === 'tr' ? 'TEKRAR DENE' : 'RETRY'}
+                </button>
+              </div>
+            </AlertBanner>
           )}
 
           {!selectedId && !qrError && (

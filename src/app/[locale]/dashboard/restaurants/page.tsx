@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store, X } from 'lucide-react';
+import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { PageHeader } from '@/components/ui';
+import { AlertBanner, ErrorState, Modal, PageHeader } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -195,17 +195,13 @@ export default function DashboardRestaurantsPage() {
 
   if (fetchError) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-8">
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-10 text-center">
-          <p className="pulse-eyebrow text-red-500">{locale === 'tr' ? 'HATA' : 'ERROR'}</p>
-          <p className="mt-2 text-[16px] font-semibold text-red-700">{fetchError}</p>
-          <button
-            onClick={fetchRestaurants}
-            className="mt-5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
-          >
-            {locale === 'tr' ? 'Tekrar dene' : 'Retry'}
-          </button>
-        </div>
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
+        <ErrorState
+          title={locale === 'tr' ? 'Hata' : 'Error'}
+          body={fetchError}
+          onRetry={fetchRestaurants}
+          retryLabel={locale === 'tr' ? 'Tekrar dene' : 'Retry'}
+        />
       </div>
     );
   }
@@ -248,8 +244,7 @@ export default function DashboardRestaurantsPage() {
             <Store size={22} className="text-[#737373]" strokeWidth={2} />
           </div>
           <h2
-            className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
           >
             {copy.emptyTitle}
           </h2>
@@ -271,15 +266,14 @@ export default function DashboardRestaurantsPage() {
             return (
               <div
                 key={restaurant.id}
-                className={`overflow-hidden rounded-2xl border border-[#EDEDED] bg-white transition-colors ${!restaurant.isActive ? 'opacity-70' : 'hover:border-[#C6F24E]'}`}
+                className={`overflow-hidden bz-card transition-colors ${!restaurant.isActive ? 'opacity-70' : 'hover:border-[#C6F24E]'}`}
               >
                 <div className="p-5 sm:p-6">
                   {/* Header — name + address + trend badge (AdminLocations design) */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3
-                        className="truncate text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.02em] leading-tight"
-                        style={{ fontFamily: 'var(--font-heading)' }}
+                        className="truncate text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.02em] leading-tight bz-h-tight"
                       >
                         {restaurant.name}
                       </h3>
@@ -376,33 +370,16 @@ export default function DashboardRestaurantsPage() {
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-          <div className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_20px_60px_rgba(10,10,10,0.2)] sm:rounded-2xl sm:pb-0">
-            <div className="relative border-b border-[#EDEDED] p-5 sm:p-6 md:p-7">
-              <h2
-                className="text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] pr-10"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                {copy.add}
-              </h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setCreateError('');
-                }}
-                className="absolute right-5 top-5 rounded-lg p-2 text-[#525252] transition-all hover:bg-[#FAFAFA]"
-                aria-label="close"
-              >
-                <X size={18} strokeWidth={2} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreate} className="space-y-5 overflow-y-auto p-5 sm:p-6 md:p-7">
+        <Modal
+          size={680}
+          onClose={() => { setShowCreateModal(false); setCreateError(''); }}
+          title={copy.add}
+        >
+            <form onSubmit={handleCreate} className="space-y-5">
               {createError && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">
+                <AlertBanner kind="danger" onDismiss={() => setCreateError('')}>
                   {createError}
-                </div>
+                </AlertBanner>
               )}
 
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -499,7 +476,7 @@ export default function DashboardRestaurantsPage() {
                     value={formData.getirYemekUrl}
                     onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
                     placeholder="https://getir.com/yemek/..."
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-purple-600"
+                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                   />
                 </label>
 
@@ -510,7 +487,7 @@ export default function DashboardRestaurantsPage() {
                     value={formData.yemekSepetiUrl}
                     onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
                     placeholder="https://www.yemeksepeti.com/..."
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-pink-600"
+                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                   />
                 </label>
 
@@ -521,7 +498,7 @@ export default function DashboardRestaurantsPage() {
                     value={formData.trendyolYemekUrl}
                     onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
                     placeholder="https://www.trendyol.com/..."
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:ring-2 focus:ring-orange-500"
+                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                   />
                 </label>
 
@@ -597,8 +574,7 @@ export default function DashboardRestaurantsPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

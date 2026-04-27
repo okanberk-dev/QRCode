@@ -43,7 +43,7 @@ export default function TrialExpiredPage() {
               <div className="border border-[#EDEDED] rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-[#0A0A0A]">Yıllık Plan</span>
-                  <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">%30 İndirim</span>
+                  <span className="bg-[#EAF9B8] text-[#0A0A0A] text-xs font-bold px-2 py-0.5 rounded-full">%30 İndirim</span>
                 </div>
                 <p className="text-2xl font-semibold text-[#0A0A0A]">₺209 <span className="text-sm font-normal text-[#6B7280]">/ ay (yıllık)</span></p>
               </div>

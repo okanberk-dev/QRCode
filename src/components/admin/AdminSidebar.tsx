@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   BarChart3,
@@ -53,6 +53,7 @@ function getTrialInfo(trialEndsAt: string | null | undefined): { daysLeft: numbe
 }
 
 const SIDEBAR_GROUP_STATE_KEY = 'buaze.admin.sidebarGroups';
+const SIDEBAR_SCROLL_KEY = 'buaze.admin.sidebarScroll';
 
 function loadGroupState(): Record<string, boolean> {
   if (typeof window === 'undefined') return {};
@@ -74,6 +75,29 @@ function saveGroupState(state: Record<string, boolean>) {
     // localStorage full or disabled — ignore. Group state is purely UX
     // sugar; the user will just see all groups closed by default next
     // session.
+  }
+}
+
+// Sidebar scrollTop persistence — sessionStorage so it doesn't leak across
+// tabs but DOES survive navigations. Without this, clicking a child link
+// inside a collapsible group would let the layout shift back to scrollTop
+// 0 (because Next.js' layout hydration races the saved expand state),
+// jumping the active item out of view.
+function loadSidebarScroll(): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = window.sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+    return raw ? parseInt(raw, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+function saveSidebarScroll(scrollTop: number) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(scrollTop));
+  } catch {
+    /* swallow */
   }
 }
 
@@ -99,6 +123,21 @@ export default function AdminSidebar() {
       saveGroupState(next);
       return next;
     });
+  };
+
+  // Desktop nav scroll persistence. Mobile drawer remounts on every open
+  // so it doesn't need this — restore on mount + save before navigation.
+  const navRef = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const target = loadSidebarScroll();
+    if (target > 0) el.scrollTop = target;
+  }, [pathname]);
+  const handleNavClick = () => {
+    const el = navRef.current;
+    if (el) saveSidebarScroll(el.scrollTop);
+    setMobileOpen(false);
   };
 
   useEffect(() => {
@@ -295,7 +334,7 @@ export default function AdminSidebar() {
     return locale === 'en' ? 'Unlimited reviews' : 'Sınırsız yorum';
   })();
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ navRef: forwardedNavRef }: { navRef?: React.MutableRefObject<HTMLElement | null> } = {}) => (
     <div className="flex flex-col h-full bg-[#0A0A0A] text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
@@ -328,10 +367,18 @@ export default function AdminSidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3">
+      <nav
+        ref={forwardedNavRef as React.RefObject<HTMLElement>}
+        className="flex-1 space-y-0.5 overflow-y-auto px-3"
+      >
         {menuItems
           .filter((i) => i.roles.includes(role))
-          .map((item) => {
+          .map((item, idx) => {
+            // Subtle separator before each top-level group (visual clarity
+            // when categories sit next to flat items).
+            const showDividerBefore =
+              idx > 0 && item.type === 'group' && menuItems[idx - 1]?.type === 'item';
+
             if (item.type === 'item') {
               const Icon = item.icon;
               const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
@@ -339,11 +386,11 @@ export default function AdminSidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={handleNavClick}
                   aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
                     isActive
-                      ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
+                      ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold shadow-[0_2px_8px_-2px_rgba(198,242,78,0.4)]'
                       : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
                   }`}
                 >
@@ -363,26 +410,31 @@ export default function AdminSidebar() {
             const isExpanded = childActive || expandedGroups[item.id] === true;
             return (
               <div key={item.id}>
+                {showDividerBefore && (
+                  <div aria-hidden className="my-2 mx-3 h-px bg-white/5" />
+                )}
                 <button
                   type="button"
                   onClick={() => toggleGroup(item.id)}
                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
                     childActive
-                      ? 'bg-white/10 text-white font-semibold'
+                      ? 'bg-white/[0.07] text-white font-semibold'
                       : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
                   }`}
                   aria-expanded={isExpanded}
                 >
                   <Icon size={16} strokeWidth={2} />
                   <span className="flex-1 truncate text-left">{item.label}</span>
-                  {isExpanded ? (
-                    <ChevronDown size={14} strokeWidth={2} className="text-white/50" />
-                  ) : (
-                    <ChevronRight size={14} strokeWidth={2} className="text-white/50" />
-                  )}
+                  <ChevronRight
+                    size={14}
+                    strokeWidth={2}
+                    className={`text-white/50 transition-transform duration-200 ${
+                      isExpanded ? 'rotate-90' : ''
+                    }`}
+                  />
                 </button>
                 {isExpanded && (
-                  <div className="mt-0.5 ml-3 space-y-0.5 border-l border-white/10 pl-3">
+                  <div className="mt-1 ml-5 space-y-0.5 border-l border-white/10 pl-3 pb-1">
                     {item.children.map((child) => {
                       const ChildIcon = child.icon;
                       const isActive = pathname === child.href || pathname?.startsWith(child.href + '/');
@@ -390,7 +442,8 @@ export default function AdminSidebar() {
                         <Link
                           key={child.href}
                           href={child.href}
-                          onClick={() => setMobileOpen(false)}
+                          onClick={handleNavClick}
+                          aria-current={isActive ? 'page' : undefined}
                           className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-all ${
                             isActive
                               ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
@@ -430,7 +483,7 @@ export default function AdminSidebar() {
         {role !== 'superadmin' && (
           <Link
             href="/admin/profile"
-            onClick={() => setMobileOpen(false)}
+            onClick={handleNavClick}
             className="mt-2.5 block rounded-full bg-[#C6F24E] px-3 py-1.5 text-center text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
           >
             {locale === 'en' ? 'Manage plan' : 'Planı yönet'}
@@ -483,7 +536,7 @@ export default function AdminSidebar() {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-64 bg-[#0A0A0A] border-r border-white/5 flex-col h-full z-30 text-white">
-        <SidebarContent />
+        <SidebarContent navRef={navRef} />
       </aside>
 
       {/* Mobile top bar */}

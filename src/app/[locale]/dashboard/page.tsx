@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
 import Link from 'next/link';
-import { Building2, QrCode, ArrowRight, Star, Calendar, ShieldCheck, TrendingUp } from 'lucide-react';
+import { Building2, QrCode, ArrowRight, Star, ShieldCheck, TrendingUp } from 'lucide-react';
 import RestaurantAnalyticsPanel from '@/components/dashboard/RestaurantAnalyticsPanel';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
@@ -58,14 +58,6 @@ export default async function DashboardPage({
           slug: true,
           isActive: true,
           _count: { select: { feedbacks: true } },
-          feedbacks: {
-            where: {
-              createdAt: {
-                gte: new Date(new Date().setHours(0, 0, 0, 0))
-              }
-            },
-            select: { id: true }
-          }
         },
       },
     },
@@ -77,12 +69,13 @@ export default async function DashboardPage({
 
   // Calculate stats
   const totalReviews = user.restaurants.reduce((a, r) => a + r._count.feedbacks, 0);
-  const todayReviews = user.restaurants.reduce((a, r) => a + r.feedbacks.length, 0);
-  
-  const positiveReviews = await prisma.feedback.count({
+  // Platform redirect count — feedbacks recorded with a platform target.
+  // Used as the 4th KPI per design AdminDashboard pattern (`Aylık yönlendirme`).
+  const redirectCount = await prisma.feedback.count({
     where: {
       restaurantId: { in: user.restaurants.map(r => r.id) },
-      rating: { gte: 4 }
+      rating: { gte: 4 },
+      platform: { not: null },
     }
   });
 
@@ -125,6 +118,12 @@ export default async function DashboardPage({
   const displayName = user.name?.trim() || (isTr ? 'İşletmeci' : 'there');
   const activeQr = user.restaurants.filter((r) => r.isActive).length;
 
+  // Weighted average rating across the operator's locations
+  const totalRatedCount = restaurantRatings.reduce((a, r) => a + r._count._all, 0);
+  const avgRating = totalRatedCount === 0
+    ? 0
+    : restaurantRatings.reduce((a, r) => a + (r._avg.rating ?? 0) * r._count._all, 0) / totalRatedCount;
+
   // Onboarding nudge — derive setup completeness from existing data signals.
   // Backend shape unchanged; we just project booleans the UI can read.
   const hasRestaurant = user.restaurants.length > 0;
@@ -163,7 +162,7 @@ export default async function DashboardPage({
     },
   ];
 
-  type Kpi = { label: string; value: number; sub: string; icon: React.ReactNode; href?: string };
+  type Kpi = { label: string; value: string | number; sub: string; icon: React.ReactNode; href?: string; accent?: boolean };
   const kpis: Kpi[] = [
     {
       label: isTr ? 'Toplam yorum' : 'Total reviews',
@@ -173,30 +172,32 @@ export default async function DashboardPage({
       href: `/${locale}/dashboard/feedbacks`,
     },
     {
-      label: isTr ? 'Bugün' : 'Today',
-      value: todayReviews,
-      sub: isTr ? 'Son 24 saat' : 'Last 24 hours',
-      icon: <Calendar size={14} strokeWidth={2} />,
-      href: `/${locale}/dashboard/feedbacks?days=1`,
-    },
-    {
-      label: isTr ? 'Pozitif yorum' : 'Positive reviews',
-      value: positiveReviews,
-      sub: isTr ? '4+ yıldız' : '4+ stars',
-      icon: <ShieldCheck size={14} strokeWidth={2} />,
-      href: `/${locale}/dashboard/feedbacks?rating=positive`,
+      label: isTr ? 'Ortalama puan' : 'Avg rating',
+      value: avgRating > 0 ? avgRating.toFixed(1) : '—',
+      sub: isTr ? `${totalRatedCount} yorum üzerinden` : `across ${totalRatedCount} reviews`,
+      icon: <Star size={14} strokeWidth={2} fill="currentColor" />,
+      href: `/${locale}/dashboard/feedbacks`,
+      accent: true,
     },
     {
       label: isTr ? 'Aktif QR' : 'Active QR',
       value: activeQr,
       sub: isTr ? `${user.restaurants.length} konum` : `${user.restaurants.length} locations`,
       icon: <QrCode size={14} strokeWidth={2} />,
+      href: `/${locale}/dashboard/qr`,
+    },
+    {
+      label: isTr ? 'Yönlendirme' : 'Redirects',
+      value: redirectCount,
+      sub: isTr ? '4+ yıldızdan platforma' : '4+ stars sent to platform',
+      icon: <ShieldCheck size={14} strokeWidth={2} />,
+      href: `/${locale}/dashboard/platforms`,
     },
   ];
 
   return (
     <div
-      className="mx-auto max-w-[1200px] space-y-8 px-4 py-8 sm:px-8 lg:py-10"
+      className="mx-auto max-w-[1200px] space-y-6 px-4 sm:px-7 py-6 lg:py-8"
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <PageHeader
@@ -217,13 +218,16 @@ export default async function DashboardPage({
             <>
               <div className="flex items-center justify-between">
                 <span className="pulse-eyebrow text-[#737373]">{k.label}</span>
-                <span className="w-7 h-7 rounded-lg bg-[#EAF9B8] text-[#0A0A0A] flex items-center justify-center">
+                <span
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                    k.accent ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#EAF9B8] text-[#0A0A0A]'
+                  }`}
+                >
                   {k.icon}
                 </span>
               </div>
               <div
-                className="mt-4 text-[30px] sm:text-[38px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A] tabular-nums"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="mt-4 text-[30px] sm:text-[38px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A] tabular-nums bz-h-tight"
               >
                 {k.value}
               </div>
@@ -237,12 +241,12 @@ export default async function DashboardPage({
             <Link
               key={k.label}
               href={k.href}
-              className="block rounded-2xl border border-[#EDEDED] bg-white p-5 transition-colors hover:border-[#C6F24E]"
+              className="block bz-card p-5 transition-colors hover:border-[#C6F24E]"
             >
               {inner}
             </Link>
           ) : (
-            <div key={k.label} className="rounded-2xl border border-[#EDEDED] bg-white p-5">
+            <div key={k.label} className="bz-card p-5">
               {inner}
             </div>
           );
@@ -261,12 +265,11 @@ export default async function DashboardPage({
       {(latestFeedbacks.length > 0 || locationPerf.length > 0) && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
           {latestFeedbacks.length > 0 && (
-            <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+            <section className="bz-card p-6 sm:p-7">
               <div className="flex items-center justify-between">
                 <div>
                   <h2
-                    className="text-[18px] font-semibold tracking-[-0.015em]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
+                    className="text-[18px] font-semibold tracking-[-0.015em] bz-h-tight"
                   >
                     {isTr ? 'Son yorumlar' : 'Latest reviews'}
                   </h2>
@@ -325,11 +328,10 @@ export default async function DashboardPage({
 
           {/* Konum performansı — AdminDashboard right column */}
           {locationPerf.length > 0 && (
-            <section className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+            <section className="bz-card p-6 sm:p-7">
               <div>
                 <h2
-                  className="text-[18px] font-semibold tracking-[-0.015em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="text-[18px] font-semibold tracking-[-0.015em] bz-h-tight"
                 >
                   {isTr ? 'Konum performansı' : 'Location performance'}
                 </h2>
@@ -353,8 +355,7 @@ export default async function DashboardPage({
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <span
-                        className="text-[18px] font-semibold tabular-nums text-[#0A0A0A]"
-                        style={{ fontFamily: 'var(--font-heading)' }}
+                        className="text-[18px] font-semibold tabular-nums text-[#0A0A0A] bz-h-tight"
                       >
                         {loc.avg > 0 ? loc.avg.toFixed(1) : '—'}
                       </span>
@@ -372,8 +373,7 @@ export default async function DashboardPage({
       <section className="space-y-5">
         <div className="flex items-center justify-between">
           <h2
-            className="text-[20px] sm:text-[22px] font-semibold tracking-[-0.015em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="text-[20px] sm:text-[22px] font-semibold tracking-[-0.015em] bz-h-tight"
           >
             {t.dash_restaurants}
           </h2>
@@ -392,8 +392,7 @@ export default async function DashboardPage({
               <Building2 size={22} className="text-[#737373]" />
             </div>
             <p
-              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
             >
               {t.dash_no_restaurant}
             </p>
@@ -415,13 +414,12 @@ export default async function DashboardPage({
             {user.restaurants.map((restaurant) => (
               <div
                 key={restaurant.id}
-                className="rounded-2xl border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#C6F24E]"
+                className="bz-card p-6 transition-colors hover:border-[#C6F24E]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <h3
-                      className="truncate text-[17px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
+                      className="truncate text-[17px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
                     >
                       {restaurant.name}
                     </h3>
@@ -447,8 +445,7 @@ export default async function DashboardPage({
                   <Star size={14} className="text-[#C6F24E]" fill="currentColor" />
                   <span className="text-[13px] text-[#525252]">
                     <span
-                      className="font-semibold text-[#0A0A0A]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
+                      className="font-semibold text-[#0A0A0A] bz-h-tight"
                     >
                       {restaurant._count.feedbacks}
                     </span>{' '}
@@ -484,8 +481,7 @@ export default async function DashboardPage({
                 {isTr ? 'GROWTH' : 'GROWTH'}
               </span>
               <h3
-                className="mt-3 text-[24px] sm:text-[30px] font-medium tracking-[-0.02em] leading-[1.15]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="mt-3 text-[24px] sm:text-[30px] font-medium tracking-[-0.02em] leading-[1.15] bz-h-tight"
               >
                 {isTr ? 'Kesintisiz itibar yönetimi.' : 'Uninterrupted reputation management.'}
               </h3>

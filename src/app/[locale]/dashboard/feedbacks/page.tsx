@@ -55,8 +55,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'new' | 'attention' | 'replied'>(
-    (searchParams.get('tab') as 'all' | 'new' | 'attention' | 'replied') || 'all',
+  // Tabs: design source (`OwnerFeedback` in owner-pages-1.jsx) buckets feedbacks
+  // by rating + redirection state, not by reply state. Aligned 1:1 here.
+  const [activeTab, setActiveTab] = useState<'all' | 'low' | 'high' | 'redirected'>(
+    (searchParams.get('tab') as 'all' | 'low' | 'high' | 'redirected') || 'all',
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [replyDraft, setReplyDraft] = useState('');
@@ -89,9 +91,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
   const filteredList = useMemo(() => {
     let rows = feedbacks;
-    if (activeTab === 'new') rows = rows.filter((r) => !r.isReplied);
-    else if (activeTab === 'attention') rows = rows.filter((r) => r.rating <= 2);
-    else if (activeTab === 'replied') rows = rows.filter((r) => r.isReplied);
+    if (activeTab === 'low') rows = rows.filter((r) => r.rating <= 3);
+    else if (activeTab === 'high') rows = rows.filter((r) => r.rating >= 4);
+    else if (activeTab === 'redirected') rows = rows.filter((r) => !!r.platform);
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       rows = rows.filter(
@@ -108,47 +110,22 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     [feedbacks, activeId, filteredList],
   );
 
-  // Initial counts from server aggregate (fast first paint) —
-  // /api/feedback/counts returns {all,new,attention,replied} using
-  // Prisma aggregates. Falls back to derived list counts when the
-  // endpoint is unavailable.
-  const [serverCounts, setServerCounts] = useState<{
-    all: number;
-    new: number;
-    attention: number;
-    replied: number;
-  } | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/feedback/counts');
-        if (res.ok && !cancelled) setServerCounts(await res.json());
-      } catch {
-        /* keep fallback */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const counts = useMemo(() => {
-    if (serverCounts && feedbacks.length === 0) return serverCounts;
-    return {
-      all: feedbacks.length,
-      new: feedbacks.filter((r) => !r.isReplied).length,
-      attention: feedbacks.filter((r) => r.rating <= 2).length,
-      replied: feedbacks.filter((r) => r.isReplied).length,
-    };
-  }, [feedbacks, serverCounts]);
+  // Counts derived from the loaded list. Tab semantics moved away from
+  // reply-state buckets (Phase 11.8 audit), so the legacy
+  // /api/feedback/counts endpoint shape doesn't match any more — counts
+  // are computed client-side over the fetched window.
+  const counts = useMemo(() => ({
+    all: feedbacks.length,
+    low: feedbacks.filter((r) => r.rating <= 3).length,
+    high: feedbacks.filter((r) => r.rating >= 4).length,
+    redirected: feedbacks.filter((r) => !!r.platform).length,
+  }), [feedbacks]);
 
   const tabs: { k: typeof activeTab; l: string; c: number }[] = [
-    { k: 'all', l: isTr ? 'Hepsi' : 'All', c: counts.all },
-    { k: 'new', l: isTr ? 'Yeni' : 'New', c: counts.new },
-    { k: 'attention', l: isTr ? 'Dikkat' : 'Attention', c: counts.attention },
-    { k: 'replied', l: isTr ? 'Yanıtlandı' : 'Replied', c: counts.replied },
+    { k: 'all', l: isTr ? 'Tümü' : 'All', c: counts.all },
+    { k: 'low', l: isTr ? 'Düşük puan (1-3)' : 'Low (1-3)', c: counts.low },
+    { k: 'high', l: isTr ? 'Yüksek puan (4-5)' : 'High (4-5)', c: counts.high },
+    { k: 'redirected', l: isTr ? 'Yönlendirilen' : 'Redirected', c: counts.redirected },
   ];
 
   // Static customer profile + history + SLA (frontend-only, backend to be wired later)
@@ -312,7 +289,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       {/* ============ LEFT — review list ============ */}
       <aside className="flex max-h-[55vh] w-full flex-shrink-0 flex-col border-b border-[#EDEDED] bg-white lg:max-h-none lg:w-[340px] lg:border-b-0 lg:border-r">
         {degraded && (
-          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-[11px] font-medium text-amber-900">
+          <div className="border-b border-[#FDE68A] bg-[#FFFBEB] px-4 py-2 text-[11px] font-medium text-[#92400E]">
             {isTr
               ? `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — DB senkronizasyonu bekleniyor.`
               : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — DB sync pending.`}
@@ -455,15 +432,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           <>
             <div className="flex items-start gap-4">
               <div
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0A0A0A] text-[18px] font-semibold text-[#C6F24E]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0A0A0A] text-[18px] font-semibold text-[#C6F24E] bz-h-tight"
               >
                 {initials(active.customerName)}
               </div>
               <div className="flex-1 min-w-0">
                 <h2
-                  className="text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
                 >
                   {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
                 </h2>
@@ -535,8 +510,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             <div className="mt-6 rounded-xl bg-[#0A0A0A] p-5 text-white">
               <div className="flex items-center gap-2">
                 <span
-                  className="flex h-5 w-5 items-center justify-center rounded bg-[#C6F24E] text-[10px] font-bold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="flex h-5 w-5 items-center justify-center rounded bg-[#C6F24E] text-[10px] font-bold text-[#0A0A0A] bz-h-tight"
                 >
                   AI
                 </span>
@@ -675,8 +649,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               <Inbox size={22} strokeWidth={2} />
             </div>
             <p
-              className="text-[16px] font-semibold text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[16px] font-semibold text-[#0A0A0A] bz-h-tight"
             >
               {isTr ? 'Bir yorum seç' : 'Select a review'}
             </p>
@@ -696,8 +669,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           <div className="mt-3 rounded-xl border border-[#EDEDED] bg-white p-5">
             <p className="text-[12px] text-[#737373]">{isTr ? 'Toplam ziyaret' : 'Total visits'}</p>
             <div
-              className="text-[32px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[32px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A] bz-h-tight"
             >
               1
             </div>
@@ -705,8 +677,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               <div>
                 <p className="pulse-eyebrow text-[#737373]">{isTr ? 'ORT. PUAN' : 'AVG. RATING'}</p>
                 <p
-                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A] bz-h-tight"
                 >
                   {active.rating.toFixed(1)} <span className="text-[#C6F24E]">★</span>
                 </p>
@@ -714,8 +685,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               <div>
                 <p className="pulse-eyebrow text-[#737373]">{isTr ? 'SADAKAT' : 'LOYALTY'}</p>
                 <p
-                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A] bz-h-tight"
                 >
                   {active.rating >= 4 ? (isTr ? 'Yüksek' : 'High') : isTr ? 'Orta' : 'Mid'}
                 </p>

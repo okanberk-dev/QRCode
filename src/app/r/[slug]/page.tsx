@@ -32,6 +32,9 @@ interface RestaurantData {
   trendyolYemekUrl: string | null;
   primaryColor: string;
   isActive: boolean;
+  // Phase 12.6 — owner-picked fallback when QR has no `?platform=` param.
+  // NULL → Google fallback (legacy default).
+  defaultRedirectPlatform?: string | null;
 }
 
 const RATING_LABELS: Record<Locale, string[]> = {
@@ -44,7 +47,10 @@ function ReviewContent() {
   const searchParams = useSearchParams();
   const slug = params.slug as string;
 
-  const platformParam = searchParams.get('platform') || 'google';
+  // The QR's `?platform=` overrides everything; if not present, the
+  // restaurant's owner-picked `defaultRedirectPlatform` is used; if neither
+  // is set, fall back to Google (legacy default).
+  const explicitPlatform = searchParams.get('platform');
   const sourceParam = searchParams.get('source') || 'qr';
   const tableParam = searchParams.get('table') || '';
 
@@ -136,6 +142,11 @@ function ReviewContent() {
     getir: restaurant.getirYemekUrl,
     trendyol_go: restaurant.trendyolYemekUrl,
   };
+
+  // Resolve the platform: explicit `?platform=` wins, then owner-picked
+  // default on the restaurant, finally Google.
+  const platformParam =
+    explicitPlatform || restaurant.defaultRedirectPlatform || 'google';
 
   const targetPlatformUrl = platformUrls[platformParam] || googleUrl;
   const fallbackPlatformId = platformParam in platformUrls ? platformParam : 'google';
@@ -258,10 +269,10 @@ function ReviewContent() {
       <div className="mx-auto flex min-h-[100dvh] max-w-[420px] flex-col px-6 pb-10 pt-8 sm:px-4">
         {/* Brand header */}
         <header className="mb-6 text-center sm:mb-8">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-[26px] font-medium text-[#0A0A0A] shadow-[0_8px_24px_rgba(0,0,0,0.35)]" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-[26px] font-bold text-[#0A0A0A] shadow-[0_8px_24px_rgba(0,0,0,0.35)]" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
             {initial}
           </div>
-          <h1 className="bz-h-tight mt-4 text-[22px] text-white">{restaurant.name}</h1>
+          <h1 className="mt-4 text-[22px] font-bold text-white" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>{restaurant.name}</h1>
           {restaurant.address && (
             <p className="mt-1 text-[12px] text-white/55">{restaurant.address}</p>
           )}
