@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Eye, Loader2, Mail, Send } from 'lucide-react';
+import { PageHeader } from '@/components/ui';
 
 const TEMPLATES = [
   { key: 'forgot-password', label: 'Şifre sıfırlama', desc: 'Token + 6-haneli kod + meta bilgi' },
@@ -44,22 +45,12 @@ export default function MailPreviewIndex() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-8">
-      <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <p className="pulse-eyebrow text-[#737373]">PANEL / DEV / MAIL PREVIEW</p>
-            <h1
-              className="mt-1 flex items-center gap-3 text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              <Mail size={22} strokeWidth={2} />
-              Mail Önizleme
-            </h1>
-            <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252] max-w-[600px]">
-              9 Pulse mail template'i seed verilerle render edilir. Browser'da yeni tab'da görüntüle ya da kendi e-posta adresine test gönder.
-            </p>
-          </div>
+    <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow="MAIL ÖNİZLEME"
+        title="Mail önizleme (dev)"
+        description="9 Pulse mail template'i seed verilerle render edilir. Browser'da yeni tab'da görüntüle ya da kendi e-posta adresine test gönder."
+        actions={
           <div className="inline-flex rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-1 pulse-eyebrow">
             {(['tr', 'en'] as const).map((opt) => (
               <button
@@ -73,14 +64,24 @@ export default function MailPreviewIndex() {
               </button>
             ))}
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700">{error}</div>
+        <div
+          className="px-4 py-3 rounded-xl text-xs font-medium"
+          style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}
+        >
+          {error}
+        </div>
       )}
       {info && (
-        <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8] p-4 text-xs font-semibold text-[#0A0A0A]">{info}</div>
+        <div
+          className="px-4 py-3 rounded-xl text-xs font-medium"
+          style={{ background: '#EAF9B8', border: '1px solid #D9EE7A', color: '#4D5C00' }}
+        >
+          {info}
+        </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
