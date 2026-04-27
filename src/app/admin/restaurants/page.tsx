@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus, Store, Loader2, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, ArrowRight, Crown, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { EmptyState, PageHeader, type TabItem, Tabs } from '@/components/ui';
+import { AlertBanner, EmptyState, PageHeader, type TabItem, Tabs } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -413,10 +413,9 @@ export default function RestaurantsPage() {
 
             <form onSubmit={handleCreate} className="space-y-5 overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
               {error && (
-                <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-3.5">
-                  <Info size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-red-600" />
-                  <p className="text-[13px] leading-relaxed text-red-700">{error}</p>
-                </div>
+                <AlertBanner kind="danger" icon={<Info size={14} strokeWidth={2} className="mt-0.5" />}>
+                  {error}
+                </AlertBanner>
               )}
 
               <div className="space-y-1.5">

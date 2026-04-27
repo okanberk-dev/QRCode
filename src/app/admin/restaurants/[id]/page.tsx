@@ -6,6 +6,7 @@ import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, 
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
+import { AlertBanner } from '@/components/ui';
 
 interface Owner {
   id: string;
@@ -322,16 +323,14 @@ export default function RestaurantDetailPage() {
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4">
-          <AlertTriangle size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-red-600" />
-          <p className="text-[13px] leading-relaxed text-red-700">{error}</p>
-        </div>
+        <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
+          {error}
+        </AlertBanner>
       )}
       {success && (
-        <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-          <CheckCircle2 size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-emerald-600" />
-          <p className="text-[13px] leading-relaxed text-emerald-700">{success}</p>
-        </div>
+        <AlertBanner kind="success" icon={<CheckCircle2 size={14} strokeWidth={2} className="mt-0.5" />}>
+          {success}
+        </AlertBanner>
       )}
 
       {/* Menu management — outside the main form so its toggles don't submit the whole thing */}
