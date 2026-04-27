@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { ArrowLeft, Eye, History, Loader2, Mail, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import MailFieldInput, { type MailFieldDef } from './MailFieldInput';
@@ -51,7 +50,6 @@ const emptyNested = (): NestedContent => ({
 });
 
 export default function FormConfirmationEditor({ locale }: Props) {
-  const router = useRouter();
   const [activeVariant, setActiveVariant] = useState<FormType>('contact');
   const [nested, setNested] = useState<NestedContent>(emptyNested);
   const [seeded, setSeeded] = useState(false);
@@ -212,7 +210,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
           Form onayı · {isEnglish ? 'English' : 'Türkçe'}
         </h1>
         <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252]">
-          4 form tipi (İletişim · Kariyer · ROI · Bülten) için ayrı içerik. Sekmeler arasında geçiş yap, her birinin alanlarını düzenle, sonra "Kaydet" tüm 4 variant'ı tek seferde DB'ye yazar.
+          4 form tipi (İletişim · Kariyer · ROI · Bülten) için ayrı içerik. Sekmeler arasında geçiş yap, her birinin alanlarını düzenle, sonra &quot;Kaydet&quot; tüm 4 variant&apos;ı tek seferde DB&apos;ye yazar.
         </p>
       </div>
 
@@ -302,7 +300,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
                   className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-semibold text-red-700 hover:bg-red-50 active:scale-95 disabled:opacity-50"
                 >
                   {reverting ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-                  <span className="truncate">Tüm variant'ları sıfırla</span>
+                  <span className="truncate">Tüm variant&apos;ları sıfırla</span>
                 </button>
               )}
             </div>

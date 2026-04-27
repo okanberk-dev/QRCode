@@ -267,7 +267,7 @@ export default async function PricingPage({
                   <span key={s} className="text-[18px]">★</span>
                 ))}
               </div>
-              <p className="text-[17px] text-[#0A0A0A] leading-[1.55] mb-6">"{ts.text}"</p>
+              <p className="text-[17px] text-[#0A0A0A] leading-[1.55] mb-6">&quot;{ts.text}&quot;</p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#0A0A0A] text-[#C6F24E] rounded-full flex items-center justify-center text-[14px] font-semibold">
                   {ts.author.charAt(0)}

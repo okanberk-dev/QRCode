@@ -46,7 +46,7 @@ export default function AdminError({
             className="min-h-[44px] w-full flex items-center justify-center gap-2 bg-white text-[#0A0A0A] border border-[#E5E5E5] font-medium py-3 rounded-full hover:border-[#0A0A0A] transition-colors text-[14px]"
           >
             <Home size={15} strokeWidth={2} />
-            Dashboard'a dön
+            Dashboard&apos;a dön
           </Link>
         </div>
       </div>

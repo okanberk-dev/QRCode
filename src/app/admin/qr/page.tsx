@@ -582,7 +582,7 @@ function QRPageContent() {
               </div>
             </div>
             <p className="text-[13px] text-[#525252] mb-4">
-              Müşterinin QR'ı tarattıktan sonra izlediği yol — her adım tek panelden yönetilir.
+              Müşterinin QR&apos;ı tarattıktan sonra izlediği yol — her adım tek panelden yönetilir.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[

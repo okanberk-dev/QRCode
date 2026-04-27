@@ -1,4 +1,4 @@
-import type { Metadata, ResolvingMetadata } from 'next';
+import type { Metadata } from 'next';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
@@ -17,7 +17,6 @@ export async function generateMetadata(
   }: {
     params: Promise<{ locale: Locale; slug: string }>;
   },
-  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { locale, slug } = await params;
   const post = await prisma.blogPost.findUnique({

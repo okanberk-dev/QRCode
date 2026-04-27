@@ -303,7 +303,7 @@ export default async function PizzaLocaleCaseStudy({
             className="text-[80px] leading-none text-[#0A0A0A]/20 font-medium"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
-            "
+            &quot;
           </span>
           <p className="mt-2 text-[22px] sm:text-[32px] lg:text-[36px] font-medium text-[#0A0A0A] leading-[1.2] tracking-[-0.02em] -mt-6">
             {isTr

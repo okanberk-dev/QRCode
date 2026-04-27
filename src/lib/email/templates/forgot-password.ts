@@ -3,7 +3,6 @@ import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import {
   renderEyebrow,
-  renderP,
   renderButton,
   renderStatusPill,
   spacer,

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendWeeklyDigest } from '@/lib/email';
-import { ApiErrors } from '@/lib/api-errors';
 
 /**
  * Weekly digest cron endpoint.
