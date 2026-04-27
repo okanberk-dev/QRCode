@@ -11,7 +11,10 @@ import {
   ProgressBar,
   StatCard,
 } from '@/components/ui';
-import AdminOverviewWidgets from '@/components/admin/AdminOverviewWidgets';
+import AdminOverviewWidgets, {
+  type AttentionRow,
+  type RecentMember,
+} from '@/components/admin/AdminOverviewWidgets';
 
 export const metadata: Metadata = {
   title: 'Panel — Buaze Admin',
@@ -31,6 +34,10 @@ const PLAN_PRICES: Record<string, number> = {
   yearly: 416, // 4990 / 12 (yearly equivalent monthly)
   enterprise: 0,
 };
+
+// Plan trial quota (review count) — used by the "Kota %90+ doldu" attention
+// metric. Aligned with CLAUDE.md GROWTH plan note (default trial = 2000).
+const TRIAL_QUOTA = 2000;
 
 function bucketByWeek(dates: Date[], weeks: number, now: Date): { label: string; value: number }[] {
   const buckets: { label: string; value: number }[] = [];
@@ -53,8 +60,9 @@ export default async function AdminDashboardPage() {
 
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
   const twelveWeeksAgo = new Date(now.getTime() - 12 * 7 * 24 * 60 * 60 * 1000);
 
   // Aggregate queries — kept narrow so the dashboard stays a strategic
@@ -62,25 +70,25 @@ export default async function AdminDashboardPage() {
   const [
     totalBusinesses,
     newBusinesses24h,
+    last7Reviews,
+    prev7Reviews,
     monthlyReviews,
-    previousMonthReviews,
     owners,
     ownersThirtyDaysAgo,
     restaurantsForGrowth,
+    recentRestaurants,
   ] = await Promise.all([
     prisma.restaurant.count(),
     prisma.restaurant.count({ where: { createdAt: { gte: oneDayAgo } } }),
+    prisma.feedback.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+    prisma.feedback.count({ where: { createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo } } }),
     prisma.feedback.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-    prisma.feedback.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
     prisma.user.findMany({
       where: { role: 'restaurant_owner' },
       select: { plan: true, trialEndsAt: true, isActive: true },
     }),
-    // 30-day-old MRR snapshot proxy: paying owners (non-trial/free) who
-    // existed before the 30d window. We don't track plan-switch history, so
-    // this is approximate — assumes today's plan reflects past 30d state for
-    // these owners. Good enough for a directional trend; detailed MRR
-    // accounting will land with Iyzico billing.
+    // 30-day-old MRR snapshot proxy (bkz. CLAUDE.md §14 — plan-switch history
+    // tracking yok, today's plan ≈ past plan kabul edilir).
     prisma.user.findMany({
       where: { role: 'restaurant_owner', createdAt: { lt: thirtyDaysAgo } },
       select: { plan: true },
@@ -89,12 +97,25 @@ export default async function AdminDashboardPage() {
       where: { createdAt: { gte: twelveWeeksAgo } },
       select: { createdAt: true },
     }),
+    // Recent businesses for "SON KATILAN İŞLETMELER" widget — design pattern
+    // gösteriyor: name + city + relative date + owner plan badge.
+    prisma.restaurant.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 4,
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        createdAt: true,
+        user: { select: { plan: true } },
+      },
+    }),
   ]);
 
-  // Trend computations — mirrors design StatCard delta pattern (+X%, +N(24s))
-  const reviewsDeltaPct = previousMonthReviews > 0
-    ? Math.round(((monthlyReviews - previousMonthReviews) / previousMonthReviews) * 1000) / 10
-    : monthlyReviews > 0 ? 100 : 0;
+  // 7-day review delta (design uniform "son 7 gün" suffix uses W-1 → W % change).
+  const reviewsDeltaPct = prev7Reviews > 0
+    ? Math.round(((last7Reviews - prev7Reviews) / prev7Reviews) * 1000) / 10
+    : last7Reviews > 0 ? 100 : 0;
   const reviewsDeltaKind: 'up' | 'down' | 'neutral' =
     reviewsDeltaPct > 0 ? 'up' : reviewsDeltaPct < 0 ? 'down' : 'neutral';
 
@@ -102,8 +123,8 @@ export default async function AdminDashboardPage() {
     (o) => o.plan === 'trial' && o.trialEndsAt && o.trialEndsAt > now,
   ).length;
 
-  // Estimated MRR — sum of plan prices for non-trial owners.
-  // Iyzico bağlantısı geldiğinde gerçek invoice toplamı kullanılır.
+  // Estimated MRR (sentinel prices). Iyzico billing geldiğinde gerçek invoice
+  // toplamı kullanılır.
   const computeMrr = (rows: { plan: string | null }[]) =>
     rows.reduce((acc, o) => {
       const plan = (o.plan || 'trial').toLowerCase();
@@ -144,20 +165,63 @@ export default async function AdminDashboardPage() {
     now,
   );
 
+  // Recently joined → design pattern: business name + "city · joined date" + owner plan
+  const recentMembers: RecentMember[] = recentRestaurants.map((r) => {
+    const city = (r.address || '').split(',').slice(-1)[0]?.trim() || '—';
+    const joined = new Date(r.createdAt).toLocaleDateString('tr-TR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+    return {
+      id: r.id,
+      name: r.name,
+      subline: `${city} · ${joined}`,
+      plan: r.user?.plan || 'trial',
+    };
+  });
+
+  // Attention metrics — design 1:1 (4 sinyal):
+  //  1. KVKK metni eksik          → Restaurant.kvkkText empty
+  //  2. 14+ gün giriş yapılmadı   → User.updatedAt (proxy, lastLoginAt yok)
+  //  3. Kota %90+ doldu           → Trial restaurants whose feedback count ≥ 90% of TRIAL_QUOTA
+  //  4. Doğrulanmamış platform    → Restaurant has googleReviewUrl but googlePlaceId null
+  const [kvkkMissing, staleAccounts, restaurantsForQuota, unverifiedPlatform] = await Promise.all([
+    prisma.restaurant.count({
+      where: { OR: [{ kvkkText: null }, { kvkkText: '' }] },
+    }),
+    prisma.user.count({
+      where: { role: 'restaurant_owner', updatedAt: { lt: fourteenDaysAgo } },
+    }),
+    prisma.restaurant.findMany({
+      where: { user: { plan: 'trial' } },
+      select: { id: true, _count: { select: { feedbacks: true } } },
+    }),
+    prisma.restaurant.count({
+      where: { googleReviewUrl: { not: null }, googlePlaceId: null },
+    }),
+  ]);
+  const quotaNearFull = restaurantsForQuota.filter(
+    (r) => r._count.feedbacks >= TRIAL_QUOTA * 0.9,
+  ).length;
+
+  const attention: AttentionRow[] = [
+    { k: 'KVKK metni eksik', n: kvkkMissing, kind: 'danger' },
+    { k: '14+ gün giriş yapılmadı', n: staleAccounts, kind: 'warn' },
+    { k: 'Kota %90+ doldu', n: quotaNearFull, kind: 'warn' },
+    { k: 'Doğrulanmamış platform', n: unverifiedPlatform, kind: 'warn' },
+  ];
+
   return (
     <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
       <PageHeader
-        eyebrow="SUPERADMIN"
-        eyebrowColor="#C6F24E"
-        title="Sistem genel görünümü"
-        description="Buaze platformunun strateji panosu. Operasyonel günlük yorum izleme için Yorumlar sekmesine geç."
+        eyebrow="SİSTEM YÖNETİMİ"
+        title="Panel"
       />
 
-      {/* Mobile-only "SİSTEM NABZI" hero (Pulse 2026-04 mobile-screens-2.jsx
-          MAdminHome line 419-435 1:1). Desktop'ta KPI grid + business growth +
-          plan distribution daha zengin görünüm sağlar. */}
+      {/* Mobile-only "SİSTEM NABZI" hero (mobile-screens-2.jsx MAdminHome line 419-435 1:1) */}
       <section className="md:hidden rounded-[20px] bg-[#0A0A0A] p-[18px] text-white">
-        <span className="pulse-eyebrow text-[#C6F24E]">SİSTEM NABZI</span>
+        <span className="pulse-eyebrow text-[#C6F24E]" style={{ fontSize: 9 }}>SİSTEM NABZI</span>
         <div className="bz-h-tight-2 mt-2" style={{ fontSize: 32 }}>
           ₺{mrr.toLocaleString('tr-TR')}
         </div>
@@ -185,14 +249,14 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* 4-stat KPI grid (1:1 design AdminDashboard) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* Desktop-only 4-stat KPI grid — 'son 7 gün' uniform suffix per design */}
+      <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <StatCard
           label="Toplam işletme"
           value={totalBusinesses}
-          delta={`+${newBusinesses24h}`}
+          delta={`+${newBusinesses24h} (24s)`}
           deltaKind={newBusinesses24h > 0 ? 'up' : 'neutral'}
-          deltaSuffix="(24s)"
+          deltaSuffix="son 7 gün"
           icon={<Store size={14} strokeWidth={2} />}
         />
         <StatCard
@@ -200,16 +264,16 @@ export default async function AdminDashboardPage() {
           value={`₺${mrr.toLocaleString('tr-TR')}`}
           delta={mrrThirtyDaysAgo > 0 ? `${mrrDeltaPct >= 0 ? '+' : ''}${mrrDeltaPct}%` : 'Yeni'}
           deltaKind={mrrDeltaKind}
-          deltaSuffix="son 30 gün"
+          deltaSuffix="son 7 gün"
           icon={<CreditCard size={14} strokeWidth={2} />}
           accent="#C6F24E"
         />
         <StatCard
           label="Aktif denemeler"
           value={activeTrials}
-          delta="14 gün"
+          delta="14 gün ort."
           deltaKind="neutral"
-          deltaSuffix="ortalama"
+          deltaSuffix="son 7 gün"
           icon={<Crown size={14} strokeWidth={2} />}
         />
         <StatCard
@@ -217,22 +281,22 @@ export default async function AdminDashboardPage() {
           value={monthlyReviews.toLocaleString('tr-TR')}
           delta={`${reviewsDeltaPct >= 0 ? '+' : ''}${reviewsDeltaPct}%`}
           deltaKind={reviewsDeltaKind}
-          deltaSuffix="son 30 gün"
+          deltaSuffix="son 7 gün"
           icon={<MessageSquare size={14} strokeWidth={2} />}
         />
       </div>
 
-      {/* Business growth + Plan distribution (1:1 design 2fr 1fr split) */}
-      <div className="grid gap-3.5 lg:grid-cols-[2fr_1fr]">
+      {/* Desktop-only: Business growth + Plan distribution (1:1 design 2fr 1fr split) */}
+      <div className="hidden md:grid gap-3.5 lg:grid-cols-[2fr_1fr]">
         <div className="bz-card p-5 sm:p-6">
-          <Eyebrow>İşletme büyümesi</Eyebrow>
+          <Eyebrow>İŞLETME BÜYÜMESİ</Eyebrow>
           <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
             Son 12 hafta
           </div>
           <BarChart data={businessGrowthData} height={160} />
         </div>
         <div className="bz-card p-5 sm:p-6">
-          <Eyebrow>Plan dağılımı</Eyebrow>
+          <Eyebrow>PLAN DAĞILIMI</Eyebrow>
           <div className="bz-h-tight mt-1 mb-3.5" style={{ fontSize: 18 }}>
             {totalOwners} işletme
           </div>
@@ -260,8 +324,9 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Recently joined + Needs attention (Phase 3.3 — already 1:1 design) */}
-      <AdminOverviewWidgets locale="tr" />
+      {/* Recently joined + Needs attention — server-computed metrics (design 1:1).
+          Mobile: stacks vertically (matches MAdminHome). Desktop: 2-col. */}
+      <AdminOverviewWidgets locale="tr" members={recentMembers} attention={attention} />
     </div>
   );
 }
