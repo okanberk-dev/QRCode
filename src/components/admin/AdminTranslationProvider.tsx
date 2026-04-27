@@ -73,7 +73,7 @@ export function AdminTranslationProvider({ children, initialLocale = 'tr' }: { c
   };
 
   const t = (key: string) => {
-    return (adminTranslations as any)[locale]?.[key] || key;
+    return (adminTranslations as Record<string, Record<string, string>>)[locale]?.[key] || key;
   };
 
   return (

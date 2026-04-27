@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
@@ -54,11 +55,12 @@ export async function GET(req: NextRequest) {
           'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
         },
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as { code?: string; message?: string };
       console.error('Restaurant lookup error:', {
         slug,
-        code: error?.code,
-        message: error?.message,
+        code: err?.code,
+        message: err?.message,
       });
       return ApiErrors.internalError('Sunucu hatası');
     }
@@ -77,7 +79,7 @@ export async function GET(req: NextRequest) {
     const status = adminParams.get('status') || 'active';
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.RestaurantWhereInput = {};
     const scopedIds = await getScopedRestaurantIds(actor);
     
     if (scopedIds !== null) {
@@ -224,8 +226,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(restaurant, { status: 201 });
-  } catch (error: any) {
-    if (error?.code === 'P2002') {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return ApiErrors.conflict('Bu slug zaten kullanılıyor');
     }
     console.error('Failed to create restaurant:', error);

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin || admin.role !== 'superadmin') {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
   }
@@ -25,7 +26,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       }
     }
 
-    const data: any = {};
+    const data: Prisma.UserUpdateInput = {};
     if (name !== undefined) data.name = name;
     if (email !== undefined) data.email = email.toLowerCase().trim();
     if (plan !== undefined) data.plan = plan;
@@ -101,7 +102,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   // Only superadmins can delete customers
   if (!admin || admin.role !== 'superadmin') {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });

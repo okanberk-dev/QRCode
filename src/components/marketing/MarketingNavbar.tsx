@@ -1,12 +1,12 @@
 import { cookies } from 'next/headers';
 import { verifyJwt } from '@/lib/auth';
-import type { Locale } from '@/lib/translations';
+import type { Locale, Translations } from '@/lib/translations';
 import MarketingNavbarClient from './MarketingNavbarClient';
 import { getSiteSettings } from '@/lib/site-settings';
 
 interface MarketingNavbarProps {
   locale: Locale;
-  t: any;
+  t: Translations;
 }
 
 export default async function MarketingNavbar({ locale, t }: MarketingNavbarProps) {

@@ -27,7 +27,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   // Superadmin gate. Endpoint was production-disabled before, so it had
   // no auth — opening it up to prod requires a real auth check.
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin || admin.role !== 'superadmin') {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }

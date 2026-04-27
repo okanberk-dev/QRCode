@@ -41,7 +41,7 @@ function QRPageContent() {
   const [loading, setLoading] = useState(true);
   const [qrSvg, setQrSvg] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<{ role?: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [history, setHistory] = useState<QrHistoryItem[]>([]);

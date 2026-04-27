@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import { ApiErrors } from '@/lib/api-errors';
 
 export async function GET(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
@@ -128,15 +128,16 @@ export async function POST(req: NextRequest) {
       });
 
       return NextResponse.json({ success: true, user: newUser }, { status: 201 });
-    } catch (txError: any) {
-      if (txError?.apiCode === 'USERNAME_TAKEN') {
+    } catch (txError) {
+      const err = txError as { apiCode?: string; code?: string; meta?: { target?: unknown } };
+      if (err?.apiCode === 'USERNAME_TAKEN') {
         return ApiErrors.conflict('Bu kullanıcı adı zaten kullanılıyor');
       }
-      if (txError?.apiCode === 'INVALID_RESTAURANT') {
+      if (err?.apiCode === 'INVALID_RESTAURANT') {
         return ApiErrors.badRequest('Seçilen restoran bulunamadı', 'INVALID_RESTAURANT');
       }
-      if (txError?.code === 'P2002') {
-        const target = Array.isArray(txError.meta?.target) ? txError.meta.target.join(',') : String(txError.meta?.target || '');
+      if (err?.code === 'P2002') {
+        const target = Array.isArray(err.meta?.target) ? err.meta.target.join(',') : String(err.meta?.target || '');
         if (target.includes('slug')) {
           return ApiErrors.conflict('Bu URL Slug zaten kullanımda');
         }
@@ -154,7 +155,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 

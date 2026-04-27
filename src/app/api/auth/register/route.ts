@@ -137,10 +137,10 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error) {
     console.error('[AUTH_REGISTER]', error);
-    
-    if (error.message === 'USER_EXISTS') {
+
+    if (error instanceof Error && error.message === 'USER_EXISTS') {
       return NextResponse.json(
         { error: 'Bu e-posta adresiyle zaten bir hesap mevcut.' },
         { status: 409 }
@@ -148,7 +148,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Prisma Connection Timeout
-    if (error.code === 'P2024') {
+    const errCode = (error as { code?: string })?.code;
+    if (errCode === 'P2024') {
       return NextResponse.json(
         { error: 'Veritabanı bağlantı zaman aşımı. Lütfen biraz bekleyip tekrar deneyin.' },
         { status: 503 }

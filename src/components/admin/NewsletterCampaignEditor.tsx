@@ -64,7 +64,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
         const res = await fetch('/api/admin/blog?limit=100');
         const body = await res.json();
         if (!alive) return;
-        const list: BlogPostOption[] = (body.data ?? body.posts ?? []).map((p: any) => ({
+        const list: BlogPostOption[] = (body.data ?? body.posts ?? []).map((p: { id: string; title: string; locale: string; slug: string; isActive?: boolean }) => ({
           id: p.id,
           title: p.title,
           locale: p.locale,

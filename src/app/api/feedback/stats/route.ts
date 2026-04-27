@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
     // Build base date filter (supports: today/1, month, numeric days, all).
     // UTC-based to match the /feedback route and stay consistent regardless of
     // server timezone.
-    const dateFilter: any = {};
+    const dateFilter: Prisma.FeedbackWhereInput = {};
     if (daysParam === '1' || daysParam === 'today') {
       const startOfToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0));
       dateFilter.createdAt = { gte: startOfToday };
@@ -110,7 +111,7 @@ export async function GET(req: NextRequest) {
       // Build the groupBy where clause carefully: the dateFilter may already
       // contain a restaurantId scope (e.g. { in: [...] } for restaurant_owner).
       // We must NOT overwrite it with { not: null }.
-      const groupByWhere: any = { ...dateFilter, rating: { gte: 4 } };
+      const groupByWhere: Prisma.FeedbackWhereInput = { ...dateFilter, rating: { gte: 4 } };
       if (!groupByWhere.restaurantId) {
         groupByWhere.restaurantId = { not: null };
       }
@@ -122,7 +123,7 @@ export async function GET(req: NextRequest) {
 
       if (highByRest.length > 0) {
         const rawIds = highByRest
-          .map((r: any) => r.restaurantId as string | null)
+          .map((r) => r.restaurantId as string | null)
           .filter((id): id is string => !!id);
         const restaurantIds = Array.from(new Set(rawIds));
 
@@ -131,10 +132,11 @@ export async function GET(req: NextRequest) {
           select: { id: true, name: true, googlePlaceId: true },
         });
 
-        const restMap = new Map(restaurants.map((r: any) => [r.id, r]));
+        const restMap = new Map(restaurants.map((r) => [r.id, r]));
 
         byRestaurant = highByRest
-          .map((row: any) => {
+          .map((row) => {
+            if (!row.restaurantId) return null;
             const rest = restMap.get(row.restaurantId);
             if (!rest) return null;
             const hasGoogleLink = !!rest.googlePlaceId;
@@ -222,7 +224,7 @@ export async function GET(req: NextRequest) {
       orderBy: { rating: 'desc' }
     });
     const distribution: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    distributionRaw.forEach((item: any) => {
+    distributionRaw.forEach((item) => {
       distribution[item.rating] = item._count;
     });
 
@@ -234,7 +236,7 @@ export async function GET(req: NextRequest) {
       const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
       const end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
 
-      const trendFilter: any = { ...dateFilter, createdAt: { gte: start, lt: end } };
+      const trendFilter: Prisma.FeedbackWhereInput = { ...dateFilter, createdAt: { gte: start, lt: end } };
       
       const [count, aggregations] = await Promise.all([
         prisma.feedback.count({ where: trendFilter }),
@@ -261,7 +263,7 @@ export async function GET(req: NextRequest) {
 
     // Day.getDay(): 0=Sun, 1=Mon, ..., 6=Sat
     const daysMap: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-    dayDistributionRaw.forEach((f: any) => {
+    dayDistributionRaw.forEach((f) => {
       const day = f.createdAt.getDay();
       daysMap[day] = (daysMap[day] || 0) + 1;
     });
@@ -291,7 +293,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     const wordCounts: Record<string, number> = {};
-    allComments.forEach((fb: any) => {
+    allComments.forEach((fb) => {
       if (!fb.comment) return;
       const cleanString = fb.comment.toLowerCase().replace(/[^a-zçğıöşü\s]/g, ' ');
       const words = cleanString.split(/\s+/);
@@ -322,7 +324,7 @@ export async function GET(req: NextRequest) {
       trendyol_go: 'Trendyol GO',
     };
 
-    const platformDistribution = platformGroupRaw.map((row: any) => ({
+    const platformDistribution = platformGroupRaw.map((row) => ({
       platform: row.platform || 'unspecified',
       label: row.platform ? (platformLabels[row.platform] || row.platform) : 'Genel',
       count: row._count,
