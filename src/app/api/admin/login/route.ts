@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
           }
         });
       }
-    } catch (e) {
+    } catch {
       // Ignored if table doesn't exist
     }
 
