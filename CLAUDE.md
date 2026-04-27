@@ -1926,6 +1926,8 @@ Mobil pass kapsamı: **küçük metrik düzeltmeleri + smooth motion** (yeni com
 
 ### 25.4 Tasarım metriği eşleme tablosu
 
+#### Pas 1 — temel metrikler (PR #118)
+
 | Tasarım metriği (`buaze-mobil`) | Eski değer | Yeni değer | Dosya |
 |---|---|---|---|
 | Bottom nav center FAB | 48x48, shadow blur 12 | 52x52, shadow blur 16 | `MobileBottomNav.tsx` |
@@ -1933,6 +1935,37 @@ Mobil pass kapsamı: **küçük metrik düzeltmeleri + smooth motion** (yeni com
 | Drawer scroll container | scrollbar görünür | `no-scrollbar` | `MarketingNavbarClient.tsx` |
 | Industry tab strip scroll | scrollbar görünür | `no-scrollbar` | `HomeIndustryTabs.tsx` |
 | Hero h1 mobile baseline | 40px | 38px | `app/[locale]/page.tsx` |
+
+#### Pas 2 — 1:1 hizalama (kullanıcı talebi: "birebir aynı yap")
+
+| Tasarım metriği | Eski | Yeni | Dosya |
+|---|---|---|---|
+| Bottom nav active indicator | sol-aligned (centering bug), `rounded-b-full` | `left-1/2 -translate-x-1/2`, `rounded-b-[2px]` (2px corners only) | `MobileBottomNav.tsx` |
+| Bottom nav icon stroke | `active ? 2.25 : 2` (kalınlaşıyordu) | `2` her durumda (renk değişimi yeter) | `MobileBottomNav.tsx` |
+| Hero h1 line-height (mobile) | 1.05 | **0.95** | `page.tsx` |
+| Hero subtitle (mobile) | 16px / 1.55 | **15px / 1.6** | `page.tsx` |
+| Logo strip padding-y | 20px (`py-5`) | 16px (`py-4`) | `page.tsx` |
+| Three Steps card bg | `#FAFAFA` | **`#fff`** (`bz-card`) | `page.tsx` |
+| Three Steps card radius | 18px | **16px** (`bz-card`) | `page.tsx` |
+| Three Steps illustration | `size={180}` | **`size={160}`** | `page.tsx` |
+| Three Steps grid | `grid-cols-1 md:grid-cols-3` | **`auto-fit, minmax(260px, 1fr)`** (tablet 2-up otomatik) | `page.tsx` |
+| Three Steps grid gap | `gap-6` (24px) | **`gap-5`** (20px) | `page.tsx` |
+| Three Steps h2 mobile | 32px | **28px** | `page.tsx` |
+| Three Steps h3 mobile | 24px | **20px** | `page.tsx` |
+| Three Steps body mobile | 15px / 1.55 | **14px / 1.6** | `page.tsx` |
+| Dark Feature h2 mobile | 36px | **28px** | `page.tsx` |
+| Dark Feature features grid | `grid-cols-1 sm:grid-cols-2` | **`grid-cols-2`** her viewport | `page.tsx` |
+| Dark Feature checkmark | 24x24 (`w-6 h-6`) / 12px text | **22x22 / 11px text** | `page.tsx` |
+| Google Safe h2 mobile | 36px | **26px** | `page.tsx` |
+| Bento section bg | beyaz | **`#FAFAFA`** | `page.tsx` |
+| Bento h2 mobile | 30px | **26px** | `page.tsx` |
+| Industry Tabs h2 mobile | 36px | **26px** | `page.tsx` |
+| QR Teaser h2 mobile | 28px | **24px** | `page.tsx` |
+| Case Study h2 mobile | 36px | **26px** | `page.tsx` |
+| Case Study illustration | `size={340}` | **`size={280}`** | `page.tsx` |
+| CTA Banner h2 mobile | 36px | **28px** | `page.tsx` |
+| Section padding-x mobile | `px-6` (24px) | **`px-5`** (20px) — tüm section'larda tasarım `clamp(20px,5vw,64px)` taban değeri | `page.tsx` |
+| Section padding-y mobile | `py-20` (80px) | **`py-[60px]`** — tasarım `clamp(60px,8vw,112px)` taban değeri | `page.tsx` |
 
 ### 25.5 Yeni mobil sayfa eklerken
 
