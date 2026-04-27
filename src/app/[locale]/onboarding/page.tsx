@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import type { Locale } from '@/lib/translations';
+import { AlertBanner } from '@/components/ui';
 
 type StepId = 'profile' | 'sector' | 'location' | 'platforms' | 'qr';
 
@@ -441,14 +442,11 @@ function LocationStep({
           className={inputCls}
         />
       </FormRow>
-      <div className="flex items-start gap-3 rounded-xl bg-[#EAF9B8] px-4 py-3 text-[12px] text-[#0A0A0A]">
-        <MapPin size={14} className="mt-0.5 shrink-0" />
-        <span>
-          {isTr
-            ? 'Birden fazla şubeniz varsa endişelenmeyin — ilk kurulum sonrası kolayca ekleyebilirsiniz.'
-            : 'Got more than one branch? No stress — add them after the first setup in one click.'}
-        </span>
-      </div>
+      <AlertBanner kind="lime" icon={<MapPin size={14} className="mt-0.5 shrink-0" />}>
+        {isTr
+          ? 'Birden fazla şubeniz varsa endişelenmeyin — ilk kurulum sonrası kolayca ekleyebilirsiniz.'
+          : 'Got more than one branch? No stress — add them after the first setup in one click.'}
+      </AlertBanner>
     </div>
   );
 }
@@ -694,8 +692,7 @@ function ConfettiBurst() {
 }
 
 // ─── Shared bits ─────────────────────────────────────────────
-const inputCls =
-  'w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#0A0A0A]';
+const inputCls = 'bz-input';
 
 function FormRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
