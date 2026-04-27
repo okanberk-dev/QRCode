@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
-import { 
-  Loader2, Info, ChevronRight, X, 
-  MapPin, Phone, Globe, ArrowLeft,
-  Utensils, Search
+import {
+  X,
+  ArrowLeft,
+  Utensils,
+  Search,
 } from 'lucide-react';
-import { getTranslations, Locale, locales } from '@/lib/translations';
+import { Locale, locales } from '@/lib/translations';
 import { useMenuAnalytics, useProductViewTracking } from '@/hooks/useMenuAnalytics';
+import { Badge, EmptyState } from '@/components/ui';
 
 interface Category {
   id: string;
@@ -134,12 +136,37 @@ export default function PublicMenuPage() {
     fetchMenu();
   }, [slug]);
 
+  // Body scroll lock while modal is open
+  useEffect(() => {
+    if (selectedItem) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [selectedItem]);
+
+  // ESC closes modal
+  useEffect(() => {
+    if (!selectedItem) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedItem(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [selectedItem]);
+
   if (loading) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-6">
-          <div className="w-16 h-16 rounded-full border-4 border-[#FFFFFF] border-t-blue-500 animate-spin" />
-          <p className="text-sm font-black text-[#C9D0DB] tracking-[0.2em] uppercase">BUAZE</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-2 border-[#EDEDED] border-t-[#C6F24E]" />
+          <span
+            className="text-[10px] uppercase text-[#A3A3A3]"
+            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.18em' }}
+          >
+            Buaze
+          </span>
         </div>
       </div>
     );
@@ -150,26 +177,32 @@ export default function PublicMenuPage() {
   const themeColor = data.menuAccentColor || data.primaryColor || '#0A0A0A';
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FFFFFF] selection:bg-[#EDEDED]">
-      
-      {/* ── Fixed Header ── */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#EDEDED]">
-        <div className="max-w-xl mx-auto px-5 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <button 
-               onClick={() => window.history.back()}
-               className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#FFFFFF] text-[#0A0A0A] transition-colors"
-             >
-               <ArrowLeft size={22} strokeWidth={2} />
-             </button>
-             <h1 className="font-extrabold text-lg tracking-tight text-[#0A0A0A] truncate max-w-[180px]">{data.name}</h1>
+    <div className="flex min-h-screen flex-col bg-white selection:bg-[#EAF9B8]">
+
+      {/* ── Sticky Header ── */}
+      <header className="sticky top-0 z-50 border-b border-[#EDEDED] bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-xl items-center justify-between px-5">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => window.history.back()}
+              aria-label={locale === 'tr' ? 'Geri' : 'Back'}
+              className="bz-btn-icon"
+            >
+              <ArrowLeft size={18} strokeWidth={2} />
+            </button>
+            <h1 className="bz-h-tight truncate text-[18px] text-[#0A0A0A]">{data.name}</h1>
           </div>
-          <div 
-            className="w-10 h-10 rounded-2xl flex items-center justify-center text-white text-base font-black shadow-lg overflow-hidden shrink-0"
-            style={{ backgroundColor: themeColor }}
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl text-base font-medium text-white shadow-sm"
+            style={{
+              backgroundColor: themeColor,
+              fontFamily: 'var(--font-heading)',
+              letterSpacing: '-0.03em',
+            }}
+            aria-hidden="true"
           >
             {data.menuLogoUrl ? (
-              <img src={data.menuLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+              <img src={data.menuLogoUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               data.name.charAt(0).toUpperCase()
             )}
@@ -177,216 +210,261 @@ export default function PublicMenuPage() {
         </div>
 
         {/* ── Search Bar ── */}
-        <div className="max-w-xl mx-auto px-5 pb-3">
-           <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280] group-focus-within:text-[#0A0A0A] transition-colors" size={18} />
-              <input 
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={locale === 'tr' ? 'Ürün veya kategori ara...' : 'Search for dishes...'}
-                className="w-full h-12 bg-[#FFFFFF] border border-[#EDEDED] rounded-2xl pl-12 pr-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#EDEDED] focus:bg-white transition-all shadow-sm"
-              />
-           </div>
+        <div className="mx-auto max-w-xl px-5 pb-3">
+          <div className="relative">
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={locale === 'tr' ? 'Ürün veya kategori ara…' : 'Search dishes or categories…'}
+              className="bz-input pl-10"
+              aria-label={locale === 'tr' ? 'Menüde ara' : 'Search menu'}
+            />
+          </div>
         </div>
 
         {/* ── Category Chips ── */}
-        {!searchQuery && (
-          <div className="max-w-xl mx-auto px-5 pb-3 overflow-x-auto no-scrollbar flex items-center gap-2">
-            {data.categories.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  analytics.trackCategoryClick(cat.id);
-                  const el = document.getElementById(`cat-${cat.id}`);
-                  if (el) {
-                    const offset = 160; // adjust based on header height
-                    const bodyRect = document.body.getBoundingClientRect().top;
-                    const elementRect = el.getBoundingClientRect().top;
-                    const elementPosition = elementRect - bodyRect;
-                    const offsetPosition = elementPosition - offset;
-
-                    window.scrollTo({
-                      top: offsetPosition,
-                      behavior: 'smooth'
-                    });
-                  }
-                }}
-                className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
-                  activeCategory === cat.id 
-                    ? 'bg-[#0A0A0A] text-white border-[#0A0A0A] shadow-xl shadow-[#EDEDED]' 
-                    : 'bg-white text-[#6B7280] border-[#EDEDED] hover:border-[#EDEDED]'
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
+        {!searchQuery && data.categories.length > 0 && (
+          <div
+            role="tablist"
+            aria-label={locale === 'tr' ? 'Kategoriler' : 'Categories'}
+            className="mx-auto flex max-w-xl items-center gap-2 overflow-x-auto px-5 pb-3 no-scrollbar"
+          >
+            {data.categories.map(cat => {
+              const active = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    analytics.trackCategoryClick(cat.id);
+                    const el = document.getElementById(`cat-${cat.id}`);
+                    if (el) {
+                      const offset = 160; // header height incl. search + chips
+                      const bodyRect = document.body.getBoundingClientRect().top;
+                      const elementRect = el.getBoundingClientRect().top;
+                      const elementPosition = elementRect - bodyRect;
+                      window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
+                    }
+                  }}
+                  className={`whitespace-nowrap rounded-full border px-4 py-1.5 text-[12px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
+                    active
+                      ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                      : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              );
+            })}
           </div>
         )}
       </header>
 
       {/* ── Menu List ── */}
-      <main className="max-w-xl mx-auto w-full px-5 py-6 space-y-12 mb-20">
-         {filteredCategories.length === 0 ? (
-           <div className="py-20 text-center space-y-4">
-              <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center mx-auto shadow-sm">
-                 <Search className="text-[#EDEDED]" size={32} />
-              </div>
-              <p className="text-sm font-bold text-[#6B7280]">{locale === 'tr' ? 'Aradığınız kritere uygun ürün bulunamadı.' : 'No items found matching your search.'}</p>
-           </div>
-         ) : (
-           filteredCategories.map(cat => (
-             <section key={cat.id} id={`cat-${cat.id}`} className="space-y-6 scroll-mt-28 animate-in fade-in slide-in-from-bottom-5 duration-500">
-                <div className="flex items-center gap-4">
-                   <div className="h-8 w-1.5 rounded-full" style={{ backgroundColor: themeColor }} />
-                   <div>
-                     <h2 className="text-2xl font-extrabold text-[#0A0A0A] tracking-tight">{cat.name}</h2>
-                     {cat.description && <p className="text-xs font-bold text-[#6B7280] mt-0.5">{cat.description}</p>}
-                   </div>
+      <main className="mx-auto mb-20 w-full max-w-xl flex-1 space-y-12 px-5 py-6">
+        {filteredCategories.length === 0 ? (
+          <div className="py-16">
+            <EmptyState
+              icon={<Search size={28} className="text-[#A3A3A3]" />}
+              title={locale === 'tr' ? 'Sonuç bulunamadı' : 'No results'}
+              body={
+                locale === 'tr'
+                  ? 'Aradığınız kritere uygun ürün bulunamadı.'
+                  : 'No items match your search.'
+              }
+            />
+          </div>
+        ) : (
+          filteredCategories.map(cat => (
+            <section
+              key={cat.id}
+              id={`cat-${cat.id}`}
+              className="bz-fade-in scroll-mt-32 space-y-5"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  aria-hidden="true"
+                  className="h-7 w-1 rounded-full"
+                  style={{ backgroundColor: themeColor }}
+                />
+                <div className="min-w-0">
+                  <h2 className="bz-h-tight-2 text-[22px] text-[#0A0A0A]">{cat.name}</h2>
+                  {cat.description && (
+                    <p className="mt-0.5 text-[12px] text-[#737373]">{cat.description}</p>
+                  )}
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                   {cat.items.map(item => (
-                     <div
-                       key={item.id}
-                       data-pid={item.id}
-                       ref={(el) => setProductRef(item.id, el)}
-                       onClick={() => { setSelectedItem(item); analytics.trackProductClick(item.id, cat.id); }}
-                       className="relative bg-white rounded-[28px] p-4 flex gap-4 border border-[#FFFFFF] shadow-sm active:scale-[0.98] transition-all group cursor-pointer"
-                     >
-                        <div className="flex-1 space-y-1.5">
-                           <div className="flex items-start justify-between gap-2">
-                             <div className="flex flex-col gap-1">
-                               <h3 className="font-extrabold text-[#0A0A0A] leading-tight group-hover:text-[#1A1A1A] transition-colors uppercase tracking-tight">{item.name}</h3>
-                               {item.badges && item.badges.length > 0 && (
-                                 <div className="flex flex-wrap gap-1">
-                                    {item.badges.map((badge, idx) => (
-                                      <span key={idx} className="bg-[#C6F24E] text-[#0A0A0A] text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
-                                         {badge}
-                                      </span>
-                                    ))}
-                                 </div>
-                               )}
-                             </div>
-                           </div>
-                           {item.description && (
-                             <p className="text-[12px] font-medium text-[#6B7280] line-clamp-2 leading-relaxed">{item.description}</p>
-                           )}
-                           <div className="pt-1">
-                             <span className="text-[15px] font-black text-[#0A0A0A]">
-                               {(item.priceCents / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {item.currency === 'TRY' ? '₺' : item.currency}
-                             </span>
-                           </div>
-                        </div>
-
-                        {item.imageUrl && (
-                          <div className="relative w-24 h-24 shrink-0 rounded-[20px] overflow-hidden border border-[#FFFFFF]">
-                             <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                             {item.isOutOfStock && (
-                               <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
-                                  <span className="bg-white px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-tighter text-red-600 shadow-sm">
-                                    {locale === 'tr' ? 'STOKTA YOK' : 'OUT OF STOCK'}
-                                  </span>
-                               </div>
-                             )}
+              <div className="grid grid-cols-1 gap-3">
+                {cat.items.map(item => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    data-pid={item.id}
+                    ref={(el) => setProductRef(item.id, el)}
+                    onClick={() => {
+                      setSelectedItem(item);
+                      analytics.trackProductClick(item.id, cat.id);
+                    }}
+                    className="group relative flex w-full gap-4 rounded-3xl border border-[#EDEDED] bg-white p-4 text-left transition-all hover:border-[#0A0A0A] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                  >
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex flex-col gap-1">
+                        <h3 className="bz-h-tight text-[15px] text-[#0A0A0A]">{item.name}</h3>
+                        {item.badges && item.badges.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {item.badges.map((badge, idx) => (
+                              <Badge key={idx} kind="lime">{badge}</Badge>
+                            ))}
                           </div>
                         )}
+                      </div>
+                      {item.description && (
+                        <p className="line-clamp-2 text-[12.5px] leading-relaxed text-[#525252]">
+                          {item.description}
+                        </p>
+                      )}
+                      <div className="pt-1">
+                        <span
+                          className="text-[15px] text-[#0A0A0A]"
+                          style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}
+                        >
+                          {(item.priceCents / 100).toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US', {
+                            minimumFractionDigits: 2,
+                          })}{' '}
+                          {item.currency === 'TRY' ? '₺' : item.currency}
+                        </span>
+                      </div>
+                    </div>
 
-                        {!item.imageUrl && item.isOutOfStock && (
-                           <div className="absolute right-4 top-4">
-                              <span className="bg-red-50 px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-tighter text-red-600 border border-red-100">
-                                {locale === 'tr' ? 'TÜKENDİ' : 'SOLD OUT'}
-                              </span>
-                           </div>
+                    {item.imageUrl && (
+                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-[#EDEDED]">
+                        <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                        {item.isOutOfStock && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/45 backdrop-blur-[1px]">
+                            <Badge kind="danger">{locale === 'tr' ? 'Stokta yok' : 'Out of stock'}</Badge>
+                          </div>
                         )}
-                     </div>
-                   ))}
-                </div>
-             </section>
-           ))
-         )}
+                      </div>
+                    )}
+
+                    {!item.imageUrl && item.isOutOfStock && (
+                      <div className="absolute right-4 top-4">
+                        <Badge kind="danger">{locale === 'tr' ? 'Tükendi' : 'Sold out'}</Badge>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))
+        )}
       </main>
 
       {/* ── Footer ── */}
-      <footer className="mt-auto py-10 px-6 bg-[#FFFFFF]/50 border-t border-[#EDEDED]">
-        <div className="max-w-xl mx-auto flex flex-col items-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold text-[#C9D0DB] tracking-[0.2em] uppercase">POWERED BY</span>
-            <span className="text-[10px] font-black text-[#6B7280] tracking-tighter uppercase">BUAZE</span>
-          </div>
+      <footer className="mt-auto border-t border-[#EDEDED] px-6 py-8">
+        <div
+          className="mx-auto flex max-w-xl items-center justify-center gap-2 text-[10px] uppercase text-[#A3A3A3]"
+          style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.18em' }}
+        >
+          <span>Powered by</span>
+          <span className="text-[#0A0A0A]">Buaze</span>
         </div>
       </footer>
 
       {/* ── Item Detail Modal ── */}
       {selectedItem && (
-        <div className="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 animate-in fade-in duration-300">
-           <div 
-             className="w-full max-w-xl bg-white rounded-t-[32px] sm:rounded-[40px] overflow-hidden animate-in slide-in-from-bottom-20 duration-500 shadow-2xl"
-             onClick={(e) => e.stopPropagation()}
-           >
-              <div className="relative h-[60dvh] sm:h-[400px]">
-                 {selectedItem.imageUrl ? (
-                   <img src={selectedItem.imageUrl} alt={selectedItem.name} className="w-full h-full object-cover" />
-                 ) : (
-                   <div className="w-full h-full bg-[#FFFFFF] flex items-center justify-center text-[#EDEDED]">
-                      <Utensils size={64} />
-                   </div>
-                 )}
-                 <button 
-                   onClick={() => setSelectedItem(null)}
-                   className="absolute top-5 right-5 w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/40 transition-all active:scale-90"
-                 >
-                   <X size={20} strokeWidth={2} />
-                 </button>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="menu-item-title"
+          onClick={() => setSelectedItem(null)}
+          className="bz-fade-in fixed inset-0 z-[60] flex items-end justify-center bg-black/60 p-0 backdrop-blur-md sm:items-center sm:p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-xl overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:rounded-[28px]"
+          >
+            <div className="relative h-[55dvh] sm:h-[360px]">
+              {selectedItem.imageUrl ? (
+                <img src={selectedItem.imageUrl} alt={selectedItem.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-[#FAFAFA] text-[#D4D4D4]">
+                  <Utensils size={56} strokeWidth={1.5} />
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setSelectedItem(null)}
+                aria-label={locale === 'tr' ? 'Kapat' : 'Close'}
+                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-colors hover:bg-black/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+              >
+                <X size={18} strokeWidth={2} />
+              </button>
+            </div>
+
+            <div className="space-y-5 p-6 sm:p-7">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 id="menu-item-title" className="bz-h-tight-2 text-[24px] text-[#0A0A0A]">
+                    {selectedItem.name}
+                  </h2>
+                  {selectedItem.isOutOfStock && (
+                    <Badge kind="danger">{locale === 'tr' ? 'Stokta yok' : 'Out of stock'}</Badge>
+                  )}
+                </div>
+                {selectedItem.badges && selectedItem.badges.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedItem.badges.map((badge, idx) => (
+                      <Badge key={idx} kind="lime">{badge}</Badge>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div className="p-8 space-y-6">
-                 <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-3xl font-extrabold text-[#0A0A0A] leading-tight uppercase tracking-tight">{selectedItem.name}</h2>
-                      {selectedItem.isOutOfStock && (
-                        <span className="px-2 py-1 rounded-lg bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-tighter border border-red-100">
-                          {locale === 'tr' ? 'STOKTA YOK' : 'OUT OF STOCK'}
-                        </span>
-                      )}
-                    </div>
-                    {selectedItem.badges && selectedItem.badges.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                         {selectedItem.badges.map((badge, idx) => (
-                           <span key={idx} className="bg-[#C6F24E] text-[#0A0A0A] text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider shadow-sm">
-                             {badge}
-                           </span>
-                         ))}
-                      </div>
-                    )}
-                 </div>
+              {selectedItem.description && (
+                <div className="space-y-1.5 border-t border-[#EDEDED] pt-4">
+                  <span className="pulse-eyebrow text-[#737373]">
+                    {locale === 'tr' ? 'Açıklama' : 'Description'}
+                  </span>
+                  <p className="text-[14px] leading-relaxed text-[#525252]">
+                    {selectedItem.description}
+                  </p>
+                </div>
+              )}
 
-                 {selectedItem.description && (
-                   <div className="space-y-2 pt-2 border-t border-[#FFFFFF]">
-                      <p className="text-[11px] font-black uppercase text-[#6B7280] tracking-[0.2em]">{locale === 'tr' ? 'AÇIKLAMA' : 'DESCRIPTION'}</p>
-                      <p className="text-[#6B7280] text-sm font-bold leading-relaxed">{selectedItem.description}</p>
-                   </div>
-                 )}
-
-                 <div className="flex items-center justify-between pt-6 border-t border-[#FFFFFF]">
-                    <div className="space-y-1">
-                       <p className="text-[11px] font-black uppercase text-[#6B7280] tracking-[0.2em]">{locale === 'tr' ? 'FİYAT' : 'PRICE'}</p>
-                       <p className="text-2xl font-black text-[#0A0A0A]">
-                         {(selectedItem.priceCents / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {selectedItem.currency === 'TRY' ? '₺' : selectedItem.currency}
-                       </p>
-                    </div>
-                    <button 
-                      onClick={() => setSelectedItem(null)}
-                      className="px-10 py-4 bg-[#0A0A0A] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#1A1A1A] transition-all active:scale-95 shadow-xl"
-                    >
-                      {locale === 'tr' ? 'GERİ DÖN' : 'GO BACK'}
-                    </button>
-                 </div>
+              <div className="flex items-end justify-between gap-3 border-t border-[#EDEDED] pt-4">
+                <div className="space-y-1">
+                  <span className="pulse-eyebrow text-[#737373]">
+                    {locale === 'tr' ? 'Fiyat' : 'Price'}
+                  </span>
+                  <p
+                    className="text-[24px] text-[#0A0A0A]"
+                    style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}
+                  >
+                    {(selectedItem.priceCents / 100).toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US', {
+                      minimumFractionDigits: 2,
+                    })}{' '}
+                    {selectedItem.currency === 'TRY' ? '₺' : selectedItem.currency}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedItem(null)}
+                  className="bz-btn-primary px-6 py-3 text-[13px]"
+                >
+                  {locale === 'tr' ? 'Geri dön' : 'Go back'}
+                </button>
               </div>
-           </div>
-           {/* Click backdrop to close */}
-           <div className="absolute inset-0 -z-10" onClick={() => setSelectedItem(null)} />
+            </div>
+          </div>
         </div>
       )}
     </div>
