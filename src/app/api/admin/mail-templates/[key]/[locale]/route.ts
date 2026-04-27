@@ -41,6 +41,17 @@ export async function GET(
 
   const row = await prisma.mailTemplate.findUnique({
     where: { key_locale: { key: parsed.key, locale: parsed.locale } },
+    // Explicit select — drift-resilient (CLAUDE.md §14.1).
+    select: {
+      id: true,
+      key: true,
+      locale: true,
+      content: true,
+      editable: true,
+      updatedById: true,
+      updatedAt: true,
+      createdAt: true,
+    },
   });
   if (!row) return NextResponse.json({ error: 'not_seeded' }, { status: 404 });
 
