@@ -279,7 +279,11 @@ export default async function AboutPage({
         </div>
       </section>
 
-      {/* ─── Team · design: 4 lime-soft square avatar cards ─── */}
+      {/* ─── Team · 4 lime-soft initial-badge cards ───
+          Audit §4: stock Unsplash portraits were a clear E-E-A-T violation
+          (reverse-image-search reveals the same photos on dozens of other
+          sites). Replaced with initial badges until real, consented portraits
+          are taken. ───────────────────────────────── */}
       <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
         <div className="max-w-[1200px] mx-auto">
           <h2 className="text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.03em] text-[#0A0A0A] mb-10">
@@ -288,28 +292,36 @@ export default async function AboutPage({
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {(isTr
               ? [
-                  { n: 'Emre Kaya', r: 'Kurucu · CEO', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80' },
-                  { n: 'Zeynep Aydın', r: 'Kurucu · CTO', img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80' },
-                  { n: 'Mert Yılmaz', r: 'Ürün', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80' },
-                  { n: 'Selin Demir', r: 'Büyüme', img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=600&q=80' },
+                  { n: 'Emre Kaya', r: 'Kurucu · CEO' },
+                  { n: 'Zeynep Aydın', r: 'Kurucu · CTO' },
+                  { n: 'Mert Yılmaz', r: 'Ürün' },
+                  { n: 'Selin Demir', r: 'Büyüme' },
                 ]
               : [
-                  { n: 'Emre Kaya', r: 'Founder · CEO', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80' },
-                  { n: 'Zeynep Aydın', r: 'Founder · CTO', img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80' },
-                  { n: 'Mert Yılmaz', r: 'Product', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80' },
-                  { n: 'Selin Demir', r: 'Growth', img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=600&q=80' },
+                  { n: 'Emre Kaya', r: 'Founder · CEO' },
+                  { n: 'Zeynep Aydın', r: 'Founder · CTO' },
+                  { n: 'Mert Yılmaz', r: 'Product' },
+                  { n: 'Selin Demir', r: 'Growth' },
                 ]
-            ).map((p) => (
+            ).map((p) => {
+              const initials = p.n
+                .split(/\s+/)
+                .map((part) => part[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase();
+              return (
               <div key={p.n} className="flex flex-col gap-3">
-                <div className="aspect-square overflow-hidden rounded-2xl bg-[#EAF9B8]">
-                  {/* Real Unsplash CC0 portrait — replaces initials placeholder for warmer team page */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.img}
-                    alt={p.n}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
-                  />
+                <div
+                  className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]"
+                  aria-hidden="true"
+                >
+                  <span
+                    className="text-[56px] sm:text-[72px] font-medium tracking-[-0.04em] leading-none"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {initials}
+                  </span>
                 </div>
                 <div>
                   <div
@@ -321,7 +333,8 @@ export default async function AboutPage({
                   <div className="pulse-eyebrow text-[#737373] mt-1">{p.r}</div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

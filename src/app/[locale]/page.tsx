@@ -164,7 +164,13 @@ export default async function LandingPage({
     ? ['Kredi kartı gerekmez', '5 dakikada kurulum']
     : ['No credit card required', '5-minute setup'];
 
-  const brandWordmarks = ['ARK BISTRO', 'HOTEL NORA', 'DERMA+', 'LAW&CO', 'KAHVE DUKKAN', 'SPA REN'];
+  // Audit §8.4 — fake-looking wordmarks ("HOTEL NORA", "LAW&CO", ...) were
+  // implying specific paying customers without consent, which is FTC and
+  // Reklam Kurulu deceptive-advertising risk. Replaced with industry
+  // categories until real customer logos with usage permission are added.
+  const industryCategories = isTr
+    ? ['Restoranlar', 'Oteller', 'Klinikler', 'Hukuk büroları', 'Kafeler', 'Spa & güzellik']
+    : ['Restaurants', 'Hotels', 'Clinics', 'Law firms', 'Cafés', 'Spa & wellness'];
 
   const steps = [
     {
@@ -285,9 +291,9 @@ export default async function LandingPage({
       ═══════════════════════════════════════════════════════════ */}
       <section className="border-y border-[#EDEDED] bg-[#FAFAFA] py-4">
         <MarqueeRow
-          eyebrow={isTr ? 'GÜVENEN MARKALAR' : 'TRUSTED BY'}
+          eyebrow={isTr ? 'BUAZE\'İ KULLANAN İŞLETME TÜRLERİ' : 'BUILT FOR TEAMS LIKE THESE'}
           itemClassName="shrink-0 px-10 sm:px-12"
-          items={brandWordmarks.map((name) => (
+          items={industryCategories.map((name) => (
             <span
               key={name}
               className="text-[16px] sm:text-[18px] font-semibold tracking-[0.08em] text-[#D4D4D4] whitespace-nowrap"
@@ -836,33 +842,12 @@ export default async function LandingPage({
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════
-          7.5 INTERNATIONAL TESTIMONIAL — EN ONLY
-      ═══════════════════════════════════════════════════════════ */}
-      {!isTr && (
-        <section className="px-6 sm:px-10 pb-20 sm:pb-24">
-          <div className="max-w-[1100px] mx-auto border-t border-[#EDEDED] pt-16 sm:pt-20">
-            <blockquote
-              className="text-[28px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] max-w-[900px]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              &ldquo;We went from 3.9 on Yelp to 4.7 in six months. The Tripadvisor sync alone paid for Buaze.&rdquo;
-            </blockquote>
-            <div className="mt-7 flex items-center gap-3">
-              <div
-                className="w-12 h-12 rounded-full bg-[#0A0A0A] text-[#C6F24E] flex items-center justify-center text-[15px] font-semibold"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                JM
-              </div>
-              <div>
-                <div className="text-[15px] font-medium text-[#0A0A0A]">Julia Martens</div>
-                <div className="pulse-eyebrow text-[#737373] mt-1">Hotel Nora · Amsterdam</div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* International testimonial section removed — the prior block
+          attributed a quote to "Julia Martens · Hotel Nora · Amsterdam"
+          but Hotel Nora was a placeholder brand name (audit §8.4 / §4),
+          and an unverifiable named testimonial is FTC + Reklam Kurulu
+          deceptive-advertising risk. Restore once a real consented
+          customer + venue is available. */}
 
       {/* ═══════════════════════════════════════════════════════════
           8. LIME CTA BANNER
