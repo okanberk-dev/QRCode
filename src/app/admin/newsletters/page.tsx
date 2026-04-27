@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { getNewsletterSourceLabel } from '@/lib/newsletter-sources';
-import { PageHeader, StatCard } from '@/components/ui';
+import { PageHeader, StatCard, useConfirmDialog } from '@/components/ui';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 type Status = 'all' | 'active' | 'cancelled';
@@ -45,6 +45,7 @@ export default function AdminNewslettersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [confirmDialog, askConfirm] = useConfirmDialog();
   const [data, setData] = useState<SubscribersResponse | null>(null);
 
   // Filters
@@ -122,8 +123,17 @@ export default function AdminNewslettersPage() {
     setExporting(false);
   };
 
-  const triggerNewsletter = async () => {
-    if (!confirm('Aylık bülteni aktif tüm abonelere şimdi göndermek istediğine emin misin? Bu işlem geri alınamaz.')) return;
+  const triggerNewsletter = () => {
+    askConfirm({
+      title: 'Bülteni şimdi gönder?',
+      body: 'Aylık bülteni aktif tüm abonelere şimdi göndereceksin. Bu işlem geri alınamaz.',
+      confirmLabel: 'Gönder',
+      cancelLabel: 'İptal',
+      onConfirm: doTriggerNewsletter,
+    });
+  };
+
+  const doTriggerNewsletter = async () => {
     setSending(true);
     setError(null);
     setInfo(null);
@@ -142,8 +152,18 @@ export default function AdminNewslettersPage() {
   // KVKK / GDPR right-to-erasure: hard delete the row. Soft-delete
   // (unsubscribedAt) is the default for opt-outs; this is reserved for
   // explicit data-removal requests.
-  const deleteSubscriber = async (id: string, email: string) => {
-    if (!confirm(`"${email}" aboneliğini KALICI olarak silmek istediğine emin misin?\n\nBu işlem geri alınamaz. Yalnızca KVKK silme talepleri için kullan.`)) return;
+  const deleteSubscriber = (id: string, email: string) => {
+    askConfirm({
+      title: 'Aboneliği kalıcı sil?',
+      body: `"${email}" aboneliğini KALICI olarak sileceksin. Bu işlem geri alınamaz. Yalnızca KVKK silme talepleri için kullan.`,
+      confirmLabel: 'Kalıcı sil',
+      cancelLabel: 'İptal',
+      variant: 'danger',
+      onConfirm: () => doDeleteSubscriber(id, email),
+    });
+  };
+
+  const doDeleteSubscriber = async (id: string, email: string) => {
     setDeletingId(id);
     setError(null);
     setInfo(null);
@@ -414,6 +434,7 @@ export default function AdminNewslettersPage() {
           </>
         )}
       </div>
+      {confirmDialog}
     </div>
   );
 }

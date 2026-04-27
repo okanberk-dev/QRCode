@@ -7,6 +7,7 @@ export { AlertBanner, type AlertKind } from "./AlertBanner";
 export { Avatar } from "./Avatar";
 export { Badge, type BadgeKind } from "./Badge";
 export { BarChart } from "./BarChart";
+export { ConfirmDialog, useConfirmDialog } from "./ConfirmDialog";
 export { BuazeWordmark } from "./BuazeWordmark";
 export { EmptyState } from "./EmptyState";
 export { ErrorState } from "./ErrorState";
