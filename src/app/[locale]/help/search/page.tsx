@@ -92,7 +92,7 @@ export default async function HelpSearchPage({ params, searchParams }: PageParam
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Header with search bar */}
-      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-10 sm:py-14">
+      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-14">
         <div className="mx-auto max-w-[900px]">
           <nav
             aria-label={isTr ? 'Site yolu' : 'Breadcrumb'}
@@ -136,7 +136,7 @@ export default async function HelpSearchPage({ params, searchParams }: PageParam
       </section>
 
       {/* Results */}
-      <section className="px-6 sm:px-10 py-12 sm:py-16">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
         <div className="mx-auto max-w-[900px]">
           {q.length === 0 ? (
             <EmptyPrompt locale={locale} />

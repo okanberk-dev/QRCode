@@ -81,7 +81,7 @@ export default async function ComparisonPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-24 pb-12 sm:pb-16">
+      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-24 pb-12 sm:pb-16">
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
@@ -99,18 +99,18 @@ export default async function ComparisonPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Karşılaştırma' : 'Comparison'}
           </span>
-          <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[68px] font-medium leading-[1] tracking-[-0.035em] text-[#0A0A0A]">
+          <h1 className="mt-5 text-[38px] sm:text-[60px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
             {heroHead}{' '}
             <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">{heroTail}</span>
           </h1>
-          <p className="mt-6 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[620px] mx-auto">
+          <p className="mt-6 text-[15px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[620px] mx-auto">
             {t.compare_hero_p}
           </p>
         </div>
       </section>
 
       {/* ─── Comparison Table ─── */}
-      <section className="px-6 sm:px-10 pb-16 sm:pb-20">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
         <div className="max-w-[1000px] mx-auto">
           <div className="rounded-3xl border border-[#EDEDED] bg-white overflow-hidden">
             <div className="overflow-x-auto">
@@ -170,7 +170,7 @@ export default async function ComparisonPage({
           <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-5">
             <Link
               href={`${base}/vs/spreadsheet`}
-              className="group p-7 bg-white border border-[#EDEDED] rounded-3xl hover:border-[#C6F24E] transition-colors"
+              className="group p-7 bz-card hover:border-[#C6F24E] transition-colors"
             >
               <div className="flex justify-between items-start mb-5">
                 <div className="w-11 h-11 bg-[#EAF9B8] rounded-lg flex items-center justify-center">
@@ -195,7 +195,7 @@ export default async function ComparisonPage({
 
             <Link
               href={`${base}/vs/individual-qr`}
-              className="group p-7 bg-white border border-[#EDEDED] rounded-3xl hover:border-[#C6F24E] transition-colors"
+              className="group p-7 bz-card hover:border-[#C6F24E] transition-colors"
             >
               <div className="flex justify-between items-start mb-5">
                 <div className="w-11 h-11 bg-[#EAF9B8] rounded-lg flex items-center justify-center">
@@ -222,7 +222,7 @@ export default async function ComparisonPage({
       </section>
 
       {/* ─── Deeper Dive ─── */}
-      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-20 sm:py-28">
+      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[1200px] mx-auto space-y-20 sm:space-y-24">
           {/* Section 1: Static QR */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -230,7 +230,7 @@ export default async function ComparisonPage({
               <span className="pulse-eyebrow text-[#737373]">
                 {isTr ? 'Statik QR riski' : 'Static QR risk'}
               </span>
-              <h2 className="mt-4 text-[30px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
+              <h2 className="mt-4 text-[26px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
                 {isTr ? 'Neden statik QR kullanmamalısınız?' : "Why you shouldn't use static QR."}
               </h2>
               <div className="mt-5 space-y-4 text-[16px] text-[#525252] leading-[1.65]">
@@ -272,7 +272,7 @@ export default async function ComparisonPage({
               <span className="pulse-eyebrow text-[#737373]">
                 {isTr ? 'Excel gizli maliyeti' : "Excel's hidden cost"}
               </span>
-              <h2 className="mt-4 text-[30px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
+              <h2 className="mt-4 text-[26px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
                 {isTr ? 'Excel tablolarının gizli maliyeti.' : 'The hidden cost of Excel.'}
               </h2>
               <div className="mt-5 space-y-4 text-[16px] text-[#525252] leading-[1.65]">
@@ -312,9 +312,9 @@ export default async function ComparisonPage({
       </section>
 
       {/* ─── Final CTA ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[800px] mx-auto text-center">
-          <h2 className="text-[32px] sm:text-[48px] font-medium tracking-[-0.035em] leading-[1.05] text-[#0A0A0A]">
+          <h2 className="text-[28px] sm:text-[48px] font-medium tracking-[-0.035em] leading-[1.05] text-[#0A0A0A]">
             {isTr ? 'Profesyonel itibar yönetimine geçin.' : 'Switch to professional reputation management.'}
           </h2>
           <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">

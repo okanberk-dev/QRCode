@@ -81,14 +81,14 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero — light gray bg */}
-      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-16 sm:py-20">
+      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-20">
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
           <div>
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'SEKTÖR · OTEL & KONAKLAMA' : 'SECTOR · HOTEL & HOSPITALITY'}
             </span>
             <h1
-              className="mt-3 text-[40px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+              className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? (
@@ -109,7 +109,7 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
                 </>
               )}
             </h1>
-            <p className="mt-5 max-w-[500px] text-[16px] leading-[1.6] text-[#525252]">
+            <p className="mt-5 max-w-[500px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">
               {isTr
                 ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, negatifi önce sen gör."
                 : 'Booking.com, Tripadvisor, Airbnb and Google — run all four from one panel. Room QRs capture feedback at check-out; you see the negative ones first.'}
@@ -175,10 +175,10 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
       </section>
 
       {/* 4-stat grid */}
-      <section className="px-6 sm:px-10 py-14 sm:py-16">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
         <div className="mx-auto max-w-[1200px] grid grid-cols-2 gap-5 md:grid-cols-4">
           {stats.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+            <div key={s.label} className="bz-card p-5 sm:p-6">
               <div
                 className="text-[28px] sm:text-[34px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A]"
                 style={{ fontFamily: 'var(--font-heading)' }}
@@ -192,7 +192,7 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
       </section>
 
       {/* 6-feature grid */}
-      <section className="px-6 sm:px-10 pb-20 sm:pb-24">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
         <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
             <div key={f.t} className="rounded-[14px] border border-[#EDEDED] bg-white p-6">
@@ -209,10 +209,10 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
       </section>
 
       {/* Dark CTA band */}
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="mx-auto max-w-[900px] text-center">
           <h2
-            className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
+            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Her oda, bir yıldız.' : 'Every room, a star.'}

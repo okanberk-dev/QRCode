@@ -111,7 +111,7 @@ export default async function HelpCategoryPage({ params }: PageParams) {
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero */}
-      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-12 sm:py-16">
+      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-16">
         <div className="mx-auto max-w-[1200px]">
           {/* Breadcrumb */}
           <nav
@@ -138,12 +138,12 @@ export default async function HelpCategoryPage({ params }: PageParams) {
               {cat.symbol}
             </span>
             <h1
-              className="text-[36px] sm:text-[48px] lg:text-[56px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]"
+              className="text-[32px] sm:text-[48px] lg:text-[56px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {meta.title}
             </h1>
-            <p className="max-w-[620px] text-[16px] leading-[1.55] text-[#525252]">{meta.desc}</p>
+            <p className="max-w-[620px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">{meta.desc}</p>
             <p className="pulse-eyebrow text-[#737373]">
               {articles.length > 0
                 ? isTr
@@ -162,7 +162,7 @@ export default async function HelpCategoryPage({ params }: PageParams) {
       </section>
 
       {/* Article list */}
-      <section className="px-6 sm:px-10 py-12 sm:py-16">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
         <div className="mx-auto max-w-[900px]">
           {articles.length === 0 ? (
             <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-10 text-center">
@@ -219,7 +219,7 @@ export default async function HelpCategoryPage({ params }: PageParams) {
       </section>
 
       {/* Contact CTA */}
-      <section className="border-t border-[#EDEDED] px-6 sm:px-10 py-14">
+      <section className="border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-14">
         <div className="mx-auto max-w-[720px] text-center">
           <h2
             className="text-[22px] sm:text-[26px] font-medium tracking-[-0.02em] text-[#0A0A0A]"

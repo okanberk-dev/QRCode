@@ -73,14 +73,14 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero — white bg, 2-column with document+seal SVG */}
-      <section className="px-6 sm:px-10 py-16 sm:py-20">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-20">
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
           <div>
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'SEKTÖR · HUKUK OFİSİ' : 'SECTOR · LAW FIRM'}
             </span>
             <h1
-              className="mt-3 text-[40px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+              className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? (
@@ -101,7 +101,7 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
                 </>
               )}
             </h1>
-            <p className="mt-5 max-w-[500px] text-[16px] leading-[1.6] text-[#525252]">
+            <p className="mt-5 max-w-[500px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">
               {isTr
                 ? 'Danışmanlık sonrası müvekkilden geri bildirim toplayın. Google arama sıralamanızı yükseltin. Etik kurallara uyumlu, saygın bir dijital profil oluşturun.'
                 : 'Collect feedback after every consultation. Climb Google search rankings. Build an ethics-compliant, respected digital presence.'}
@@ -186,10 +186,10 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
       </section>
 
       {/* 3-stat grid */}
-      <section className="px-6 sm:px-10 pb-20 sm:pb-24">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
         <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 md:grid-cols-3">
           {stats.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-[#EDEDED] bg-white p-6">
+            <div key={s.label} className="bz-card p-6">
               <div
                 className="text-[40px] sm:text-[48px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
                 style={{ fontFamily: 'var(--font-heading)' }}
@@ -203,10 +203,10 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
       </section>
 
       {/* Dark CTA band */}
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="mx-auto max-w-[900px] text-center">
           <h2
-            className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
+            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Hukuk büronuzun nabzını dinleyin.' : "Listen to your firm's pulse."}

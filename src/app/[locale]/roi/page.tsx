@@ -78,12 +78,12 @@ export default async function RoiPage({
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
 
-      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-10">
+      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-10">
         <div className="max-w-[1000px] mx-auto text-center">
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'ROI hesaplayıcı' : 'ROI calculator'}
           </span>
-          <h1 className="mt-4 text-[40px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em]">
+          <h1 className="mt-4 text-[38px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em]">
             {isTr ? (
               <>
                 Her{' '}
@@ -102,7 +102,7 @@ export default async function RoiPage({
               </>
             )}
           </h1>
-          <p className="mt-5 text-[16px] text-[#525252] max-w-[560px] mx-auto leading-[1.6]">
+          <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[560px] mx-auto leading-[1.6]">
             {isTr
               ? 'Orta ölçekli bir restoran için demo hesap. İşletmeniz için özel senaryoyu ücretsiz danışmanlığımızda çıkarıyoruz.'
               : 'Demo scenario for a mid-size restaurant. We build a scenario for your exact business in a free consultation.'}
@@ -110,15 +110,15 @@ export default async function RoiPage({
         </div>
       </section>
 
-      <section className="px-6 sm:px-10 pb-20">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
         <div className="max-w-[1000px] mx-auto">
-          <div className="bg-[#0A0A0A] text-white rounded-3xl p-8 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+          <div className="bg-[#0A0A0A] text-white rounded-3xl p-6 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 items-center">
             <div>
               <span className="pulse-eyebrow text-[#C6F24E]">
                 {isTr ? 'Yıllık net kazanç' : 'Annual net gain'}
               </span>
               <div
-                className="mt-3 text-[48px] sm:text-[72px] font-medium leading-none tracking-[-0.035em] text-[#C6F24E]"
+                className="mt-3 text-[44px] sm:text-[72px] font-medium leading-none tracking-[-0.035em] text-[#C6F24E]"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {currency}
@@ -154,9 +154,9 @@ export default async function RoiPage({
               { k: `${currency}${buazePlan.toLocaleString(isTr ? 'tr-TR' : 'en-US')}/${isTr ? 'ay' : 'mo'}`, l: isTr ? 'Buaze Growth planı' : 'Buaze Growth plan' },
               { k: `${roiMultiple}×`, l: isTr ? 'ROI · yıllık' : 'ROI · annual' },
             ].map((x) => (
-              <div key={x.l} className="border border-[#EDEDED] rounded-2xl p-6 bg-[#FAFAFA]">
+              <div key={x.l} className="bz-card p-6">
                 <div
-                  className="text-[24px] sm:text-[32px] font-medium leading-none tracking-[-0.025em]"
+                  className="text-[22px] sm:text-[32px] font-medium leading-none tracking-[-0.025em]"
                   style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {x.k}
@@ -168,9 +168,9 @@ export default async function RoiPage({
         </div>
       </section>
 
-      <section className="bg-[#C6F24E] px-6 sm:px-10 py-20">
+      <section className="bg-[#C6F24E] px-5 sm:px-10 py-[60px] sm:py-20">
         <div className="max-w-[900px] mx-auto text-center">
-          <h2 className="text-[28px] sm:text-[40px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]">
+          <h2 className="text-[26px] sm:text-[40px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]">
             {isTr ? 'Kendi senaryonu çıkart.' : 'Build your own scenario.'}
           </h2>
           <p className="mt-4 text-[15px] text-[#1A1A1A] max-w-[540px] mx-auto">

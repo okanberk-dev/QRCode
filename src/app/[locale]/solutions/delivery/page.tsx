@@ -151,13 +151,13 @@ export default async function DeliveryPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* HERO */}
-      <section className="px-6 sm:px-10 py-16 sm:py-20">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-20">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
           <div>
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Sektör · Paket servis & Dark kitchen' : 'Sector · Delivery & Dark kitchen'}
             </span>
-            <h1 className="mt-4 text-[40px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
+            <h1 className="mt-4 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
               {isTr ? (
                 <>
                   Her pakette bir
@@ -174,7 +174,7 @@ export default async function DeliveryPage({
                 </>
               )}
             </h1>
-            <p className="mt-5 text-[16px] sm:text-[17px] text-[#525252] leading-[1.6] max-w-[540px]">
+            <p className="mt-5 text-[15px] sm:text-[18px] text-[#525252] leading-[1.6] max-w-[540px]">
               {isTr
                 ? 'Yemeksepeti, Getir Yemek ve Trendyol GO\'daki puanınız Google\'dan bile daha önemli. Paket içine koyduğunuz tek QR ile müşteriyi tam olarak yorum bırakacağı platforma yönlendirin.'
                 : 'Your score on Yemeksepeti, Getir Yemek and Trendyol GO can matter more than Google. One QR inside the package routes the customer to the exact platform they\'ll leave a review on.'}
@@ -281,13 +281,13 @@ export default async function DeliveryPage({
       </section>
 
       {/* PLATFORMS GRID */}
-      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[1200px] mx-auto">
           <div className="max-w-[720px]">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Platform entegrasyonları' : 'Platform integrations'}
             </span>
-            <h2 className="mt-4 text-[32px] sm:text-[44px] lg:text-[48px] font-medium leading-[1.02] tracking-[-0.03em]">
+            <h2 className="mt-4 text-[26px] sm:text-[44px] lg:text-[48px] font-medium leading-[1.02] tracking-[-0.03em]">
               {isTr
                 ? 'Tek QR. Dört platform. Dört kat geri bildirim.'
                 : 'One QR. Four platforms. Four times the feedback.'}
@@ -303,7 +303,7 @@ export default async function DeliveryPage({
             {allPlatforms.map((p) => (
               <div
                 key={p.id}
-                className="bg-white border border-[#EDEDED] rounded-2xl p-5 flex flex-col gap-3"
+                className="bz-card p-5 flex flex-col gap-3"
               >
                 <div className="flex justify-between items-start">
                   <PlatformLogo id={p.id} size={44} rounded={10} />
@@ -323,9 +323,9 @@ export default async function DeliveryPage({
       </section>
 
       {/* SMART ROUTING FLOW */}
-      <section className="px-6 sm:px-10 py-20 sm:py-24">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[1200px] mx-auto">
-          <h2 className="text-[32px] sm:text-[44px] lg:text-[48px] font-medium tracking-[-0.03em] leading-[1]">
+          <h2 className="text-[26px] sm:text-[44px] lg:text-[48px] font-medium tracking-[-0.03em] leading-[1]">
             {isTr ? 'Akıllı yönlendirme.' : 'Smart routing.'}
           </h2>
           <p className="mt-3 text-[15px] text-[#525252] max-w-[600px]">
@@ -338,7 +338,7 @@ export default async function DeliveryPage({
             {flow.map((x) => (
               <div
                 key={x.s}
-                className="bg-[#FAFAFA] border border-[#EDEDED] rounded-2xl p-6 flex flex-col gap-3"
+                className="bz-card-soft p-6 flex flex-col gap-3"
               >
                 <div
                   className={`${x.bg} w-16 h-16 rounded-full flex items-center justify-center text-[20px] font-semibold`}
@@ -355,8 +355,8 @@ export default async function DeliveryPage({
       </section>
 
       {/* STATS DARK BANNER */}
-      <section className="px-6 sm:px-10 pb-20 sm:pb-24">
-        <div className="max-w-[1200px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-8 sm:p-12">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
+        <div className="max-w-[1200px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-6 sm:p-12">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((x) => (
               <div key={x.l}>

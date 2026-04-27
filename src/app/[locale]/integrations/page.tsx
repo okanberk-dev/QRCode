@@ -100,12 +100,12 @@ export default async function IntegrationsPage({
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
 
-      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-8">
+      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-8">
         <div className="max-w-[1200px] mx-auto">
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Entegrasyonlar' : 'Integrations'}
           </span>
-          <h1 className="mt-4 text-[40px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
+          <h1 className="mt-4 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
             {isTr ? (
               <>
                 Mevcut akışına
@@ -120,7 +120,7 @@ export default async function IntegrationsPage({
               </>
             )}
           </h1>
-          <p className="mt-5 text-[16px] text-[#525252] max-w-[560px] leading-[1.6]">
+          <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[560px] leading-[1.6]">
             {isTr
               ? 'İşletmenizde zaten kullandığınız araçlarla Buaze tek tıkla konuşur. API ve webhook\'lar developer dokümanlarında.'
               : 'Buaze connects with the tools you already run in one click. APIs and webhooks live in our developer docs.'}
@@ -128,16 +128,16 @@ export default async function IntegrationsPage({
         </div>
       </section>
 
-      <section className="px-6 sm:px-10 pb-20">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
         <div className="max-w-[1200px] mx-auto">
           {groups.map((g, gi) => (
             <div
               key={g.title}
-              className={`pt-10 ${gi === 0 ? 'border-t-2 border-[#0A0A0A]' : 'border-t border-[#EDEDED]'}`}
+              className={`pt-8 sm:pt-10 ${gi === 0 ? 'border-t-2 border-[#0A0A0A]' : 'border-t border-[#EDEDED]'}`}
             >
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_3fr] gap-10 pb-12">
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_3fr] gap-8 lg:gap-10 pb-10 sm:pb-12">
                 <div>
-                  <h2 className="text-[28px] sm:text-[32px] font-medium tracking-[-0.02em] leading-[1.1]">
+                  <h2 className="text-[24px] sm:text-[32px] font-medium tracking-[-0.02em] leading-[1.1]">
                     {g.title}
                   </h2>
                   <p className="mt-2 text-[13px] text-[#737373]">{g.subtitle}</p>
@@ -174,14 +174,14 @@ export default async function IntegrationsPage({
         </div>
       </section>
 
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[900px] mx-auto text-center">
-          <h2 className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]">
+          <h2 className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]">
             {isTr
               ? 'API ve webhook\'lar hazır.'
               : 'APIs and webhooks are ready.'}
           </h2>
-          <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
+          <p className="mt-4 text-[15px] sm:text-[16px] text-white/70 max-w-[560px] mx-auto">
             {isTr
               ? 'Buaze\'in REST API\'si ile kendi akışlarınızı kurun. 5000+ uygulamaya Zapier üzerinden bağlanın.'
               : 'Build your own workflows on the Buaze REST API. Connect to 5,000+ apps via Zapier.'}

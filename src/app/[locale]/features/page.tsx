@@ -111,12 +111,12 @@ export default async function FeaturesPage({
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
 
-      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-8">
+      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-8">
         <div className="max-w-[1200px] mx-auto">
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Ürün' : 'Product'}
           </span>
-          <h1 className="mt-4 text-[40px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] max-w-[900px]">
+          <h1 className="mt-4 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] max-w-[900px]">
             {isTr ? (
               <>
                 Bir panel. Her yorum.{' '}
@@ -133,7 +133,7 @@ export default async function FeaturesPage({
               </>
             )}
           </h1>
-          <p className="mt-5 text-[16px] text-[#525252] max-w-[620px] leading-[1.6]">
+          <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[620px] leading-[1.6]">
             {isTr
               ? 'Buaze\'in tüm özellikleri nabız metaforunda buluşuyor: topla, yönet, iyileştir, büyü.'
               : 'Every Buaze feature meets in the pulse metaphor: collect, manage, improve, grow.'}
@@ -141,12 +141,12 @@ export default async function FeaturesPage({
         </div>
       </section>
 
-      <section className="px-6 sm:px-10 pb-20">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
         <div className="max-w-[1200px] mx-auto">
           {features.map((f, i) => (
             <div
               key={f.n}
-              className={`grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-10 lg:gap-14 items-center py-14 lg:py-16 ${
+              className={`grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-8 lg:gap-14 items-center py-10 sm:py-14 lg:py-16 ${
                 i === 0 ? 'border-t-2 border-[#0A0A0A]' : 'border-t border-[#EDEDED]'
               }`}
             >
@@ -154,10 +154,10 @@ export default async function FeaturesPage({
                 <span className="pulse-eyebrow text-[#A8D62E]">
                   {isTr ? 'ÖZELLİK' : 'FEATURE'} {f.n}
                 </span>
-                <h2 className="mt-3 text-[32px] sm:text-[44px] lg:text-[52px] font-medium leading-[1.02] tracking-[-0.03em]">
+                <h2 className="mt-3 text-[26px] sm:text-[44px] lg:text-[52px] font-medium leading-[1.02] tracking-[-0.03em]">
                   {f.t}
                 </h2>
-                <p className="mt-4 text-[16px] text-[#525252] leading-[1.6] max-w-[480px]">
+                <p className="mt-4 text-[15px] sm:text-[16px] text-[#525252] leading-[1.6] max-w-[480px]">
                   {f.d}
                 </p>
                 <div className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -188,9 +188,9 @@ export default async function FeaturesPage({
         </div>
       </section>
 
-      <section className="bg-[#C6F24E] px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#C6F24E] px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[900px] mx-auto text-center">
-          <h2 className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+          <h2 className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
             {isTr
               ? 'Tüm özellikler, ilk dakikadan itibaren.'
               : 'Every feature, from the first minute.'}

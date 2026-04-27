@@ -1,8 +1,11 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import type { Locale } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
 import NewsletterSignup from './NewsletterSignup';
+import MobileBottomNav from './MobileBottomNav';
 import { getSiteSettings } from '@/lib/site-settings';
+import { verifyJwt } from '@/lib/auth';
 
 interface MarketingFooterProps {
   locale: Locale;
@@ -37,6 +40,26 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
   const base = `/${locale}`;
   const s = await getSiteSettings();
   const isTr = locale === 'tr';
+
+  // Determine login state for the mobile bottom nav center CTA
+  // (Panel vs Try-Free). Same pattern as MarketingNavbar — server-side
+  // cookie read + jose verify, never trusts cookie presence alone.
+  let isLoggedIn = false;
+  try {
+    const cookieStore = await cookies();
+    const userToken = cookieStore.get('user_token')?.value;
+    const adminToken = cookieStore.get('admin_token')?.value;
+    if (userToken) {
+      const payload = await verifyJwt(userToken);
+      if (payload && typeof payload.userId === 'string') isLoggedIn = true;
+    }
+    if (!isLoggedIn && adminToken) {
+      const payload = await verifyJwt(adminToken);
+      if (payload && typeof payload.role === 'string') isLoggedIn = true;
+    }
+  } catch {
+    isLoggedIn = false;
+  }
 
   const cols: { title: string; items: { label: string; href: string; badge?: string }[] }[] = [
     {
@@ -87,6 +110,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
   ];
 
   return (
+    <>
     <footer className="bg-[#0A0A0A] text-white">
       {/* ECG divider — animated lime heartbeat line */}
       <div className="relative h-14 overflow-hidden border-t border-[#1F1F1F]">
@@ -247,5 +271,11 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
         </div>
       </div>
     </footer>
+
+    {/* Mobile bottom navigation — md:hidden, fixed, safe-area aware. Mounted
+        from the footer so every marketing surface inherits it without
+        per-page wiring. Auth/onboarding/dashboard render their own chrome. */}
+    <MobileBottomNav locale={locale} isLoggedIn={isLoggedIn} />
+    </>
   );
 }
