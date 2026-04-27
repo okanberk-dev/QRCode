@@ -73,6 +73,7 @@ export default function RestaurantsPage() {
     notificationEmail: '',
     googlePlaceId: '',
     address: '',
+    city: '',
     phone: '',
     primaryColor: '#C6F24E',
     userId: '',
@@ -167,7 +168,7 @@ export default function RestaurantsPage() {
       }
 
       setShowCreateModal(false);
-      setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googlePlaceId: '', address: '', phone: '', primaryColor: '#C6F24E', userId: '' });
+      setFormData({ name: '', slug: '', category: 'Restoran', notificationEmail: '', googlePlaceId: '', address: '', city: '', phone: '', primaryColor: '#C6F24E', userId: '' });
       setIsManualSlug(false);
       fetchRestaurants();
     } catch (err) {
