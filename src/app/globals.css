@@ -672,6 +672,39 @@ input::-webkit-inner-spin-button {
   height: 2px; background: #0A0A0A; border-radius: 1px;
 }
 
+/* ── Vertical variant — sidebar-style tabs (Owner Profile, Settings menus) ── */
+.bz-tabs-vertical {
+  display: flex; flex-direction: column;
+  gap: 2px;
+  border: 0;
+  width: auto;
+  overflow: visible;
+}
+.bz-tab-vertical {
+  position: relative;
+  font-size: 13px; font-weight: 500;
+  color: #525252;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: none; border: 0;
+  font-family: var(--font-body);
+  transition: background-color 120ms ease, color 120ms ease;
+  white-space: nowrap;
+  text-align: left;
+  display: inline-flex; align-items: center; gap: 10px;
+  width: 100%;
+  outline: none;
+}
+.bz-tab-vertical:hover { background: #FAFAFA; color: #1A1A1A; }
+.bz-tab-vertical:focus-visible { box-shadow: 0 0 0 2px rgba(198,242,78,0.6); }
+.bz-tab-vertical[aria-selected="true"] {
+  background: #0A0A0A;
+  color: #fff;
+  font-weight: 600;
+}
+.bz-tab-vertical[aria-selected="true"]::after { content: none; }
+
 /* ── ECG pulse animation for live indicators ── */
 @keyframes bz-pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }

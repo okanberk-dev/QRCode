@@ -314,7 +314,7 @@ export default function RestaurantsPage() {
                   </div>
 
                   {/* Stats strip */}
-                  <div className="grid grid-cols-2 gap-3 rounded-2xl bg-[#FAFAFA] p-3 ring-1 ring-[#EDEDED] sm:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 rounded-2xl bg-[#FAFAFA] p-3 ring-1 ring-[#EDEDED] sm:grid-cols-3 md:grid-cols-4">
                     <div className="min-w-0">
                       <p className="pulse-eyebrow text-[#737373]">Kategori</p>
                       <p className="mt-1 truncate text-[13px] font-medium text-[#0A0A0A]" title={r.category}>
