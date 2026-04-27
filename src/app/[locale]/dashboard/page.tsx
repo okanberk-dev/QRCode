@@ -10,7 +10,7 @@ import { Building2, QrCode, ArrowRight, Star, ShieldCheck, TrendingUp } from 'lu
 import RestaurantAnalyticsPanel from '@/components/dashboard/RestaurantAnalyticsPanel';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
-import { PageHeader } from '@/components/ui';
+import { BarChart, Eyebrow, PageHeader } from '@/components/ui';
 
 export async function generateMetadata({
   params,
@@ -84,10 +84,39 @@ export default async function DashboardPage({
       restaurantId: { in: user.restaurants.map(r => r.id) }
     },
     orderBy: { createdAt: 'desc' },
-    take: 3,
+    // 4 öğe — Pulse 2026-04 design OwnerDashboard "Son yorumlar" 1:1
+    take: 4,
     include: {
       restaurant: { select: { name: true } }
     }
+  });
+
+  // 7-day feedback trend (Pulse 2026-04 design OwnerDashboard inline BarChart, 1:1)
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const trendFeedbacks = await prisma.feedback.findMany({
+    where: {
+      restaurantId: { in: user.restaurants.map((r) => r.id) },
+      createdAt: { gte: sevenDaysAgo },
+    },
+    select: { createdAt: true },
+  });
+  const isTrLocale = locale === 'tr';
+  const dayLabelsTr = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+  const dayLabelsEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const dayLabels = isTrLocale ? dayLabelsTr : dayLabelsEn;
+  const trendData: { label: string; value: number }[] = Array.from({ length: 7 }, (_, i) => {
+    const dayStart = new Date();
+    dayStart.setHours(0, 0, 0, 0);
+    dayStart.setDate(dayStart.getDate() - (6 - i));
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+    // Mon-Sun mapping (getDay: 0=Sun, 1=Mon, ...)
+    const jsDay = dayStart.getDay();
+    const labelIdx = jsDay === 0 ? 6 : jsDay - 1;
+    const count = trendFeedbacks.filter(
+      (f) => f.createdAt >= dayStart && f.createdAt < dayEnd,
+    ).length;
+    return { label: dayLabels[labelIdx], value: count };
   });
 
   // Per-restaurant avg rating for "Konum performansı" widget
@@ -252,6 +281,15 @@ export default async function DashboardPage({
           );
         })}
       </div>
+
+      {/* 7-day trend BarChart (1:1 design OwnerDashboard inline chart) */}
+      <section className="bz-card p-5 sm:p-6">
+        <Eyebrow>{isTrLocale ? 'SON 7 GÜN' : 'LAST 7 DAYS'}</Eyebrow>
+        <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
+          {isTrLocale ? 'Yorum trendi' : 'Review trend'}
+        </div>
+        <BarChart data={trendData} height={140} />
+      </section>
 
       <RestaurantAnalyticsPanel
         locale={locale}
