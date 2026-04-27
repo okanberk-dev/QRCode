@@ -311,10 +311,7 @@ export default function UsersPage() {
           title={
             <div>
               <p className="pulse-eyebrow text-[#737373]">{editingId ? 'Düzenle' : 'Yeni kayıt'}</p>
-              <h2
-                className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
+              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
                 {editingId ? 'Yöneticiyi düzenle' : 'Yeni yönetici ekle'}
               </h2>
               <p className="mt-1 text-[12px] leading-relaxed text-[#525252]">

@@ -180,8 +180,8 @@ export default function DashboardMenuSelectPage() {
                   className="flex items-center gap-4 bz-card p-4 transition-colors hover:border-[#C6F24E]"
                 >
                   <div
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[15px] font-semibold text-white"
-                    style={{ backgroundColor: r.primaryColor || '#0A0A0A', fontFamily: 'var(--font-heading)' }}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-heading text-[15px] font-semibold text-white"
+                    style={{ backgroundColor: r.primaryColor || '#0A0A0A' }}
                   >
                     {r.name.charAt(0).toUpperCase()}
                   </div>

@@ -294,8 +294,7 @@ export default async function DashboardPage({
                   return (
                     <li key={fb.id} className="grid grid-cols-[36px_1fr_auto] items-start gap-3 py-4">
                       <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-semibold ${badgeBg} ${badgeFg}`}
-                        style={{ fontFamily: 'var(--font-heading)' }}
+                        className={`flex h-9 w-9 items-center justify-center rounded-full font-heading text-[12px] font-semibold ${badgeBg} ${badgeFg}`}
                       >
                         {initials}
                       </div>

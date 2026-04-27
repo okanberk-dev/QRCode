@@ -181,10 +181,7 @@ export default function AdminAnalyticsPage() {
                 <p className="pulse-eyebrow text-white/60">
                   {isTr ? `NPS SKORU · ${range.toUpperCase()}` : `NPS SCORE · ${range.toUpperCase()}`}
                 </p>
-                <p
-                  className="mt-3 text-[72px] font-medium leading-none tracking-tight text-[#C6F24E] sm:text-[104px]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
+                <p className="mt-3 font-heading text-[72px] font-medium leading-none tracking-tight text-[#C6F24E] sm:text-[104px]">
                   {nps}
                 </p>
                 <p className="mt-3 max-w-[680px] text-[14px] leading-relaxed text-white/75">
@@ -422,7 +419,7 @@ function StatCard({
         <p className="pulse-eyebrow min-w-0 truncate text-[#737373]">{label}</p>
         {icon && <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${tone}`}>{icon}</span>}
       </div>
-      <p className="mt-3 truncate text-[28px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+      <p className="mt-3 truncate font-heading text-[28px] font-medium tracking-tight text-[#0A0A0A]">
         {value}
       </p>
     </div>

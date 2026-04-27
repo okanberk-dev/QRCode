@@ -466,8 +466,7 @@ function QRPageContent() {
             ].map((s) => (
               <div key={s.n} className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
                 <span
-                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[11px] font-semibold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] font-heading text-[11px] font-semibold text-[#0A0A0A]"
                 >
                   {s.n}
                 </span>
@@ -481,17 +480,13 @@ function QRPageContent() {
           <div className="bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-8 space-y-6 sm:space-y-8">
             <div className="flex items-center gap-3">
               <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[13px] font-semibold text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] font-heading text-[13px] font-semibold text-[#0A0A0A]"
               >
                 1
               </span>
               <div>
                 <p className="pulse-eyebrow text-[#737373]">ADIM 01</p>
-                <h3
-                  className="text-[18px] font-semibold text-[#0A0A0A] tracking-tight"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
+                <h3 className="text-[18px] font-semibold text-[#0A0A0A] tracking-tight">
                   Kampanya Detayları
                 </h3>
               </div>
@@ -575,17 +570,13 @@ function QRPageContent() {
           <div className="bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-7">
             <div className="flex items-center gap-3 mb-4">
               <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[13px] font-semibold text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] font-heading text-[13px] font-semibold text-[#0A0A0A]"
               >
                 2
               </span>
               <div>
                 <p className="pulse-eyebrow text-[#737373]">ADIM 02</p>
-                <h3
-                  className="text-[18px] font-semibold text-[#0A0A0A] tracking-tight"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
+                <h3 className="text-[18px] font-semibold text-[#0A0A0A] tracking-tight">
                   Akış
                 </h3>
               </div>
@@ -604,10 +595,7 @@ function QRPageContent() {
                   <p className="pulse-eyebrow text-[#C6F24E] bg-[#0A0A0A] inline-block rounded px-1.5 py-0.5">
                     ADIM {step.n}
                   </p>
-                  <p
-                    className="mt-2 text-[14px] font-semibold text-[#0A0A0A]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
+                  <p className="mt-2 font-heading text-[14px] font-semibold text-[#0A0A0A]">
                     {step.t}
                   </p>
                   <p className="text-[11px] text-[#737373] mt-1 leading-snug">{step.d}</p>
@@ -626,17 +614,13 @@ function QRPageContent() {
           <div className="bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-8 space-y-6 sm:space-y-8">
             <div className="flex items-center gap-3">
               <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[13px] font-semibold text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] font-heading text-[13px] font-semibold text-[#0A0A0A]"
               >
                 3
               </span>
               <div>
                 <p className="pulse-eyebrow text-[#737373]">ADIM 03</p>
-                <h3
-                  className="text-[18px] font-semibold text-[#0A0A0A] tracking-tight"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
+                <h3 className="text-[18px] font-semibold text-[#0A0A0A] tracking-tight">
                   Tasarım
                 </h3>
               </div>
@@ -977,10 +961,7 @@ function QRPageContent() {
               <div className="flex aspect-[3/4] flex-col items-center justify-between rounded-2xl bg-[#C6F24E] p-4 text-[#0A0A0A] shadow-sm">
                 <div className="text-center">
                   <p className="pulse-eyebrow text-[#0A0A0A]/60">{selectedRestaurant?.name || 'BUAZE'}</p>
-                  <h2
-                    className="mt-2 text-[24px] font-medium leading-none tracking-[-0.025em]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
+                  <h2 className="mt-2 text-[24px] font-medium leading-none tracking-[-0.025em]">
                     Deneyiminizi paylaşın.
                   </h2>
                 </div>
@@ -1006,10 +987,7 @@ function QRPageContent() {
               <div className="hidden aspect-[9/19] rounded-[28px] bg-[#0A0A0A] p-2.5 min-[440px]:block">
                 <div className="flex h-full flex-col gap-3 rounded-[20px] bg-white p-4">
                   <p className="pulse-eyebrow text-[#737373]">{selectedRestaurant?.name || 'İşletme'}</p>
-                  <h3
-                    className="text-[18px] font-medium leading-tight tracking-[-0.025em] text-[#0A0A0A]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
+                  <h3 className="text-[18px] font-medium leading-tight tracking-[-0.025em] text-[#0A0A0A]">
                     Deneyiminiz nasıldı?
                   </h3>
                   <div className="grid grid-cols-5 gap-1">

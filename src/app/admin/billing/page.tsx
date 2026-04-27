@@ -80,7 +80,7 @@ function AdminBillingBody() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="pulse-eyebrow text-[#737373]">{isTr ? 'MEVCUT PLAN' : 'CURRENT PLAN'}</p>
-                  <h2 className="mt-1 text-[24px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+                  <h2 className="mt-1 text-[24px] font-medium text-[#0A0A0A]">
                     {summary?.planLabel || (isTr ? 'Trial' : 'Trial')}
                   </h2>
                   <p className="mt-1 text-[13px] text-[#525252]">
@@ -150,7 +150,7 @@ function AdminBillingBody() {
             <div className="flex items-center justify-between border-b border-[#EDEDED] p-5">
               <div className="flex items-center gap-2">
                 <FileText size={14} className="text-[#0A0A0A]" />
-                <h3 className="text-[16px] font-semibold text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+                <h3 className="text-[16px] font-semibold text-[#0A0A0A]">
                   {isTr ? 'Fatura geçmişi' : 'Invoice history'}
                 </h3>
               </div>
