@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Eye, Loader2, Mail, Send } from 'lucide-react';
-import { PageHeader } from '@/components/ui';
+import { AlertBanner, PageHeader } from '@/components/ui';
 
 const TEMPLATES = [
   { key: 'forgot-password', label: 'Şifre sıfırlama', desc: 'Token + 6-haneli kod + meta bilgi' },
@@ -67,22 +67,8 @@ export default function MailPreviewIndex() {
         }
       />
 
-      {error && (
-        <div
-          className="px-4 py-3 rounded-xl text-xs font-medium"
-          style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}
-        >
-          {error}
-        </div>
-      )}
-      {info && (
-        <div
-          className="px-4 py-3 rounded-xl text-xs font-medium"
-          style={{ background: '#EAF9B8', border: '1px solid #D9EE7A', color: '#4D5C00' }}
-        >
-          {info}
-        </div>
-      )}
+      {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+      {info && <AlertBanner kind="lime">{info}</AlertBanner>}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {TEMPLATES.map((t) => (

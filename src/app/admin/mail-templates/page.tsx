@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FileEdit, Loader2, ArrowRight, BellRing } from 'lucide-react';
-import { Badge, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, PageHeader } from '@/components/ui';
 
 interface GridCell {
   key: string;
@@ -101,22 +101,8 @@ export default function MailTemplatesIndexPage() {
         }
       />
 
-      {error && (
-        <div
-          className="px-4 py-3 rounded-xl text-xs font-medium"
-          style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}
-        >
-          {error}
-        </div>
-      )}
-      {opsResult && (
-        <div
-          className="px-4 py-3 rounded-xl text-xs font-medium"
-          style={{ background: '#EAF9B8', border: '1px solid #D9EE7A', color: '#4D5C00' }}
-        >
-          {opsResult}
-        </div>
-      )}
+      {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+      {opsResult && <AlertBanner kind="lime">{opsResult}</AlertBanner>}
 
       {loading ? (
         <div className="flex items-center justify-center p-16">

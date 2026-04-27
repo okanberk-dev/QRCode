@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2, X, Check, AlertTriangle, Crown, RefreshCw, Store, ToggleLeft, ToggleRight } from 'lucide-react';
-import { Badge, type BadgeKind, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, type BadgeKind, PageHeader } from '@/components/ui';
 
 interface Member {
   id: string;
@@ -118,9 +118,9 @@ export default function MembersPage() {
       />
 
       {success && (
-        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-2xl text-green-700 text-sm font-semibold">
-          <Check size={18} strokeWidth={2} /> {success}
-        </div>
+        <AlertBanner kind="success" icon={<Check size={14} strokeWidth={2} className="mt-0.5" />}>
+          {success}
+        </AlertBanner>
       )}
 
       {/* Table */}
@@ -241,11 +241,7 @@ export default function MembersPage() {
             </div>
 
             <div className="p-6 space-y-6">
-              {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-xs font-semibold text-center">
-                  {error}
-                </div>
-              )}
+              {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
               {/* Plan */}
               <div className="space-y-2">

@@ -14,7 +14,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { Badge, EmptyState, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, EmptyState, PageHeader } from '@/components/ui';
 
 interface BlogPost {
   id: string;
@@ -178,19 +178,12 @@ export default function AdminBlogPage() {
         </section>
 
         {error && (
-          <div className="flex items-center justify-between rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
+          <AlertBanner kind="danger" onDismiss={() => setError('')}>
             {error}
-            <button onClick={() => setError('')} className="rounded-full p-1 hover:bg-red-100">
-              <X size={16} />
-            </button>
-          </div>
+          </AlertBanner>
         )}
 
-        {success && (
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700">
-            {success}
-          </div>
-        )}
+        {success && <AlertBanner kind="success">{success}</AlertBanner>}
 
         {loading ? (
           <div className="flex items-center justify-center py-24">
