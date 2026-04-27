@@ -1675,7 +1675,7 @@ function MenuQrModal({
           ) : err ? (
             <div className="flex aspect-square w-full max-w-[240px] flex-col items-center justify-center gap-2 text-center">
               <AlertTriangle size={24} strokeWidth={2} className="text-[#DC2626]" />
-              <p className="text-[13px] text-red-700">{err}</p>
+              <p className="text-[13px] text-[#991B1B]">{err}</p>
             </div>
           ) : (
             <div className="flex aspect-square w-full max-w-[240px] items-center justify-center">
