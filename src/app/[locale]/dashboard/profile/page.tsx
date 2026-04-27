@@ -3,20 +3,13 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import {
-  Bell,
-  Building2,
   Check,
-  Code,
-  Cog,
-  CreditCard,
   Image as ImageIcon,
   Key,
   Loader2,
   Palette,
-  Plug,
   ShieldCheck,
   Upload,
-  Users,
 } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
@@ -138,54 +131,6 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
     },
   ];
 
-  // Side links — replace the 5 placeholder/redirect tabs (integrations,
-  // rules, team, billing, notifications, api) with a card-list footer
-  // pointing at their dedicated routes/owners. Phase 11.8 dropped the
-  // 8-tab interface for design's 3-card pattern.
-  const otherLinks: {
-    icon: typeof Plug;
-    label: string;
-    sub: string;
-    href: string;
-  }[] = [
-    {
-      icon: Plug,
-      label: isTr ? 'Entegrasyonlar' : 'Integrations',
-      sub: isTr ? 'Google, Yemeksepeti, Getir, Trendyol GO bağlantıları' : 'Google, Yemeksepeti, Getir, Trendyol GO links',
-      href: `/${locale}/dashboard/platforms`,
-    },
-    {
-      icon: Cog,
-      label: isTr ? 'Otomatik kurallar' : 'Automation rules',
-      sub: isTr ? 'Düşük puan uyarıları, otomatik yanıt eşikleri' : 'Low-rating alerts, auto-reply thresholds',
-      href: `/${locale}/dashboard/feedbacks`,
-    },
-    {
-      icon: Users,
-      label: isTr ? 'Ekip & roller' : 'Team & roles',
-      sub: isTr ? 'Yönetici, manager ve operatör erişimi' : 'Admin, manager and operator access',
-      href: `/${locale}/dashboard/restaurants`,
-    },
-    {
-      icon: CreditCard,
-      label: isTr ? 'Faturalandırma' : 'Billing',
-      sub: isTr ? 'Aktif plan, deneme süresi, fatura geçmişi' : 'Plan, trial period, invoice history',
-      href: '/admin/billing',
-    },
-    {
-      icon: Bell,
-      label: isTr ? 'Bildirimler' : 'Notifications',
-      sub: isTr ? 'E-posta + push tercihleri' : 'Email + push preferences',
-      href: '/admin/notifications',
-    },
-    {
-      icon: Code,
-      label: 'API & Webhook',
-      sub: isTr ? 'Geliştirici API anahtarları' : 'Developer API keys',
-      href: '/admin/api',
-    },
-  ];
-
   return (
     <div className="mx-auto max-w-[920px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
       <PageHeader
@@ -193,8 +138,8 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
         title={isTr ? 'Hesap & ayarlar' : 'Account & settings'}
         description={
           isTr
-            ? 'Kimlik bilgilerin, marka kimliğin ve yasal metinler. Diğer modüller için aşağıdaki kısayolları kullan.'
-            : 'Your identity, brand identity and legal documents. Use the shortcuts below for other modules.'
+            ? 'Kimlik bilgilerin, marka kimliğin ve yasal metinler.'
+            : 'Your identity, brand identity and legal documents.'
         }
       />
 
@@ -390,50 +335,6 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
         </div>
       </section>
 
-      {/* Diğer ayarlar — link cards for the 5 modules dropped from the
-          tab interface (integrations, rules, team, billing, notifications,
-          api). Each is a real route; this is just navigation. */}
-      <section className="bz-card-soft p-5 sm:p-6">
-        <Eyebrow>{isTr ? 'DİĞER AYARLAR' : 'OTHER SETTINGS'}</Eyebrow>
-        <div className="bz-h-tight mt-1 mb-3.5" style={{ fontSize: 15 }}>
-          {isTr ? 'Modül kısayolları' : 'Module shortcuts'}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {otherLinks.map((l) => {
-            const Icon = l.icon;
-            return (
-              <Link
-                key={l.label}
-                href={l.href}
-                className="flex items-start gap-3 rounded-xl border border-[#EDEDED] bg-white p-3.5 transition-colors hover:border-[#C6F24E]"
-              >
-                <span
-                  className="flex shrink-0 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]"
-                  style={{ width: 32, height: 32 }}
-                >
-                  <Icon size={14} strokeWidth={2} />
-                </span>
-                <div className="min-w-0">
-                  <div className="text-[13px] font-semibold text-[#0A0A0A]">{l.label}</div>
-                  <div className="text-[11px] text-[#737373] mt-0.5 leading-[1.45]">{l.sub}</div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Profilim shortcut to admin profile — preserved from previous
-          tab interface */}
-      <section className="text-center pt-2">
-        <Link
-          href="/admin/profile"
-          className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors"
-        >
-          <Building2 size={12} strokeWidth={2} />
-          {isTr ? 'Süperadmin profili' : 'Superadmin profile'}
-        </Link>
-      </section>
     </div>
   );
 }
