@@ -689,7 +689,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
       {/* ============ RIGHT — customer context (static, frontend only) ============ */}
       {active && (
-        <aside className="hidden xl:flex w-[340px] flex-shrink-0 flex-col overflow-y-auto border-l border-[#EDEDED] bg-[#FAFAFA] p-6">
+        <aside className="hidden lg:flex lg:w-[280px] xl:w-[340px] flex-shrink-0 flex-col overflow-y-auto border-l border-[#EDEDED] bg-[#FAFAFA] p-5 xl:p-6">
           <div className="pulse-eyebrow text-[#737373]">
             {isTr ? 'MÜŞTERİ PROFİLİ' : 'CUSTOMER PROFILE'}
           </div>
