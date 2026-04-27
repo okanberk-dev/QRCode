@@ -263,7 +263,6 @@ export default function RestaurantsPage() {
       <PageHeader
         eyebrow="İŞLETMELER"
         title={`${restaurants.length} kayıtlı işletme`}
-        description="Restoran, kafe, otel, klinik veya mağaza fark etmeden tüm işletmeleri tek panelden yönet. Sahip ataması, aktiflik, menü yayını ve QR akışları burada görünür."
         actions={
           <>
             <button onClick={handleExport} className="bz-btn-ghost">

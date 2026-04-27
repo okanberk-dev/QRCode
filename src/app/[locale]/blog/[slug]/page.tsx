@@ -166,6 +166,19 @@ export default async function BlogPostPage({
 
   if (!post) notFound();
 
+  // Fire-and-forget view counter — atomic increment, swallow P2022 (column
+  // not migrated yet on first deploy after schema change).
+  prisma.blogPost
+    .update({
+      where: { id: post.id },
+      data: { viewCount: { increment: 1 } },
+      select: { id: true },
+    })
+    .catch((err) => {
+      const code = (err as { code?: string })?.code;
+      if (code !== 'P2022') console.error('[blog viewCount]', err);
+    });
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
