@@ -318,6 +318,17 @@ model AdminUser {
   passwordHash String  @map("password_hash")
   role         String  @default("superadmin")
   restaurantId String? @map("restaurant_id")
+  // Recovery e-mail — admin opt-in, kullanıcı profile'inden ekler. Boşsa
+  // /api/admin/forgot-password kod gönderemez (UI hata mesajı verir).
+  email             String?   @unique
+  // Şifre sıfırlama 6-haneli numerik kod. Hash olarak (SHA-256) saklanır;
+  // plaintext kod yalnız ilk gönderimde mail'e konur. 15 dakika geçerli.
+  resetTokenHash    String?   @map("reset_token_hash")
+  resetTokenExpiry  DateTime? @map("reset_token_expiry")
+  // Brute-force gating — son 1 saat içinde N başarısız sıfırlama denemesi
+  // sonrası pencere bir saat kapanır.
+  resetAttempts     Int       @default(0) @map("reset_attempts")
+  resetLastAttempt  DateTime? @map("reset_last_attempt")
 
   restaurant Restaurant? @relation(fields: [restaurantId], references: [id])
 

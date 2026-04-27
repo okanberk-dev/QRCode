@@ -1,82 +1,123 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, User, Key, Check, ShieldCheck, AlertCircle } from 'lucide-react';
-import { PageHeader } from '@/components/ui';
+import { Loader2, User, Key, Check, Mail, ShieldCheck, AlertCircle } from 'lucide-react';
+import { AlertBanner, PageHeader } from '@/components/ui';
+
+interface ProfileData {
+  id: string;
+  username: string;
+  role: string;
+  recoveryEmail: string | null;
+}
 
 export default function AdminProfilePage() {
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
-  const [profile, setProfile] = useState<{ id: string, username: string, role: string } | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
 
-  const [formData, setFormData] = useState({
+  // E-mail
+  const [email, setEmail] = useState('');
+
+  // Password change
+  const [pwForm, setPwForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
 
+  const isEnvAdmin = profile?.id === 'env-admin';
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch('/api/admin/me');
-        if (res.ok) {
-          const data = await res.json();
-          setProfile(data);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
+    let cancelled = false;
+    fetch('/api/admin/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        setProfile({
+          id: data.id,
+          username: data.username,
+          role: data.role,
+          recoveryEmail: data.recoveryEmail || null,
+        });
+        setEmail(data.recoveryEmail || '');
+      })
+      .catch((e) => console.error(e))
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
     };
-    fetchProfile();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    
-    if (formData.newPassword !== formData.confirmPassword) {
+    setSavingEmail(true);
+    try {
+      const res = await fetch('/api/admin/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'E-posta güncellenemedi.');
+      } else {
+        setSuccess('Kurtarma e-postası güncellendi.');
+        setProfile((prev) =>
+          prev ? { ...prev, recoveryEmail: email.trim() || null } : prev,
+        );
+        setTimeout(() => setSuccess(''), 4000);
+      }
+    } catch {
+      setError('Bağlantı hatası.');
+    } finally {
+      setSavingEmail(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
       setError('Şifreler eşleşmiyor.');
       return;
     }
-
-    if (formData.newPassword.length < 8) {
-      setError('Yeni şifre en az 8 karakter olmalıdır.');
+    if (pwForm.newPassword.length < 8) {
+      setError('Yeni şifre en az 8 karakter olmalı.');
       return;
     }
 
-    setSaving(true);
+    setSavingPassword(true);
     try {
       const res = await fetch('/api/admin/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword,
+          currentPassword: pwForm.currentPassword,
+          newPassword: pwForm.newPassword,
         }),
       });
-
       const data = await res.json();
-
       if (res.ok) {
-        setSuccess('Şifreniz başarıyla güncellendi.');
-        setFormData({
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
-        });
+        setSuccess('Şifren başarıyla güncellendi.');
+        setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setTimeout(() => setSuccess(''), 4000);
       } else {
         setError(data.error || 'Güncelleme sırasında hata oluştu.');
       }
     } catch {
       setError('Bağlantı hatası.');
     } finally {
-      setSaving(false);
+      setSavingPassword(false);
     }
   };
 
@@ -90,131 +131,217 @@ export default function AdminProfilePage() {
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
-      <PageHeader
-        eyebrow="PROFİL"
-        title="Profilim"
-        description="Hesap bilgilerinizi ve parolanızı güncelleyin."
-      />
+      <PageHeader eyebrow="PROFİL" title="Profilim" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
-        {/* Sidebar Info */}
-        <div className="space-y-8">
-          <div className="p-6 sm:p-8 bg-[#0A0A0A] rounded-2xl sm:rounded-[40px] border border-[#EDEDED] sm:shadow-md space-y-6 text-white">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#C6F24E] border border-[#EDEDED] flex items-center justify-center shadow-md">
-              <ShieldCheck size={28} className="text-[#0A0A0A]" strokeWidth={2} />
+      {error && (
+        <AlertBanner kind="danger" onDismiss={() => setError('')}>
+          {error}
+        </AlertBanner>
+      )}
+      {success && <AlertBanner kind="success">{success}</AlertBanner>}
+
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-5 lg:gap-7">
+        {/* Sidebar info */}
+        <aside className="bz-card p-5 sm:p-6 self-start">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0A0A0A]">
+            <ShieldCheck size={26} className="text-[#C6F24E]" strokeWidth={2} />
+          </div>
+          <div className="mt-4">
+            <p className="pulse-eyebrow text-[#737373]">HESAP</p>
+            <div className="bz-h-tight mt-1 truncate" style={{ fontSize: 16 }}>
+              {profile?.username}
             </div>
-            <div className="space-y-2">
-              <h4 className="text-white font-semibold uppercase text-sm tracking-widest">Güvenlik Önemlidir</h4>
-              <p className="text-white/70 text-xs font-bold leading-relaxed">
-                Şifrenizi düzenli aralıklarla değiştirmek hesabınızın güvenliğini artırır. Güçlü bir şifre en az 8 karakter, rakam ve sembol içermelidir.
-              </p>
+            <div className="mt-1 text-[12px] text-[#737373] uppercase tracking-wide">
+              {profile?.role || 'superadmin'}
+              {isEnvAdmin && ' · ENV'}
             </div>
           </div>
-        </div>
+          <div className="mt-5 rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-3.5">
+            <p className="text-[11px] font-semibold text-[#0A0A0A] mb-1">
+              Güvenlik ipucu
+            </p>
+            <p className="text-[11px] leading-[1.55] text-[#525252]">
+              Şifreni düzenli aralıklarla değiştir. En az 8 karakter, bir büyük harf ve bir
+              rakam içersin.
+            </p>
+          </div>
+        </aside>
 
-        {/* Form Area */}
-        <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl sm:rounded-[40px] border border-[#EDEDED] sm:shadow-md p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-10">
-            {error && (
-              <div className="flex items-center gap-4 p-5 bg-red-50 border-2 border-red-500/20 rounded-2xl text-red-600 pulse-eyebrow shadow-sm">
-                <AlertCircle size={20} strokeWidth={2} className="flex-shrink-0" />
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="flex items-center gap-4 p-5 bg-green-50 border-2 border-[#10b981]/20 rounded-2xl text-[#10b981] pulse-eyebrow shadow-sm">
-                <Check size={20} strokeWidth={2} className="flex-shrink-0" />
-                {success}
-              </div>
-            )}
+        {/* Form area */}
+        <div className="space-y-4">
+          {/* E-mail card */}
+          <section className="bz-card p-5 sm:p-7">
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EAF9B8]">
+                <Mail size={16} strokeWidth={2} />
+              </span>
+              <h3 className="bz-h-tight" style={{ fontSize: 17 }}>
+                Kurtarma e-postası
+              </h3>
+            </div>
+            <p className="text-[13px] text-[#525252] leading-[1.55] mb-5">
+              Şifreni unuttuğunda 6 haneli doğrulama kodu bu adrese gelir. Kayıtlı bir e-posta
+              yoksa kurtarma akışı çalışmaz.
+            </p>
 
-            {/* Account Info */}
-            <div className="space-y-6 sm:space-y-8">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#FFFFFF] border border-[#EDEDED] flex items-center justify-center shadow-md">
-                  <User size={16} strokeWidth={2} />
+            <form onSubmit={handleEmailSubmit} className="space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                  E-posta
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isEnvAdmin}
+                  placeholder="ornek@buaze.com"
+                  className="bz-input"
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">
+                <p className="text-[11px] text-[#737373]">
+                  {profile?.recoveryEmail ? (
+                    <>
+                      Mevcut:{' '}
+                      <span className="font-mono text-[#0A0A0A]">{profile.recoveryEmail}</span>
+                    </>
+                  ) : (
+                    'Henüz e-posta kayıtlı değil.'
+                  )}
+                </p>
+                <button
+                  type="submit"
+                  disabled={savingEmail || isEnvAdmin}
+                  className="bz-btn-primary inline-flex items-center justify-center gap-1.5 sm:self-end disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingEmail ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Check size={14} strokeWidth={2} />
+                  )}
+                  E-postayı kaydet
+                </button>
+              </div>
+
+              {isEnvAdmin && (
+                <div className="flex items-start gap-2 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] px-3 py-2 text-[12px] text-[#92400E]">
+                  <AlertCircle size={13} className="shrink-0 mt-0.5" strokeWidth={2} />
+                  <span>
+                    Çevre (env) admin&apos;i için e-posta veritabanına yazılamaz. DB üzerinden bir
+                    AdminUser oluşturup ona e-posta ekle.
+                  </span>
                 </div>
-                <h3 className="bz-h-tight" style={{ fontSize: 18 }}>Hesap bilgileri</h3>
-              </div>
+              )}
+            </form>
+          </section>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Kullanıcı Adı</label>
-                <div className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border border-[#EDEDED] bg-[#f3f4f6] text-[#1A1A1A] font-bold">
-                  {profile?.username}
-                  {profile?.id === 'env-admin' && " (Varsayılan Admin - Değiştirilemez)"}
-                </div>
+          {/* Account info card */}
+          <section className="bz-card p-5 sm:p-7">
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAFAFA] border border-[#EDEDED]">
+                <User size={16} strokeWidth={2} />
+              </span>
+              <h3 className="bz-h-tight" style={{ fontSize: 17 }}>
+                Hesap bilgileri
+              </h3>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                Kullanıcı adı
+              </label>
+              <div
+                className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-[14px] font-medium text-[#0A0A0A]"
+              >
+                {profile?.username}
+                {isEnvAdmin && ' (varsayılan — değiştirilemez)'}
               </div>
             </div>
+          </section>
 
-            {/* Password Change */}
-            <div className="pt-6 sm:pt-10 border-t-4 border-[#FFFFFF] space-y-6 sm:space-y-8">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#FFFFFF] border border-[#EDEDED] flex items-center justify-center shadow-md">
-                  <Key size={16} strokeWidth={2} />
-                </div>
-                <h3 className="bz-h-tight" style={{ fontSize: 18 }}>Şifre değiştir</h3>
+          {/* Password change card */}
+          <section className="bz-card p-5 sm:p-7">
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAFAFA] border border-[#EDEDED]">
+                <Key size={16} strokeWidth={2} />
+              </span>
+              <h3 className="bz-h-tight" style={{ fontSize: 17 }}>
+                Şifre değiştir
+              </h3>
+            </div>
+
+            <form onSubmit={handlePasswordSubmit} className="space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                  Mevcut şifre
+                </label>
+                <input
+                  type="password"
+                  required
+                  disabled={isEnvAdmin}
+                  value={pwForm.currentPassword}
+                  onChange={(e) =>
+                    setPwForm((p) => ({ ...p, currentPassword: e.target.value }))
+                  }
+                  placeholder="••••••••"
+                  className="bz-input"
+                  autoComplete="current-password"
+                />
               </div>
-
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Mevcut Şifre</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                    Yeni şifre
+                  </label>
                   <input
                     type="password"
                     required
-                    disabled={profile?.id === 'env-admin'}
-                    value={formData.currentPassword}
-                    onChange={(e) => setFormData(p => ({ ...p, currentPassword: e.target.value }))}
-                    placeholder="••••••••"
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-[#EDEDED]"
+                    disabled={isEnvAdmin}
+                    minLength={8}
+                    value={pwForm.newPassword}
+                    onChange={(e) =>
+                      setPwForm((p) => ({ ...p, newPassword: e.target.value }))
+                    }
+                    placeholder="Min 8 karakter"
+                    className="bz-input"
+                    autoComplete="new-password"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Yeni Şifre</label>
-                    <input
-                      type="password"
-                      required
-                      disabled={profile?.id === 'env-admin'}
-                      value={formData.newPassword}
-                      onChange={(e) => setFormData(p => ({ ...p, newPassword: e.target.value }))}
-                      placeholder="Min 8 karakter"
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-[#EDEDED]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Şifre Tekrar</label>
-                    <input
-                      type="password"
-                      required
-                      disabled={profile?.id === 'env-admin'}
-                      value={formData.confirmPassword}
-                      onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
-                      placeholder="Şifreyi doğrula"
-                      className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] focus:border-[#C6F24E] focus:shadow-md outline-none text-[15px] font-bold transition-all disabled:opacity-50 disabled:bg-[#EDEDED]"
-                    />
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                    Şifreyi tekrarla
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    disabled={isEnvAdmin}
+                    minLength={8}
+                    value={pwForm.confirmPassword}
+                    onChange={(e) =>
+                      setPwForm((p) => ({ ...p, confirmPassword: e.target.value }))
+                    }
+                    placeholder="Tekrar gir"
+                    className="bz-input"
+                    autoComplete="new-password"
+                  />
                 </div>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={saving || profile?.id === 'env-admin'}
-              className="w-full py-5 bg-[#0A0A0A] text-white font-semibold rounded-2xl border border-[#EDEDED] hover:bg-[#0A0A0A]/90 active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3 text-[15px] tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} strokeWidth={2} />
-                  GÜNCELLENİYOR...
-                </>
-              ) : (
-                <>
-                  <ShieldCheck size={20} strokeWidth={2} />
-                  ŞİFREYİ GÜNCELLE
-                </>
-              )}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={savingPassword || isEnvAdmin}
+                className="bz-btn-primary inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {savingPassword ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <ShieldCheck size={14} strokeWidth={2} />
+                )}
+                Şifreyi güncelle
+              </button>
+            </form>
+          </section>
         </div>
       </div>
     </div>
