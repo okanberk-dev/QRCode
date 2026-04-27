@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { Calendar } from 'lucide-react';
 import ExportReportButton from '@/components/dashboard/ExportReportButton';
-import { PageHeader } from '@/components/ui';
+import { Eyebrow, PageHeader } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -127,13 +127,23 @@ export default async function AnalyticsPage({
             ? '#F27A1A'
             : '#0A0A0A';
 
-  // Theme cloud — keyword frequency from comments (naive)
+  // Sentiment word cloud (1:1 design `OwnerAnalytics` "Duygu analizi") —
+  // tone derived from the source rating: words from rating ≥ 4 land in
+  // the positive bucket, rating ≤ 2 in the negative bucket. Rating = 3
+  // is treated as neutral and skipped (no signal). When the same word
+  // appears in both buckets the larger count wins; total count = both.
   const stopWords = new Set([
     've',
     'çok',
     'bir',
     'için',
     'ile',
+    'ama',
+    'gibi',
+    'daha',
+    'olan',
+    'olur',
+    'oldu',
     'the',
     'and',
     'was',
@@ -147,46 +157,76 @@ export default async function AnalyticsPage({
     'had',
     'from',
     'then',
+    'with',
+    'which',
+    'just',
   ]);
-  const wordFreq = new Map<string, number>();
-  feedbacks.forEach((f) => {
-    if (!f.comment) return;
-    f.comment
+
+  const tokenize = (text: string): string[] =>
+    text
       .toLowerCase()
       .replace(/[^a-zçğıöşüA-ZÇĞİÖŞÜ\s]/g, ' ')
       .split(/\s+/)
-      .filter((w) => w.length >= 4 && !stopWords.has(w))
-      .forEach((w) => wordFreq.set(w, (wordFreq.get(w) || 0) + 1));
-  });
-  const themes = Array.from(wordFreq.entries())
-    .map(([k, v]) => ({ label: k, count: v }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 12);
+      .filter((w) => w.length >= 4 && !stopWords.has(w));
 
-  // Static fallback if no themes
-  const staticThemes = isTr
+  const posFreq = new Map<string, number>();
+  const negFreq = new Map<string, number>();
+  feedbacks.forEach((f) => {
+    if (!f.comment) return;
+    if (f.rating === 3) return; // neutral — skipped
+    const target = f.rating >= 4 ? posFreq : negFreq;
+    tokenize(f.comment).forEach((w) =>
+      target.set(w, (target.get(w) || 0) + 1),
+    );
+  });
+
+  // Merge — every distinct word becomes one cloud token, tone decided
+  // by the larger bucket.
+  const allWords = new Set<string>([...posFreq.keys(), ...negFreq.keys()]);
+  const sentimentThemes = Array.from(allWords)
+    .map((label) => {
+      const pos = posFreq.get(label) ?? 0;
+      const neg = negFreq.get(label) ?? 0;
+      return {
+        label,
+        count: pos + neg,
+        tone: pos >= neg ? ('pos' as const) : ('neg' as const),
+      };
+    })
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 14);
+
+  // Static fallback if not enough sentiment signal yet — the design's
+  // sample shape (positive + negative mix) is preserved.
+  const staticThemes: Array<{ label: string; count: number; tone: 'pos' | 'neg' }> = isTr
     ? [
-        { label: 'servis', count: 34 },
-        { label: 'lezzet', count: 28 },
-        { label: 'atmosfer', count: 22 },
-        { label: 'fiyat', count: 20 },
-        { label: 'bekleme', count: 18 },
-        { label: 'personel', count: 16 },
-        { label: 'temizlik', count: 10 },
-        { label: 'müzik', count: 5 },
+        { label: 'lezzetli', count: 32, tone: 'pos' },
+        { label: 'servis', count: 28, tone: 'pos' },
+        { label: 'temiz', count: 24, tone: 'pos' },
+        { label: 'mekan', count: 22, tone: 'pos' },
+        { label: 'kibar', count: 18, tone: 'pos' },
+        { label: 'manzara', count: 14, tone: 'pos' },
+        { label: 'tatlı', count: 12, tone: 'pos' },
+        { label: 'soğuk', count: 10, tone: 'neg' },
+        { label: 'pahalı', count: 9, tone: 'neg' },
+        { label: 'yavaş', count: 7, tone: 'neg' },
+        { label: 'hijyen', count: 5, tone: 'neg' },
       ]
     : [
-        { label: 'service', count: 34 },
-        { label: 'flavor', count: 28 },
-        { label: 'ambience', count: 22 },
-        { label: 'price', count: 20 },
-        { label: 'wait', count: 18 },
-        { label: 'staff', count: 16 },
-        { label: 'cleanliness', count: 10 },
-        { label: 'music', count: 5 },
+        { label: 'tasty', count: 32, tone: 'pos' },
+        { label: 'service', count: 28, tone: 'pos' },
+        { label: 'clean', count: 24, tone: 'pos' },
+        { label: 'venue', count: 22, tone: 'pos' },
+        { label: 'kind', count: 18, tone: 'pos' },
+        { label: 'view', count: 14, tone: 'pos' },
+        { label: 'dessert', count: 12, tone: 'pos' },
+        { label: 'cold', count: 10, tone: 'neg' },
+        { label: 'pricey', count: 9, tone: 'neg' },
+        { label: 'slow', count: 7, tone: 'neg' },
+        { label: 'hygiene', count: 5, tone: 'neg' },
       ];
 
-  const displayThemes = themes.length >= 5 ? themes : staticThemes;
+  const displayThemes = sentimentThemes.length >= 5 ? sentimentThemes : staticThemes;
 
   // Per-location performance table (instead of "staff" which doesn't exist as a feature yet)
   const perLocation = user.restaurants.map((r) => {
@@ -334,36 +374,42 @@ export default async function AnalyticsPage({
         </div>
       </section>
 
-      {/* Theme cloud + source distribution */}
+      {/* Sentiment word cloud + source distribution */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
         <section className="bz-card p-5 sm:p-6">
+          <Eyebrow>{isTr ? 'DUYGU ANALİZİ' : 'SENTIMENT'}</Eyebrow>
           <h3
-            className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
+            className="bz-h-tight text-[18px] text-[#0A0A0A] mt-1"
           >
-            {isTr ? 'Öne çıkan temalar' : 'Trending themes'}
+            {isTr ? 'Yorumlardan çıkan kelimeler' : 'Words from reviews'}
           </h3>
           <p className="pulse-eyebrow text-[#737373] mt-1">
-            {themes.length >= 5
-              ? isTr ? 'Yorum içeriklerinden otomatik' : 'Auto-extracted from comments'
-              : isTr ? 'Demo · yeterli yorum olunca Pulse AI ile güncellenecek' : 'Demo · Pulse AI updates with more reviews'}
+            {sentimentThemes.length >= 5
+              ? isTr
+                ? 'Pozitif: 4–5 yıldız · Negatif: 1–2 yıldız yorumlardan'
+                : 'Positive: 4–5★ · Negative: 1–2★ reviews'
+              : isTr
+                ? 'Demo · daha fazla yorum geldikçe gerçek veri görünür'
+                : 'Demo · real data appears as more reviews come in'}
           </p>
           <div className="mt-5 flex flex-wrap gap-2 items-center">
             {displayThemes.map((tag) => {
-              const tone = tag.label.match(/bekle|park|hata|uzun|eksik|wait|slow|poor|issue/) ? 'neg' : 'pos';
-              const bg = tone === 'pos' ? 'bg-[#EAF9B8]' : 'bg-[#FEE2E2]';
-              const fg = tone === 'pos' ? 'text-[#0A0A0A]' : 'text-[#DC2626]';
-              const size = 11 + Math.min(tag.count * 0.12, 6);
-              const pad = 4 + Math.min(tag.count * 0.1, 4);
+              const isPos = tag.tone === 'pos';
+              const size = 12 + Math.min(tag.count / 4, 8);
               return (
                 <span
                   key={tag.label}
-                  className={`${bg} ${fg} rounded-full font-medium`}
+                  className="inline-flex items-center gap-1.5 rounded-full"
                   style={{
-                    padding: `${pad}px ${pad + 4}px`,
+                    padding: '5px 12px',
+                    background: isPos ? '#EAF9B8' : '#FEF2F2',
+                    color: isPos ? '#3D4D00' : '#991B1B',
                     fontSize: `${size}px`,
+                    fontWeight: 500,
                   }}
                 >
-                  {tag.label} · {tag.count}
+                  {tag.label}
+                  <span style={{ opacity: 0.6, fontSize: 10 }}>{tag.count}</span>
                 </span>
               );
             })}
