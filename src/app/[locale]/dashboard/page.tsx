@@ -100,6 +100,33 @@ export default async function DashboardPage({
     },
     select: { createdAt: true },
   });
+
+  // Mobile dashboard "BUGÜN" hero card aggregate'leri (mobile-screens-1.jsx
+  // MOwnerHome line 110-138 1:1). scansToday = bugünkü feedback count
+  // (gerçek QR scan tracking olmadığından proxy). 30g scan = son 30 gün
+  // feedback count. redirectPct = rating>=4 + platform set olanların oranı.
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const thirtyDaysAgoMobile = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const restIds = user.restaurants.map((r) => r.id);
+  const [scansToday, scans30d, redirected30d, total30d] = restIds.length
+    ? await Promise.all([
+        prisma.feedback.count({ where: { restaurantId: { in: restIds }, createdAt: { gte: todayStart } } }),
+        prisma.feedback.count({ where: { restaurantId: { in: restIds }, createdAt: { gte: thirtyDaysAgoMobile } } }),
+        prisma.feedback.count({
+          where: {
+            restaurantId: { in: restIds },
+            createdAt: { gte: thirtyDaysAgoMobile },
+            rating: { gte: 4 },
+            platform: { not: null },
+          },
+        }),
+        prisma.feedback.count({ where: { restaurantId: { in: restIds }, createdAt: { gte: thirtyDaysAgoMobile } } }),
+      ])
+    : [0, 0, 0, 0];
+  const reviewsToday = scansToday;
+  const redirectPct = total30d > 0 ? Math.round((redirected30d / total30d) * 100) : 0;
+  const scans30dShort = scans30d >= 1000 ? `${(scans30d / 1000).toFixed(1)}k` : String(scans30d);
   const isTrLocale = locale === 'tr';
   const dayLabelsTr = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
   const dayLabelsEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -239,6 +266,67 @@ export default async function DashboardPage({
       />
 
       <OnboardingNudge locale={locale} steps={onboardingSteps} />
+
+      {/* Mobile-only "BUGÜN" hero card (Pulse 2026-04 mobile-screens-1.jsx
+          MOwnerHome line 110-138 1:1). Desktop'ta KPI grid + 7-day chart
+          aynı bilgiyi taşır, bu hero mobil-spesifik kompakt özet. */}
+      <section className="md:hidden relative overflow-hidden rounded-[20px] bg-[#0A0A0A] p-[18px] text-white">
+        <div
+          aria-hidden
+          className="absolute -top-[30px] -right-[30px] h-[140px] w-[140px] rounded-full"
+          style={{ background: 'rgba(198,242,78,0.08)', filter: 'blur(20px)' }}
+        />
+        <div className="relative flex items-center justify-between">
+          <span className="pulse-eyebrow text-[#C6F24E]">{isTr ? 'BUGÜN' : 'TODAY'}</span>
+          <span className="text-[10px] text-white/50">
+            {new Date().toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'short' })}
+          </span>
+        </div>
+        <div className="bz-h-tight-2 mt-2.5" style={{ fontSize: 38 }}>
+          {scansToday}
+        </div>
+        <div className="text-[12px] text-white/65">
+          {isTr ? 'QR taraması' : 'QR scans'} · {reviewsToday} {isTr ? 'yorum' : 'reviews'}
+        </div>
+        <div className="mt-3.5 h-px bg-white/10" />
+        <div className="mt-3.5 grid grid-cols-3">
+          {[
+            { l: isTr ? '30g taranma' : '30d scans', v: scans30dShort, d: '' },
+            { l: isTr ? 'Ort. puan' : 'Avg rating', v: avgRating > 0 ? avgRating.toFixed(1) : '—', d: '' },
+            { l: isTr ? 'Yönlend.' : 'Redirect', v: `${redirectPct}%`, d: '' },
+          ].map((s, i) => (
+            <div
+              key={s.l}
+              className={i ? 'border-l border-white/10 pl-2.5 pr-2.5' : 'pr-2.5'}
+            >
+              <div className="pulse-eyebrow text-[8px] text-white/45">{s.l}</div>
+              <div className="bz-h-tight mt-1 text-[16px]">{s.v}</div>
+              {s.d && <div className="mt-0.5 text-[10px] font-semibold text-[#C6F24E]">{s.d}</div>}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Mobile-only quick actions 4-grid (mobile-screens-1.jsx line 141-159) */}
+      <div className="md:hidden grid grid-cols-4 gap-2">
+        {[
+          { id: 'qr', icon: <QrCode size={18} strokeWidth={2} />, l: isTr ? 'QR' : 'QR', href: `/${locale}/dashboard/qr` },
+          { id: 'feedback', icon: <Star size={18} strokeWidth={2} />, l: isTr ? 'Yorum' : 'Reviews', href: `/${locale}/dashboard/feedbacks` },
+          { id: 'menu', icon: <Building2 size={18} strokeWidth={2} />, l: isTr ? 'Menü' : 'Menu', href: `/${locale}/dashboard/menu` },
+          { id: 'platforms', icon: <ShieldCheck size={18} strokeWidth={2} />, l: isTr ? 'Platform' : 'Links', href: `/${locale}/dashboard/platforms` },
+        ].map((a) => (
+          <Link
+            key={a.id}
+            href={a.href}
+            className="flex flex-col items-center gap-1.5 rounded-[14px] border border-[#EDEDED] bg-white px-1 py-3.5 transition-colors hover:border-[#0A0A0A]"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#FAFAFA]">
+              {a.icon}
+            </span>
+            <span className="text-[11px] font-medium text-[#0A0A0A]">{a.l}</span>
+          </Link>
+        ))}
+      </div>
 
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
