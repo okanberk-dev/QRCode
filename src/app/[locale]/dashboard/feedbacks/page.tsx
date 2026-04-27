@@ -6,6 +6,7 @@ import { Loader2, Search, Flag, Mail, UserPlus, Sparkles, RotateCw, Pencil, Send
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
+import { Tabs, type TabItem } from '@/components/ui';
 
 // Feedback shape returned by /api/feedback (subset of what we use)
 interface FeedbackRow {
@@ -144,11 +145,11 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     };
   }, [feedbacks, serverCounts]);
 
-  const tabs: { k: typeof activeTab; l: string; c: number }[] = [
-    { k: 'all', l: isTr ? 'Hepsi' : 'All', c: counts.all },
-    { k: 'new', l: isTr ? 'Yeni' : 'New', c: counts.new },
-    { k: 'attention', l: isTr ? 'Dikkat' : 'Attention', c: counts.attention },
-    { k: 'replied', l: isTr ? 'Yanıtlandı' : 'Replied', c: counts.replied },
+  const tabs: TabItem[] = [
+    { id: 'all', label: isTr ? 'Hepsi' : 'All', count: counts.all },
+    { id: 'new', label: isTr ? 'Yeni' : 'New', count: counts.new },
+    { id: 'attention', label: isTr ? 'Dikkat' : 'Attention', count: counts.attention },
+    { id: 'replied', label: isTr ? 'Yanıtlandı' : 'Replied', count: counts.replied },
   ];
 
   // Static customer profile + history + SLA (frontend-only, backend to be wired later)
@@ -319,25 +320,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           </div>
         )}
         <div className="border-b border-[#EDEDED] p-4">
-          <div className="flex flex-wrap gap-1.5">
-            {tabs.map((tab) => (
-              <button
-                key={tab.k}
-                type="button"
-                onClick={() => setActiveTab(tab.k)}
-                className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                  activeTab === tab.k
-                    ? 'bg-[#0A0A0A] text-white'
-                    : 'bg-[#F5F5F5] text-[#525252] hover:bg-[#EDEDED]'
-                }`}
-              >
-                {tab.l}
-                <span className={`ml-1.5 ${activeTab === tab.k ? 'text-white/60' : 'text-[#737373]'}`}>
-                  · {tab.c}
-                </span>
-              </button>
-            ))}
-          </div>
+          <Tabs
+            items={tabs}
+            active={activeTab}
+            onChange={(id) => setActiveTab(id as typeof activeTab)}
+            ariaLabel={isTr ? 'Yorum filtresi' : 'Review filter'}
+          />
           <div className="mt-3 flex items-center gap-2 rounded-lg bg-[#F5F5F5] px-3 py-2">
             <Search size={13} className="text-[#737373] shrink-0" strokeWidth={2} />
             <input
