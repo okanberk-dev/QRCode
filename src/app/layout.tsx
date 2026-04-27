@@ -42,12 +42,12 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     icons: {
       icon: [
-        { url: s.faviconUrl || '/favicon.svg', type: 'image/svg+xml' },
+        { url: s.faviconUrl ? `${s.faviconUrl}?v=3` : '/favicon.svg?v=3', type: 'image/svg+xml' },
       ],
-      shortcut: s.faviconUrl || '/favicon.svg',
-      apple: '/apple-touch-icon.svg',
+      shortcut: s.faviconUrl ? `${s.faviconUrl}?v=3` : '/favicon.svg?v=3',
+      apple: '/apple-touch-icon.svg?v=3',
     },
-    manifest: '/site.webmanifest',
+    manifest: '/site.webmanifest?v=3',
     openGraph: {
       images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze - Every review is a pulse' }],
     },
