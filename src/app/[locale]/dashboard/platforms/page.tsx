@@ -210,8 +210,76 @@ export default async function PlatformsPage({
         }
       />
 
+      {/* Mobile-only — design's MOwnerPlatforms dark default card (1:1).
+          Prominent display of the active default platform; md+ uses the
+          unified DefaultRedirectPicker card below. */}
+      {(() => {
+        const defaultPlatform = platforms.find((p) => p.isDefault) ?? null;
+        if (!defaultPlatform || !firstRestaurant) return null;
+        return (
+          <div
+            className="md:hidden bz-card p-4 mb-4"
+            style={{ background: '#0A0A0A', color: '#fff' }}
+          >
+            <div className="pulse-eyebrow" style={{ fontSize: 9, color: '#C6F24E' }}>
+              {isTr ? 'VARSAYILAN PLATFORM' : 'DEFAULT PLATFORM'}
+            </div>
+            <div className="flex items-center gap-2.5 mt-2.5">
+              <PlatformChip id={defaultPlatform.id} size={36} />
+              <div className="flex-1 min-w-0">
+                <div className="bz-h-tight" style={{ fontSize: 14 }}>
+                  {PLATFORMS[defaultPlatform.id].label}
+                </div>
+                {defaultPlatform.url ? (
+                  <div
+                    className="bz-mono truncate"
+                    style={{
+                      fontSize: 10.5,
+                      color: 'rgba(255,255,255,0.55)',
+                    }}
+                  >
+                    {defaultPlatform.url.replace(/^https?:\/\//, '')}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      fontSize: 10.5,
+                      color: 'rgba(255,255,255,0.55)',
+                    }}
+                  >
+                    {isTr ? 'Bağlanmadı' : 'Not connected'}
+                  </div>
+                )}
+              </div>
+              <a
+                href="#default-picker"
+                style={{
+                  background: '#C6F24E',
+                  color: '#0A0A0A',
+                  padding: '6px 12px',
+                  borderRadius: 8,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                }}
+              >
+                {isTr ? 'Değiştir' : 'Change'}
+              </a>
+            </div>
+            <div
+              className="mt-3"
+              style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}
+            >
+              {isTr
+                ? '4–5 yıldızlı yorumlar bu platforma yönlendirilir.'
+                : '4–5 star reviews are redirected to this platform.'}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Default redirect picker */}
-      <div className="bz-card-soft p-5 sm:p-6 mb-4">
+      <div id="default-picker" className="bz-card-soft p-5 sm:p-6 mb-4 scroll-mt-20">
         <div className="flex items-center gap-3 mb-3.5">
           <div
             className="flex items-center justify-center"

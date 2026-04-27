@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Loader2, Store, User, ShieldCheck, Search } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
-import { AlertBanner, Badge, Modal, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, Modal, PageHeader, TableSkeleton } from '@/components/ui';
 
 interface User {
   id: string;
@@ -187,8 +187,9 @@ export default function UsersPage() {
 
   if (loading && users.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#0A0A0A] w-10 h-10" />
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+        <PageHeader eyebrow="YÖNETİCİLER" title="Yükleniyor…" />
+        <TableSkeleton rows={6} cols={4} />
       </div>
     );
   }

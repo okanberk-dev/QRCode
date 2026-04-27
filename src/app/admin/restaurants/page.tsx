@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download } from 'lucide-react';
+import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { AlertBanner, Avatar, Badge, type BadgeKind, EmptyState, Modal, PageHeader, type TabItem, Tabs } from '@/components/ui';
+import { AlertBanner, Avatar, Badge, type BadgeKind, CardSkeleton, EmptyState, Modal, PageHeader, type TabItem, Tabs } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -201,8 +201,13 @@ export default function RestaurantsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="h-7 w-7 animate-spin text-[#0A0A0A]" />
+      <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+        <PageHeader eyebrow="İŞLETMELER" title="Yükleniyor…" />
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <CardSkeleton key={i} height={220} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -670,53 +675,57 @@ function RestaurantTable({ rows, onToggle }: RestaurantTableProps) {
         </table>
       </div>
 
-      {/* Mobile: card list */}
-      <div className="divide-y divide-[#EDEDED] md:hidden">
+      {/* Mobile: compact horizontal card list (1:1 design MAdminBusinesses) */}
+      <div className="flex flex-col gap-2 p-3 md:hidden">
         {rows.map((r) => {
           const plan = planBadge(r.user?.plan);
-          const kvkkOk = hasKvkk(r);
           return (
-            <article key={r.id} className="p-4 space-y-2.5">
-              <div className="flex items-center gap-3">
-                <Avatar name={r.name} size={32} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-[#0A0A0A] truncate" title={r.name}>{r.name}</div>
-                  <div className="text-[11px] text-[#737373] truncate">{r.user?.name || r.user?.email || 'Sahip atanmamış'}</div>
+            <Link
+              key={r.id}
+              href={`/admin/restaurants/${r.id}`}
+              className="bz-card flex items-center gap-3 p-3.5 active:bg-[#FAFAFA] transition-colors"
+            >
+              <Avatar
+                name={r.name}
+                size={40}
+                color={r.primaryColor || '#0A0A0A'}
+                fg="#FFFFFF"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <div
+                    className="text-[13px] font-semibold text-[#0A0A0A] truncate flex-1"
+                    title={r.name}
+                  >
+                    {r.name}
+                  </div>
+                  <Badge kind={plan.kind}>{plan.label}</Badge>
                 </div>
-                <button
-                  onClick={() => onToggle(r.id, r.isActive)}
-                  className={r.isActive ? 'text-[#16A34A]' : 'text-[#A3A3A3]'}
-                  aria-label={r.isActive ? 'Pasifleştir' : 'Aktifleştir'}
+                <div
+                  className="flex items-center gap-1.5 text-[10.5px] text-[#737373]"
                 >
-                  {r.isActive ? <ToggleRight size={28} strokeWidth={1.75} /> : <ToggleLeft size={28} strokeWidth={1.75} />}
-                </button>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <Badge kind={plan.kind}>{plan.label}</Badge>
-                {r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}
-                {kvkkOk ? <Badge kind="ok">KVKK</Badge> : <Badge kind="danger">KVKK eksik</Badge>}
-                <Badge kind="ghost">{r.category}</Badge>
-              </div>
-              <div className="flex items-center gap-3 text-[12px] text-[#525252]">
-                <span><span className="text-[#737373]">Yorum:</span> <span className="bz-mono">{r._count.feedbacks}</span></span>
-                <span><span className="text-[#737373]">Şube:</span> <span className="bz-mono">1</span></span>
-                {r.avgRating && (
-                  <span className="inline-flex items-center gap-1">
-                    <Star size={11} className="text-[#C6F24E] fill-[#C6F24E]" />
-                    {r.avgRating.toFixed(1)}
+                  {r.city && (
+                    <>
+                      <span className="truncate">{r.city}</span>
+                      <span aria-hidden="true">·</span>
+                    </>
+                  )}
+                  {r.avgRating != null && (
+                    <>
+                      <span className="inline-flex items-center gap-0.5">
+                        <Star size={9} className="text-[#C6F24E] fill-[#C6F24E]" />
+                        {r.avgRating.toFixed(1)}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                    </>
+                  )}
+                  <span className="bz-mono">
+                    {r._count.feedbacks} <span className="text-[#A3A3A3]">yrm</span>
                   </span>
-                )}
+                </div>
               </div>
-              <div className="flex items-center gap-2 pt-1">
-                <Link href={`/admin/restaurants/${r.id}`} className="bz-btn-primary flex-1 text-center justify-center">Düzenle</Link>
-                <Link href={`/admin/restaurants/${r.id}/menu`} className="bz-btn-ghost" aria-label="Menü">
-                  <UtensilsCrossed size={14} strokeWidth={2} />
-                </Link>
-                <Link href={`/admin/qr?restaurant=${r.id}`} className="bz-btn-ghost" aria-label="QR">
-                  <Link2 size={14} strokeWidth={2} />
-                </Link>
-              </div>
-            </article>
+              <ChevronRight size={14} className="shrink-0 text-[#A3A3A3]" strokeWidth={2} />
+            </Link>
           );
         })}
       </div>

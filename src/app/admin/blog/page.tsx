@@ -14,7 +14,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { AlertBanner, Badge, EmptyState, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, EmptyState, PageHeader, TableSkeleton } from '@/components/ui';
 
 interface BlogPost {
   id: string;
@@ -169,9 +169,7 @@ export default function AdminBlogPage() {
 
       {/* Table — 1:1 design AdminBlog */}
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 size={32} className="animate-spin text-[#0A0A0A]" />
-        </div>
+        <TableSkeleton rows={6} cols={5} />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<BookOpen size={22} />}
