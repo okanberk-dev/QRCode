@@ -99,13 +99,13 @@ export default async function AboutPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero · design: 1.3fr / 1fr with lighthouse right ─── */}
-      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-16">
+      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-[60px] sm:pb-16">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-10 lg:gap-12 items-center">
           <div>
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Biz kimiz' : 'Who we are'}
             </span>
-            <h1 className="mt-3 text-[40px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
+            <h1 className="mt-3 text-[38px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? (
                 <>
                   Her işletmenin
@@ -141,12 +141,12 @@ export default async function AboutPage({
       </section>
 
       {/* ─── Numbers · design: #FAFAFA bg + top-2 rule per stat ─── */}
-      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-14 sm:py-16">
+      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-12 sm:py-16">
         <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
           {numbers.map((item, i) => (
             <div key={i} className="border-t-2 border-[#0A0A0A] pt-4">
               <div
-                className="text-[36px] sm:text-[48px] font-medium text-[#0A0A0A] leading-none tracking-[-0.03em]"
+                className="text-[28px] sm:text-[40px] lg:text-[48px] font-medium text-[#0A0A0A] leading-none tracking-[-0.03em]"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {item.num}
@@ -158,9 +158,9 @@ export default async function AboutPage({
       </section>
 
       {/* ─── Values · design: 3-card grid with 01/02/03 ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-24">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[1200px] mx-auto">
-          <h2 className="text-[32px] sm:text-[44px] lg:text-[48px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A] mb-10">
+          <h2 className="text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.03em] text-[#0A0A0A] mb-10">
             {isTr ? 'Değerlerimiz' : 'Our values'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -181,9 +181,9 @@ export default async function AboutPage({
       </section>
 
       {/* ─── Team · design: 4 lime-soft square avatar cards ─── */}
-      <section className="px-6 sm:px-10 pb-24">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
         <div className="max-w-[1200px] mx-auto">
-          <h2 className="text-[32px] sm:text-[44px] lg:text-[48px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A] mb-10">
+          <h2 className="text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.03em] text-[#0A0A0A] mb-10">
             {isTr ? 'Takım' : 'Team'}
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">

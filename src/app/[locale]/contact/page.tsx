@@ -67,7 +67,7 @@ export default async function ContactPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-24 pb-10 sm:pb-14">
+      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-24 pb-10 sm:pb-14">
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
@@ -86,7 +86,7 @@ export default async function ContactPage({
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'İletişim' : 'Contact'}
             </span>
-            <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[68px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+            <h1 className="mt-5 text-[38px] sm:text-[60px] lg:text-[68px] font-medium leading-[0.95] sm:leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? 'Konuşalım.' : "Let's talk."}
             </h1>
             <p className="mt-5 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[560px]">
@@ -99,7 +99,7 @@ export default async function ContactPage({
       </section>
 
       {/* ─── Main ─── */}
-      <section className="px-6 sm:px-10 pb-20 sm:pb-28">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-28">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
           {/* Left: contact info + support */}
           <div className="space-y-5">
