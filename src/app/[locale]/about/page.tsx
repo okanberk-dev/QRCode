@@ -46,20 +46,98 @@ export default async function AboutPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
 
+  // /about is the canonical entity description for Buaze (the company).
+  // We expose a richer @graph than the rest of the site so search engines and
+  // LLMs can disambiguate the company from "buaze" the Securidaca plant
+  // (audit Section 9 — brand-as-dictionary-word risk).
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'AboutPage',
-    name: isTr ? 'Hakkımızda | Buaze' : 'About Us | Buaze',
-    url: `https://buaze.com/${locale}/about`,
-    description: isTr
-      ? 'Buaze, işletmelerin dijital itibarını yöneten ve büyüten Türkiye\'nin öncü SaaS platformudur.'
-      : 'Buaze is Turkey\'s leading SaaS platform for managing and growing digital reputation for businesses.',
-    publisher: {
-      '@type': 'Organization',
-      name: 'Buaze',
-      url: 'https://buaze.com',
-      logo: 'https://buaze.com/favicon.svg',
-    },
+    '@graph': [
+      {
+        '@type': 'AboutPage',
+        '@id': `https://buaze.com/${locale}/about#aboutpage`,
+        name: isTr ? 'Hakkımızda | Buaze' : 'About Us | Buaze',
+        url: `https://buaze.com/${locale}/about`,
+        description: isTr
+          ? 'Buaze (şirket), işletmelerin dijital itibarını yöneten Türkiye merkezli SaaS platformudur.'
+          : 'Buaze (the company) is an Istanbul-based SaaS platform that helps businesses manage their digital reputation.',
+        mainEntity: { '@id': 'https://buaze.com/#organization' },
+        inLanguage: isTr ? 'tr-TR' : 'en-US',
+      },
+      {
+        '@type': 'Organization',
+        '@id': 'https://buaze.com/#organization',
+        name: 'Buaze',
+        legalName: 'Buaze Bilişim A.Ş.',
+        alternateName: ['Buaze (the company)', 'Buaze SaaS'],
+        url: 'https://buaze.com',
+        logo: 'https://buaze.com/favicon.svg',
+        foundingDate: '2023',
+        foundingLocation: {
+          '@type': 'Place',
+          name: 'İstanbul, Türkiye',
+        },
+        description: isTr
+          ? 'QR tabanlı müşteri geri bildirimi ve itibar yönetimi sunan SaaS platformu. Restoran, otel, klinik ve perakende sektörlerinde kullanılır.'
+          : 'A SaaS platform offering QR-based customer feedback and reputation management. Used by restaurants, hotels, clinics and retail.',
+        knowsAbout: [
+          'Customer feedback management',
+          'Online reputation management',
+          'Google Business Profile reviews',
+          'QR code review collection',
+          'Multi-location feedback operations',
+        ],
+        // Disambiguates the SaaS entity from the Securidaca longipedunculata
+        // plant (Chichewa "buaze") that owns the dictionary entry.
+        disambiguatingDescription: isTr
+          ? 'Buaze, Securidaca longipedunculata bitkisinin Çiçewa adıyla aynı yazılır; bu sayfa Buaze SaaS şirketine aittir.'
+          : 'Not to be confused with Securidaca longipedunculata (Chichewa "buaze"), an African plant. This page is about Buaze, the SaaS company.',
+        sameAs: [
+          'https://www.instagram.com/buazerating',
+          'https://twitter.com/buaze',
+          'https://www.linkedin.com/company/buaze',
+          'https://www.youtube.com/@buaze',
+        ],
+        contactPoint: [
+          {
+            '@type': 'ContactPoint',
+            contactType: 'customer support',
+            email: 'support@buaze.com',
+            availableLanguage: ['Turkish', 'English'],
+          },
+          {
+            '@type': 'ContactPoint',
+            contactType: 'sales',
+            email: 'sales@buaze.com',
+            availableLanguage: ['Turkish', 'English'],
+          },
+        ],
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: 'Workinton Maslak, Floor 4',
+          addressLocality: 'Maslak',
+          addressRegion: 'İstanbul',
+          addressCountry: 'TR',
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: isTr ? 'Anasayfa' : 'Home',
+            item: `https://buaze.com/${locale}`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: isTr ? 'Hakkımızda' : 'About',
+            item: `https://buaze.com/${locale}/about`,
+          },
+        ],
+      },
+    ],
   };
 
   // Values aligned with site-more.jsx §136-148 — exactly three items
@@ -103,7 +181,7 @@ export default async function AboutPage({
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-10 lg:gap-12 items-center">
           <div>
             <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Biz kimiz' : 'Who we are'}
+              {isTr ? 'Buaze (şirket) · Hakkımızda' : 'Buaze (the company) · About'}
             </span>
             <h1 className="mt-3 text-[38px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? (
@@ -129,9 +207,30 @@ export default async function AboutPage({
               )}
             </h1>
             <p className="mt-5 text-[17px] text-[#525252] leading-[1.6] max-w-[560px]">
+              {isTr ? (
+                <>
+                  <strong>Buaze</strong>, 2023&apos;te İstanbul&apos;da kurulan, QR
+                  tabanlı müşteri geri bildirimi ve dijital itibar yönetimi
+                  sunan SaaS platformudur. Restoran, otel, klinik ve perakende
+                  işletmeleri Google Business Profile, Yemeksepeti, Getir ve
+                  TripAdvisor üzerindeki yorum operasyonlarını Buaze
+                  üzerinden yönetir.
+                </>
+              ) : (
+                <>
+                  <strong>Buaze</strong> is an Istanbul-based SaaS platform,
+                  founded in 2023, that provides QR-based customer feedback
+                  and digital reputation management. Restaurants, hotels,
+                  clinics and retail businesses use Buaze to operate review
+                  flows across Google Business Profile, Yemeksepeti, Getir
+                  and TripAdvisor.
+                </>
+              )}
+            </p>
+            <p className="mt-3 text-[12px] text-[#737373] leading-[1.6] max-w-[560px]">
               {isTr
-                ? "2023'te İstanbul'da kurulduk. Küçük bir kafeyi büyütmeye çalışırken gördük: işletmelerin en değerli geri bildirimi hiçbir zaman duyulmuyor. Buaze bu sessizliği nabza çeviriyor."
-                : 'Founded in Istanbul in 2023. While helping a small café grow, we noticed that the most valuable customer feedback never reaches the business. Buaze turns that silence into a pulse.'}
+                ? 'Not: Buaze (Çiçewa) bir Afrika bitkisinin (Securidaca longipedunculata) adıdır. Bu sayfa Buaze adlı şirket içindir.'
+                : 'Note: "buaze" is also the Chichewa name of an African plant (Securidaca longipedunculata). This page is about Buaze, the company.'}
             </p>
           </div>
           <div className="flex justify-center lg:justify-end">

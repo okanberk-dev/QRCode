@@ -38,6 +38,20 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // 301 redirects to preserve link equity when public-facing slugs are renamed.
+  // Add new entries here whenever a marketing route changes path.
+  async redirects() {
+    return [
+      // Marketing slug rename: /features/ai-copilot → /features/pulse-ai
+      // Audit Section 5: URL slug must match the canonical product name.
+      {
+        source: '/:locale(tr|en)/features/ai-copilot',
+        destination: '/:locale/features/pulse-ai',
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {

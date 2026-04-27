@@ -68,15 +68,38 @@ export default async function PricingPage({
         })),
       },
       {
-        '@type': 'Product',
-        name: 'Buaze Reputation Management',
+        '@type': 'SoftwareApplication',
+        name: 'Buaze',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web, iOS, Android',
         description: t.pricing_subtitle,
+        url: `https://buaze.com/${locale}/pricing`,
+        // No aggregateRating — must be backed by verifiable on-page reviews.
         offers: {
-          '@type': 'Offer',
-          price: isTr ? '500' : '10',
+          '@type': 'AggregateOffer',
           priceCurrency: isTr ? 'TRY' : 'USD',
+          lowPrice: isTr ? '500' : '10',
+          highPrice: isTr ? '1000' : '20',
+          offerCount: '2',
           availability: 'https://schema.org/InStock',
         },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: isTr ? 'Anasayfa' : 'Home',
+            item: `https://buaze.com/${locale}`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: isTr ? 'Fiyatlandırma' : 'Pricing',
+            item: `https://buaze.com/${locale}/pricing`,
+          },
+        ],
       },
     ],
   };

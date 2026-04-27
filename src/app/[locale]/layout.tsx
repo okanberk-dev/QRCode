@@ -126,28 +126,48 @@ export default async function LocaleLayout({
 
   // JSON-LD structured data for richer search-engine appearance
   // (Organization + WebSite + SoftwareApplication schemas).
+  // NOTE: aggregateRating is intentionally omitted from SoftwareApplication.
+  // Google requires AggregateRating to be backed by verifiable, on-page review
+  // data; hardcoded numbers are a Manual Action risk. Re-add only when
+  // computed from real Feedback aggregates surfaced on this page.
   const structuredData = [
     {
       '@context': 'https://schema.org',
       '@type': 'Organization',
       name: 'Buaze',
+      legalName: 'Buaze Bilişim A.Ş.',
+      alternateName: ['Buaze (the company)', 'Buaze SaaS'],
       url: siteUrl,
       logo: s.logoUrl || `${siteUrl}/favicon.svg`,
       description: locale === 'tr' ? s.descriptionTr : s.descriptionEn,
+      // sameAs disambiguates the Buaze SaaS entity from the Securidaca
+      // longipedunculata plant (Chichewa "buaze") in dictionaries. Add a
+      // Wikidata Q-id and Crunchbase URL here once the entries exist.
       sameAs: [
         'https://www.instagram.com/buazerating',
         'https://twitter.com/buaze',
         'https://www.linkedin.com/company/buaze',
+        'https://www.youtube.com/@buaze',
       ],
-      contactPoint: {
-        '@type': 'ContactPoint',
-        contactType: 'customer support',
-        availableLanguage: ['Turkish', 'English'],
-        areaServed: 'TR',
-      },
+      contactPoint: [
+        {
+          '@type': 'ContactPoint',
+          contactType: 'customer support',
+          email: 'support@buaze.com',
+          availableLanguage: ['Turkish', 'English'],
+          areaServed: 'TR',
+        },
+        {
+          '@type': 'ContactPoint',
+          contactType: 'sales',
+          email: 'sales@buaze.com',
+          availableLanguage: ['Turkish', 'English'],
+        },
+      ],
       address: {
         '@type': 'PostalAddress',
-        addressLocality: 'Ataşehir',
+        streetAddress: 'Workinton Maslak, Floor 4',
+        addressLocality: 'Maslak',
         addressRegion: 'İstanbul',
         addressCountry: 'TR',
       },
@@ -169,16 +189,11 @@ export default async function LocaleLayout({
       '@type': 'SoftwareApplication',
       name: 'Buaze',
       applicationCategory: 'BusinessApplication',
-      operatingSystem: 'Web',
+      operatingSystem: 'Web, iOS, Android',
       offers: {
         '@type': 'Offer',
         price: '500',
         priceCurrency: 'TRY',
-      },
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '4.9',
-        reviewCount: '142',
       },
     },
   ];
