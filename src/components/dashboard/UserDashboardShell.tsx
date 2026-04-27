@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ChevronDown, Crown, LayoutDashboard, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Layers, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Sparkles, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -57,11 +57,79 @@ function useTopBar(locale: Locale, pathname: string | null) {
   return null;
 }
 
+const SIDEBAR_GROUP_STATE_KEY = 'buaze.owner.sidebarGroups';
+const SIDEBAR_SCROLL_KEY = 'buaze.owner.sidebarScroll';
+
+function loadGroupState(): Record<string, boolean> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(SIDEBAR_GROUP_STATE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+function saveGroupState(state: Record<string, boolean>) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SIDEBAR_GROUP_STATE_KEY, JSON.stringify(state));
+  } catch {
+    /* swallow */
+  }
+}
+function loadSidebarScroll(): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = window.sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+    return raw ? parseInt(raw, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+function saveSidebarScroll(scrollTop: number) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(scrollTop));
+  } catch {
+    /* swallow */
+  }
+}
+
 export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, children }: UserDashboardShellProps) {
   void TOP_BAR_MAP;
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  // Collapsible group state — persists across navigations via localStorage.
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    setExpandedGroups(loadGroupState());
+  }, []);
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = { ...prev, [groupId]: !prev[groupId] };
+      saveGroupState(next);
+      return next;
+    });
+  };
+  // Sidebar scroll persistence (sessionStorage; per-tab, survives Next.js
+  // navigation). Without this, navigating between groups would let the
+  // hydration race reset scrollTop to 0 and bump the active item out of
+  // view.
+  const navRef = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const target = loadSidebarScroll();
+    if (target > 0) el.scrollTop = target;
+  }, [pathname]);
+  const handleNavClick = () => {
+    const el = navRef.current;
+    if (el) saveSidebarScroll(el.scrollTop);
+    setDrawerOpen(false);
+  };
   const trialDaysLeft = getDaysLeft(user.trialEndsAt);
   const topBar = useTopBar(locale, pathname);
 
@@ -84,21 +152,69 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       platforms: isTr ? 'Platform bağlantıları' : 'Review platforms',
       announcements: isTr ? 'Duyurular' : 'Announcements',
       notifications: isTr ? 'Bildirimler' : 'Notifications',
+      groupSetup: isTr ? 'Yapılandırma' : 'Setup',
+      groupInsight: isTr ? 'İçgörü' : 'Insight',
+      groupInfo: isTr ? 'Bilgi' : 'Info',
     };
   }, [locale]);
 
-  const navItems = [
-    { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
-    { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks, badge: workspace?.feedbackCount && workspace.feedbackCount > 0 ? workspace.feedbackCount : undefined },
-    { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
-    { href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
-    { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
-    { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
-    { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
-    { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
-    { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
-    { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
-    { href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
+  // Sidebar navigation — flat top primary actions, then 3 collapsible groups
+  // for setup / insight / info, then a flat profile entry. Reduces visible
+  // surface from 11 items to ~7 (3 flat + 3 group headers + 1 flat).
+  type LucideIcon = typeof LayoutDashboard;
+  type NavItem = { type: 'item'; href: string; icon: LucideIcon; label: string; badge?: number };
+  type NavChild = { href: string; icon: LucideIcon; label: string };
+  type NavGroup = { type: 'group'; id: string; icon: LucideIcon; label: string; children: NavChild[] };
+  type Nav = NavItem | NavGroup;
+
+  const feedbackBadge =
+    workspace?.feedbackCount && workspace.feedbackCount > 0 ? workspace.feedbackCount : undefined;
+
+  const navItems: Nav[] = [
+    // Daily core — kept flat at the top.
+    { type: 'item', href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
+    { type: 'item', href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks, badge: feedbackBadge },
+    { type: 'item', href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
+
+    // Setup — configuration done occasionally (locations, menu, redirects).
+    {
+      type: 'group',
+      id: 'setup',
+      icon: Sparkles,
+      label: copy.groupSetup,
+      children: [
+        { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
+        { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
+        { href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
+      ],
+    },
+
+    // Insight — periodic review, not daily.
+    {
+      type: 'group',
+      id: 'insight',
+      icon: Layers,
+      label: copy.groupInsight,
+      children: [
+        { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
+        { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
+      ],
+    },
+
+    // Info — read-only references.
+    {
+      type: 'group',
+      id: 'info',
+      icon: BookOpen,
+      label: copy.groupInfo,
+      children: [
+        { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
+        { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
+      ],
+    },
+
+    // Settings — flat at the bottom.
+    { type: 'item', href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
 
   // Mobile bottom nav: 4 primary tabs + "More" sheet for the rest.
@@ -152,7 +268,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     ? (locale === 'tr' ? 'Yükselt' : 'Upgrade')
     : (locale === 'tr' ? 'Planı yönet' : 'Manage plan');
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ navRef: forwardedNavRef }: { navRef?: React.MutableRefObject<HTMLElement | null> } = {}) => (
     <div className="flex h-full flex-col bg-[#0A0A0A] text-white">
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
@@ -185,40 +301,110 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       </div>
 
       {/* Nav */}
-      <div className="flex-1 space-y-0.5 overflow-y-auto px-3 py-1">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+      <nav
+        ref={forwardedNavRef as React.RefObject<HTMLElement>}
+        className="flex-1 space-y-0.5 overflow-y-auto px-3 py-1"
+        aria-label={copy.dashboard}
+      >
+        {navItems.map((item, idx) => {
+          // Subtle divider between flat items and the first group (visual
+          // boundary between daily-core and grouped sections).
+          const showDividerBefore =
+            idx > 0 && item.type === 'group' && navItems[idx - 1]?.type === 'item';
+
+          if (item.type === 'item') {
+            const Icon = item.icon;
+            const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={handleNavClick}
+                aria-current={isActive ? 'page' : undefined}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
+                  isActive
+                    ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold shadow-[0_2px_8px_-2px_rgba(198,242,78,0.4)]'
+                    : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
+                }`}
+              >
+                <Icon size={16} strokeWidth={2} />
+                <span className="flex-1 truncate">{item.label}</span>
+                {item.badge !== undefined && item.badge !== 0 && (
+                  <span
+                    className="text-[10px] font-semibold rounded-full px-2 py-0.5"
+                    style={{
+                      background: isActive ? 'rgba(10,10,10,0.1)' : 'rgba(198,242,78,0.2)',
+                      color: isActive ? '#0A0A0A' : '#C6F24E',
+                    }}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          }
+
+          // Group: collapsible parent with auto-expand when active route
+          // lives in one of its children.
           const Icon = item.icon;
-          const badge = 'badge' in item ? item.badge : undefined;
+          const childActive = item.children.some(
+            (c) => pathname === c.href || pathname?.startsWith(`${c.href}/`),
+          );
+          const isExpanded = childActive || expandedGroups[item.id] === true;
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setDrawerOpen(false)}
-              aria-current={isActive ? 'page' : undefined}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition-all ${
-                isActive
-                  ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
-                  : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
-              }`}
-            >
-              <Icon size={16} strokeWidth={2} />
-              <span className="flex-1 truncate">{item.label}</span>
-              {badge !== undefined && badge !== 0 && (
-                <span
-                  className="text-[10px] font-semibold rounded-full px-2 py-0.5"
-                  style={{
-                    background: isActive ? 'rgba(10,10,10,0.1)' : 'rgba(198,242,78,0.2)',
-                    color: isActive ? '#0A0A0A' : '#C6F24E',
-                  }}
-                >
-                  {badge}
-                </span>
+            <div key={item.id}>
+              {showDividerBefore && (
+                <div aria-hidden className="my-2 mx-3 h-px bg-white/5" />
               )}
-            </Link>
+              <button
+                type="button"
+                onClick={() => toggleGroup(item.id)}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
+                  childActive
+                    ? 'bg-white/[0.07] text-white font-semibold'
+                    : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
+                }`}
+                aria-expanded={isExpanded}
+              >
+                <Icon size={16} strokeWidth={2} />
+                <span className="flex-1 truncate text-left">{item.label}</span>
+                <ChevronRight
+                  size={14}
+                  strokeWidth={2}
+                  className={`text-white/50 transition-transform duration-200 ${
+                    isExpanded ? 'rotate-90' : ''
+                  }`}
+                />
+              </button>
+              {isExpanded && (
+                <div className="mt-1 ml-5 space-y-0.5 border-l border-white/10 pl-3 pb-1">
+                  {item.children.map((child) => {
+                    const ChildIcon = child.icon;
+                    const isActive =
+                      pathname === child.href || pathname?.startsWith(`${child.href}/`);
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        onClick={handleNavClick}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-all ${
+                          isActive
+                            ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
+                            : 'text-white/60 hover:bg-white/5 hover:text-white font-medium'
+                        }`}
+                      >
+                        <ChildIcon size={14} strokeWidth={2} />
+                        <span className="truncate">{child.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
-      </div>
+      </nav>
 
       {/* Plan card */}
       <div className="mx-3 my-3 rounded-lg bg-[#1A1A1A] p-3.5">
@@ -273,7 +459,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       </a>
       {/* Desktop sidebar */}
       <aside className="hidden h-full w-64 shrink-0 border-r border-white/5 lg:flex">
-        <SidebarContent />
+        <SidebarContent navRef={navRef} />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto">
