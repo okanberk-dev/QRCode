@@ -1736,6 +1736,7 @@ Kritik mappings: `Icon.qr`→`QrCode`, `Icon.inbox`→`Inbox`, `Icon.chart`→`B
 | `/admin/customers` | Customers | Mevcut |
 | `/admin/blog` (+new + [id]) | AdminBlog | Mevcut |
 | `/admin/announcements` | AdminAnnouncements | Mevcut |
+| `/admin/plans` | (tasarımda yok) | **Yeni** (Phase 2) — plan dağılımı + plan tier kartları, Iyzico stub |
 | `/admin/site-settings` | AdminSiteSettings | Mevcut |
 | `/admin/newsletters` (+ campaigns) | (tasarımda yok) | Mevcut |
 | `/admin/mail-templates` (+ [key]/[locale]) | (tasarımda yok) | Mevcut |
@@ -1760,10 +1761,11 @@ Kritik mappings: `Icon.qr`→`QrCode`, `Icon.inbox`→`Inbox`, `Icon.chart`→`B
 
 ### 23.7 Phase log
 
-- **Phase 0 (PR #1, branch `claude/implement-panel-ui-design-H8hvu`)**: Foundation — `bz-*` token block (`globals.css`), 22 reusable primitive (`src/components/ui/`), icon mapping (`icons.ts`), `.design-pulse-2026/` referans bundle, CLAUDE.md §23.
-- **Phase 1.1 (aynı PR)**: `UserDashboardShell.tsx` polish — nav'a `platforms` + `announcements` eklendi, badge slot, topbar bell icon. `AdminSidebar.tsx` polish — `aria-current="page"` eklendi.
+- **Phase 0 (PR #97, branch `claude/implement-panel-ui-design-H8hvu`)**: Foundation — `bz-*` token block (`globals.css`), 22 reusable primitive (`src/components/ui/`), icon mapping (`icons.ts`), `.design-pulse-2026/` referans bundle, CLAUDE.md §23.
+- **Phase 1.1 (aynı PR)**: `UserDashboardShell.tsx` polish — nav'a `platforms` + `announcements` eklendi, badge slot, topbar bell icon. `AdminSidebar.tsx` polish — `aria-current="page"` eklendi, sidebar'a `Abonelikler` (admin/plans) link'i eklendi.
 - **Phase 1.2 (aynı PR)**: Owner Dashboard'a `<OnboardingNudge />` (5-step gradient dark card). Yeni route'lar: `/[locale]/dashboard/platforms` (default redirect picker + platform list + KVKK compliance note), `/[locale]/dashboard/announcements` (read-only sistem duyuruları list).
-- **Phase 2-3 (sonraki PR'lar)**: Mevcut admin + owner sayfaları sırayla `bz-*` ve primitive component'lere migrate edilecek (tablo → bz-table, button → bz-btn-*, badge → `<Badge>`, modal → `<Modal>`). Backend dokunulmuyor.
+- **Phase 2 (aynı PR, kısmi)**: `/admin/plans` yeni route — plan dağılımı (StatCard + ProgressBar), son katılan ödeyen müşteriler listesi (Avatar + Badge), 3 plan tier kartı (Starter/Growth/Pro, Growth highlight'lı dark card), Iyzico roadmap notu. Tasarımda explicit ekran yok ama aynı `bz-*` görsel sistemi kullanılarak inşa edildi.
+- **Phase 3 (sonraki PR'lar)**: Mevcut admin + owner sayfaları (Restaurants table, Blog list, Announcements cards, Members/Users/Customers tables, OwnerQR grid/list, OwnerFeedback split-pane) sırayla `bz-*` ve primitive component'lere progressive migrate edilecek. Backend dokunulmuyor.
 
 ### 23.8 Dokunulmayan eski Pulse
 

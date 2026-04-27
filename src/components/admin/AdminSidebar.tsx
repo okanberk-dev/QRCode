@@ -221,6 +221,14 @@ export default function AdminSidebar() {
 
     menuItems.push({
       type: 'item',
+      href: '/admin/plans',
+      icon: CreditCard,
+      label: locale === 'en' ? 'Subscriptions' : 'Abonelikler',
+      roles: ['superadmin'],
+    });
+
+    menuItems.push({
+      type: 'item',
       href: '/admin/site-settings',
       icon: Settings,
       label: locale === 'en' ? 'Site Settings' : 'Site Ayarları',
