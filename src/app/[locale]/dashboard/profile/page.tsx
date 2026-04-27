@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { Loader2, User, Key, Check, ShieldCheck, AlertCircle, Palette, Plug, Cog, Users, CreditCard, Bell, Code, Globe } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, Tabs, type TabItem } from '@/components/ui';
 
 type SettingsTab = 'account' | 'brand' | 'integrations' | 'rules' | 'team' | 'billing' | 'notifications' | 'api';
 
@@ -127,26 +127,47 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
         }
       />
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6 lg:gap-8">
-        {/* Tab sidebar */}
-        <aside className="flex flex-row lg:flex-col gap-1 lg:gap-0.5 overflow-x-auto lg:overflow-visible">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.k;
-            return (
-              <button
-                key={tab.k}
-                type="button"
-                onClick={() => setActiveTab(tab.k)}
-                className={`flex items-center gap-2.5 whitespace-nowrap rounded-lg px-3.5 py-2.5 text-[13px] transition-colors ${
-                  isActive
-                    ? 'bg-[#0A0A0A] text-white font-semibold'
-                    : 'text-[#525252] hover:bg-[#F5F5F5] font-medium'
-                }`}
-              >
-                {tab.i}
-                {tab.l}
-              </button>
-            );
-          })}
+        {/* Tab sidebar — vertical Tabs primitive (lg+); horizontal scroll fallback (<lg) */}
+        <aside className="lg:sticky lg:top-4">
+          <div className="hidden lg:block">
+            <Tabs
+              items={tabs.map((tab): TabItem => ({
+                id: tab.k,
+                label: (
+                  <span className="flex items-center gap-2.5">
+                    {tab.i}
+                    {tab.l}
+                  </span>
+                ),
+              }))}
+              active={activeTab}
+              onChange={(id) => setActiveTab(id as SettingsTab)}
+              variant="vertical"
+              ariaLabel={isTr ? 'Ayarlar sekmeleri' : 'Settings tabs'}
+            />
+          </div>
+          {/* Mobile/tablet: horizontal scroll button row */}
+          <div className="flex lg:hidden flex-row gap-1 overflow-x-auto -mx-1 px-1 pb-1">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.k;
+              return (
+                <button
+                  key={tab.k}
+                  type="button"
+                  onClick={() => setActiveTab(tab.k)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2.5 text-[13px] transition-colors ${
+                    isActive
+                      ? 'bg-[#0A0A0A] text-white font-semibold'
+                      : 'text-[#525252] hover:bg-[#F5F5F5] font-medium'
+                  }`}
+                >
+                  {tab.i}
+                  {tab.l}
+                </button>
+              );
+            })}
+          </div>
         </aside>
 
         {/* Tab content */}

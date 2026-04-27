@@ -191,7 +191,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* ─── Toolbar ─── */}
-      <div className="flex flex-col md:flex-row md:items-center md:flex-wrap gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:flex-wrap gap-2 sm:gap-3 md:gap-4 bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
         <label className="flex items-center gap-2 w-full md:w-auto md:flex-1 md:max-w-[220px]">
           <Calendar size={16} strokeWidth={2} className="text-[#6B7280] shrink-0" />
           <select

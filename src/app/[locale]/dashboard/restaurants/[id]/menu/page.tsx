@@ -18,6 +18,7 @@ import { MENU_BADGES, MENU_THEMES, type MenuBadge, type MenuTheme } from '@/lib/
 import { formatPrice, parsePriceInput } from '@/lib/format';
 import { compressImage } from '@/lib/client-image';
 import type { Locale } from '@/lib/translations';
+import { AlertBanner } from '@/components/ui';
 
 interface RestaurantShape extends RestaurantView {
   menuEnabled: boolean;
@@ -609,19 +610,17 @@ export default function RestaurantMenuBuilderPage() {
             </div>
           </div>
           {!restaurant.menuEnabled && (
-            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <AlertTriangle size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-amber-700" />
-              <p className="text-[13px] leading-relaxed text-amber-900">{copy.disabledByAdmin}</p>
-            </div>
+            <AlertBanner kind="warn" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
+              {copy.disabledByAdmin}
+            </AlertBanner>
           )}
         </div>
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4">
-          <AlertTriangle size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-red-600" />
-          <p className="text-[13px] leading-relaxed text-red-700">{error}</p>
-        </div>
+        <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
+          {error}
+        </AlertBanner>
       )}
 
       {/* Menu Design (theme + accent color + logo) */}
@@ -1071,10 +1070,9 @@ function ItemModal({
           </label>
         </div>
         {formError && (
-          <div className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-3">
-            <AlertTriangle size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-red-600" />
-            <p className="text-[13px] text-red-700">{formError}</p>
-          </div>
+          <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
+            {formError}
+          </AlertBanner>
         )}
         <ModalActions busy={busy} copy={copy} onClose={onClose} />
       </form>
