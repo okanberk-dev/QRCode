@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, city, kvkkText, phone, googlePlaceId, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, userId: bodyUserId } = body;
+    const { name, slug, category, address, city, kvkkText, phone, googlePlaceId, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, tripAdvisorUrl, airbnbUrl, userId: bodyUserId } = body;
 
     if (!name || !slug) {
       return ApiErrors.badRequest('Ad ve slug zorunludur', 'MISSING_FIELDS');
@@ -234,6 +234,8 @@ export async function POST(req: NextRequest) {
         getirYemekUrl: getirYemekUrl || null,
         yemekSepetiUrl: yemekSepetiUrl || null,
         trendyolYemekUrl: trendyolYemekUrl || null,
+        tripAdvisorUrl: tripAdvisorUrl || null,
+        airbnbUrl: airbnbUrl || null,
         userId: ownerUserId,
       },
     });

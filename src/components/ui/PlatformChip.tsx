@@ -1,6 +1,7 @@
 export type PlatformId =
   | "google"
   | "tripadvisor"
+  | "airbnb"
   | "yemeksepeti"
   | "trendyol"
   | "trendyol_go"
@@ -18,6 +19,8 @@ export interface PlatformConfig {
 export const PLATFORMS: Record<PlatformId, PlatformConfig> = {
   google: { label: "Google", short: "G", color: "#4285F4", urlHost: "g.page/r/..." },
   tripadvisor: { label: "Tripadvisor", short: "TA", color: "#34E0A1", urlHost: "tripadvisor.com/..." },
+  // Airbnb resmi marka rengi (Rausch). Konaklama segmenti için.
+  airbnb: { label: "Airbnb", short: "AB", color: "#FF5A5F", urlHost: "airbnb.com/rooms/..." },
   yemeksepeti: { label: "Yemeksepeti", short: "YS", color: "#FA0050", urlHost: "yemeksepeti.com/..." },
   trendyol: { label: "Trendyol GO", short: "TY", color: "#F27A1A", urlHost: "tgoapp.com/..." },
   trendyol_go: { label: "Trendyol GO", short: "TY", color: "#F27A1A", urlHost: "tgoapp.com/..." },

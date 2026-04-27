@@ -35,7 +35,7 @@ interface PlatformRow {
   id: PlatformId;
   // Owner's pick of which schema field stores this platform's URL — used by
   // PlatformEnableToggle to know which `*Enabled` flag to PATCH.
-  schemaKey: 'google' | 'yemekSepeti' | 'getir' | 'trendyol';
+  schemaKey: 'google' | 'yemekSepeti' | 'getir' | 'trendyol' | 'tripAdvisor' | 'airbnb';
   url: string | null;
   /** Effective enabled = URL configured AND owner-flag is true */
   enabled: boolean;
@@ -74,10 +74,14 @@ export default async function PlatformsPage({
       yemekSepetiUrl: true,
       getirYemekUrl: true,
       trendyolYemekUrl: true,
+      tripAdvisorUrl: true,
+      airbnbUrl: true,
       googleEnabled: true,
       yemekSepetiEnabled: true,
       getirEnabled: true,
       trendyolEnabled: true,
+      tripAdvisorEnabled: true,
+      airbnbEnabled: true,
       defaultRedirectPlatform: true,
     },
   });
@@ -112,7 +116,13 @@ export default async function PlatformsPage({
   // Aggregate the *first* configured URL per platform (multi-restaurant
   // platforms management gets its own per-location page later — Phase 4).
   const firstUrl = (
-    key: 'googleReviewUrl' | 'yemekSepetiUrl' | 'getirYemekUrl' | 'trendyolYemekUrl',
+    key:
+      | 'googleReviewUrl'
+      | 'yemekSepetiUrl'
+      | 'getirYemekUrl'
+      | 'trendyolYemekUrl'
+      | 'tripAdvisorUrl'
+      | 'airbnbUrl',
   ): string | null => {
     const found = restaurants.find((r) => Boolean(r[key]));
     return (found?.[key] as string | null | undefined) ?? null;
@@ -138,7 +148,13 @@ export default async function PlatformsPage({
   // single-restaurant assumption as `firstUrl`. Multi-location ownership
   // gets per-restaurant flags via the detail page (out of scope here).
   const flagOf = (
-    key: 'googleEnabled' | 'yemekSepetiEnabled' | 'getirEnabled' | 'trendyolEnabled',
+    key:
+      | 'googleEnabled'
+      | 'yemekSepetiEnabled'
+      | 'getirEnabled'
+      | 'trendyolEnabled'
+      | 'tripAdvisorEnabled'
+      | 'airbnbEnabled',
   ): boolean => {
     if (!firstRestaurant) return true;
     const v = (firstRestaurant as Record<string, unknown>)[key];
@@ -189,6 +205,26 @@ export default async function PlatformsPage({
       enabled: Boolean(firstUrl('trendyolYemekUrl')) && flagOf('trendyolEnabled'),
       isDefault: storedDefaultUiKey === 'trendyol',
       monthlyClicks: platformClicks('trendyol'),
+    },
+    {
+      id: 'tripadvisor',
+      schemaKey: 'tripAdvisor',
+      url: firstUrl('tripAdvisorUrl'),
+      hasUrl: Boolean(firstUrl('tripAdvisorUrl')),
+      enabledFlag: flagOf('tripAdvisorEnabled'),
+      enabled: Boolean(firstUrl('tripAdvisorUrl')) && flagOf('tripAdvisorEnabled'),
+      isDefault: false,
+      monthlyClicks: platformClicks('tripadvisor'),
+    },
+    {
+      id: 'airbnb',
+      schemaKey: 'airbnb',
+      url: firstUrl('airbnbUrl'),
+      hasUrl: Boolean(firstUrl('airbnbUrl')),
+      enabledFlag: flagOf('airbnbEnabled'),
+      enabled: Boolean(firstUrl('airbnbUrl')) && flagOf('airbnbEnabled'),
+      isDefault: false,
+      monthlyClicks: platformClicks('airbnb'),
     },
   ];
 
