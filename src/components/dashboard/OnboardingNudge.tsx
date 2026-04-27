@@ -47,8 +47,7 @@ export default function OnboardingNudge({ locale, steps, className = "" }: Onboa
           </div>
         </div>
         <div
-          className="flex-1 grid gap-2"
-          style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(140px, 100%), 1fr))` }}
+          className="flex-1 grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
         >
           {steps.map((s) => (
             <Link
