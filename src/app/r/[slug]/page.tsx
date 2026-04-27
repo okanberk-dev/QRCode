@@ -32,6 +32,9 @@ interface RestaurantData {
   trendyolYemekUrl: string | null;
   primaryColor: string;
   isActive: boolean;
+  // Phase 12.6 — owner-picked fallback when QR has no `?platform=` param.
+  // NULL → Google fallback (legacy default).
+  defaultRedirectPlatform?: string | null;
 }
 
 const RATING_LABELS: Record<Locale, string[]> = {
@@ -44,7 +47,10 @@ function ReviewContent() {
   const searchParams = useSearchParams();
   const slug = params.slug as string;
 
-  const platformParam = searchParams.get('platform') || 'google';
+  // The QR's `?platform=` overrides everything; if not present, the
+  // restaurant's owner-picked `defaultRedirectPlatform` is used; if neither
+  // is set, fall back to Google (legacy default).
+  const explicitPlatform = searchParams.get('platform');
   const sourceParam = searchParams.get('source') || 'qr';
   const tableParam = searchParams.get('table') || '';
 
@@ -136,6 +142,11 @@ function ReviewContent() {
     getir: restaurant.getirYemekUrl,
     trendyol_go: restaurant.trendyolYemekUrl,
   };
+
+  // Resolve the platform: explicit `?platform=` wins, then owner-picked
+  // default on the restaurant, finally Google.
+  const platformParam =
+    explicitPlatform || restaurant.defaultRedirectPlatform || 'google';
 
   const targetPlatformUrl = platformUrls[platformParam] || googleUrl;
   const fallbackPlatformId = platformParam in platformUrls ? platformParam : 'google';

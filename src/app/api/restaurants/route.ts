@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
         trendyolYemekUrl: restaurant.trendyolYemekUrl,
         primaryColor: restaurant.primaryColor,
         isActive: restaurant.isActive,
+        defaultRedirectPlatform: restaurant.defaultRedirectPlatform,
       });
     } catch (error) {
       console.error('Restaurant lookup error:', error);

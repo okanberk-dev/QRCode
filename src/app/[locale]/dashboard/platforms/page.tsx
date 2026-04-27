@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Pencil, ShieldCheck, ArrowUpRight, Check } from 'lucide-react';
+import { Pencil, ShieldCheck, ArrowUpRight } from 'lucide-react';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import type { Locale } from '@/lib/translations';
@@ -14,6 +14,7 @@ import {
   PLATFORMS,
   type PlatformId,
 } from '@/components/ui';
+import DefaultRedirectPicker from '@/components/dashboard/DefaultRedirectPicker';
 
 export async function generateMetadata({
   params,
@@ -64,6 +65,7 @@ export default async function PlatformsPage({
       yemekSepetiUrl: true,
       getirYemekUrl: true,
       trendyolYemekUrl: true,
+      defaultRedirectPlatform: true,
     },
   });
 
@@ -103,42 +105,61 @@ export default async function PlatformsPage({
     return (found?.[key] as string | null | undefined) ?? null;
   };
 
-  // Default redirect: per-restaurant `platform` is captured at QR time,
-  // not at restaurant level. Treat Google as the default when configured —
-  // matches Buaze's existing convention. Owner can change per-QR in /qr.
+  // Phase 12.6 — Default redirect read from Restaurant.defaultRedirectPlatform
+  // (nullable; NULL = Google fallback for back-compat). The picker mutates
+  // the *first* restaurant's value — multi-restaurant owners get per-location
+  // management on the restaurant detail page (out of scope here).
+  const firstRestaurant = restaurants[0] ?? null;
+  const storedDefault = firstRestaurant?.defaultRedirectPlatform ?? null;
+  // Map stored value (Feedback.platform vocab) → UI key (PlatformId).
+  const storedDefaultUiKey: PlatformId | null =
+    storedDefault === 'trendyol_go'
+      ? 'trendyol'
+      : storedDefault === 'google' ||
+          storedDefault === 'yemeksepeti' ||
+          storedDefault === 'getir'
+        ? (storedDefault as PlatformId)
+        : null;
+
   const platforms: PlatformRow[] = [
     {
       id: 'google',
       url: firstUrl('googleReviewUrl'),
       enabled: Boolean(firstUrl('googleReviewUrl')),
-      isDefault: Boolean(firstUrl('googleReviewUrl')),
+      isDefault:
+        storedDefaultUiKey === 'google' ||
+        // Legacy back-compat: when no explicit default has been picked,
+        // Google with a configured URL is the implicit default.
+        (storedDefaultUiKey === null && Boolean(firstUrl('googleReviewUrl'))),
       monthlyClicks: platformClicks('google'),
     },
     {
       id: 'yemeksepeti',
       url: firstUrl('yemekSepetiUrl'),
       enabled: Boolean(firstUrl('yemekSepetiUrl')),
-      isDefault: false,
+      isDefault: storedDefaultUiKey === 'yemeksepeti',
       monthlyClicks: platformClicks('yemeksepeti'),
     },
     {
       id: 'getir',
       url: firstUrl('getirYemekUrl'),
       enabled: Boolean(firstUrl('getirYemekUrl')),
-      isDefault: false,
+      isDefault: storedDefaultUiKey === 'getir',
       monthlyClicks: platformClicks('getir'),
     },
     {
       id: 'trendyol',
       url: firstUrl('trendyolYemekUrl'),
       enabled: Boolean(firstUrl('trendyolYemekUrl')),
-      isDefault: false,
+      isDefault: storedDefaultUiKey === 'trendyol',
       monthlyClicks: platformClicks('trendyol'),
     },
   ];
 
-  const editLink = restaurants[0]
-    ? `/${locale}/dashboard/restaurants/${restaurants[0].id}`
+  const enabledPlatformIds = platforms.filter((p) => p.enabled).map((p) => p.id);
+
+  const editLink = firstRestaurant
+    ? `/${locale}/dashboard/restaurants/${firstRestaurant.id}`
     : `/${locale}/dashboard/restaurants`;
 
   return (
@@ -173,33 +194,20 @@ export default async function PlatformsPage({
             </div>
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          {platforms
-            .filter((p) => p.enabled)
-            .map((p) => (
-              <Link
-                key={p.id}
-                href={editLink}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full transition-colors text-[13px] font-medium"
-                style={{
-                  border: `1px solid ${p.isDefault ? '#0A0A0A' : '#EDEDED'}`,
-                  background: p.isDefault ? '#0A0A0A' : '#fff',
-                  color: p.isDefault ? '#fff' : '#0A0A0A',
-                }}
-              >
-                <PlatformChip id={p.id} size={18} />
-                {PLATFORMS[p.id].label}
-                {p.isDefault && <Check size={12} strokeWidth={2.5} color="#C6F24E" />}
-              </Link>
-            ))}
-          {platforms.filter((p) => p.enabled).length === 0 && (
-            <span style={{ fontSize: 12, color: '#737373' }}>
-              {isTr
-                ? 'Henüz platform bağlantısı yok. Aşağıdan en az birini etkinleştir.'
-                : 'No platforms connected yet. Enable at least one below.'}
-            </span>
-          )}
-        </div>
+        {firstRestaurant ? (
+          <DefaultRedirectPicker
+            restaurantId={firstRestaurant.id}
+            enabledPlatforms={enabledPlatformIds}
+            initialValue={storedDefault}
+            locale={locale}
+          />
+        ) : (
+          <span style={{ fontSize: 12, color: '#737373' }}>
+            {isTr
+              ? 'Henüz platform bağlantısı yok. Aşağıdan en az birini etkinleştir.'
+              : 'No platforms connected yet. Enable at least one below.'}
+          </span>
+        )}
       </div>
 
       {/* Platform list */}

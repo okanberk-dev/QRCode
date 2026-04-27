@@ -73,7 +73,17 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, isActive, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, menuLogoUrl, userId } = body;
+    const { name, slug, category, address, phone, googlePlaceId, notificationEmail, primaryColor, isActive, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, menuLogoUrl, userId, defaultRedirectPlatform } = body;
+
+    // Phase 12.6 — defaultRedirectPlatform whitelist. NULL or '' = clear
+    // (back to legacy Google fallback). Anything else must be one of the
+    // four supported keys; mirrors Feedback.platform values.
+    const ALLOWED_DEFAULT_PLATFORMS = new Set(['google', 'yemeksepeti', 'getir', 'trendyol_go']);
+    if (defaultRedirectPlatform !== undefined && defaultRedirectPlatform !== null && defaultRedirectPlatform !== '') {
+      if (typeof defaultRedirectPlatform !== 'string' || !ALLOWED_DEFAULT_PLATFORMS.has(defaultRedirectPlatform)) {
+        return ApiErrors.badRequest('Geçersiz varsayılan platform', 'INVALID_DEFAULT_PLATFORM');
+      }
+    }
 
     // Validate slug if provided
     if (slug) {
@@ -130,6 +140,9 @@ export async function PUT(
         ...(yemekSepetiUrl !== undefined && { yemekSepetiUrl: yemekSepetiUrl || null }),
         ...(trendyolYemekUrl !== undefined && { trendyolYemekUrl: trendyolYemekUrl || null }),
         ...(menuLogoUrl !== undefined && { menuLogoUrl: menuLogoUrl || null }),
+        ...(defaultRedirectPlatform !== undefined && {
+          defaultRedirectPlatform: defaultRedirectPlatform || null,
+        }),
         ...(ownerUserId !== undefined && { userId: ownerUserId }),
       },
     });

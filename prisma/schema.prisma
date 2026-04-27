@@ -43,6 +43,10 @@ model Restaurant {
   getirYemekUrl     String?   @map("getir_yemek_url")
   yemekSepetiUrl    String?   @map("yemek_sepeti_url")
   trendyolYemekUrl  String?   @map("trendyol_yemek_url")
+  // Owner's chosen fallback platform when a QR has no explicit ?platform=
+  // query string. NULL → Google fallback (legacy default). Values mirror
+  // Feedback.platform: google | yemeksepeti | getir | trendyol_go.
+  defaultRedirectPlatform String? @map("default_redirect_platform")
   notificationEmail String?   @map("notification_email")
   primaryColor      String    @default("#1a73e8")
   isActive          Boolean   @default(true) @map("is_active")
