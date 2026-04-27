@@ -9,35 +9,46 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const slug = searchParams.get('slug');
 
-  // Public lookup by slug (used by /[slug] page)
+  // Public lookup by slug (used by /r/[slug] feedback form).
+  // Explicit `select` keeps the endpoint resilient to schema/DB drift on
+  // unrelated columns (CLAUDE.md §14.1) — `findUnique` without `select`
+  // pulls every Restaurant column, so any column listed in schema.prisma
+  // that doesn't exist in the live DB throws `P2022 column does not exist`
+  // and bubbles up as a 500.
   if (slug) {
     try {
       const restaurant = await prisma.restaurant.findUnique({
         where: { slug },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          category: true,
+          address: true,
+          phone: true,
+          googlePlaceId: true,
+          getirYemekUrl: true,
+          yemekSepetiUrl: true,
+          trendyolYemekUrl: true,
+          primaryColor: true,
+          isActive: true,
+          // `defaultRedirectPlatform` powers the public review surface's
+          // auto-redirect behaviour for high ratings — public-safe.
+          defaultRedirectPlatform: true,
+        },
       });
 
       if (!restaurant || !restaurant.isActive) {
         return ApiErrors.notFound('İşletme bulunamadı');
       }
 
-      // Return public-safe fields only
-      return NextResponse.json({
-        id: restaurant.id,
-        slug: restaurant.slug,
-        name: restaurant.name,
-        category: restaurant.category,
-        address: restaurant.address,
-        phone: restaurant.phone,
-        googlePlaceId: restaurant.googlePlaceId,
-        getirYemekUrl: restaurant.getirYemekUrl,
-        yemekSepetiUrl: restaurant.yemekSepetiUrl,
-        trendyolYemekUrl: restaurant.trendyolYemekUrl,
-        primaryColor: restaurant.primaryColor,
-        isActive: restaurant.isActive,
-        defaultRedirectPlatform: restaurant.defaultRedirectPlatform,
+      return NextResponse.json(restaurant);
+    } catch (error: any) {
+      console.error('Restaurant lookup error:', {
+        slug,
+        code: error?.code,
+        message: error?.message,
       });
-    } catch (error) {
-      console.error('Restaurant lookup error:', error);
       return ApiErrors.internalError('Sunucu hatası');
     }
   }

@@ -551,7 +551,7 @@ export default function MarketingNavbarClient({
             className="absolute inset-0 bg-black/30 backdrop-blur-sm"
           />
           <div
-            className="relative ml-auto h-[calc(100dvh-64px)] w-full max-w-md overflow-y-auto rounded-tl-[28px] border-l border-[#EDEDED] bg-white shadow-2xl"
+            className="no-scrollbar relative ml-auto h-[calc(100dvh-64px)] w-full max-w-md overflow-y-auto rounded-tl-[28px] border-l border-[#EDEDED] bg-white shadow-2xl"
             style={{
               paddingBottom: 'env(safe-area-inset-bottom)',
               paddingLeft: 'env(safe-area-inset-left)',
@@ -791,7 +791,10 @@ function MobileSection({
           className={`text-[#737373] transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
-      {open && <div className="space-y-1 pb-3">{children}</div>}
+      {/* Smooth max-height accordion — design buaze-mobil/buaze.html .accordion-body */}
+      <div className={`accordion-body${open ? ' open' : ''}`}>
+        <div className="space-y-1 pb-3">{children}</div>
+      </div>
     </div>
   );
 }
