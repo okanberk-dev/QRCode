@@ -296,21 +296,26 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           </div>
         )}
         <div className="border-b border-[#EDEDED] p-4">
-          <div className="flex flex-wrap gap-1.5">
+          {/* Mobile-screens-1.jsx MOwnerFeedback line 247-267: filter chips
+              horizontal scroll. Mobile'da no-wrap + overflow-x-auto;
+              desktop'ta wrap. */}
+          <div className="flex gap-1.5 overflow-x-auto md:flex-wrap no-scrollbar">
             {tabs.map((tab) => (
               <button
                 key={tab.k}
                 type="button"
                 onClick={() => setActiveTab(tab.k)}
-                className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
                   activeTab === tab.k
                     ? 'bg-[#0A0A0A] text-white'
                     : 'bg-[#F5F5F5] text-[#525252] hover:bg-[#EDEDED]'
                 }`}
               >
                 {tab.l}
-                <span className={`ml-1.5 ${activeTab === tab.k ? 'text-white/60' : 'text-[#737373]'}`}>
-                  · {tab.c}
+                <span
+                  className={`ml-1.5 font-mono ${activeTab === tab.k ? 'text-[#C6F24E]' : 'text-[#A3A3A3]'}`}
+                >
+                  {tab.c}
                 </span>
               </button>
             ))}

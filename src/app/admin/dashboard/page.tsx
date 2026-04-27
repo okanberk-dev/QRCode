@@ -153,6 +153,38 @@ export default async function AdminDashboardPage() {
         description="Buaze platformunun strateji panosu. Operasyonel günlük yorum izleme için Yorumlar sekmesine geç."
       />
 
+      {/* Mobile-only "SİSTEM NABZI" hero (Pulse 2026-04 mobile-screens-2.jsx
+          MAdminHome line 419-435 1:1). Desktop'ta KPI grid + business growth +
+          plan distribution daha zengin görünüm sağlar. */}
+      <section className="md:hidden rounded-[20px] bg-[#0A0A0A] p-[18px] text-white">
+        <span className="pulse-eyebrow text-[#C6F24E]">SİSTEM NABZI</span>
+        <div className="bz-h-tight-2 mt-2" style={{ fontSize: 32 }}>
+          ₺{mrr.toLocaleString('tr-TR')}
+        </div>
+        <div className="text-[12px] text-white/60">
+          Aylık tekrarlayan gelir
+          {mrrThirtyDaysAgo > 0 && (
+            <>
+              {' · '}
+              <span className={mrrDeltaKind === 'up' ? 'text-[#C6F24E]' : mrrDeltaKind === 'down' ? 'text-[#FB7185]' : ''}>
+                {mrrDeltaPct >= 0 ? '+' : ''}
+                {mrrDeltaPct}%
+              </span>
+            </>
+          )}
+        </div>
+        <div className="mt-3.5 grid grid-cols-2 gap-2.5">
+          <div className="rounded-[10px] bg-white/[0.04] p-3">
+            <div className="pulse-eyebrow text-[8px] text-white/45">İŞLETME</div>
+            <div className="bz-h-tight mt-1 text-[18px]">{totalBusinesses}</div>
+          </div>
+          <div className="rounded-[10px] bg-white/[0.04] p-3">
+            <div className="pulse-eyebrow text-[8px] text-white/45">AKTİF DENEMELER</div>
+            <div className="bz-h-tight mt-1 text-[18px]">{activeTrials}</div>
+          </div>
+        </div>
+      </section>
+
       {/* 4-stat KPI grid (1:1 design AdminDashboard) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <StatCard
