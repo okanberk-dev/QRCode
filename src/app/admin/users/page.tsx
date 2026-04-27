@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Loader2, Store, User, ShieldCheck, Search, X } from 'lucide-react';
+import { Plus, Trash2, Loader2, Store, User, ShieldCheck, Search } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
-import { AlertBanner, Badge, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, Modal, PageHeader } from '@/components/ui';
 
 interface User {
   id: string;
@@ -29,6 +29,7 @@ export default function UsersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [pageNotice, setPageNotice] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     username: '',
@@ -174,12 +175,13 @@ export default function UsersPage() {
       const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Silme işlemi başarısız');
+        setPageNotice(data.error || 'Silme işlemi başarısız');
       } else {
         fetchData();
       }
     } catch (e) {
       console.error(e);
+      setPageNotice('Bağlantı hatası oluştu, lütfen tekrar deneyin.');
     }
   };
 
@@ -207,6 +209,12 @@ export default function UsersPage() {
           </button>
         }
       />
+
+      {pageNotice && (
+        <AlertBanner kind="danger" onDismiss={() => setPageNotice(null)}>
+          {pageNotice}
+        </AlertBanner>
+      )}
 
       {/* Search Bar */}
       <div className="relative">
@@ -297,28 +305,30 @@ export default function UsersPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-[#000]/60 backdrop-blur-md z-50 flex items-end justify-center p-0 sm:items-center sm:p-6">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-xl max-h-[92dvh] overflow-hidden flex flex-col pb-[env(safe-area-inset-bottom)] sm:pb-0">
-            <div className="p-5 sm:p-8 md:p-10 border-b border-[#EDEDED] bg-[#FFFFFF] relative">
-              <h2 className="text-xl sm:text-3xl font-semibold text-[#0A0A0A] tracking-tight uppercase pr-10">
-                {editingId ? 'Yöneticiyi Düzenle' : 'Yeni Yönetici Ekle'}
-              </h2>
-              <p className="text-[#1A1A1A] text-[13px] sm:text-sm font-bold mt-2">
-                {editingId ? 'Yönetici yetkilerini ve bilgilerini güncelleyin.' : 'Sisteme yeni bir Buaze yöneticisi veya restoran yöneticisi tanımlayın.'}
-              </p>
-
-              <button
-                onClick={() => { setShowModal(false); setEditingId(null); setError(''); }}
-                className="absolute right-4 top-5 sm:right-8 sm:top-10 p-2 text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#EDEDED] rounded-xl transition-all"
+        <Modal
+          size={640}
+          onClose={() => { setShowModal(false); setEditingId(null); setError(''); }}
+          title={
+            <div>
+              <p className="pulse-eyebrow text-[#737373]">{editingId ? 'Düzenle' : 'Yeni kayıt'}</p>
+              <h2
+                className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
               >
-                <X size={24} strokeWidth={2} />
-              </button>
+                {editingId ? 'Yöneticiyi düzenle' : 'Yeni yönetici ekle'}
+              </h2>
+              <p className="mt-1 text-[12px] leading-relaxed text-[#525252]">
+                {editingId
+                  ? 'Yönetici yetkilerini ve bilgilerini güncelleyin.'
+                  : 'Sisteme yeni bir Buaze yöneticisi veya restoran yöneticisi tanımlayın.'}
+              </p>
             </div>
-
-            <form onSubmit={handleSubmit} className="p-5 sm:p-8 md:p-10 space-y-5 sm:space-y-6 md:space-y-8 overflow-y-auto no-scrollbar">
+          }
+        >
+            <form onSubmit={handleSubmit} className="space-y-5">
               {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Kullanıcı Adı</label>
                   <input
@@ -429,26 +439,25 @@ export default function UsersPage() {
                 </div>
               )}
 
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-5 pt-6 sm:pt-10 border-t-2 border-[#FFFFFF]">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 mt-2 border-t border-[#EDEDED]">
                 <button
                   type="button"
-                  onClick={() => { setShowModal(false); setEditingId(null); }}
-                  className="px-6 sm:px-8 py-3 sm:py-4 text-xs font-semibold text-[#1A1A1A] hover:text-[#0A0A0A]  transition-colors"
+                  onClick={() => { setShowModal(false); setEditingId(null); setError(''); }}
+                  className="bz-btn-ghost"
                 >
-                  İPTAL
+                  İptal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-[#0A0A0A] text-white px-6 sm:px-10 py-3 sm:py-4 rounded-2xl text-xs font-semibold hover:scale-95 transition-all disabled:opacity-50"
+                  className="bz-btn-primary disabled:opacity-50"
                 >
-                  {isSubmitting ? <Loader2 className="animate-spin" size={20} strokeWidth={2} /> : <Plus size={20} className={editingId ? 'rotate-45' : ''} strokeWidth={2} />}
-                  {editingId ? 'GÜNCELLEMEYİ KAYDET' : 'HESABI OLUŞTUR'}
+                  {isSubmitting ? <Loader2 className="animate-spin" size={14} strokeWidth={2} /> : <Plus size={14} className={editingId ? 'rotate-45' : ''} strokeWidth={2} />}
+                  {editingId ? 'Güncellemeyi kaydet' : 'Hesabı oluştur'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

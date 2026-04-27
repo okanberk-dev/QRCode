@@ -15,7 +15,7 @@ import {
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
-import { PageHeader } from '@/components/ui';
+import { AlertBanner, PageHeader } from '@/components/ui';
 
 type TabId = 'account' | 'brand' | 'integrations' | 'automation' | 'team' | 'billing' | 'notifications' | 'api';
 
@@ -31,6 +31,26 @@ function AdminSettingsBody() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
   const [tab, setTab] = useState<TabId>('account');
+  const [integrationsError, setIntegrationsError] = useState<string | null>(null);
+
+  const handleConnect = async (provider: 'google') => {
+    setIntegrationsError(null);
+    try {
+      const res = await fetch(`/api/integrations/${provider}/connect`, { method: 'POST' });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+      if (data?.configured === false) {
+        setIntegrationsError(isTr ? 'Google OAuth env ayarları eksik.' : 'Google OAuth env settings missing.');
+        return;
+      }
+      setIntegrationsError(isTr ? 'Bağlantı başlatılamadı.' : 'Connection could not be started.');
+    } catch {
+      setIntegrationsError(isTr ? 'Bağlantı hatası.' : 'Connection error.');
+    }
+  };
 
   const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number }> }[] = [
     { id: 'account', label: isTr ? 'Hesap' : 'Account', icon: Briefcase },
@@ -93,16 +113,23 @@ function AdminSettingsBody() {
             />
           )}
           {tab === 'integrations' && (
-            <Placeholder
-              icon={Plug}
-              title={isTr ? 'Entegrasyonlar' : 'Integrations'}
-              body={
-                isTr
-                  ? 'Google Business Profile, Slack, Zapier ve webhook bağlantıları buraya gelecek. OAuth akışı backend bağlandıktan sonra aktif olur.'
-                  : 'Google Business Profile, Slack, Zapier and webhook connections will live here once the OAuth backend ships.'
-              }
-              cta={{ label: isTr ? 'Google bağlantı isteği' : 'Request Google connect', onClick: () => connect('google') }}
-            />
+            <div className="space-y-4">
+              {integrationsError && (
+                <AlertBanner kind="danger" onDismiss={() => setIntegrationsError(null)}>
+                  {integrationsError}
+                </AlertBanner>
+              )}
+              <Placeholder
+                icon={Plug}
+                title={isTr ? 'Entegrasyonlar' : 'Integrations'}
+                body={
+                  isTr
+                    ? 'Google Business Profile, Slack, Zapier ve webhook bağlantıları buraya gelecek. OAuth akışı backend bağlandıktan sonra aktif olur.'
+                    : 'Google Business Profile, Slack, Zapier and webhook connections will live here once the OAuth backend ships.'
+                }
+                cta={{ label: isTr ? 'Google bağlantı isteği' : 'Request Google connect', onClick: () => handleConnect('google') }}
+              />
+            </div>
           )}
           {tab === 'automation' && (
             <Placeholder
@@ -166,24 +193,6 @@ function AdminSettingsBody() {
       </div>
     </div>
   );
-}
-
-async function connect(provider: 'google') {
-  try {
-    const res = await fetch(`/api/integrations/${provider}/connect`, { method: 'POST' });
-    const data = await res.json().catch(() => null);
-    if (res.ok && data?.url) {
-      window.location.href = data.url;
-      return;
-    }
-    if (data?.configured === false) {
-      alert('Google OAuth env ayarları eksik.');
-      return;
-    }
-    alert('Bağlantı başlatılamadı.');
-  } catch {
-    alert('Bağlantı hatası.');
-  }
 }
 
 function Placeholder({

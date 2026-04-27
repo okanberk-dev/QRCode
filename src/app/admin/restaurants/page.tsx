@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus, Store, Loader2, ExternalLink, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, ArrowRight, Crown, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, EmptyState, PageHeader, type TabItem, Tabs } from '@/components/ui';
+import { AlertBanner, EmptyState, Modal, PageHeader, type TabItem, Tabs } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -392,26 +392,22 @@ export default function RestaurantsPage() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-6">
-          <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-[#EDEDED] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:rounded-3xl sm:pb-0">
-            <div className="relative border-b border-[#EDEDED] px-6 py-5 sm:px-8 sm:py-6">
+        <Modal
+          size={640}
+          onClose={() => { setShowCreateModal(false); setError(''); }}
+          title={
+            <div>
               <p className="pulse-eyebrow text-[#737373]">Yeni Kayıt</p>
-              <h2 className="mt-1 text-[22px] font-medium tracking-[-0.015em] text-[#0A0A0A] sm:text-[26px]">
+              <h2 className="mt-1 text-[22px] font-medium tracking-[-0.015em] text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
                 İşletme Ekle
               </h2>
               <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">
                 Sisteme restoran, otel, kafe, klinik veya mağaza gibi yeni bir işletme tanımlayın.
               </p>
-              <button
-                onClick={() => { setShowCreateModal(false); setError(''); }}
-                aria-label="Kapat"
-                className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
-              >
-                <X size={18} strokeWidth={2} />
-              </button>
             </div>
-
-            <form onSubmit={handleCreate} className="space-y-5 overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
+          }
+        >
+            <form onSubmit={handleCreate} className="space-y-5">
               {error && (
                 <AlertBanner kind="danger" icon={<Info size={14} strokeWidth={2} className="mt-0.5" />}>
                   {error}
@@ -589,22 +585,21 @@ export default function RestaurantsPage() {
                 <button
                   type="button"
                   onClick={() => { setShowCreateModal(false); setError(''); }}
-                  className="rounded-full px-5 py-2.5 text-[13px] font-medium text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+                  className="bz-btn-ghost"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+                  className="bz-btn-primary disabled:opacity-50"
                 >
                   {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} strokeWidth={2.25} />}
                   İşletmeyi Kaydet
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
