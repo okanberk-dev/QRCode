@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
 import Link from 'next/link';
-import { Building2, QrCode, ArrowRight, Star, Calendar, ShieldCheck, TrendingUp } from 'lucide-react';
+import { Building2, QrCode, ArrowRight, Star, ShieldCheck, TrendingUp } from 'lucide-react';
 import RestaurantAnalyticsPanel from '@/components/dashboard/RestaurantAnalyticsPanel';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
@@ -58,14 +58,6 @@ export default async function DashboardPage({
           slug: true,
           isActive: true,
           _count: { select: { feedbacks: true } },
-          feedbacks: {
-            where: {
-              createdAt: {
-                gte: new Date(new Date().setHours(0, 0, 0, 0))
-              }
-            },
-            select: { id: true }
-          }
         },
       },
     },
@@ -77,12 +69,13 @@ export default async function DashboardPage({
 
   // Calculate stats
   const totalReviews = user.restaurants.reduce((a, r) => a + r._count.feedbacks, 0);
-  const todayReviews = user.restaurants.reduce((a, r) => a + r.feedbacks.length, 0);
-  
-  const positiveReviews = await prisma.feedback.count({
+  // Platform redirect count — feedbacks recorded with a platform target.
+  // Used as the 4th KPI per design AdminDashboard pattern (`Aylık yönlendirme`).
+  const redirectCount = await prisma.feedback.count({
     where: {
       restaurantId: { in: user.restaurants.map(r => r.id) },
-      rating: { gte: 4 }
+      rating: { gte: 4 },
+      platform: { not: null },
     }
   });
 
@@ -125,6 +118,12 @@ export default async function DashboardPage({
   const displayName = user.name?.trim() || (isTr ? 'İşletmeci' : 'there');
   const activeQr = user.restaurants.filter((r) => r.isActive).length;
 
+  // Weighted average rating across the operator's locations
+  const totalRatedCount = restaurantRatings.reduce((a, r) => a + r._count._all, 0);
+  const avgRating = totalRatedCount === 0
+    ? 0
+    : restaurantRatings.reduce((a, r) => a + (r._avg.rating ?? 0) * r._count._all, 0) / totalRatedCount;
+
   // Onboarding nudge — derive setup completeness from existing data signals.
   // Backend shape unchanged; we just project booleans the UI can read.
   const hasRestaurant = user.restaurants.length > 0;
@@ -163,7 +162,7 @@ export default async function DashboardPage({
     },
   ];
 
-  type Kpi = { label: string; value: number; sub: string; icon: React.ReactNode; href?: string };
+  type Kpi = { label: string; value: string | number; sub: string; icon: React.ReactNode; href?: string; accent?: boolean };
   const kpis: Kpi[] = [
     {
       label: isTr ? 'Toplam yorum' : 'Total reviews',
@@ -173,24 +172,26 @@ export default async function DashboardPage({
       href: `/${locale}/dashboard/feedbacks`,
     },
     {
-      label: isTr ? 'Bugün' : 'Today',
-      value: todayReviews,
-      sub: isTr ? 'Son 24 saat' : 'Last 24 hours',
-      icon: <Calendar size={14} strokeWidth={2} />,
-      href: `/${locale}/dashboard/feedbacks?days=1`,
-    },
-    {
-      label: isTr ? 'Pozitif yorum' : 'Positive reviews',
-      value: positiveReviews,
-      sub: isTr ? '4+ yıldız' : '4+ stars',
-      icon: <ShieldCheck size={14} strokeWidth={2} />,
-      href: `/${locale}/dashboard/feedbacks?rating=positive`,
+      label: isTr ? 'Ortalama puan' : 'Avg rating',
+      value: avgRating > 0 ? avgRating.toFixed(1) : '—',
+      sub: isTr ? `${totalRatedCount} yorum üzerinden` : `across ${totalRatedCount} reviews`,
+      icon: <Star size={14} strokeWidth={2} fill="currentColor" />,
+      href: `/${locale}/dashboard/feedbacks`,
+      accent: true,
     },
     {
       label: isTr ? 'Aktif QR' : 'Active QR',
       value: activeQr,
       sub: isTr ? `${user.restaurants.length} konum` : `${user.restaurants.length} locations`,
       icon: <QrCode size={14} strokeWidth={2} />,
+      href: `/${locale}/dashboard/qr`,
+    },
+    {
+      label: isTr ? 'Yönlendirme' : 'Redirects',
+      value: redirectCount,
+      sub: isTr ? '4+ yıldızdan platforma' : '4+ stars sent to platform',
+      icon: <ShieldCheck size={14} strokeWidth={2} />,
+      href: `/${locale}/dashboard/platforms`,
     },
   ];
 
@@ -217,7 +218,11 @@ export default async function DashboardPage({
             <>
               <div className="flex items-center justify-between">
                 <span className="pulse-eyebrow text-[#737373]">{k.label}</span>
-                <span className="w-7 h-7 rounded-lg bg-[#EAF9B8] text-[#0A0A0A] flex items-center justify-center">
+                <span
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                    k.accent ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#EAF9B8] text-[#0A0A0A]'
+                  }`}
+                >
                   {k.icon}
                 </span>
               </div>

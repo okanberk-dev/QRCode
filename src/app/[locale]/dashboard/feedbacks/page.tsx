@@ -55,8 +55,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'new' | 'attention' | 'replied'>(
-    (searchParams.get('tab') as 'all' | 'new' | 'attention' | 'replied') || 'all',
+  // Tabs: design source (`OwnerFeedback` in owner-pages-1.jsx) buckets feedbacks
+  // by rating + redirection state, not by reply state. Aligned 1:1 here.
+  const [activeTab, setActiveTab] = useState<'all' | 'low' | 'high' | 'redirected'>(
+    (searchParams.get('tab') as 'all' | 'low' | 'high' | 'redirected') || 'all',
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [replyDraft, setReplyDraft] = useState('');
@@ -89,9 +91,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
   const filteredList = useMemo(() => {
     let rows = feedbacks;
-    if (activeTab === 'new') rows = rows.filter((r) => !r.isReplied);
-    else if (activeTab === 'attention') rows = rows.filter((r) => r.rating <= 2);
-    else if (activeTab === 'replied') rows = rows.filter((r) => r.isReplied);
+    if (activeTab === 'low') rows = rows.filter((r) => r.rating <= 3);
+    else if (activeTab === 'high') rows = rows.filter((r) => r.rating >= 4);
+    else if (activeTab === 'redirected') rows = rows.filter((r) => !!r.platform);
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       rows = rows.filter(
@@ -108,47 +110,22 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     [feedbacks, activeId, filteredList],
   );
 
-  // Initial counts from server aggregate (fast first paint) —
-  // /api/feedback/counts returns {all,new,attention,replied} using
-  // Prisma aggregates. Falls back to derived list counts when the
-  // endpoint is unavailable.
-  const [serverCounts, setServerCounts] = useState<{
-    all: number;
-    new: number;
-    attention: number;
-    replied: number;
-  } | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/feedback/counts');
-        if (res.ok && !cancelled) setServerCounts(await res.json());
-      } catch {
-        /* keep fallback */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const counts = useMemo(() => {
-    if (serverCounts && feedbacks.length === 0) return serverCounts;
-    return {
-      all: feedbacks.length,
-      new: feedbacks.filter((r) => !r.isReplied).length,
-      attention: feedbacks.filter((r) => r.rating <= 2).length,
-      replied: feedbacks.filter((r) => r.isReplied).length,
-    };
-  }, [feedbacks, serverCounts]);
+  // Counts derived from the loaded list. Tab semantics moved away from
+  // reply-state buckets (Phase 11.8 audit), so the legacy
+  // /api/feedback/counts endpoint shape doesn't match any more — counts
+  // are computed client-side over the fetched window.
+  const counts = useMemo(() => ({
+    all: feedbacks.length,
+    low: feedbacks.filter((r) => r.rating <= 3).length,
+    high: feedbacks.filter((r) => r.rating >= 4).length,
+    redirected: feedbacks.filter((r) => !!r.platform).length,
+  }), [feedbacks]);
 
   const tabs: { k: typeof activeTab; l: string; c: number }[] = [
-    { k: 'all', l: isTr ? 'Hepsi' : 'All', c: counts.all },
-    { k: 'new', l: isTr ? 'Yeni' : 'New', c: counts.new },
-    { k: 'attention', l: isTr ? 'Dikkat' : 'Attention', c: counts.attention },
-    { k: 'replied', l: isTr ? 'Yanıtlandı' : 'Replied', c: counts.replied },
+    { k: 'all', l: isTr ? 'Tümü' : 'All', c: counts.all },
+    { k: 'low', l: isTr ? 'Düşük puan (1-3)' : 'Low (1-3)', c: counts.low },
+    { k: 'high', l: isTr ? 'Yüksek puan (4-5)' : 'High (4-5)', c: counts.high },
+    { k: 'redirected', l: isTr ? 'Yönlendirilen' : 'Redirected', c: counts.redirected },
   ];
 
   // Static customer profile + history + SLA (frontend-only, backend to be wired later)
