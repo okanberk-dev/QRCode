@@ -759,7 +759,30 @@ input::-webkit-inner-spin-button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bz-pulse-dot, .bz-fade-in, .bz-skeleton {
+  /* Pulse panel + marketing animations all disabled when the user prefers
+     reduced motion. Covers explicit Pulse keyframes and Tailwind's native
+     animate-* utilities (which don't auto-respect this preference). */
+  .bz-pulse-dot,
+  .bz-fade-in,
+  .bz-fade-up,
+  .bz-scale-in,
+  .bz-skeleton,
+  .bz-float,
+  .pulse-heartbeat,
+  .animate-marquee,
+  .animate-slide-in,
+  .animate-spin,
+  .animate-pulse,
+  .animate-bounce,
+  .animate-ping,
+  [class*="animate-in"] {
     animation: none !important;
+  }
+  /* Strip transition durations so hover/focus polish doesn't ride them. */
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

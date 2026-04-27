@@ -13,6 +13,16 @@ interface ModalProps {
   ariaLabel?: string;
 }
 
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled]):not([type='hidden'])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+  "[contenteditable]",
+].join(",");
+
 export function Modal({
   title,
   onClose,
@@ -23,17 +33,70 @@ export function Modal({
   ariaLabel,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    // 1. Remember the element that triggered the modal so we can restore focus on close
+    previouslyFocused.current =
+      typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
+
+    // 2. Move focus into the dialog (first focusable element, or the dialog itself)
+    const dialog = dialogRef.current;
+    if (dialog) {
+      const focusables = dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+      const first = focusables[0];
+      if (first) {
+        first.focus();
+      } else {
+        dialog.focus();
+      }
+    }
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+        return;
+      }
+      // 3. Focus trap: keep Tab/Shift+Tab cycling inside the dialog
+      if (e.key === "Tab" && dialog) {
+        const focusables = Array.from(
+          dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+        ).filter((el) => !el.hasAttribute("disabled"));
+        if (focusables.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const firstEl = focusables[0];
+        const lastEl = focusables[focusables.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        if (e.shiftKey) {
+          if (active === firstEl || !dialog.contains(active)) {
+            e.preventDefault();
+            lastEl.focus();
+          }
+        } else if (active === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
+      }
     };
     document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevOverflow;
+      // 4. Restore focus to the element that opened the modal
+      const toRestore = previouslyFocused.current;
+      if (toRestore && typeof toRestore.focus === "function") {
+        try {
+          toRestore.focus();
+        } catch {
+          /* element may have been unmounted */
+        }
+      }
     };
   }, [onClose]);
 
@@ -48,8 +111,9 @@ export function Modal({
     >
       <div
         ref={dialogRef}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="bz-fade-in bg-white w-full sm:w-auto"
+        className="bz-fade-in bg-white w-full sm:w-auto focus:outline-none"
         style={{
           borderRadius: 20,
           width: typeof size === "number" ? Math.min(size, window?.innerWidth ?? size) : size,

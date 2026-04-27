@@ -178,6 +178,9 @@ export default function PublicMenuPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white selection:bg-[#EAF9B8]">
+      <a href="#menu-main-content" className="bz-skip-link">
+        {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
+      </a>
 
       {/* ── Sticky Header ── */}
       <header className="sticky top-0 z-50 border-b border-[#EDEDED] bg-white/90 backdrop-blur-xl">
@@ -268,7 +271,11 @@ export default function PublicMenuPage() {
       </header>
 
       {/* ── Menu List ── */}
-      <main className="mx-auto mb-20 w-full max-w-xl flex-1 space-y-12 px-5 py-6">
+      <main
+        id="menu-main-content"
+        tabIndex={-1}
+        className="mx-auto mb-20 w-full max-w-xl flex-1 space-y-12 px-5 py-6 focus:outline-none"
+      >
         {filteredCategories.length === 0 ? (
           <div className="py-16">
             <EmptyState
