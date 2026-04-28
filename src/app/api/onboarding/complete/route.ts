@@ -6,6 +6,7 @@ import { sendMail } from '@/lib/email';
 import { pulseLayout } from '@/lib/email/layout';
 import { renderEyebrow, renderH1, renderP, renderButton, spacer } from '@/lib/email/components';
 import { PULSE } from '@/lib/email/tokens';
+import { sectorIdToLabel } from '@/lib/sectors';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
           name: bizNameRaw,
           slug: finalSlug,
           userId: actor.id,
-          category: sector && SECTOR_LABEL[sector] ? SECTOR_LABEL[sector] : 'Restoran',
+          category: sectorIdToLabel(sector),
           primaryColor: '#C6F24E',
           ...(city ? { address: city } : {}),
         },
@@ -120,19 +121,6 @@ export async function POST(req: NextRequest) {
     createdRestaurantId,
   });
 }
-
-const SECTOR_LABEL: Record<string, string> = {
-  restaurant: 'Restoran',
-  delivery: 'Paket Servis',
-  hotel: 'Otel',
-  clinic: 'Klinik',
-  legal: 'Hukuk',
-  spa: 'Spa',
-  retail: 'Perakende',
-  fitness: 'Fitness',
-  education: 'Eğitim',
-  other: 'Diğer',
-};
 
 function slugify(raw: string): string {
   return raw

@@ -7,6 +7,7 @@ import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store } from 'lucide
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import { AlertBanner, Badge, EmptyState, ErrorState, Modal, PageHeader, Tabs, type TabItem } from '@/components/ui';
 import { getSectorPlatforms } from '@/lib/sector-platforms';
+import { SECTORS } from '@/lib/sectors';
 
 interface Restaurant {
   id: string;
@@ -607,13 +608,25 @@ export default function DashboardRestaurantsPage() {
                 )}
 
                 <label className="space-y-2">
-                  <span className="ml-1 pulse-eyebrow text-[#737373]">Kategori</span>
-                  <input
-                    type="text"
+                  <span className="ml-1 pulse-eyebrow text-[#737373]">
+                    {locale === 'tr' ? 'Sektör' : 'Sector'}
+                  </span>
+                  <select
                     value={formData.category}
                     onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
                     className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
-                  />
+                  >
+                    {SECTORS.map((sector) => (
+                      <option key={sector.id} value={sector.label}>
+                        {sector.display[locale === 'tr' ? 'tr' : 'en']}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="ml-1 block text-[11px] text-[#A3A3A3]">
+                    {locale === 'tr'
+                      ? 'Sektörünüz, yorum yönlendirmesinde gösterilecek platformları belirler.'
+                      : 'Your sector decides which review platforms appear in the redirect.'}
+                  </span>
                 </label>
 
                 <label className="space-y-2">

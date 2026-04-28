@@ -19,7 +19,8 @@ export type PlatformId =
   | 'ubereats'
   | 'doordash'
   | 'instagram'
-  | 'zomato';
+  | 'zomato'
+  | 'airbnb';
 
 type Props = {
   id: PlatformId;
@@ -273,6 +274,18 @@ export default function PlatformLogo({ id, size = 40, rounded = 10, className }:
           <path
             d="M12 12 L28 12 L28 16 L22 16 L22 28 L18 28 L18 16 L12 16 Z"
             fill="#FFFFFF"
+          />
+        </svg>
+      );
+    case 'airbnb':
+      // Airbnb Bélo (love symbol) — rausch #FF5A5F. Two arches meeting in
+      // a rounded heart-pin glyph; abstracted to a single closed path.
+      return (
+        <svg {...common}>
+          <rect width="40" height="40" fill="#FFFFFF" />
+          <path
+            d="M20 8 C13.5 8 9 13 9 19 C9 23 11 26 14 28.5 C16 30.2 18 31.5 20 32 C22 31.5 24 30.2 26 28.5 C29 26 31 23 31 19 C31 13 26.5 8 20 8 Z M20 12 C24 12 27 15 27 19 C27 22 25.5 24 23.5 25.7 C22.3 26.7 21.1 27.5 20 28 C18.9 27.5 17.7 26.7 16.5 25.7 C14.5 24 13 22 13 19 C13 15 16 12 20 12 Z"
+            fill="#FF5A5F"
           />
         </svg>
       );

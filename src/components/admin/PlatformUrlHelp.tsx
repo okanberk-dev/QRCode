@@ -3,7 +3,7 @@
 import { Info, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-export type HelpPlatform = 'google' | 'yemeksepeti' | 'getir' | 'trendyol';
+export type HelpPlatform = 'google' | 'yemeksepeti' | 'getir' | 'trendyol' | 'tripadvisor' | 'airbnb';
 
 const GUIDE: Record<HelpPlatform, { title: string; steps: string[]; hint?: string }> = {
   google: {
@@ -38,6 +38,24 @@ const GUIDE: Record<HelpPlatform, { title: string; steps: string[]; hint?: strin
       'Restoran detay sayfasını açın → paylaş → linki kopyalayın.',
       'trendyol.com/... ile başlayan URL\'yi buraya yapıştırın.',
     ],
+  },
+  tripadvisor: {
+    title: 'Tripadvisor İşletme Linki',
+    steps: [
+      'tripadvisor.com (veya .com.tr) üzerinde işletmenizi açın.',
+      'Tarayıcının adres çubuğundaki tam URL\'yi kopyalayın.',
+      'Bu alana yapıştırın. URL "tripadvisor.com/..." ile başlamalı.',
+    ],
+    hint: 'Otel ve konaklama segmentinde 4+ yıldız verenler buraya yönlendirilebilir.',
+  },
+  airbnb: {
+    title: 'Airbnb İlan Linki',
+    steps: [
+      'airbnb.com\'da ilanınızı (veya konaklama mekânınızı) açın.',
+      'Tarayıcının adres çubuğundaki tam URL\'yi kopyalayın.',
+      'Bu alana yapıştırın. URL "airbnb.com/rooms/..." veya "airbnb.com.tr/..." ile başlamalı.',
+    ],
+    hint: 'Sadece konaklama segmenti için. Yorumlar Airbnb hesabınız üzerinden bırakılır.',
   },
 };
 

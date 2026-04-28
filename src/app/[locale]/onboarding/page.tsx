@@ -18,6 +18,7 @@ import {
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, PlatformChip, type PlatformId } from '@/components/ui';
+import { SECTORS } from '@/lib/sectors';
 
 type StepId = 'profile' | 'sector' | 'location' | 'platforms' | 'qr';
 
@@ -361,21 +362,9 @@ function SectorStep({
   data: OnboardingState;
   update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
 }) {
-  const sectors = [
-    { id: 'restoran', label: { tr: 'Restoran & Kafe', en: 'Restaurant & Café' }, sub: { tr: 'Masa, fatura ve paket QR', en: 'Table, receipt and pack QR' } },
-    { id: 'paket', label: { tr: 'Paket Servis', en: 'Delivery' }, sub: { tr: 'Yemeksepeti, Getir, Trendyol GO', en: 'Yemeksepeti, Getir, Trendyol GO' } },
-    { id: 'otel', label: { tr: 'Otel & Konaklama', en: 'Hotel & Hospitality' }, sub: { tr: 'Oda QR, Booking, Tripadvisor', en: 'Room QR, Booking, Tripadvisor' } },
-    { id: 'klinik', label: { tr: 'Klinik & Sağlık', en: 'Clinic & Health' }, sub: { tr: 'KVKK uyumlu anket akışı', en: 'KVKK-compliant survey flow' } },
-    { id: 'hukuk', label: { tr: 'Hukuk Ofisi', en: 'Legal' }, sub: { tr: 'Danışmanlık sonrası yorum', en: 'Post-consultation review' } },
-    { id: 'spa', label: { tr: 'Güzellik & Spa', en: 'Beauty & Spa' }, sub: { tr: 'Randevu sonrası, usta bazlı', en: 'Post-appointment, per-specialist' } },
-    { id: 'perakende', label: { tr: 'Perakende', en: 'Retail' }, sub: { tr: 'Fiş altı QR, çok mağaza', en: 'QR on receipt, multi-store' } },
-    { id: 'fitness', label: { tr: 'Spor & Fitness', en: 'Sports & Fitness' }, sub: { tr: 'Seans sonrası geri bildirim', en: 'Post-session feedback' } },
-    { id: 'egitim', label: { tr: 'Eğitim', en: 'Education' }, sub: { tr: 'Kurs ve seminer değerlendirmesi', en: 'Course and seminar review' } },
-    { id: 'diger', label: { tr: 'Diğer', en: 'Other' }, sub: { tr: 'Sektörünü özelleştir', en: 'Tell us more later' } },
-  ];
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      {sectors.map((s) => {
+      {SECTORS.map((s) => {
         const selected = data.sector === s.id;
         return (
           <button
@@ -393,7 +382,7 @@ function SectorStep({
                 className="text-[15px] font-semibold text-[#0A0A0A]"
                 style={{ fontFamily: 'var(--font-space-grotesk)' }}
               >
-                {s.label[isTr ? 'tr' : 'en']}
+                {s.display[isTr ? 'tr' : 'en']}
               </p>
               <p className="mt-0.5 text-[12px] text-[#737373]">{s.sub[isTr ? 'tr' : 'en']}</p>
             </div>

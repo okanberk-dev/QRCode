@@ -8,7 +8,8 @@ import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import { AlertBanner, Badge, ConfirmDialog, PageHeader } from '@/components/ui';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
-import { getSectorPlatforms } from '@/lib/sector-platforms';
+import { detectSector, getSectorPlatforms } from '@/lib/sector-platforms';
+import { SECTORS } from '@/lib/sectors';
 
 export default function DashboardRestaurantDetailPage() {
   const params = useParams();
@@ -37,6 +38,8 @@ export default function DashboardRestaurantDetailPage() {
     getirYemekUrl: '',
     yemekSepetiUrl: '',
     trendyolYemekUrl: '',
+    tripAdvisorUrl: '',
+    airbnbUrl: '',
     notificationEmail: '',
     primaryColor: '#C6F24E',
     isActive: true,
@@ -63,6 +66,8 @@ export default function DashboardRestaurantDetailPage() {
           getirYemekUrl: data.getirYemekUrl || '',
           yemekSepetiUrl: data.yemekSepetiUrl || '',
           trendyolYemekUrl: data.trendyolYemekUrl || '',
+          tripAdvisorUrl: data.tripAdvisorUrl || '',
+          airbnbUrl: data.airbnbUrl || '',
           notificationEmail: data.notificationEmail || '',
           primaryColor: data.primaryColor || '#C6F24E',
           isActive: data.isActive ?? true,
@@ -117,6 +122,8 @@ export default function DashboardRestaurantDetailPage() {
         getirYemekUrl: data.getirYemekUrl || '',
         yemekSepetiUrl: data.yemekSepetiUrl || '',
         trendyolYemekUrl: data.trendyolYemekUrl || '',
+        tripAdvisorUrl: data.tripAdvisorUrl || '',
+        airbnbUrl: data.airbnbUrl || '',
         notificationEmail: data.notificationEmail || '',
         primaryColor: data.primaryColor || prev.primaryColor,
         isActive: data.isActive ?? prev.isActive,
@@ -212,6 +219,20 @@ export default function DashboardRestaurantDetailPage() {
       value: formData.trendyolYemekUrl,
       logo: <PlatformLogo id="trendyol-go" size={18} rounded={5} />,
       help: <PlatformUrlHelp platform="trendyol" />,
+    },
+    {
+      id: 'tripadvisor' as const,
+      label: 'Tripadvisor',
+      value: formData.tripAdvisorUrl,
+      logo: <PlatformLogo id="tripadvisor" size={18} rounded={5} />,
+      help: <PlatformUrlHelp platform="tripadvisor" />,
+    },
+    {
+      id: 'airbnb' as const,
+      label: 'Airbnb',
+      value: formData.airbnbUrl,
+      logo: <PlatformLogo id="airbnb" size={18} rounded={5} />,
+      help: <PlatformUrlHelp platform="airbnb" />,
     },
   ].filter((row) => allowedPlatforms.has(row.id));
 
@@ -396,13 +417,32 @@ export default function DashboardRestaurantDetailPage() {
             </label>
 
             <label className="space-y-2">
-              <span className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'Kategori' : 'Category'}</span>
-              <input
-                type="text"
-                value={formData.category}
+              <span className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'Sektör' : 'Sector'}</span>
+              <select
+                value={(() => {
+                  // Surface the canonical SECTOR label that matches the current
+                  // (possibly free-form / legacy) category. Keeps the dropdown
+                  // visually consistent without mutating state — original value
+                  // persists until owner explicitly picks a different sector.
+                  const exact = SECTORS.find((s) => s.label === formData.category);
+                  if (exact) return exact.label;
+                  const detected = detectSector(formData.category);
+                  return SECTORS.find((s) => s.sectorKey === detected)?.label ?? SECTORS[0].label;
+                })()}
                 onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
                 className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
-              />
+              >
+                {SECTORS.map((sector) => (
+                  <option key={sector.id} value={sector.label}>
+                    {sector.display[locale === 'tr' ? 'tr' : 'en']}
+                  </option>
+                ))}
+              </select>
+              <span className="block text-[11px] text-[#A3A3A3]">
+                {locale === 'tr'
+                  ? 'Sektörünüz, yorum yönlendirmesinde gösterilecek platformları belirler.'
+                  : 'Your sector decides which review platforms appear in the redirect.'}
+              </span>
             </label>
 
             <label className="space-y-2">
@@ -536,6 +576,40 @@ export default function DashboardRestaurantDetailPage() {
                   onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
                   placeholder="https://www.trendyol.com/..."
                   className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#F27A1A]"
+                />
+              </label>
+            )}
+
+            {allowedPlatforms.has('tripadvisor') && (
+              <label className="space-y-2">
+                <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                  <PlatformLogo id="tripadvisor" size={16} rounded={4} />
+                  Tripadvisor URL
+                  <PlatformUrlHelp platform="tripadvisor" />
+                </span>
+                <input
+                  type="url"
+                  value={formData.tripAdvisorUrl}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, tripAdvisorUrl: event.target.value }))}
+                  placeholder="https://www.tripadvisor.com/..."
+                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#00AA6C]"
+                />
+              </label>
+            )}
+
+            {allowedPlatforms.has('airbnb') && (
+              <label className="space-y-2">
+                <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                  <PlatformLogo id="airbnb" size={16} rounded={4} />
+                  Airbnb URL
+                  <PlatformUrlHelp platform="airbnb" />
+                </span>
+                <input
+                  type="url"
+                  value={formData.airbnbUrl}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, airbnbUrl: event.target.value }))}
+                  placeholder="https://www.airbnb.com/rooms/..."
+                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#FF5A5F]"
                 />
               </label>
             )}
