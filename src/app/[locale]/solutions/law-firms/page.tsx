@@ -5,6 +5,7 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { buildSolutionSchema } from '@/lib/solution-schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,8 +69,22 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
         { value: '38%', label: 'Client inquiry growth' },
       ];
 
+  const jsonLd = buildSolutionSchema({
+    locale,
+    slug: 'law-firms',
+    industryLabel: isTr ? 'Hukuk Ofisi' : 'Law Firm',
+    serviceName: isTr ? 'Hukuk Ofisi İtibar Yönetimi' : 'Law Firm Reputation Management',
+    description: isTr
+      ? 'Danışmanlık sonrası müvekkilden geri bildirim toplayın. Google arama sıralamanızı yükseltin. Etik kurallara uyumlu, saygın bir dijital profil.'
+      : 'Collect feedback from clients after every consultation. Rise in Google search rankings. Ethics-compliant, reputable digital presence.',
+  });
+
   return (
     <div className="min-h-screen bg-white pt-[64px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero — white bg, 2-column with document+seal SVG */}

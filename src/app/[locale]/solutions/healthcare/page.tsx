@@ -5,6 +5,7 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { buildSolutionSchema } from '@/lib/solution-schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,8 +70,22 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
         { t: 'Multilingual support', d: 'Auto language detection for medical tourism — 12 languages including Arabic.' },
       ];
 
+  const jsonLd = buildSolutionSchema({
+    locale,
+    slug: 'healthcare',
+    industryLabel: isTr ? 'Klinik & Sağlık' : 'Clinic & Healthcare',
+    serviceName: isTr ? 'Klinik & Sağlık İtibar Yönetimi' : 'Clinic & Healthcare Reputation Management',
+    description: isTr
+      ? 'KVKK uyumlu hasta geri bildirimi. Tedavi sonrası QR ile deneyim toplayın, Google profilinizi güçlendirin.'
+      : 'KVKK-compliant patient feedback. Collect experience after treatment via QR and strengthen your Google profile.',
+  });
+
   return (
     <div className="min-h-screen bg-white pt-[64px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero — light gray bg */}

@@ -6,6 +6,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { buildSolutionSchema } from '@/lib/solution-schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,8 +77,22 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
         { t: 'Guest profile', d: 'Recognise returning guests and tie them back to prior reviews.' },
       ];
 
+  const jsonLd = buildSolutionSchema({
+    locale,
+    slug: 'hotels',
+    industryLabel: isTr ? 'Otel & Konaklama' : 'Hotel & Hospitality',
+    serviceName: isTr ? 'Otel & Konaklama İtibar Yönetimi' : 'Hotel & Hospitality Reputation Management',
+    description: isTr
+      ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, negatifi önce sen gör."
+      : 'Booking.com, Tripadvisor, Airbnb and Google — manage all four from one panel. Collect reviews at check-out with room QRs.',
+  });
+
   return (
     <div className="min-h-screen bg-white pt-[64px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero — light gray bg */}
