@@ -58,7 +58,7 @@ export default function DashboardRestaurantDetailPage() {
           category: data.category || 'Restoran',
           address: data.address || '',
           phone: data.phone || '',
-          googlePlaceId: data.googlePlaceId || '',
+          googlePlaceId: data.googlePlaceId || data.googleReviewUrl || '',
           getirYemekUrl: data.getirYemekUrl || '',
           yemekSepetiUrl: data.yemekSepetiUrl || '',
           trendyolYemekUrl: data.trendyolYemekUrl || '',

@@ -81,7 +81,7 @@ export default function RestaurantDetailPage() {
             category: data.category || 'Restoran',
             address: data.address || '',
             phone: data.phone || '',
-            googlePlaceId: data.googlePlaceId || '',
+            googlePlaceId: data.googlePlaceId || data.googleReviewUrl || '',
             getirYemekUrl: data.getirYemekUrl || '',
             yemekSepetiUrl: data.yemekSepetiUrl || '',
             trendyolYemekUrl: data.trendyolYemekUrl || '',
@@ -138,7 +138,11 @@ export default function RestaurantDetailPage() {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { userId, ...rest } = formData;
-      const payload = owners.length > 0 ? formData : rest;
+      const base = owners.length > 0 ? formData : rest;
+      // Mirror the Google review link to both columns. The detail form edits
+      // `googlePlaceId`, but the public review surface and the owner platforms
+      // page read `googleReviewUrl` (CLAUDE.md §4 platforms).
+      const payload = { ...base, googleReviewUrl: formData.googlePlaceId };
       const res = await fetch(`/api/restaurants/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
