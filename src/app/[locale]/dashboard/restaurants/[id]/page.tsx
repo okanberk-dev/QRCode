@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Building2, ExternalLink, Link2, Loader2, Mail, MapPin, Power, PowerOff, Save } from 'lucide-react';
+import { ArrowLeft, Building2, ExternalLink, Loader2, Power, PowerOff, Save } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import { AlertBanner, Badge, ConfirmDialog, PageHeader } from '@/components/ui';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
@@ -81,7 +81,7 @@ export default function DashboardRestaurantDetailPage() {
     };
 
     fetchRestaurant();
-  }, [id]);
+  }, [id, locale]);
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -531,12 +531,30 @@ export default function DashboardRestaurantDetailPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
-            onClick={() => setConfirmDelete(true)}
+            onClick={() => {
+              if (formData.isActive) {
+                setConfirmDelete(true);
+              } else {
+                updateStatus(true);
+              }
+            }}
             disabled={deleting}
-            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#FECACA] bg-[#FEF2F2] px-5 py-2.5 text-[13px] font-medium text-[#DC2626] hover:bg-[#FEE2E2] disabled:opacity-60 transition-colors"
+            className={`inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 text-[13px] font-medium disabled:opacity-60 transition-colors ${
+              formData.isActive
+                ? 'border border-[#FECACA] bg-[#FEF2F2] text-[#DC2626] hover:bg-[#FEE2E2]'
+                : 'border border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
+            }`}
           >
-            {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 size={14} strokeWidth={2} />}
-            {locale === 'tr' ? 'Pasife al' : 'Deactivate'}
+            {deleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : formData.isActive ? (
+              <PowerOff size={14} strokeWidth={2} />
+            ) : (
+              <Power size={14} strokeWidth={2} />
+            )}
+            {formData.isActive
+              ? locale === 'tr' ? 'Pasife al' : 'Deactivate'
+              : locale === 'tr' ? 'Aktifleştir' : 'Reactivate'}
           </button>
 
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -572,9 +590,18 @@ export default function DashboardRestaurantDetailPage() {
         cancelLabel={locale === 'tr' ? 'İptal' : 'Cancel'}
         variant="danger"
         loading={deleting}
-        onConfirm={handleDelete}
+        onConfirm={handleDeactivate}
         onCancel={() => setConfirmDelete(false)}
       />
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
+      <p className="pulse-eyebrow text-[#737373]">{label}</p>
+      <p className="mt-1 text-[20px] font-semibold tracking-[-0.02em] text-[#0A0A0A]">{value}</p>
     </div>
   );
 }

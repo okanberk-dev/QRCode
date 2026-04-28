@@ -28,6 +28,95 @@ interface SearchParams {
   tab?: 'items' | 'analytics';
 }
 
+type MenuCategorySummary = {
+  id: string;
+  name: string;
+  _count: { items: number };
+};
+
+type MenuItemSummary = {
+  id: string;
+  name: string;
+  description: string | null;
+  priceCents: number;
+  isAvailable: boolean;
+};
+
+function isPrismaSchemaDriftError(error: unknown) {
+  const code = (error as { code?: string } | null)?.code;
+  return code === 'P2021' || code === 'P2022';
+}
+
+async function fetchMenuCategories(restaurantId: string): Promise<MenuCategorySummary[]> {
+  try {
+    return await prisma.menuCategory.findMany({
+      where: { restaurantId, deletedAt: null },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        _count: { select: { items: true } },
+      },
+    });
+  } catch (error) {
+    if (!isPrismaSchemaDriftError(error)) throw error;
+    console.error('[dashboard/menu] MenuCategory schema drift fallback', error);
+
+    try {
+      return await prisma.menuCategory.findMany({
+        where: { restaurantId },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          _count: { select: { items: true } },
+        },
+      });
+    } catch (fallbackError) {
+      if (!isPrismaSchemaDriftError(fallbackError)) throw fallbackError;
+      console.error('[dashboard/menu] MenuCategory fallback failed', fallbackError);
+      return [];
+    }
+  }
+}
+
+async function fetchMenuItems(restaurantId: string, categoryId: string): Promise<MenuItemSummary[]> {
+  try {
+    return await prisma.menuItem.findMany({
+      where: { restaurantId, categoryId, deletedAt: null },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        priceCents: true,
+        isAvailable: true,
+      },
+    });
+  } catch (error) {
+    if (!isPrismaSchemaDriftError(error)) throw error;
+    console.error('[dashboard/menu] MenuItem schema drift fallback', error);
+
+    try {
+      return await prisma.menuItem.findMany({
+        where: { restaurantId, categoryId },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          priceCents: true,
+          isAvailable: true,
+        },
+      });
+    } catch (fallbackError) {
+      if (!isPrismaSchemaDriftError(fallbackError)) throw fallbackError;
+      console.error('[dashboard/menu] MenuItem fallback failed', fallbackError);
+      return [];
+    }
+  }
+}
+
 export default async function DashboardMenuPage({
   params,
   searchParams,
@@ -94,15 +183,7 @@ export default async function DashboardMenuPage({
   }
 
   // Fetch categories + items + analytics aggregates for the selected restaurant
-  const categories = await prisma.menuCategory.findMany({
-    where: { restaurantId: selectedRestaurantId, deletedAt: null },
-    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-    select: {
-      id: true,
-      name: true,
-      _count: { select: { items: true } },
-    },
-  });
+  const categories = await fetchMenuCategories(selectedRestaurantId);
 
   const activeCategoryId = sp.category && categories.some((c) => c.id === sp.category)
     ? sp.category
@@ -113,17 +194,7 @@ export default async function DashboardMenuPage({
     : undefined;
 
   const items = activeCategoryId
-    ? await prisma.menuItem.findMany({
-        where: { categoryId: activeCategoryId },
-        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          price: true,
-          isAvailable: true,
-        },
-      })
+    ? await fetchMenuItems(selectedRestaurantId, activeCategoryId)
     : [];
 
   // Menu analytics — views + clicks per product (last 30 days)
@@ -187,9 +258,9 @@ export default async function DashboardMenuPage({
       recentClicksByItem = new Map(recentClicks.map((r) => [r.productId!, r._count._all]));
       priorClicksByItem = new Map(priorClicks.map((r) => [r.productId!, r._count._all]));
     } catch (err) {
-      const code = (err as { code?: string })?.code;
-      if (code !== 'P2021') throw err;
-      // Table not migrated yet — empty maps remain.
+      if (!isPrismaSchemaDriftError(err)) throw err;
+      console.error('[dashboard/menu] MenuAnalyticsEvent unavailable', err);
+      // Table/columns not migrated yet — empty maps remain.
     }
   }
 
@@ -357,7 +428,9 @@ export default async function DashboardMenuPage({
                               )}
                             </td>
                             <td className="bz-mono" style={{ fontWeight: 600 }}>
-                              ₺{Number(it.price).toLocaleString(isTr ? 'tr-TR' : 'en-US', {
+                              {(it.priceCents / 100).toLocaleString(isTr ? 'tr-TR' : 'en-US', {
+                                style: 'currency',
+                                currency: 'TRY',
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 2,
                               })}

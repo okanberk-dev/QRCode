@@ -371,8 +371,8 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
       <div className="mb-4">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.trends}</h2>
       </div>
-      <div className="h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-72 min-h-[288px] w-full min-w-[1px] overflow-hidden">
+        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
           <AreaChart data={trend} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradViews" x1="0" y1="0" x2="0" y2="1">
@@ -452,8 +452,8 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: Copy })
       {dataRows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
       ) : (
-        <div className="h-72 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-72 min-h-[288px] w-full min-w-[1px] overflow-hidden">
+          <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
             <BarChart data={dataRows} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#EDEDED" horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#EDEDED" allowDecimals={false} />
