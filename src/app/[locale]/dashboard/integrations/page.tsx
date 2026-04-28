@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -11,6 +11,7 @@ import {
   Save,
   Link2,
   Plug,
+  X,
 } from 'lucide-react';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
 
@@ -66,6 +67,21 @@ export default function DashboardIntegrationsPage() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Toast — fixed bottom feedback so the user sees save result regardless
+  // of where the page is scrolled (the inline status next to the button
+  // was missed when the form scrolled below the fold).
+  const [toast, setToast] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = (kind: 'ok' | 'err', msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ kind, msg });
+    toastTimerRef.current = setTimeout(() => setToast(null), 3500);
+  };
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   const copy = useMemo(
     () => ({
@@ -195,8 +211,11 @@ export default function DashboardIntegrationsPage() {
         ),
       );
       setSavedAt(Date.now());
+      showToast('ok', copy.saved);
     } catch (e) {
-      setError((e as Error).message || copy.saveFail);
+      const msg = (e as Error).message || copy.saveFail;
+      setError(msg);
+      showToast('err', msg);
     } finally {
       setSaving(false);
     }
@@ -403,6 +422,53 @@ export default function DashboardIntegrationsPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Toast — fixed bottom feedback. Renders OUTSIDE the form / save bar
+          so the user sees the result regardless of where they're scrolled.
+          Auto-dismisses after 3.5s; click X to dismiss earlier.
+          Safe-area aware so it sits above the iOS home indicator and the
+          mobile bottom-nav (which is md:hidden, but adds 68px of fixed
+          chrome on small screens). */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed left-4 right-4 z-50 flex justify-center sm:left-auto sm:right-6 sm:justify-end pointer-events-none"
+          style={{
+            bottom: 'calc(var(--dash-bottom-nav-h, 0px) + 16px)',
+          }}
+        >
+          <div
+            className={`pointer-events-auto inline-flex max-w-[420px] items-start gap-3 rounded-2xl border px-4 py-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.25)] animate-slide-in ${
+              toast.kind === 'ok'
+                ? 'bg-white border-[#A8D62E]'
+                : 'bg-white border-[#DC2626]'
+            }`}
+          >
+            <span className="shrink-0 mt-px">
+              {toast.kind === 'ok' ? (
+                <CheckCircle2 size={18} className="text-[#16A34A]" />
+              ) : (
+                <AlertCircle size={18} className="text-[#DC2626]" />
+              )}
+            </span>
+            <p className="min-w-0 flex-1 text-[13px] leading-[1.45] text-[#0A0A0A] font-medium">
+              {toast.msg}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+                setToast(null);
+              }}
+              aria-label={isTr ? 'Kapat' : 'Dismiss'}
+              className="shrink-0 -m-1 rounded-full p-1 text-[#A3A3A3] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+            >
+              <X size={14} strokeWidth={2} />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
