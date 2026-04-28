@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight, Check, Copy, Download, Eye } from "lucide-react";
+import { ArrowUpRight, Check, Copy, Download, Eye, Trash2 } from "lucide-react";
 import { Badge, Eyebrow, PlatformChip, type PlatformId } from "@/components/ui";
 import { copyToClipboard } from "@/lib/clipboard";
 
@@ -29,6 +29,9 @@ interface QRCardProps {
   svg?: string;
   defaultPlatformLabel?: string;
   locale?: "tr" | "en";
+  /** Optional delete handler. When omitted (e.g. read-only contexts), the
+   *  trash button isn't rendered — the card stays a 3-action row. */
+  onDelete?: () => void;
 }
 
 const PLATFORM_TO_CHIP: Record<string, PlatformId> = {
@@ -45,7 +48,7 @@ const PLATFORM_LABEL: Record<string, string> = {
   trendyol_go: "Trendyol GO",
 };
 
-export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "tr" }: QRCardProps) {
+export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "tr", onDelete }: QRCardProps) {
   const [copied, setCopied] = useState(false);
 
   const isTr = locale === "tr";
@@ -150,11 +153,16 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
       </div>
 
       {/* Actions */}
-      <div className="mt-3.5 grid grid-cols-3 gap-1 border-t border-[#EDEDED] pt-3">
+      <div
+        className={`mt-3.5 grid gap-1 border-t border-[#EDEDED] pt-3 ${
+          onDelete ? "grid-cols-4" : "grid-cols-3"
+        }`}
+      >
         <button
           type="button"
           onClick={downloadPng}
           aria-label={isTr ? "PNG indir" : "Download PNG"}
+          title={isTr ? "PNG indir" : "Download PNG"}
           className="bz-btn-icon flex h-8 w-full items-center justify-center"
         >
           <Download size={14} />
@@ -163,6 +171,7 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
           type="button"
           onClick={copy}
           aria-label={isTr ? "URL'yi kopyala" : "Copy URL"}
+          title={isTr ? "URL'yi kopyala" : "Copy URL"}
           className="bz-btn-icon flex h-8 w-full items-center justify-center"
         >
           {copied ? <Check size={14} className="text-[#A8D62E]" /> : <Copy size={14} />}
@@ -172,10 +181,23 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
           target="_blank"
           rel="noopener noreferrer"
           aria-label={isTr ? "Hedef sayfayı aç" : "Open target page"}
+          title={isTr ? "Hedef sayfayı aç" : "Open target page"}
           className="bz-btn-icon flex h-8 w-full items-center justify-center"
         >
           <Eye size={14} />
         </a>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={isTr ? "QR'ı sil" : "Delete QR"}
+            title={isTr ? "Sil" : "Delete"}
+            className="bz-btn-icon flex h-8 w-full items-center justify-center"
+            style={{ color: "#DC2626" }}
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
     </div>
   );
