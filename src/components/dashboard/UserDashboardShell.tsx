@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BarChart3, BookOpen, ChevronDown, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
@@ -8,6 +8,7 @@ import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import CommandPalette from '@/components/dashboard/CommandPalette';
 
 interface DashboardUser {
   name: string | null;
@@ -62,8 +63,22 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const trialDaysLeft = getDaysLeft(user.trialEndsAt);
   const topBar = useTopBar(locale, pathname);
+
+  // Cmd/Ctrl+K toggles the command palette anywhere in the dashboard.
+  // We listen on window since the user may not have a focused input.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const copy = useMemo(() => {
     const isTr = locale === 'tr';
@@ -308,20 +323,31 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               </h1>
             </div>
             <div className="flex items-center gap-2.5 shrink-0">
-              <div
-                className="hidden xl:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#737373] cursor-not-allowed select-none"
-                aria-hidden
-                title={locale === 'tr' ? 'Yakında: komut paleti' : 'Coming soon: command palette'}
+              <button
+                type="button"
+                onClick={() => setPaletteOpen(true)}
+                aria-label={locale === 'tr' ? 'Arama paletini aç' : 'Open search palette'}
+                title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
+                className="hidden xl:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#737373] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
               >
                 <Search size={12} strokeWidth={2} />
-                <span>{locale === 'tr' ? 'Yorum, konum, ekip ara…' : 'Search reviews, locations, team…'}</span>
+                <span>{locale === 'tr' ? 'Yorum, konum, sayfa ara…' : 'Search reviews, locations, pages…'}</span>
                 <span
                   className="ml-1 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252]"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   ⌘K
                 </span>
-              </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaletteOpen(true)}
+                aria-label={locale === 'tr' ? 'Aramayı aç' : 'Open search'}
+                title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
+                className="xl:hidden flex h-9 w-9 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
+              >
+                <Search size={14} strokeWidth={2} />
+              </button>
               <NotificationBell
                 locale={locale}
                 announcements={announcements}
@@ -483,6 +509,28 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           </div>
         </div>
       )}
+
+      {/* Cmd/Ctrl+K command palette — searchable launcher across pages,
+          locations, and reviews. The list of `navItems` here mirrors the
+          sidebar nav so the user can jump to any tab without scrolling. */}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        locale={locale}
+        base={`/${locale}/dashboard`}
+        navItems={[
+          { href: `/${locale}/dashboard`, label: copy.dashboard, keywords: ['panel', 'dashboard', 'genel'] },
+          { href: `/${locale}/dashboard/feedbacks`, label: copy.feedbacks, keywords: ['yorum', 'review', 'feedback', 'inbox'] },
+          { href: `/${locale}/dashboard/qr`, label: copy.qr, keywords: ['qr', 'kod', 'code'] },
+          { href: `/${locale}/dashboard/analytics`, label: copy.analytics, keywords: ['analitik', 'rapor', 'analytics', 'report'] },
+          { href: `/${locale}/dashboard/restaurants`, label: copy.restaurants, keywords: ['işletme', 'konum', 'lokasyon', 'restoran', 'location'] },
+          { href: `/${locale}/dashboard/menu`, label: copy.menu, keywords: ['menü', 'menu', 'ürün', 'item'] },
+          { href: `/${locale}/dashboard/integrations`, label: copy.integrations, keywords: ['entegrasyon', 'integration', 'google', 'yemeksepeti', 'getir', 'trendyol', 'platform', 'url'] },
+          { href: `/${locale}/dashboard/leads`, label: copy.leads, keywords: ['müşteri', 'customer', 'lead'] },
+          { href: `/${locale}/dashboard/guide`, label: copy.guide, keywords: ['kılavuz', 'guide', 'help', 'yardım'] },
+          { href: `/${locale}/dashboard/profile`, label: copy.profile, keywords: ['ayar', 'settings', 'profil', 'profile', 'hesap', 'account'] },
+        ]}
+      />
     </div>
   );
 }
