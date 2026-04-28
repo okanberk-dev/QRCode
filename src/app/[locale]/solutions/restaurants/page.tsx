@@ -5,6 +5,7 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { buildSolutionSchema } from '@/lib/solution-schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,8 +70,22 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
         { t: 'Inside packaging', d: 'A stickered card in the bag; review from home.' },
       ];
 
+  const jsonLd = buildSolutionSchema({
+    locale,
+    slug: 'restaurants',
+    industryLabel: isTr ? 'Restoran & Kafe' : 'Restaurant & Café',
+    serviceName: isTr ? 'Restoran & Kafe İtibar Yönetimi' : 'Restaurant & Café Reputation Management',
+    description: isTr
+      ? 'Masaya QR koy, ilk hafta Google yorumun 10 kat artsın. Her misafire Google bağlantısı sunulur; isteyen ek olarak işletmene özel geri bildirim de gönderir.'
+      : 'Put a QR on the table and watch Google reviews multiply 10x in the first week. Every guest gets the Google review link; private feedback is an optional extra step.',
+  });
+
   return (
     <div className="min-h-screen bg-white pt-[64px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero — light gray bg, 2-column */}

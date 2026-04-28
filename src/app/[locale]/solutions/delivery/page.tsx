@@ -6,6 +6,7 @@ import PlatformLogo, { TR_DELIVERY, TR_REVIEW } from '@/components/marketing/Pla
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
+import { buildSolutionSchema } from '@/lib/solution-schema';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
 
@@ -146,8 +147,22 @@ export default async function DeliveryPage({
         { k: '18s', l: 'Average scan-to-review time' },
       ];
 
+  const jsonLd = buildSolutionSchema({
+    locale,
+    slug: 'delivery',
+    industryLabel: isTr ? 'Paket Servis' : 'Delivery',
+    serviceName: isTr ? 'Paket Servis İtibar Yönetimi' : 'Delivery Reputation Management',
+    description: isTr
+      ? 'Paket içine koyduğunuz tek QR ile müşteriyi tam olarak yorum bırakacağı platforma yönlendirin. Google, Yemeksepeti, Getir Yemek ve Trendyol GO uyumlu.'
+      : 'One QR inside every package routes the customer to the platform where they will actually leave a review. Works with Google, Yemeksepeti, Getir Yemek and Trendyol GO.',
+  });
+
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* HERO */}

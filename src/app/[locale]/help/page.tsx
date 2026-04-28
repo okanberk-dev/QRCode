@@ -83,12 +83,46 @@ export default async function HelpCenterPage({
     }));
   }
 
-  const breadcrumbJsonLd = {
+  const helpUrl = `https://buaze.com/${locale}/help`;
+  const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım Merkezi' : 'Help Center', item: `https://buaze.com/${locale}/help` },
+    '@graph': [
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+          { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım Merkezi' : 'Help Center', item: helpUrl },
+        ],
+      },
+      {
+        '@type': 'CollectionPage',
+        name: isTr ? 'Buaze Yardım Merkezi' : 'Buaze Help Center',
+        url: helpUrl,
+        inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
+        isPartOf: { '@type': 'WebSite', name: 'Buaze', url: 'https://buaze.com' },
+        about: HELP_CATEGORIES.map((cat) => ({
+          '@type': 'Thing',
+          name: cat[locale].title,
+          description: cat[locale].desc,
+          url: `https://buaze.com/${locale}/help/category/${cat.slug}`,
+        })),
+        hasPart: popular.map((p) => ({
+          '@type': 'Article',
+          headline: p.title,
+          url: `https://buaze.com/${locale}/help/${p.slug}`,
+          inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
+        })),
+      },
+      {
+        '@type': 'ItemList',
+        name: isTr ? 'Yardım kategorileri' : 'Help categories',
+        itemListElement: HELP_CATEGORIES.map((cat, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          url: `https://buaze.com/${locale}/help/category/${cat.slug}`,
+          name: cat[locale].title,
+        })),
+      },
     ],
   };
 
@@ -96,7 +130,7 @@ export default async function HelpCenterPage({
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 

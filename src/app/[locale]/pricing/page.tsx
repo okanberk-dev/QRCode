@@ -56,6 +56,29 @@ export default async function PricingPage({
     { q: t.faq_q6, a: t.faq_a6 },
   ];
 
+  const priceCurrency = isTr ? 'TRY' : 'USD';
+  // Mirror PricingPlans.tsx: Starter=0, Growth=890, Scale=2490 (TRY monthly).
+  // EN: rough TRY/30 → USD ($30, $83). Annual gives 20% off (× 0.80).
+  const planOffers = [
+    { name: 'Starter', monthly: isTr ? 0 : 0 },
+    { name: 'Growth', monthly: isTr ? 890 : 30 },
+    { name: 'Scale', monthly: isTr ? 2490 : 83 },
+  ].map((p) => ({
+    '@type': 'Offer',
+    name: p.name,
+    price: String(p.monthly),
+    priceCurrency,
+    priceSpecification: {
+      '@type': 'UnitPriceSpecification',
+      price: String(p.monthly),
+      priceCurrency,
+      billingDuration: 'P1M',
+      unitCode: 'MON',
+    },
+    availability: 'https://schema.org/InStock',
+    url: `https://buaze.com/${locale}/pricing`,
+  }));
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -75,14 +98,7 @@ export default async function PricingPage({
         description: t.pricing_subtitle,
         url: `https://buaze.com/${locale}/pricing`,
         // No aggregateRating — must be backed by verifiable on-page reviews.
-        offers: {
-          '@type': 'AggregateOffer',
-          priceCurrency: isTr ? 'TRY' : 'USD',
-          lowPrice: isTr ? '500' : '10',
-          highPrice: isTr ? '1000' : '20',
-          offerCount: '2',
-          availability: 'https://schema.org/InStock',
-        },
+        offers: planOffers,
       },
       {
         '@type': 'BreadcrumbList',

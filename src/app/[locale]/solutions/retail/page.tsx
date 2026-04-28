@@ -5,6 +5,7 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { buildSolutionSchema } from '@/lib/solution-schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,8 +87,22 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
         },
       ];
 
+  const jsonLd = buildSolutionSchema({
+    locale,
+    slug: 'retail',
+    industryLabel: isTr ? 'Perakende & Mağaza' : 'Retail & Store',
+    serviceName: isTr ? 'Perakende & Mağaza İtibar Yönetimi' : 'Retail & Store Reputation Management',
+    description: isTr
+      ? "Müşteri kasadan çıkarken fişinin altındaki QR'ı tarar. Google ve Yandex'e yönlendirilir. Çok mağaza, tek panel."
+      : 'Customers scan the QR under the receipt on the way out. Routed to Google and Yandex. Multi-store, one panel.',
+  });
+
   return (
     <div className="min-h-screen bg-white pt-[64px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero — dark (1:1 .design/site/site-pages4.jsx:246-267) */}

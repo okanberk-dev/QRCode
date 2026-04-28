@@ -41,12 +41,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const title = `${restaurant.name} · Menü`;
   const description = [restaurant.category, restaurant.address].filter(Boolean).join(' — ') ||
     `${restaurant.name} işletmesinin dijital menüsü.`;
+  const canonical = `https://buaze.com/menu/${slug}`;
   return {
     title,
     description,
+    alternates: { canonical },
     openGraph: {
       title,
       description,
+      url: canonical,
       type: 'website',
     },
     twitter: {
@@ -116,16 +119,28 @@ export default async function PublicMenuPage({
     })),
   }));
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
+  const canonical = `https://buaze.com/menu/${data.slug}`;
+  const restaurantNode = {
+    '@type': 'Restaurant',
+    '@id': `${canonical}#restaurant`,
+    name: data.name,
+    url: canonical,
+    image: data.menuLogoUrl || undefined,
+    address: data.address
+      ? { '@type': 'PostalAddress', streetAddress: data.address, addressCountry: 'TR' }
+      : undefined,
+    telephone: data.phone || undefined,
+    servesCuisine: data.category || undefined,
+    openingHours: data.workingHours || undefined,
+    hasMenu: { '@id': `${canonical}#menu` },
+  };
+  const menuNode = {
     '@type': 'Menu',
+    '@id': `${canonical}#menu`,
     name: `${data.name} — Menü`,
-    provider: {
-      '@type': 'Restaurant',
-      name: data.name,
-      address: data.address || undefined,
-      telephone: data.phone || undefined,
-    },
+    inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
+    url: canonical,
+    provider: { '@id': `${canonical}#restaurant` },
     hasMenuSection: categories.map((c) => ({
       '@type': 'MenuSection',
       name: c.name,
@@ -151,6 +166,10 @@ export default async function PublicMenuPage({
         },
       })),
     })),
+  };
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [restaurantNode, menuNode],
   };
 
   return (

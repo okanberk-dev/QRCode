@@ -5,6 +5,7 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { buildSolutionSchema } from '@/lib/solution-schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,8 +69,22 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
         { t: 'Booking trigger', d: 'Connect to your booking software — auto-send review invites when service ends.' },
       ];
 
+  const jsonLd = buildSolutionSchema({
+    locale,
+    slug: 'beauty-salon',
+    industryLabel: isTr ? 'Güzellik & Spa' : 'Beauty & Spa',
+    serviceName: isTr ? 'Güzellik & Spa İtibar Yönetimi' : 'Beauty & Spa Reputation Management',
+    description: isTr
+      ? "Hizmet biter bitmez müşteriniz QR'ı tarar. Instagram, Google ve Foursquare'de puanınız organik büyür."
+      : 'The moment service ends, your customer scans the QR. Ratings grow organically on Instagram, Google and Foursquare.',
+  });
+
   return (
     <div className="min-h-screen bg-white pt-[64px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero — light gray bg */}
