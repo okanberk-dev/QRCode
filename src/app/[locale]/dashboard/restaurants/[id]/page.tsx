@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Building2, ExternalLink, Loader2, Power, PowerOff, Save } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, Badge, ConfirmDialog, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, ConfirmDialog, PageHeader, PlatformChip } from '@/components/ui';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
 import { detectSector, getSectorPlatforms } from '@/lib/sector-platforms';
@@ -464,6 +464,16 @@ export default function DashboardRestaurantDetailPage() {
                   ? 'Sektörünüz, yorum yönlendirmesinde gösterilecek platformları belirler.'
                   : 'Your sector decides which review platforms appear in the redirect.'}
               </span>
+              <div aria-live="polite">
+                <span className="pulse-eyebrow block text-[#737373]">
+                  {locale === 'tr' ? 'Bu sektörde görünecek' : 'Visible in this sector'}
+                </span>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {Array.from(allowedPlatforms).map((platform) => (
+                    <PlatformChip key={platform} id={platform} size={20} withLabel />
+                  ))}
+                </div>
+              </div>
             </label>
 
             <label className="space-y-2">
