@@ -23,9 +23,9 @@ import {
 } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
-import { AlertBanner, Badge, Eyebrow, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, Eyebrow, PageHeader, PlatformChip } from '@/components/ui';
 import { SECTORS } from '@/lib/sectors';
-import { detectSector } from '@/lib/sector-platforms';
+import { detectSector, getSectorPlatforms } from '@/lib/sector-platforms';
 
 export default function ProfilePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = use(params);
@@ -357,6 +357,16 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
                     ? 'Sektörünüz, yorum yönlendirmesinde gösterilecek platformları belirler.'
                     : 'Your sector decides which review platforms appear in the redirect.'}
                 </span>
+                <div aria-live="polite">
+                  <span className="pulse-eyebrow block text-[#737373]">
+                    {isTr ? 'Bu sektörde görünecek' : 'Visible in this sector'}
+                  </span>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {Array.from(getSectorPlatforms(businessData.category)).map((platform) => (
+                      <PlatformChip key={platform} id={platform} size={20} withLabel />
+                    ))}
+                  </div>
+                </div>
               </label>
               <label className="space-y-1.5 block">
                 <span className="pulse-eyebrow text-[#737373]">
