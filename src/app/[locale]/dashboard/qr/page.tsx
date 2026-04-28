@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Check, Copy, Download, Loader2, Minus, Palette, Plus, Printer, RefreshCw } from 'lucide-react';
 import { copyToClipboard } from '@/lib/clipboard';
@@ -18,6 +19,15 @@ interface Restaurant {
   slug: string;
   name: string;
   primaryColor?: string;
+  // Integration URLs — read so the platform picker can warn / disable
+  // platforms whose redirect link is not configured in /dashboard/integrations.
+  // Without these, the QR carries `?platform=foo` to /r/[slug] which then
+  // silently falls back to "first available platform" or the thank-you
+  // screen, losing the customer's intent.
+  googlePlaceId?: string | null;
+  yemekSepetiUrl?: string | null;
+  getirYemekUrl?: string | null;
+  trendyolYemekUrl?: string | null;
 }
 
 const PLATFORM_BADGE: Record<string, { label: string; bg: string }> = {
@@ -79,6 +89,23 @@ export default function DashboardQrPage() {
   const activeDark = useBrandColor && selectedRestaurant?.primaryColor
     ? selectedRestaurant.primaryColor
     : customDark;
+
+  // Map selectedPlatform → integration URL field on the active restaurant.
+  // Used to disable platforms that have no URL configured and to warn the
+  // owner that a QR they're about to print would silently fall back on the
+  // public review page (`/r/[slug]` route — see line 124-140 of that file).
+  const PLATFORM_URL_GETTERS: Record<string, (r: Restaurant | undefined) => string | null | undefined> = {
+    google: (r) => r?.googlePlaceId,
+    yemeksepeti: (r) => r?.yemekSepetiUrl,
+    getir: (r) => r?.getirYemekUrl,
+    trendyol_go: (r) => r?.trendyolYemekUrl,
+  };
+  const platformHasUrl = (platform: string) => {
+    if (!platform) return true; // "Genel" — no specific platform, always OK
+    const getter = PLATFORM_URL_GETTERS[platform];
+    return Boolean(getter?.(selectedRestaurant)?.trim());
+  };
+  const selectedPlatformMissingUrl = !!selectedPlatform && !platformHasUrl(selectedPlatform);
 
   const copy = locale === 'tr'
     ? {
@@ -292,15 +319,22 @@ export default function DashboardQrPage() {
                   <select
                     value={selectedPlatform}
                     onChange={(event) => setSelectedPlatform(event.target.value)}
-                    className={`w-full rounded-xl border border-[#EDEDED] bg-white py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E] ${
+                    className={`w-full rounded-xl border bg-white py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E] ${
+                      selectedPlatformMissingUrl ? 'border-amber-300' : 'border-[#EDEDED]'
+                    } ${
                       selectedPlatform && PLATFORM_LOGO_ID[selectedPlatform] ? 'pl-11' : 'pl-4'
                     } pr-4`}
                   >
                     <option value="">{copy.genel}</option>
-                    <option value="google">Google</option>
-                    <option value="yemeksepeti">Yemeksepeti</option>
-                    <option value="getir">Getir</option>
-                    <option value="trendyol_go">Trendyol GO</option>
+                    {(['google', 'yemeksepeti', 'getir', 'trendyol_go'] as const).map((p) => {
+                      const label = PLATFORM_BADGE[p].label;
+                      const ok = platformHasUrl(p);
+                      return (
+                        <option key={p} value={p}>
+                          {label}{ok ? '' : ` — ${locale === 'tr' ? 'URL eksik' : 'URL missing'}`}
+                        </option>
+                      );
+                    })}
                   </select>
                   {selectedPlatform && PLATFORM_LOGO_ID[selectedPlatform] && (
                     <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2">
@@ -308,6 +342,26 @@ export default function DashboardQrPage() {
                     </span>
                   )}
                 </div>
+                {selectedPlatformMissingUrl && (
+                  <div
+                    role="status"
+                    className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] leading-[1.5] text-amber-800 flex items-start gap-2"
+                  >
+                    <span aria-hidden className="shrink-0 mt-px">⚠</span>
+                    <span className="min-w-0 flex-1">
+                      {locale === 'tr'
+                        ? `${PLATFORM_BADGE[selectedPlatform].label} bağlantısı tanımlı değil. Bu QR'ı tarayan müşteriler ${PLATFORM_BADGE[selectedPlatform].label} yerine başka bir platforma yönlendirilir.`
+                        : `${PLATFORM_BADGE[selectedPlatform].label} link is not configured. Customers scanning this QR will be redirected to a different platform.`}
+                      {' '}
+                      <Link
+                        href={`/${locale}/dashboard/integrations`}
+                        className="underline underline-offset-2 font-semibold hover:text-amber-900"
+                      >
+                        {locale === 'tr' ? 'Entegrasyonları aç →' : 'Open integrations →'}
+                      </Link>
+                    </span>
+                  </div>
+                )}
               </label>
 
               {/* Removed: dead "Yerleşim" pills (Masa/Fatura/Kapı/Paket).
