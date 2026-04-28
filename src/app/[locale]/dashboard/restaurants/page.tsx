@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import { AlertBanner, Badge, EmptyState, ErrorState, Modal, PageHeader, Tabs, type TabItem } from '@/components/ui';
+import { getSectorPlatforms } from '@/lib/sector-platforms';
 
 interface Restaurant {
   id: string;
@@ -260,6 +261,10 @@ export default function DashboardRestaurantsPage() {
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.category.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+  // Sector → platform whitelist for the "Yeni İşletme" modal — filters which
+  // platform inputs the owner sees while the modal is open. Live on
+  // formData.category (default 'Restoran' → food sector).
+  const allowedPlatforms = getSectorPlatforms(formData.category);
   const statusTabs: TabItem[] = [
     { id: 'active', label: copy.active },
     { id: 'all', label: copy.all },
@@ -503,6 +508,7 @@ export default function DashboardRestaurantsPage() {
                 </label>
 
                 {/* ── Google Review Link — emphasized ── */}
+                {allowedPlatforms.has('google') && (
                 <div className="sm:col-span-2 rounded-2xl border-2 border-[#C6F24E]/50 bg-gradient-to-br from-[#C6F24E]/15 via-[#C6F24E]/8 to-white p-4 sm:p-5 shadow-sm">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -559,39 +565,46 @@ export default function DashboardRestaurantsPage() {
                     className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3.5 text-sm font-bold text-[#0A0A0A] outline-none transition-all placeholder:text-[#6B7280] focus:ring-2 focus:ring-[#C6F24E]"
                   />
                 </div>
+                )}
 
-                <label className="space-y-2 sm:col-span-2">
-                  <span className="ml-1 pulse-eyebrow text-[#737373]">Getir Yemek URL</span>
-                  <input
-                    type="url"
-                    value={formData.getirYemekUrl}
-                    onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
-                    placeholder="https://getir.com/yemek/..."
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
-                  />
-                </label>
+                {allowedPlatforms.has('getir') && (
+                  <label className="space-y-2 sm:col-span-2">
+                    <span className="ml-1 pulse-eyebrow text-[#737373]">Getir Yemek URL</span>
+                    <input
+                      type="url"
+                      value={formData.getirYemekUrl}
+                      onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
+                      placeholder="https://getir.com/yemek/..."
+                      className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                    />
+                  </label>
+                )}
 
-                <label className="space-y-2">
-                  <span className="ml-1 pulse-eyebrow text-[#737373]">Yemek Sepeti URL</span>
-                  <input
-                    type="url"
-                    value={formData.yemekSepetiUrl}
-                    onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
-                    placeholder="https://www.yemeksepeti.com/..."
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
-                  />
-                </label>
+                {allowedPlatforms.has('yemeksepeti') && (
+                  <label className="space-y-2">
+                    <span className="ml-1 pulse-eyebrow text-[#737373]">Yemek Sepeti URL</span>
+                    <input
+                      type="url"
+                      value={formData.yemekSepetiUrl}
+                      onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
+                      placeholder="https://www.yemeksepeti.com/..."
+                      className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                    />
+                  </label>
+                )}
 
-                <label className="space-y-2">
-                  <span className="ml-1 pulse-eyebrow text-[#737373]">Trendyol Yemek URL</span>
-                  <input
-                    type="url"
-                    value={formData.trendyolYemekUrl}
-                    onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
-                    placeholder="https://www.trendyol.com/..."
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
-                  />
-                </label>
+                {allowedPlatforms.has('trendyol') && (
+                  <label className="space-y-2">
+                    <span className="ml-1 pulse-eyebrow text-[#737373]">Trendyol Yemek URL</span>
+                    <input
+                      type="url"
+                      value={formData.trendyolYemekUrl}
+                      onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
+                      placeholder="https://www.trendyol.com/..."
+                      className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                    />
+                  </label>
+                )}
 
                 <label className="space-y-2">
                   <span className="ml-1 pulse-eyebrow text-[#737373]">Kategori</span>
