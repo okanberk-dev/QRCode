@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Loader2, User, Key, Check, ShieldCheck, AlertCircle, Palette, Plug, Cog, Users, CreditCard, Bell, Code, Globe } from 'lucide-react';
+import Link from 'next/link';
+import { Loader2, User, Key, Check, ShieldCheck, AlertCircle, ArrowRight, Palette, Plug, Cog, Users, CreditCard, Bell, Code, Globe } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 
@@ -303,18 +304,26 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
                   <span className="pulse-eyebrow text-[#737373]">
                     {isTr ? 'MARKA RENGİ' : 'BRAND COLOR'}
                   </span>
-                  <div className="mt-2 flex gap-2">
+                  {/* Visual-only swatches — backend wiring pending. Set
+                      cursor + opacity + title so users don't expect them
+                      to be selectable. The real brand-color picker lives
+                      on the per-restaurant settings page (primaryColor). */}
+                  <div
+                    className="mt-2 flex gap-2 opacity-60"
+                    aria-disabled="true"
+                    title={isTr ? 'Yakında — şimdilik tek QR rengi otomatik' : 'Coming soon — QR uses brand color automatically'}
+                  >
                     {['#C6F24E', '#0A0A0A', '#FFFFFF', '#FF6B35', '#2563EB'].map((c, i) => (
                       <div
                         key={c}
-                        className="h-9 w-9 rounded-md"
+                        className="h-9 w-9 rounded-md cursor-not-allowed"
                         style={{
                           background: c,
                           border: i === 0 ? '2px solid #0A0A0A' : '1px solid #E5E5E5',
                         }}
                       />
                     ))}
-                    <div className="h-9 w-9 rounded-md border border-dashed border-[#A3A3A3] flex items-center justify-center text-[#A3A3A3]">
+                    <div className="h-9 w-9 rounded-md border border-dashed border-[#A3A3A3] flex items-center justify-center text-[#A3A3A3] cursor-not-allowed">
                       +
                     </div>
                   </div>
@@ -346,29 +355,34 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
                 className="text-[20px] font-semibold tracking-[-0.015em]"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
-                {isTr ? 'Google Business Profile' : 'Google Business Profile'}
+                {isTr ? 'Platform bağlantıları' : 'Platform connections'}
               </h2>
-              <div className="mt-3 flex items-center justify-between">
-                <p className="text-[13px] text-[#737373]">
-                  {isTr ? 'hello@buaze.com · 0 konum eşleşti' : 'hello@buaze.com · 0 locations matched'}
-                </p>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#A3A3A3]" />
-                  <span className="text-[12px] font-medium">{isTr ? 'Bağlanmadı' : 'Not connected'}</span>
-                </div>
-              </div>
+              <p className="mt-2 text-[13px] text-[#525252] leading-[1.55]">
+                {isTr
+                  ? 'Google, Yemeksepeti, Getir ve Trendyol GO bağlantı linklerini Entegrasyonlar sayfasından kolayca düzenleyebilirsin. OAuth ile tek-tıkla Google Business Profile bağlantısı yakında geliyor.'
+                  : 'Manage your Google, Yemeksepeti, Getir and Trendyol GO redirect links from the Integrations page. One-click Google Business Profile OAuth is on the way.'}
+              </p>
               <div className="mt-4 rounded-lg bg-[#EAF9B8] p-3 text-[12px] leading-[1.5]">
                 ✓ {isTr ? 'Google politikalarına uyumlu. Bağlandığında otomatik denetim başlar.' : 'Google-policy compliant. Auto-audit starts once connected.'}
               </div>
-              <button
-                type="button"
-                className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
-              >
-                {isTr ? 'Google ile bağlan' : 'Connect Google'}
-              </button>
-              <p className="mt-5 text-[12px] text-[#737373] italic">
-                {isTr ? 'Frontend hazır — OAuth backend yakında.' : 'Frontend ready — OAuth backend coming soon.'}
-              </p>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Link
+                  href={`/${locale}/dashboard/integrations`}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
+                >
+                  <Plug size={13} strokeWidth={2} />
+                  {isTr ? 'Entegrasyonları aç' : 'Open integrations'}
+                  <ArrowRight size={13} strokeWidth={2} />
+                </Link>
+                <button
+                  type="button"
+                  disabled
+                  title={isTr ? 'OAuth backend yakında devreye alınacak' : 'OAuth backend coming soon'}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#F5F5F5] px-5 py-2.5 text-[13px] font-medium text-[#A3A3A3] cursor-not-allowed"
+                >
+                  {isTr ? 'Google ile bağlan · yakında' : 'Connect Google · soon'}
+                </button>
+              </div>
             </section>
           )}
 
@@ -405,7 +419,10 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
             activeTab === 'api') && (
             <section className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-10 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-[#EDEDED]">
-                <Cog size={22} className="text-[#737373]" strokeWidth={2} />
+                {(() => {
+                  const I = tabs.find((t) => t.k === activeTab)?.i ?? <Cog size={22} className="text-[#737373]" strokeWidth={2} />;
+                  return I;
+                })()}
               </div>
               <h3
                 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
@@ -413,14 +430,61 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
               >
                 {tabs.find((t) => t.k === activeTab)?.l}
               </h3>
-              <p className="mt-2 text-[14px] text-[#525252] max-w-[440px] mx-auto">
-                {isTr
-                  ? 'Bu bölüm hazır, backend bağlantısı yakında. Stay tuned.'
-                  : 'This section is ready — backend wiring coming soon.'}
-              </p>
-              <span className="pulse-eyebrow text-[#A8D62E] mt-3 inline-block">
-                {isTr ? 'YAKINDA · FRONTEND HAZIR' : 'SOON · FRONTEND READY'}
-              </span>
+              {/* Each placeholder tab now offers a link to the closest
+                  working surface so users aren't dead-ended. The /admin/*
+                  routes accept restaurant_owner role per AdminSidebar.tsx
+                  config (lines 88-101). Map updated 2026-04-28. */}
+              {(() => {
+                const ALT: Record<typeof activeTab, { href: string; label: string; description: string } | null> = {
+                  rules: null,
+                  team: {
+                    href: `/admin/team`,
+                    label: isTr ? 'Ekip ayarlarına git' : 'Open team settings',
+                    description: isTr
+                      ? 'Workspace üyelerini, rolleri ve davetleri yönet.'
+                      : 'Manage workspace members, roles and invitations.',
+                  },
+                  notifications: {
+                    href: `/admin/notifications`,
+                    label: isTr ? 'Bildirim tercihlerine git' : 'Open notification preferences',
+                    description: isTr
+                      ? 'E-posta uyarıları, Slack webhook ve haftalık raporu yönet.'
+                      : 'Manage email alerts, Slack webhook and the weekly digest.',
+                  },
+                  api: {
+                    href: `/admin/api`,
+                    label: isTr ? 'API & webhook ayarlarına git' : 'Open API & webhook settings',
+                    description: isTr
+                      ? 'Webhook URL\'lerini ve API anahtarlarını yönet.'
+                      : 'Manage webhook URLs and API keys.',
+                  },
+                };
+                const alt = ALT[activeTab];
+                return (
+                  <>
+                    <p className="mt-2 text-[14px] text-[#525252] max-w-[440px] mx-auto">
+                      {alt
+                        ? alt.description
+                        : isTr
+                          ? 'Bu bölüm hazır, backend bağlantısı yakında. Stay tuned.'
+                          : 'This section is ready — backend wiring coming soon.'}
+                    </p>
+                    {alt ? (
+                      <Link
+                        href={alt.href}
+                        className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
+                      >
+                        {alt.label}
+                        <ArrowRight size={13} strokeWidth={2} />
+                      </Link>
+                    ) : (
+                      <span className="pulse-eyebrow text-[#A8D62E] mt-3 inline-block">
+                        {isTr ? 'YAKINDA · FRONTEND HAZIR' : 'SOON · FRONTEND READY'}
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
             </section>
           )}
         </div>
