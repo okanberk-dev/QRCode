@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Grid3x3, List as ListIcon, Loader2, MoreHorizontal, Plus, QrCode } from 'lucide-react';
+import { Download, Grid3x3, List as ListIcon, Loader2, Plus, QrCode, Trash2 } from 'lucide-react';
 import {
   AlertBanner,
   Badge,
+  ConfirmDialog,
   EmptyState,
   PageHeader,
   PlatformChip,
@@ -55,10 +55,20 @@ export default function DashboardQrPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [items, setItems] = useState<QrHistoryItem[]>([]);
   const [svgs, setSvgs] = useState<Record<string, string>>({});
+  // `loading` stays true until BOTH the restaurants fetch and the
+  // per-restaurant history fetches resolve. The `restaurantsLoaded`
+  // gate prevents the second effect from prematurely flipping
+  // loading=false on the very first render (when restaurants is still
+  // the initial empty array) — that drift was producing a brief
+  // "Henüz işletme eklenmemiş" / "Henüz QR oluşturulmadı" flash before
+  // the real data landed.
+  const [restaurantsLoaded, setRestaurantsLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [showCreate, setShowCreate] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<QrHistoryItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Filters
   const [branchFilter, setBranchFilter] = useState<string>('all');
@@ -77,7 +87,12 @@ export default function DashboardQrPage() {
           setBranchFilter(preselected);
         }
       })
-      .catch(() => setRestaurants([]));
+      .catch(() => {
+        if (!cancelled) setRestaurants([]);
+      })
+      .finally(() => {
+        if (!cancelled) setRestaurantsLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -85,6 +100,7 @@ export default function DashboardQrPage() {
 
   // 2) After restaurants load, fetch each restaurant's QR history in parallel
   useEffect(() => {
+    if (!restaurantsLoaded) return;
     if (restaurants.length === 0) {
       setLoading(false);
       return;
@@ -115,7 +131,7 @@ export default function DashboardQrPage() {
     return () => {
       cancelled = true;
     };
-  }, [restaurants]);
+  }, [restaurantsLoaded, restaurants]);
 
   // 3) Lazy-fetch SVG for each item not yet cached
   useEffect(() => {
@@ -222,6 +238,65 @@ export default function DashboardQrPage() {
         .catch(() => {});
     }, 400);
   };
+
+  // Delete confirms via ConfirmDialog (`pendingDelete` state) then runs
+  // optimistically — the row vanishes from the grid the moment the
+  // dialog confirms. On API failure we restore it and surface a banner.
+  const requestDelete = useCallback((item: QrHistoryItem) => {
+    setPendingDelete(item);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!pendingDelete) return;
+    const target = pendingDelete;
+    setDeleting(true);
+    setPageError(null);
+
+    // Optimistic removal — grid updates immediately. We keep the
+    // SVG cache entry around so a rollback re-renders without a
+    // re-fetch flash.
+    setItems((prev) => prev.filter((it) => it.id !== target.id));
+
+    try {
+      const res = await fetch(
+        `/api/restaurants/${target.restaurantId}/qr/history/${target.id}`,
+        { method: 'DELETE' },
+      );
+      if (!res.ok) {
+        // Rollback — re-insert by createdAt order.
+        setItems((prev) =>
+          [...prev, target].sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          ),
+        );
+        const body = await res.json().catch(() => ({}));
+        setPageError(
+          isTr
+            ? `QR silinemedi${body?.error ? ` — ${body.error}` : ''}.`
+            : `Failed to delete QR${body?.error ? ` — ${body.error}` : ''}.`,
+        );
+      } else {
+        // Drop the cached SVG too so a future re-creation of the same
+        // (table, platform) pair doesn't render a stale preview.
+        setSvgs((prev) => {
+          if (!(target.id in prev)) return prev;
+          const next = { ...prev };
+          delete next[target.id];
+          return next;
+        });
+      }
+    } catch {
+      setItems((prev) =>
+        [...prev, target].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        ),
+      );
+      setPageError(isTr ? 'Ağ hatası — QR silinemedi.' : 'Network error — could not delete QR.');
+    } finally {
+      setDeleting(false);
+      setPendingDelete(null);
+    }
+  }, [pendingDelete, isTr]);
 
   const downloadOne = async (item: QrHistoryItem, format: 'svg' | 'png' = 'png') => {
     const params = new URLSearchParams({ format });
@@ -424,9 +499,18 @@ export default function DashboardQrPage() {
       {/* Grid view */}
       {!loading && cardItems.length > 0 && view === 'grid' && (
         <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {cardItems.map((c) => (
-            <QRCard key={c.id} item={c} svg={svgs[c.id]} locale={locale} />
-          ))}
+          {cardItems.map((c) => {
+            const raw = filteredItems.find((it) => it.id === c.id);
+            return (
+              <QRCard
+                key={c.id}
+                item={c}
+                svg={svgs[c.id]}
+                locale={locale}
+                onDelete={raw ? () => requestDelete(raw) : undefined}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -492,9 +576,20 @@ export default function DashboardQrPage() {
                             type="button"
                             onClick={() => downloadOne(rawItem, 'png')}
                             aria-label={isTr ? 'PNG indir' : 'Download PNG'}
+                            title={isTr ? 'PNG indir' : 'Download PNG'}
                             className="bz-btn-icon"
                           >
-                            <MoreHorizontal size={14} />
+                            <Download size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => requestDelete(rawItem)}
+                            aria-label={isTr ? 'QR\'ı sil' : 'Delete QR'}
+                            title={isTr ? 'Sil' : 'Delete'}
+                            className="bz-btn-icon"
+                            style={{ color: '#DC2626' }}
+                          >
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </td>
@@ -518,6 +613,24 @@ export default function DashboardQrPage() {
           onCreated={handleCreated}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        variant="danger"
+        title={isTr ? 'Bu QR kaydını sil' : 'Delete this QR record'}
+        body={
+          isTr
+            ? 'QR sadece panel listenizden kaldırılır. Daha önce basılan QR sticker\'ları çalışmaya devam eder; aynı masa veya platform için yeni bir QR oluşturmak isterseniz tekrar üretebilirsiniz.'
+            : "The QR is only removed from your panel list. Previously printed stickers keep working; you can re-create one for the same table or platform anytime."
+        }
+        confirmLabel={isTr ? 'Sil' : 'Delete'}
+        cancelLabel={isTr ? 'Vazgeç' : 'Cancel'}
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          if (!deleting) setPendingDelete(null);
+        }}
+      />
     </div>
   );
 }

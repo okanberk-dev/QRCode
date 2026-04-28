@@ -1,11 +1,12 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Grid3x3, List as ListIcon, Loader2, MoreHorizontal, Plus, QrCode } from 'lucide-react';
+import { Download, Grid3x3, List as ListIcon, Loader2, Plus, QrCode, Trash2 } from 'lucide-react';
 import {
   AlertBanner,
   Badge,
+  ConfirmDialog,
   EmptyState,
   PageHeader,
   PlatformChip,
@@ -51,10 +52,16 @@ function AdminQrContent() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [items, setItems] = useState<QrHistoryItem[]>([]);
   const [svgs, setSvgs] = useState<Record<string, string>>({});
+  // See `src/app/[locale]/dashboard/qr/page.tsx` — same flash-prevention
+  // gate. `loading` only flips false once both fetches have a chance to
+  // settle.
+  const [restaurantsLoaded, setRestaurantsLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [showCreate, setShowCreate] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<QrHistoryItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
@@ -72,7 +79,12 @@ function AdminQrContent() {
           setBranchFilter(preselected);
         }
       })
-      .catch(() => setRestaurants([]));
+      .catch(() => {
+        if (!cancelled) setRestaurants([]);
+      })
+      .finally(() => {
+        if (!cancelled) setRestaurantsLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -80,6 +92,7 @@ function AdminQrContent() {
 
   // 2) Fetch each restaurant's QR history
   useEffect(() => {
+    if (!restaurantsLoaded) return;
     if (restaurants.length === 0) {
       setLoading(false);
       return;
@@ -110,7 +123,7 @@ function AdminQrContent() {
     return () => {
       cancelled = true;
     };
-  }, [restaurants]);
+  }, [restaurantsLoaded, restaurants]);
 
   // 3) Lazy-fetch SVGs (max 8 in flight)
   useEffect(() => {
@@ -216,6 +229,51 @@ function AdminQrContent() {
         .catch(() => {});
     }, 400);
   };
+
+  const requestDelete = useCallback((item: QrHistoryItem) => {
+    setPendingDelete(item);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!pendingDelete) return;
+    const target = pendingDelete;
+    setDeleting(true);
+    setPageError(null);
+    setItems((prev) => prev.filter((it) => it.id !== target.id));
+
+    try {
+      const res = await fetch(
+        `/api/restaurants/${target.restaurantId}/qr/history/${target.id}`,
+        { method: 'DELETE' },
+      );
+      if (!res.ok) {
+        setItems((prev) =>
+          [...prev, target].sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          ),
+        );
+        const body = await res.json().catch(() => ({}));
+        setPageError(`QR silinemedi${body?.error ? ` — ${body.error}` : ''}.`);
+      } else {
+        setSvgs((prev) => {
+          if (!(target.id in prev)) return prev;
+          const next = { ...prev };
+          delete next[target.id];
+          return next;
+        });
+      }
+    } catch {
+      setItems((prev) =>
+        [...prev, target].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        ),
+      );
+      setPageError('Ağ hatası — QR silinemedi.');
+    } finally {
+      setDeleting(false);
+      setPendingDelete(null);
+    }
+  }, [pendingDelete]);
 
   const downloadOne = async (item: QrHistoryItem, format: 'svg' | 'png' = 'png') => {
     const params = new URLSearchParams({ format });
@@ -363,9 +421,18 @@ function AdminQrContent() {
 
       {!loading && cardItems.length > 0 && view === 'grid' && (
         <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {cardItems.map((c) => (
-            <QRCard key={c.id} item={c} svg={svgs[c.id]} locale="tr" />
-          ))}
+          {cardItems.map((c) => {
+            const raw = filteredItems.find((it) => it.id === c.id);
+            return (
+              <QRCard
+                key={c.id}
+                item={c}
+                svg={svgs[c.id]}
+                locale="tr"
+                onDelete={raw ? () => requestDelete(raw) : undefined}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -426,9 +493,20 @@ function AdminQrContent() {
                             type="button"
                             onClick={() => downloadOne(rawItem, 'png')}
                             aria-label="PNG indir"
+                            title="PNG indir"
                             className="bz-btn-icon"
                           >
-                            <MoreHorizontal size={14} />
+                            <Download size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => requestDelete(rawItem)}
+                            aria-label="QR'ı sil"
+                            title="Sil"
+                            className="bz-btn-icon"
+                            style={{ color: '#DC2626' }}
+                          >
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </td>
@@ -452,6 +530,20 @@ function AdminQrContent() {
           onCreated={handleCreated}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        variant="danger"
+        title="Bu QR kaydını sil"
+        body="QR sadece panel listenizden kaldırılır. Daha önce basılan QR sticker'ları çalışmaya devam eder; aynı masa veya platform için yeni bir QR oluşturmak isterseniz tekrar üretebilirsiniz."
+        confirmLabel="Sil"
+        cancelLabel="Vazgeç"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          if (!deleting) setPendingDelete(null);
+        }}
+      />
     </div>
   );
 }
