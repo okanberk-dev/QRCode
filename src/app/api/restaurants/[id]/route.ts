@@ -135,6 +135,23 @@ export async function PUT(
       return ApiErrors.notFound('İşletme bulunamadı');
     }
 
+    // Orphan-default cleanup (CLAUDE.md §19.2). If this PUT clears the URL
+    // backing the stored defaultRedirectPlatform — and the caller didn't
+    // already set defaultRedirectPlatform explicitly — drop the default so
+    // /r/[slug] doesn't silently fall back to Google with the owner none
+    // the wiser. Owner explicit value always wins over derived cleanup.
+    const platformUrlInBody: Record<string, unknown> = {
+      google: googleReviewUrl,
+      yemeksepeti: yemekSepetiUrl,
+      getir: getirYemekUrl,
+      trendyol_go: trendyolYemekUrl,
+    };
+    const orphanedDefault =
+      defaultRedirectPlatform === undefined &&
+      !!currentRest.defaultRedirectPlatform &&
+      platformUrlInBody[currentRest.defaultRedirectPlatform] !== undefined &&
+      !platformUrlInBody[currentRest.defaultRedirectPlatform];
+
     let ownerUserId: string | null | undefined = undefined;
     if (userId !== undefined) {
       if (actor.role !== 'superadmin') {
@@ -187,6 +204,7 @@ export async function PUT(
         ...(defaultRedirectPlatform !== undefined && {
           defaultRedirectPlatform: defaultRedirectPlatform || null,
         }),
+        ...(orphanedDefault && { defaultRedirectPlatform: null }),
         ...(ownerUserId !== undefined && { userId: ownerUserId }),
       },
     });
