@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Grid3x3, List as ListIcon, Loader2, MoreHorizontal, Plus, QrCode } from 'lucide-react';
 import {

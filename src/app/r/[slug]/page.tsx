@@ -5,6 +5,7 @@ import { useParams, useSearchParams, notFound } from 'next/navigation';
 import { Star, ArrowRight, Check, X, ShieldCheck, Mail, Loader2 } from 'lucide-react';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
+import { buildGoogleReviewUrl } from '@/lib/google-review';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
 import RecaptchaNotice from '@/components/RecaptchaNotice';
 import { PlatformChip } from '@/components/ui';
@@ -122,11 +123,9 @@ function ReviewContent() {
   if (loading) return <DarkLoader />;
   if (isNotFound || !restaurant) return notFound();
 
-  const googleUrl = restaurant.googlePlaceId
-    ? restaurant.googlePlaceId.startsWith('http')
-      ? restaurant.googlePlaceId
-      : `https://search.google.com/local/writereview?placeid=${restaurant.googlePlaceId}`
-    : null;
+  // Accepts: raw Place ID (ChIJ…), g.page/r/… link, search.google.com
+  // writereview link, or a /maps/place/ URL — see buildGoogleReviewUrl.
+  const googleUrl = buildGoogleReviewUrl(restaurant.googlePlaceId);
 
   const platformUrls: Record<string, string | null> = {
     google: googleUrl,

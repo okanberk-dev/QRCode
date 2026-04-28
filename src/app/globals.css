@@ -69,7 +69,13 @@
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Mobile bottom-nav reserved height — used by sticky overlays
+  /* Reserved bottom space for the owner dashboard's mobile bottom nav
+     (`lg:hidden` in UserDashboardShell, ~76px tall + iOS safe area).
+     Used by fixed-position toasts/snackbars in /dashboard/* routes so
+     they don't render underneath the nav. Reset to 0 at lg+ where the
+     nav is hidden and the desktop sidebar takes over. */
+  --dash-bottom-nav-h: calc(76px + env(safe-area-inset-bottom, 0px));
+  /* Marketing MobileBottomNav reserved height — used by sticky overlays
      (StickyCtaBar, SocialProofToast) so they stack above the bar
      without manually duplicating the env() math. Reset to 0 at md+
      where MobileBottomNav is hidden. */
@@ -79,6 +85,12 @@
 @media (min-width: 768px) {
   :root {
     --mobile-nav-h: 0px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --dash-bottom-nav-h: 0px;
   }
 }
 

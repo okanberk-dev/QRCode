@@ -111,35 +111,13 @@ export async function GET(
     }
 
 
-    // Track generation — non-fatal if the qr_generations table hasn't been
-    // provisioned yet (e.g. first deploy before `prisma db push`).
-    try {
-      await prisma.$transaction(async (tx) => {
-        await tx.qrGeneration.create({
-          data: {
-            restaurantId: restaurant.id,
-            qrUrl,
-            tableNumber: table || null,
-            platform: sanitizedPlatform || null,
-          },
-        });
-
-        const overflow = await tx.qrGeneration.findMany({
-          where: { restaurantId: restaurant.id },
-          orderBy: { createdAt: 'desc' },
-          skip: 50,
-          select: { id: true },
-        });
-
-        if (overflow.length > 0) {
-          await tx.qrGeneration.deleteMany({
-            where: { id: { in: overflow.map((item) => item.id) } },
-          });
-        }
-      });
-    } catch (trackErr) {
-      console.warn('[QR] Generation tracking skipped (table may not exist):', (trackErr as Error).message);
-    }
+    // Single-QR concept (2026-04 user request). Each account now has one
+    // canonical QR per restaurant, derived from `restaurant.slug` at render
+    // time. We no longer write a fresh QrGeneration row on every render —
+    // the table is read-only from here on. Existing rows are preserved
+    // (intentional "don't break existing QRs"); the history list endpoint
+    // (`/api/restaurants/[id]/qr/history`) still returns them, but the
+    // owner UI has been simplified to show only the canonical QR.
 
     const qrOptions = {
       width,

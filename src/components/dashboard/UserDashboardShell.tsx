@@ -3,10 +3,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
+import NotificationBell from '@/components/notifications/NotificationBell';
+import CommandPalette from '@/components/dashboard/CommandPalette';
 
 interface DashboardUser {
   name: string | null;
@@ -49,6 +51,7 @@ function useTopBar(locale: Locale, pathname: string | null) {
   if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
   if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / KONUMLAR' : 'PANEL / LOCATIONS', title: isTr ? 'Konumlar' : 'Locations' };
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
+  if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / ENTEGRASYONLAR' : 'PANEL / INTEGRATIONS', title: isTr ? 'Entegrasyonlar' : 'Integrations' };
   if (rest.startsWith('/leads')) return { breadcrumb: isTr ? 'PANEL / MÜŞTERİLER' : 'PANEL / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
   if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORMLAR' : 'PANEL / PLATFORMS', title: isTr ? 'Platform bağlantıları' : 'Review platforms' };
   if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
@@ -102,6 +105,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   // Collapsible group state — persists across navigations via localStorage.
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   useEffect(() => {
@@ -133,6 +137,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const trialDaysLeft = getDaysLeft(user.trialEndsAt);
   const topBar = useTopBar(locale, pathname);
 
+  // Cmd/Ctrl+K toggles the command palette anywhere in the dashboard.
+  // We listen on window since the user may not have a focused input.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   const copy = useMemo(() => {
     const isTr = locale === 'tr';
     return {
@@ -142,6 +159,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       restaurants: isTr ? 'İşletmeler' : 'Locations',
       qr: 'QR',
       menu: isTr ? 'Menü' : 'Menu',
+      integrations: isTr ? 'Entegrasyonlar' : 'Integrations',
       guide: isTr ? 'Kılavuz' : 'Guide',
       profile: isTr ? 'Ayarlar' : 'Settings',
       logout: isTr ? 'Çıkış' : 'Logout',
@@ -171,10 +189,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const feedbackBadge =
     workspace?.feedbackCount && workspace.feedbackCount > 0 ? workspace.feedbackCount : undefined;
 
-  // Flat 10-item nav (Pulse 2026-04 design ownerNav 1:1, shell.jsx line 12-23).
+  // Flat 12-item nav (Pulse 2026-04 design ownerNav 1:1, shell.jsx line 12-23).
   // Previously grouped Setup/Insight/Info — flattened for design parity.
   // `restaurants` (multi-location yönetim) design'da explicit yok; flat list
-  // sonuna ek item olarak korunur (11 toplam).
+  // sonuna ek item olarak korunur. `integrations` (PR #156) Pulse-after entry.
   const navItems: Nav[] = [
     { type: 'item', href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
     { type: 'item', href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks, badge: feedbackBadge },
@@ -183,6 +201,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { type: 'item', href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { type: 'item', href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
     { type: 'item', href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
+    { type: 'item', href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
     { type: 'item', href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
     { type: 'item', href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
     { type: 'item', href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
@@ -200,6 +219,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
+    { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
     { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
     { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
@@ -452,6 +472,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 <Crown size={10} /> {trialDaysLeft}g
               </span>
             )}
+            <NotificationBell
+              locale={locale}
+              announcements={announcements}
+              panelBase={`/${locale}/dashboard`}
+              reviewsHref={`/${locale}/dashboard/feedbacks`}
+              notificationsSettingsHref="/admin/notifications"
+            />
             <button
               onClick={() => setDrawerOpen((v) => !v)}
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E] bz-h-tight"
@@ -463,16 +490,14 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
         {/* Desktop top bar — always render (Pulse 2026-04 shell.jsx 1:1
             design); breadcrumb + title slot opsiyonel, search/bell/avatar
-            sabit chrome. Step 12: conditional `{topBar && ...}` kaldırıldı,
-            page-level <PageHeader> primitive zaten her sayfada başlık taşır. */}
+            sabit chrome. Page-level <PageHeader> primitive zaten her sayfada
+            başlık taşır; topBar slot SSR breadcrumb için. */}
         <div className="hidden lg:flex items-center justify-between gap-4 border-b border-[#EDEDED] bg-white px-7 py-3.5">
           <div className="min-w-0">
             {topBar ? (
               <>
                 <p className="pulse-eyebrow text-[#737373]">{topBar.breadcrumb}</p>
-                <h1
-                  className="mt-1 text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-none truncate bz-h-tight"
-                >
+                <h1 className="mt-1 text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-none truncate bz-h-tight">
                   {topBar.title}
                 </h1>
               </>
@@ -481,26 +506,33 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             )}
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
-            <div
-              className="hidden xl:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#737373] cursor-not-allowed select-none"
-              aria-hidden
-              title={locale === 'tr' ? 'Yakında: komut paleti' : 'Coming soon: command palette'}
+            <button
+              type="button"
+              onClick={() => setPaletteOpen(true)}
+              aria-label={locale === 'tr' ? 'Arama paletini aç' : 'Open search palette'}
+              title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
+              className="hidden xl:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#737373] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
             >
               <Search size={12} strokeWidth={2} />
-              <span>{locale === 'tr' ? 'Yorum, konum, ekip ara…' : 'Search reviews, locations, team…'}</span>
-              <span
-                className="ml-1 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252] bz-mono"
-              >
+              <span>{locale === 'tr' ? 'Yorum, konum, sayfa ara…' : 'Search reviews, locations, pages…'}</span>
+              <span className="ml-1 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252] bz-mono">
                 ⌘K
               </span>
-            </div>
-            <Link
-              href={`/${locale}/dashboard/announcements`}
-              aria-label={copy.notifications}
-              className="bz-btn-icon"
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaletteOpen(true)}
+              aria-label={locale === 'tr' ? 'Aramayı aç' : 'Open search'}
+              title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
+              className="xl:hidden flex h-9 w-9 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
             >
-              <Bell size={16} strokeWidth={2} />
-            </Link>
+              <Search size={14} strokeWidth={2} />
+            </button>
+            <NotificationBell
+              locale={locale}
+              announcements={announcements}
+              panelBase={`/${locale}/dashboard`}
+            />
             <Link
               href={`/${locale}/dashboard/profile`}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors bz-h-tight"
@@ -658,6 +690,28 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           </div>
         </div>
       )}
+
+      {/* Cmd/Ctrl+K command palette — searchable launcher across pages,
+          locations, and reviews. The list of `navItems` here mirrors the
+          sidebar nav so the user can jump to any tab without scrolling. */}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        locale={locale}
+        base={`/${locale}/dashboard`}
+        navItems={[
+          { href: `/${locale}/dashboard`, label: copy.dashboard, keywords: ['panel', 'dashboard', 'genel'] },
+          { href: `/${locale}/dashboard/feedbacks`, label: copy.feedbacks, keywords: ['yorum', 'review', 'feedback', 'inbox'] },
+          { href: `/${locale}/dashboard/qr`, label: copy.qr, keywords: ['qr', 'kod', 'code'] },
+          { href: `/${locale}/dashboard/analytics`, label: copy.analytics, keywords: ['analitik', 'rapor', 'analytics', 'report'] },
+          { href: `/${locale}/dashboard/restaurants`, label: copy.restaurants, keywords: ['işletme', 'konum', 'lokasyon', 'restoran', 'location'] },
+          { href: `/${locale}/dashboard/menu`, label: copy.menu, keywords: ['menü', 'menu', 'ürün', 'item'] },
+          { href: `/${locale}/dashboard/integrations`, label: copy.integrations, keywords: ['entegrasyon', 'integration', 'google', 'yemeksepeti', 'getir', 'trendyol', 'platform', 'url'] },
+          { href: `/${locale}/dashboard/leads`, label: copy.leads, keywords: ['müşteri', 'customer', 'lead'] },
+          { href: `/${locale}/dashboard/guide`, label: copy.guide, keywords: ['kılavuz', 'guide', 'help', 'yardım'] },
+          { href: `/${locale}/dashboard/profile`, label: copy.profile, keywords: ['ayar', 'settings', 'profil', 'profile', 'hesap', 'account'] },
+        ]}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileNav from '@/components/admin/AdminMobileNav';
+import AdminTopbar from '@/components/admin/AdminTopbar';
 import AnnouncementBanner, { type DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import { isAdminRole, verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -88,9 +89,15 @@ export default async function AdminLayout({
         <main
           id="panel-main-content"
           tabIndex={-1}
-          className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-28 lg:pb-0 pt-2 sm:pt-6'}`}
+          className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-28 lg:pb-0'}`}
         >
-          <div className={showSidebar ? "max-w-7xl mx-auto w-full" : "w-full max-w-full"}>
+          {showSidebar && (
+            <AdminTopbar
+              announcements={announcements}
+              displayName={typeof payload?.username === 'string' ? payload.username : null}
+            />
+          )}
+          <div className={showSidebar ? "max-w-7xl mx-auto w-full pt-2 sm:pt-6" : "w-full max-w-full"}>
             {showSidebar && announcements.length > 0 && (
               <AnnouncementBanner announcements={announcements} locale={adminLocale} />
             )}
