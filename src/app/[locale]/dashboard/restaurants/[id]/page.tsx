@@ -8,6 +8,7 @@ import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import { AlertBanner, Badge, ConfirmDialog, PageHeader } from '@/components/ui';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
+import { getSectorPlatforms } from '@/lib/sector-platforms';
 
 export default function DashboardRestaurantDetailPage() {
   const params = useParams();
@@ -178,36 +179,41 @@ export default function DashboardRestaurantDetailPage() {
 
   const missing = locale === 'tr' ? 'Belirtilmemiş' : 'Not specified';
   const publicUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${formData.slug}`;
+  // Sector → platform whitelist. Hides input groups that don't make sense for
+  // the owner's vertical. Live-recomputed on every render so changing the
+  // category dropdown immediately reflects in the form. Hidden inputs keep
+  // their value in state — refresh-after-toggle restores them.
+  const allowedPlatforms = getSectorPlatforms(formData.category);
   const integrationRows = [
     {
-      id: 'google',
+      id: 'google' as const,
       label: 'Google',
       value: formData.googlePlaceId,
       logo: <PlatformLogo id="google" size={18} rounded={5} />,
       help: <PlatformUrlHelp platform="google" />,
     },
     {
-      id: 'getir',
+      id: 'getir' as const,
       label: 'Getir',
       value: formData.getirYemekUrl,
       logo: <PlatformLogo id="getir-yemek" size={18} rounded={5} />,
       help: <PlatformUrlHelp platform="getir" />,
     },
     {
-      id: 'yemeksepeti',
+      id: 'yemeksepeti' as const,
       label: 'Yemeksepeti',
       value: formData.yemekSepetiUrl,
       logo: <PlatformLogo id="yemeksepeti" size={18} rounded={5} />,
       help: <PlatformUrlHelp platform="yemeksepeti" />,
     },
     {
-      id: 'trendyol',
+      id: 'trendyol' as const,
       label: 'Trendyol GO',
       value: formData.trendyolYemekUrl,
       logo: <PlatformLogo id="trendyol-go" size={18} rounded={5} />,
       help: <PlatformUrlHelp platform="trendyol" />,
     },
-  ];
+  ].filter((row) => allowedPlatforms.has(row.id));
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
@@ -314,7 +320,7 @@ export default function DashboardRestaurantDetailPage() {
               </h2>
             </div>
             <Badge kind={integrationRows.some((row) => row.value.trim()) ? 'ok' : 'off'}>
-              {integrationRows.filter((row) => row.value.trim()).length}/4
+              {integrationRows.filter((row) => row.value.trim()).length}/{integrationRows.length}
             </Badge>
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -467,64 +473,72 @@ export default function DashboardRestaurantDetailPage() {
               />
             </label>
 
-            <label className="space-y-2">
-              <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
-                <PlatformLogo id="google" size={16} rounded={4} />
-                Google Place ID / Link
-                <PlatformUrlHelp platform="google" />
-              </span>
-              <input
-                type="text"
-                value={formData.googlePlaceId}
-                onChange={(event) => setFormData((prev) => ({ ...prev, googlePlaceId: event.target.value }))}
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
-              />
-            </label>
+            {allowedPlatforms.has('google') && (
+              <label className="space-y-2">
+                <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                  <PlatformLogo id="google" size={16} rounded={4} />
+                  Google Place ID / Link
+                  <PlatformUrlHelp platform="google" />
+                </span>
+                <input
+                  type="text"
+                  value={formData.googlePlaceId}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, googlePlaceId: event.target.value }))}
+                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
+                />
+              </label>
+            )}
 
-            <label className="space-y-2 sm:col-span-2">
-              <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
-                <PlatformLogo id="getir-yemek" size={16} rounded={4} />
-                Getir Yemek URL
-                <PlatformUrlHelp platform="getir" />
-              </span>
-              <input
-                type="url"
-                value={formData.getirYemekUrl}
-                onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
-                placeholder="https://getir.com/yemek/..."
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#5D3EBD]"
-              />
-            </label>
+            {allowedPlatforms.has('getir') && (
+              <label className="space-y-2 sm:col-span-2">
+                <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                  <PlatformLogo id="getir-yemek" size={16} rounded={4} />
+                  Getir Yemek URL
+                  <PlatformUrlHelp platform="getir" />
+                </span>
+                <input
+                  type="url"
+                  value={formData.getirYemekUrl}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
+                  placeholder="https://getir.com/yemek/..."
+                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#5D3EBD]"
+                />
+              </label>
+            )}
 
-            <label className="space-y-2">
-              <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
-                <PlatformLogo id="yemeksepeti" size={16} rounded={4} />
-                Yemek Sepeti URL
-                <PlatformUrlHelp platform="yemeksepeti" />
-              </span>
-              <input
-                type="url"
-                value={formData.yemekSepetiUrl}
-                onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
-                placeholder="https://www.yemeksepeti.com/..."
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#FA0050]"
-              />
-            </label>
+            {allowedPlatforms.has('yemeksepeti') && (
+              <label className="space-y-2">
+                <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                  <PlatformLogo id="yemeksepeti" size={16} rounded={4} />
+                  Yemek Sepeti URL
+                  <PlatformUrlHelp platform="yemeksepeti" />
+                </span>
+                <input
+                  type="url"
+                  value={formData.yemekSepetiUrl}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
+                  placeholder="https://www.yemeksepeti.com/..."
+                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#FA0050]"
+                />
+              </label>
+            )}
 
-            <label className="space-y-2">
-              <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
-                <PlatformLogo id="trendyol-go" size={16} rounded={4} />
-                Trendyol Yemek URL
-                <PlatformUrlHelp platform="trendyol" />
-              </span>
-              <input
-                type="url"
-                value={formData.trendyolYemekUrl}
-                onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
-                placeholder="https://www.trendyol.com/..."
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#F27A1A]"
-              />
-            </label>
+            {allowedPlatforms.has('trendyol') && (
+              <label className="space-y-2">
+                <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                  <PlatformLogo id="trendyol-go" size={16} rounded={4} />
+                  Trendyol Yemek URL
+                  <PlatformUrlHelp platform="trendyol" />
+                </span>
+                <input
+                  type="url"
+                  value={formData.trendyolYemekUrl}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
+                  placeholder="https://www.trendyol.com/..."
+                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#F27A1A]"
+                />
+              </label>
+            )}
           </div>
         </div>
 

@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
+import { getSectorPlatforms } from '@/lib/sector-platforms';
 
 interface RestaurantRow {
   id: string;
@@ -160,6 +161,13 @@ export default function DashboardIntegrationsPage() {
   const active = useMemo(
     () => restaurants.find((r) => r.id === activeId) || null,
     [restaurants, activeId],
+  );
+  // Sector → platform whitelist for the integration form. Live on the
+  // active restaurant's category — switching restaurant in the dropdown
+  // immediately re-filters the visible inputs.
+  const allowedPlatforms = useMemo(
+    () => getSectorPlatforms(active?.category),
+    [active],
   );
   const draft = drafts[activeId] ?? EMPTY_DRAFT;
   const original = active ? toDraft(active) : EMPTY_DRAFT;
@@ -311,72 +319,80 @@ export default function DashboardIntegrationsPage() {
               {/* Google — accepts either Place ID or full review URL.
                   Public review page (`/r/[slug]`) reads only googlePlaceId
                   and uses startsWith('http') to detect URL vs raw ID. */}
-              <PlatformField
-                logo={<PlatformLogo id="google" size={20} rounded={5} />}
-                label={copy.labels.google}
-                hint={copy.hint.google}
-                accent="#4285F4"
-              >
-                <input
-                  type="text"
-                  value={draft.googlePlaceId}
-                  onChange={(e) => setField('googlePlaceId', e.target.value)}
-                  placeholder="ChIJ… · maps.google.com/… · g.page/r/…"
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none focus:border-[#4285F4] transition-colors"
-                  aria-label="Google Place ID or Maps link"
-                />
-              </PlatformField>
+              {allowedPlatforms.has('google') && (
+                <PlatformField
+                  logo={<PlatformLogo id="google" size={20} rounded={5} />}
+                  label={copy.labels.google}
+                  hint={copy.hint.google}
+                  accent="#4285F4"
+                >
+                  <input
+                    type="text"
+                    value={draft.googlePlaceId}
+                    onChange={(e) => setField('googlePlaceId', e.target.value)}
+                    placeholder="ChIJ… · maps.google.com/… · g.page/r/…"
+                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none focus:border-[#4285F4] transition-colors"
+                    aria-label="Google Place ID or Maps link"
+                  />
+                </PlatformField>
+              )}
 
               {/* Yemeksepeti */}
-              <PlatformField
-                logo={<PlatformLogo id="yemeksepeti" size={20} rounded={5} />}
-                label={copy.labels.yemeksepeti}
-                hint={copy.hint.yemeksepeti}
-                accent="#FA0050"
-              >
-                <input
-                  type="url"
-                  inputMode="url"
-                  value={draft.yemekSepetiUrl}
-                  onChange={(e) => setField('yemekSepetiUrl', e.target.value)}
-                  placeholder="https://www.yemeksepeti.com/..."
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none focus:border-[#FA0050] transition-colors"
-                />
-              </PlatformField>
+              {allowedPlatforms.has('yemeksepeti') && (
+                <PlatformField
+                  logo={<PlatformLogo id="yemeksepeti" size={20} rounded={5} />}
+                  label={copy.labels.yemeksepeti}
+                  hint={copy.hint.yemeksepeti}
+                  accent="#FA0050"
+                >
+                  <input
+                    type="url"
+                    inputMode="url"
+                    value={draft.yemekSepetiUrl}
+                    onChange={(e) => setField('yemekSepetiUrl', e.target.value)}
+                    placeholder="https://www.yemeksepeti.com/..."
+                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none focus:border-[#FA0050] transition-colors"
+                  />
+                </PlatformField>
+              )}
 
               {/* Getir */}
-              <PlatformField
-                logo={<PlatformLogo id="getir-yemek" size={20} rounded={5} />}
-                label={copy.labels.getir}
-                hint={copy.hint.getir}
-                accent="#5D3EBC"
-              >
-                <input
-                  type="url"
-                  inputMode="url"
-                  value={draft.getirYemekUrl}
-                  onChange={(e) => setField('getirYemekUrl', e.target.value)}
-                  placeholder="https://getir.com/yemek/..."
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none focus:border-[#5D3EBC] transition-colors"
-                />
-              </PlatformField>
+              {allowedPlatforms.has('getir') && (
+                <PlatformField
+                  logo={<PlatformLogo id="getir-yemek" size={20} rounded={5} />}
+                  label={copy.labels.getir}
+                  hint={copy.hint.getir}
+                  accent="#5D3EBC"
+                >
+                  <input
+                    type="url"
+                    inputMode="url"
+                    value={draft.getirYemekUrl}
+                    onChange={(e) => setField('getirYemekUrl', e.target.value)}
+                    placeholder="https://getir.com/yemek/..."
+                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none focus:border-[#5D3EBC] transition-colors"
+                  />
+                </PlatformField>
+              )}
 
               {/* Trendyol */}
-              <PlatformField
-                logo={<PlatformLogo id="trendyol-go" size={20} rounded={5} />}
-                label={copy.labels.trendyol}
-                hint={copy.hint.trendyol}
-                accent="#F27A1A"
-              >
-                <input
-                  type="url"
-                  inputMode="url"
-                  value={draft.trendyolYemekUrl}
-                  onChange={(e) => setField('trendyolYemekUrl', e.target.value)}
-                  placeholder="https://www.trendyol.com/..."
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none focus:border-[#F27A1A] transition-colors"
-                />
-              </PlatformField>
+              {allowedPlatforms.has('trendyol') && (
+                <PlatformField
+                  logo={<PlatformLogo id="trendyol-go" size={20} rounded={5} />}
+                  label={copy.labels.trendyol}
+                  hint={copy.hint.trendyol}
+                  accent="#F27A1A"
+                >
+                  <input
+                    type="url"
+                    inputMode="url"
+                    value={draft.trendyolYemekUrl}
+                    onChange={(e) => setField('trendyolYemekUrl', e.target.value)}
+                    placeholder="https://www.trendyol.com/..."
+                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none focus:border-[#F27A1A] transition-colors"
+                  />
+                </PlatformField>
+              )}
 
               {/* Save bar */}
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-3 border-t border-[#EDEDED]">

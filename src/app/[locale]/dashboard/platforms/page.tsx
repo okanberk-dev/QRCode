@@ -16,6 +16,7 @@ import {
 } from '@/components/ui';
 import DefaultRedirectPicker from '@/components/dashboard/DefaultRedirectPicker';
 import PlatformEnableToggle from '@/components/dashboard/PlatformEnableToggle';
+import { getSectorPlatforms } from '@/lib/sector-platforms';
 
 export async function generateMetadata({
   params,
@@ -70,7 +71,13 @@ export default async function PlatformsPage({
     select: {
       id: true,
       name: true,
+      // Restaurant.category drives the sector → platform whitelist below.
+      category: true,
       googleReviewUrl: true,
+      // Legacy Google data may live only in googlePlaceId (older detail
+      // forms persisted there). Read both and fall back so the Google card
+      // doesn't appear passive when only the Place ID is set.
+      googlePlaceId: true,
       yemekSepetiUrl: true,
       getirYemekUrl: true,
       trendyolYemekUrl: true,
@@ -118,6 +125,7 @@ export default async function PlatformsPage({
   const firstUrl = (
     key:
       | 'googleReviewUrl'
+      | 'googlePlaceId'
       | 'yemekSepetiUrl'
       | 'getirYemekUrl'
       | 'trendyolYemekUrl'
@@ -127,6 +135,12 @@ export default async function PlatformsPage({
     const found = restaurants.find((r) => Boolean(r[key]));
     return (found?.[key] as string | null | undefined) ?? null;
   };
+
+  // Google fallback: the platforms page reads `googleReviewUrl` historically,
+  // but the older detail form persisted to `googlePlaceId` only. Fall back so
+  // legacy rows surface as "connected" — public review redirect already
+  // handles either column.
+  const googleUrl = firstUrl('googleReviewUrl') || firstUrl('googlePlaceId');
 
   // Phase 12.6 — Default redirect read from Restaurant.defaultRedirectPlatform
   // (nullable; NULL = Google fallback for back-compat). The picker mutates
@@ -158,22 +172,26 @@ export default async function PlatformsPage({
   ): boolean => {
     if (!firstRestaurant) return true;
     const v = (firstRestaurant as Record<string, unknown>)[key];
-    return v === undefined ? true : Boolean(v);
+    // Treat both `undefined` (column absent on this Prisma client) and `null`
+    // (legacy rows backfilled without the boolean default) as the schema
+    // default `true`. Without this, a NULL flag silently disables the toggle
+    // and the card appears passive.
+    return v === undefined || v === null ? true : Boolean(v);
   };
 
   const platforms: PlatformRow[] = [
     {
       id: 'google',
       schemaKey: 'google',
-      url: firstUrl('googleReviewUrl'),
-      hasUrl: Boolean(firstUrl('googleReviewUrl')),
+      url: googleUrl,
+      hasUrl: Boolean(googleUrl),
       enabledFlag: flagOf('googleEnabled'),
-      enabled: Boolean(firstUrl('googleReviewUrl')) && flagOf('googleEnabled'),
+      enabled: Boolean(googleUrl) && flagOf('googleEnabled'),
       isDefault:
         storedDefaultUiKey === 'google' ||
         // Legacy back-compat: when no explicit default has been picked,
         // Google with a configured URL is the implicit default.
-        (storedDefaultUiKey === null && Boolean(firstUrl('googleReviewUrl'))),
+        (storedDefaultUiKey === null && Boolean(googleUrl)),
       monthlyClicks: platformClicks('google'),
     },
     {
@@ -228,7 +246,13 @@ export default async function PlatformsPage({
     },
   ];
 
-  const enabledPlatformIds = platforms.filter((p) => p.enabled).map((p) => p.id);
+  // Sector → platform whitelist. Hides cards that don't make sense for the
+  // owner's vertical (e.g. Airbnb on a restaurant, Yemeksepeti on a clinic).
+  // Source of truth: src/lib/sector-platforms.ts.
+  const allowedPlatforms = getSectorPlatforms(firstRestaurant?.category);
+  const visiblePlatforms = platforms.filter((p) => allowedPlatforms.has(p.id));
+
+  const enabledPlatformIds = visiblePlatforms.filter((p) => p.enabled).map((p) => p.id);
 
   const editLink = firstRestaurant
     ? `/${locale}/dashboard/restaurants/${firstRestaurant.id}`
@@ -258,7 +282,7 @@ export default async function PlatformsPage({
           Prominent display of the active default platform; md+ uses the
           unified DefaultRedirectPicker card below. */}
       {(() => {
-        const defaultPlatform = platforms.find((p) => p.isDefault) ?? null;
+        const defaultPlatform = visiblePlatforms.find((p) => p.isDefault) ?? null;
         if (!defaultPlatform || !firstRestaurant) return null;
         return (
           <div
@@ -360,7 +384,7 @@ export default async function PlatformsPage({
 
       {/* Platform list */}
       <div className="flex flex-col gap-2.5">
-        {platforms.map((p) => (
+        {visiblePlatforms.map((p) => (
           <div
             key={p.id}
             className="bz-card p-5 flex flex-col md:flex-row md:items-center gap-4"

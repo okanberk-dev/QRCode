@@ -7,6 +7,7 @@ import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import { AlertBanner, useConfirmDialog } from '@/components/ui';
+import { getSectorPlatforms } from '@/lib/sector-platforms';
 
 interface Owner {
   id: string;
@@ -237,6 +238,14 @@ export default function RestaurantDetailPage() {
   const menuUrl = `${origin}/menu/${formData.slug}`;
   const qrUrl = `${origin}/admin/qr?restaurant=${id}`;
   const ownerLabel = meta?.user?.name || meta?.user?.email || 'Sahip atanmamış';
+  // Sector → platform whitelist; hides input groups irrelevant for the
+  // restaurant's vertical. Live on formData.category — admin can change the
+  // category dropdown to surface hidden platforms when needed.
+  const allowedPlatforms = getSectorPlatforms(formData.category);
+  const showDeliverySection =
+    allowedPlatforms.has('getir') ||
+    allowedPlatforms.has('yemeksepeti') ||
+    allowedPlatforms.has('trendyol');
 
   return (
     <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6 md:p-10">
@@ -599,27 +608,30 @@ export default function RestaurantDetailPage() {
               </p>
             </div>
 
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="pulse-eyebrow text-[#737373]">Google Place ID veya Harita Linki</label>
-                <PlatformUrlHelp platform="google" />
+            {allowedPlatforms.has('google') && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="pulse-eyebrow text-[#737373]">Google Place ID veya Harita Linki</label>
+                  <PlatformUrlHelp platform="google" />
+                </div>
+                <input
+                  type="text"
+                  value={formData.googlePlaceId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, googlePlaceId: e.target.value }))}
+                  placeholder="ChIJ... veya https://maps.app.goo.gl/..."
+                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 font-mono text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                />
+                <p className="text-[12px] leading-relaxed text-[#737373]">
+                  Mekan kimliğini ya da Google Haritalar yorum linkini direkt ekleyebilirsiniz. Olumlu geri bildirimler buraya yönlendirilir.
+                </p>
               </div>
-              <input
-                type="text"
-                value={formData.googlePlaceId}
-                onChange={(e) => setFormData(prev => ({ ...prev, googlePlaceId: e.target.value }))}
-                placeholder="ChIJ... veya https://maps.app.goo.gl/..."
-                className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 font-mono text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              />
-              <p className="text-[12px] leading-relaxed text-[#737373]">
-                Mekan kimliğini ya da Google Haritalar yorum linkini direkt ekleyebilirsiniz. Olumlu geri bildirimler buraya yönlendirilir.
-              </p>
-            </div>
+            )}
           </div>
         </section>
 
         {/* Delivery Platforms */}
+        {showDeliverySection && (
         <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
           <div className="flex items-center gap-3 border-b border-[#EDEDED] px-6 py-5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
@@ -631,58 +643,65 @@ export default function RestaurantDetailPage() {
             </div>
           </div>
           <div className="space-y-4 p-6">
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
-                  <span className="inline-block h-2 w-2 rounded-full bg-[#5D3EBC]" aria-hidden />
-                  Getir Yemek URL
-                </label>
-                <PlatformUrlHelp platform="getir" />
+            {allowedPlatforms.has('getir') && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                    <span className="inline-block h-2 w-2 rounded-full bg-[#5D3EBC]" aria-hidden />
+                    Getir Yemek URL
+                  </label>
+                  <PlatformUrlHelp platform="getir" />
+                </div>
+                <input
+                  type="url"
+                  value={formData.getirYemekUrl}
+                  onChange={(e) => setFormData(prev => ({ ...prev, getirYemekUrl: e.target.value }))}
+                  placeholder="https://getir.com/yemek/..."
+                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#5D3EBC] focus:ring-2 focus:ring-[#5D3EBC]/30"
+                />
               </div>
-              <input
-                type="url"
-                value={formData.getirYemekUrl}
-                onChange={(e) => setFormData(prev => ({ ...prev, getirYemekUrl: e.target.value }))}
-                placeholder="https://getir.com/yemek/..."
-                className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#5D3EBC] focus:ring-2 focus:ring-[#5D3EBC]/30"
-              />
-            </div>
+            )}
 
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
-                  <span className="inline-block h-2 w-2 rounded-full bg-[#FA0050]" aria-hidden />
-                  Yemek Sepeti URL
-                </label>
-                <PlatformUrlHelp platform="yemeksepeti" />
+            {allowedPlatforms.has('yemeksepeti') && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                    <span className="inline-block h-2 w-2 rounded-full bg-[#FA0050]" aria-hidden />
+                    Yemek Sepeti URL
+                  </label>
+                  <PlatformUrlHelp platform="yemeksepeti" />
+                </div>
+                <input
+                  type="url"
+                  value={formData.yemekSepetiUrl}
+                  onChange={(e) => setFormData(prev => ({ ...prev, yemekSepetiUrl: e.target.value }))}
+                  placeholder="https://www.yemeksepeti.com/..."
+                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#FA0050] focus:ring-2 focus:ring-[#FA0050]/30"
+                />
               </div>
-              <input
-                type="url"
-                value={formData.yemekSepetiUrl}
-                onChange={(e) => setFormData(prev => ({ ...prev, yemekSepetiUrl: e.target.value }))}
-                placeholder="https://www.yemeksepeti.com/..."
-                className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#FA0050] focus:ring-2 focus:ring-[#FA0050]/30"
-              />
-            </div>
+            )}
 
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
-                  <span className="inline-block h-2 w-2 rounded-full bg-[#F27A1A]" aria-hidden />
-                  Trendyol Yemek URL
-                </label>
-                <PlatformUrlHelp platform="trendyol" />
+            {allowedPlatforms.has('trendyol') && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                    <span className="inline-block h-2 w-2 rounded-full bg-[#F27A1A]" aria-hidden />
+                    Trendyol Yemek URL
+                  </label>
+                  <PlatformUrlHelp platform="trendyol" />
+                </div>
+                <input
+                  type="url"
+                  value={formData.trendyolYemekUrl}
+                  onChange={(e) => setFormData(prev => ({ ...prev, trendyolYemekUrl: e.target.value }))}
+                  placeholder="https://www.trendyol.com/..."
+                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#F27A1A] focus:ring-2 focus:ring-[#F27A1A]/30"
+                />
               </div>
-              <input
-                type="url"
-                value={formData.trendyolYemekUrl}
-                onChange={(e) => setFormData(prev => ({ ...prev, trendyolYemekUrl: e.target.value }))}
-                placeholder="https://www.trendyol.com/..."
-                className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#F27A1A] focus:ring-2 focus:ring-[#F27A1A]/30"
-              />
-            </div>
+            )}
           </div>
         </section>
+        )}
 
         {/* Sticky save bar */}
         <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-3xl border border-[#EDEDED] bg-white/95 p-4 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
