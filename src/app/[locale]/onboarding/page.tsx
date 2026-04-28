@@ -18,7 +18,8 @@ import {
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, PlatformChip, type PlatformId } from '@/components/ui';
-import { SECTORS } from '@/lib/sectors';
+import { SECTORS, getSectorById } from '@/lib/sectors';
+import { getSectorPlatforms } from '@/lib/sector-platforms';
 
 type StepId = 'profile' | 'sector' | 'location' | 'platforms' | 'qr';
 
@@ -362,38 +363,53 @@ function SectorStep({
   data: OnboardingState;
   update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
 }) {
+  const allowedPlatforms = getSectorPlatforms(getSectorById(data.sector)?.label);
+
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {SECTORS.map((s) => {
-        const selected = data.sector === s.id;
-        return (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => update('sector', s.id)}
-            className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-all ${
-              selected
-                ? 'border-[#0A0A0A] bg-[#EAF9B8]'
-                : 'border-[#EDEDED] bg-white hover:border-[#0A0A0A]'
-            }`}
-          >
-            <div className="min-w-0 flex-1">
-              <p
-                className="text-[15px] font-semibold text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
-              >
-                {s.display[isTr ? 'tr' : 'en']}
-              </p>
-              <p className="mt-0.5 text-[12px] text-[#737373]">{s.sub[isTr ? 'tr' : 'en']}</p>
-            </div>
-            {selected && (
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
-                <Check size={12} strokeWidth={3} />
-              </span>
-            )}
-          </button>
-        );
-      })}
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {SECTORS.map((s) => {
+          const selected = data.sector === s.id;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => update('sector', s.id)}
+              className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-all ${
+                selected
+                  ? 'border-[#0A0A0A] bg-[#EAF9B8]'
+                  : 'border-[#EDEDED] bg-white hover:border-[#0A0A0A]'
+              }`}
+            >
+              <div className="min-w-0 flex-1">
+                <p
+                  className="text-[15px] font-semibold text-[#0A0A0A]"
+                  style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                >
+                  {s.display[isTr ? 'tr' : 'en']}
+                </p>
+                <p className="mt-0.5 text-[12px] text-[#737373]">{s.sub[isTr ? 'tr' : 'en']}</p>
+              </div>
+              {selected && (
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+                  <Check size={12} strokeWidth={3} />
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div aria-live="polite">
+        <span className="pulse-eyebrow block text-[#737373]">
+          {isTr ? 'Bu sektörde görünecek' : 'Visible in this sector'}
+        </span>
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {Array.from(allowedPlatforms).map((platform) => (
+            <PlatformChip key={platform} id={platform} size={20} withLabel />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
