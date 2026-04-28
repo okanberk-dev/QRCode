@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
-import { getErrorCode } from '@/lib/api-errors';
+import { dedupeQrRows } from '@/lib/qr-signature';
 
 export async function GET(
   req: NextRequest,
@@ -21,29 +21,56 @@ export async function GET(
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
-    try {
-      const history = await prisma.qrGeneration.findMany({
-        where: { restaurantId: id },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-        select: {
-          id: true,
-          qrUrl: true,
-          tableNumber: true,
-          platform: true,
-          createdAt: true,
-        },
-      });
-      return NextResponse.json(history, { status: 200 });
-    } catch (innerError) {
-      // Only swallow the case where the table hasn't been migrated yet.
-      if ((innerError as { code?: string })?.code === 'P2021') {
-        return NextResponse.json([], { status: 200 });
-      }
-      throw innerError;
-    }
+    const history = await getFeedbackQrHistory(id);
+    return NextResponse.json(dedupeQrRows(history), { status: 200 });
   } catch (error) {
     console.error('QR history fetch error:', error);
     return NextResponse.json({ error: 'QR geçmişi alınamadı' }, { status: 500 });
+  }
+}
+
+async function getFeedbackQrHistory(restaurantId: string) {
+  try {
+    return await prisma.qrGeneration.findMany({
+      where: { restaurantId, type: 'feedback' },
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+      select: {
+        id: true,
+        restaurantId: true,
+        qrUrl: true,
+        tableNumber: true,
+        platform: true,
+        serviceType: true,
+        type: true,
+        createdAt: true,
+      },
+    });
+  } catch (error) {
+    const code = (error as { code?: string })?.code;
+    if (code !== 'P2021' && code !== 'P2022') throw error;
+
+    const legacyRows = await prisma.qrGeneration.findMany({
+      where: { restaurantId },
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+      select: {
+        id: true,
+        restaurantId: true,
+        qrUrl: true,
+        tableNumber: true,
+        platform: true,
+        createdAt: true,
+      },
+    }).catch((fallbackError) => {
+      if ((fallbackError as { code?: string })?.code === 'P2021') return [];
+      throw fallbackError;
+    });
+
+    return legacyRows.map((row) => ({
+      ...row,
+      serviceType: null,
+      type: 'feedback',
+    }));
   }
 }

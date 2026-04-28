@@ -4,8 +4,8 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
 
 /**
- * Delete a single QR history row. The QrGeneration table is an audit log
- * of QRs the panel produced — removing a row only hides it from the
+ * Delete a QR history signature. The QrGeneration table is an audit log
+ * of QRs the panel produced — removing rows only hides them from the
  * panel's "Son üretilenler" list. The QR image and the URL it encodes
  * (e.g. `/r/<slug>?platform=...&table=...`) keep working independently;
  * a printed QR sticker in the field is unaffected.
@@ -33,7 +33,14 @@ export async function DELETE(
 
     const row = await prisma.qrGeneration.findUnique({
       where: { id: qrId },
-      select: { id: true, restaurantId: true },
+      select: {
+        id: true,
+        restaurantId: true,
+        tableNumber: true,
+        platform: true,
+        serviceType: true,
+        type: true,
+      },
     });
     if (!row) {
       return NextResponse.json({ error: 'QR kaydı bulunamadı' }, { status: 404 });
@@ -44,7 +51,15 @@ export async function DELETE(
       return NextResponse.json({ error: 'QR kaydı bulunamadı' }, { status: 404 });
     }
 
-    await prisma.qrGeneration.delete({ where: { id: qrId } });
+    await prisma.qrGeneration.deleteMany({
+      where: {
+        restaurantId: id,
+        tableNumber: row.tableNumber,
+        platform: row.platform,
+        serviceType: row.serviceType,
+        type: row.type,
+      },
+    });
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     // P2025 — concurrent delete (already gone). Idempotent: report success.

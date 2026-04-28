@@ -11,6 +11,49 @@ const MIN_BATCH_WIDTH = 200;
 const MAX_BATCH_WIDTH = 1200;
 const DEFAULT_BATCH_WIDTH = 512;
 
+async function rememberBatchQr(params: {
+  restaurantId: string;
+  qrUrl: string;
+  tableNumber: string;
+}) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.qrGeneration.findFirst({
+        where: {
+          restaurantId: params.restaurantId,
+          type: 'feedback',
+          tableNumber: params.tableNumber,
+          platform: null,
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+      });
+
+      if (existing) {
+        await tx.qrGeneration.update({
+          where: { id: existing.id },
+          data: { qrUrl: params.qrUrl },
+        });
+        return;
+      }
+
+      await tx.qrGeneration.create({
+        data: {
+          restaurantId: params.restaurantId,
+          qrUrl: params.qrUrl,
+          tableNumber: params.tableNumber,
+          type: 'feedback',
+        },
+      });
+    });
+  } catch (trackErr) {
+    const code = (trackErr as { code?: string })?.code;
+    if (code !== 'P2021' && code !== 'P2022') {
+      console.warn('[QR] Batch tracking skipped:', (trackErr as Error).message);
+    }
+  }
+}
+
 /**
  * Batch-generate QR codes for a contiguous table range.
  * Body: { from: number, to: number, dark?, light?, width? }
@@ -69,7 +112,10 @@ export async function POST(
   }
 
   try {
-    const restaurant = await prisma.restaurant.findUnique({ where: { id } });
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id },
+      select: { id: true, slug: true, name: true, isActive: true },
+    });
     if (!restaurant) {
       return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
     }
@@ -103,33 +149,12 @@ export async function POST(
       items.push({ table, qrUrl, svg });
     }
 
-    // Record a single batch entry — non-fatal if table doesn't exist yet.
-    try {
-      await prisma.$transaction(async (tx) => {
-        await tx.qrGeneration.create({
-          data: {
-            restaurantId: restaurant.id,
-            qrUrl: `${appUrl}/r/${restaurant.slug}?source=qr&batch=${from}-${to}`,
-            tableNumber: `${from}-${to}`,
-          },
-        });
-
-        const overflow = await tx.qrGeneration.findMany({
-          where: { restaurantId: restaurant.id },
-          orderBy: { createdAt: 'desc' },
-          skip: 50,
-          select: { id: true },
-        });
-
-        if (overflow.length > 0) {
-          await tx.qrGeneration.deleteMany({
-            where: { id: { in: overflow.map((i) => i.id) } },
-          });
-        }
-      });
-    } catch (trackErr) {
-      console.warn('[QR] Batch tracking skipped:', (trackErr as Error).message);
-    }
+    // Record one canonical batch entry for this exact range.
+    await rememberBatchQr({
+      restaurantId: restaurant.id,
+      qrUrl: `${appUrl}/r/${restaurant.slug}?source=qr&batch=${from}-${to}`,
+      tableNumber: `${from}-${to}`,
+    });
 
     return NextResponse.json(
       { items, count: items.length, restaurantName: restaurant.name, slug: restaurant.slug },

@@ -12,6 +12,51 @@ const MIN_WIDTH = 200;
 const MAX_WIDTH = 2000;
 const DEFAULT_WIDTH = 800;
 
+async function rememberFeedbackQr(params: {
+  restaurantId: string;
+  qrUrl: string;
+  tableNumber: string | null;
+  platform: string | null;
+}) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.qrGeneration.findFirst({
+        where: {
+          restaurantId: params.restaurantId,
+          type: 'feedback',
+          tableNumber: params.tableNumber,
+          platform: params.platform,
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+      });
+
+      if (existing) {
+        await tx.qrGeneration.update({
+          where: { id: existing.id },
+          data: { qrUrl: params.qrUrl },
+        });
+        return;
+      }
+
+      await tx.qrGeneration.create({
+        data: {
+          restaurantId: params.restaurantId,
+          qrUrl: params.qrUrl,
+          tableNumber: params.tableNumber,
+          platform: params.platform,
+          type: 'feedback',
+        },
+      });
+    });
+  } catch (trackError) {
+    const code = (trackError as { code?: string })?.code;
+    if (code !== 'P2021' && code !== 'P2022') {
+      console.warn('[QR] Generation tracking skipped:', (trackError as Error).message);
+    }
+  }
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -75,6 +120,7 @@ export async function GET(
   try {
     const restaurant = await prisma.restaurant.findUnique({
       where: { id },
+      select: { id: true, slug: true, isActive: true },
     });
 
     if (!restaurant) {
@@ -110,14 +156,15 @@ export async function GET(
       qrUrl += `&platform=${sanitizedPlatform}`;
     }
 
-
-    // Single-QR concept (2026-04 user request). Each account now has one
-    // canonical QR per restaurant, derived from `restaurant.slug` at render
-    // time. We no longer write a fresh QrGeneration row on every render —
-    // the table is read-only from here on. Existing rows are preserved
-    // (intentional "don't break existing QRs"); the history list endpoint
-    // (`/api/restaurants/[id]/qr/history`) still returns them, but the
-    // owner UI has been simplified to show only the canonical QR.
+    // Canonical QR history: one row per restaurant + platform + table
+    // signature. Re-rendering/downloading the same QR updates the existing
+    // record instead of growing the panel list indefinitely.
+    await rememberFeedbackQr({
+      restaurantId: restaurant.id,
+      qrUrl,
+      tableNumber: table || null,
+      platform: sanitizedPlatform || null,
+    });
 
     const qrOptions = {
       width,

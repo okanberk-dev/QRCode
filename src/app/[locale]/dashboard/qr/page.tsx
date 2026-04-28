@@ -14,6 +14,7 @@ import {
 } from '@/components/ui';
 import { CreateQRModal, type QRGenerationResult } from '@/components/panel/qr/CreateQRModal';
 import { QRCard, type QRCardItem } from '@/components/panel/qr/QRCard';
+import { dedupeQrRows } from '@/lib/qr-signature';
 
 interface Restaurant {
   id: string;
@@ -27,6 +28,8 @@ interface QrHistoryItem {
   qrUrl: string;
   tableNumber: string | null;
   platform: string | null;
+  serviceType?: string | null;
+  type?: string | null;
   createdAt: string;
   restaurantId: string;
 }
@@ -120,10 +123,7 @@ export default function DashboardQrPage() {
       .then((results) => {
         if (cancelled) return;
         const flat: QrHistoryItem[] = ([] as QrHistoryItem[]).concat(...results);
-        flat.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
-        setItems(flat);
+        setItems(dedupeQrRows(flat));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -214,10 +214,12 @@ export default function DashboardQrPage() {
       qrUrl: result.qrUrl,
       tableNumber: result.tableNumber,
       platform: result.platform,
+      serviceType: null,
+      type: 'feedback',
       createdAt: result.createdAt,
       restaurantId: result.restaurantId,
     };
-    setItems((prev) => [newItem, ...prev]);
+    setItems((prev) => dedupeQrRows([newItem, ...prev]));
     setSvgs((prev) => ({ ...prev, [newItem.id]: result.svg }));
     // Refresh from API to get the canonical id
     setTimeout(() => {
@@ -228,11 +230,7 @@ export default function DashboardQrPage() {
           setItems((prev) => {
             const otherRestaurants = prev.filter((p) => p.restaurantId !== result.restaurantId);
             const merged = [...otherRestaurants, ...enriched];
-            merged.sort(
-              (a, b) =>
-                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-            );
-            return merged;
+            return dedupeQrRows(merged);
           });
         })
         .catch(() => {});
@@ -264,11 +262,7 @@ export default function DashboardQrPage() {
       );
       if (!res.ok) {
         // Rollback — re-insert by createdAt order.
-        setItems((prev) =>
-          [...prev, target].sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          ),
-        );
+        setItems((prev) => dedupeQrRows([...prev, target]));
         const body = await res.json().catch(() => ({}));
         setPageError(
           isTr
@@ -286,11 +280,7 @@ export default function DashboardQrPage() {
         });
       }
     } catch {
-      setItems((prev) =>
-        [...prev, target].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        ),
-      );
+      setItems((prev) => dedupeQrRows([...prev, target]));
       setPageError(isTr ? 'Ağ hatası — QR silinemedi.' : 'Network error — could not delete QR.');
     } finally {
       setDeleting(false);

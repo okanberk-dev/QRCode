@@ -10,6 +10,44 @@ const MIN_WIDTH = 200;
 const MAX_WIDTH = 2000;
 const DEFAULT_WIDTH = 800;
 
+async function rememberMenuQr(restaurantId: string, qrUrl: string) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.qrGeneration.findFirst({
+        where: {
+          restaurantId,
+          type: 'menu',
+          tableNumber: null,
+          platform: null,
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+      });
+
+      if (existing) {
+        await tx.qrGeneration.update({
+          where: { id: existing.id },
+          data: { qrUrl },
+        });
+        return;
+      }
+
+      await tx.qrGeneration.create({
+        data: {
+          restaurantId,
+          qrUrl,
+          type: 'menu',
+        },
+      });
+    });
+  } catch (trackErr) {
+    const code = (trackErr as { code?: string })?.code;
+    if (code !== 'P2021' && code !== 'P2022') {
+      console.warn('[MenuQR] Generation tracking skipped:', (trackErr as Error).message);
+    }
+  }
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -80,32 +118,7 @@ export async function GET(
     const defaultDark = restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#000000';
     const dark = darkRaw && isValidHexColor(darkRaw) ? darkRaw : defaultDark;
 
-    try {
-      await prisma.$transaction(async (tx) => {
-        await tx.qrGeneration.create({
-          data: {
-            restaurantId: restaurant.id,
-            qrUrl,
-            type: 'menu',
-          },
-        });
-
-        const overflow = await tx.qrGeneration.findMany({
-          where: { restaurantId: restaurant.id },
-          orderBy: { createdAt: 'desc' },
-          skip: 50,
-          select: { id: true },
-        });
-
-        if (overflow.length > 0) {
-          await tx.qrGeneration.deleteMany({
-            where: { id: { in: overflow.map((item) => item.id) } },
-          });
-        }
-      });
-    } catch (trackErr) {
-      console.warn('[MenuQR] Generation tracking skipped:', (trackErr as Error).message);
-    }
+    await rememberMenuQr(restaurant.id, qrUrl);
 
     const qrOptions = {
       width,
