@@ -1,15 +1,14 @@
 'use client';
 
 import { use } from 'react';
-import { ArrowLeft, BookOpen, QrCode, Star, ShieldCheck, Zap, MessageSquare, Printer, Settings } from 'lucide-react';
+import { QrCode, Star, ShieldCheck, Zap, MessageSquare, Printer, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { PageHeader } from '@/components/ui';
 
 export default function GuidePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = use(params);
   const locale: Locale = rawLocale === 'en' ? 'en' : 'tr';
-  const t = getTranslations(locale);
 
   const steps = [
     {
@@ -22,7 +21,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
       linkText: locale === 'tr' ? 'QR Oluşturucuyu Aç' : 'Open QR Generator'
     },
     {
-      icon: <Printer size={32} className="text-[#3b82f6]" />,
+      icon: <Printer size={32} className="text-[#0A0A0A]" />,
       title: locale === 'tr' ? '2. Basın ve Sergileyin' : '2. Print and Display',
       desc: locale === 'tr'
         ? 'Oluşturulan QR kodu yüksek çözünürlükte indirin. Masalara, menülere veya kasa yanına müşterilerinizin kolayca görebileceği şekilde yerleştirin.'
@@ -36,7 +35,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
         : 'When customers scan the QR code, they reach the feedback screen in seconds. Strengthen your digital reputation with organic interaction.',
     },
     {
-      icon: <ShieldCheck size={32} className="text-[#10b981]" />,
+      icon: <ShieldCheck size={32} className="text-[#0A0A0A]" />,
       title: locale === 'tr' ? '4. Operasyonel Takip' : '4. Operational Monitoring',
       desc: locale === 'tr'
         ? 'Tüm geri bildirimler yapılandırılmış bir veri akışına dönüştürülür ve doğrudan panelinize düşer. Deneyimi anlık takip ederek marka itibarınızı koruyun.'
@@ -49,50 +48,30 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
   const isTr = locale === 'tr';
 
   return (
-    <div
-      className="mx-auto max-w-[1100px] space-y-8 px-4 py-8 sm:px-8 lg:py-10"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
-      <header>
-        <Link
-          href={`/${locale}/dashboard`}
-          className="inline-flex items-center gap-1.5 pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
-        >
-          <ArrowLeft size={12} strokeWidth={2} />
-          {isTr ? 'PANEL' : 'PANEL'}
-        </Link>
-
-        <div className="mt-4 flex items-center gap-2">
-          <BookOpen size={14} strokeWidth={2} className="text-[#0A0A0A]" />
-          <span className="pulse-eyebrow text-[#737373]">{isTr ? 'REHBER' : 'GUIDE'}</span>
-        </div>
-        <h1
-          className="mt-2 text-[28px] sm:text-[36px] font-medium tracking-[-0.025em] leading-[1.05] text-[#0A0A0A]"
-          style={{ fontFamily: 'var(--font-heading)' }}
-        >
-          {isTr ? 'Kullanım kılavuzu' : 'User guide'}
-        </h1>
-        <p className="mt-3 max-w-[620px] text-[14px] text-[#525252] leading-[1.6]">
-          {isTr
+    <div className="mx-auto max-w-[1100px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow={isTr ? 'KILAVUZ' : 'GUIDE'}
+        title={isTr ? 'Kullanım kılavuzu' : 'User guide'}
+        description={
+          isTr
             ? 'Buaze platformunu en verimli şekilde kullanmanız için hazırladığımız adım adım başlangıç rehberi.'
-            : 'A step-by-step startup guide to help you use the Buaze platform most efficiently.'}
-        </p>
-      </header>
+            : 'A step-by-step startup guide to help you use the Buaze platform most efficiently.'
+        }
+      />
 
       {/* Steps grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {steps.map((step, idx) => (
           <div
             key={idx}
-            className="bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-7 space-y-4 hover:border-[#C6F24E] transition-colors"
+            className="bz-card p-6 sm:p-7 space-y-4 hover:border-[#C6F24E] transition-colors"
           >
             <div className="w-11 h-11 rounded-xl bg-[#EAF9B8] flex items-center justify-center text-[#0A0A0A]">
               {step.icon}
             </div>
             <div className="space-y-2">
               <h3
-                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
               >
                 {step.title}
               </h3>
@@ -115,8 +94,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
         <div>
           <span className="pulse-eyebrow text-[#C6F24E]">{isTr ? 'İPUÇLARI' : 'PRO TIPS'}</span>
           <h2
-            className="mt-3 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="mt-3 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em] bz-h-tight"
           >
             {isTr ? 'Önemli ipuçları' : 'Key tactics'}
           </h2>

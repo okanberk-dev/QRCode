@@ -6,6 +6,7 @@ import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, 
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
+import { AlertBanner, useConfirmDialog } from '@/components/ui';
 
 interface Owner {
   id: string;
@@ -37,6 +38,7 @@ export default function RestaurantDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [confirmDialog, askConfirm] = useConfirmDialog();
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -134,6 +136,7 @@ export default function RestaurantDetailPage() {
     setSaving(true);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { userId, ...rest } = formData;
       const payload = owners.length > 0 ? formData : rest;
       const res = await fetch(`/api/restaurants/${id}`, {
@@ -152,7 +155,7 @@ export default function RestaurantDetailPage() {
 
       setSuccess('İşletme başarıyla güncellendi.');
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
+    } catch {
       setError('Bağlantı hatası');
     }
     setSaving(false);
@@ -189,13 +192,23 @@ export default function RestaurantDetailPage() {
     setMenuSaving(null);
   };
 
-  const handleDelete = async () => {
-    if (!confirm('DİKKAT: Bu işletme kalıcı olarak silinecek ve geri alınamayacaktır. QR, yorum, menü ve analitik verileri de silinir. Onaylıyor musunuz?')) return;
+  const handleDelete = () => {
+    askConfirm({
+      title: 'İşletmeyi kalıcı olarak sil?',
+      body: 'DİKKAT: Bu işletme kalıcı olarak silinecek ve geri alınamayacak. QR, yorum, menü ve analitik verileri de silinir.',
+      confirmLabel: 'Kalıcı sil',
+      cancelLabel: 'İptal',
+      variant: 'danger',
+      onConfirm: doDelete,
+    });
+  };
+
+  const doDelete = async () => {
     setDeleting(true);
     try {
       await fetch(`/api/restaurants/${id}`, { method: 'DELETE' });
       router.push('/admin/restaurants');
-    } catch (e) {
+    } catch {
       setError('Silme başarısız');
       setDeleting(false);
     }
@@ -213,8 +226,8 @@ export default function RestaurantDetailPage() {
   const menuStateTone = !menuEnabled
     ? { dot: 'bg-[#A3A3A3]', text: 'text-[#737373]' }
     : menuPublished
-    ? { dot: 'bg-emerald-500', text: 'text-emerald-700' }
-    : { dot: 'bg-amber-500', text: 'text-amber-700' };
+    ? { dot: 'bg-[#16A34A]', text: 'text-[#166534]' }
+    : { dot: 'bg-[#D97706]', text: 'text-[#92400E]' };
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const feedbackUrl = `${origin}/r/${formData.slug}`;
   const menuUrl = `${origin}/menu/${formData.slug}`;
@@ -248,8 +261,8 @@ export default function RestaurantDetailPage() {
                   {formData.name || 'İşletme Düzenle'}
                 </h1>
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#737373]">
-                  <span className={`inline-flex items-center gap-1.5 ${formData.isActive ? 'text-emerald-700' : 'text-[#737373]'}`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${formData.isActive ? 'bg-emerald-500' : 'bg-[#A3A3A3]'}`} aria-hidden />
+                  <span className={`inline-flex items-center gap-1.5 ${formData.isActive ? 'text-[#166534]' : 'text-[#737373]'}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${formData.isActive ? 'bg-[#16A34A]' : 'bg-[#A3A3A3]'}`} aria-hidden />
                     <span className="font-medium">{formData.isActive ? 'Aktif' : 'Pasif'}</span>
                   </span>
                   <span className="h-1 w-1 rounded-full bg-[#EDEDED]" aria-hidden />
@@ -294,7 +307,7 @@ export default function RestaurantDetailPage() {
               <Link2 size={18} strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="pulse-eyebrow text-[#737373]">Detay URL'leri</p>
+              <p className="pulse-eyebrow text-[#737373]">Detay URL&apos;leri</p>
               <h2 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Müşteri ve yönetim bağlantıları</h2>
             </div>
           </div>
@@ -322,16 +335,14 @@ export default function RestaurantDetailPage() {
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4">
-          <AlertTriangle size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-red-600" />
-          <p className="text-[13px] leading-relaxed text-red-700">{error}</p>
-        </div>
+        <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
+          {error}
+        </AlertBanner>
       )}
       {success && (
-        <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-          <CheckCircle2 size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-emerald-600" />
-          <p className="text-[13px] leading-relaxed text-emerald-700">{success}</p>
-        </div>
+        <AlertBanner kind="success" icon={<CheckCircle2 size={14} strokeWidth={2} className="mt-0.5" />}>
+          {success}
+        </AlertBanner>
       )}
 
       {/* Menu management — outside the main form so its toggles don't submit the whole thing */}
@@ -364,7 +375,7 @@ export default function RestaurantDetailPage() {
             onClick={() => saveMenuSetting({ menuEnabled: !menuEnabled })}
             disabled={menuSaving !== null}
             className={`flex items-center justify-between gap-3 rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-60 disabled:hover:translate-y-0 ${
-              menuEnabled ? 'border-emerald-200 bg-emerald-50/60' : 'border-[#EDEDED] bg-white'
+              menuEnabled ? 'border-[#BBF7D0] bg-[#F0FDF4]/60' : 'border-[#EDEDED] bg-white'
             }`}
           >
             <div className="min-w-0">
@@ -374,7 +385,7 @@ export default function RestaurantDetailPage() {
               </p>
             </div>
             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all ${
-              menuEnabled ? 'bg-emerald-500 text-white' : 'bg-[#EDEDED] text-[#737373]'
+              menuEnabled ? 'bg-[#16A34A] text-white' : 'bg-[#EDEDED] text-[#737373]'
             }`}>
               {menuEnabled ? <Eye size={15} strokeWidth={2.25} /> : <EyeOff size={15} strokeWidth={2.25} />}
             </div>
@@ -675,7 +686,7 @@ export default function RestaurantDetailPage() {
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2.5 text-[13px] font-medium text-red-600 transition-all hover:border-red-300 hover:bg-red-50 active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-[#FECACA] bg-white px-4 py-2.5 text-[13px] font-medium text-[#DC2626] transition-all hover:border-[#FCA5A5] hover:bg-[#FEF2F2] active:scale-95 disabled:opacity-50"
           >
             <Trash2 size={14} strokeWidth={2} />
             {deleting ? 'Siliniyor…' : 'İşletmeyi Sil'}
@@ -701,6 +712,7 @@ export default function RestaurantDetailPage() {
           </div>
         </div>
       </form>
+      {confirmDialog}
     </div>
   );
 }
@@ -734,7 +746,7 @@ function Metric({ icon, label, value }: { icon: ReactNode; label: string; value:
         {icon}
         <p className="pulse-eyebrow">{label}</p>
       </div>
-      <p className="mt-2 text-[22px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+      <p className="mt-2 font-heading text-[22px] font-medium text-[#0A0A0A]">
         {value}
       </p>
     </div>

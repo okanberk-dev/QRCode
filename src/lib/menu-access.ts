@@ -13,7 +13,7 @@ export async function requireRestaurantAccess(req: NextRequest, restaurantId: st
   const isSuperadmin = actor.role === 'superadmin';
   if (!isSuperadmin) {
     if (actor.role === 'manager') {
-      if ((actor as any).restaurantId !== restaurantId) {
+      if ((actor as { restaurantId?: string }).restaurantId !== restaurantId) {
         return { ok: false as const, res: NextResponse.json({ error: 'Bu restorana erişiminiz yok' }, { status: 403 }) };
       }
     } else {

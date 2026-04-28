@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ApiErrors } from '@/lib/api-errors';
+import { ApiErrors, getErrorCode } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
 import { sanitizeBlogContent } from '@/lib/blog-content';
 
@@ -22,7 +22,27 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   try {
     const { id } = await params;
-    const post = await prisma.blogPost.findUnique({ where: { id } });
+    // Explicit select — admin blog edit form consumes every field, but
+    // pinning them keeps this route resilient to schema/DB drift on
+    // unrelated columns added in future migrations (CLAUDE.md §14.1).
+    const post = await prisma.blogPost.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        slug: true,
+        locale: true,
+        title: true,
+        description: true,
+        content: true,
+        date: true,
+        readTime: true,
+        author: true,
+        coverImage: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
     if (!post) {
       return ApiErrors.notFound('Blog yazısı bulunamadı');
     }
@@ -108,8 +128,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     return NextResponse.json({ post });
-  } catch (error: any) {
-    if (error?.code === 'P2025') {
+  } catch (error) {
+    if (getErrorCode(error) === 'P2025') {
       return ApiErrors.notFound('Blog yazısı bulunamadı');
     }
     console.error('[API blog PUT]', error);
@@ -126,8 +146,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const { id } = await params;
     await prisma.blogPost.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    if (error?.code === 'P2025') {
+  } catch (error) {
+    if (getErrorCode(error) === 'P2025') {
       return ApiErrors.notFound('Blog yazısı bulunamadı');
     }
     console.error('[API blog DELETE]', error);

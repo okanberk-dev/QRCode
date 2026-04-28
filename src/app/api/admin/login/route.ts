@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Defence-in-depth: per-IP and per-username throttles before DB/bcrypt work.
-    const ipLimit = rateLimit(ipKey, 8, 10 * 60 * 1000);
-    const userLimit = rateLimit(userKey, 5, 10 * 60 * 1000);
+    const ipLimit = await rateLimit(ipKey, 8, 10 * 60 * 1000);
+    const userLimit = await rateLimit(userKey, 5, 10 * 60 * 1000);
     if (!ipLimit.allowed || !userLimit.allowed) {
       const retry = Math.max(ipLimit.retryAfterSeconds, userLimit.retryAfterSeconds);
       blockKey(lockKey, LOCKOUT_WINDOW_MS);
@@ -57,7 +57,11 @@ export async function POST(req: NextRequest) {
     // Only AdminUser accounts can authenticate to /admin.
     // HOTFIX: Migrate old 'admin' row to 'oknbrk' automatically
     try {
-      const existing = await prisma.adminUser.findUnique({ where: { username: 'admin' } });
+      // Hotfix migration — only `id` is read downstream (CLAUDE.md §14.1).
+      const existing = await prisma.adminUser.findUnique({
+        where: { username: 'admin' },
+        select: { id: true },
+      });
       if (existing) {
         await prisma.adminUser.update({ where: { id: existing.id }, data: { username: 'oknbrk' } });
       }
@@ -72,14 +76,24 @@ export async function POST(req: NextRequest) {
           }
         });
       }
-    } catch (e) {
+    } catch {
       // Ignored if table doesn't exist
     }
 
     let admin = null;
     try {
+      // Auth path — explicit select keeps login resilient to schema drift
+      // on unrelated columns (CLAUDE.md §14.1). Pinned fields are exactly
+      // those consumed downstream: passwordHash for bcrypt, id/role/
+      // restaurantId for the JWT payload.
       admin = await prisma.adminUser.findUnique({
-        where: { username: normalizedUsername }
+        where: { username: normalizedUsername },
+        select: {
+          id: true,
+          passwordHash: true,
+          role: true,
+          restaurantId: true,
+        },
       });
     } catch (dbError) {
       console.error("Database check failed, using fallback:", dbError);
@@ -109,7 +123,6 @@ export async function POST(req: NextRequest) {
                 passwordHash: hashedPassword
               }
             });
-            console.log('BOOTSTRAP: Created first admin user successfully.');
           }
         } catch (e) {
           console.error("Bootstrap creation failed, continuing with env authentication", e);
@@ -131,7 +144,7 @@ export async function POST(req: NextRequest) {
       let payloadRole: 'superadmin' | 'manager' = 'superadmin';
       let payloadRestaurantId = null;
       let payloadId = 'env-admin';
-      let payloadUsername = normalizedUsername;
+      const payloadUsername = normalizedUsername;
 
       if (admin) {
         payloadRole = admin.role === 'manager' ? 'manager' : 'superadmin';
@@ -180,13 +193,13 @@ export async function POST(req: NextRequest) {
       await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_INCORRECT');
     }
 
-    const failedLimit = rateLimit(failedKey, 3, 10 * 60 * 1000);
+    const failedLimit = await rateLimit(failedKey, 3, 10 * 60 * 1000);
     if (!failedLimit.allowed) {
       blockKey(lockKey, LOCKOUT_WINDOW_MS);
     }
 
     return NextResponse.json({ error: 'Kullanıcı adı veya şifre hatalı' }, { status: 401 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json({ error: 'Sunucu hatası veya veritabanı bağlantı sorunu' }, { status: 500 });
   }

@@ -164,7 +164,13 @@ export default async function LandingPage({
     ? ['Kredi kartı gerekmez', '5 dakikada kurulum']
     : ['No credit card required', '5-minute setup'];
 
-  const brandWordmarks = ['ARK BISTRO', 'HOTEL NORA', 'DERMA+', 'LAW&CO', 'KAHVE DUKKAN', 'SPA REN'];
+  // Audit §8.4 — fake-looking wordmarks ("HOTEL NORA", "LAW&CO", ...) were
+  // implying specific paying customers without consent, which is FTC and
+  // Reklam Kurulu deceptive-advertising risk. Replaced with industry
+  // categories until real customer logos with usage permission are added.
+  const industryCategories = isTr
+    ? ['Restoranlar', 'Oteller', 'Klinikler', 'Hukuk büroları', 'Kafeler', 'Spa & güzellik']
+    : ['Restaurants', 'Hotels', 'Clinics', 'Law firms', 'Cafés', 'Spa & wellness'];
 
   const steps = [
     {
@@ -179,8 +185,8 @@ export default async function LandingPage({
       num: '02',
       title: isTr ? 'Yönet' : 'Manage',
       body: isTr
-        ? 'Tüm yorumları tek panelden yanıtla. Olumsuzu ekibine ata, olumluyu Google\'da yayına taşı.'
-        : 'Reply to every review from one panel. Route negatives to your team, push positives to Google.',
+        ? 'Hem Google\'a düşen yorumları hem de işletmene özel gönderilen geri bildirimleri tek panelden yanıtla.'
+        : 'Reply to every review — public Google posts and private guest feedback — from one shared inbox.',
       Ill: IllusInbox,
     },
     {
@@ -209,13 +215,13 @@ export default async function LandingPage({
 
   const policyBlocks = isTr
     ? [
-        { n: '01', t: 'Tercih gönderimi', d: 'QR müşteriyi önce gerçek geri bildirime yönlendirir.' },
-        { n: '02', t: 'Şeffaf akış', d: 'Negatif yorumları süzmez; içeride çözüme aktarır.' },
+        { n: '01', t: 'Google önce', d: 'Her misafire önce Google yorum bağlantısı sunulur — yıldıza göre dallandırma yok.' },
+        { n: '02', t: 'Şeffaf akış', d: 'Negatif yorumlar süzülmez veya engellenmez; isteyen Google\'a yazar, isteyen ek olarak işletmeye özel geri bildirim de bırakır.' },
         { n: '03', t: 'Kural motoru', d: 'Her kampanya Google politikasına göre otomatik denetlenir.' },
       ]
     : [
-        { n: '01', t: 'Preference-first', d: 'The QR routes the customer to real feedback first.' },
-        { n: '02', t: 'Transparent flow', d: 'Negative reviews aren\'t filtered; they reach your team for resolution.' },
+        { n: '01', t: 'Google first', d: 'Every guest sees the public Google review link first — no rating-based gating.' },
+        { n: '02', t: 'Transparent flow', d: 'Negative reviews are never filtered or blocked; private feedback to your team is an optional extra step in the same flow.' },
         { n: '03', t: 'Rule engine', d: 'Every campaign is auto-audited against Google policy.' },
       ];
 
@@ -246,11 +252,11 @@ export default async function LandingPage({
       <section className="px-5 pb-16 pt-16 sm:px-8 sm:pb-20 sm:pt-20 lg:px-16 lg:pb-20 lg:pt-24">
         <div className="mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-8 sm:gap-12 md:grid-cols-2 lg:gap-16">
           <div className="flex flex-col gap-5 sm:gap-7">
-            <h1 className="bz-fade-up bz-d1 text-[40px] font-medium leading-[1.05] tracking-[-0.04em] text-[#0A0A0A] text-balance sm:text-[64px] sm:leading-[0.96] lg:text-[76px] lg:leading-[0.92]">
+            <h1 className="bz-fade-up bz-d1 text-[38px] font-medium leading-[0.95] tracking-[-0.04em] text-[#0A0A0A] text-balance sm:text-[64px] sm:leading-[0.96] lg:text-[76px] lg:leading-[0.92]">
               {heroHeadline}
             </h1>
 
-            <p className="bz-fade-up bz-d2 max-w-[500px] text-[16px] font-normal leading-[1.55] text-[#525252] text-pretty sm:text-[18px] sm:leading-[1.65]">
+            <p className="bz-fade-up bz-d2 max-w-[500px] text-[15px] font-normal leading-[1.6] text-[#525252] text-pretty sm:text-[18px] sm:leading-[1.65]">
               {heroSub}
             </p>
 
@@ -283,11 +289,11 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           2. LOGO STRIP — trusted brands
       ═══════════════════════════════════════════════════════════ */}
-      <section className="border-y border-[#EDEDED] bg-[#FAFAFA] py-5">
+      <section className="border-y border-[#EDEDED] bg-[#FAFAFA] py-4">
         <MarqueeRow
-          eyebrow={isTr ? 'GÜVENEN MARKALAR' : 'TRUSTED BY'}
+          eyebrow={isTr ? 'BUAZE\'İ KULLANAN İŞLETME TÜRLERİ' : 'BUILT FOR TEAMS LIKE THESE'}
           itemClassName="shrink-0 px-10 sm:px-12"
-          items={brandWordmarks.map((name) => (
+          items={industryCategories.map((name) => (
             <span
               key={name}
               className="text-[16px] sm:text-[18px] font-semibold tracking-[0.08em] text-[#D4D4D4] whitespace-nowrap"
@@ -302,33 +308,37 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           3. THREE STEPS
       ═══════════════════════════════════════════════════════════ */}
-      <section id="how-it-works" className="scroll-mt-24 px-6 sm:px-10 py-20 sm:py-28">
+      <section id="how-it-works" className="scroll-mt-24 px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[1200px] mx-auto">
           <div className="mb-12 sm:mb-16 max-w-[720px]">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Nasıl çalışır' : 'How it works'}
             </span>
-            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.1] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] text-balance">
+            <h2 className="mt-4 text-[28px] sm:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] text-balance">
               {isTr ? 'Üç adım, üç saniye.' : 'Three steps, three seconds.'}
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* auto-fit grid — design buaze-mobil/home.jsx:442
+              `repeat(auto-fit,minmax(260px,1fr))` so the cards collapse
+              to single column on phones and 2-up on tablets without a
+              hard breakpoint flip. */}
+          <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
             {steps.map(({ num, title, body, Ill }) => (
               <div
                 key={num}
-                className="bg-[#FAFAFA] border border-[#EDEDED] rounded-[18px] p-7 flex flex-col"
+                className="bz-card flex flex-col p-7"
               >
                 <div className="flex justify-center mb-4">
-                  <Ill size={180} />
+                  <Ill size={160} />
                 </div>
                 <span className="pulse-eyebrow text-[#A8D62E]">
                   {isTr ? 'ADIM' : 'STEP'} {num}
                 </span>
-                <h3 className="mt-3 text-[24px] sm:text-[30px] font-medium leading-[1.15] sm:leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] text-balance">
+                <h3 className="mt-3 text-[20px] sm:text-[28px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] text-balance">
                   {title}
                 </h3>
-                <p className="mt-3 text-[15px] sm:text-[14px] text-[#525252] leading-[1.55] text-pretty">{body}</p>
+                <p className="mt-2.5 text-[14px] text-[#525252] leading-[1.6] text-pretty">{body}</p>
               </div>
             ))}
           </div>
@@ -338,8 +348,8 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           4. DARK FEATURE — live stream mock
       ═══════════════════════════════════════════════════════════ */}
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-28">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           {/* Live stream card — auto-rotating review ticker, mirrors the
               HeroProduct helper in .design/site/site-homepage-v3.jsx:174 */}
           <LiveReviewTicker locale={locale} />
@@ -349,7 +359,7 @@ export default async function LandingPage({
             <span className="pulse-eyebrow text-[#C6F24E]">
               {isTr ? 'Merkezi yönetim' : 'Central control'}
             </span>
-            <h2 className="mt-4 text-[36px] sm:text-[48px] lg:text-[52px] font-medium leading-[1.02] tracking-[-0.035em] text-white">
+            <h2 className="mt-4 text-[28px] sm:text-[40px] lg:text-[52px] font-medium leading-[1.02] tracking-[-0.035em] text-white">
               {isTr ? (
                 <>
                   Her yorum, tek bir{' '}
@@ -393,15 +403,18 @@ export default async function LandingPage({
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Always 2-col on mobile too — design buaze-mobil/home.jsx:473
+                renders `gridTemplateColumns:'1fr 1fr'` regardless of viewport.
+                Stacking would make the panel feel sparse on dark bg. */}
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4">
               {darkFeatures.map((f) => (
-                <div key={f.t} className="flex items-start gap-3">
-                  <span className="mt-0.5 w-6 h-6 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[12px] font-bold shrink-0">
+                <div key={f.t} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 h-[22px] w-[22px] rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[11px] font-bold shrink-0">
                     ✓
                   </span>
                   <div>
-                    <div className="text-[15px] font-medium text-white">{f.t}</div>
-                    <div className="text-[13px] text-[#A3A3A3] mt-0.5">{f.d}</div>
+                    <div className="text-[14px] font-medium text-white">{f.t}</div>
+                    <div className="text-[12px] text-[#A3A3A3] mt-0.5">{f.d}</div>
                   </div>
                 </div>
               ))}
@@ -413,7 +426,7 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           5. GOOGLE SAFE + SHIELD
       ═══════════════════════════════════════════════════════════ */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div>
             <span className="pulse-chip-soft">
@@ -422,7 +435,7 @@ export default async function LandingPage({
                 {isTr ? 'Google güvenli' : 'Google safe'}
               </span>
             </span>
-            <h2 className="mt-4 text-[36px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? 'Politikalara uyumlu. Organik büyüme.' : 'Policy compliant. Organic growth.'}
             </h2>
 
@@ -448,13 +461,13 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           5.5 BENTO GRID — QR Studio / Buaze Pulse AI / Analytics / Platforms
       ═══════════════════════════════════════════════════════════ */}
-      <section className="px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[1200px] mx-auto">
           <div className="max-w-[720px] mb-10 sm:mb-12">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Tek platform' : 'One platform'}
             </span>
-            <h2 className="mt-4 text-[30px] sm:text-[46px] font-medium leading-[1.1] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] text-balance">
+            <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[46px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] text-balance">
               {isTr ? 'Tek panelde, dört süper güç.' : 'One panel, four superpowers.'}
             </h2>
           </div>
@@ -588,13 +601,13 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           6. INDUSTRY TABS — interactive sector switcher
       ═══════════════════════════════════════════════════════════ */}
-      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-20 sm:py-28">
+      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-10 max-w-[720px] mx-auto">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Sektörler' : 'Industries'}
             </span>
-            <h2 className="mt-4 text-[36px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? 'Her sektör için, tam oturur.' : 'Fits every industry, perfectly.'}
             </h2>
           </div>
@@ -659,7 +672,7 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           6.5 QR GENERATOR TOOL TEASER
       ═══════════════════════════════════════════════════════════ */}
-      <section className="px-6 sm:px-10 py-16 sm:py-20">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-20">
         <div className="max-w-[1100px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-8 sm:p-12 relative overflow-hidden">
           <div className="absolute -top-32 -right-32 w-[400px] h-[400px] bg-[#C6F24E]/15 rounded-full blur-[100px] pointer-events-none" />
           <div className="relative grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-10 items-center">
@@ -667,7 +680,7 @@ export default async function LandingPage({
               <span className="pulse-eyebrow text-[#C6F24E]">
                 {isTr ? 'ÜCRETSİZ ARAÇ · YENİ' : 'FREE TOOL · NEW'}
               </span>
-              <h2 className="mt-4 text-[28px] sm:text-[40px] lg:text-[48px] font-medium text-white tracking-[-0.03em] leading-[1.05]">
+              <h2 className="mt-4 text-[24px] sm:text-[36px] lg:text-[48px] font-medium text-white tracking-[-0.03em] leading-[1.05]">
                 {isTr ? (
                   <>
                     Saniyede{' '}
@@ -773,17 +786,17 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           7. CASE STUDY + MOUNTAIN
       ═══════════════════════════════════════════════════════════ */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 lg:gap-16 items-center">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-10 lg:gap-16 items-center">
           <div className="flex justify-center lg:justify-start order-2 lg:order-1">
-            <IllusMountain size={340} className="w-full max-w-[340px] h-auto" />
+            <IllusMountain size={280} className="w-full max-w-[280px] h-auto" />
           </div>
 
           <div className="order-1 lg:order-2">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Vaka · Kadıköy Bistro' : 'Case · Kadıköy Bistro'}
             </span>
-            <h2 className="mt-4 text-[36px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? (
                 <>
                   90 günde{' '}
@@ -829,40 +842,19 @@ export default async function LandingPage({
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════
-          7.5 INTERNATIONAL TESTIMONIAL — EN ONLY
-      ═══════════════════════════════════════════════════════════ */}
-      {!isTr && (
-        <section className="px-6 sm:px-10 pb-20 sm:pb-24">
-          <div className="max-w-[1100px] mx-auto border-t border-[#EDEDED] pt-16 sm:pt-20">
-            <blockquote
-              className="text-[28px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] max-w-[900px]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              &ldquo;We went from 3.9 on Yelp to 4.7 in six months. The Tripadvisor sync alone paid for Buaze.&rdquo;
-            </blockquote>
-            <div className="mt-7 flex items-center gap-3">
-              <div
-                className="w-12 h-12 rounded-full bg-[#0A0A0A] text-[#C6F24E] flex items-center justify-center text-[15px] font-semibold"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                JM
-              </div>
-              <div>
-                <div className="text-[15px] font-medium text-[#0A0A0A]">Julia Martens</div>
-                <div className="pulse-eyebrow text-[#737373] mt-1">Hotel Nora · Amsterdam</div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* International testimonial section removed — the prior block
+          attributed a quote to "Julia Martens · Hotel Nora · Amsterdam"
+          but Hotel Nora was a placeholder brand name (audit §8.4 / §4),
+          and an unverifiable named testimonial is FTC + Reklam Kurulu
+          deceptive-advertising risk. Restore once a real consented
+          customer + venue is available. */}
 
       {/* ═══════════════════════════════════════════════════════════
           8. LIME CTA BANNER
       ═══════════════════════════════════════════════════════════ */}
-      <section className="bg-[#C6F24E] px-6 sm:px-10 py-20 sm:py-28">
+      <section className="bg-[#C6F24E] px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[900px] mx-auto text-center">
-          <h2 className="text-[36px] sm:text-[56px] font-medium leading-[1.02] tracking-[-0.04em] text-[#0A0A0A] text-balance">
+          <h2 className="text-[28px] sm:text-[44px] lg:text-[56px] font-medium leading-[1.02] tracking-[-0.04em] text-[#0A0A0A] text-balance">
             {isTr ? 'Bugün başla, ilk yorumunu yarın al.' : 'Start today, get your first review tomorrow.'}
           </h2>
           <p className="mt-5 text-[16px] sm:text-[17px] text-[#1A1A1A] max-w-[560px] mx-auto">

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Users, X, Check, AlertTriangle, Crown, RefreshCw, Store, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Loader2, Check, AlertTriangle, Crown, RefreshCw, Store, ToggleLeft, ToggleRight } from 'lucide-react';
+import { AlertBanner, Badge, type BadgeKind, Modal, PageHeader, TableSkeleton } from '@/components/ui';
 
 interface Member {
   id: string;
@@ -20,11 +21,11 @@ function daysLeft(trialEndsAt: string | null): number | null {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-const PLAN_LABELS: Record<string, { label: string; color: string }> = {
-  trial:   { label: 'DENEME',  color: 'bg-[#C6F24E]/15 text-[#C6F24E] border-[#C6F24E]/30' },
-  monthly: { label: 'AYLIK',   color: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
-  yearly:  { label: 'YILLIK',  color: 'bg-green-500/15 text-green-400 border-green-500/20' },
-  free:    { label: 'ÜCRETSİZ', color: 'bg-[#6B7280]/15 text-[#6B7280] border-[#6B7280]/20' },
+const PLAN_BADGE: Record<string, { label: string; kind: BadgeKind }> = {
+  trial: { label: 'Deneme', kind: 'lime' },
+  monthly: { label: 'Aylık', kind: 'info' },
+  yearly: { label: 'Yıllık', kind: 'ok' },
+  free: { label: 'Ücretsiz', kind: 'ghost' },
 };
 
 export default function MembersPage() {
@@ -96,41 +97,31 @@ export default function MembersPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#0A0A0A] w-10 h-10" />
+      <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+        <PageHeader eyebrow="İŞLETME SAHİPLERİ" title="Yükleniyor…" />
+        <TableSkeleton rows={6} cols={5} />
       </div>
     );
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-6 sm:space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-[#EDEDED] shadow-sm">
-        <div className="space-y-1">
-          <p className="pulse-eyebrow text-[#737373]">PANEL / İŞLETME SAHİPLERİ</p>
-          <h1
-            className="text-[26px] sm:text-[32px] font-medium text-[#0A0A0A] tracking-[-0.025em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            İşletme Sahipleri
-          </h1>
-          <p className="text-[#525252] text-[13px] sm:text-[14px] max-w-[520px]">
-            Buaze'ye kayıtlı işletme sahibi hesaplarının plan, deneme süresi, erişim durumu ve bağlı işletme sayısını yönetin.
-          </p>
-        </div>
-        <button
-          onClick={fetchMembers}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#FFFFFF] border border-[#EDEDED] text-sm font-semibold text-[#0A0A0A] hover:bg-[#EDEDED] transition-all active:scale-95"
-        >
-          <RefreshCw size={16} strokeWidth={2} />
-          YENİLE
-        </button>
-      </div>
+    <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow="İŞLETME SAHİPLERİ"
+        title="İşletme sahipleri"
+        description="Buaze'ye kayıtlı işletme sahibi hesaplarının plan, deneme süresi, erişim durumu ve bağlı işletme sayısını yönet."
+        actions={
+          <button onClick={fetchMembers} className="bz-btn-ghost">
+            <RefreshCw size={14} strokeWidth={2} />
+            Yenile
+          </button>
+        }
+      />
 
       {success && (
-        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-2xl text-green-700 text-sm font-semibold">
-          <Check size={18} strokeWidth={2} /> {success}
-        </div>
+        <AlertBanner kind="success" icon={<Check size={14} strokeWidth={2} className="mt-0.5" />}>
+          {success}
+        </AlertBanner>
       )}
 
       {/* Table */}
@@ -158,78 +149,71 @@ export default function MembersPage() {
                 const dl = daysLeft(m.trialEndsAt);
                 const trialExpired = m.plan === 'trial' && dl !== null && dl <= 0;
                 const trialSoon = m.plan === 'trial' && dl !== null && dl > 0 && dl <= 3;
-                const planMeta = PLAN_LABELS[m.plan] || { label: m.plan.toUpperCase(), color: 'bg-[#EDEDED] text-[#1A1A1A] border-[#EDEDED]' };
+                const planMeta = PLAN_BADGE[m.plan] || { label: m.plan, kind: 'ghost' as const };
 
                 return (
-                  <tr key={m.id} className="hover:bg-[#FFFFFF]/50 transition-all">
+                  <tr key={m.id} className="hover:bg-[#FAFAFA] transition-all">
                     <td className="px-3 py-4 sm:px-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#FFFFFF] border border-[#EDEDED] flex items-center justify-center text-sm font-semibold text-[#0A0A0A] flex-shrink-0">
+                        <div className="bz-avatar" style={{ width: 36, height: 36 }}>
                           {(m.name || m.email).charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-[#0A0A0A] text-sm truncate">{m.name || '—'}</p>
-                          <p className="text-xs text-[#1A1A1A] font-bold truncate">{m.email}</p>
-                          {/* Mobile-only badges: plan + status + trial countdown */}
+                          <p className="text-[13px] font-semibold text-[#0A0A0A] truncate">{m.name || '—'}</p>
+                          <p className="text-[11px] text-[#737373] truncate">{m.email}</p>
                           <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
-                            <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wider border ${planMeta.color}`}>
-                              {planMeta.label}
-                            </span>
-                            {m.isActive ? (
-                              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wider bg-green-100 text-green-700">AKTİF</span>
-                            ) : (
-                              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wider bg-red-100 text-red-700">PASİF</span>
-                            )}
+                            <Badge kind={planMeta.kind}>{planMeta.label}</Badge>
+                            <Badge kind={m.isActive ? 'ok' : 'danger'}>
+                              {m.isActive ? 'Aktif' : 'Pasif'}
+                            </Badge>
                             {m.plan === 'trial' && m.trialEndsAt && (
-                              <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-semibold uppercase tracking-wider ${trialExpired ? 'bg-red-100 text-red-700' : trialSoon ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'bg-[#EDEDED] text-[#1A1A1A]'}`}>
-                                {trialExpired ? 'SÜRESİ DOLDU' : `${dl}G KALDI`}
-                              </span>
+                              <Badge kind={trialExpired ? 'danger' : trialSoon ? 'warn' : 'ghost'}>
+                                {trialExpired ? 'Süresi doldu' : `${dl}g kaldı`}
+                              </Badge>
                             )}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="hidden md:table-cell px-3 py-4 sm:px-5">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg pulse-eyebrow border ${planMeta.color}`}>
-                        <Crown size={10} />
+                      <Badge kind={planMeta.kind}>
+                        <Crown size={10} strokeWidth={2} />
                         {planMeta.label}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
                       {m.plan === 'trial' && m.trialEndsAt ? (
-                        <span className={`text-xs font-semibold flex items-center gap-1.5 ${trialExpired ? 'text-red-500' : trialSoon ? 'text-[#C6F24E]' : 'text-[#1A1A1A]'}`}>
-                          {trialExpired ? <AlertTriangle size={14} strokeWidth={2} /> : null}
+                        <span
+                          className="text-xs font-medium flex items-center gap-1.5"
+                          style={{ color: trialExpired ? '#DC2626' : trialSoon ? '#D97706' : '#525252' }}
+                        >
+                          {trialExpired ? <AlertTriangle size={12} strokeWidth={2} /> : null}
                           {trialExpired
                             ? `Süresi doldu (${Math.abs(dl!)} gün önce)`
                             : `${dl} gün kaldı`}
                         </span>
                       ) : (
-                        <span className="text-xs text-[#6B7280] font-bold">—</span>
+                        <span className="text-xs text-[#737373]">—</span>
                       )}
                     </td>
                     <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#1A1A1A]">
-                        <Store size={14} strokeWidth={2} />
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-[#0A0A0A]">
+                        <Store size={13} strokeWidth={2} />
                         {m._count.restaurants}
                       </div>
                     </td>
                     <td className="hidden md:table-cell px-3 py-4 sm:px-5">
-                      {m.isActive ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-50 text-green-600 border border-green-200 pulse-eyebrow">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />AKTİF
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-500 border border-red-200 pulse-eyebrow">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />PASİF
-                        </span>
-                      )}
+                      <Badge kind={m.isActive ? 'ok' : 'danger'}>
+                        {m.isActive ? 'Aktif' : 'Pasif'}
+                      </Badge>
                     </td>
                     <td className="px-2 py-4 sm:px-5 text-right">
                       <button
                         onClick={() => openEdit(m)}
-                        className="px-3 sm:px-4 py-2 rounded-xl bg-[#0A0A0A] text-white text-[10px] sm:pulse-eyebrow hover:bg-[#1A1A1A] active:scale-95 transition-all"
+                        className="bz-btn-ghost"
+                        style={{ padding: '6px 12px', fontSize: 12 }}
                       >
-                        DÜZENLE
+                        Düzenle
                       </button>
                     </td>
                   </tr>
@@ -242,101 +226,96 @@ export default function MembersPage() {
 
       {/* Edit Modal */}
       {editingMember && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-[#EDEDED] w-full max-w-md max-h-[92dvh] overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:pb-0">
-            <div className="p-6 border-b border-[#EDEDED] flex items-center justify-between">
+        <Modal
+          size={440}
+          onClose={() => setEditingMember(null)}
+          title={
+            <div>
+              <p className="pulse-eyebrow text-[#737373]">Düzenle</p>
+              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+                İşletme sahibini düzenle
+              </h2>
+              <p className="mt-1 text-[12px] text-[#525252]">{editingMember.email}</p>
+            </div>
+          }
+        >
+          <div className="space-y-6">
+            {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+
+            {/* Plan */}
+            <div className="space-y-2">
+              <label className="pulse-eyebrow text-[#737373]">Plan</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['trial', 'monthly', 'yearly', 'free'] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setEditPlan(p)}
+                    className={`py-3 rounded-xl border pulse-eyebrow transition-all ${
+                      editPlan === p
+                        ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+                        : 'bg-white text-[#525252] border-[#EDEDED] hover:border-[#0A0A0A]'
+                    }`}
+                  >
+                    {PLAN_BADGE[p]?.label.toUpperCase() || p.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Trial End Date */}
+            {editPlan === 'trial' && (
+              <div className="space-y-2">
+                <label className="pulse-eyebrow text-[#737373]">Deneme bitiş tarihi</label>
+                <input
+                  type="date"
+                  value={editTrialEndsAt}
+                  onChange={(e) => setEditTrialEndsAt(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-[#EDEDED] bg-white focus:ring-2 focus:ring-[#C6F24E] focus:border-[#0A0A0A] outline-none text-[13px]"
+                />
+              </div>
+            )}
+
+            {/* Active toggle */}
+            <div className="flex items-center justify-between p-4 bg-[#FAFAFA] rounded-2xl border border-[#EDEDED]">
               <div>
-                <h2 className="text-xl font-semibold text-[#0A0A0A] uppercase tracking-tight">İşletme Sahibini Düzenle</h2>
-                <p className="text-xs text-[#1A1A1A] font-bold mt-1">{editingMember.email}</p>
+                <p className="text-[13px] font-medium text-[#0A0A0A]">Hesap durumu</p>
+                <p className="text-[11px] text-[#737373] mt-0.5">{editIsActive ? 'Kullanıcı sisteme girebilir.' : 'Kullanıcı erişimi engellendi.'}</p>
               </div>
               <button
-                onClick={() => setEditingMember(null)}
-                className="p-2 text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#EDEDED] rounded-xl transition-all"
+                type="button"
+                onClick={() => setEditIsActive((v) => !v)}
+                aria-pressed={editIsActive}
+                aria-label={editIsActive ? 'Aktif - tıklayarak devre dışı bırak' : 'Devre dışı - tıklayarak etkinleştir'}
+                className={`transition-all duration-200 active:scale-95 ${editIsActive ? 'text-[#A8D62E] hover:text-[#0A0A0A]' : 'text-[#737373] hover:text-[#0A0A0A]'}`}
               >
-                <X size={20} strokeWidth={2} />
+                {editIsActive
+                  ? <ToggleRight size={36} strokeWidth={1.5} />
+                  : <ToggleLeft size={36} strokeWidth={1.5} />}
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
-              {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-xs font-semibold text-center">
-                  {error}
-                </div>
-              )}
-
-              {/* Plan */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Plan</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['trial', 'monthly', 'yearly', 'free'] as const).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setEditPlan(p)}
-                      className={`py-3 rounded-xl border-2 pulse-eyebrow transition-all ${
-                        editPlan === p
-                          ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                          : 'bg-white text-[#1A1A1A] border-[#EDEDED] hover:border-[#6B7280]'
-                      }`}
-                    >
-                      {PLAN_LABELS[p]?.label || p.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Trial End Date */}
-              {editPlan === 'trial' && (
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Deneme Bitiş Tarihi</label>
-                  <input
-                    type="date"
-                    value={editTrialEndsAt}
-                    onChange={(e) => setEditTrialEndsAt(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-bold"
-                  />
-                </div>
-              )}
-
-              {/* Active toggle */}
-              <div className="flex items-center justify-between p-4 bg-[#FFFFFF] rounded-2xl border border-[#EDEDED]">
-                <div>
-                  <p className="text-sm font-semibold text-[#0A0A0A]">Hesap Durumu</p>
-                  <p className="text-xs font-bold text-[#1A1A1A] mt-0.5">{editIsActive ? 'Kullanıcı sisteme girebilir.' : 'Kullanıcı erişimi engellendi.'}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setEditIsActive((v) => !v)}
-                  className={`transition-colors ${editIsActive ? 'text-green-500' : 'text-[#6B7280]'}`}
-                >
-                  {editIsActive
-                    ? <ToggleRight size={36} strokeWidth={1.5} />
-                    : <ToggleLeft size={36} strokeWidth={1.5} />}
-                </button>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingMember(null)}
-                  className="flex-1 py-3 rounded-xl border border-[#EDEDED] text-sm font-semibold text-[#1A1A1A] hover:text-[#0A0A0A] transition-colors"
-                >
-                  İPTAL
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex-1 py-3 rounded-xl bg-[#0A0A0A] text-white text-sm font-semibold hover:bg-[#1A1A1A] disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
-                >
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2} />}
-                  KAYDET
-                </button>
-              </div>
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setEditingMember(null)}
+                className="flex-1 py-3 rounded-full border border-[#EDEDED] text-[13px] font-medium text-[#525252] hover:bg-[#FAFAFA] transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 py-3 rounded-full bg-[#0A0A0A] text-white text-[13px] font-semibold hover:bg-[#1A1A1A] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              >
+                {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2} />}
+                Kaydet
+              </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

@@ -11,8 +11,8 @@ export async function compressImage(
   // SVGs already tiny; no benefit to rasterizing them.
   if (file.type === 'image/svg+xml') return file;
 
-  const hasBitmap = typeof (window as any).createImageBitmap === 'function';
-  const hasOffscreen = typeof (window as any).OffscreenCanvas === 'function';
+  const hasBitmap = typeof (window as unknown as { createImageBitmap?: unknown }).createImageBitmap === 'function';
+  const hasOffscreen = typeof (window as unknown as { OffscreenCanvas?: unknown }).OffscreenCanvas === 'function';
 
   try {
     let width: number;
@@ -46,7 +46,7 @@ export async function compressImage(
     const canvas: HTMLCanvasElement | OffscreenCanvas = hasOffscreen
       ? new OffscreenCanvas(w, h)
       : Object.assign(document.createElement('canvas'), { width: w, height: h });
-    const ctx = (canvas as any).getContext('2d') as CanvasRenderingContext2D | null;
+    const ctx = (canvas as HTMLCanvasElement | OffscreenCanvas).getContext('2d') as CanvasRenderingContext2D | null;
     if (!ctx) return file;
     ctx.drawImage(source, 0, 0, w, h);
 

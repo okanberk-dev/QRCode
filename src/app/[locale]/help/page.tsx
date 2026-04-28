@@ -83,18 +83,31 @@ export default async function HelpCenterPage({
     }));
   }
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım Merkezi' : 'Help Center', item: `https://buaze.com/${locale}/help` },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero */}
-      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-16 sm:py-20 text-center">
+      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-20 text-center">
         <div className="mx-auto max-w-[800px]">
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'YARDIM MERKEZI' : 'HELP CENTER'}
           </span>
           <h1
-            className="mt-3 text-[40px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+            className="mt-3 text-[38px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Sorunuzun cevabı burada.' : 'Your answer is right here.'}
@@ -104,7 +117,7 @@ export default async function HelpCenterPage({
       </section>
 
       {/* Categories grid */}
-      <section className="px-6 sm:px-10 py-12 sm:py-16">
+      <section className="px-5 sm:px-10 py-12 sm:py-16">
         <div className="mx-auto max-w-[1200px]">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {HELP_CATEGORIES.map((cat) => {
@@ -148,7 +161,7 @@ export default async function HelpCenterPage({
 
       {/* Popular questions */}
       {popular.length > 0 && (
-        <section className="px-6 sm:px-10 pb-16 sm:pb-20">
+        <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
           <div className="mx-auto max-w-[1200px]">
             <h2
               className="text-[28px] sm:text-[32px] font-medium leading-[1.1] tracking-[-0.02em] text-[#0A0A0A]"
@@ -191,7 +204,7 @@ export default async function HelpCenterPage({
       )}
 
       {/* Contact CTA */}
-      <section className="border-t border-[#EDEDED] px-6 sm:px-10 py-16">
+      <section className="border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-16">
         <div className="mx-auto max-w-[720px] text-center">
           <h2
             className="text-[24px] sm:text-[28px] font-medium tracking-[-0.02em] text-[#0A0A0A]"

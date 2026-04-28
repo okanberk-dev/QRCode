@@ -1,4 +1,4 @@
-import { Stethoscope, Star, ShieldCheck, TrendingUp, QrCode, Users, BarChart3, Lock, Smile } from 'lucide-react';
+import { Stethoscope, Star, TrendingUp, QrCode, BarChart3, Lock, Smile } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
 import { IllusDentist } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   const title = locale === 'tr'
     ? 'Diş Kliniği İtibar Yönetimi — Buaze'
     : 'Dental Clinic Reputation Management — Buaze';
@@ -54,8 +53,8 @@ export default async function DentistSolutionPage({ params }: { params: Promise<
       icon: <Smile size={24} />,
       title: isTr ? 'Anında Geri Bildirim Al' : 'Get Instant Feedback',
       desc: isTr
-        ? 'Hasta kliniği terk etmeden deneyimini paylaşır. Memnun hastalar Google\'a, memnuniyetsizler size yönlendirilir.'
-        : 'Patients share their experience before leaving the clinic. Happy patients go to Google, dissatisfied ones come to you.',
+        ? 'Hasta kliniği terk etmeden deneyimini paylaşır. Her hastaya Google yorum bağlantısı sunulur; isteyen ek olarak kliniğe özel geri bildirim de bırakır.'
+        : 'Patients share their experience before leaving the clinic. Every patient gets the public Google review link; private feedback to the clinic is an optional extra step.',
     },
     {
       icon: <BarChart3 size={24} />,

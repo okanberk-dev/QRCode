@@ -12,7 +12,6 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   return {
     title: (locale === 'tr' ? 'Buaze vs Excel/Spreadsheet | Dijital İtibar Karşılaştırması' : 'Buaze vs Spreadsheet | Digital Reputation Comparison') + ' | Buaze',
     description: locale === 'tr' 

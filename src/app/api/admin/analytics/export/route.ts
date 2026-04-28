@@ -5,13 +5,6 @@ import { getScopedRestaurantIds } from '@/lib/panel-access';
 
 export const dynamic = 'force-dynamic';
 
-const PLATFORM_LABELS: Record<string, string> = {
-  google: 'Google',
-  yemeksepeti: 'Yemeksepeti',
-  getir: 'Getir',
-  trendyol_go: 'Trendyol GO',
-};
-
 function parseRange(range: string): Date | null {
   if (range === 'all') return null;
   const days = range === '7d' ? 7 : range === '30d' ? 30 : range === '90d' ? 90 : NaN;

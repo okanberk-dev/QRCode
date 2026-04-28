@@ -20,6 +20,13 @@ export async function GET(req: NextRequest) {
 
   const restaurantIdFilter = req.nextUrl.searchParams.get('restaurantId');
 
+  // Explicit IDOR check on the filter param. Without this, the implicit
+  // "userId scoping" already blocks data leakage but lets the caller probe
+  // for restaurant existence by inspecting empty vs. populated responses.
+  if (restaurantIdFilter && !(await canAccessRestaurant(actor, restaurantIdFilter))) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
   const items = await prisma.campaign.findMany({
     where: {
       userId: ownerId,

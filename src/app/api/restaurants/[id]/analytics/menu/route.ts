@@ -69,7 +69,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     let categoryId: string | undefined;
     if (rawCategoryId) {
       const ok = await prisma.menuCategory.findFirst({
-        where: { id: rawCategoryId, restaurantId: id },
+        where: { id: rawCategoryId, restaurantId: id, deletedAt: null },
         select: { id: true },
       });
       if (ok) categoryId = rawCategoryId;
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       productClicks,
     ] = await Promise.all([
       prisma.menuCategory.findMany({
-        where: { restaurantId: id },
+        where: { restaurantId: id, deletedAt: null },
         select: { id: true, name: true, sortOrder: true },
         orderBy: { sortOrder: 'asc' },
       }),

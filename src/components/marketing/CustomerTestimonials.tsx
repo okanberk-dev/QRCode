@@ -36,7 +36,7 @@ function Testimonial({ quote, name, role, company, avatarUrl, initials, link, lo
       </div>
       
       <blockquote className="mb-8 text-[15px] italic leading-relaxed text-[#0A0A0A] sm:text-[16px]">
-        "{quote}"
+        &ldquo;{quote}&rdquo;
       </blockquote>
 
       <div className="mt-auto flex items-center gap-3 border-t border-[#EDEDED] pt-5">
@@ -93,8 +93,8 @@ export default function CustomerTestimonials({ locale }: CustomerTestimonialsPro
       initials: 'SB',
       link: `/${locale}/case-study/pizza-locale`,
       quote: isTr
-        ? "Akıllı bildirim sistemi ve olumsuz yorum filtresi Pizza Locale için gerçek bir dönüm noktası oldu. Krizleri büyümeden çözme şansı veriyor."
-        : "The smart notification system and negative review filter have been a real turning point for Pizza Locale. It gives us the chance to resolve crises before they grow.",
+        ? "Akıllı bildirim sistemi ve özel geri bildirim kanalı Pizza Locale için gerçek bir dönüm noktası oldu. Krizleri büyümeden çözme şansı veriyor."
+        : "The smart notification system and private feedback channel have been a real turning point for Pizza Locale. It gives us the chance to resolve crises before they grow.",
     }
   ];
 

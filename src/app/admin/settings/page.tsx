@@ -15,6 +15,7 @@ import {
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
+import { AlertBanner, PageHeader } from '@/components/ui';
 
 type TabId = 'account' | 'brand' | 'integrations' | 'automation' | 'team' | 'billing' | 'notifications' | 'api';
 
@@ -30,6 +31,26 @@ function AdminSettingsBody() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
   const [tab, setTab] = useState<TabId>('account');
+  const [integrationsError, setIntegrationsError] = useState<string | null>(null);
+
+  const handleConnect = async (provider: 'google') => {
+    setIntegrationsError(null);
+    try {
+      const res = await fetch(`/api/integrations/${provider}/connect`, { method: 'POST' });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+      if (data?.configured === false) {
+        setIntegrationsError(isTr ? 'Google OAuth env ayarları eksik.' : 'Google OAuth env settings missing.');
+        return;
+      }
+      setIntegrationsError(isTr ? 'Bağlantı başlatılamadı.' : 'Connection could not be started.');
+    } catch {
+      setIntegrationsError(isTr ? 'Bağlantı hatası.' : 'Connection error.');
+    }
+  };
 
   const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number }> }[] = [
     { id: 'account', label: isTr ? 'Hesap' : 'Account', icon: Briefcase },
@@ -43,13 +64,16 @@ function AdminSettingsBody() {
   ];
 
   return (
-    <div className="space-y-4">
-      <header>
-        <p className="pulse-eyebrow text-[#737373]">{isTr ? 'PANEL / AYARLAR' : 'PANEL / SETTINGS'}</p>
-        <h1 className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
-          {isTr ? 'Çalışma alanı ayarları' : 'Workspace settings'}
-        </h1>
-      </header>
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <PageHeader
+        eyebrow={isTr ? 'AYARLAR' : 'SETTINGS'}
+        title={isTr ? 'Çalışma alanı ayarları' : 'Workspace settings'}
+        description={
+          isTr
+            ? 'Hesap, marka, entegrasyon, ekip ve fatura tercihlerini buradan yönet.'
+            : 'Manage account, brand, integrations, team, and billing preferences.'
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-[220px_1fr]">
         <aside className="rounded-2xl border border-[#EDEDED] bg-white p-2">
@@ -89,16 +113,23 @@ function AdminSettingsBody() {
             />
           )}
           {tab === 'integrations' && (
-            <Placeholder
-              icon={Plug}
-              title={isTr ? 'Entegrasyonlar' : 'Integrations'}
-              body={
-                isTr
-                  ? 'Google Business Profile, Slack, Zapier ve webhook bağlantıları buraya gelecek. OAuth akışı backend bağlandıktan sonra aktif olur.'
-                  : 'Google Business Profile, Slack, Zapier and webhook connections will live here once the OAuth backend ships.'
-              }
-              cta={{ label: isTr ? 'Google bağlantı isteği' : 'Request Google connect', onClick: () => connect('google') }}
-            />
+            <div className="space-y-4">
+              {integrationsError && (
+                <AlertBanner kind="danger" onDismiss={() => setIntegrationsError(null)}>
+                  {integrationsError}
+                </AlertBanner>
+              )}
+              <Placeholder
+                icon={Plug}
+                title={isTr ? 'Entegrasyonlar' : 'Integrations'}
+                body={
+                  isTr
+                    ? 'Google Business Profile, Slack, Zapier ve webhook bağlantıları buraya gelecek. OAuth akışı backend bağlandıktan sonra aktif olur.'
+                    : 'Google Business Profile, Slack, Zapier and webhook connections will live here once the OAuth backend ships.'
+                }
+                cta={{ label: isTr ? 'Google bağlantı isteği' : 'Request Google connect', onClick: () => handleConnect('google') }}
+              />
+            </div>
           )}
           {tab === 'automation' && (
             <Placeholder
@@ -164,24 +195,6 @@ function AdminSettingsBody() {
   );
 }
 
-async function connect(provider: 'google') {
-  try {
-    const res = await fetch(`/api/integrations/${provider}/connect`, { method: 'POST' });
-    const data = await res.json().catch(() => null);
-    if (res.ok && data?.url) {
-      window.location.href = data.url;
-      return;
-    }
-    if (data?.configured === false) {
-      alert('Google OAuth env ayarları eksik.');
-      return;
-    }
-    alert('Bağlantı başlatılamadı.');
-  } catch {
-    alert('Bağlantı hatası.');
-  }
-}
-
 function Placeholder({
   icon: Icon,
   title,
@@ -199,7 +212,7 @@ function Placeholder({
         <Icon size={20} strokeWidth={2} />
       </div>
       <div>
-        <h2 className="text-[20px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+        <h2 className="text-[20px] font-medium text-[#0A0A0A]">
           {title}
         </h2>
         <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-[#525252]">{body}</p>
@@ -227,7 +240,7 @@ function AccountPanel({ isTr }: { isTr: boolean }) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-[20px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+        <h2 className="text-[20px] font-medium text-[#0A0A0A]">
           {isTr ? 'Hesap' : 'Account'}
         </h2>
         <p className="mt-1 text-[13px] text-[#525252]">

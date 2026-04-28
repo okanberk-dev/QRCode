@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import { ApiErrors } from '@/lib/api-errors';
 
 export async function GET(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 
@@ -84,7 +84,12 @@ export async function POST(req: NextRequest) {
 
     try {
       const newUser = await prisma.$transaction(async (tx) => {
-        const existingUser = await tx.adminUser.findUnique({ where: { username } });
+        // Existence check only — minimal select keeps this resilient to
+        // schema/DB drift (CLAUDE.md §14.1).
+        const existingUser = await tx.adminUser.findUnique({
+          where: { username },
+          select: { id: true },
+        });
         if (existingUser) {
           throw Object.assign(new Error('USERNAME_TAKEN'), { apiCode: 'USERNAME_TAKEN' });
         }
@@ -102,7 +107,10 @@ export async function POST(req: NextRequest) {
           });
           finalRestaurantId = rest.id;
         } else if (restaurantId) {
-          const rest = await tx.restaurant.findUnique({ where: { id: restaurantId } });
+          const rest = await tx.restaurant.findUnique({
+            where: { id: restaurantId },
+            select: { id: true },
+          });
           if (!rest) {
             throw Object.assign(new Error('INVALID_RESTAURANT'), { apiCode: 'INVALID_RESTAURANT' });
           }
@@ -120,15 +128,16 @@ export async function POST(req: NextRequest) {
       });
 
       return NextResponse.json({ success: true, user: newUser }, { status: 201 });
-    } catch (txError: any) {
-      if (txError?.apiCode === 'USERNAME_TAKEN') {
+    } catch (txError) {
+      const err = txError as { apiCode?: string; code?: string; meta?: { target?: unknown } };
+      if (err?.apiCode === 'USERNAME_TAKEN') {
         return ApiErrors.conflict('Bu kullanıcı adı zaten kullanılıyor');
       }
-      if (txError?.apiCode === 'INVALID_RESTAURANT') {
+      if (err?.apiCode === 'INVALID_RESTAURANT') {
         return ApiErrors.badRequest('Seçilen restoran bulunamadı', 'INVALID_RESTAURANT');
       }
-      if (txError?.code === 'P2002') {
-        const target = Array.isArray(txError.meta?.target) ? txError.meta.target.join(',') : String(txError.meta?.target || '');
+      if (err?.code === 'P2002') {
+        const target = Array.isArray(err.meta?.target) ? err.meta.target.join(',') : String(err.meta?.target || '');
         if (target.includes('slug')) {
           return ApiErrors.conflict('Bu URL Slug zaten kullanımda');
         }
@@ -146,7 +155,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const admin: any = await getAdminFromRequest(req);
+  const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
 

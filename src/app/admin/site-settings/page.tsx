@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
 import { Loader2, Save, Upload, Image as ImageIcon, Check, AlertCircle, X, Globe, Sparkles } from 'lucide-react';
+import { AlertBanner, Badge, PageHeader } from '@/components/ui';
 
 type Lang = 'tr' | 'en';
 
@@ -16,11 +18,15 @@ interface SiteSettings {
   ogImageUrl: string | null;
   faviconUrl: string | null;
   logoUrl: string | null;
+  g2Url: string | null;
+  wikidataUrl: string | null;
+  crunchbaseUrl: string | null;
+  capterraUrl: string | null;
 }
 
 const CARD = 'bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-8';
 const LABEL = 'block text-[12px] font-semibold text-[#1A1A1A] uppercase tracking-wider mb-2';
-const INPUT = 'w-full px-4 py-3 bg-[#FFFFFF] border border-[#EDEDED] rounded-xl text-[14px] font-medium text-[#0A0A0A] focus:outline-none focus:border-[#C6F24E] focus:bg-white transition-colors';
+const INPUT = 'bz-input';
 const HINT = 'text-[11px] font-medium text-[#6B7280] mt-1';
 
 export default function SiteSettingsPage() {
@@ -106,48 +112,37 @@ export default function SiteSettingsPage() {
   if (!settings) {
     return (
       <div className="p-8">
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-6 font-bold flex items-center gap-3">
-          <AlertCircle size={20} />
+        <AlertBanner kind="danger" icon={<AlertCircle size={14} strokeWidth={2} className="mt-0.5" />}>
           {error || 'Ayarlar yüklenemedi.'}
-        </div>
+        </AlertBanner>
       </div>
     );
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 max-w-5xl mx-auto space-y-6 pb-32">
-      {/* ─── Header ─── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">PANEL / SİTE AYARLARI</p>
-          <h1
-            className="mt-1 text-[28px] sm:text-[36px] font-medium text-[#0A0A0A] tracking-tight"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            Site Ayarları
-          </h1>
-          <p className="text-[14px] text-[#525252] mt-1.5 max-w-[560px]">
-            SEO metadatası, logo ve favicon — her değişiklik tüm site genelinde yansır.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 rounded-full border border-[#C6F24E]/60 bg-[#EAF9B8] px-3 py-1.5">
-          <Sparkles size={14} className="text-[#0A0A0A]" />
-          <span className="pulse-eyebrow text-[#0A0A0A]">SUPERADMIN</span>
-        </div>
-      </div>
+    <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-5 pb-32">
+      <PageHeader
+        eyebrow="SİTE AYARLARI"
+        title="Site ayarları"
+        description="SEO metadatası, logo ve favicon — her değişiklik tüm site genelinde yansır."
+        actions={
+          <Badge kind="lime">
+            <Sparkles size={11} strokeWidth={2} />
+            Superadmin
+          </Badge>
+        }
+      />
 
       {/* ─── Notifications ─── */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-4 font-bold text-[14px] flex items-center gap-3">
-          <AlertCircle size={18} />
+        <AlertBanner kind="danger" icon={<AlertCircle size={14} strokeWidth={2} className="mt-0.5" />}>
           {error}
-        </div>
+        </AlertBanner>
       )}
       {success && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl p-4 font-bold text-[14px] flex items-center gap-3">
-          <Check size={18} />
+        <AlertBanner kind="success" icon={<Check size={14} strokeWidth={2} className="mt-0.5" />}>
           {success}
-        </div>
+        </AlertBanner>
       )}
 
       {/* ─── Kart 1: SEO Metadata ─── */}
@@ -243,7 +238,7 @@ export default function SiteSettingsPage() {
         <div className="mb-6">
           <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">Marka Kimliği</h2>
           <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
-            Site genelinde (navbar, footer, auth sayfaları) görünen logo ve tarayıcı favicon'u.
+            Site genelinde (navbar, footer, auth sayfaları) görünen logo ve tarayıcı favicon&apos;u.
           </p>
         </div>
 
@@ -268,6 +263,68 @@ export default function SiteSettingsPage() {
             uploading={uploading === 'favicon'}
             previewClass="aspect-square w-full max-w-[128px] bg-[#FFFFFF] rounded-xl p-3 border border-[#EDEDED]"
           />
+        </div>
+      </div>
+
+      {/* ─── Kart 3: Entity Profile URLs ─── */}
+      <div className={CARD}>
+        <div className="mb-6">
+          <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">
+            Varlık Profili URL&apos;leri
+          </h2>
+          <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
+            Buaze&apos;in dış kaynak profillerine bağlantı. Doluysa ana sayfadaki Organization JSON-LD&apos;ye <code className="bg-[#FAFAFA] px-1 rounded text-[11px]">sameAs</code> olarak girer ve <Link className="underline" href="/tr/press">basın kiti</Link> sayfasında gösterilir. Boş alanlar atlanır.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className={LABEL}>G2 Listing</label>
+            <input
+              type="url"
+              className={INPUT}
+              value={settings.g2Url ?? ''}
+              onChange={(e) => update('g2Url', e.target.value || null)}
+              placeholder="https://www.g2.com/products/buaze"
+            />
+            <p className={HINT}>SaaS karşılaştırma sayfaları + AI search.</p>
+          </div>
+
+          <div>
+            <label className={LABEL}>Wikidata Q-ID URL</label>
+            <input
+              type="url"
+              className={INPUT}
+              value={settings.wikidataUrl ?? ''}
+              onChange={(e) => update('wikidataUrl', e.target.value || null)}
+              placeholder="https://www.wikidata.org/wiki/Q123456789"
+            />
+            <p className={HINT}>Knowledge Graph + LLM eğitim datası.</p>
+          </div>
+
+          <div>
+            <label className={LABEL}>Crunchbase</label>
+            <input
+              type="url"
+              className={INPUT}
+              value={settings.crunchbaseUrl ?? ''}
+              onChange={(e) => update('crunchbaseUrl', e.target.value || null)}
+              placeholder="https://www.crunchbase.com/organization/buaze"
+            />
+            <p className={HINT}>Şirket entity sinyali.</p>
+          </div>
+
+          <div>
+            <label className={LABEL}>Capterra</label>
+            <input
+              type="url"
+              className={INPUT}
+              value={settings.capterraUrl ?? ''}
+              onChange={(e) => update('capterraUrl', e.target.value || null)}
+              placeholder="https://www.capterra.com/p/123456/Buaze"
+            />
+            <p className={HINT}>SaaS yazılım dizini.</p>
+          </div>
         </div>
       </div>
 

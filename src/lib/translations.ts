@@ -3,6 +3,18 @@ export type Locale = 'tr' | 'en';
 export const locales: Locale[] = ['tr', 'en'];
 export const defaultLocale: Locale = 'tr';
 
+// Resolve a Locale from an Accept-Language header for server-side routing
+// (not-found, admin redirects). Falls back to defaultLocale.
+export function detectLocaleFromAcceptLanguage(acceptLang: string | null | undefined): Locale {
+  if (!acceptLang) return defaultLocale;
+  const tags = acceptLang.toLowerCase().split(',');
+  for (const raw of tags) {
+    const tag = raw.split(';')[0].trim().split('-')[0];
+    if ((locales as string[]).includes(tag)) return tag as Locale;
+  }
+  return defaultLocale;
+}
+
 export const translations = {
   tr: {
     // Meta
@@ -455,7 +467,7 @@ Bu metni okudum, anladım ve yukarıda belirtilen şekilde tarafıma ticari elek
     google_compliance_point2_title: 'Ödüllendirme Yok',
     google_compliance_point2_desc: 'Google politikaları uyarınca, yorum karşılığında indirim, hediye veya herhangi bir ödül verilmesini kesinlikle önermez ve desteklemeyiz. Dürüstlük en büyük ödülümüzdür.',
     google_compliance_point3_title: 'Dürüst Geri Bildirim Akışı',
-    google_compliance_point3_desc: 'Müşterilerinizden sadece gerçek deneyimlerini paylaşmalarını istiyoruz. Olumlu yorumları Google\'a yönlendirirken, olumsuzları size özel olarak ileterek krizleri profesyonelce yönetmenizi sağlarız.',
+    google_compliance_point3_desc: 'Her müşteriye Google\'da yorum bırakma seçeneği sunuyoruz. İsteyen müşteri ek olarak işletmenize özel geri bildirim de gönderebilir; kimsenin Google\'a yazmasına engel değiliz, yıldıza göre dallandırma yapmıyoruz.',
     google_compliance_policy_title: 'Google\'ın "Review Gating" Politikası',
     google_compliance_policy_desc: 'Google, işletmelerin negatif yorumları caydırmasını ve sadece pozitif yorumları seçici olarak istemesini yasaklıyor. Buaze, tüm müşterilere dürüst geri bildirim imkanı sunarak bu politikalara tam uyum sağlar.',
     google_compliance_link_text: 'Google Maps Katkı Politikası\'nı inceleyin',
@@ -507,7 +519,7 @@ Bu metni okudum, anladım ve yukarıda belirtilen şekilde tarafıma ticari elek
     pl_case_challenge_title: 'Zorluk: Parçalanmış İtibar ve Operasyonel Kör Noktalar',
     pl_case_challenge_desc: 'Hızlı büyüme sürecinde her şubede aynı kaliteyi korumak ve müşterilerin "sessiz kalmamasını" sağlamak Pizza Locale için en büyük zorluktu. Manuel geri bildirim toplama yöntemleri, müşteri deneyiminde operasyonel kör noktalar yaratıyordu. İşletme yönetimi, her şubedeki gerçek hissiyatı anlık olarak ölçebilecek merkezi bir sisteme ihtiyaç duyuyordu.',
     pl_case_solution_title: 'Çözüm: Buaze Akıllı Deneyim Akışı',
-    pl_case_solution_desc: 'Tüm şubelerdeki masalara yerleştirilen akıllı QR kodlar ile geri bildirim toplama süreci tam otomatize edildi. Negatif geri bildirimlerin doğrudan bölge sorumlusuna saniyeler içinde iletildiği, pozitif deneyimlerin ise Google Haritalar\'a yönlendirildiği dinamik bir altyapı kuruldu. Bu sayede her masa, şeffaf bir veri kaynağına dönüştü.',
+    pl_case_solution_desc: 'Tüm şubelerdeki masalara yerleştirilen akıllı QR kodlar ile geri bildirim toplama süreci tam otomatize edildi. Her misafire Google Haritalar bağlantısı sunulurken, ek olarak işletmeye özel paylaşılan geri bildirimler de saniyeler içinde bölge sorumlusuna iletildi. Bu sayede her masa, şeffaf bir veri kaynağına dönüştü.',
     pl_case_results_title: 'Sonuç: Veriyle Gelen Zincirleme Başarı',
     pl_case_results_desc: 'Bugün Pizza Locale, 12 şubesinde de 4.5+ puan ortalamasını başarıyla koruyor. Müşteri kaybı %90 oranında azaldı ve şube fark etmeksizin servis kalitesi standardize edildi. Yeni şubelerin açılış paketine Buaze entegrasyonu "olmazsa olmaz" bir standart olarak eklendi.',
     
@@ -528,10 +540,10 @@ Bu metni okudum, anladım ve yukarıda belirtilen şekilde tarafıma ticari elek
     compare_static: 'Bireysel QR',
     compare_sheet: 'Excel / Kağıt',
     compare_f1: 'Dinamik QR (Link Değiştirme)',
-    compare_f2: 'Negatif Yorum Filtreleme',
+    compare_f2: 'Özel Geri Bildirim Kanalı',
     compare_f3: 'Anlık SMS/Email Bildirimi',
     compare_f4: 'Müşteri Veri Tabanı (CRM)',
-    compare_f5: 'Otomatik Google Yönlendirme',
+    compare_f5: 'Tek Tıkla Google Bağlantısı',
     compare_f6: 'Çoklu Şube Yönetimi',
     compare_f7: 'Gelişmiş Analitik Panel',
     compare_yes: 'Evet',
@@ -988,7 +1000,7 @@ I have read and understood this notice and give my EXPLICIT CONSENT to receive c
     google_compliance_point2_title: 'No Incentives',
     google_compliance_point2_desc: 'In accordance with Google policies, we strictly refrain from and discourage offering discounts, gifts, or any rewards in exchange for reviews. Integrity is our greatest reward.',
     google_compliance_point3_title: 'Honest Feedback Flow',
-    google_compliance_point3_desc: 'We only ask your customers to share their genuine experiences. We direct positive reviews to Google while sending negative ones to you privately, allowing you to manage crises professionally.',
+    google_compliance_point3_desc: 'Every customer is offered the public Google review link. Anyone who also wants to share private feedback with your business can do so in the same flow — we never gate negative reviews or branch by star rating.',
     google_compliance_policy_title: 'Google\'s Review Gating Policy',
     google_compliance_policy_desc: 'Google prohibits businesses from discouraging negative reviews and selectively requesting only positive ones. Buaze ensures full compliance by offering honest feedback opportunities for all customers.',
     google_compliance_link_text: 'Review Google\'s Maps User Contributed Content Policy',
@@ -1040,7 +1052,7 @@ I have read and understood this notice and give my EXPLICIT CONSENT to receive c
     pl_case_challenge_title: 'Challenge: Fragmented Reputation & Operational Blind Spots',
     pl_case_challenge_desc: 'Maintaining the same quality across every branch during rapid growth and ensuring customers didn\'t stay silent were the biggest challenges for Pizza Locale. Manual methods of collecting feedback created an operational blind spot in the customer experience. Management needed a centralized system to measure the real sentiment at every branch in real-time.',
     pl_case_solution_title: 'Solution: Buaze Smart Experience Flow',
-    pl_case_solution_desc: 'The feedback collection process was fully automated with smart QR codes placed on tables in all branches. A dynamic infrastructure was established where negative feedback was instantly forwarded to the regional manager within seconds, while positive experiences were directed to Google Maps. This way, every table was transformed into a transparent data source.',
+    pl_case_solution_desc: 'The feedback collection process was fully automated with smart QR codes placed on tables in all branches. Every guest was offered the Google Maps review link, and any additional private feedback shared with the business was instantly forwarded to the regional manager within seconds. This way, every table was transformed into a transparent data source.',
     pl_case_results_title: 'Result: Data-Driven Chain Success',
     pl_case_results_desc: 'Today, Pizza Locale successfully maintains a 4.5+ rating average across all 12 branches. Customer churn has decreased by 90%, and service quality has been standardized regardless of the location. Buaze integration has been added as a "must-have" standard to the opening package of all new branches.',
 
@@ -1061,10 +1073,10 @@ I have read and understood this notice and give my EXPLICIT CONSENT to receive c
     compare_static: 'Static QR',
     compare_sheet: 'Excel / Paper',
     compare_f1: 'Dynamic QR (Link Update)',
-    compare_f2: 'Negative Feedback Filtering',
+    compare_f2: 'Private Feedback Channel',
     compare_f3: 'Instant SMS/Email Alerts',
     compare_f4: 'Customer CRM Database',
-    compare_f5: 'Automated Google Routing',
+    compare_f5: 'One-Click Google Review Link',
     compare_f6: 'Multi-Branch Management',
     compare_f7: 'Advanced Analytics Dashboard',
     compare_yes: 'Yes',

@@ -31,7 +31,7 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 | Charts | recharts | |
 | Görsel işleme | sharp (WebP dönüşüm + resize) | |
 | QR | qrcode | `/api/restaurants/[id]/qr` |
-| Mail | nodemailer | Bildirim emaili |
+| Mail | Resend HTTP API | `src/lib/email.ts` — SMTP yok, fetch tabanlı |
 | i18n | `src/app/[locale]/...` + `src/lib/translations.ts` | tr / en |
 | Deploy | Vercel (Production) | Otomatik Git entegrasyonu |
 
@@ -42,8 +42,8 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 | Veri | Nerede | Not |
 |---|---|---|
 | Veritabanı | Supabase PostgreSQL | Kalıcı (tüm ana veri) |
-| Menü ürün görselleri | **Postgres TEXT kolonu** (`menu_items.image_url`) | Base64 data URL (`data:image/webp;base64,...`) — Vercel ephemeral FS riskini atlatır |
-| Menü logosu | **Postgres TEXT kolonu** (`restaurants.menu_logo_url`) | Aynı şekilde base64 data URL |
+| Menü ürün görselleri | **Postgres TEXT kolonu** (`menu_items.image_url`) | Base64 data URL (`data:image/webp;base64,...`) — Vercel ephemeral FS riskini atlatır. Şemada `@db.Text` ile zorlanır (2026-04 audit fix). |
+| Menü logosu | **Postgres TEXT kolonu** (`restaurants.menu_logo_url`) | Aynı şekilde base64 data URL. `@db.Text` zorunlu. |
 | Site ayarları görselleri | Supabase Storage (ayrı yol) | `src/app/api/admin/site-settings/upload` |
 
 ### Görsel işleme akışı (menü)
@@ -57,6 +57,7 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 - `src/lib/validations.ts` — `imageUrl` hem `http(s)://` URL'i hem `data:image/` prefix'li data URL kabul eder
 - `data:image/` için max 300 KB (base64), diğer URL'ler max 1000 karakter
 - `/api/restaurants/[id]/theme` — `menuLogoUrl` aynı kuralları uygular
+- **Önemli:** Şemada `@db.Text` ile saklama bütçesi `VARCHAR(255)`'ten `TEXT`'e çıkarıldı; aksi halde 300 KB validation geçerken save sırasında sessizce kesiliyordu. Geçmiş truncated kayıtlar tespit için: `SELECT id FROM menu_items WHERE octet_length(image_url) >= 254;`
 
 ### Niçin base64-in-DB?
 - Vercel serverless FS yok → diske yazamıyoruz
@@ -89,36 +90,25 @@ where.restaurantId = { in: scopedIds };
 
 ---
 
-## 4.5 Admin "İşletmeler / Yöneticiler / Müşteriler" terminolojisi (2026-04 yedinci dalga)
+## 4.5 Admin Terminoloji (Kanonik)
 
-Süperadmin paneli üç ayrı user-ish sayfa barındırıyor; her biri farklı veri tablosundan beslendiği için **kanonik terminoloji** zorunlu (Stripe / Linear / Vercel disiplini). Eskiden "Üyeler / Üye / Kullanıcı / İşletmeci" karışık kullanılıyordu — §20'de tamamen normalize edildi.
+Stripe/Linear/Vercel disiplini — her entity için tek terim. **"Üyeler" süperadmin tarafında ASLA kullanılmaz** (muğlak: User mu, TeamMember mı, AdminUser mı?).
 
 | Sidebar | URL | Kaynak tablo | Anlam |
 |---|---|---|---|
-| **İşletmeler** (Businesses) | `/admin/members` | `User` (`role='restaurant_owner'`) | Buaze'ye kayıtlı SaaS müşterileri (paying/trial restaurant owners) |
-| **Yöneticiler** (Admins) | `/admin/users` | `AdminUser` (`role='manager'\|'superadmin'`) | Buaze iç ekibi + restoran yöneticisi hesapları (operatör erişim) |
-| **Müşteriler** (Customers) | `/admin/customers` | `Feedback` (groupBy email/phone, KVKK-onaylı) | İşletmelerin son-müşterileri — QR'dan form dolduranlar |
+| **İşletmeler** | `/admin/members` | `User` (`role='restaurant_owner'`) | SaaS müşterileri (ödeyen/trial restoran sahipleri) |
+| **Yöneticiler** | `/admin/users` | `AdminUser` (`role='manager'\|'superadmin'`) | Buaze iç ekibi + restoran operatör hesapları |
+| **Müşteriler** | `/admin/customers` | `Feedback` (KVKK-onaylı, dedupe) | İşletmelerin son-müşterileri — QR'dan form dolduranlar |
 
-> **Owner panelindeki `/admin/team`** ayrı bir scope: bir işletme sahibinin kendi ekibini (`TeamMember` tablosu) yönetir. Sidebar label'ı **Ekip** olarak korunur, "Üye davet et" butonu owner-side workspace member'lar için doğru terim.
+> **Owner panelindeki `/admin/team`** ayrı scope: işletme sahibinin kendi ekibi (`TeamMember`). Sidebar label **Ekip**, "Üye davet et" butonu burada doğru.
 
-**Neden "Üyeler" terimi terk edildi?** Hem User (SaaS müşterisi) hem TeamMember (workspace üyesi) hem de AdminUser (sistem yetkilisi) için kullanılıyordu — anlamı bağlama göre değişiyordu. Stripe, Linear, Vercel benzeri SaaS'lar her entity için ayrı terim kullanır:
-- "Customers" / "Accounts" → ödeme yapan müşteriler (= **İşletmeler**)
-- "Admins" / "Team" → operatör/iç ekip (= **Yöneticiler**)
-- "End-users" / "Customers" → ürünün son tüketicileri (= **Müşteriler**)
+**API URL'leri değişmedi** (backward compat):
+- `/api/admin/members` → User CRUD
+- `/api/admin/users` → AdminUser CRUD
+- `/api/admin/customers` (+ `/export`) → Feedback-derived; `restaurantId/range/search/hasEmail/hasPhone/hasComment/page/limit` query, `{ data, meta, summary }` response, IDOR `getScopedRestaurantIds`
+- **Müşteri dedupe:** `(restaurant_id, COALESCE(lower(email), phone))` — anonim (email+phone null) feedback listede yer almaz
 
-**API'ler değişmedi** (URL stability):
-- `GET/PUT /api/admin/members` → User CRUD (SaaS hesapları)
-- `GET/POST/PUT/DELETE /api/admin/users` → AdminUser CRUD (operatör hesaplar)
-- `GET /api/admin/customers` → Feedback-derived customer list. Query: `restaurantId`, `range`, `search`, `hasEmail`, `hasPhone`, `hasComment`, `page`, `limit`. Response: `{ data, meta, summary }`. **Sadece KVKK onaylı satırlar**, IDOR `getScopedRestaurantIds` ile.
-- `GET /api/admin/customers/export` → aynı filtrelerle tüm set CSV (UTF-8 BOM).
-
-**Dedupe mantığı (Müşteriler):** `(restaurant_id, COALESCE(lower(email), phone))` → aynı müşteri aynı restorana birden fazla feedback bıraksa bile tek satır; email+phone ikisi de boş olan anonim feedback listede yer almaz.
-
-**translations.ts** key'leri:
-- `users` (legacy "Kullanıcılar") — backward-compat, kaldırılmadı
-- `businesses` → "İşletmeler" / "Businesses" (2026-04 §20'de eklendi)
-- `admins` → "Yöneticiler" / "Admins" (2026-04 §20'de eklendi)
-- `customers` → "Müşteriler" / "Customers" (zaten vardı)
+`translations.ts` key'leri: `businesses`, `admins`, `customers` (kanonik) + `users` (legacy backward-compat).
 
 ---
 
@@ -208,13 +198,7 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 
 ## 8. Sık Karşılaşılan Tuzaklar
 
-### Upload EACCES
-- **Neden:** `public/` dizini root-owned + runtime user nextjs (uid 1001).
-- **Çözüm:** Dockerfile satır 44 `--chown=nextjs:nodejs` + `mkdir -p public/uploads/menu` + `chown -R nextjs:nodejs public/uploads`.
-- **Ayrıca:** Coolify'da volume mount → `/app/public/uploads`.
-
-### "Upload başarılı ama görsel gitti"
-- Volume mount yok. Next deploy'da `public/` tekrar kopyalanıyor, yeni dosyalar kayboldu. → Coolify volume ekle.
+> **Not:** Eski Coolify upload tuzakları (EACCES, public/uploads volume) artık geçerli değil — Vercel + base64-in-DB'ye geçildi (§3).
 
 ### Next.js body size limit (4MB default)
 - Upload route'u dosyayı `file.arrayBuffer()` ile alıyor. 5MB client tarafı validasyonu var ama Next 15 App Router `Route Handler` default ~4MB. Gerekirse `next.config.ts` içinde experimental body size config.
@@ -293,21 +277,6 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 - **Motion**: `.pulse-heartbeat` utility — 1.6s ease infinite scale(1→1.2→1). Logo accent dot, live status indicator vb. için.
 - **Signature buton**: `bg-[#C6F24E] text-[#0A0A0A]` (lime CTA) veya `bg-[#0A0A0A] text-white` (koyu CTA); hover'da `bg-[#A8D62E]` / `bg-[#1A1A1A]`.
 
-### Eski renkler → Pulse karşılıkları (v2 → Pulse)
-| v2 (Eski) | Pulse (Yeni) |
-|---|---|
-| `#F4B400` Gold | `#C6F24E` Lime |
-| `#D69E00` Gold Deep | `#A8D62E` Lime Deep |
-| `#B88800` Dark Gold (text on soft bg) | `#0A0A0A` Graphite |
-| `#FFD666` Amber | `#D7F98E` Mid Lime |
-| `#FFF8D6` Soft Gold bg | `#EAF9B8` Lime Soft |
-| `#1A2332` Navy | `#0A0A0A` Graphite |
-| `#0E1525` Ink | `#000000` Pure Black |
-| `#2A3444` Slate | `#1A1A1A` N800 |
-| `#F8F6F1` Ivory | `#FFFFFF` Pure |
-| `#E8ECF2` Cloud | `#EDEDED` N200 |
-| `#FFB347`/`#FB923C`/`#F97316` (v1 gradient) | `#C6F24E`/`#A8D62E`/`#8CB81E` |
-
 ### Dokunulmayan platform brand hex'leri
 `#4285F4` (Google), `#FA0050` (Yemeksepeti), `#5D3EBC` (Getir), `#F27A1A` (Trendyol GO) — `FeedbackTable.tsx`, `PlatformDistribution.tsx`, `admin/qr/page.tsx` içinde resmi marka renkleri olarak korunur.
 
@@ -357,41 +326,18 @@ Paylaşılan helper'lar: `BadgeChip`, `BadgeChipOnDark`, `Placeholder`, `Restaur
 
 Admin preview modu `disableAnalytics` prop'u ile tracking'i kapatır **ve** splash'i devre dışı bırakır — builder'daki önizleme üretim verilerini kirletmez ve 3 sn beklemeye sokmaz.
 
-### 12.2.1 Ürün detay modal'ı
+### 12.2.1 Yan component'ler
 
-**Dosya:** `src/components/menu/ProductDetailModal.tsx`
-
-Ürün kartına tıklayan müşteriye ürünün büyük görseli + tam açıklaması + badge'leri + fiyatı gösterir. Tema-agnostik (restoran accent rengini vurgu için kullanır).
-
-- Mobilde (< 640px): alt-yapışık bottom sheet, `rounded-t-3xl`, `max-h-[92vh]`, yukarı slide animasyonu.
-- Desktop'ta (≥ 640px): merkez modal, `max-w-lg`, padding'li.
-- Backdrop click + ESC tuşu kapatır.
-- `document.body.style.overflow` kilidi ile arka plan scroll önlendi.
-- Modal açılırken analytics `menu_product_click` fırlatılır (PublicMenuView'ın `onProductClick` handler'ı).
-
-### 12.2.2 QR splash (açılış animasyonu)
-
-**Dosya:** `src/components/menu/MenuSplash.tsx`
-
-`?source=qr` parametresiyle gelen müşteriye 3 sn markalı splash gösterir: accent gradient arka plan, logo (varsa — yoksa harf initial), restoran adı, ince ilerleme çubuğu.
-
-- `window.history.replaceState` ile `?source=qr` param'ı silinir → yenilemede splash tekrar çıkmaz.
-- `setSplashReady` ilk mount'ta tetiklenir → SSR'de hiçbir şey flash etmez, yalnızca client mount sonrası splash veya menü render edilir.
-- Animasyon `globals.css`'teki `slide-in-from-bottom-6` + yerel `buaze-splash-fill` keyframe'i ile sürdürülür.
-
-### 12.3 Eski `/r/[slug]/menu` sayfası
-
-**Dosya:** `src/app/r/[slug]/menu/page.tsx`
-
-Magazin stilindeki client-side sayfa. PublicMenuView'den ayrı yaşıyor (kendi search + item detail modal'ı var). Tema desteği **yok** (yalnızca `menuAccentColor` kullanılıyor); tam tema entegrasyonu scope dışı bırakıldı. Analytics eklendi.
-
-**TDZ notu:** `filteredCategories` useMemo'su ilgili useEffect'lerden **önce** tanımlanmalı — aksi halde minify sonrası `Cannot access 'k' before initialization` hatası oluşur.
+- **`ProductDetailModal.tsx`** — ürün kart tıklamasında açılır; mobilde bottom sheet, desktop'ta merkez modal. ESC + backdrop kapatır, `document.body.overflow` kilidi var. Açılışta `menu_product_click` analytics event'i.
+- **`MenuSplash.tsx`** — `?source=qr` parametresiyle gelen müşteriye 3 sn markalı splash. `window.history.replaceState` ile param silinir (yenilemede tekrar çıkmaz). `prefers-reduced-motion: reduce` altında 0ms (atlanır).
+- **Legacy `/r/[slug]/menu/page.tsx`** — magazin stilli ayrı sayfa (kendi search + modal). Tema desteği yok (sadece `menuAccentColor`). TDZ tuzağı: `filteredCategories` useMemo'su ilgili useEffect'lerden **önce** tanımlanmalı (minify sonrası `Cannot access before initialization`).
 
 ### 12.4 Backend dikkat edilecek davranışlar
 
 - **Item PATCH + kategori değişikliği:** Item farklı bir kategoriye taşındığında server tarafı otomatik olarak hedef kategorinin sonuna yerleştirir (`sortOrder = MAX + 1`). Aksi halde sortOrder eski değerinde kalır ve listede yanlış pozisyonda görünür. Bkz. `/api/restaurants/[id]/menu/items/[itemId]` PATCH.
 - **sortOrder default:** Yeni item/kategori POST'unda `sortOrder = last + 10` kullanılır (10'luk boşluk manuel ince ayar için ama reorder sonrası `0,1,2...`'e sıkıştırılır). Small quirk, functional.
 - **`parsePriceInput`:** TR (`1.234,56`), EN (`1,234.56`) ve basit formatları (`1,50` / `1.50` / `1000`) destekler. Comma varsa decimal, dotlar thousand separator; tersi de geçerli. Tek dot belirsizlik durumunda decimal kabul edilir. Bkz. `src/lib/format.ts`.
+- **MenuCategory soft-delete (Sprint 3):** `deletedAt` kolonu ile mantıksal silme. `MenuItem.category onDelete: Restrict` korunur, `MenuCategory.items` cascade `deleteMany` sadece **restoran tamamen silindiğinde** çalışır (`/api/restaurants/[id]` DELETE). Tüm read sayfaları + reorder + item POST/PATCH `deletedAt: null` filtresi uygular; PATCH endpoint'i soft-deleted satırı 404 döner (zombie write koruması). Restore yolu yok — soft-delete = arşivleme; geri çağırmak DB direct müdahale gerektirir (Sprint 4 kararı).
 
 ---
 
@@ -468,9 +414,7 @@ Daily rollup tabloları **yok** — ham event'ler + composite index yeterli. ~10
 
 ### 13.7 Entegrasyon noktaları
 
-- `PublicMenuView.tsx` → 4 tema layout'u da tracking'e bağlı. `disableAnalytics` prop'u admin preview'ı dışarda tutar.
-- `/r/[slug]/menu` (legacy magazine) → tracking eklenmiş durumda.
-- `/menu/[slug]` (SSR) → PublicMenuView üzerinden.
+`PublicMenuView` (6 tema), `/r/[slug]/menu` (legacy), `/menu/[slug]` (SSR) — hepsi tracking'e bağlı. `disableAnalytics` prop'u admin preview'ı dışarda tutar.
 
 ### 13.8 Admin UI davranışları
 
@@ -484,18 +428,22 @@ Daily rollup tabloları **yok** — ham event'ler + composite index yeterli. ~10
   - AreaChart x-axis tick interval trend uzunluğuna göre (`≤7 gün: 0`, `≤30 gün: 5`, `>30: length/6`) — 375px ekranda etiketler çakışmaz.
   - BarChart Y-axis kategori etiketleri 14 karakterden uzunsa truncate edilir, tam ad tooltip'te görünür.
 
-### 13.9 Retention (TODO)
+### 13.9 Retention politikası
 
-Event tablosu **temizlenmiyor**. 10 restorana + günde 1K event varsayımı ile 1 yıl ~3.6M satır — partition yerine şimdilik kabul ediliyor. İleride:
-- 180 gün sonrası event'leri daily rollup tablosuna aggregate et
-- Raw event'leri 90 gün sonra sil
-- Cron: `/api/cron/analytics-compact` (örnek path, henüz yok)
+| Veri sınıfı | Tablo | Retention | Mekanizma |
+|---|---|---|---|
+| Müşteri IP'si | `Feedback.ipAddress` | **90 gün** (KVKK data minimization) | `/api/cron/anonymize-ips` — `IP_RETENTION_DAYS` env override edilebilir |
+| Menü analitik event'i | `menu_analytics_events` | **Süresiz** (şimdilik) | 10 restoran × 1K/gün = ~3.6M satır/yıl — ileride 90 gün raw + 180 gün rollup planı |
+| Admin audit log | `admin_audit_logs` | **2 yıl** (legitimate interest) | Şu an cron yok; günde 1-2 işlem × 730 gün ≈ 1500 satır → manuel temizlik yeterli. Volume artarsa `/api/cron/prune-audit-logs` eklenir. |
+| Yorum (Feedback) | `Feedback` | **Süresiz** (KVKK onaylı) | İşletmenin müşteri ilişkisi kaydı — silmek müşteri talebine bağlı |
 
-### 13.10 Eklememe kuralları (scope disiplini)
+**Cron path'leri:**
+- `/api/cron/anonymize-ips` — canlı (Sprint 3)
+- `/api/cron/weekly-digest` — canlı (haftalık özet)
+- `/api/cron/analytics-compact` — örnek path, henüz yok
+- `/api/cron/prune-audit-logs` — gerek olunca eklenecek
 
-- **Customer UI'da sayaç, badge, debug bilgisi ekleme.** Analytics tamamen görünmezdir.
-- **Heuristic eşiklerini component içine hardcode etme** — `ANALYTICS_THRESHOLDS` objesi kullan.
-- **AI/ML insights ekleme** — kurallı heuristics proje tercihidir.
+Tüm cron'lar `Authorization: Bearer ${CRON_SECRET}` zorunlu; Vercel Cron config ya da harici scheduler ile tetiklenir.
 
 ---
 
@@ -510,6 +458,21 @@ Event tablosu **temizlenmiyor**. 10 restorana + günde 1K event varsayımı ile 
 
 Her deploy'da schema sync edilir → `P2022 column does not exist` hatası oluşmaz (daha önce `/api/restaurants` 500 bug'ına sebep olmuştu).
 
+**Defensive coding kuralı (Faz 6 sweep, 2026-04):** `prisma.X.findUnique({ where: ... })` çağrılarına **her zaman explicit `select`** ekle. Prisma'da select'siz findUnique tüm sütunları çeker; schema'da olup henüz DB'ye sync olmamış bir sütun (deploy race, manual SQL, preview env, dev branch) varsa `P2022` ile 500 atar. Explicit select ilgisiz sütunları sorgudan çıkardığı için drift'e bağışıklık sağlar.
+
+**Faz 6'da süpürülen 11 callsite (8 dosya):**
+- `admin/profile` (PUT) — `select: { passwordHash }`
+- `admin/users` POST içi tx — 2 existence check, `select: { id }`
+- `admin/blog/[id]` GET — tam alan listesi (admin edit form full read)
+- `admin/mail-templates/[key]/[locale]` GET — tam alan listesi
+- `admin/mail-templates/.../revisions/[id]/revert` — `{ templateKey, locale, content }`
+- `admin/newsletters/campaigns/[id]` — GET tam alanlar; PATCH ve DELETE `{ status }` only
+- `admin/login` — hotfix migration `{ id }`; auth fetch `{ id, passwordHash, role, restaurantId }`
+
+Public path (`/api/restaurants?slug=`) zaten Faz 1'de süpürüldü (PR #118). Sweep'in dışında kalan callsite: `prisma.X.create()` — INSERT yolu zaten o anda schema↔DB ile yazıyor, SELECT-only drift senaryosu uygulanmaz.
+
+**Yeni route eklerken:** `findUnique`'e `select: { ... }` ekle. Sonradan field eklersen `select`'i de güncelle. Lint kuralı bunu zorlamıyor; code review checklist.
+
 **Zorunlu Vercel env var'ları:**
 - `DATABASE_URL` — Supabase pooler (port 6543)
 - `DIRECT_URL` — Supabase direct connection (port 5432) — `prisma db push` bunu kullanır. **Yoksa build fail eder.**
@@ -520,572 +483,1624 @@ Her deploy'da schema sync edilir → `P2022 column does not exist` hatası oluş
 - `OPENAI_API_KEY` — AI Co-Pilot yanıt önerileri için (§15). Yoksa endpoint deterministik şablona düşer, UI çalışmaya devam eder.
 - `OPENAI_MODEL` — Varsayılan `gpt-4o-mini`.
 
-### 14.2 Rate limit notu
+### 14.2 Rate limit (Upstash Redis + in-memory fallback)
 
-`src/lib/rate-limit.ts` in-memory. Vercel serverless'ta her instance farklı Map tutar — hard limit değil, yumuşak bir koruma. Ciddi abuse'a karşı Upstash Redis veya Vercel Edge Config gerekir (şimdilik opex gereksiz).
+`src/lib/rate-limit.ts` 2026-04 itibariyle **distributed**. Vercel Marketplace üzerinden Upstash Redis bağlandı (`KV_REST_API_URL` + `KV_REST_API_TOKEN` env'leri); env yoksa eski in-memory `Map` davranışına otomatik geri düşer (lokal dev intacta). Sliding-window algoritması (`@upstash/ratelimit` `Ratelimit.slidingWindow`) — fixed-bucket'ın "boundary'de iki kat istek" exploit'ini engeller. Ratelimit instance'ları `${max}:${windowMs}` key'iyle cache'lenir, RTT/maliyet düşürülür.
 
----
+**Public API değişti:** `rateLimit(key, max, windowMs)` artık `Promise<RateLimitResult>` — tüm caller'lar `await` etmeli (mevcut 21+ caller toplu güncellendi). `blockKey` / `isBlocked` / `resetRateLimit` in-memory only kaldı (admin-login ve özel akışlar için yeterli).
 
-## 15. AI Co-Pilot (OpenAI) — 2026-04
+**Fail-open:** Upstash 800ms timeout veya hata atarsa in-memory fallback'e düşer + console.error logu. Site'ı offline rate-limit backend kuyruğunda boğmamak için bilinçli karar.
 
-Restoran panelindeki yorum gelen kutularında (`/[locale]/dashboard/feedbacks` + `/admin/reviews`) "Taslak oluştur" butonu OpenAI'a yanıt taslağı yazdırır.
+**Wired endpoints (bu PR):** `/api/feedback` POST'a Upstash ön-katmanı eklendi (5/dk/IP — DB rate limit (3/10dk) hâlâ ikinci kat). `/api/contact` POST'una rate limit eklendi (3/10dk/IP — Resend mail spend kontrolü). Diğer mevcut caller'lar zaten in-memory kullanıyordu, otomatik distributed'a geçti.
 
-**Helper:** `src/lib/openai.ts` — `hasOpenAIKey()` + `chatCompletion(messages, opts)`. Doğrudan `fetch` kullanır, `openai` SDK dep yok (CLAUDE.md §7).
+**Yapma:** Upstash key'lerini istemci bundle'ına geçirme — server-only (env prefix `NEXT_PUBLIC_` yok). Read-only token (`KV_REST_API_READ_ONLY_TOKEN`) henüz consume edilmedi ama gelecek cache okumaları için Vercel integration tarafından provisioned, dokümante edildi.
 
-**Endpoint:** `POST /api/feedback/[id]/suggest-reply`
-- Auth: `getPanelActorFromRequest` + `canAccessRestaurant` (IDOR)
-- Rate limit: 30 istek / dk / actor (in-memory)
-- Body: `{ locale?: 'tr' | 'en' }` — diğer her şey Prisma'dan çekilir (rating, comment, customerName, platform, restaurant.name/category)
-- Response: `{ feedbackId, suggestion, source: 'openai' | 'template' | 'template-fallback' }`
-- Fallback: `OPENAI_API_KEY` yoksa veya API hatası olursa `buildReplyTemplate()` deterministik şablonu döner — UI her zaman bir şey alır.
-
-**Prompt:**
-- System: Restoran itibar uzmanı rolü; 2-4 cümle, maks. 80 kelime; olumluya teşekkür + yeniden davet, olumsuza özür + somut düzeltme (ücretsiz ikram ÖNERME), emoji yok, müşteri adı ilk adıyla.
-- User: İşletme adı + kategori + müşteri + puan + platform + yorum — yapılandırılmış format.
-- Model: `gpt-4o-mini` default (hızlı + ucuz). `OPENAI_MODEL` env'iyle override.
-- `temperature=0.7`, `max_tokens=300`.
-
-**UI davranışı:**
-- Admin reviews sayfası (`src/app/admin/reviews/page.tsx`): butonda loader + `AI` / `ŞABLON` rozeti response source'una göre. Optimistik olarak önce local template doldurur, sonra endpoint cevabını kullanır.
-- Owner feedbacks sayfası (`src/app/[locale]/dashboard/feedbacks/page.tsx`): zaten endpoint'i çağırıyordu, OpenAI cevabını otomatik alır.
-
-**Maliyet notu:** 1 öneri ≈ 400 token ≈ $0.0001 (gpt-4o-mini). 10.000 öneri/ay = $1. Kotayı OpenAI dashboard'dan takip et.
-
-**Güvenlik:**
-- Anahtar yalnız server-side (`process.env`). Client bundle'a sızmaz (NEXT_PUBLIC_ prefix yok).
-- Rate limit + IDOR koruması var. Anahtarı yanlışlıkla commit etmemek için `.env.local` git-ignored; `.env.example`'da boş bırakılmış.
+**Yap:** Yeni public POST endpoint'i eklerken `await rateLimit('endpoint:ip:${ip}', N, windowMs)` ile en başta gate koy. Mail/SMS gibi side-effect'li akışlarda kapsayıcılık kritik (her istek = 1 Resend send credit).
 
 ---
 
-_Son güncelleme: 2026-04 (üçüncü dalga) — §15 AI Co-Pilot eklendi, §3 depolama mimarisi güncellendi (base64-in-DB), §12 builder'a görsel/logo upload + visibility toggle + reorder perf notları eklendi, §12.4 backend davranışları (cross-category sortOrder + TR price parser), §13.8 analytics admin UI davranışları (refresh, reset, window date, all-time note, mobile chart responsive)._
+## 15. AI Co-Pilot (OpenAI)
+
+Yorum yanıt taslağı için "Taslak oluştur" butonu (`/admin/reviews` + `/[locale]/dashboard/feedbacks`).
+
+- **Helper:** `src/lib/openai.ts` — `hasOpenAIKey()` + `chatCompletion()`; `fetch` tabanlı, `openai` SDK dep YOK (§7).
+- **Endpoint:** `POST /api/feedback/[id]/suggest-reply`
+  - IDOR: `getPanelActorFromRequest` + `canAccessRestaurant`
+  - Rate limit: **30 istek / dk / workspace owner** (`resolveOwnerUserId(actor)` ile keylenir — team member'lar bypass yapamaz)
+  - Body: `{ locale?: 'tr' | 'en' }`; diğer her şey Prisma'dan
+  - Response: `{ feedbackId, suggestion, source: 'openai' | 'template' | 'template-fallback' }`
+- **Fallback:** `OPENAI_API_KEY` yok / API hata → `buildReplyTemplate()` tek satır + `[fill in]` placeholder döner. UI'da gri "ŞABLON" rozeti, lime "AI" rozeti.
+- **Prompt:** Restoran itibar uzmanı, 2-4 cümle, max 80 kelime, ücretsiz ikram önerme, emoji yok. Model `gpt-4o-mini` default (env: `OPENAI_MODEL`).
+- **Maliyet:** ~400 token / öneri ≈ $0.0001. 10K öneri/ay = $1.
+- **Güvenlik:** Anahtar yalnız server-side (`process.env.OPENAI_API_KEY`); `NEXT_PUBLIC_` prefix yok, client bundle'a sızmaz.
 
 ---
 
-## 16. Claude Design Handoff — Buaze Site Tasarımı (2026-04)
+## 16. Claude Design Handoff — Referans
 
-**Kaynak:** Claude Design (claude.ai/design) üzerinden kullanıcının hazırlattığı Pulse marka kimliği + tam site tasarımı.
+`.design/` klasörü Claude Design'dan gelen JSX prototipleri + canvas HTML + chat log içerir (21 dosya, git-tracked). Pulse marka kimliği (graphite/lime/pure white) + ~38 sayfalık site tasarımı kaynağıdır.
 
-### 16.1 Tasarım dosyalarının konumu
+**Kritik kural:** `.design/*.jsx` **doğrudan `src/`'ye kopyalanmaz** — yalnız referans olarak okunur. Pulse token'lar zaten `globals.css` `@theme {}` bloğunda, font'lar `src/app/layout.tsx`'te yüklü, logo `src/components/marketing/BuazeLogo.tsx`. Uygulanan kararlar §11 (renk + typography) + §12 (menü temaları) + §15 (AI Co-Pilot) + §17 (utility class'ları).
 
-Tüm tasarım dosyaları `.design/` klasöründe (git-tracked, kaynak referansı olarak saklanıyor):
+`design.md` repo kökünde — 15 PR'lık faz log'unu tutar.
+
+
+---
+
+## 17. Pulse Redesign — Kalıcı Çıktılar
+
+Pulse design 15 draft PR'da uygulandı (PR #39 → #53). Tarihsel commit detayları için `git log` + `design.md`. Aşağıda **kalıcı kararlar** — tasarım kararları için §11, menü için §12, AI Co-Pilot için §15.
+
+21 dosya `.design/` altında (JSX prototipleri + canvas HTML + chat log). **Asla `src/`'ye kopyalanmaz** — yalnız referans. Pulse token'lar zaten `globals.css`, font'lar `layout.tsx`'te yüklü.
+
+### Pulse utility class'ları (`src/app/globals.css`)
+
+| Class | Kullanım |
+|---|---|
+| `.pulse-btn-primary` | Lime CTA (`#C6F24E`, hover `#A8D62E`, active `scale-0.98`) |
+| `.pulse-btn-dark` | Graphite CTA (`#0A0A0A`, hover `#1A1A1A`) |
+| `.pulse-btn-ghost` | Transparent → graphite border on hover |
+| `.pulse-card-hover` | `translateY(-3px)` lift + soft shadow |
+| `.pulse-eyebrow` | JetBrains Mono 11px tracking-0.18em uppercase |
+| `.pulse-heartbeat` | 1.6s scale 1→1.2→1 — logo accent / live indicator |
+| `.animate-slide-in` / `.animate-marquee` / `.bz-float` | Sticky CTA / logo strip / hero badge motion |
+| `@keyframes ecgDraw` / `confettiFly` | Footer ECG line / onboarding finish burst |
+
+Tüm motion `prefers-reduced-motion: reduce` altında devre dışı (globals.css blanket).
+
+### Marketing component'leri (`src/components/marketing/`)
+
+`AnimatedCounter`, `MarqueeRow`, `StickyCtaBar`, `SocialProofToast`, `VideoModal`, `WatchDemoButton`, `HomeIndustryTabs`, `NewsletterSignup`, `LiveReviewTicker`, `HomeHeroDashboard`, `BuazeLogo`, `PlatformLogo`. Hepsi client-side; SSR-safe değil.
+
+### Faz log'u
+
+`design.md` — 15 PR zincirinin teknik günlüğü ("Backend açıkları" tablosu dahil). Tarihsel ayrıntı oradan; bu dosyada özetlemiyoruz.
+
+
+---
+
+## 18. E-posta + Storage Env'leri
+
+**Stratejik karar:** Yeni external provider eklenmiyor. Resend (mail) + Supabase Storage (dosya) + OpenAI (AI Co-Pilot) yeterli. POS (Iyzico/Stripe) kasıtlı ertelenmiş — billing read-side canlı, write-side yok.
+
+| Env | Zorunluluk | Etki |
+|---|---|---|
+| `RESEND_API_KEY` | Opsiyonel | Eksikse `sendResendEmail` `false` döner; mail akışı sessizce kapanır ama gözlemlenebilir log basar |
+| `RESEND_FROM_EMAIL` | Opsiyonel | Varsayılan `"Buaze <noreply@buaze.com>"`; domain Resend'de doğrulanmış olmalı |
+| `NOTIFICATION_EMAIL` | Opsiyonel | Restoran `notification_email` set değilse default alıcı; ROI/contact/careers fallback |
+| `CAREERS_INBOX_EMAIL` | Opsiyonel | HR ayrı kutu; yoksa `NOTIFICATION_EMAIL` fallback |
+| `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `SUPABASE_STORAGE_BUCKET` | Opsiyonel | Careers attachment + site-settings görselleri; eksikse 503 |
+| `CRON_SECRET` | Cron kullanılıyorsa | `/api/cron/*` endpoint'leri `Authorization: Bearer ${CRON_SECRET}` zorunlu |
+| `IP_RETENTION_DAYS` | Opsiyonel | Default 90; KVKK IP anonimleştirme cron'u için |
+| `IYZICO_*` (POS, henüz yok) | Yok | Wave 3.5'te eklenecek |
+
+Tüm env'ler `.env.example`'da. Vercel production'da yüklü; local dev için manuel kopyalama. Build script `node scripts/validate-env.js` ile zorunlu env'leri doğrular (eksik → exit 1).
+
+
+---
+
+## 19. Reviews + Reply + Resilience Pattern
+
+Yorum gelen kutusu (admin + owner) — kalıcı kararlar.
+
+### Aksiyon endpoint'leri (hepsi `requireFeedbackAccess` IDOR'lu)
+
+| Endpoint | İşlev | Davranış |
+|---|---|---|
+| `POST /api/feedback/[id]/reply` | Yanıt yaz | `channel: 'email'` flag'i + `feedback.email` doluysa Resend e-postası gönderilir; aksi halde "dahili kayıt". `FeedbackReply.status` `pending → sent / failed` (Resend response'una göre). `replyTo` = `restaurant.notificationEmail`. |
+| `POST /api/feedback/[id]/flag` | Dikkat işaretle (toggle) | `FeedbackFlag` upsert / `DELETE` kaldırır |
+| `POST /api/feedback/[id]/assign` | Birine ata | `FeedbackAssignment` upsert; `'self'` sentinel actor'a atar |
+| `POST /api/feedback/[id]/suggest-reply` | AI taslak | §15'e bak; rate-limit workspace owner seviyesinde |
+
+### Reply UI davranışı (`/admin/reviews` + `/[locale]/dashboard/feedbacks`)
+
+- E-posta varsa: `☑ Müşteriye e-posta gönder` checkbox (default on) + buton "E-posta ile gönder" (Mail ikonu)
+- E-posta yoksa: info satırı "Müşteri e-posta bırakmamış (yüksek puanlılar Google'a yönlendirildiği için bu beklenir)" + buton "Dahili kaydet" (Send ikonu)
+- Post-send notice: `sent → lime`, `failed → kırmızı`, `skipped → lime "dahili kaydedildi"`
+
+### Feedback list 3-tier resilience (`GET /api/feedback`)
+
+`prisma db push` henüz çalışmamış preview deploy'larında bazı join tabloları (`feedback_replies`, `feedback_flags`, `feedback_assignments`, `feedback_tags`) yoksa list endpoint çökmesin diye:
+
+1. **Tier 1 (happy path):** Tüm join'ler — `flag + assignment + replies + tags`
+2. **Tier 2:** Tags hariç tüm join'ler (sadece `FeedbackTag` eksikse `isReplied/isFlagged/isAssigned` korunur)
+3. **Tier 3:** Hiç join yok — satırlar yine listelenir, action flag'leri `false`
+
+Response `meta.degraded: { joins, tags } | null` döner. UI amber banner ile "DB sync bekleniyor" notice gösterir. `/api/feedback/counts` aynı pattern'i `replied` sayacında uygular.
+
+### 19.1 Public review surface consent default kuralı (KVKK / GDPR)
+
+`/r/[slug]/page.tsx` form rendering kuralları:
+
+| Onay | Default | Sebep |
+|---|---|---|
+| **KVKK (`hasKvkkConsent`)** | `useState(true)` | Submit-gate olarak işlev görür; UI `disabled={!kvkk}` ile zaten engelliyor. "Action implies consent" — kullanıcı submit ediyorsa veri işleme rızası verilmiş sayılır. |
+| **Marketing (`hasMarketingConsent`)** | **`useState(false)` ZORUNLU** | KVKK Açık Rıza + GDPR Article 7 — pazarlama izni **opt-in** olmalı. Pre-checked iletişim onayı denetimde **ihlal sayılır**, kasten verilmiş onay değil. |
+
+**Yapma:** Marketing default `true` ayarlama. UX trade-off değil, hukuki zorunluluk. PR #121'de yanlışlıkla pre-checked yapıldı, Faz 1 (PR TBD) düzeltti.
+
+**Yap:** Marketing checkbox'a açıklayıcı label + açık link ile "İletişim iznini oku" modal — bilinçli onay görünür olsun.
+
+### 19.2 Default redirect platform — orphan default uyarısı
+
+`Restaurant.defaultRedirectPlatform` set edilmiş ama o platformun URL'i (`yemekSepetiUrl` / `getirYemekUrl` / `trendyolYemekUrl` / `googleReviewUrl`) sonradan silinmiş olabilir. Bu durumda public review surface (`/r/[slug]`) sessizce Google'a düşer — owner için **görünmez bug**: ayar tutmuyor sanır.
+
+**Frontend uyarısı** (`DefaultRedirectPicker.tsx`):
+- `enabledPlatforms` array'i sadece URL'i dolu platformları içerir (parent `OwnerPlatforms` filtresi).
+- `selected` (DB'deki stored default) `enabledPlatforms` içinde değilse → **orphan**.
+- Picker'da amber `<AlertTriangle>` + 2-satırlık açıklama + "Varsayılanı temizle" buton render edilir.
+- Temizle → `defaultRedirectPlatform: null` PUT → orphan kaybolur, public review Google fallback'a döner (kasıtlı).
+
+**Yapma:** Public review tarafında server-side validation ile kullanıcıyı "URL boş" hatasıyla karşılama; müşteri yine de form gönderebilmeli, owner'ın hatası müşteriyi engellemez. Düzeltme yeri **owner panel**.
+
+**Yap:** Owner panelden URL silindiğinde `defaultRedirectPlatform` değeri otomatik temizlenebilir mi? Backend cleanup hook olmadan bu temizlik gerçekleşmiyor — gelecek scope (kullanıcı isteyince).
+
+### 19.3 Public restaurant lookup edge cache
+
+`GET /api/restaurants?slug=` her `/r/[slug]` page load'unda çağrılıyor — tek müşteri akışı = 1 Postgres hit. Restaurant verisi nadiren değişir (owner ayda birkaç kez platform URL veya default platform günceller); read-heavy public path için Vercel edge cache mantıklı.
+
+**Cache header** (`/api/restaurants/route.ts` slug branch):
+```ts
+return NextResponse.json(restaurant, {
+  headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+});
+```
+
+- `s-maxage=60` — Vercel CDN edge'de 60sn fresh, aynı slug için bu süre içinde gelen tüm istekler edge'den döner, DB hit yok.
+- `stale-while-revalidate=300` — 60sn dolduktan sonra 5dk daha stale serve edilir, arka planda fresh fetch tetiklenir. Müşteri "yenileme bekleyiş" hissetmez.
+- `public` — browser ve CDN cache'leyebilir (response zaten public-safe `select` ile filtrelenmiş, §14.1).
+
+**Etki**: ~1000 review-flow/gün → ~24 Postgres hit (slot başına 1). Vercel function invocation maliyeti de aynı oranda düşer.
+
+**Owner update propagation**: 
+- En kötü durum 60 + 300 = 360sn (~6dk) bekleme. Owner panel "Yemeksepeti URL'i değiştirdim ama yorumda hâlâ eskisini görüyorum" hissedebilir.
+- 6dk debug penceresi kabul edildi — alternatif Vercel `revalidatePath('/api/restaurants')` PUT/DELETE handler'larına eklemek olur (kullanıcı isteyince yapılır, scope creep önleyici şimdilik beklemekte).
+- Kritik debug için cache bypass: `curl -H "Cache-Control: no-cache" ...` veya admin paneli `?_=Date.now()` query param ile.
+
+**Yapma:** `dynamic = 'force-dynamic'` route handler'a ekleme — `Cache-Control` header'ı CDN'e zaten talimat veriyor; framework-level dynamic flag bu cache'i geçersiz kılar.
+
+**Yap:** Yeni public read-heavy endpoint eklerken (örn. `/api/menu/[slug]` benzer akış) aynı pattern'i uygula. Public-write veya auth-gated endpoint'lere cache koyma — IDOR + stale-data riski.
+
+
+---
+
+<!-- §20 §4.5 ile birleştirildi (kanonik terminoloji tek bölümde) -->
+
+
+---
+
+## 21. Pulse Mail System (2026-04 Pulse mail handoff)
+
+Buaze mail katmanı 2026-04 Claude Design "buaze-mail" handoff bundle'ı temel alınarak Pulse design system'ine taşındı. Eski neo-brutalist `SHARED_LAYOUT` (3px border + 6px offset shadow + tek harf "B") tamamen kaldırıldı.
+
+### 21.1 Klasör yapısı
 
 ```
-.design/
-├── buaze-site.html          ← Ana canvas (tüm sayfalar için entry point)
-├── chat1.md                 ← Tasarım geçmişi & karar log'u (ÖNCE OKU)
-├── design-canvas.jsx        ← Canvas layout motoru
-├── pulse/
-│   ├── pulse-tokens.jsx     ← Renk, tipografi, spacing token'ları
-│   ├── pulse-symbols.jsx    ← Logo & sembol SVG varyantları
-│   ├── pulse-artboards-1.jsx ← Marka kimliği artboard'ları (1. parça)
-│   ├── pulse-artboards-2.jsx ← Marka kimliği artboard'ları (2. parça)
-│   ├── pulse-app.jsx        ← Pulse marka sistemi app
-│   └── design-canvas.jsx    ← Pulse canvas
-└── site/
-    ├── site-shared.jsx      ← Ortak nav, footer, illüstrasyonlar
-    ├── site-platforms.jsx   ← Platform logo'ları (Google, Yemeksepeti, Getir, Trendyol GO, Yelp, Tripadvisor...)
-    ├── site-premium.jsx     ← Premium nav/footer v2 (mega-dropdown, mobile hamburger, animated footer)
-    ├── site-homepage-v2.jsx ← Ana sayfa v2 (animasyonlu hero, ECG dashboard, live review ticker, video modal, bento grid)
-    ├── site-homepage-v3.jsx ← Ana sayfa v3 (gerçek buaze.com içeriğine uyarlanmış)
-    ├── site-onboarding-v2.jsx ← 5 adımlı onboarding wizard (tamamen redesign)
-    ├── site-marketing.jsx   ← Marketing sayfaları (fiyatlar, QR, nasıl çalışır, karşılaştır, ROI)
-    ├── site-more.jsx        ← Ekstra sayfalar (entegrasyonlar, müşteri hikayeleri, SSS, yardım, kariyer, yasal)
-    ├── site-admin.jsx       ← Admin panel sayfaları (dashboard, inbox, QR builder, analitik, konumlar, ayarlar)
-    ├── site-pages3.jsx      ← Çözüm sayfaları + sektör detayları + auth
-    ├── site-pages4.jsx      ← Daha fazla sayfa (onboarding, 404, admin ek: kampanya, ekip, fatura, API)
-    └── site-app.jsx         ← Tüm sayfaları bir araya getiren canvas uygulaması
+src/lib/email/
+├── tokens.ts           # PULSE renk paleti + FONTS + Instagram handle
+├── escape.ts           # HTML escape (mevcut yardımcı taşındı)
+├── layout.ts           # pulseLayout({subject, preheader, content, eyebrow, darkHeader, footer})
+├── components.ts       # renderLogo / renderHeader / renderFooter / renderButton / renderEyebrow / renderEcgDivider / renderStarRow / renderStatGrid / renderH1 / renderH2 / renderP / spacer
+└── templates/
+    ├── forgot-password.ts
+    ├── welcome.ts
+    ├── form-confirmation.ts   # contact | career | roi | newsletter (tek template)
+    ├── low-rating-alert.ts    # rating ≤ 3
+    ├── new-review.ts          # rating ≥ 4
+    ├── weekly-report.ts
+    ├── newsletter.ts          # aylık Pulse bülteni
+    ├── customer-reply.ts      # düşük puan müşteriye yanıt
+    ├── trial-ending.ts
+    └── index.ts               # re-export
 ```
 
-### 16.2 Tasarım kararları & içerik özeti
+`src/lib/email.ts` şimdi sadece **Resend HTTP layer** + **public sender'lar**:
+- `sendResendEmail` (private), `sendMail` (legacy generic)
+- `sendFeedbackNotification` (rating ≤ 3 → low-rating-alert, ≥ 4 → new-review)
+- `sendWeeklyDigest`, `sendPasswordResetEmail`
+- `sendWelcomeEmail`, `sendFormConfirmationEmail`, `sendCustomerReplyEmail`, `sendTrialEndingEmail`, `sendNewsletterEmail`
+- `getUnsubscribeUrl(token)` utility
 
-**Marka:** Pulse kimliği — graphite (#0A0A0A) + lime (#C6F24E) + pure white. Zaten §11'de belgelenmiş.
+### 21.2 Mail mobile-first kuralları
 
-**Canvas'ta kaç sayfa var:** ~38 sayfa, 5 grup:
-1. **Marketing** — Anasayfa v2/v3, özellikler, AI Co-Pilot, fiyatlar, ROI hesaplayıcı, QR studio, entegrasyonlar, karşılaştır, müşteri hikayeleri, EN uluslararası
-2. **Çözümler** — Restoran, Paket servis (Yemeksepeti/Getir/Trendyol GO logolarıyla), Otel (Booking/Tripadvisor), Klinik, Hukuk, Spa, Perakende
-3. **İçerik** — Blog listesi, blog yazısı, SSS, yardım, hakkımızda, kariyer, iletişim, gizlilik
-4. **Auth** — Kayıt, giriş, şifre sıfırla, onboarding (5 adım), 404
-5. **Admin** — Dashboard, yorum inbox (AI Co-Pilot), QR builder, analitik, konumlar, kampanyalar, ekip, bildirimler, fatura, API/webhook, ayarlar
+Email client'ları (Outlook, Gmail) flex/grid çoğunlukla desteklemez. Tüm template'ler **table-based** + `@media (max-width:600px)` tek breakpoint:
 
-**Platform entegrasyonları:** TR için Google, Yemeksepeti, Getir, Trendyol GO + EN için Yelp, Tripadvisor, Foursquare, Facebook.
+- `<td class="stack-col">` mobile'da `display:block;width:100%` — 2-sütun row'lar dikey stack.
+- `<table class="stack-row">` parent — nested grid'lerde de stack davranışı.
+- Min font-size **14px** (iOS auto-zoom önleme), buton padding **min 14px 24px** (44px touch target).
+- Görseller `style="max-width:100%;height:auto;"` + HTML `width="100%"` attr.
+- Hidden preheader: `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">…</div>`.
+- Google Fonts `@import` (Outlook fallback Arial/Helvetica), `<!--[if mso]>` MSO conditional.
 
-**Animasyonlar:** ECG banner (SVG stroke-dashoffset), live review ticker, AnimCounter (sayı koşma), marquee logo şeridi, heartbeat pulse, social proof toast, video modal, sticky CTA bar.
+### 21.3 Newsletter & Marketing cron
 
-**Onboarding wizard (5 adım):** İşletme bilgileri → Sektör → Konum → Platform seçimi → QR oluştur → Done screen.
+Yeni cron: `/api/cron/monthly-newsletter` schedule `0 9 1 * *` (her ayın 1'i 09:00 UTC, `vercel.json`'da tanımlı).
 
-### 16.3 Implementasyon öncelikleri (bir sonraki oturumda)
+Davranış:
+- `unsubscribedAt: null` aboneleri pull eder.
+- Locale başına son 3 aktif blog post (`isActive: true`, `orderBy: createdAt desc`).
+- Resend rate limit (10/sn) için 120 ms throttle.
+- `unsubscribeToken` legacy abonelerde yoksa `crypto.randomBytes(24).toString('hex')` ile backfill edilir.
+- Issue numarası deterministik: `(year - 2026) * 12 + (month + 1)`.
 
-Kullanıcı "tasarımı geliştirme planına geçeceğiz" dedi. Implementasyon sırası için önerilen yaklaşım:
+Auth: `Bearer ${CRON_SECRET}` (CLAUDE.md §14.1 mevcut env'i kullanılır, yeni env yok).
 
-1. **Marketing anasayfa** (`src/app/[locale]/page.tsx` veya yeni landing) — hero, nav, conversion öğeleri
-2. **Auth sayfaları** (login/register) — Pulse tasarımına uyarla
-3. **Onboarding wizard** — 5 adım, mevcut `src/app/[locale]/onboarding/` route'una bak
-4. **Admin dashboard** — mevcut `src/app/admin/dashboard/` sayfasını Pulse v2 ile güncelle
-5. **Public QR landing** (`/r/[slug]`) — buaze-site.html'deki QR kart tasarımı referans
+### 21.4 Newsletter signup → unsubscribe akışı
 
-**ÖNEMLI:** Implementasyon başlamadan kullanıcıdan scope onayı al. Hangi sayfadan başlanacağını sor.
-
-### 16.4 Dikkat edilecekler
-
-- `.design/` klasörü sadece **referans** — bu dosyaları doğrudan `src/`'ye kopyalama, React/Babel prototipleri
-- Renk token'ları zaten `globals.css` `@theme {}` blokunda tanımlı (§11'e bak)
-- Logo SVG → `src/components/marketing/BuazeLogo.tsx` zaten güncel
-- Font'lar zaten yüklü (`src/app/layout.tsx`)
-
----
-
-## 17. 2026-04 Pulse Redesign Wave — Session Wrap-Up
-
-Tek bir session'da 15 draft PR üretildi (#39 → #53). Bir sonraki oturum bu bölümü okuyunca ne merge edilmesi gerektiğini, hangi component/util/endpoint'in nereye eklendiğini, neyin hâlâ açık known-gap olduğunu görebilsin.
-
-### 17.0 Nerede ne var — hızlı dosya haritası
-
-| Yol | İçerik |
-|---|---|
-| `.design/` (repo kökü) | **Claude Design handoff bundle** — 21 dosya, JSX prototipleri + canonical site HTML. Git-tracked, referans olarak tutulur. `.design/site/*.jsx` (12 artboard grubu) + `.design/pulse/*.jsx` (token + sembol) + `.design/buaze-site.html` + `.design/chat1.md` (design chat geçmişi). Detaylı dosya haritası §16.1'de. |
-| `design.md` (repo kökü) | **Faz log'u** — her faz için "Kapsam / Değişen dosyalar / Backend etkisi / Verification / Sonraki adım" + "Backend açıkları" tablosu. 15 PR'lık zincirin teknik günlüğü. |
-| `CLAUDE.md` (bu dosya) | Proje referansı + her yeni sessionda önce okunur. §1-16 mevcut mimari, §17 bu Pulse redesign dalgasının özeti. |
-| `src/components/marketing/*` | Yeni marketing component'leri (§17.2) |
-| `src/app/globals.css` | Pulse button utility'leri + 5 motion keyframe (§17.3) |
-| `src/app/api/**` | Mevcut 68 API + 9 yeni 501 scaffold (§17.4) |
-| `src/lib/scaffolding.ts` | Henüz eklenmemiş Prisma modelleri için yorum-önerisi blokları + `scaffoldedResponse()` helper'ı |
-| `src/lib/openai.ts` | AI Co-Pilot OpenAI client (§15) |
-
-**Kritik kural:** `.design/*.jsx` React prototipleridir → `src/`'ye **doğrudan kopyalanmaz**. Yalnız referans olarak okunur; Pulse token'lar zaten `globals.css`'te var, font'lar `layout.tsx`'te yüklü.
-
-### 17.1 Draft PR zinciri (merge sırası önemli)
-
-Her PR bir önceki branch'in üzerine açıldı — merge sırayla yapılmalı:
-
-| PR | Başlık | Branch |
+| Adım | Kod yolu | Davranış |
 |---|---|---|
-| #39 | docs(design): Phase 0 — baseline + .design bundle + design.md | `claude/design-phase-0-baseline` |
-| #40 | feat(design): Phase 1 — chrome + homepage v3 conversion layer | `claude/design-phase-1-home` |
-| #41 | fix(owner): restaurants list vanished after clicking the mini map | `claude/fix-owner-restaurants-accidental-toggle` |
-| #42 | feat(design): Phase 2 — onboarding 5-step + confetti + 404 | `claude/design-phase-2-auth-onboarding` |
-| #43 | feat(design): Phase 3 — AI Co-Pilot + dynamic case studies + ROI | `claude/design-phase-3-marketing` |
-| #44 | feat(design): Phase 4 — retail sector + TR/design slug aliases + footer | `claude/design-phase-4-solutions` |
-| #45 | feat(design): Phase 5 — content APIs scaffolded | `claude/design-phase-5-content` |
-| #46 | feat(design): Phase 6 — admin core header consistency | `claude/design-phase-6-admin-core` |
-| #47 | feat(design): Phase 7 — API & Webhook page + admin headers | `claude/design-phase-7-admin-advanced` |
-| #48 | feat(design): Phase 8 — public Pulse sweep + design-intent gap fixes | `claude/design-phase-8-public-polish` |
-| #49 | feat(admin): QR page 4-step visual wizard | `claude/post-phase-qr-wizard` |
-| #50 | feat(home): animated v2 hero dashboard | `claude/post-phase-hero-v2` |
-| #51 | feat(chrome): conversion-led IA redesign for header + footer | `claude/post-phase-nav-footer-ia` |
-| #52 | feat(polish): pulse button system + real Unsplash imagery | `claude/post-phase-buttons-imagery` |
-| #53 | fix(ux): onboarding polish + QR pages cleanup + api entry scoped | `claude/post-phase-onboarding-qr-fix` |
+| Signup | `POST /api/newsletter` | Upsert + `unsubscribeToken` üretimi (yeni kayıt) |
+| Mail | Aylık cron | `getUnsubscribeUrl(token)` footer'a gömer |
+| Unsubscribe | `GET /api/newsletter/unsubscribe?token=...` | `unsubscribedAt = now()` set + Pulse stilinde plain HTML "Aboneliğin sonlandı" sayfası |
 
-**Takip dosyası:** Repo kökünde `design.md` — her faz için "Kapsam / Değişen dosyalar / Backend etkisi / Verification / Sonraki faz" kayıtları + "Backend açıkları" tablosu.
+Schema: `NewsletterSubscriber.unsubscribeToken String? @unique` (Prisma 6.x, `prisma db push` deploy build script'inde otomatik sync).
 
-### 17.2 Yeni eklenen marketing component'leri (hepsi client-side)
+### 21.5 Admin newsletter sayfası (`/admin/newsletters`)
 
-`src/components/marketing/`:
+Sadece superadmin. `/admin/customers/page.tsx` pattern'i temel alındı (mobile cards + desktop table):
+- 4-sütun summary card grid (mobile 2-col): toplam abone, aktif, iptal, iptal oranı %
+- Filtreler: range (7d/30d/90d/all), status (aktif/iptal/all), locale (tr/en/all), source (dinamik distinct), debounced email search
+- "Yenile" + "CSV İndir" + "Şimdi gönder" butonları
+- "Şimdi gönder" → POST `/api/admin/newsletters/trigger` → internal `Bearer CRON_SECRET` ile cron'a fetch (compose UI kasıtlı yok, scope creep önleme)
 
-- `AnimatedCounter.tsx` — IntersectionObserver ile 0→hedefe easeOut tween. `locale` prop'u TR `1.284` / EN `1,284` ayrımı yapar. Phase 1.
-- `MarqueeRow.tsx` — CSS-only horizontal logo marquee + edge mask. Phase 1.
-- `StickyCtaBar.tsx` — 600px scroll sonrası altta koyu "Bugün başla" CTA + session-dismiss. Phase 1.
-- `SocialProofToast.tsx` — 3s → 8s döngüyle TR/EN 5 toast gösterir. Phase 1.
-- `VideoModal.tsx` — sandboxed iframe + ESC/backdrop close + body-scroll lock. Phase 1.
-- `WatchDemoButton.tsx` — hero'daki "Demo izle" client sarıcısı (VideoModal'ı açar). Phase 1.
-- `HomeIndustryTabs.tsx` — 8 sektör tab'ı + per-sektör body copy. Phase 1.
-- `NewsletterSignup.tsx` — footer email capture, 501'i "başarı" sayar. Phase 1.
-- `LiveReviewTicker.tsx` — homepage dark panel'de 4 review 2.8s rotate. Phase 8.
-- `HomeHeroDashboard.tsx` — v2 hero'daki animasyonlu canlı dashboard kartı (chart stroke-dashoffset reveal + AnimCounter + floating +184% badge + staggered review rows). Post-phase #50.
+Sidebar (`AdminSidebar.tsx`): superadmin section'ında `Mail` ikonu, kanonik label "Bülten Aboneleri" / "Newsletter".
 
-`src/components/admin/`:
+### 21.6 Mevcut akışlardaki entegrasyonlar
 
-- `SuperadminBlock.tsx` — workspace-scoped admin sayfalarını (`/admin/{billing,campaigns,team,notifications,settings}`) superadmin için "Yönetici için değil" kartıyla gate'ler. Phase 5.
+Bu rotalar artık Pulse template'lerini kullanır:
 
-### 17.3 Yeni Pulse utility class'ları (`src/app/globals.css`)
-
-**Button system** (Post-phase #52):
-- `.pulse-btn-primary` — lime `#C6F24E`, hover `#A8D62E`, active scale 0.98
-- `.pulse-btn-dark` — graphite `#0A0A0A`, hover `#1A1A1A`
-- `.pulse-btn-ghost` — transparent, hover border `#0A0A0A`
-- `.pulse-card-hover` — `translateY(-3px)` lift + soft shadow + border highlight
-
-**Motion keyframes:**
-- `@keyframes slideIn` + `.animate-slide-in` — sticky CTA / toast giriş (Phase 0)
-- `@keyframes marqueeSlide` + `.animate-marquee` — logo strip (Phase 0)
-- `@keyframes ecgDraw` — footer lime heartbeat line reveal (Phase 1)
-- `@keyframes confettiFly` — onboarding finish burst, `--cf-x/y/rot` per-particle custom properties (Phase 2)
-- `@keyframes bzFloat` + `.bz-float` — hero +184% badge ±6px Y oscillation (Post-phase #50)
-
-Tüm animasyonlar `prefers-reduced-motion: reduce` altında devre dışı (tek bir `@media` bloğu hepsini kapsar).
-
-### 17.4 Yeni scaffolded API endpoint'leri (501 döner)
-
-Hepsi `scaffolding.ts` helper'ını kullanır. Prisma model önerileri scaffolding.ts başındaki yorum bloğunda tanımlı.
-
-| Endpoint | Method | Prisma model (öneri) | Faz |
-|---|---|---|---|
-| `/api/newsletter` | POST | `NewsletterSubscriber` | Phase 1 |
-| `/api/admin/analytics/export` | GET | `AnalyticsExport` | Phase 5 |
-| `/api/roi/save` | POST | `ROIRequest` | Phase 3 |
-| `/api/help/articles` | GET | `HelpArticle` | Phase 5 |
-| `/api/careers/apply` | POST | `CareerApplication` | Phase 5 |
-| `/api/billing/summary` | GET | `BillingSubscription` | Phase 5 |
-| `/api/billing/invoices` | GET | `BillingInvoice` | Phase 5 |
-| `/api/onboarding/state` | GET/PATCH | `OnboardingProgress` | Phase 5 |
-| `/api/onboarding/complete` | POST | `OnboardingProgress` | Phase 5 |
-
-**OpenAI / AI Co-Pilot canlı:** `POST /api/feedback/[id]/suggest-reply` gerçek OpenAI gpt-4o-mini'ye bağlı (rate-limit 30/dk/actor + IDOR koruması + template fallback). §15'e bak.
-
-### 17.5 Yeni UI route'ları
-
-**Public:**
-- `/features/ai-copilot` — AI Co-Pilot ürün sayfası (Phase 3)
-- `/case-study/[slug]` — dinamik vaka çalışmaları (3 mock: `kadikoy-bistro`, `hotel-nora`, `derma-klinik`) (Phase 3)
-- `/[locale]/onboarding` — 5-step wizard + confetti (Phase 2, polished Post-phase #53)
-
-**Solutions aliasları (7 redirect + 1 yeni):**
-- `/solutions/retail` yeni sektör sayfası
-- `/solutions/{hotel,clinic,legal,spa,otel,klinik,hukuk,perakende}` → kanonik slug'lara redirect
-
-**Admin workspace-scoped (SuperadminBlock'lu):**
-- `/admin/reviews`, `/admin/analytics`, `/admin/settings`, `/admin/campaigns`, `/admin/team`, `/admin/billing`, `/admin/notifications`, `/admin/api`
-
-### 17.6 IA değişiklikleri
-
-**Header (`MarketingNavbarClient.tsx`, tamamen yeniden yazıldı Post-phase #51):**
-- 5 top entry: Ürün / Çözümler / Müşteriler / Kaynaklar / Fiyatlandırma
-- 3 mega-dropdown (Ürün + Çözümler + Kaynaklar) + 1 mini dropdown (Müşteriler)
-- Logo yanında "2.400+ işletme" trust chip
-- Ürün dropdown'unda AI Co-Pilot lime featured card + inline Demo izle
-
-**Footer (`MarketingFooter.tsx`, 4 → 5 kolon):**
-- Yeni **Resources** kolonu (Help / FAQ / ROI / Compare / Ücretsiz QR / Pricing)
-- Ürün kolonuna "Review Management" + "API & Webhook" eklendi
-- Company kolonuna "Vaka çalışmaları" + "Kariyer · 5 POZİSYON" badge
-- Brand kolonuna "★ 2.400+ işletme" + "KVKK · GDPR" trust pill'leri
-- Bottom rail: 7-link legal mini-strip (Gizlilik / KVKK / Şartlar / Çerez / Açık-Rıza / Ticari-İleti / Google Uyumu)
-
-### 17.7 Gerçek görseller (Post-phase #52)
-
-Unsplash CC0 fotoğrafları 3 stratejik yerde:
-- **About → Takım**: 4 inisiyal placeholder → portrait fotoğraflar (CEO/CTO/Product/Growth), hover scale 1.02
-- **Customer Stories grid**: 6 düz renkli stat bloğu → gerçek mekan fotoğrafları + dark gradient + metric overlay + `pulse-card-hover`
-- **Case Study `/[slug]`**: 3 mock için magazine-style cover photo (16:9 → 21:9 → 3:1 responsive) + sektör eyebrow + brand h1
-
-`next.config.ts` zaten `remotePatterns: [{ hostname: '**' }]` — Unsplash config eklemedi. `<img>` tag kullanıldı (next/image değil) — external CC0 asset'ler için optimizer hop'unu atlamak için.
-
-### 17.8 PlatformLogo iyileştirmeleri (Post-phase #53)
-
-`src/components/marketing/PlatformLogo.tsx`:
-- **Yemeksepeti**: abstract üçgenler → "ys" monogram (brand kırmızı)
-- **Trendyol GO**: jenerik T + nokta → "ty" + beyaz "GO" puck (brand turuncu)
-- Diğer 14 platform (Google, Getir, Migros Hemen, Yelp, Tripadvisor, Booking, Trustpilot, Facebook, Foursquare, OpenTable, Uber Eats, DoorDash, Instagram, Zomato) dokunulmadı
-
-### 17.9 Backend güvenliği (dokunulmayan)
-
-Hiçbir post-phase PR bu bölümü etkilemedi:
-- **68 API route** (`src/app/api/**` mevcut) — sadece yeni scaffold'lar eklendi
-- **Prisma schema** — sıfır değişiklik; tüm yeni modeller `scaffolding.ts` yorum bloğunda önerilir
-- **Auth helpers** (`src/lib/auth.ts`, `panel-access.ts`) — dokunulmadı
-- **IDOR**: `getScopedRestaurantIds` + `canAccessRestaurant` her yeni API'de uygulanıyor
-- **Rate-limit**: `rateLimit()` helper'ı newsletter/careers/roi'de per-IP, openai'de per-actor
-- **JWT cookie flow**: `MarketingNavbar.tsx` server wrapper'da `verifyJwt` korundu
-- **OpenAI anahtarı**: `src/lib/openai.ts` + `process.env.OPENAI_API_KEY`, client bundle'a sızmıyor
-
-### 17.10 Bilinen açık gap'ler (production öncesi)
-
-`design.md` "Backend açıkları" tablosunda detaylı — özet (2026-04 beşinci dalga'dan sonra güncel durum):
-
-1. ~~**Sektör bespoke content** — CaseStudy modeli ve CMS bağlantısı.~~ **§18.1'de kısmen kapatıldı** (CaseStudy modeli + seed + DB-backed `/case-study/[slug]`). SolutionPageLayout ↔ CaseStudy `sector` alanı ile "Related" bağlama henüz yapılmadı.
-2. ~~**501 scaffold'larının gerçek backend'i**~~ — **§18'de 7/9 kapatıldı**. 9 scaffolddan 7'si artık Prisma + mevcut provider'lara bağlı (Resend, Supabase Storage). Sadece billing tarafı yarım kaldı (POS entegrasyonu yok).
-3. **Sanal POS entegrasyonu** — Billing read-side (§18.3) canlı ama `POST /api/billing/checkout` ve `POST /api/billing/webhook/iyzico` henüz yok. Iyzico/Stripe seçimi + provider hesabı + webhook secret'ı gerekiyor.
-4. **Mobile QA cihazda** — dev server 200/307 doğruladı, ama 375/768/1280 breakpoint'lerde görsel QA gerçek cihazda yapılmalı.
-
-### 17.11 Design handoff referans dosyaları
-
-`.design/` klasörü (21 dosya, branch `save-design-files-moe8c`'den Phase 0'da alındı, §16'da dosya haritası):
-- `site/site-homepage-v2.jsx` — hero dashboard animasyon referansı (HeroDashboard, AnimCounter, LiveTicker)
-- `site/site-homepage-v3.jsx` — canonical copy (trust tickler, 3-step, ticker)
-- `site/site-premium.jsx` — PremiumNav / PremiumFooter / ConversionLayer (sticky CTA + toast)
-- `site/site-onboarding-v2.jsx` — 5-step canonical + OnboardingProgress + Confetti
-- `site/site-admin.jsx` — AdminShell, AdminDashboard, AdminReviews, AdminQRBuilder, AdminAnalytics, AdminLocations, AdminSettings
-- `site/site-pages3.jsx`, `site-pages4.jsx` — sektör + legal + admin advanced
-
-**Dikkat:** `.design/*.jsx` React prototipleridir, `src/`'ye direkt kopyalanmaz — yalnız referans olarak okunur.
-
----
-
-## 18. Backend Wiring Wave — §17.10 kapanışı (2026-04)
-
-Session özeti: CLAUDE.md §17.10'daki üç gap'ten ikisi (CaseStudy + 9 scaffold) dalga dalga bağlandı. Branch: `claude/connect-prisma-providers-3ytkP`. Üç commit:
-
-| Commit | Kapsam |
-|---|---|
-| `6f1a05a` | Wave 1 — CaseStudy + Onboarding + Newsletter + ROI |
-| `a048615` | Wave 2 — HelpArticle + Admin Analytics CSV + Careers |
-| `f8a8f1c` | Wave 3 kısmi — Billing read-side (POS YOK) |
-
-**Stratejik karar:** Hiçbir yeni external provider eklenmedi. Zaten kurulu olan Resend (mail) + Supabase Storage (dosya) + OpenAI (AI Co-Pilot) yeterli. POS (Iyzico/Stripe) kasıtlı olarak ertelendi (§18.3'e bak).
-
-### 18.1 Wave 1 — Hızlı win'ler (commit `6f1a05a`)
-
-Tek dış bağımlılık yok; sadece Prisma + mevcut helper'lar.
-
-**Yeni Prisma modelleri:**
-- `CaseStudy` — `slug @unique, brand, sector, sectorEn, location, heroImage, heroTr/En, subtitleTr/En, stats Json, highlights Json, quoteTr/En, personName, personRole Json, isPublished, publishedAt`
-- `OnboardingProgress` — `userId @id, step Int, data Json?, completedAt` (UI kontratına hizalandı; scaffolding'deki 4 boolean kolon bu wizard'a uymuyordu)
-- `NewsletterSubscriber` — `email @unique, locale, source, ip, createdAt, unsubscribedAt`
-- `ROIRequest` — `email, restaurantName, tables, avgTicket Decimal, noShowRate, projection Json, ip, createdAt`
-
-**Yeni/değişen endpoint'ler:**
-- `GET /api/case-studies[?slug=]` — list veya tek kayıt; `isPublished=true` filtresi.
-- `src/app/[locale]/case-study/[slug]/page.tsx` — inline `STUDIES` array silindi, `prisma.caseStudy.findUnique` + `notFound()`; JSX 1:1 korundu.
-- `prisma/seed-case-studies.ts` — 3 mock (`kadikoy-bistro`, `hotel-nora`, `derma-klinik`) idempotent `upsert`. **Manuel çalıştır:** `npx ts-node prisma/seed-case-studies.ts` (migration file kullanılmaz).
-- `GET/PATCH /api/onboarding/state` — `getPanelActorFromRequest` ile scoped; `prisma.onboardingProgress.upsert` pattern.
-- `POST /api/onboarding/complete` — `completedAt = new Date()`; actor email varsa Resend ile welcome mail (`sendMail`).
-- `POST /api/newsletter` — `prisma.newsletterSubscriber.upsert(email)` (duplicate-safe, unsubscribed olanı yeniden aktifleştirir); mevcut `rateLimit()` korundu.
-- `POST /api/roi/save` — insert + `NOTIFICATION_EMAIL` env set ise sales inbox'a mail; `Prisma.Decimal` ile fiyat alanı.
-
-### 18.2 Wave 2 — Orta karmaşıklık (commit `a048615`)
-
-**Yeni Prisma modelleri:**
-- `HelpArticle` — `slug + locale @@unique, category, title, excerpt, body Text, searchTags String[], isPublished, order`
-- `CareerApplication` — `name, email, roleSlug, message, portfolio, attachment, locale, ip, status, createdAt`
-
-**Yeni/değişen endpoint'ler:**
-- `GET /api/help/articles?locale=&category=&slug=` — kategoriye göre gruplu liste VEYA tek makale (`slug` + `locale` bileşik key ile). Seed yok — mevcut `/help` sayfası statik hub. Admin CRUD sonra.
-- `GET /api/admin/analytics/export?format=csv&range=7d|30d|90d|all` — **stream-only CSV** (`AnalyticsExport` model eklenmedi, premature). `getScopedRestaurantIds` ile IDOR; restoran başına toplam/ort./düşük/yüksek + 4 platform dağılımı. UTF-8 BOM + `attachment` Content-Disposition.
-- `POST /api/careers/apply` — JSON body (multipart değil; frontend henüz form göndermemiş durumda). Data URL attachment varsa (`^data:mime;base64,...`) → `uploadToStorage('careers/...')` ile Supabase Storage'a kaydeder, URL döner. 5 MB limit; PDF/DOC/DOCX/PNG/JPG. `isStorageConfigured()` false ise 503. `CAREERS_INBOX_EMAIL` (fallback `NOTIFICATION_EMAIL`) ile HR mail'i.
-
-**Dikkat:** `HelpArticle` arrayField (`searchTags String[]`) sadece PostgreSQL'de native destek alır — Supabase Postgres kullanıldığı için sorun yok.
-
-### 18.3 Wave 3 — Billing read-side (commit `f8a8f1c`, POS YOK)
-
-Kullanıcı sanal POS entegrasyonunu bilinçli ertelemek istedi. Read-side canlı — POS bağlanınca webhook bu tablolara yazacak, UI değişmeden çalışacak.
-
-**Yeni Prisma modelleri:**
-- `BillingSubscription` — `userId @id, plan, status, trialEndsAt, renewsAt, providerRef @unique, paymentBrand, paymentLast4`. `providerRef @unique` webhook idempotency için.
-- `BillingInvoice` — `id, userId, amount Decimal(10,2), currency @default("TRY"), status, providerRef @unique, pdfUrl, issuedAt`.
-
-**Yeni sabitler (`src/lib/constants.ts`):**
-- `PLAN_QUOTA: Record<string, number>` — `trial: 500, monthly: 2000, yearly: 50000, enterprise: 999999` (Infinity UI progress bar için kötü; sabit yüksek tavan).
-- `PLAN_LABELS: Record<string, {tr, en}>` — UI rozetleri için.
-
-**Değişen endpoint'ler:**
-- `GET /api/billing/summary` — `resolveOwnerUserId(actor)` ile owner userId çözer (user → actor.id; manager → `restaurant.userId`). `BillingSubscription` source-of-truth; yoksa `User.plan` + `trialEndsAt` fallback (trial user). Quota: ay başından beri owner'ın tüm restoranlarındaki `Feedback.count`. Response shape admin UI'ın beklediği `{ plan, planLabel, status, trialDaysLeft, renewsAt, quota, paymentMethod }`.
-- `GET /api/billing/invoices` — `userId`-scoped `findMany`; response'u admin UI'ın beklediği `{date, amount, status, url}` shape'ine map eder (`issuedAt → date`, `pdfUrl → url`).
-
-**Henüz YOK (POS geldiğinde):**
-- `POST /api/billing/checkout` — Iyzico subscription create + redirect URL.
-- `POST /api/billing/webhook/iyzico` — imza doğrula → `subscription + invoice` `upsert` (`providerRef @unique` ile idempotent).
-- Env: `IYZICO_API_KEY`, `IYZICO_SECRET_KEY`, `IYZICO_BASE_URL` (sandbox/prod), `IYZICO_WEBHOOK_SECRET`. Stripe parite ikinci iterasyon.
-
-### 18.4 Schema sync & dağıtım
-
-- 4 wave'in tamamı `prisma/schema.prisma`'ya toplam **10 yeni model** ekledi: `CaseStudy`, `OnboardingProgress`, `NewsletterSubscriber`, `ROIRequest`, `HelpArticle`, `CareerApplication`, `BillingSubscription`, `BillingInvoice`.
-- Migration dosyası **üretilmedi** (CLAUDE.md §7 kuralı) — deploy sırasında `package.json::build` scripti `prisma db push --accept-data-loss` çalıştırır, Supabase'teki şema otomatik senkronize olur.
-- Local dev için: `npx prisma generate` yeterli (bu session'da yapıldı, TypeScript tipleri hazır).
-- Case study seed **manuel çalıştırılmalı:** `npx ts-node prisma/seed-case-studies.ts` (veya `tsx prisma/seed-case-studies.ts`). Deploy akışına eklenmedi — 3 kayıt küçük, bir kere çalışır.
-
-### 18.5 Kasten atlanmış kararlar (scope disiplini)
-
-Aşağıdakilerin hiçbiri **eklenmedi** — her biri ayrı iş kalemi:
-
-- Admin CRUD (CaseStudy, HelpArticle, CareerApplication için) — mevcut seed/scaffolded read yeterli
-- `AnalyticsExport` modeli + Supabase Storage job path — stream-only ilk sürüm
-- Resend Audiences sync (newsletter subs) — DB source of truth; Wave 2.4 opsiyonel katmanı yapılmadı
-- `shared helper` dört DB-insert endpoint için — benzer görünse de şemalar farklı, 3+ tekrar kuralına henüz ulaşılmadı
-- `zod` / `shadcn/ui` — proje kararına sadık, manuel validation + Tailwind arbitrary values
-- Stripe parite — Iyzico TR öncelik, Stripe ikinci iterasyon
-- Plan enforcement (quota aşımı durumunda feedback POST'u reddet) — şu an read-only yerinde; write-time enforcement ayrı scope
-
-### 18.6 Yeni env var'ları (hiçbiri zorunlu değil, hepsi opsiyonel)
-
-- `CAREERS_INBOX_EMAIL` — HR başvuru maili için; yoksa `NOTIFICATION_EMAIL` fallback.
-- `NOTIFICATION_EMAIL` — zaten mevcut; ROI save ve Careers apply kullanır.
-- `RESEND_API_KEY` — zaten mevcut; newsletter/welcome/ROI/careers mail gönderimleri bunu kullanır.
-- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET` — zaten mevcut; careers attachment upload bunu kullanır.
-
-POS için gerekli env'ler (Wave 3.5+): yukarıda §18.3'te listelendi.
-
-### 18.7 Verification checklist
-
-POS'suz halde çalıştığı doğrulandı:
-- [x] `npx tsc --noEmit` — sadece 2 pre-existing hata (globals.css + menu analytics JSON tip), yeni kod temiz
-- [x] `npx prisma generate` — 10 yeni model tipli
-- [ ] `prisma db push` — local DB'de çalışmadı (bu sandbox'ta Supabase bağlantısı yok); Vercel deploy'da otomatik uygulanır
-- [ ] Seed — deploy sonrası `npx ts-node prisma/seed-case-studies.ts` manuel çalıştırılmalı
-- [ ] Mobile QA — dev server'da 375/768/1280 breakpoint'leri kontrol edilmeli
-
----
-
-_Son güncelleme: 2026-04 (beşinci dalga) — §18 Backend Wiring Wave eklendi (3 commit, 10 yeni Prisma model, 9'dan 7 scaffold bağlandı, POS kasıtlı ertelendi). §17.10 gap listesi güncellendi. Daha önceki güncelleme §17 Pulse Redesign idi._
-
----
-
-## 19. Admin & Owner Panel Alignment Wave (2026-04 altıncı dalga)
-
-Session özeti: kullanıcının "admin + restoran paneli tasarım dosyalarındaki gibi değil, bazı yerler çalışmıyor (anasayfa istatistik), bazı form'lar 'Coming soon' diyor, yorumlara yanıt mail atmıyor, AI taslak üretmiyor" şikayetleri dalga dalga kapatıldı. Branch: `claude/connect-prisma-providers-3ytkP` (§18'in üstüne 6 commit daha).
-
-**Commit zinciri** (sırayla merge edilmeli):
-
-| Commit | Başlık | İçerik |
+| Rota | Template | Tetik |
 |---|---|---|
-| `b18a2fa` | feat(faz-1): fix analytics page data mapping + dark NPS scoreboard | `/admin/analytics` broken API mapping bug'ı + koyu NPS kartı |
-| `534605a` | feat(faz-2): wire reviews reply/flag/assign to real Prisma models | 3 yeni model + 3 endpoint + inbox UI state |
-| `c8b25df` | feat(faz-3): wire team/campaigns/notifications to real Prisma models | 3 yeni model + 5 endpoint + form UI |
-| `2a4c7e6` | fix(reviews): repair AI suggest-reply + send replies via Resend | AI bug fix + Resend email delivery |
-| (bu commit) | fix(feedback): resilient list query + CLAUDE.md §19 | Schema mismatch fallback + docs |
+| `POST /api/auth/register` | `welcome` | Hesap oluşturulduktan sonra fire-and-forget |
+| `POST /api/contact` | `form-confirmation` (contact) | Kullanıcıya onay (admin maili eski formatta kalır) |
+| `POST /api/careers/apply` | `form-confirmation` (career) | Başvuran onayı |
+| `POST /api/roi/save` | `form-confirmation` (roi) | ROI hesap onayı |
+| `POST /api/feedback/[id]/reply` | `customer-reply` | Düşük puanlı müşteriye yanıt |
+| `POST /api/feedback` | `new-review` (≥4★) / `low-rating-alert` (≤3★) | Restoran sahibine bildirim |
+| `GET /api/cron/weekly-digest` | `weekly-report` | Haftalık digest |
+| `POST /api/auth/forgot-password` | `forgot-password` | Şifre sıfırlama |
 
-### 19.1 Faz 1 — Analytics & Dashboard (commit `b18a2fa`)
+### 21.7 Tasarım kaynağı (referans, src/'ye kopyalanmaz)
 
-**Kritik bulgu:** `/admin/analytics` sayfası broken'dı. `stats.total / stats.avg / stats.byRating / stats.byPlatform` okuyordu ama `/api/feedback/stats` `totalCount / avgRating / distribution / platformDistribution` döner. Çoğu kart 0 gösteriyordu. "Backend aggregation gelince aktif olur" placeholder metni bir özelliği değil bir bug'ı örtüyordu.
+`/tmp/design-pkg/buaze-mail/` (Claude Design handoff bundle, git-tracked değil, lokal `.design/` analoji). Tüm 9 template + shared.jsx orijinalleri orada. AB-test-result template'i ertelendi (sistem feature'ı yok, eklenirse `/api/admin/abtests/...` ile birlikte gelmesi mantıklı).
 
-**Dokunulan tek dosya:** `src/app/admin/analytics/page.tsx` (komple yeniden yazıldı).
+### 21.8 Yeni template eklemek
 
-- Doğru API field mapping
-- **Koyu NPS scoreboard** (tasarım referansı: `.design/site/site-admin.jsx:525-681`): büyük lime NPS skoru, tone-aware label (Mükemmel/İyi/Ortalama/Dikkat), destekçi-nötr-eleştiren progress barları, dönem başından delta
-- Inline SVG 7-day trend chart (mevcut `stats.trends` data'sını kullanır, yeni endpoint yok)
-- Tag bulutu (`stats.wordCloud` frekansına göre font-size scaling, lime chip)
-- Puan dağılımı renk kodlu: 4-5★ lime, 3★ amber, 1-2★ kırmızı
-- "TODO disclaimer" silindi
+1. `src/lib/email/templates/<name>.ts` — `render<Name>(params, locale): { subject, html, text }` exportu
+2. `templates/index.ts` re-export ekle
+3. `src/lib/email.ts` içine `send<Name>Email(...)` sender helper
+4. Tetikleyici route'u plug et (sender çağırılır)
 
-### 19.2 Faz 2 — Reviews aksiyonları (commit `534605a`)
+**Yapma**: `react-email` / `mjml` dep ekleme (CLAUDE.md §7 minimum dependency). Pulse layout helper'ları yeterli.
 
-**3 yeni Prisma modeli** (scaffolding.ts bloklarından şemaya alındı):
-- `FeedbackReply` — feedbackId + authorUserId + body + channel + status
-- `FeedbackFlag` — feedbackId `@unique` + reason + flaggedBy
-- `FeedbackAssignment` — feedbackId `@unique` + assigneeId + assignedById
+### 21.8.1 FeedbackReply.source
 
-**3 endpoint canlı backend'e** (hepsi `requireFeedbackAccess` helper'ı ile IDOR korumalı):
-- `POST /api/feedback/[id]/reply` — insert + `GET` yanıt listesi
-- `POST /api/feedback/[id]/flag` — upsert; `DELETE` kaldırır
-- `POST /api/feedback/[id]/assign` — upsert; `'self'` sentinel actor'a atar
+`FeedbackReply.source String? @default("manual")` — her yanıt 'manual', 'ai_copilot', veya 'template_fallback'. Trial-ending mailindeki "AI yanıt" sayacı bu kolonun `source: 'ai_copilot'` count'ına dayanıyor. Yeni reply UI eklerken (örn. mobile app, third-party kanal):
 
-**Feedback list endpoint değişti:** `GET /api/feedback` artık `flag` + `_count.replies` + `assignment` join'leriyle `isReplied / isFlagged / isAssigned / assigneeId / customerName / customerEmail` flag'lerini döndürür.
+1. Frontend "Taslak oluştur" / suggest-reply çağrısı yaparsa → `setAiSource('openai' | 'template' | 'template-fallback')`.
+2. Reply gönderirken POST `/api/feedback/[id]/reply` body'sine map et:
+   - `'openai'` → `'ai_copilot'`
+   - `'template'` veya `'template-fallback'` → `'template_fallback'`
+   - Hiç AI çağrısı olmamış → `'manual'`
+3. Reply gönderildikten sonra `setAiSource(null)` — sonraki manuel reply yanlışlıkla `ai_copilot` etiketlenmesin.
 
-**Counts endpoint** gerçek `new` (unreplied) + `replied` buckets'ları hesaplar.
+Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düşürür.
 
-**Reviews UI** (admin + owner):
-- Liste satırında + detay header'ında **YANITLANDI / DİKKAT / ATANDI** badge'leri
-- Her aksiyon için ayrı loading spinner; in-flight iken buton disabled
-- Success'te local row + counts diff'lenir (tam refresh yok)
-- Tone-aware notice: success=lime, error=kırmızı, info=nötr
-- Flag butonu toggle (POST/DELETE)
+### 21.9 Pixel-perfect 1:1 audit (Phase 16.1)
 
-### 19.3 Faz 3 — Admin formlarını canlı backend'e (commit `c8b25df`)
+9 template `.design/` JSX prototipleriyle birebir hizalandı:
+- **forgot-password**: 2x2 meta grid (Talep saati / IP / Cihaz / Hesap), token URL display + 6-digit code fallback, "Sen değil misin?" lime-soft card with 3px lime-deep left border, status pill ("Aktif · 30 dk geçerli")
+- **welcome**: 4-step list with done/current/pending visual states (graphite check / lime current / muted pending), "İlk gün için" 4-card resource grid, secondary "Demo videoyu izle" CTA
+- **form-confirmation**: animated check icon (nested limeSoft → lime), timeline visualization (left border + dot markers), 2 side cards (Acil durum + Beklerken)
+- **low-rating-alert**: graphite alert bar with warning dot + timestamp, avatar circle (FEF3C7) review card, hashtag chips, AI Co-Pilot dark editor card with tone label + edit/approve buttons, 3-col quick actions grid
+- **new-review**: "● Canlı · Az önce geldi" status pill, gradient quote card (limeSoft → pure 2-stop with MSO solid fallback), avatar initials, primary "Teşekkür yaz" + secondary "Google'da paylaş" CTAs
+- **weekly-report**: dark hero with 3 deltaed stats, 7-day bar chart (HTML/CSS bars with peak highlight), "Bu haftanın sözleri" 3-quote gallery, side-by-side limeSoft CTA card
+- **newsletter**: dark featured article card (tek sütun: okuma süresi + başlık + excerpt + lime CTA), 4-item numbered list, stats band, future teaser, lime-highlight title positioning. **Not (2026-04 düzeltme)**: JSX prototipindeki sağ sütun "AI Co-Pilot demo code block" (`> input.tone / > model.draft / latency: 1.2s`) **kaldırıldı** — statik içerikti, her ay farklı featured post seçildiğinde uyumsuz görünüyordu. Default preheader artık featured post excerpt'inden çekilir, fallback generic.
+- **customer-reply**: lime-soft hero with restaurant card (graphite K initial), single-line italicized title, paragraph-bazlı letter body, 3 action items (override edilebilir), graphite coupon card with code + "30 gün" split, 2x2 contact grid (call + maps), italic signature
+- **trial-ending**: warning eyebrow, dark usage card with **4-col grid** (yorum / ortalama / AI yanıt / +X% organik artış), 2 plan cards ("Pulse Starter" ₺499 + "Pulse Pro" ₺1.299), **absolute-positioned "ÖNERİLEN" badge** (MSO `<v:rect>`-aware fallback in `renderBadge({ position: 'absolute-tr' })`), "İlk ay %50" eyebrow, secondary "Detaylı karşılaştırma" link
 
-**3 yeni Prisma modeli:**
-- `TeamMember` — `(ownerId + email) @@unique`; role (`owner/manager/staff/viewer`), status (`invited/active/revoked`), locations Json, lastSeenAt
-- `Campaign` — userId + opsiyonel restaurantId + name + placement (`table/receipt/door/pack`) + template (`lime/white/dark/minimal`) + color + status (`draft/live/archived`)
-- `NotificationPreference` — userId `@id`; lowRatingEmail + dailyDigestEmail + weeklyReport + slackWebhook
+**Yeni helper'lar** (`src/lib/email/components.ts`):
+- `renderBadge` — MSO-conditional positioned badge
+- `renderTwoColCards` — table-based 50/50 cards stack on mobile
+- `renderBarChart` — `<td height="${pct}%">` cells
+- `renderAvatarCircle` — circle with initial fallback
+- `renderQuoteCard` — review row with avatar + stars + text
+- `renderTimeline` — done/current/pending dot+line
+- `renderStatusPill` — colored dot + label
 
-**5 endpoint canlı:**
-- `GET/POST /api/team` + `PATCH/DELETE /api/team/[id]` — owner-scoped (invite için `actor.source === 'user'` şartı)
-- `GET/POST /api/campaigns` + `GET/PATCH/DELETE /api/campaigns/[id]` — `canAccessRestaurant` ile opsiyonel restaurant attach
-- `GET/PUT /api/notifications` — upsert; slackWebhook http(s) URL doğrulama
+**Layout updates** (`src/lib/email/layout.ts`): yeni media queries — `.col-half`, `.grid-4 td.cell`, `.badge-absolute`, `.bar-chart td` → mobilde stack/inline-block.
 
-**Yeni helper:** `resolveOwnerUserId(actor)` → `src/lib/panel-access.ts`. 4 endpoint kullandığı için extract edildi (§7 3+ tekrar kuralı). `billing/summary` ve `billing/invoices` de refactor edildi.
+### 21.10 Source tracking
 
-**UI:** Team / Campaigns / Notifications sayfalarındaki DEMO fallback'ları kaldırıldı, success'te local state güncellenir, hata payload'ı görünür.
+`NewsletterSubscriber.source` artık her abonede dolu. `<NewsletterSignup>` component opsiyonel `source?: string` prop alır; default `'footer'`. Footer'da explicit `<NewsletterSignup source="footer" />`. Yeni kayıt yolları (popup, blog inline, onboarding) eklenirken farklı source string geç → admin paneldeki `Kaynak` filter dropdown otomatik kategorileri gösterir.
 
-### 19.4 AI Co-Pilot ve Resend email fix (commit `2a4c7e6`)
+### 21.11 Trial reminder cron
 
-**Bug 1 — AI taslak oluşturmuyor:**
-`/api/feedback/[id]/suggest-reply` Prisma select'te `customerName: true` istiyordu ama Feedback modelinde alan `name`. Prisma query reddediyor, endpoint 500 dönüyor, UI sessizce template'e düşüyordu. **Fix:** `name: true` → `feedback.name` referansları güncellendi. Artık `OPENAI_API_KEY` set ise gerçek OpenAI yanıtı gelir.
+**Yeni**: `/api/cron/trial-reminders` (`vercel.json`'da `0 9 * * *` günlük 09:00 UTC)
+- `User.lastTrialReminderAt` field'ı dedup için (20-saat threshold — cron 24-saat aralık güvenliği)
+- **Sadece 1 ve 3 gün kalan trial user'lara mail gönderir** (`TRIAL_REMINDER_DAYS = [1, 3]` constant'ı). Spam algısını önlemek için kullanıcı başına trial sürecinde max 2 mail. SQL window 4 güne kadar geniş (yanlışlıkla skip etmeyi önlemek için), ama precise filter cron handler'ında.
+- Usage hesabı: ilgili restoran için son 14 gün vs önceki 14 gün (growth %), ortalama puan, yorum sayısı, **AI Co-Pilot ile gönderilen yanıt sayısı** (`prisma.feedbackReply.count({ where: { source: 'ai_copilot', ... } })`).
+- Auth: `Bearer ${CRON_SECRET}` (mevcut pattern)
+- Sender: `sendTrialEndingEmail` (Pulse `trial-ending` template)
+- **Eşikleri değiştirmek**: `TRIAL_REMINDER_DAYS` array'i tek değişiklik noktası. Yeni eşik (örn. 7 gün) eklendiğinde SQL window otomatik genişler.
 
-**Bug 2 — Yanıt müşteriye email olarak gitmiyor:**
-- `POST /api/feedback/[id]/reply` artık `channel: 'email'` veya `sendEmail: true` flag'ı kabul ediyor
-- Müşteri `feedback.email` bırakmışsa: Pulse temalı Resend e-postası (lime greeting-card block + orijinal yorum alıntı) `sendMail` helper'ı ile gönderilir
-- `FeedbackReply.status` transitions `pending → sent / failed` (Resend response'una göre)
-- Response `{ email: { status, reason, requested, hasCustomerEmail } }` → UI doğru badge'i flash eder
-- `replyTo`: restoranın `notificationEmail`'i (varsa) — müşteri cevap verirse işletmeye gelir
+### 21.12 Cron path listesi (mevcut)
 
-**4-5★ davranışı:** Yüksek puan bırakanlar Google'a yönlendirildiği için çoğu durumda `feedback.email` null. UI bunu net gösterir: "Müşteri e-posta bırakmamış (yüksek puanlılar Google'a yönlendirildiği için bu beklenir) — yanıt sadece dahili kayıt". Buton da "Dahili kaydet" olarak değişir.
+| Path | Schedule | Amaç |
+|---|---|---|
+| `/api/cron/weekly-digest` | `0 9 * * 1` | Her pazartesi 09:00 UTC — restoran sahibine haftalık özet |
+| `/api/cron/anonymize-ips` | `0 3 * * 0` | Her pazar 03:00 UTC — KVKK IP retention |
+| `/api/cron/monthly-newsletter` | `0 9 1 * *` | Her ayın 1'i 09:00 UTC — Pulse aylık bülten |
+| `/api/cron/trial-reminders` | `0 9 * * *` | Her gün 09:00 UTC — trial bitimine 1 ve 3 gün kalanlara hatırlatma |
 
-**UI değişikliği — her iki panel** (`/admin/reviews` + `/[locale]/dashboard/feedbacks`):
-- E-posta varsa: `☑ Müşteriye e-posta gönder · ahmet@...` checkbox'ı (default on)
-- E-posta yoksa: info satırı + buton "Dahili kaydet"
-- Send butonu: email modunda Mail ikonu + "E-posta ile gönder"; dahili modda Send + "Dahili kaydet"
-- Post-send notice: `sent → lime "E-posta gönderildi: ..."`, `failed → kırmızı`, `skipped → lime "Yanıt kaydedildi (dahili)"`
+### 21.13 Cron logic'i admin panelden tetikleme (anti-pattern: self-fetch)
 
-### 19.5 Feedback list resilience (bu commit)
+**Yapma**: `fetch(${appUrl}/api/cron/...)` ile kendi sunucusunu çağırma. Vercel serverless'ta cold start + 10s gateway timeout = 502.
 
-**Kök neden:** Faz 2'de `GET /api/feedback` list endpoint'i `include: { flag, _count: { replies }, assignment }` ile join'lendi. Eğer `prisma db push` henüz çalışmamış bir ortamda (preview deploy, stale local DB) bu tablolar yok → query throw → **tüm feedback listesi çöker** → admin dashboard + reviews sayfaları boş, "bazı sayfalar açılmıyor" algısı oluşur.
+**Yap**: Cron logic'ini ortak helper'a çıkar, hem cron GET handler hem admin trigger doğrudan invoke etsin.
 
-**Çözüm:**
-- `/api/feedback` GET: primary join'li query bir try/catch içinde; başarısızsa **join'siz fallback** çalışır, satırlar gösterilir ama `isReplied/isFlagged/isAssigned` false döner
-- `/api/feedback/counts`: `replied` sayacı `try/catch` ile sarıldı, hata durumunda 0 döner ama `all + attention` gösterilmeye devam eder
-- Sayfalar DB schema sync edilene kadar "degrade gracefully" çalışır
+Pattern (mevcut örnek `/api/cron/monthly-newsletter` + `/api/admin/newsletters/trigger`):
+```ts
+// src/app/api/cron/foo/route.ts
+export async function runFoo(): Promise<FooResult> { /* logic */ }
+export async function GET(req) {
+  // Bearer ${CRON_SECRET} auth
+  return NextResponse.json(await runFoo());
+}
 
-### 19.6 Deploy & "neden göremiyorum" notu
+// src/app/api/admin/foo/trigger/route.ts
+import { runFoo } from '@/app/api/cron/foo/route';
+export const maxDuration = 60;  // explicit — abone sayısı arttıkça lazım
+export async function POST(req) {
+  // admin auth
+  return NextResponse.json(await runFoo());
+}
+```
 
-Bu session'ın tüm değişiklikleri `claude/connect-prisma-providers-3ytkP` branch'inde. Kullanıcı `buaze.com` (production main) veya başka bir branch deploy'una bakarken bu değişiklikleri görmez. Değişikliklerin canlıda görünmesi için:
+`maxDuration: 60` explicit set — Vercel default 10s, batch send gerektiren işler için yetersiz.
 
-1. **Vercel preview deploy** — branch push'u Vercel otomatik preview üretir; preview URL'i (genellikle `claude-connect-prisma-providers-3ytkp-<team>.vercel.app`) ziyaret et.
-2. **Production merge** — `main`'e merge + Vercel production deploy. Bu otomatik olarak `prisma db push --accept-data-loss && next build` çalıştırır.
-3. **Local dev** — `npm install && npx prisma generate && npx prisma db push && npm run dev`. `DATABASE_URL + DIRECT_URL` env'i gerekli (§14.1).
+### 21.14 Recharts ResponsiveContainer pattern
 
-Son session'dan bu yana şemaya toplam **10 + 6 = 16 yeni Prisma modeli** eklendi (§18 + §19 birleşik: CaseStudy, OnboardingProgress, NewsletterSubscriber, ROIRequest, HelpArticle, CareerApplication, BillingSubscription, BillingInvoice, FeedbackReply, FeedbackFlag, FeedbackAssignment, TeamMember, Campaign, NotificationPreference). **`prisma db push` çalışmadan** bu tablolara dokunan endpoint'ler 500 döner. Vercel build script'i bunu otomatik halleder ama local dev'de manuel.
+**Yapma**: `<div flex flex-col h-[300px]><div flex-1 w-full><ResponsiveContainer width="100%" height="100%">` sandwich. Flexbox child'da `min-height: auto` default → ResponsiveContainer'ın ResizeObserver'ı `width(-1) and height(-1) of chart should be greater than 0` warning'i basıyor.
 
-### 19.7 Session'da kasten atlanmış
+**Yap**: Fixed-height parent'ın doğrudan child'ı olarak ResponsiveContainer:
+```tsx
+<div className="h-[260px] sm:h-[320px] md:h-[350px] w-full">
+  <ResponsiveContainer width="100%" height="100%">
+    {/* chart */}
+  </ResponsiveContainer>
+</div>
+```
 
-- **Admin CRUD** (CaseStudy, HelpArticle, CareerApplication yazma UI) — seed yeterli
-- **Stripe/Iyzico POS** — kullanıcı bilinçli ertelendi, billing sadece read-side
-- **Mobile QA** — deploy sonrası cihazda test edilmeli (Faz 5)
-- **`.design/*.jsx` prototiplerinin birebir kopyalanması** — proje Pulse token'lara hizalı, ama bazı `.design` detayları (örn. konum mini-map pulse animasyonu, tag bulutu gerçek NLP) scope dışı bırakıldı
+Mevcut örnekler: `src/components/admin/TrendsChart.tsx`, `src/components/admin/DayDistributionChart.tsx`.
 
-### 19.8 Deployment verification checklist
+### 21.15 Mail visual smoke test workflow
 
-Deploy sonrası kontrol:
+**Yerler**:
+- `/api/dev/email-preview?template=...&locale=tr|en&format=html|text` — raw HTML / text response. Production'da 404 (Vercel preview dahil).
+- `/admin/dev/mail-preview` — superadmin index sayfası, 9 template kart + locale toggle + "Önizle" + "Test mail at" butonları. Sidebar'da yalnız `NODE_ENV !== 'production'` ise görünür.
+- `/api/admin/dev/send-test` — superadmin POST endpoint, seed data ile sender'ı çağırır, admin'in kendi e-posta'sına gönderir. Production'da 404. Rate limit: **10 mail / 5 dk / admin** (`mail-test:${adminId}` key'i, `rateLimit()` helper'ı). Misclick veya stuck button'dan korur.
 
-- [ ] `/admin/dashboard` yükleniyor, istatistik kartları gerçek sayı gösteriyor
-- [ ] `/admin/analytics` NPS scoreboard + trend + tag bulutu doluyor (boş DB'de dahi NPS=0 + "veri yok" placeholder)
-- [ ] `/admin/reviews` liste açılıyor, badge'ler görünüyor; reply gönderince DB'de `feedback_replies` satırı oluşuyor; müşteri email varsa Resend log'da gönderim mesajı
-- [ ] `/admin/team` davet POST sonrası satır listede; PATCH ile rol değişiyor
-- [ ] `/admin/campaigns` yeni kampanya oluşturulur
-- [ ] `/admin/notifications` toggle kaydedilir, refresh sonrası durum korunur
-- [ ] `/[locale]/dashboard/feedbacks` owner panelinde aynı yanıt + email akışı çalışır
-- [ ] Browser console: `prisma db push run?` warning'i **yoksa** tablolar canlı; **varsa** deploy db push başarısız, tekrar deploy tetikle
+**Seed data**: `src/app/api/dev/email-preview/seeds.ts` — her template için realistic placeholder. Yeni template eklerken bu factory'e seed entry ekle.
+
+**Newsletter compose preview**: `/admin/newsletters/campaigns/{new,[id]}` formundaki "Önizle" butonu preview route'una `title`, `intro`, `postIds` query parametreleri geçer; render aşamasında DB'den o post'lar çekilip seed'in posts array'ini override eder. Bu sayede authored content gerçek post'larla eşleştirilmiş hâlde önizlenir.
+
+**Release checklist** (her major mail değişikliğinden önce):
+1. Lokal `npm run dev` → `localhost:3000/admin/dev/mail-preview`
+2. 9 template'i 375px (mobile DevTools) ve 1440px (desktop) viewport'ta aç
+3. Layout kırılma yok, font ≥ 14px, butonlar tıklanabilir
+4. "Test mail at" butonu → kendi adresine gerçek gönderim
+5. iPhone Mail / Gmail Web / Gmail iOS / Outlook Web kontrolü
+6. Spesifik bakılacaklar: trial-ending "ÖNERİLEN" badge Outlook'ta, newsletter dark featured card 4 client'ta, forgot-password token URL hover/click
+
+### 21.16 NewsletterCampaign
+
+**Schema** (`prisma/schema.prisma` `NewsletterCampaign`):
+- `title`, `intro` (override default Pulse copy)
+- `postIds: String[]` — BlogPost id array (max 6, en az 1). Phantom id'ler cron'da sessizce skip
+- `locale: 'tr' | 'en' | 'both'` — `'both'` aboneye locale'ine göre matching post'lar
+- `status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'`
+- `scheduledAt` + `sentAt` + `sentCount` + `failedCount`
+
+**Cron precedence** (`runMonthlyNewsletter()` `src/app/api/cron/monthly-newsletter/route.ts`):
+1. Explicit `campaignId` (admin "Şimdi gönder" yolu) → ilgili campaign
+2. `status: 'scheduled'`, `scheduledAt <= now`, en eski → o campaign
+3. Hiç campaign yoksa → fallback "son 3 aktif blog post" (legacy)
+
+Send başlamadan campaign `'sending'`, bitince `'sent'` + `sentAt` + counts. Even partial failure marks campaign `'sent'` — re-fire'dan korur.
+
+**Admin UI** (`/admin/newsletters/campaigns`):
+- Liste: `page.tsx` desktop table + mobile cards, status pill, `sentCount/failedCount`, "Yeni kampanya" butonu
+- Compose form: `NewsletterCampaignEditor.tsx` (ortak new + edit) — title + intro + locale + post checkbox grid + Taslak/Zamanla/Şimdi gönder mode
+- Preview + Test mail butonları (yalnız `NODE_ENV !== 'production'`'da işe yarar)
+- `'sent'` ve `'sending'` campaign'lar **immutable** (PATCH 409, DELETE 409)
+- Sadece `'draft'` campaign silinebilir
+
+**Sender override**: `sendNewsletterEmail({ title, intro, subject })` — set edildiğinde Pulse default "Sessiz misafiri…" hero'sunu replace eder, lime-highlight styling yerine plain title.
+
+### 21.17 Newsletter source tracking pattern
+
+(taşındı — alttaki §21.20'ye bak)
+
+### 21.18 Vercel preview env'leri
+
+**Mevcut durum (2026-04 doğrulandı)**: Vercel'de **`DATABASE_URL`, `DIRECT_URL`, `CRON_SECRET`, `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`** Production + Preview + Development scope'larında set. **Yeni preview branch açıldığında ekstra konfigürasyon yok** — `prisma db push` build script'inde otomatik koşar, schema sync olur.
+
+**Mevcut DB topology**: production DB tek paylaşılan Supabase instance (preview deploy'lar da aynı DB'ye yazıyor). Supabase Branching aktif değil (`supabase/` klasörü boş → PR'larda `Supabase Preview` check `skipped` normal).
+
+**Schema değişikliği yaparken** (preview deploy'un prod'u kırmaması için):
+- **Yapma**: NOT NULL kolon eklemek → eski koda yazan request fail eder
+- **Yapma**: kolonu silmek → eski kod o kolonu okumaya devam eder, fail
+- **Yap**: Her yeni kolon **nullable + default'lu**. Pulse mail PR'larında bu disiplin uygulandı (`FeedbackReply.source String? @default("manual")`, `User.lastTrialReminderAt DateTime?`, vb.)
+
+**Preview deploy paranoidliği gerekirse**: Supabase Branching aktif edilebilir (yeni `supabase/migrations/` klasörü + Vercel-Supabase integration ayarı) → her preview kendi izole DB'sini alır, prod etkilenmez. Şu anki ölçek için gereksiz.
+
+### 21.19 GitHub Actions CI
+
+`.github/workflows/ci.yml` her PR'da koşar:
+1. `npm ci` (lockfile-strict install)
+2. `npx prisma generate` (stub DATABASE_URL ile, gerçek DB'siz)
+3. `npx prisma validate` (schema syntax)
+4. `npx tsc --noEmit -p tsconfig.json` (zero error)
+5. `npx eslint .` (lint, max-warnings flag yok)
+
+**Trigger**: `on.pull_request` (branch filter YOK — stacked PR'lar (base ≠ main) da koşsun, CLAUDE.md §21.22). Push event sadece `main` branch'inde tetiklenir (zaten merge sonrası verifiy için). Eski `branches: [main]` filter PR base'i `claude/*` olunca CI'ı tamamen atlıyordu — düzeltildi.
+
+Concurrency cancel-in-progress: aynı PR'a yeni commit gelince eski run iptal. Workflow ~2-3 dk sürer. Local geliştirici için aynı 4 komutu local'de koşmak yeterli — CI sadece "review öncesi son güvenlik ağı".
+
+`.github/pull_request_template.md` — her yeni PR'a Test plan / Backend etkisi / Risks bölümleri otomatik gelir.
+
+### 21.20 FeedbackReply.source backfill
+
+`scripts/backfill-feedback-reply-source.ts` — eski reply'ları `source = 'manual'` ile dolduran one-shot data migration. `prisma db push` schema kolonu ekler ama eski rows NULL kalır. Çalıştırmak (idempotent):
+
+```bash
+DATABASE_URL=... npx tsx scripts/backfill-feedback-reply-source.ts
+```
+
+Cron `'ai_copilot'` filter'ında zaten NULL'lar yer almıyor → backfill **opsiyonel**. Ama admin reports/analytics `GROUP BY source` sorguları "Unknown" bucket'ı görmek istemiyorsa run et.
+
+### 21.21 Newsletter source tracking pattern
+
+**`NewsletterSubscriber.source`** her abonede dolu olmalı. Yeni signup placement eklendiğinde:
+
+1. Component'e `source` prop pas et (örn. `<NewsletterSignup locale={l} source="popup" />`)
+2. `src/lib/newsletter-sources.ts` `NEWSLETTER_SOURCE_LABELS` haritasına eklemeyi unutma — admin UI ham string yerine label gösterir
+3. Admin Kaynak filter dropdown'ı dinamik distinct query — yeni source otomatik görünür, label upgrade cosmetic
+
+**Mevcut sources**: `footer`, `popup`, `blog_inline`, `dashboard_invite`, `onboarding`, `roi_form`, `homepage_hero`. Yeni eklemeler için CLAUDE.md'yi güncelle.
+
+**Helper**: `getNewsletterSourceLabel(source, locale)` — admin UI + CSV export'ta tek nokta.
+
+### 21.22 Stacked PR workflow (kanonik)
+
+**Hedef**: Kullanıcı bazen birden fazla PR aynı anda açık tutuyor. Sadece **en son PR'ı** main'e merge ettiğinde tüm önceki PR'ların değişiklikleri de gelmeli — manuel sıralı merge yapmak zorunda kalmamalı.
+
+**Yöntem — Stacked PR pattern**: Yeni branch açarken, eğer önceki feature branch'i hâlâ open PR'sa, **önceki branch'ten branch'le** (main'den değil). Yeni PR'ın base'i de önceki PR'ın head branch'i olur.
+
+```
+main
+ └─ feature-A  (PR #100, base=main)
+     └─ feature-B  (PR #101, base=feature-A)
+         └─ feature-C  (PR #102, base=feature-B)
+```
+
+**Kullanıcı PR #102'yi main'e merge ettiğinde**:
+- GitHub diff: A + B + C tüm commit'leri main'e gelir
+- PR #100 ve #101 otomatik `Closed` olarak işaretlenir (içerikleri main'de)
+- Status `Merged` değil `Closed` olur — ama kod main'e geçti, fonksiyonel olarak aynı
+
+**Yeni AI/dev session'u feature branch açarken yapması gereken**:
+
+1. Açık PR'ları kontrol et:
+   ```bash
+   git branch -r --no-merged origin/main | grep claude/
+   ```
+2. Eğer son commit'lediğin/PR'sı açık olan branch varsa → o branch'ten branch'le:
+   ```bash
+   git fetch origin <onceki-branch>
+   git checkout -b claude/<yeni-feature> origin/<onceki-branch>
+   ```
+3. Yeni PR açarken `mcp__github__create_pull_request`'te `base: '<onceki-branch>'` (main değil)
+4. PR description'da belirt: "Bu PR `<onceki-branch>` üzerine kuruludur. PR #<önceki> main'e merge'lenirse base otomatik main'e güncellenir."
+
+**Eğer önceki PR yoksa veya kullanıcı paralel iş istediğini söylüyorsa** → main'den branch'le, base=main yap (klasik akış).
+
+**Kontrol listesi (yeni feature branch öncesi)**:
+- [ ] `git fetch origin main` — main güncel mi?
+- [ ] Açık PR var mı? `gh pr list` veya GitHub UI'dan kontrol — yoksa `mcp__github__list_pull_requests`
+- [ ] Stacked PR pattern uygulanacak mı? (cevap genelde **evet**, kullanıcı tek-PR-merge konforu istiyor)
+- [ ] Branch ismi `claude/<scope>-<short-description>` formatında
+
+**Pulse mail iterasyonlarında uygulanan örnek**:
+- PR #68 base=main (`claude/analyze-codebase-dBomf`)
+- PR #69 base=`claude/analyze-codebase-dBomf` (`claude/pulse-mail-followups`) — stacked
+- PR #70 base=main (`claude/pulse-mail-hardening`) — #69 main'e merge edildikten sonra açıldığı için stack kırıldı, main'den branch'lendi
+
+**Squash merge yan etkisi**: Kullanıcı GitHub UI'da "Squash and merge" seçerse stacked PR'ların commit'leri tek commit'e sıkışır → individual blame info kaybolur. "Create a merge commit" veya "Rebase and merge" history'yi korur. Kullanıcı tercihi.
+
+
+
+### 21.23 Mail Deliverability — Spam'e düşmemek için
+
+Pulse mail sistemi 5000+ mail/gün eşiğine yaklaşıldığında bulk sender olarak değerlendirilir. Gmail (Şubat 2024) + Yahoo + Apple Mail spam filter'ları için aşağıdaki kontroller **zorunlu**.
+
+#### Otomatik (kod tarafında halledildi)
+
+| Kontrol | Nerede | Detay |
+|---|---|---|
+| **`List-Unsubscribe` header** | `sendNewsletterEmail` (`src/lib/email.ts`) | Token-based HTTPS link + `mailto:` fallback. RFC 2369. |
+| **`List-Unsubscribe-Post: One-Click`** | Aynı yer | RFC 8058. Gmail/Yahoo bulk sender requirement. |
+| **`Precedence: bulk`** header | Aynı yer | Marketing trafik işareti. |
+| **POST `/api/newsletter/unsubscribe`** | `src/app/api/newsletter/unsubscribe/route.ts` | RFC 8058 one-click POST endpoint — bad token'da bile 200 (RFC zorunluluğu). |
+| **Plain text + HTML** | Tüm sender'lar | Resend `text` + `html` field'larını birlikte alır → tek-format spam tetiği yok. |
+| **Default Reply-To** | `defaultReplyTo()` helper | `RESEND_REPLY_TO` veya `NOTIFICATION_EMAIL` env'lerine düşer. Marketing mail'de noreply-only sender Gmail'de risk. |
+| **Unsubscribe link HTML body'de** | Newsletter footer | `EmailFooter` Pulse layout. Token-based, idempotent. |
+| **`unsubscribedAt: null` filter** | Cron query'leri | İptal edenlere mail göndermez — complaint rate kontrolü. |
+
+#### Kullanıcı tarafında (DNS + Resend dashboard)
+
+Bunlar **kod ile yapılamaz**, Resend hesabında + DNS provider'da set edilmeli:
+
+1. **SPF record** → Resend domain doğrulama yapınca otomatik talimat verir. `TXT @ "v=spf1 include:_spf.resend.com ~all"`. ✓ Resend dashboard'da yeşil tik kontrol et.
+2. **DKIM** → Resend otomatik 3 CNAME record verir. ✓ Resend dashboard'da yeşil tik kontrol et.
+3. **DMARC** → Manuel olarak ekle, DNS:
+   ```
+   TXT _dmarc "v=DMARC1; p=none; rua=mailto:dmarc@buaze.com; pct=100"
+   ```
+   - Başlangıç: `p=none` (sadece raporla, bloke etme)
+   - 2 hafta sonra raporlar temizse: `p=quarantine` (şüphelileri spam'e yolla)
+   - 1 ay sonra: `p=reject` (sertleştir)
+4. **MX record** → buaze.com için aktif olmalı (mailto: ve bounce için). DNS provider'da kontrol et.
+5. **`RESEND_REPLY_TO`** Vercel env'inde **set edilmeli** — `hello@buaze.com` veya monitored bir mailbox.
+6. **Resend webhook** (opsiyonel ama önerilir): Bounce + Complaint event'lerini DB'ye kaydet, abone listesinden auto-remove. Gelecek scope.
+
+#### Spam testi (deploy sonrası)
+
+1. **mail-tester.com**: `/admin/dev/mail-preview` "Test mail at" butonu ile mail-tester'ın verdiği test adresine gönder → 10/10 puan hedefle. <8 ise raporu oku, eksiği gider.
+2. **Gmail Postmaster Tools** (gönderim hacmi >100/gün olunca): https://postmastertools.google.com — domain reputation, IP reputation, spam rate metrikleri.
+3. **Sender Score** (https://senderscore.org) — Resend shared IP score'unu görmek için.
+
+#### Spam riski tetikleyen şeyler (yapma)
+
+- ❌ `noreply@` from + Reply-To yok (yapıldı, default fallback eklendi)
+- ❌ Subject'te `!!!`, ALL CAPS, "FREE", "$$$" gibi tetik kelimeler
+- ❌ Image-only HTML (text yok). Bizim template'ler image + text dengeli ✓
+- ❌ Gizli `display:none` text. Bizimki sadece preheader (RFC-uyumlu)
+- ❌ URL shortener (bit.ly). Tüm linkler `buaze.com` direct ✓
+- ❌ Yüksek bounce rate (>5%). Resend dashboard'da izle, geçersiz adresleri DB'den temizle.
+- ❌ Yüksek complaint rate (>0.3% Gmail eşiği). `unsubscribedAt`'i hemen set et + bir daha mail gönderme ✓
+
+#### Audit checklist (her ay)
+
+- [ ] Resend dashboard: SPF + DKIM yeşil tik
+- [ ] DMARC report mail'lerini oku (rua adresine düşüyor)
+- [ ] Bounce rate < 5%
+- [ ] Complaint rate < 0.3%
+- [ ] mail-tester.com test mail'i 9+/10
+- [ ] Gmail Postmaster: domain reputation "High" veya "Medium"
+
+### 21.24 Favicon / icon asset envanteri
+
+Pulse temalı favicon her bağlamda doğru servis edilsin diye **3 statik dosya** + **layout metadata** birlikte çalışıyor:
+
+**Statik dosyalar** (`public/`):
+- `favicon.svg` — ana favicon (lime gradient bg + graphite ECG line + dot accent). Tüm modern tarayıcılar bunu kullanır.
+- `apple-touch-icon.svg` — iOS Safari "Add to Home Screen" + pinned tab. 180x180 viewBox.
+- `site.webmanifest` — PWA manifest (Android Chrome "Install App"). Background `#FFFFFF`, theme `#0A0A0A`.
+
+**Layout metadata** (`src/app/layout.tsx` + `src/app/[locale]/layout.tsx`):
+```ts
+icons: {
+  icon: [{ url: s.faviconUrl || '/favicon.svg', type: 'image/svg+xml' }],
+  shortcut: s.faviconUrl || '/favicon.svg',
+  apple: '/apple-touch-icon.svg',
+},
+manifest: '/site.webmanifest',
+```
+
+`s.faviconUrl` — admin paneli `Site Settings`'ten kullanıcı override'ı. Boşsa default `/favicon.svg`.
+
+**Vercel rewrites** (`vercel.json`):
+Eski tarayıcı default isteklerini SVG'ye yönlendirir:
+- `/favicon.ico` → `/favicon.svg`
+- `/favicon.png` → `/favicon.svg`
+- `/apple-touch-icon.png` → `/apple-touch-icon.svg`
+- `/apple-touch-icon-precomposed.png` → `/apple-touch-icon.svg`
+- `/icon-192.png`, `/icon-512.png` → `/apple-touch-icon.svg`
+
+**Eski tarayıcı / third-party cache**:
+- Bazı siteler (DMARC dashboard'ları, social embeds) favicon'u kendi cache'lerinden çeker; Buaze tarafında değişiklik yapsan bile o cache 7-30 gün eski olabilir.
+- Hızlandırma: ilgili siteye favicon URL'i ile cache invalidation isteği yolla, ya da `?v=2` query string ekle.
+
+**JSON-LD logo URL'leri** (SEO yapısal veri):
+- `src/app/[locale]/layout.tsx:131` — Organization schema, `s.logoUrl || ${siteUrl}/favicon.svg`
+- `src/app/[locale]/blog/[slug]/page.tsx`, `about/page.tsx` — hardcoded `https://buaze.com/favicon.svg`. Site logo değişirse bu üçü de güncellenmeli.
+
+**OG image** (sosyal paylaşım) ayrı bir dosya: `src/app/opengraph-image.tsx` (1200x630 dynamic OG image). Favicon'dan farklı boyut/görsel kuralları.
+
+### 21.25 Lint baseline & technical debt
+
+`eslint.config.mjs` Pulse mail PR'ları sonrası eklendi (CI workflow ilk koştuğunda 117 error + 94 warning yakaladı). Mevcut borcu warning seviyesinde tutup CI'ı çalışır halde bıraktık:
+
+**Warning seviyesinde** (CI fail değil):
+- `@typescript-eslint/no-explicit-any` — 100+ yer (hızlı yazılan API tipleri)
+- `@typescript-eslint/no-unused-vars` — 30+ yer (unused import/destructure)
+- `react/no-unescaped-entities` — 50+ yer (Türkçe içerik içinde tırnak)
+- `react-hooks/exhaustive-deps` — birkaç yer (useEffect dep array)
+- `@next/next/no-img-element` — birkaç yer (`<img>` yerine `<Image>` öneri)
+
+**Halen error seviyesinde** (CI fail eder, yeni PR'larda düzeltilmeli):
+- TypeScript syntax / type errors (tsc adımında yakalanır)
+- Next.js critical patterns (örn. `<a>` yerine `<Link>` zorunluluğu)
+- Tüm Next/typescript preset error'ları default kalmış kurallar
+
+**Warning'leri tek tek temizleme stratejisi**:
+- Yeni PR'da bir kuralı `'error'`'a çevir → ilgili dosyaları düzelt → CI yeşil olunca commit
+- Örn: önce `no-unused-vars` (en az invasive), sonra `no-explicit-any` (saatler sürebilir)
+- `npx eslint . --fix` otomatik düzeltebileceği şeyleri (1-2 düzine) hemen kapatır
+- `next-env.d.ts` ignored — Next.js auto-generates, manuel düzeltilemez
+
+**CI komut**: `npx eslint .` (max-warnings flag'i yok). Yeni error → fail. Mevcut warning → görünür ama bloke etmez.
+
+**Next 16 hazırlığı**: `next lint` deprecated. ESLint CLI'a geçildi. `next/core-web-vitals` + `next/typescript` preset'leri aynen kalıyor; sadece lint runner değişti.
+
+### 21.26 DB-driven mail content (9 template — tüm Pulse mailler)
+
+**Schema** (`prisma/schema.prisma` `MailTemplate`):
+- `key: String` — `'welcome' | 'newsletter' | 'trial-ending'` (MVP scope)
+- `locale: String` — `'tr' | 'en'`
+- `content: Json` — flat object: render fonksiyonunun inline `copy = isTr ? {...} : {...}` field'larıyla aynı isimler
+- `editable: Boolean @default(true)` — KVKK/legal copy için Phase 2'de field-level lock
+- `updatedById: String?` + `updatedAt: DateTime` — audit
+- `@@unique([key, locale])` — bir (template, dil) için tek satır
+
+**Helper** (`src/lib/email/copy-loader.ts`):
+```ts
+loadMailCopy<T>(key, locale, fallback) → Promise<T>
+```
+- DB'den `mailTemplate.findUnique` → JSON content çeker
+- `{...fallback, ...dbContent}` shallow merge → admin sadece istediği field'ı override eder, kalan default kalır
+- Process-local cache (60 sn TTL) — `Map<string, CacheEntry>`. Vercel serverless cold start'ta sıfırlanır, kabul edilen drift.
+- DB error → fallback (mail kırılmaz). `console.error` ile log düşer.
+- `invalidateMailCopyCache(key, locale)` — admin PATCH/DELETE sonrası cache bust
+
+**Render fonksiyonu pattern** (welcome/newsletter/trial-ending):
+```ts
+export async function renderXxx(params, locale): Promise<{...}> {
+  const inlineDefault = isTr ? {...} : {...};
+  const copy = await loadMailCopy('xxx', locale, inlineDefault);
+  // copy artık DB-merge'lı; render aynen devam
+}
+```
+3 render fonksiyonu artık `async` — sender'lar `await renderXxx(...)` çağırır.
+
+**Admin UI**:
+- `/admin/mail-templates` (liste) — 3×2 = 6 kart grid, seeded/not-seeded durumu
+- `/admin/mail-templates/[key]/[locale]` (edit form) — `MailTemplateEditor.tsx` schema-bilinçli alan listesi (`FIELDS_BY_TEMPLATE` map'i her template için input + textarea field'ları + hint'ler tanımlar)
+- Eylemler: **Önizle** (yeni tab dev preview), **Test mail at** (admin'in kendi e-postasına), **Kaydet** (PATCH), **Varsayılana dön** (DELETE → kod-içi default)
+- Sidebar: "Mail İçerikleri" (FileEdit icon, superadmin)
+
+**API**:
+- `GET /api/admin/mail-templates` — full grid (seeded/not seeded)
+- `GET /api/admin/mail-templates/[key]/[locale]` — tek template content
+- `PATCH /api/admin/mail-templates/[key]/[locale]` — content upsert + cache invalidate. Empty string field'lar drop edilir (admin "varsayılana dön" istediği field için).
+- `DELETE /api/admin/mail-templates/[key]/[locale]` — full revert + cache invalidate
+
+**Seed** (`scripts/seed-mail-templates.ts`):
+```bash
+DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts
+```
+Idempotent. 6 satır upsert. Çağrıldığında **admin-edited content'i override eder** — operator "kod default'larına geri dön" istediğinde çalıştırılır.
+
+**Phase 2 backlog** (yapılmadı, gelecek scope):
+- Kalan 6 template DB-driven (forgot-password, form-confirmation, low-rating-alert, new-review, weekly-report, customer-reply)
+- Dynamic placeholder injection: `${firstName}`, `${restaurantName}` gibi runtime substitution. Şu an `welcome.titleHi` `Merhaba ${name}.` interpolation render fonksiyonunda yapılıyor; admin override edemez (per-recipient personalization).
+- `editable: false` field-level flag + UI read-only (KVKK metinleri için)
+- Audit log (`MailTemplateRevision { templateId, content, editedAt, editorId }`)
+- Redis-backed cache (multi-instance Vercel'de drift sıfır)
+
+**Faz 1 hardcoded cleanup** (aynı PR):
+- Newsletter `stats` array'i → `params.stats?` opsiyonel param. Cron geçirmediği için band gizlenir (eski `+184% / 1.4s` placeholder'ları yok).
+- Weekly-report 3. stat hücre (`'1.4s'` response time) kaldırıldı → 3-col → 2-col layout. Backend tracking eklendiğinde tekrar `stats.push({...})` ile geri açılır.
+- Customer-reply `defaultActions` (3 sabit Kadıköy hikayesi) silindi. `params.actions` undefined/empty → "Aldığımız aksiyonlar" kart gizlenir.
+- Trial-ending fiyat fallback yorumla işaretlendi (Faz 2'de DB-driven olabilir).
+
+### 21.27 Phase 2 — 5 template extension + KVKK field lock
+
+**Genişletilen template'ler** (2026-04 Phase 2): `forgot-password`, `low-rating-alert`, `new-review`, `weekly-report`, `customer-reply`. PR #75 (welcome/newsletter/trial-ending) ile aynı pattern: render fn `async`, sender `await`, `loadMailCopy('xxx', locale, inlineDefault)`. **Form-confirmation** 4-variant yapısı (`contact/career/roi/newsletter`) bu PR'a alınmadı — Phase 3'te nested JSON ile DB-driven yapılacak.
+
+**Field-level lock** (`src/lib/email/locked-fields.ts`):
+- KVKK / güvenlik kritik field'lar admin UI'da `disabled` + 🔒 KVKK badge
+- API PATCH endpoint server-side `stripLockedFields()` ile drop eder (defence in depth)
+- Mevcut locked field'lar:
+  - `forgot-password`: `statusText`, `notYouTitle`, `notYouBody`, `notYouLink`
+  - `customer-reply`: `sentLine`, `sentSuffix` (Buaze attribution disclosure)
+
+**Editor**: `MailTemplateEditor.tsx` 8 template entry, her field için opsiyonel `locked: true; lockReason: '...'` flag. UI render: `<input disabled>` + kırmızı border + lock icon + reason hint.
+
+**`SUPPORTED_MAIL_KEYS` export** (`src/lib/email/copy-loader.ts`): API route + page validator + editor tek source-of-truth'tan import eder. Yeni template eklerken bu array'i + `MailTemplateKey` union'u + `FIELDS_BY_TEMPLATE` map'i + `TEMPLATE_LABELS` map'i + seed entry'i + (varsa) `LOCKED_MAIL_FIELDS` set'i — bağlantı checklist'i CLAUDE.md §21.26'da.
+
+**Seed**: `npx tsx scripts/seed-mail-templates.ts` artık 16 satır upsert eder (8 template × 2 locale).
+
+**Phase 3 backlog** (yapılmadı):
+- form-confirmation DB-driven (nested `{ contact: {...}, career: {...}, roi: {...}, newsletter: {...} }` JSON)
+- Dynamic placeholder injection (`${firstName}`, `${restaurantName}` runtime)
+- Audit log (`MailTemplateRevision`)
+- Redis cache (gerekli değil şimdilik — 60s drift kabul)
+
+### 21.28 Phase 3 — `form-confirmation` 4-variant nested JSON
+
+`form-confirmation` template'i **4 formType variant** taşır (`contact / career / roi / newsletter`); her variant 14 string field içerir. Phase 2'de erteleme sebebi: tek-row düz JSON yapısı 4 variant'ı doğru modelleyemiyordu. Phase 3 çözümü: aynı `MailTemplate.content: Json` schema'sıyla nested JSON.
+
+**DB shape** (per locale row):
+```json
+{
+  "contact":    { "subject": "...", "preheader": "...", ... },
+  "career":     { ... },
+  "roi":        { ... },
+  "newsletter": { ... }
+}
+```
+
+**Loader** (`src/lib/email/copy-loader.ts`): `loadMailCopy<T>` defansif normalisation iki shape kabul eder — flat `string` (8 template) **veya** plain object of strings (form-confirmation). Array / null / number / nested-deeper yine drop edilir.
+
+**Render** (`src/lib/email/templates/form-confirmation.ts`): Async; iki seviyeli merge:
+```ts
+const merged = await loadMailCopy('form-confirmation', locale, FORM_COPY);
+const variantOverride = merged[formType] ?? {};
+const copy = { ...FORM_COPY[formType], ...variantOverride };
+```
+Admin sadece bir variant'ın bir field'ını override etse, kalan field'lar inline default'tan gelir.
+
+**API endpoint** (`/api/admin/mail-templates/[key]/[locale]`): PATCH validation `parsed.key === 'form-confirmation'` ise top-level değerlere plain object kabul eder, içindeki string'leri trim + drop empty + drop non-string. Diğer 8 template hâlâ flat-only.
+
+**Admin UI**:
+- Tek route: `/admin/mail-templates/form-confirmation/[locale]` — `MailTemplateEditor` `templateKey === 'form-confirmation'` branch'inde `<FormConfirmationEditor>` render eder.
+- `<FormConfirmationEditor>` 4 variant tab'ı (`İletişim / Kariyer / ROI / Bülten`) + her variant için aynı 14 field listesi.
+- State: `Record<FormType, Record<string, string>>` — her tab kendi state'ini tutar; "Kaydet" tüm 4 variant'ı tek PATCH'te gönderir.
+- Önizle / Test mail butonları aktif tab'ın variant'ını query string ile preview / send-test endpoint'ine geçirir.
+
+**`<MailFieldInput>`** (`src/components/admin/MailFieldInput.tsx`) — tek input render component; flat editor + variant editor aynı şeyi kullanır (DRY). Locked badge + multiline + hint hepsi tek yerde.
+
+**Liste sayfası**: `TEMPLATE_LABELS` 9 entry, grid otomatik 9 × 2 = 18 kart.
+
+**Seed**: 18 row upsert (16 mevcut + 2 nested form-confirmation).
+
+**Phase 4 backlog** (yapılmadı):
+- Dynamic placeholder injection (`${firstName}`, `${restaurantName}` runtime substitution)
+- Audit log (`MailTemplateRevision`)
+- Redis cache (gerekli olduğunda)
+- Per-field validation (max length, format) — şu an sadece trim + non-empty
+
+### 21.29 Phase 4 — Dynamic placeholder injection
+
+Admin CMS'inde editlenen copy field'larında runtime placeholder substitution. Admin "Merhaba ${firstName}." yazınca her mailde gerçek isimle dolar; her şey backward compatible — placeholder'sız field'lar olduğu gibi render olur.
+
+**Helper** (`src/lib/email/placeholders.ts`):
+- `MAIL_PLACEHOLDERS: Record<MailTemplateKey, string[]>` — per-template whitelist
+- `substitutePlaceholders(text, vars, mode)` — `${key}` → vars[key]; mode='html' HTML-escape (XSS guard), mode='text' plain
+- `validatePlaceholders(text, allowed)` — token whitelist check
+- `findInvalidPlaceholders(content, allowed)` — flat veya nested (form-confirmation) content içinde ilk geçersiz token'ı bulur
+- `deepSubstitute(value, vars, mode)` — recursive walk, string leaf'larda substitute
+
+**Render fn pattern** (9 template'in tümünde):
+```ts
+const merged = await loadMailCopy('xxx', locale, inlineDefault);
+const vars = { firstName: params.firstName || fallback, ... };
+const copy = deepSubstitute(merged, vars, 'html');
+const copyText = deepSubstitute(merged, vars, 'text');
+// HTML body uses `copy.X` (HTML-escaped substitutions)
+// Text body uses `copyText.X` (plain substitutions)
+```
+
+**Whitelist** (per template):
+| Template | Placeholders |
+|---|---|
+| welcome | `${firstName}` |
+| newsletter | `${firstName}` |
+| trial-ending | `${firstName}` `${restaurantName}` `${daysLeft}` |
+| forgot-password | `${firstName}` |
+| low-rating-alert | `${restaurantName}` `${customerName}` `${rating}` `${branch}` |
+| new-review | `${restaurantName}` `${customerName}` `${rating}` |
+| weekly-report | `${restaurantName}` `${totalReviews}` `${avgRating}` |
+| customer-reply | `${customerFirstName}` `${restaurantName}` `${ownerName}` |
+| form-confirmation | `${firstName}` |
+
+**API validation** (`PATCH /api/admin/mail-templates/[key]/[locale]`):
+- `findInvalidPlaceholders(cleaned, MAIL_PLACEHOLDERS[key])` — typo yakalanır
+- 400 response: `{ error: 'invalid_placeholder', field, invalid: [...], allowed: [...] }`
+- Editor'lerde user-friendly Turkish error gösterilir
+
+**Editor UI** (`MailFieldInput`):
+- `field.placeholders?: readonly string[]` — input altında chip row görünür
+- Tıklayınca caret konumuna `${token}` literal eklenir
+- Locked field'lar chip göstermez (KVKK lock)
+- Editor `FieldDef` schema'sı: yeni alanlar `placeholders: MAIL_PLACEHOLDERS[key]` ile etkinleştirilir
+
+**Yeni placeholder eklemek**:
+1. `MAIL_PLACEHOLDERS[key]` array'ine ekle
+2. Render fn'inde `vars` object'ine değeri map et
+3. (Opsiyonel) Editor `FieldDef.placeholders`'ı güncelle (hint UI için)
+
+**XSS guard**: HTML mode substitution `escapeHtml` kullanır — admin "${customerName}" yazıp customer name `<script>` olsa bile mail'de `&lt;script&gt;` olarak çıkar. Text mode escape yapmaz (text mail saf metin).
+
+**Phase 5+ backlog**:
+- Audit log (`MailTemplateRevision`)
+- Redis cache (multi-instance drift)
+- Per-field validation (max length, format)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+
+### 21.30 Phase 5 — Audit log (`MailTemplateRevision`)
+
+Mail template her edit'inde DB'ye snapshot yazılır. KVKK uyumu (kim ne zaman ne değiştirdi) + rollback yeteneği (admin yanlış save etse, önceki sürüme dön).
+
+**Schema** (`prisma/schema.prisma` `MailTemplateRevision`):
+```prisma
+model MailTemplateRevision {
+  id          String        @id @default(cuid())
+  templateId  String?       // SetNull on MailTemplate delete (history survives)
+  templateKey String        // denormalized for query after delete
+  locale      String
+  editType    String        // 'created' | 'updated' | 'deleted' | 'reverted'
+  content     Json          // snapshot of the new content after edit
+  editedById  String?
+  createdAt   DateTime
+}
+```
+
+**Endpoint'ler** (hepsi `prisma.$transaction(async tx => ...)` ile sarılı — audit log canlı row'la asla drift etmez):
+- `PATCH /api/admin/mail-templates/[key]/[locale]` — upsert + revision tek transaction. `editType` upsert sonrası `createdAt === updatedAt` check'iyle atomik türetilir (find-then-upsert TOCTOU race kapatıldı).
+- `DELETE /api/admin/mail-templates/[key]/[locale]` — delete + 'deleted' revision tek transaction. Order: delete önce → P2025 throw varsa transaction rollback olur, audit drift olmaz. SetNull FK ile audit history survive eder.
+- `GET /api/admin/mail-templates/[key]/[locale]/revisions` — last 50 revision, editor username/email join'lü.
+- `POST /api/admin/mail-templates/[key]/[locale]/revisions/[id]/revert` — upsert + 'reverted' revision tek transaction; revisionId path mismatch (templateKey/locale farklı) ise 400.
+
+**Soft-prune** (`src/lib/email/revisions.ts` shared helper): PATCH/DELETE/revert hepsinin sonunda çağrılır. Last 50'yi tutar, geri kalanı `deleteMany`. Transaction'ın DIŞINDA — best-effort cleanup, atomically commit gerekmiyor.
+
+**Editor UI**: `<MailRevisionHistory>` slide-over modal. "Geçmiş" butonu açar. Listede her revision için editType badge + tarih + editor + "İçeriği göster" expand + "Bu sürüme dön" buton. Revert sonrası editor state otomatik refresh (reloadKey trigger).
+
+**Locked field defansı**: Revert sırasında `stripLockedFields()` yine çalışır — eski revision KVKK öncesi unlocked field içeriyorsa, revert apply eder ama locked field drop edilir.
+
+**Cross-template guard**: revert endpoint revisionId path'iyle gelirken `templateKey` + `locale` mismatch olursa 400 döner. UI bug ile A template'ini B'ye revert etmeyi engeller.
+
+**Phase 6+ backlog**:
+- Diff viewer (revision A vs B side-by-side)
+- Per-field history filtering
+- Bulk export (KVKK soruşturma için CSV/JSON)
+- Redis cache (multi-instance drift)
+- Per-field validation (max length, format)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+
+### 21.31 Phase 6 — Per-field length validation
+
+Mail template'lerde admin paste-bomb'larını engelleyen length validation. 300 karakterlik subject Gmail spam filter'ını tetikler, 500 karakterlik eyebrow hero layout'u 4 satıra wrap eder. Loose limits — gerçek abuse'u yakalar, küçük overage'larda nag etmez.
+
+**Helper** (`src/lib/email/field-validation.ts`):
+- `EXPLICIT: Record<string, FieldValidation>` — per-key override (`subject: 100`, `intro: 1000`, vb.)
+- `getValidationByPattern()` — fallback: `*body*` 400, `*eyebrow*` 80, `*cta/link*` 60, default 200
+- `validateField(key, value)` — null = valid, structured error = invalid
+- `findInvalidField(content)` — flat veya nested (form-confirmation) content içinde ilk geçersiz field
+
+**Limit table**:
+| Field grup | Max | Sebep |
+|---|---|---|
+| `subject` | 100 | Gmail truncate ≥70, spam score ≥100 |
+| `preheader` | 200 | Inbox preview |
+| `*eyebrow*` | 80 | Single-line layout |
+| `title*` | 80 | Hero h1/h2 wrap |
+| `titleAccent` | 60 | Vurgu kelime |
+| `intro` | 1000 | Body paragraph |
+| `*body*` | 400 | Side card body |
+| `*cta`/`*link*` | 60 | Button label |
+| Other (default) | 200 | Generic chrome |
+
+**API validation** (`PATCH /api/admin/mail-templates/[key]/[locale]`):
+- `findInvalidField(cleaned)` placeholder validation'dan sonra
+- 400 response: `{ error: 'invalid_field_length', field, reason: 'too_long' | 'too_short', max?, min?, actual }`
+- Form-confirmation nested için path `variant.field` formatında
+
+**Editor UI** (`MailFieldInput`):
+- Live char counter input altında (sağ-aligned, mono font, 10px)
+- Renk: `<%80` neutral gray, `>=80%` amber, `>100%` red
+- Locked field counter göstermez
+
+**TR error mapping** (editor `onSave`):
+- `too_long`: `"subject" alanı çok uzun: 142 karakter (max 100).`
+- `too_short`: `"cta" alanı çok kısa: 2 karakter (min 5).`
+
+**Yeni field eklemek**: `EXPLICIT` dict'e ekle veya pattern-fallback'e güven. Çoğu yeni field name (`*Eyebrow`, `*Cta`) zaten covered.
+
+**Phase 7+ backlog**:
+- Diff viewer (revision A vs B)
+- Bulk export (CSV/JSON revision history)
+- Redis cache (multi-instance drift)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+- URL field format validation (`http(s)://` zorunluluk)
+
+### 21.32 Phase 7 — Revision diff viewer
+
+Phase 5 audit log'unun debug değerini katlayan field-level diff. Admin "ne değişmiş" görsün — JSON blob squint etmesin. jsdiff dep yok (CLAUDE.md §7 minimum dependency); copy field'ları string-bazlı, char-level diff yerine field-level "subject was X, now Y" daha actionable.
+
+**Helper** (`src/lib/email/revision-diff.ts`):
+- `DiffEntry` union: `{ kind: 'added' | 'removed' | 'changed', path, ... }`
+- `computeDiff(before, after)` → `{ entries, unchangedCount }`
+- Flat + nested (form-confirmation `variant.field` path) destekler
+- Sort: `changed` → `added` → `removed`, alfabetik path
+
+**Component** (`src/components/admin/MailRevisionDiff.tsx`):
+- `before` + `after` prop (her ikisi `unknown`)
+- 3 entry tipi:
+  - `changed`: amber badge + `−` (red 50/60 bg) + `+` (emerald 50/60 bg)
+  - `added`: emerald card
+  - `removed`: red card
+- Truncate at 200 char (uzun string'ler için)
+- "Bu iki sürüm arasında değişiklik yok (12 alan aynı)" empty state
+
+**Integration** (`MailRevisionHistory`):
+- Her revision card'ında "Önceki sürümle farkı göster" buton (GitCompare icon)
+- Click → inline expand: bu revision vs bir önceki revision
+- Oldest revision için `before = {}` (empty start) → tüm field'lar `added` görünür
+- "İçeriği göster" (raw JSON) buton korundu — diff özet, JSON detay
+
+**Phase 8+ backlog**:
+- Bulk export (CSV/JSON revision history)
+- Redis cache (multi-instance drift)
+- Conditional placeholders (`${firstName ?? 'sevgili müşteri'}`)
+- URL field format validation
+- A/B compare (any two revisions, not just adjacent)
+
+### 21.33 Phase 8 — Operator alert on critical mail failure
+
+Bazı mail akışları zaman-kritik: düşük puan uyarısı restoran sahibine ulaşmazsa şikayet saatlerce yanıtsız kalır. Forgot-password mail bounce ederse kullanıcı hesabına giremez. Sonsuza dek retry edemeyiz, ama ops'a "bu mail gitmedi" diyebiliriz, manuel müdahale etsinler.
+
+**Helper** (`src/lib/email/ops-alert.ts`):
+- `notifyOpsOfMailFailure({ template, recipient, reason, metadata })`
+- Plain-text mail to `OPS_EMAIL` env (fallback `NOTIFICATION_EMAIL`)
+- Subject: `[OPS] Mail send failed: ${template}`
+- Body: structured failure context (template, recipient, reason, metadata, ISO timestamp)
+- Uses `sendResendEmail` from `email-internal.ts` directly — public sender'lara recurse etmez (Resend outage'ında sonsuz alert loop riski)
+- **Rate-limited** 10 alerts / template / 5 dk → outage'da inbox bombalanmaz
+- Errors swallowed + console.error — caller'ın kararı zaten `false` dönmüş, üstüne throw atmak request crash eder
+
+**Internal layer** (`src/lib/email-internal.ts`):
+- `sendResendEmail` ayrı dosyaya çıkarıldı — ops-alert.ts ↔ email.ts circular dep önleyici
+- email.ts public sender'ları artık `from './email-internal'` import eder
+
+**Wired senders** (V1 — kritik HIGH-criticality):
+- `sendFeedbackNotification` — düşük puan uyarısı + 5★ yorum (rating ≥4 → 'new-review' template, <4 → 'low-rating-alert')
+- `sendPasswordResetEmail` — kullanıcı hesabı locked durumda; ops manuel recovery code issuer
+- `sendCustomerReplyEmail` — düşük-puan müşterisi yanıt almadı; müşteri ilişkisi riski
+
+**NOT wired** (V2 backlog):
+- `sendWelcomeEmail` — re-trigger admin panelden mümkün
+- `sendNewsletterEmail` — bulk; ops bombalanır
+- `sendTrialEndingEmail` — daily reminder; tek kaçırma kritik değil
+- `sendFormConfirmationEmail` — UX teyit; gitmeyince kullanıcı tekrar dener
+
+**Yeni env**: `OPS_EMAIL` (opsiyonel) — production ops distribution list. Yoksa `NOTIFICATION_EMAIL` fallback. Hiçbiri yoksa alert sessiz kalır + console.error ("no recipient configured").
+
+**Yeni sender'a wire eklerken**:
+1. Sender fn'inde `await sendResendEmail(...)` sonucunu yakala (`const ok = await ...`)
+2. `if (!ok) { await notifyOpsOfMailFailure({ template, recipient, reason, metadata: { ... } }); }`
+3. `return ok` — ops alert async ama caller-blocking değil (sender yine boolean döner)
+
+**Phase 9+ backlog**:
+- Retry on transient errors (5xx, network) — exponential backoff [500ms, 1s, 2s]
+- DB persistence (`MailDeliveryLog` table) — admin paneli "failed mails" list + manual re-send
+- Resend webhook integration → bounce/complaint → auto unsubscribe + ops alert
+- Slack webhook alternative (ops mail yerine)
+
+### 21.36 Admin sidebar — collapsible groups
+
+Superadmin sidebar'ında 14+ menü item vardı; mail/user/content kategorileri karışıktı. Operatör scroll edip ne ne diye tahmin ediyordu. 3 grupta collapsible accordion ile düzenlendi — her grup tek tıkla açılıp kapanır, aktif route otomatik açılır, expand state localStorage'da korunur.
+
+**Schema** (`src/components/admin/AdminSidebar.tsx`):
+
+```ts
+type NavItem = { type: 'item'; href; icon; label; roles };
+type NavGroup = {
+  type: 'group';
+  id: string;
+  icon; label; roles;
+  children: Array<{ href; icon; label }>;
+};
+```
+
+**Superadmin grupları**:
+| Grup | İçerik |
+|---|---|
+| **Kullanıcılar** | İşletme Sahipleri · Yöneticiler · Müşteriler |
+| **Mail** | Bülten Aboneleri · Bülten Kampanyaları · Mail İçerikleri · (+ Mail Önizleme dev only) |
+| **İçerik** | Blog Yönetimi · Duyurular |
+
+Üst seviyedeki tek-tek item'lar (Dashboard, QR, Yorumlar, Analitik, Site Ayarları, Profilim) korundu — her gün kullanılan navigation hızlı erişimde.
+
+**UX davranışı**:
+- Group header'a tıkla → expand/collapse
+- Aktif route bir grup'un child'ında ise → grup **otomatik açılır** (childActive state)
+- Expand state `localStorage['buaze.admin.sidebarGroups']`'a yazılır (key: `Record<groupId, boolean>`)
+- ChevronRight (kapalı) → ChevronDown (açık)
+- Child item'lar sol border (`border-l border-white/10 pl-3`) ile parent'a görsel olarak bağlı
+- Child item active state: lime arka plan, parent group: white/10 bg
+
+**Owner / manager için**: gruplama yok — flat list (5-9 item, kategorize gereksiz).
+
+**Yeni grup eklerken**:
+1. Role check'in altına `menuItems.push({ type: 'group', id, icon, label, roles, children })`
+2. `id` unique olsun (localStorage key'i için)
+3. Mevcut tek-item entry'leri `children` içine taşı
+4. Grup adı locale-aware (TR primary, EN fallback)
+
 
 ---
 
-_Son güncelleme: 2026-04 (altıncı dalga) — §19 Admin & Owner Panel Alignment eklendi (5 commit: analytics fix + reviews actions + admin forms + AI/email fix + resilience). §18'in üstüne 6 yeni Prisma modeli, 8 yeni endpoint canlı, feedback list join'siz fallback. §17.10 gap listesi §17.4 scaffoldları dahil kapatıldı (geriye sadece sanal POS kaldı)._
+## 22. Yardım Merkezi (Help Center) — İçerik & SEO Sistemi
+
+Buaze yardım merkezi **hybrid** veri kaynağıyla çalışır: Prisma `HelpArticle` tablosu (admin tarafından eklenen makaleler) + `STATIC_HELP_ARTICLES` array (kod içine yazılı evergreen içerik). DB boşsa veya tablo henüz `prisma db push` çalıştırılmamış preview deploy'larında static array fallback olur — yardım sayfası asla çökmez.
+
+### 22.1 Mimari özet
+
+| Katman | Dosya | İçerik |
+|---|---|---|
+| Veri | `src/lib/help-articles.ts` | Static makale array'i + helper fonksiyonlar (`getStaticHelpArticles`, `getStaticHelpArticle`, `getStaticHelpCategoryCounts`, `getStaticPopularHelpArticles`, `searchStaticHelpArticles`) |
+| Taksonomi | `src/lib/help-categories.ts` | 8 kategori (slug, symbol, TR/EN title + desc) |
+| Public sayfalar | `src/app/[locale]/help/page.tsx`, `category/[slug]/page.tsx`, `[slug]/page.tsx`, `search/page.tsx` | Pulse: pure white + graphite + lime |
+| Public API | `src/app/api/help/articles/route.ts` | `?slug=`, `?category=`, `?search=`, default mode |
+
+**8 kategori**: getting-started, qr-codes, review-management, integrations, team-roles, billing, api-webhook, security-kvkk.
+
+**Sayım**: Her kategoride 6 makale (orderlar 10/20/30/40/50/60), TR+EN = 12 entry/kategori, toplam **96 entry / 48 makale**.
+
+### 22.2 `renderBody` helper inventory
+
+`src/lib/help-articles.ts` içindeki `renderBody()` fonksiyonu makale gövdesini HTML'e dönüştürür. Desteklenen alanlar:
+
+```ts
+type BodyInput = {
+  lead: string;                    // ilk paragraf, HTML inline emphasis OK
+  keyInsight?: string;             // lead-after blockquote (tek vurgu cümlesi)
+  sections: BodySection[];         // 3-5 H2 bölümü
+  checklist: string[];             // 5-7 madde, eyleme dönük
+  faq: { q: string; a: string }[]; // 3-4 SSS
+  policyNote?: string;             // Google policy disclaimer (opsiyonel, blockquote)
+};
+
+type BodySection = {
+  title: string;         // H2
+  paragraphs?: string[]; // her biri <p>
+  items?: string[];      // <ul><li>
+  quote?: string;        // section sonunda blockquote
+};
+```
+
+**Inline HTML kabul edilenler** (helper string interpolation yapar, dış sanitize yok):
+- `<strong>`, `<em>` — vurgu
+- `<a href="..." target="_blank" rel="noopener noreferrer">` — internal/external link
+- `<code>` — teknik terim (henüz yaygın kullanılmıyor)
+
+**Render sırası**: `lead` → `keyInsight` → `sections` (her birinde quote) → `policyNote` → `Kontrol listesi / Checklist` → `SSS / FAQ`.
+
+**Tailwind prose styling** (`/help/[slug]/page.tsx`): `prose-blockquote:border-l-2 prose-blockquote:border-[#C6F24E]`, `prose-a:decoration-[#C6F24E]`, `prose-headings:text-[#0A0A0A]`. Tüm Pulse token'ları hazır.
+
+### 22.3 Yeni makale ekleme checklist
+
+1. Kategoriyi seç (`src/lib/help-categories.ts` kontrol)
+2. Slug seç:
+   - Kısa (3-5 kelime), kebab-case
+   - TR ve EN aynı slug — locale alanı ayrım yapar
+   - Mevcut slug'larla benzersiz
+3. `STATIC_HELP_ARTICLES` veya `MORE_ARTICLES` array'inin sonuna **TR + EN** olarak iki entry ekle
+4. `order` numarası kategorideki son order + 10 (genelde 60'tan devam)
+5. **Yapı tutarlılığı** (yeni makaleler için zorunlu, eski 40 makale retrofit edilebilir):
+   - `lead` 30-60 kelime
+   - `keyInsight` 1 cümle, lead'i destekler
+   - `sections` 3-5 adet, en az 1'inde `quote` veya inline `<strong>`/`<em>`
+   - `checklist` 5-7 madde
+   - `faq` 3-4 soru-cevap
+6. SEO meta:
+   - `title` 50-65 karakter
+   - `excerpt` 140-160 karakter (meta description)
+   - `searchTags` 5-8 düşük çakışmalı keyword
+7. Internal linking:
+   - İlgili makaleye `<a href="/{locale}/help/{slug}">` ile en az 1 link
+   - Locale prefix unutma (TR makalesi `/tr/...`, EN makalesi `/en/...`)
+
+### 22.4 Google policy uyumluluğu
+
+Buaze akışı **review gating yapmaz**: yüksek puan platforma yönlendirilirken düşük puan dahili form'a düşse de, müşteri yine de istediği yere yorum yazma hakkına sahiptir. Akış müşteriyi kandırmaz, zorlamaz veya belirli bir yıldıza yönlendirmez.
+
+**Yasak pattern'ler** (hiçbir makalede önerilmemeli):
+- ❌ Sahte yorum üretimi
+- ❌ Yıldız zorlama / yıldız öneri
+- ❌ Olumlu yorumlara seçici teşvik (örn. "5 yıldız verirsen kupon")
+- ❌ Yorum metnini dayatma (taslak vermek farklı, dayatmak farklı)
+- ❌ Düşük puanları platforma çıkmaktan engelleme
+
+**Disclaimer pattern**: Review-collection veya Google integration ile ilgili makalelerde `policyNote` field'ı kullanılır. Render edilen HTML şuna benzer:
+```html
+<blockquote>
+  Bu rehberdeki teknikler tarama oranını artırmaya yöneliktir, müşteriyi belirli bir
+  yıldız vermeye yönlendirmeye değil. <a href="https://support.google.com/contributionpolicy/"
+  target="_blank" rel="noopener noreferrer">Google'ın kullanıcı katkı politikalarına</a>
+  aykırı pattern'ler Buaze tarafından desteklenmez.
+</blockquote>
+```
+
+`policyNote` kullanan makaleler (her zaman TR+EN):
+- `qr-scan-rate-optimization` (qr-codes)
+- `slack-discord-webhook-routing` (integrations)
+- `two-factor-and-session-management` (security-kvkk) — KVKK çerçevesi disclaimer
+
+Yeni makale Google review akışıyla ilgili herhangi bir konuya değiniyorsa `policyNote` eklemeyi düşün.
+
+### 22.5 SEO inventory (mevcut durum)
+
+**Page-level**:
+- `<title>` ve `description` her sayfada locale-aware (`generateMetadata`)
+- `alternates.canonical` doğru locale URL'i ile set
+- `alternates.languages.tr/en` hreflang tag'leri
+- `openGraph.type: 'article'` makale sayfasında
+- Pulse typography (Space Grotesk h1/h2, Inter body) tüm help sayfalarında
+
+**JSON-LD schema blokları**:
+- `/help` (index): `BreadcrumbList`
+- `/help/category/[slug]`: `BreadcrumbList` + `ItemList`
+- `/help/[slug]`: `Article` (headline, description, datePublished, inLanguage, image, author, publisher) + `BreadcrumbList` (4 seviye)
+
+**Article schema'da** `image` alanı `https://buaze.com/favicon.svg`'dir. İleride per-article OG image üretilirse buraya bağlanır.
+
+### 22.6 Retrofit roadmap (ileride)
+
+Eski 40 makale (orderlar 10/20/30/40/50) `keyInsight` ve section `quote` içermez. `renderBody` opsiyonel olarak ele aldığı için **sorunsuz çalışır**, ama yeni makalelerle tutarlılık için retrofit edilebilir.
+
+**Retrofit önceliği**:
+1. **Yüksek**: getting-started + review-management (en çok ziyaret edilen)
+2. **Orta**: qr-codes + integrations
+3. **Düşük**: api-webhook + security-kvkk (zaten teknik içerik, blockquote daha az gerekli)
+
+Retrofit yaparken:
+- `keyInsight` lead'i tekrarlamasın, onu sentez etsin
+- Section `quote` her bölümde gerekmez; sadece *en güçlü insight* taşıyan bölüme
+- Retrofit aynı PR'da tüm 40 makaleyi kapsamamalı — kategori bazlı parça parça gidilmeli
+
+### 22.7 Pitfall — DB tablosu olmayan preview
+
+Preview deploy'da `prisma db push` koşmamış olabilir. Help sayfaları `try/catch` ile DB sorgusunu sarar; tablo yoksa static array'e düşer. Bu hibridliği bozmamak için:
+- Yeni alan eklenirse static + DB iki tarafı da güncelle (Prisma migration + array entry)
+- DB'den gelen makale `image_url` gibi static'e olmayan alan tutarsa, ortak bir typeguard ile ele al
+
+### 22.8 İçerik tonu (Pulse Voice)
+
+CLAUDE.md §11 ses ve ton kuralları yardım merkezi içeriği için de geçerlidir. Özellikle:
+- "Olabilir / belki" yerine **doğrudan** ifade
+- "Bizim" yerine "ekibinin" — ürün değil operasyon dili
+- Aşırı teknik terim yerine **somut iş senaryosu**
+- Müşteriye karşı saygılı, yargılayıcı olmayan ton
+
+### 22.9 Translation parity
+
+Her TR makale için EN eşi olmalı (aynı slug, aynı `order`, aynı kategori). Helper'lar locale parametresi alır; tek dilli makale UI'da 404 verir.
+
+Yeni makale yazarken **EN ilk taslak değildir**: TR primary, EN paralel çeviri. Kullanıcı tabanı çoğunlukla TR, ancak EN evergreen SEO için kritik.
+
+**EN çeviri kontrolü**:
+- Kültürel referans (örn. "Yemeksepeti") açıklayıcı bağlamla bırakılır, çevrilmez
+- Türkçe-spesifik kelime oyunları EN'de düz cümlelere indirgenir
+- Linkler `/en/help/...` prefix'i ile
 
 ---
 
-## 20. Admin Terminoloji Normalizasyonu (2026-04 yedinci dalga)
+## 23. Pulse 2026-04 Panel Redesign — Admin & Business Panel Foundation
 
-Kullanıcı şikayeti: süperadmin paneli "Üyeler / İşletmeciler / Müşteriler / Kullanıcılar" gibi karışık terimler kullanıyordu. Bir sayfanın breadcrumb'ı "İŞLETMECİLER", h1'i "İşletmeci Yönetimi", boş durumu "Henüz kayıtlı üye yok", modal'ı "Üye Düzenle", sütunu "KULLANICI" diyordu. Aynı sayfada 4 farklı terim → kullanıcı için anlam çözümlenemez.
+Claude Design "buaze" handoff bundle (`.design-pulse-2026/`, 2026-04-27 günü çekildi) admin paneli ve business/restaurant owner paneli için ekran-ekran spec'ler içeriyor. Pulse marka kimliği (graphite/lime/pure white) §11'den birebir korunuyor — yeni system §11 token'larının yanında **panel-scope `bz-*` utility class'ları** ile uygulanıyor.
 
-**Karar:** Stripe / Linear / Vercel disiplini — her data entity'si için tek kanonik terim. URL'ler değişmez, sadece görünen etiketler.
+**Kapsam disiplini:**
+- `bz-*` class'ları **sadece** `src/components/admin/**`, `src/app/admin/**`, `src/components/dashboard/**`, `src/app/[locale]/dashboard/**` altında kullanılır
+- Marketing surface'leri (landing, blog, help center, auth) hâlâ `pulse-*` class'larını kullanır — değişiklik yok
+- Iki sistem **paralel**, ortak palet (#0A0A0A / #C6F24E / #FFFFFF / #EDEDED) — drift riski yok ama yeni panel kodu `bz-*` tercih etmelidir
 
-| Sayfa | Eski (karışık) | Yeni (kanonik) | Veri kaynağı |
+### 23.1 Token mapping
+
+Mevcut `--color-brand-*` (Tailwind v4 `@theme {}`) ile design'ın `bz-*` token'ları birebir aynı renk değerlerine map olur. Tablodan referans:
+
+| Design token (`bz-*` CSS var) | Pulse Tailwind token | Hex |
+|---|---|---|
+| `--bz-bg` | `--color-brand-pure` | `#FFFFFF` |
+| `--bz-bg-soft` | `--color-brand-n50` | `#FAFAFA` |
+| `--bz-bg-mute` | `--color-brand-n100` | `#F2F2F2` |
+| `--bz-bg-dark` | `--color-brand-graphite` | `#0A0A0A` |
+| `--bz-bg-dark2` | `--color-brand-n800` | `#1A1A1A` |
+| `--bz-line` | `--color-brand-n200` | `#EDEDED` |
+| `--bz-fg` | `--color-text-main` | `#0A0A0A` |
+| `--bz-fg-3` | `--color-text-muted` | `#525252` |
+| `--bz-fg-4` | `--color-text-light` | `#737373` |
+| `--bz-lime` | `--color-brand-lime` | `#C6F24E` |
+| `--bz-lime-dark` | `--color-brand-lime-deep` | `#A8D62E` |
+| `--bz-lime-tint` | `--color-brand-lime-soft` | `#EAF9B8` |
+
+CSS variable formunda yeniden tanımlamadık — hex değer doğrudan `bz-*` class içinde kullanılıyor (mevcut `pulse-*` pattern'iyle aynı). Tek-source-of-truth değişikliği gerekirse `globals.css` `bz-*` block'u + `@theme {}` aynı anda güncellenir.
+
+### 23.2 Panel utility class envanteri (`globals.css`)
+
+| Class | Amaç | Kullanım örneği |
+|---|---|---|
+| `.bz-card` | Beyaz kart + EDEDED border + 16px radius | `<div className="bz-card p-5">` |
+| `.bz-card-soft` | FAFAFA bg variant — vurgu kartları | Default redirect picker |
+| `.bz-divider` | `border-top: 1px solid #EDEDED` | Liste ayırıcı |
+| `.bz-h-tight` / `.bz-h-tight-2` | Space Grotesk + tight tracking heading | `bz-h-tight text-[18px]` |
+| `.bz-mono` | JetBrains Mono | `bz-mono` sayı sütunlarda |
+| `.bz-wordmark` + `.dot` | "buaze." wordmark, lime nokta | Sidebar logo metni |
+| `.bz-btn-primary` | Graphite pill CTA (hover #1A1A1A) | "QR oluştur" |
+| `.bz-btn-lime` | Lime CTA (hover #A8D62E) | "Plan yönet" |
+| `.bz-btn-ghost` | Outlined neutral pill | "Düzenle" / "Dışa aktar" |
+| `.bz-btn-icon` | 32x32 square icon button | Toolbar bell, more |
+| `.bz-badge` + `--ok / --off / --warn / --danger / --info / --lime / --ghost` | Status pills with optional dot | `<Badge kind="lime">Default</Badge>` |
+| `.bz-input` | Standart form input — lime focus ring | `<input className="bz-input">` |
+| `.bz-table` (`+--compact`) | Responsive panel table — uppercase th, hover row tint | List sayfaları |
+| `.bz-avatar` | Graphite bg + lime initial chip | Sidebar user, list rows |
+| `.bz-skeleton` | Shimmer loader | Loading placeholders |
+| `.bz-tabs` + `.bz-tab` | Underline tab strip — `aria-selected` semantik | Feedback inbox tabları |
+| `.bz-pulse-dot` | 1.6s pulse ECG dot | "Canlı" indicators |
+| `.bz-fade-in` | 320ms fade-up | Modal & screen entrance |
+| `.bz-side-item-active` | Sidebar lime active highlight | Active nav link |
+
+Hepsi `prefers-reduced-motion: reduce` altında animasyon devre dışı.
+
+### 23.3 Reusable React primitives (`src/components/ui/`)
+
+| Component | Amaç |
+|---|---|
+| `Eyebrow` | `pulse-eyebrow` JetBrains Mono uppercase label |
+| `Badge` | Tek satır status pill (`kind` prop + dot) |
+| `Avatar` | Initial chip (size, color, fg konfigüre) |
+| `StatCard` (+ `StatCardSkeleton`) | 4-stat grid kartı: label + value + delta + icon + accent dot |
+| `EmptyState` | Empty/zero-result placeholder (icon + title + body + action) |
+| `AlertBanner` | Inline alert bar (kind: info/success/warn/danger/lime, opsiyonel onDismiss + icon override) |
+| `ErrorState` | Kırmızı border error card + Tekrar dene button |
+| `Sparkline` | Inline SVG line chart (recharts'sız — küçük trendler için) |
+| `BarChart` | Kompakt SVG bar chart (peak vurgu) |
+| `Toggle` | A11y switch (sm/md size) |
+| `ProgressBar` | `role="progressbar"` + `aria-valuenow` |
+| `Skeleton` (+ `TableSkeleton` + `CardSkeleton`) | Shimmer placeholder primitives |
+| `Modal` | Backdrop-blur dialog: ESC handler, body scroll lock, sm:bottom-sheet |
+| `Field` | Label + hint + error wrapper |
+| `RadioCard` | Büyük tıklanabilir radio (default/platform seçimleri) |
+| `Tabs` (+ `TabItem`) | `role="tablist"` + `aria-selected` + Arrow keys keyboard nav |
+| `PlatformChip` | Brand chip + label (Google/Yemeksepeti/Getir/Trendyol/Tripadvisor/Foursquare/Custom) |
+| `PLATFORMS` | Platform config map (label/short/color/urlHost) |
+| `BuazeWordmark` | "buaze." text logo |
+| `LegendDot` | Chart legend swatch |
+| `StarRow` | 5-star inline display (lucide Star) |
+| `PageHeader` | Eyebrow + h1 + description + actions (panel page üstü) |
+
+Barrel: `import { StatCard, Badge, Modal } from '@/components/ui'`.
+
+### 23.4 Icon mapping (`src/components/ui/icons.ts`)
+
+Design `Icon.X` identifier'ları lucide-react adlarına map'lendi (re-export). Yeni icon ihtiyaçında `icons.ts`'ye ekle — aynı zamanda `lucide-react`'tan direkt import edilebilir, ortak yere eklemek opsiyonel ama keşfedilebilirlik için tercih edilir.
+
+Kritik mappings: `Icon.qr`→`QrCode`, `Icon.inbox`→`Inbox`, `Icon.chart`→`BarChart3`, `Icon.utensils`→`UtensilsCrossed`, `Icon.message`→`MessageSquareText`, `Icon.dashboard`→`LayoutDashboard`, `Icon.share`→`Share2`, `Icon.link`→`Link2`.
+
+### 23.5 Sayfa-route mapping (admin + owner)
+
+**Owner / Business Panel** (`src/app/[locale]/dashboard/**`):
+
+| Route | Design page | Mevcut/Yeni |
+|---|---|---|
+| `/` (dashboard) | OwnerDashboard | Mevcut + OnboardingNudge eklendi (Phase 1.2) |
+| `/feedbacks` | OwnerFeedback | Mevcut — sonraki faz görsel polish |
+| `/qr` | OwnerQR | Mevcut — sonraki faz |
+| `/platforms` | OwnerPlatforms | **Yeni** (Phase 1.2) |
+| `/analytics` | OwnerAnalytics | Mevcut |
+| `/menu` (hub) | OwnerMenu hub | Mevcut |
+| `/restaurants/[id]/menu` | OwnerMenu builder | Mevcut |
+| `/restaurants/[id]/menu/analytics` | MenuAnalytics | Mevcut |
+| `/leads` | OwnerLeads | Mevcut |
+| `/announcements` | (tasarımda yok) | **Yeni** (Phase 1.2) — read-only sistem duyuruları |
+| `/guide` | (tasarımda yok) | Mevcut |
+| `/profile` | OwnerSettings | Mevcut |
+| `/restaurants` (list) | (tasarımda yok) | Mevcut |
+
+**Admin Panel** (`src/app/admin/**`):
+
+| Route | Design page | Mevcut/Yeni |
+|---|---|---|
+| `/admin/dashboard` | AdminDashboard | Mevcut |
+| `/admin/restaurants` | AdminBusinesses | Mevcut |
+| `/admin/restaurants/[id]` | Restaurant detail | Mevcut |
+| `/admin/reviews` | AdminReviews | Mevcut |
+| `/admin/qr` | AdminQR | Mevcut |
+| `/admin/members` | Owners list | Mevcut |
+| `/admin/users` | Admins list | Mevcut |
+| `/admin/customers` | Customers | Mevcut |
+| `/admin/blog` (+new + [id]) | AdminBlog | Mevcut |
+| `/admin/announcements` | AdminAnnouncements | Mevcut |
+| `/admin/plans` | (tasarımda yok) | **Yeni** (Phase 2) — plan dağılımı + plan tier kartları, Iyzico stub |
+| `/admin/site-settings` | AdminSiteSettings | Mevcut |
+| `/admin/newsletters` (+ campaigns) | (tasarımda yok) | Mevcut |
+| `/admin/mail-templates` (+ [key]/[locale]) | (tasarımda yok) | Mevcut |
+| `/admin/api` | (tasarımda yok) | Mevcut |
+| `/admin/profile` | (tasarımda yok) | Mevcut |
+| `/admin/leads` | (tasarımda yok) | Mevcut |
+| `/admin/trial-expired` | (tasarımda yok) | Mevcut |
+| `/admin/dev/mail-preview` | (tasarımda yok) | Mevcut |
+
+**Public Surface** (panel'den ayrı, ama design'da var):
+
+| Route | Design page | Mevcut/Yeni |
+|---|---|---|
+| `/r/[slug]` | PublicReview | Mevcut — Phase 10.1'de tam yeniden inşa edildi (dark bg + 3 step card + bz-* primitives) |
+
+### 23.6 Yeni panel sayfası eklerken checklist
+
+1. **Token kullan:** `bz-card`, `bz-btn-primary`, `bz-input`, `bz-table`, `bz-tabs`, `bz-badge`, `bz-avatar`, `bz-skeleton`. Inline hex sadece bunlar yetmediğinde.
+2. **Primitive'lerden compose et:** `import { StatCard, Badge, EmptyState, Modal, Tabs, PlatformChip, PageHeader } from '@/components/ui'`. Mevcut compose'u önce dene; yeni component yazma 3+ tekrar olmadıkça (CLAUDE.md §7).
+3. **Icon:** `lucide-react`'tan direkt import veya `@/components/ui/icons` re-export. Aynı icon adı tutarlı kullanılır.
+4. **Page header:** `<PageHeader eyebrow="..." title="..." description="..." actions={...} />`.
+5. **Loading:** `<TableSkeleton rows={6} cols={5}>` veya `<StatCardSkeleton />` veya custom `<Skeleton />`.
+6. **Empty:** `<EmptyState icon title body action />`.
+7. **Error:** `<ErrorState onRetry={...} />`.
+8. **Mobile breakpoints:** `flex-col md:flex-row`, `grid-cols-2 lg:grid-cols-4`, table → card list pattern (`hidden md:table` + `md:hidden card list`).
+9. **A11y:** `aria-current="page"` aktif link, `<Tabs>` `aria-selected` doğal, `<Modal>` `aria-modal` set, form `<Field>` label-input pair.
+10. **CLAUDE.md güncelle:** Yeni sayfa eklersen §23.5 tablosuna ekle.
+
+### 23.7 Phase log
+
+- **Phase 0 (PR #97, branch `claude/implement-panel-ui-design-H8hvu`)**: Foundation — `bz-*` token block (`globals.css`), 22 reusable primitive (`src/components/ui/`), icon mapping (`icons.ts`), `.design-pulse-2026/` referans bundle, CLAUDE.md §23.
+- **Phase 1.1 (aynı PR)**: `UserDashboardShell.tsx` polish — nav'a `platforms` + `announcements` eklendi, badge slot, topbar bell icon. `AdminSidebar.tsx` polish — `aria-current="page"` eklendi, sidebar'a `Abonelikler` (admin/plans) link'i eklendi.
+- **Phase 1.2 (aynı PR)**: Owner Dashboard'a `<OnboardingNudge />` (5-step gradient dark card). Yeni route'lar: `/[locale]/dashboard/platforms` (default redirect picker + platform list + KVKK compliance note), `/[locale]/dashboard/announcements` (read-only sistem duyuruları list).
+- **Phase 2 (aynı PR)**: `/admin/plans` yeni route — plan dağılımı (StatCard + ProgressBar), son katılan ödeyen müşteriler listesi (Avatar + Badge), 3 plan tier kartı (Starter/Growth/Pro, Growth highlight'lı dark card), Iyzico roadmap notu. AdminAnnouncements + AdminBlog list sayfaları PageHeader + Tabs + bz-card + Badge primitive'lerine migrate edildi.
+- **Phase 3.1 (aynı PR)**: AdminMembers + AdminUsers + AdminCustomers sayfalarının chrome'u (header, badges, summary tiles) primitive'lere migrate edildi. PLAN_LABELS color map → PLAN_BADGE → `<Badge kind>`. Mobile pill'ler ve desktop role/status badge'ler tutarlı `<Badge>` kullanır. SummaryCard helper kaldırıldı, yerine `<StatCard>` primitive kullanıldı.
+- **Phase 3.2 (aynı PR)**: AdminBusinesses (`/admin/restaurants`) header → PageHeader + lime CTA, status filter pills → semantic `<Tabs>` (role=tablist), search input → bz-input, empty state → `<EmptyState>` primitive (zero-results variants ayrı). Mevcut card grid + accent rail + status toggle korundu. OwnerGuide header → PageHeader (tek-line refactor, mevcut step cards intact).
+- **Phase 3.3 (aynı PR)**: AdminDashboard'a `<AdminOverviewWidgets />` eklendi — Recently joined (Avatar + plan Badge ile son 4 kayıt, /api/admin/members'tan client-side fetch) + Needs attention (trial expiring/expired, inactive, no-business, stale empty buckets — sayım hesaplaması client-side derived, ek API yok). Skeleton loading. Tasarımdaki "AdminDashboard" sağ-rail widget'larıyla 1:1 hizalı. Superadmin'e özel render. OwnerProfile + OwnerQR header'ları → `<PageHeader>` primitive (tab content intact).
+- **Phase 3.4 (aynı PR)**: AdminProfile + AdminApi + AdminSiteSettings + AdminAnalytics header'ları → `<PageHeader>` primitive. AdminAnalytics'de range picker + Export CSV butonu actions slot'unda. AdminSiteSettings'de "Superadmin" lime Badge actions slot'unda. AdminProfile'da italic/uppercase tuhaf header sade Pulse hierarchy'ye geçti. Tüm sayfalarda max-width + page padding standardize (`max-w-[1100px-1200px]` + `px-4 sm:px-7 py-6 lg:py-8`).
+- **Phase 4 (PR #99+, branch `claude/phase-4-owner-qr-redesign`)**: OwnerQR (`/[locale]/dashboard/qr`) "Son Üretilenler" history list → 3-col QRCard grid pattern (tasarımdaki "QR yönetimi" görsel hizası). Her kart: tablo/genel label + tarih + platform badge + mono URL preview + Copy/Aç action butonları. Empty state Pulse pattern'ine geçti. OwnerMenu hub (`/[locale]/dashboard/menu`) header → `<PageHeader>` primitive.
+- **Phase 5 (PR #100+, branch `claude/phase-5-panel-polish`)**: AdminMailTemplates list + AdminNewsletters list header'ları → `<PageHeader>` + `<StatCard>` migration. AdminMailTemplates kart grid'i `bz-card` + `<Badge>` ile yeniden inşa. AdminNewsletters `SummaryCard` helper kaldırıldı, `<StatCard>` primitive ile değiştirildi. AdminProfile italic+uppercase tracking-tighter h3'ler `bz-h-tight` Pulse pattern'ine geçti. **A11y baseline:** `.bz-skip-link` utility eklendi (focus-only visible, lime focus ring), hem owner shell (`UserDashboardShell`) hem admin layout (`/admin/layout.tsx`) ana içerik için `id="panel-main-content"` + `tabIndex={-1}` + skip-link entrance. Klavye/screen-reader kullanıcılar sidebar'ı atlayıp doğrudan content'e gidebilir.
+- **Phase 6 (PR #101+, branch `claude/phase-6-final-polish`)**: A11y baseline 2 — `.bz-btn-primary/lime/ghost/icon` `:focus-visible` lime ring eklendi (klavye-only kullanıcılar için). OwnerAnalytics (SSR) sayfasına `<PageHeader>` injekt edildi (eyebrow + h1 + description), mevcut tabs/range picker/export controls korundu. OwnerRestaurantDetail header → PageHeader (back link sade text link olarak ayrı satır). AdminQR dark hero → sade `<PageHeader>` + `bz-card-soft` 3-up live preview pills (form seçimleri görünür kalır ama panel-uyumlu sade tasarım).
+- **Phase 7 (PR #102+, branch `claude/phase-7-editors-polish`)**: Editor + dev sayfa chrome migration. **BlogPostEditor**: sticky header back button → bz-btn-icon, Önizle/Kaydet butonları → bz-btn-ghost/primary, h1 → bz-h-tight-2 truncate. **NewsletterCampaignEditor**: hero card + custom h1 → `<PageHeader>` + back link satırı; status pill `<Badge>` (sent ok / sending warn / draft ghost); error/info banner'lar token-driven hue. **AdminMailPreview** (`/admin/dev/mail-preview`): hero card → `<PageHeader>` (locale toggle actions slot'unda); error/info banner'lar consistent.
+- **Phase 8.1 (PR #103, branch `claude/phase-8-alert-banner`)**: Yeni `<AlertBanner>` primitive (`src/components/ui/AlertBanner.tsx`, kind: info/success/warn/danger/lime, opsiyonel onDismiss). 8 sayfada inline alert div'leri tek-satır component çağrısına geçti (announcements, blog, mail-templates, dev/mail-preview, members, customers, users, NewsletterCampaignEditor). **Bonus:** favicon `?v=3` cache-busting (root + locale layouts + manifest) — eski favicon görünme sorunu için.
+- **Phase 8.2 (PR #104, branch `claude/phase-8-page-header-batch`)**: 7 panel sayfası custom `<header>` + h1 + pulse-eyebrow → `<PageHeader>` primitive. admin/settings, billing, notifications, team, campaigns, reviews + dashboard/restaurants. Page wrapper'lar `mx-auto max-w-[1100-1400px] px-4 sm:px-7 py-6 lg:py-8` standardize.
+- **Phase 8.3 (PR #105, branch `claude/phase-8-input-polish`)**: Final cleanup — admin/qr (3 banner), admin/site-settings (3 banner + INPUT const → bz-input), admin/restaurants list + detail (3 banner), admin/page login (1 banner) → AlertBanner primitive. site-settings'in INPUT const'ı `bz-input`'e refactor edildi (8+ field tek değişiklikle). Token-driven hue tutarlılığı %95+ seviyeye ulaştı.
+- **Phase 9 (PR #106, branch `claude/phase-9-final-polish`)**: 3 polish iyileştirmesi tek PR'da. (1) `<Tabs variant="vertical">` primitive — `globals.css` yeni `.bz-tabs-vertical` + `.bz-tab-vertical`; `Tabs.tsx` `variant` prop + Arrow Up/Down keyboard nav + `aria-orientation`. OwnerProfile (`/[locale]/dashboard/profile`) custom 8-tab sidebar dikey Tabs primitive'ine geçti (lg+ desktop); mobile/tablet'te horizontal scroll fallback korundu. (2) Mobile breakpoint regression: admin/restaurants inner metrics grid `sm:grid-cols-3 md:grid-cols-4` (375px text crowding fix), dashboard/feedbacks right pane `hidden xl:flex` → `lg:flex` + responsive width (iPad'de preview görünür), admin/dashboard toolbar `gap-2 sm:gap-3 md:gap-4` (375px wrap fix). (3) OwnerMenu builder DnD chrome: `disabledByAdmin` warn banner + page-level error + item modal `formError` → `<AlertBanner>` primitive (3 inline div temizlendi). DnD logic + tüm form/CRUD intact.
+- **Phase 10.1 (PR #107, branch `claude/phase-10-public-review-redesign`)**: Public review surface (`/r/[slug]`) tam yeniden inşa — `.design-pulse-2026/.../admin-and-public.jsx` `PublicReview` ile 1:1. Dark `#0A0A0A` zemin + brand header (logo card initial + isim + adres) + tek beyaz card (24px radius) + 3 step (rating → high redirect/low form → thanks) + `POWERED BY BUAZE` mono footer. Yıldızlar lime-fill on select, `bz-h-tight-2` heading, `bz-input` form alanları, `bz-btn-primary` CTA, `bz-fade-in` step transition, `bz-btn-icon` modal close. KVKK/marketing legal modal token-driven yenilendi (ESC + body scroll lock + backdrop click). Yüksek puan + `?platform=` QR akışında auto-redirect overlay korundu — `<PlatformChip>` ile platform-aware görsel ve `bzProgress` 2.2s lime progress bar. Honeypot + recaptcha + KVKK/contact validation backend kontratı dokunulmadı. Legacy `StarRating.tsx`, `FeedbackForm.tsx`, `ThankYou.tsx` (zero callers post-refactor) silindi — `/r/[slug]/page.tsx` artık tek-dosya orchestration. Sayfa `/r/[slug]` tasarım kapsamına dahil edildi (§23.5'te eskiden listede yoktu, çünkü panel-only kapsam).
+- **Phase 10.2 (PR #108 → squash gotcha → restored in PR #109)**: Auth form'larında inline error/notice banner'lar `<AlertBanner>` primitive'ine geçti (4 form × 6 banner: LoginForm 2, RegisterForm 2, ForgotPasswordForm 1, ResetPasswordForm 1). Forgot/Reset success state full-card'ları (page-state component'i) korundu. **Not**: PR #108 stacked PR squash-merge gotcha'sına takıldı (CLAUDE.md §21.22) — base branch silinince auto-closed, içerik main'e geçmedi. PR #109'da cherry-pick ile yeniden uygulandı.
+- **Phase 10.3 (PR #109, branch `claude/phase-10-3-onboarding-polish`)**: Onboarding sayfası (`/[locale]/onboarding`) Pulse polish. (1) `inputCls` const tek-satır refactor: 9-utility Tailwind compound → `'bz-input'` (4 input alanı otomatik lime focus ring + hover state). (2) Lime info card (location step) → `<AlertBanner kind="lime" icon={<MapPin />}>` — token-driven hue tutarlılığı + slot-based icon override. Sektör/platform RadioCard-equivalent selection state'leri kasıtlı korundu (design pattern'i bu). Ayrıca PR #108'in cherry-pick'i (auth banner migration) bu PR'a dahil — squash gotcha sonrası restore.
+- **Phase 10.4 (PR #110, branch `claude/phase-10-4-menu-magazine-pulse`)**: Legacy customer menu sayfası (`/r/[slug]/menu`, magazin tarzı, 394 satır) Pulse polish'i. (1) **Tipografi**: Tüm `font-extrabold` / `font-black` heading'ler `bz-h-tight` / `bz-h-tight-2` ile değiştirildi (Pulse rule: Space Grotesk weight 500 yeter). `tracking-widest font-black uppercase` mini-label'lar `pulse-eyebrow` ile birleşti. (2) **Badge'ler**: 2 out-of-stock kırmızı div + custom lime ürün badge'leri → `<Badge kind="danger">` / `<Badge kind="lime">` primitive'leri. (3) **Empty state**: "Sonuç bulunamadı" custom div → `<EmptyState>` primitive. (4) **Search input**: 9-utility custom focus → `bz-input` (lime focus ring + hover state). (5) **Header back button**: 40x40 custom hover → `bz-btn-icon`. (6) **Modal chrome**: `role="dialog"` + `aria-modal` + `aria-labelledby`, ESC handler, body scroll lock, backdrop click-out. CTA `bz-btn-primary`, eyebrow'lar `pulse-eyebrow`. (7) **Loading state**: `text-[#C9D0DB]` (Pulse-dışı slate) → `text-[#A3A3A3]` + JetBrains Mono BUAZE label (Phase 10.1 ile tutarlı). (8) **Fiyat metni**: `font-black` → JetBrains Mono (`var(--font-mono)`, weight 600/700). (9) **Category chips**: `role="tablist" aria-selected` semantik + focus-visible lime ring. (10) **A11y bonus**: Item card'lar `<div>` → `<button>` (klavye + screen reader). Backend dokunulmadı — `useMenuAnalytics` + `useProductViewTracking` + `/api/menu/[slug]` fetch contracts intact. `<img>` korundu (CLAUDE.md §3 base64 data URL akışı zorunlu kılıyor).
+- **Phase 10.5 (PR #111, branch `claude/phase-10-5-trial-expired-polish`)**: `/admin/trial-expired` (kritik conversion sayfası) + `/[locale]/dashboard/guide` step icon brand fix. Trial-expired: `font-bold` → `bz-h-tight`, fiyat Space Grotesk weight 500 + tight tracking, "Popüler" → `<Badge kind="lime">`, "%30 İndirim" → `<Badge kind="ok">`, checkmark `text-green-500` → `text-[#A8D62E]` (lime-deep), CTA → `bz-btn-primary`, lime tint `bg-[#C6F24E]/5` → `bg-[#EAF9B8]/40` (Pulse Lime Soft token), bg `white` → `#FAFAFA` (N50). Guide: 2 step icon off-brand mavi/yeşil → graphite (lime+graphite duotone tutarlılığı).
+- **Phase 10.6 (PR #112, branch `claude/phase-10-6-announcement-banner-pulse`)**: (1) **AnnouncementBanner** (owner dashboard top, 4 severity'li sistem duyurusu): SEVERITY_STYLES paleti `bg-emerald-50/bg-amber-50/bg-red-50/bg-slate-50` Tailwind palette → AlertBanner primitive'in **KIND_PALETTE hex değerleriyle birebir hizalandı** (info: #EFF6FF/#BFDBFE/#1E40AF, success: #F0FDF4/#BBF7D0/#166534, warn: #FFFBEB/#FDE68A/#92400E, danger: #FEF2F2/#FECACA/#991B1B). Title `font-semibold` → `bz-h-tight`. CTA inline `bg-[#0A0A0A] rounded-full` → `bz-btn-primary`. Dismiss button focus-visible lime ring. Dashboard-top duyuru bar'ı + inline AlertBanner'lar artık aynı görsel dili konuşuyor — operatör için tutarlı sinyal hierarchy'si. Severity icon picker (Info/CheckCircle2/AlertTriangle/AlertOctagon), CTA slot, dismiss persistence (localStorage), collapse/expand hepsi intact. (2) **ContactForm** (marketing iletişim formu): inline `bg-[#FEF2F2]` error div → `<AlertBanner kind="danger">` (1-line refactor). Marketing form'u da panel ile aynı banner primitive'ini paylaşıyor.
+- **Phase 11.1 (PR #113, branch `claude/phase-11-a11y-audit`)**: A11y baseline 3 — primitive seviyesinde derin iyileştirmeler. (1) **`<Modal>` focus trap**: Açılışta dialog içindeki ilk focusable'a fokus, Tab/Shift+Tab dialog içinde döngü (FOCUSABLE_SELECTOR — a/button/input/select/textarea/[tabindex]/contenteditable), kapanışta `previouslyFocused.current.focus()` ile çağıran elemana geri dönüş. ESC `e.stopPropagation()` ile parent dialog'lara sızmıyor. `tabIndex={-1}` + `focus:outline-none` dialog kabuğunda. (2) **`<Field>` aria-describedby + aria-invalid + aria-required**: `useId()` ile stable ID üretimi, hint + error span'larına `id={`${inputId}-hint/error`}` atanıyor, ilk child input'a `cloneElement` ile `aria-describedby="hint-id error-id"` + `aria-invalid={!!error}` + `aria-required={!!required}` injekt ediliyor. Error span'a `role="alert"` eklendi (screen reader hata değişimini anında okur). Required `*` `aria-hidden="true"` (label'a `aria-required` zaten geçiyor). (3) **Reduced motion kapsamı**: `globals.css` `@media (prefers-reduced-motion: reduce)` block'u 3 keyframe'den 14+ keyframe'e genişledi (`bz-fade-up/scale-in/float/pulse-heartbeat/animate-marquee/slide-in/spin/pulse/bounce/ping`, `[class*="animate-in"]`) + universal `*` selector ile `transition-duration: 0.001ms` + `scroll-behavior: auto`. Kullanıcı reduced motion tercih ediyorsa hiçbir Tailwind/Pulse animation'ı oynamıyor. (4) **Public skip-link genişletmesi**: `/r/[slug]/menu` (sticky header + search + chips ile dolu) artık `<a className="bz-skip-link">İçeriğe atla</a>` + `<main id="menu-main-content" tabIndex={-1}>` ile klavye/screen-reader kullanıcılara header'ı atlama yolu sunuyor. Backend dokunulmadı.
+- **Phase 11.2 (PR #114, branch `claude/phase-11-2-panel-parity`)**: Senior-developer audit'in işaret ettiği parity drift'lerinden 3 yüksek-değerli bulgu kapatıldı. (1) **`/admin/api` Webhooks "Endpoint ekle" CTA**: native `alert("Yakında bağlanacak.")` placeholder → `<Badge kind="ghost">Yakında</Badge>` + `disabled` buton (`#FAFAFA` bg, `#A3A3A3` text, `cursor-not-allowed`, `aria-disabled="true"`). Tarayıcı dialog UX papercut'u kaldırıldı. (2) **`/admin/billing` "Yöntem ekle" CTA**: aynı pattern — `alert("Yakında bağlanacak")` → Badge + disabled buton. Iyzico backend bağlanınca disabled flag kaldırılacak. (3) **`/admin/dashboard` welcome banner eyebrow**: `"✦ CANLI PANEL"` hardcoded emoji + custom inline pill → tasarımdaki `"SUPERADMIN"` (veya non-superadmin için `"PANEL"`) eyebrow + `bz-pulse-dot` lime nokta + lime border + `pulse-eyebrow` JetBrains Mono. Off-brand emoji + Pulse-dışı pill stili düzeldi. (4) **`/[locale]/dashboard` (owner home) header**: raw `<header><div><p class="pulse-eyebrow"><h1>` markup → `<PageHeader eyebrow title>` primitive. Tüm panel'de header pattern artık tek primitive'den. Backend dokunulmadı.
+- **Phase 11.9 (PR #117 add-on, branch `claude/owner-panel-pulse-parity`)**: Süperadmin paneli yapısal audit + dashboard rewrite. Bir Explore agent admin pages'i tasarım kaynağındaki 4 explicit `Admin*` JSX (AdminDashboard / AdminBusinesses / AdminAnnouncements / AdminBlog) ile karşılaştırdı. Kullanıcı dashboard için "ekstra metrik kaldırma" yetkisi verdi. **`/admin/dashboard` major rewrite**: client-component (510 LOC, feedback-centric operational dashboard) → **server component** (~180 LOC, strategic overview). Tasarım pattern'i 1:1 uygulandı: (1) `<PageHeader eyebrow="SUPERADMIN" eyebrowColor="#C6F24E" title="Sistem genel görünümü">` (2) **4-stat KPI grid** (Toplam işletme + Aylık MRR with lime accent + Aktif denemeler + Aylık yorum) — design'daki `ADMIN_STATS` ile birebir; MRR `/admin/plans`'in PLAN_PRICES (Pro 1499 / Growth 899 / Starter 499 / Yearly 416) heuristic'iyle (3) **2-col 2fr/1fr grid**: Business growth `<BarChart>` (last 12 weeks signup buckets) + Plan distribution `<ProgressBar>` (4 plan tier'ı: Pro/Growth/Starter/Trial) (4) **2-col 1fr/1fr grid**: Recently joined + Needs attention (`<AdminOverviewWidgets>` Phase 3.3'te zaten 1:1). **Removed (operational widgets, design'da yok)**: Toolbar (date/restaurant/branch filters + export), feedback-centric StatsCards (review/avgRating/lowRatings/redirects), Quick Actions 4-button grid, AspectBreakdown + GoogleConversion + PlatformDistribution kartları, Trends + Day Distribution charts, RatingChart + WordCloud, FeedbackTable + pagination. Operasyonel yorum monitoring `/admin/reviews`'da zaten mevcut (kayıp feature yok). Backend dokunulmadı — sadece Prisma aggregate query'leri eklendi (restaurant.count, feedback.count last 30d, user.findMany for plan dist).
+- **Phase 11.8 (PR #117 add-on, branch `claude/owner-panel-pulse-parity`)**: Final structural audit (Phase 1: Explore agent layout-level compare each owner page vs design source `Owner*` JSX). Audit yapısal sapmaları katalogladı; aksiyona dönüşebilen 2'sini fix etti, kalan struktural drift'ler (sentiment AI word cloud, OwnerMenu tek-sayfa editor, OwnerSettings 3-card, OwnerQR grid/list toggle) **kabul edilen drift** olarak documented (backend dependency veya feature scope expansion). (A) **OwnerDashboard KPI set** — design 4-stat pattern'i (Total reviews + Avg rating + Active QR + Redirects) ile birebir hizalandı. Önceki KPI'lar (Today, Positive reviews) silindi; yerine `avgRating` (weighted across locations) ve `redirectCount` (rating>=4 + platform IS NOT NULL) Prisma aggregate query'leri eklendi. Avg rating KPI'sına lime accent (`bg-[#C6F24E]`) eklendi (design'da lime icon background). Unused `Calendar` icon + `todayReviews` + `feedbacks` subselect drop edildi. (B) **OwnerFeedback tab semantiği** — design'daki 4 tab (Tümü / Düşük puan 1-3 / Yüksek puan 4-5 / Yönlendirilen) `OwnerFeedback` referansıyla birebir uygulandı. Eski tab anahtarları `'all' | 'new' | 'attention' | 'replied'` (reply-state bucket'ları) → `'all' | 'low' | 'high' | 'redirected'` (rating + redirect bucket'ları). Filter logic client-side rating + platform check. Legacy `/api/feedback/counts` server aggregate kullanımı drop edildi (response shape artık eşleşmiyor); count'lar şu an loaded window üzerinde client-side derived. Backend dokunulmadı.
+- **Phase 11.7 (PR #117 add-on, branch `claude/owner-panel-pulse-parity`)**: Restaurant-related screens deep audit. Bir Explore agent menü builder + menu analytics + restaurant detail (owner+admin) + location list ekranlarını tasarım kaynağıyla satır-satır karşılaştırdı. 4 pass: (A) **Menu builder** (`/dashboard/restaurants/[id]/menu`, ~1700 LOC) — local `function Modal` (custom `fixed inset-0`) silindi; `<Modal>` primitive (3 yerde size prop'u ile) `@/components/ui`'dan import edildi (focus trap + ESC + body scroll lock kazanıldı). Menü status dots `bg-emerald-500/text-emerald-700` + `bg-amber-500/text-amber-700` → Pulse positive `#16A34A/#166534` + warn `#D97706/#92400E`. Publish button + visibility toggles + delete buttons + low-engagement badges off-palette amber/red Tailwind alias'larından Pulse hex'lerine remap. (B) **Menu analytics** (`/dashboard/restaurants/[id]/menu/analytics`) — error box `bg-red-50` → `<AlertBanner kind=danger>`; delta `text-emerald-600/red-600` → Pulse `#166534/#991B1B`; status badge `bg-amber-50 text-amber-700` → Pulse warn hex. (C) **Detail pages** (`/dashboard/restaurants/[id]` + `/admin/restaurants/[id]`) — menu enabled/disabled status dot/text + delete buttons emerald/red Tailwind → Pulse positive/danger hex. (D) **Public review** (`/r/[slug]`) — brand header (avatar initial chip + restaurant name h1) `font-medium` (500) → `font-bold` (700) tasarım kaynağındaki `fontWeight: 700` ile birebir. (E) **Sanity sweep** — 4 ek drift: `/admin/restaurants` list status dots (emerald-500/amber-500), isActive indicator (emerald-600), `/dashboard/qr` duplicate warning amber pill, `/dashboard/feedbacks` degraded join banner. Tüm Tailwind alias'lar Pulse hex'lerine remap. Backend dokunulmadı.
+- **Phase 11.6 (PR #117 add-on, branch `claude/owner-panel-pulse-parity`)**: Phase 11.5 sweep sonrası iki Explore agent ile yapılan derin sub-page audit'i, kalan 9 dosyadaki drift'i kapattı. **Pass A** — `RestaurantAnalyticsPanel` 5 chart icon container (indigo/emerald/cyan/blue/emerald-50 + emerald-deep) → Pulse Lime tint (`#EAF9B8` + graphite text) + card chrome `bz-card`'a + h2/h3'lere `bz-h-tight`. **Pass B** — admin sub-page off-palette: `/admin/qr` Toplu QR icon `bg-indigo-50` → lime, `/admin/users` row hover `bg-blue-50/50` + icon hover `bg-blue-50` → lime tint, `/admin/announcements` "Yayında" toggle `bg-emerald-500` → lime, `/admin/trial-expired` "%30 İndirim" badge `bg-green-100` → lime tint. **Pass C** — `UserDashboardShell` 9 inline `style={{ fontFamily: 'var(--font-heading) }}` + 1 mono (logo, workspace switcher, plan card, mobile sheet, topbar) silindi; `bz-h-tight` / `bz-mono` className'leri yeterli. **Pass D** — `CopyUrlButton` `text-emerald-500` check icon → `text-[#A8D62E]` (Pulse lime-deep). Menu badge palette (`PublicMenuView` + `ProductDetailModal`) Tailwind 100/800 alias'larından Pulse Badge primitive hex token'larına remap (amber/blue/emerald/lime/red/purple → warn/info/ok/lime/danger/graphite-on-lime). Backend dokunulmadı.
+- **Phase 11.5 (PR TBD, branch `claude/owner-panel-pulse-parity`, stacked on PR #116)**: İşletme (owner) paneli 1:1 Pulse parity sweep'i. Tasarım kaynağı `.design-pulse-2026/project/owner-pages-{1,2,3}.jsx` ile karşılaştırma + Phase 1'de iki Explore agent ile drift haritası çıkarıldı. 5 pass'lik aşamalı plan uygulandı: (1) **Off-palette renk temizliği** — emerald-/red-/blue-/purple-/orange- prefix'li Tailwind class'ları `<AlertBanner>` + `<ErrorState>` primitive'lerine + Pulse hex token'larına. profile, restaurants, restaurants/[id], qr, guide etkilendi. (2) **Card chrome standardize** — inline `rounded-2xl border border-[#EDEDED] bg-white` (4 permütasyon) `bz-card` utility'sine. 10 dosya, ~38 yer. (3) **Heading typography normalize** — inline `style={{ fontFamily: 'var(--font-heading)' }}` 46 yerden silindi; her birine `bz-h-tight` className eklendi. Avatar/initial chip'leri (3 yer) heading olmadığı için kasten dokunulmadı. (4) **Modal primitive adoption** — `/dashboard/restaurants` "Yeni İşletme" modal'ı custom `fixed inset-0` markup'ından `<Modal>` primitive'ine (focus trap + ESC + body scroll lock + focus restore). Feedbacks ve analytics tab migration'ları kapsam dışı bırakıldı (feedbacks select dropdown kullanıyor, analytics SSR + dekoratif). (5) **Padding normalize** — `/dashboard/page.tsx` wrapper `px-4 py-8 sm:px-8 lg:py-10` → `px-4 sm:px-7 py-6 lg:py-8` Pulse standardı. Backend dokunulmadı.
+- **Phase 11.4 (PR #115, branch `claude/implement-buaze-pulse-workspace-odHUj`)**: Süperadmin dashboard 1:1 design parity. Tasarım kaynağı `.design-pulse-2026/project/admin-and-public.jsx` `AdminDashboard` ile karşılaştırma yapıldı; en görünür drift'ler kapatıldı. (1) **Welcome banner kaldırıldı**: dark gradient hero (`bg-[#0A0A0A] text-white`) + custom satisfaction badge → tasarımdaki temiz `<PageHeader eyebrow="SUPERADMIN" eyebrowColor="#C6F24E" title>` pattern'i. Satisfaction `%` description'a inline metric olarak taşındı. Page wrapper `max-w-7xl p-3 sm:p-6 md:p-10` → `max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8` Pulse standardına. (2) **Chart card icon backgrounds remapped**: 6 ayrı off-palette renk (indigo-50, emerald-50, blue-50, purple-50, cyan-50, green-50) → Pulse Lime tint (`#EAF9B8` text-graphite) + Day Distribution için graphite-bordered N50 tile. (3) **Card chrome**: `bg-white rounded-xl sm:rounded-2xl border border-[#EDEDED]` tekrarları → `bz-card` utility class'ı. (4) **Heading weight**: 4 yerde `text-lg sm:text-xl font-semibold/bold tracking-tight` → `bz-h-tight text-lg sm:text-xl` (Space Grotesk 500 weight). Backend dokunulmadı.
+- **Phase 11.3 (PR #115, branch `claude/implement-buaze-pulse-workspace-odHUj`)**: Senior-audit Phase 11.3+ backlog'unun 2 yüksek-değerli kalemi kapatıldı. (1) **Native `alert()` callback'leri → stateful `<AlertBanner>`**: 8 yer — `/admin/qr` (4 download/export error), `/admin/settings` (3 OAuth connect error), `/admin/users` (1 delete error). `actionNotice` / `pageNotice` / `integrationsError` state'leri AlertBanner ile dismissible olarak render edilir. `/admin/qr`'da auto-dismiss 5sn timeout. (2) **3 custom modal → `<Modal>` primitive**: `/admin/users` (yönetici ekle/düzenle), `/admin/restaurants` (işletme ekle), `/admin/announcements` (duyuru ekle/düzenle) — `fixed inset-0` markup'ı silindi, `<Modal>` primitive'i (focus trap, ESC handler, body scroll lock, `aria-modal`, focus-restore on close) kullanılıyor. CTA buton'lar `bz-btn-primary` / `bz-btn-ghost` — uppercase tracking-wider + custom shadow varyantları yerine token-driven Pulse pill'ler. Modal title slot'u `pulse-eyebrow` + `bz-h-tight` ile tasarımdaki başlık hierarchy'sine uydu. Backend dokunulmadı.
+- **Phase 10+ (out-of-scope backlog)**: Settings stub pages content (Brand/Integrations/Rules/Team/Billing/Notifications/API), Storybook coverage, visual regression testing (Percy/Chromatic), Mobile native wrap (Capacitor/Expo), Superadmin onboarding flow. **Senior audit kalan bulguları** (Phase 11.4+ candidates): 5+ raw form set (label+input pair) → `<Field>` primitive (admin/users modal field'ları, admin/announcements modal field'ları, admin/restaurants modal field'ları); off-palette renkler (slate-800, blue-50, emerald, amber inline) → Pulse palette remap; sortable table'larda `aria-sort`.
+
+### 23.8 Dokunulmayan eski Pulse
+
+`.design/` v1 (CLAUDE.md §16), `.pulse-*` CSS class'ları, `.bz-fade-up / .bz-scale-in / .bz-float / .animate-marquee / .animate-slide-in / .pulse-heartbeat` keyframe'ler korundu — marketing/blog/help center hâlâ kullanıyor. Yeni panel kodu için **`bz-*` panel system tercih edilir**, ama mixed kullanım marketing'de OK.
+
+---
+
+## 24. Public QR Generator Sayfası (`/solutions/qr-generator`)
+
+Footer'da "Ücretsiz QR üret" linki bu sayfaya bağlanır. Marketing aracı — login gerektirmez, backend dokunmaz, tamamen client-side. Tasarım kaynağı: `.design/site/site-more.jsx` `QRGeneratorPage` (line 7-92).
+
+### 24.1 Yapı (1:1 design parity, 2026-04)
+
+| Katman | Dosya | İçerik |
+|---|---|---|
+| Sayfa wrapper | `src/app/[locale]/solutions/qr-generator/page.tsx` | SEO metadata, JSON-LD (WebApplication + BreadcrumbList), MarketingNavbar/Footer, hero + form mount noktası |
+| Form + preview | `src/components/marketing/QRGeneratorForm.tsx` | 2-col grid: FAFAFA form box (sol) + tema kartı + PNG/PDF (sağ) |
+
+**Sayfa yapısı** (design 1:1):
+1. Hero: `pulse-eyebrow` "ÜCRETSİZ ARAÇ" + `text-[68px]` h1 "QR kod oluşturucu." + 560px subtitle. **Centered**, padding `60px 48px 40px`.
+2. Generator: `max-w-[1200px]` container, 2-col grid (`grid-cols-2 gap-10`), no outer card.
+
+**Sol form** (`bg-[#FAFAFA] border-[#EDEDED] rounded-[18px] p-8`):
+- Heading: "1. Bilgilerini gir" (Space Grotesk 24px, weight 600)
+- 4 field stack (gap 18):
+  - **İŞLETME ADI** — text input (max 60 char), preview card eyebrow için
+  - **GOOGLE YORUM LİNKİ** — URL input (required), QR'ın hedef URL'i. Mono font, `g.page/r/CZEa4X...` placeholder
+  - **ÖN YAZI** — text input (max 48 char), preview card headline için
+  - **TASARIM ŞABLONU** — 4-pill radio: Beyaz / Lime / Koyu / Minimal
+- CTA: dark pill `QR kodu oluştur →` (form submit → URL normalize + state set)
+
+**Sağ preview**:
+- Heading: "2. Önizle ve indir"
+- Tema kartı (default lime), `aspect-ratio: 3/4`, `clamp(20px, 5vw, 40px)` padding:
+  - Top: eyebrow (uppercased businessName veya "BUAZE", JetBrains Mono 10px, opacity 0.6)
+  - Mid: headline (Space Grotesk `clamp(22px, 4vw, 38px)` 500 weight, `whitespace-pre-line`, kullanıcı `\n` ile satır kırabilir)
+  - QR card: white rounded-2xl + canvas (`120px` mobile, `160px` desktop)
+  - Bottom: "BUAZE · TARA ✦ PAYLAŞ" (mono 10px, opacity 0.6)
+- 2-col download row: PNG (`bg-[#0A0A0A]` dark pill) + PDF (`border-[#0A0A0A]` outline pill)
+
+### 24.2 4 tema paleti (`TEMPLATES` constant, `QRGeneratorForm.tsx:14`)
+
+| Tema | Card BG | Foreground | Border | Eyebrow opacity |
+|---|---|---|---|---|
+| `beyaz` | `#FFFFFF` | `#0A0A0A` | `#E5E5E5` | rgba(10,10,10,0.55) |
+| `lime` (default) | `#C6F24E` | `#0A0A0A` | transparent | rgba(10,10,10,0.6) |
+| `koyu` | `#0A0A0A` | `#FFFFFF` | transparent | rgba(255,255,255,0.55) |
+| `minimal` | `#FAFAFA` | `#0A0A0A` | `#EDEDED` | rgba(10,10,10,0.55) |
+
+QR canvas her zaman `#0A0A0A` dark + `#FFFFFF` light (tarama uyumluluğu için sabit). Tema değişimi sadece outer card + text + footer/eyebrow rengini etkiler.
+
+### 24.3 PDF download (no-dep paterni)
+
+CLAUDE.md §7 minimum-dependency disiplinine uyumlu: `jspdf` / `pdf-lib` eklenmedi. Bunun yerine `window.open()` + canvas dataURL + `window.print()` paterni:
+
+1. `canvas.toDataURL('image/png')` ile QR'ı dataURL'e çevir
+2. Yeni pencere aç, içine standalone HTML yaz: tema'ya göre stillenmiş card + img + footer
+3. `@media print { @page { size: A5 portrait; margin: 12mm; } }` — A5 dikey baskı için
+4. `<script>window.addEventListener('load', () => setTimeout(() => window.print(), 250))</script>` — sayfa yüklenince yazdır dialogu açılır
+5. Kullanıcı tarayıcıdan "Save as PDF" seçer
+
+**XSS guard**: businessName ve message kullanıcı input'u — yeni pencere HTML'ine yazılmadan önce `escapeHtml()` ile sanitize edilir (`QRGeneratorForm.tsx:23-26`).
+
+### 24.4 Design parity karar tablosu (kalkan kararlar)
+
+| Karar | Sebep |
+|---|---|
+| Eski Benefits section ("Neden Buaze" 3-card grid + register CTA) **silindi** | Design'da yok. 1:1 parity. SEO meta (JSON-LD) zaten sayfa-seviyesinde yeterli. |
+| Eski "Bağlantınızı girin" white-card wrapper **silindi** | Design'da form FAFAFA box, dış wrapper yok. |
+| Eski helper checklist (3 madde "Yalnızca bu URL için...") **silindi** | Design'da yok; 4-field form doluluğu zaten yeterli. |
+| 4 input field eklendi (eski sadece URL + submit'ti) | Design 4 alan gösteriyor. Kullanıcı preview kartını özelleştirebilir. |
+| Tema picker (4-pill) eklendi | Design'da default Lime aktif. UX olarak diğerleri de seçilebilir yapıldı. |
+| PDF download eklendi (`window.print` paterni) | Design'da "PDF olarak" butonu var. |
+| Hero'daki SVG grid pattern **silindi** | Design hero'su sade, pattern yok. |
+
+### 24.5 Çağıranlar
+
+`MarketingFooter.tsx:45,82` + `MarketingNavbarClient.tsx:124` + `MobileBottomNav.tsx:57` — 4 yerden link verilir. Component'in public API'si değişmedi (`{ locale: Locale }`), call site'ları dokunulmaz.
+
+### 24.6 Yeni tema veya alan eklerken
+
+- **Yeni tema**: `TEMPLATES` const'ına entry ekle (`QRGeneratorForm.tsx:14`) + form'daki tasarım pill grid'ine 5. button ekle. PDF print template'i `palette.card / fg / border / eyebrow` field'larını okur, otomatik uyumlu.
+- **Yeni form alanı**: 4-field stack zaten yoğun; eklemek gerekirse design'a sadık kal — yeni alan preview'a görünür değer katıyor mu? Aksi halde scope creep.
+- **Backend entegrasyon**: Bu sayfa kasıtlı olarak login-free. Buaze hesabıyla bağlamak istenirse ayrı `/dashboard/qr-quick` veya benzeri rota olur. Marketing tool ile dashboard arasında köprü kurma — UX hedefi: "hesap açmadan dene".
+
+### 24.7 Mobil davranış (2026-04 §25 pas 3)
+
+- **Form / Preview sırası**: Tasarım desktop'ta sol-form / sağ-preview 2-col. Mobilde DOM'a sadık kal — form `lg:order-1`, preview `lg:order-2` (mobile için `order-*` yok). Form numaralandırması "1. Bilgilerini gir" → "2. Önizle ve indir" doğal okuma sırasında akar. **Yapma**: mobilde preview'ı önce gösterme — kullanıcı boş input'a bakmadan default preview görüyor, kafa karıştırıcı.
+- **Tasarım şablon grid**: `grid-cols-2 sm:grid-cols-4` — 320px iPhone SE'de "Minimal" butonu 4-col'da taşıyordu, 2x2 grid'e geçtik. Tablet+'da yine 4-col yan yana.
+- **Hero metrikler**: padding `px-5` (mobil), h1 `text-[38px] leading-[1.02]` (320px ekranda "QR kod oluşturucu." satırının nefes alması için 1'den biraz daha rahat), subtitle `text-[15px]/1.6` (site genelindeki mobil subtitle standardı).
+
+---
+
+## 25. Mobil Uyum Pas — `buaze-mobil` Design Handoff (2026-04-27)
+
+Claude Design'dan gelen **`buaze-mobil`** handoff bundle (`/tmp/buaze-design/buaze-mobil/`, prompta tar.gz olarak yüklendi — git-tracked değil) marketing surface'lerinin mobil deneyimi için spec sundu. Native uygulama yok; tek hedef **responsive web**'de mobil metriklerini tasarımla 1:1 hizalamak. Bundle 1 README + 1 chat transcript + 5 prototip dosyası içeriyor (`buaze.html`, `layout.jsx`, `home.jsx`, `pages.jsx`, `app.jsx`). Hash-routed React 18 + Babel CDN prototipi — `src/`'ye kopyalanmaz, yalnız metrik referansı.
+
+### 25.1 Mevcut mobil altyapı (zaten yerinde)
+
+- **MobileBottomNav** (`src/components/marketing/MobileBottomNav.tsx`) — `md:hidden` 5-item bar, center FAB, safe-area inset
+- **MarketingNavbarClient** (`src/components/marketing/MarketingNavbarClient.tsx`) — sağ-anchor mobil drawer, body scroll lock, ESC handler, 4 accordion section
+- **MarketingFooter** — 2-col mobile grid, ECG divider, newsletter form
+- **HomeHeroDashboard** + **HomeIndustryTabs** + diğer home section'ları — Tailwind responsive (sm/md/lg) sınıflarıyla zaten mobile-first
+- Pulse design system §11 token'ları (graphite/lime/pure white) ortak — mobil ekstra palet yok
+
+Mobil pass kapsamı: **küçük metrik düzeltmeleri + smooth motion** (yeni component değil, refactor değil).
+
+### 25.2 Uygulanan değişiklikler
+
+1. **`globals.css` mobil utility'leri** (§25 ortak block, mobile media query altında):
+   - `.no-scrollbar` — yatay chip strip + drawer + kategori scroll'unda gizli scrollbar
+   - `.pb-safe` / `.pl-safe` / `.pr-safe` — iOS notch/home-indicator için safe-area inset utility'leri (Tailwind padding'leriyle compose olur)
+   - `.accordion-body` + `.open` — mobil drawer section expand/collapse smooth max-height transition (cap 720px, en uzun "Solutions" 8-item + CTA için yeterli). `prefers-reduced-motion: reduce` altında transition off.
+
+2. **MobileBottomNav merkez butonu — 52x52** (`MobileBottomNav.tsx:91-96`):
+   - Önceden: `w-12 h-12` (48px) + `shadow-[0_4px_12px_rgba(198,242,78,0.45)]`
+   - Şimdi: `h-[52px] w-[52px]` + `shadow-[0_4px_16px_rgba(198,242,78,0.5)]`
+   - Tasarımda `width:52, height:52, marginTop:-20, boxShadow:0 4px 16px rgba(198,242,78,0.5)` — birebir hizalandı. `-mt-5` (=20px) marjı korundu, FAB bar'ın üstünden 4px daha yukarı taşıyor.
+
+3. **MarketingNavbar mobil drawer akıcılık** (`MarketingNavbarClient.tsx`):
+   - `MobileSection` artık `{open && <div>}` hard-cut yerine `<div className={accordion-body${open?' open':''}}>` kullanıyor — 0.3s ease max-height transition.
+   - Dış scroll container'a `no-scrollbar` eklendi → drawer içinde scroll çubuğu görünmez.
+
+4. **HomeIndustryTabs scroll bar gizleme** (`HomeIndustryTabs.tsx:102`):
+   - `overflow-x-auto` → `no-scrollbar overflow-x-auto`. Chip strip mobilde tasarımdaki gibi temiz kayar.
+
+5. **Hero h1 mobil baseline** (`page.tsx:249`):
+   - `text-[40px]` → `text-[38px]` (sm+ aynı kaldı). Tasarımdaki `clamp(38px, 7vw, 76px)` taban değeriyle eşleşti — 375px iPhone SE'de 1px daha kompakt, satır kırılması daha güvenli.
+
+### 25.3 Korunan davranışlar
+
+- Mobil drawer body scroll lock (zaten vardı) — değişmedi
+- ESC + backdrop click kapatma — değişmedi
+- `safe-area-inset-bottom/left/right` inline padding'ler MobileBottomNav ve drawer'da hâlâ inline (yeni utility class'ları ile dual-pattern; refactor zorlaması yok, mevcut inline düzgün çalışıyor)
+- `prefers-reduced-motion: reduce` — yeni `.accordion-body` da bu media query altında transition'ı kapatır (mevcut motion off blanket'iyle tutarlı)
+
+### 25.4 Tasarım metriği eşleme tablosu
+
+#### Pas 1 — temel metrikler (PR #118)
+
+| Tasarım metriği (`buaze-mobil`) | Eski değer | Yeni değer | Dosya |
 |---|---|---|---|
-| `/admin/members` | "İşletmeciler" + "Üye" + "Kullanıcı" | **İşletmeler** | `User` (`role='restaurant_owner'`) |
-| `/admin/users` | "Hesap Yönetimi" + "Kullanıcı" + "Yetkili" | **Yöneticiler** | `AdminUser` (`role='manager'\|'superadmin'`) |
-| `/admin/customers` | (zaten "Müşteriler") | **Müşteriler** | `Feedback` derived |
-| `/admin/team` | (zaten "Ekip" + "Üye") | **Ekip** | `TeamMember` (owner-scoped, dokunulmadı) |
+| Bottom nav center FAB | 48x48, shadow blur 12 | 52x52, shadow blur 16 | `MobileBottomNav.tsx` |
+| Drawer accordion expand | hard cut | 0.3s ease max-height | `MarketingNavbarClient.tsx` |
+| Drawer scroll container | scrollbar görünür | `no-scrollbar` | `MarketingNavbarClient.tsx` |
+| Industry tab strip scroll | scrollbar görünür | `no-scrollbar` | `HomeIndustryTabs.tsx` |
+| Hero h1 mobile baseline | 40px | 38px | `app/[locale]/page.tsx` |
 
-**Değişen dosyalar:**
-- `src/components/admin/AdminSidebar.tsx:106-108` — sidebar label'ları "İşletmeler / Yöneticiler / Müşteriler" oldu
-- `src/app/admin/members/page.tsx` — breadcrumb, h1, description, sütun başlıkları (`KULLANICI` → `İŞLETME SAHİBİ`, `İŞLETME` → `RESTORAN`), boş durum, modal başlığı, success message
-- `src/app/admin/users/page.tsx` — breadcrumb (`KULLANICILAR` → `YÖNETİCİLER`), h1 (`Hesap Yönetimi` → `Yöneticiler`), description, button (`YENİ HESAP AÇ` → `YENİ YÖNETİCİ`), tablo başlığı, modal, role select labels (`İŞLETME YÖNETİCİSİ` → `RESTORAN YÖNETİCİSİ`, `SUPER ADMIN` → `BUAZE YÖNETİCİSİ`), error/confirm mesajları
-- `src/components/admin/SuperadminBlock.tsx:60-61` — TR + EN mesajları yeni terminolojiye geçti
-- `src/lib/translations.ts` — `businesses` / `admins` key'leri eklendi (TR + EN); legacy `users` key korundu
-- `CLAUDE.md` §4.5 baştan yazıldı, §20 (bu) eklendi
+#### Pas 2 — 1:1 hizalama (kullanıcı talebi: "birebir aynı yap")
 
-**Dokunulmayanlar (kasten):**
-- URL'ler, route handler'ları, API yolları → backward compat (link bozulmasın)
-- Prisma model isimleri (`User`, `AdminUser`) → DB seviyesinde kalıcı
-- Owner panelindeki `/admin/team` → ayrı scope, "Ekip / Üye davet et" doğru terim
-- Internal değişken isimleri (`Member`, `members`, `editingMember`) → kod kalitesi için, kullanıcıya görünmez
-- Dashboard greeting'deki "İşletmeci" (kişi olarak hitap) → "İşletme sahibi" anlamında, leksikal olarak doğru
+| Tasarım metriği | Eski | Yeni | Dosya |
+|---|---|---|---|
+| Bottom nav active indicator | sol-aligned (centering bug), `rounded-b-full` | `left-1/2 -translate-x-1/2`, `rounded-b-[2px]` (2px corners only) | `MobileBottomNav.tsx` |
+| Bottom nav icon stroke | `active ? 2.25 : 2` (kalınlaşıyordu) | `2` her durumda (renk değişimi yeter) | `MobileBottomNav.tsx` |
+| Hero h1 line-height (mobile) | 1.05 | **0.95** | `page.tsx` |
+| Hero subtitle (mobile) | 16px / 1.55 | **15px / 1.6** | `page.tsx` |
+| Logo strip padding-y | 20px (`py-5`) | 16px (`py-4`) | `page.tsx` |
+| Three Steps card bg | `#FAFAFA` | **`#fff`** (`bz-card`) | `page.tsx` |
+| Three Steps card radius | 18px | **16px** (`bz-card`) | `page.tsx` |
+| Three Steps illustration | `size={180}` | **`size={160}`** | `page.tsx` |
+| Three Steps grid | `grid-cols-1 md:grid-cols-3` | **`auto-fit, minmax(260px, 1fr)`** (tablet 2-up otomatik) | `page.tsx` |
+| Three Steps grid gap | `gap-6` (24px) | **`gap-5`** (20px) | `page.tsx` |
+| Three Steps h2 mobile | 32px | **28px** | `page.tsx` |
+| Three Steps h3 mobile | 24px | **20px** | `page.tsx` |
+| Three Steps body mobile | 15px / 1.55 | **14px / 1.6** | `page.tsx` |
+| Dark Feature h2 mobile | 36px | **28px** | `page.tsx` |
+| Dark Feature features grid | `grid-cols-1 sm:grid-cols-2` | **`grid-cols-2`** her viewport | `page.tsx` |
+| Dark Feature checkmark | 24x24 (`w-6 h-6`) / 12px text | **22x22 / 11px text** | `page.tsx` |
+| Google Safe h2 mobile | 36px | **26px** | `page.tsx` |
+| Bento section bg | beyaz | **`#FAFAFA`** | `page.tsx` |
+| Bento h2 mobile | 30px | **26px** | `page.tsx` |
+| Industry Tabs h2 mobile | 36px | **26px** | `page.tsx` |
+| QR Teaser h2 mobile | 28px | **24px** | `page.tsx` |
+| Case Study h2 mobile | 36px | **26px** | `page.tsx` |
+| Case Study illustration | `size={340}` | **`size={280}`** | `page.tsx` |
+| CTA Banner h2 mobile | 36px | **28px** | `page.tsx` |
+| Section padding-x mobile | `px-6` (24px) | **`px-5`** (20px) — tüm section'larda tasarım `clamp(20px,5vw,64px)` taban değeri | `page.tsx` |
+| Section padding-y mobile | `py-20` (80px) | **`py-[60px]`** — tasarım `clamp(60px,8vw,112px)` taban değeri | `page.tsx` |
 
-**Neden bu standart?**
-- "Üyeler" muğlak: hem ödeyen müşteriler (User) hem ekip üyeleri (TeamMember) hem operatör (AdminUser) için kullanılabilir
-- "İşletmeler" net: SaaS müşterimiz olan restoran sahipleri = Buaze'nin işletmeleri
-- "Yöneticiler" net: panel yetkisi olan operatör hesaplar (kendi ekibimiz + restoran tarafındaki manager rolleri)
-- "Müşteriler" net: ürünün son tüketicileri (form dolduran restoran müşterileri)
+#### Pas 3 — diğer marketing sayfaları yayılımı
 
-**Önemli:** Yeni bir sayfa eklerken terminoloji haritasına uyun. "Üyeler" terimini sadece owner panelindeki `/admin/team` bağlamında (TeamMember) kullanın. Süperadmin tarafında **asla**.
+§25 standardı homepage'den 6 ek marketing sayfasına yayıldı: `pricing`, `about`, `contact`, `blog`, `faq`, `help`. Her sayfada aynı hex / boyut formülü uygulandı:
 
----
+| Pattern | Eski | Yeni | Etkilenen sayfa sayısı |
+|---|---|---|---|
+| Section padding-x mobile | `px-6` (24px) | `px-5` (20px) | 6/6 (toplam ~25 instance) |
+| Section padding-y mobile | `py-16/20/24` | `py-[60px]` (clamp tabanı) | 6/6 |
+| Hero h1 mobile | `text-[40px]` veya `text-[44px]` | `text-[38px]` | 6/6 |
+| h1 leading mobile | `leading-[0.98]` | `leading-[0.95]` | 3/6 (pricing/contact) |
+| h2 mobile | `text-[32px]/[36px]` | `text-[26px]` | 4/6 (pricing/about/help bg sec'leri) |
+| About number stat mobile | `text-[36px]` | `text-[28px]` | 1/6 |
 
-_Son güncelleme: 2026-04 (yedinci dalga) — §20 Admin Terminoloji Normalizasyonu eklendi. Süperadmin panelinde "Üyeler / Üye / Kullanıcı / İşletmeci / Hesap" karışıklığı temizlendi: kanonik terimler **İşletmeler** (User) / **Yöneticiler** (AdminUser) / **Müşteriler** (Feedback). §4.5 baştan yazıldı. URL'ler ve API kontratları değişmedi._
+**Yapma:** Yeni marketing sayfası eklerken `px-6 sm:px-10` veya `py-20 sm:py-28` paterni — her seferinde §25 standardı: `px-5 sm:px-10` + `py-[60px] sm:py-{20-28}` ve heading mobile boyutu max 38px (h1) / 26px (h2).
 
+#### Pas 4 — MobileBottomNav globally mount + remaining marketing surfaces
+
+§25 Pas 3 sonrası kapsanmamış 9+ marketing sayfası (`roi`, `google-compliance`, `careers`, `press`, `integrations`, `how-it-works`, `features`, `solutions` index, `customer-stories`, `compare`, `case-study`, ve 7 `solutions/*` alt sayfası) §25 standardına çekildi. Aynı dönüşüm: `px-6→px-5`, `py-{16/20/24}→py-[60px]`, h1 `40px→38px` mobile, content h2 `32px→26px` mobile, hero/CTA h2 `36px→28px` mobile, kart pattern'leri `bz-card` / `bz-card-soft` utility'lerine.
+
+**MobileBottomNav globally mounted** (`src/components/marketing/MarketingFooter.tsx`):
+- Daha önce yazılmış ama hiçbir yerden mount edilmemiş `MobileBottomNav` component'i (`src/components/marketing/MobileBottomNav.tsx`) `MarketingFooter`'ın return Fragment'ine eklendi → her marketing sayfası otomatik 5-item bottom nav alır (Ana Sayfa / Fiyatlar / center FAB / QR Kod / İletişim).
+- Center FAB **conditional**: server-side `cookies()` + `verifyJwt(user_token | admin_token)` ile login state belirlenir → giriş yapılıysa "Panel" ikonu (`LayoutDashboard`) ve `/dashboard` yolu, aksi halde "Ücretsiz" ikonu (`Sparkles`) ve `/auth/register` yolu.
+- Auth/onboarding/dashboard sayfaları `MarketingFooter` render etmediği için bottom nav otomatik dışarıda kalır — design kapsamı ile birebir.
+
+**MobileBottomNav UX hardening** (design parity korunarak):
+- `active:scale-95` tab item'larda + `active:scale-90` center FAB'da — haptic-feel press feedback
+- `navigator.vibrate(8)` opsiyonel haptic tick (Android Chrome / PWA destekler; iOS Safari ignore eder, try/catch korumalı)
+- `focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2` (FAB) ve `focus-visible:bg-[#FAFAFA]` (tab) — klavye kullanıcıları için görünür ring
+- Active indicator opacity transition: route değişiminde 200ms fade-in (önceden hard-cut)
+- `transition-colors duration-150` icon + label üzerinde — renk değişimi smooth (tasarım metrikleri 32×2 pin korundu)
+- `prefers-reduced-motion: reduce` zaten globals.css blanket'ı tarafından kapatılır → erişilebilirlik native
+
+### 25.5 Yeni mobil sayfa eklerken
+
+1. **Tailwind responsive sınıfları** — flat default mobile, `sm:`/`md:` üzeri scaling. Site genelinde standart pattern.
+2. **`no-scrollbar` + `overflow-x-auto` + `min-w-max`** — yatay chip/tab strip için.
+3. **Bottom nav padding** — `pb-safe` veya inline `paddingBottom: env(safe-area-inset-bottom)`.
+4. **Drawer/modal** — `accordion-body` yapısı section bazlı için ideal; full modal için mevcut `<Modal>` primitive (panel scope) tercih edilir.
+5. **Touch target** — buton min 44x44px (Apple HIG) veya 48x48px (Material). Marketing CTA'lar zaten `min-h-[48px]`, korundu.
+
+### 25.6 Native app neden yok
+
+Bundle README + user prompt: *"mobil uygulama değil responsive olacak sadece"*. Capacitor / Expo / RN wrap'i Phase 10+ backlog'da değil, açık-uçlu — gerekirse yeniden değerlendirilir. Şu an web-only mobil deneyim.
+
+### 25.7 Tasarım kaynağı (referans, `src/`'ye kopyalanmaz)
+
+`/tmp/buaze-design/buaze-mobil/` (Claude Design handoff bundle, **git-tracked değil**, lokal `.design/` analoji). 5 dosya: `buaze.html` (global CSS + Tailwind config + animation keyframe'leri), `layout.jsx` (BuazeNav + BuazeFooter + MobileBottomNav), `home.jsx` (HeroDashboard + IndustryTabs + 8 section), `pages.jsx` (Features/Pricing/Solutions/Blog/About/Contact/Help/FAQ), `app.jsx` (hash router). Pulse token'ları zaten `globals.css` `@theme {}` block'unda — yeni token tanımı yapılmadı. Logo `BuazeLogo.tsx` korundu, font'lar `layout.tsx`'te yüklü. Mobil pass kalıcı çıktıları: §25.2 listesi.

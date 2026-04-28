@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sendFeedbackNotification } from '@/lib/email';
 import { getPanelActorFromRequest } from '@/lib/auth';
@@ -6,6 +7,7 @@ import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/validations';
 import { ApiErrors } from '@/lib/api-errors';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { rateLimit } from '@/lib/rate-limit';
 
 function parseAspectRating(value: unknown): number | null {
   const n = typeof value === 'number' ? value : Number(value);
@@ -15,9 +17,22 @@ function parseAspectRating(value: unknown): number | null {
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get('x-forwarded-for') || (req as any).ip || 'unknown';
-    
-    // Serverless-safe Database Rate limiting: Max 3 submissions per IP per 10 mins
+    const ip = req.headers.get('x-forwarded-for') || (req as unknown as { ip?: string }).ip || 'unknown';
+
+    // Layered defense:
+    // 1) Upstash rate limit (fast, distributed) — short-circuits abuse
+    //    before we hit Postgres. 5 submissions / IP / minute.
+    const fastLimit = await rateLimit(`feedback:ip:${ip}`, 5, 60 * 1000);
+    if (!fastLimit.allowed) {
+      return ApiErrors.tooManyRequests(
+        'Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.',
+        'RATE_LIMIT_EXCEEDED',
+        fastLimit.retryAfterSeconds || 60,
+      );
+    }
+
+    // 2) DB rate limit (final hard cap, persistent across instances even
+    //    when Upstash is misconfigured). 3 submissions / IP / 10 minutes.
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
     const recentSubmissions = await prisma.feedback.count({
       where: {
@@ -117,6 +132,7 @@ export async function POST(req: NextRequest) {
           toEmail: notificationEmail,
           aspects,
           feedbackId: feedback.id,
+          locale: body.locale === 'en' ? 'en' : 'tr',
         });
         emailSent = true;
       } catch (err) {
@@ -154,7 +170,7 @@ export async function GET(req: NextRequest) {
   const skip = (page - 1) * limit;
 
   // Build filter query
-  const where: any = {};
+  const where: Prisma.FeedbackWhereInput = {};
 
   // KVKK filter
   if (kvkkFilter === 'true') {
@@ -199,20 +215,24 @@ export async function GET(req: NextRequest) {
 
   // Date filter (supports today/1, month, numeric days, all)
   // UTC-based to stay consistent regardless of server timezone.
+  const createdAtBase: Prisma.DateTimeFilter =
+    where.createdAt && typeof where.createdAt === 'object' && !(where.createdAt instanceof Date)
+      ? (where.createdAt as Prisma.DateTimeFilter)
+      : {};
   if (daysParam === 'today' || daysParam === '1') {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-    where.createdAt = { ...where.createdAt, gte: today };
+    where.createdAt = { ...createdAtBase, gte: today };
   } else if (daysParam === 'month') {
     const now = new Date();
     const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
-    where.createdAt = { ...where.createdAt, gte: firstOfMonth };
+    where.createdAt = { ...createdAtBase, gte: firstOfMonth };
   } else if (daysParam && daysParam !== 'all') {
     const days = parseInt(daysParam);
     if (Number.isFinite(days) && days > 0) {
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - days);
-      where.createdAt = { ...where.createdAt, gte: pastDate };
+      where.createdAt = { ...createdAtBase, gte: pastDate };
     }
   }
 
@@ -235,14 +255,15 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Primary query includes the Faz-2 flag/reply/assignment joins. When
-    // the database schema is ahead of push (e.g. a preview env where
-    // `prisma db push` hasn't run yet), that include set throws and would
-    // otherwise break every panel page that renders a feedback list. We
-    // fall back to a joinless query so the inbox keeps rendering and the
-    // admin can at least see rows even before the new tables exist.
-    let feedbacks: any[];
+    // Primary query includes the Faz-2 flag/reply/assignment joins plus the
+    // FeedbackTag join. When the database schema is ahead of push (e.g. a
+    // preview env where `prisma db push` hasn't run yet), any one of these
+    // includes throws and would otherwise break every panel page that
+    // renders a feedback list. We try three tiers of degradation so the
+    // inbox keeps rendering even if just one of the new tables is missing.
+    let feedbacks: Array<Record<string, unknown>>;
     let joinsAvailable = true;
+    let tagsAvailable = true;
     try {
       feedbacks = await prisma.feedback.findMany({
         where,
@@ -259,35 +280,76 @@ export async function GET(req: NextRequest) {
       });
     } catch (joinErr) {
       console.warn(
-        '[feedback] falling back to joinless query — did `prisma db push` run?',
+        '[feedback] tags+joins failed, retrying without tags — did `prisma db push` run?',
         (joinErr as Error).message,
       );
-      joinsAvailable = false;
-      feedbacks = await prisma.feedback.findMany({
-        where,
-        orderBy: { createdAt: sortOrder },
-        skip,
-        take: limit,
-        include: { restaurant: { select: { name: true, slug: true } } },
-      });
+      tagsAvailable = false;
+      try {
+        feedbacks = await prisma.feedback.findMany({
+          where,
+          orderBy: { createdAt: sortOrder },
+          skip,
+          take: limit,
+          include: {
+            restaurant: { select: { name: true, slug: true } },
+            flag: { select: { id: true } },
+            assignment: { select: { assigneeId: true } },
+            _count: { select: { replies: true } },
+          },
+        });
+      } catch (innerErr) {
+        console.warn(
+          '[feedback] flag/assignment/replies joins failed, falling back to no joins',
+          (innerErr as Error).message,
+        );
+        joinsAvailable = false;
+        feedbacks = await prisma.feedback.findMany({
+          where,
+          orderBy: { createdAt: sortOrder },
+          skip,
+          take: limit,
+          include: { restaurant: { select: { name: true, slug: true } } },
+        });
+      }
     }
 
     const total = await prisma.feedback.count({ where });
 
-    const data = feedbacks.map((f: any) => ({
-      ...f,
-      customerName: f.name,
-      customerEmail: f.email,
-      isReplied: joinsAvailable ? (f._count?.replies ?? 0) > 0 : false,
-      isFlagged: joinsAvailable ? Boolean(f.flag) : false,
-      isAssigned: joinsAvailable ? Boolean(f.assignment) : false,
-      assigneeId: joinsAvailable ? f.assignment?.assigneeId ?? null : null,
-      tags: joinsAvailable ? (f.tags ?? []) : [],
-    }));
+    const data = feedbacks.map((raw) => {
+      const f = raw as Record<string, unknown> & {
+        name?: string;
+        email?: string;
+        _count?: { replies?: number };
+        flag?: unknown;
+        assignment?: { assigneeId?: string | null };
+        tags?: unknown[];
+      };
+      return {
+        ...f,
+        customerName: f.name,
+        customerEmail: f.email,
+        isReplied: joinsAvailable ? (f._count?.replies ?? 0) > 0 : false,
+        isFlagged: joinsAvailable ? Boolean(f.flag) : false,
+        isAssigned: joinsAvailable ? Boolean(f.assignment) : false,
+        assigneeId: joinsAvailable ? f.assignment?.assigneeId ?? null : null,
+        tags: joinsAvailable && tagsAvailable ? (f.tags ?? []) : [],
+      };
+    });
 
     return NextResponse.json({
       data,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        // UI uses these flags to surface "feature unavailable" notices when
+        // schema sync hasn't happened yet (e.g. preview deploys, fresh DBs).
+        degraded:
+          !joinsAvailable || !tagsAvailable
+            ? { joins: !joinsAvailable, tags: !tagsAvailable }
+            : null,
+      },
     });
   } catch (error) {
     console.error('Failed to fetch feedback:', error);

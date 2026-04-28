@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileNav from '@/components/admin/AdminMobileNav';
@@ -50,14 +49,14 @@ export default async function AdminLayout({
   const adminLocale = (cookieStore.get('ADMIN_LOCALE')?.value === 'en' ? 'en' : 'tr') as 'tr' | 'en';
 
   let isAuthenticated = false;
-  let payload: any = null;
+  let payload: Awaited<ReturnType<typeof verifyJwt>> = null;
 
   try {
     if (token) {
       payload = await verifyJwt(token);
       isAuthenticated = !!payload && isAdminRole(payload.role);
     }
-  } catch (e) {
+  } catch {
     isAuthenticated = false;
   }
 
@@ -79,10 +78,19 @@ export default async function AdminLayout({
   const announcements = showSidebar ? await fetchActiveAnnouncements(adminLocale) : [];
 
   return (
-    <AdminTranslationProvider initialLocale={adminLocale as any}>
-      <div className="flex flex-col lg:flex-row min-h-[100dvh] lg:h-screen bg-[#FFFFFF] lg:overflow-hidden font-sans selection:bg-[#C6F24E]/30">
+    <AdminTranslationProvider initialLocale={adminLocale}>
+      <div className="flex flex-col lg:flex-row min-h-[100dvh] lg:h-screen bg-[#FFFFFF] lg:overflow-hidden font-sans selection:bg-[#C6F24E]/30 relative">
+        {showSidebar && (
+          <a href="#panel-main-content" className="bz-skip-link">
+            {adminLocale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
+          </a>
+        )}
         {showSidebar && <AdminSidebar />}
-        <div className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-28 lg:pb-0'}`}>
+        <main
+          id="panel-main-content"
+          tabIndex={-1}
+          className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-28 lg:pb-0'}`}
+        >
           {showSidebar && (
             <AdminTopbar
               announcements={announcements}
@@ -95,7 +103,7 @@ export default async function AdminLayout({
             )}
             {children}
           </div>
-        </div>
+        </main>
         {showSidebar && <AdminMobileNav />}
       </div>
     </AdminTranslationProvider>

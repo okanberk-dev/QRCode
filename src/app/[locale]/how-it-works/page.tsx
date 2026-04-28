@@ -66,12 +66,12 @@ export default async function HowItWorksPage({
       id: '02',
       title: isTr ? 'Müşteri yorum bırakır' : 'Customer leaves a review',
       desc: isTr
-        ? 'Müşteri kodu tarar, bir formda 1-5 puan ve kısa bir not bırakır. Memnunsa Google\'a yönlenir, değilse ekibine iletilir — kriz büyümeden çözülür.'
-        : 'The customer scans the code and leaves a 1-5 rating and a short note. Happy ones go to Google; unhappy ones reach your team — a crisis solved before it grows.',
+        ? 'Müşteri QR\'ı tarar, doğrudan Google yorum bağlantısını görür. İsterse aynı akışta sana özel geri bildirim de bırakır; yıldıza göre kapı kapatmıyoruz.'
+        : 'The customer scans the QR and sees the public Google review link first. They can optionally also leave private feedback for your team in the same flow — no rating-based gating.',
       Ill: IllusInbox,
       perks: isTr
-        ? ['Anlık bildirim', 'Akıllı yönlendirme', 'Google uyumlu akış', 'Özel feedback formu']
-        : ['Live notifications', 'Smart routing', 'Google-compliant flow', 'Private feedback form'],
+        ? ['Anlık bildirim', 'Tek tıkla Google bağlantısı', 'Google uyumlu akış', 'Opsiyonel özel geri bildirim']
+        : ['Live notifications', 'One-tap Google link', 'Google-compliant flow', 'Optional private feedback'],
     },
     {
       id: '03',
@@ -133,7 +133,7 @@ export default async function HowItWorksPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-24 pb-16 sm:pb-20">
+      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-24 pb-[60px] sm:pb-20">
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
@@ -151,7 +151,7 @@ export default async function HowItWorksPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Nasıl çalışır' : 'How it works'}
           </span>
-          <h1 className="mt-5 text-[40px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+          <h1 className="mt-5 text-[38px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
             {isTr ? (
               <>
                 5 dakikada kurulum.
@@ -166,7 +166,7 @@ export default async function HowItWorksPage({
               </>
             )}
           </h1>
-          <p className="mt-6 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[560px] mx-auto">
+          <p className="mt-6 text-[15px] sm:text-[18px] text-[#525252] leading-[1.6] max-w-[560px] mx-auto">
             {isTr
               ? 'Karmaşık yazılımı ve müşteri psikolojisini sade bir akışa indirdik. Kurulum beş dakika, sonuç ömür boyu.'
               : 'We reduced complex software and customer psychology into a simple flow. Five-minute setup, lifetime return.'}
@@ -175,7 +175,7 @@ export default async function HowItWorksPage({
       </section>
 
       {/* ─── Timeline · design: center line + numbered circle, alternating sides ─── */}
-      <section className="px-6 sm:px-10 pb-24">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
         <div className="relative max-w-[1100px] mx-auto">
           {/* Vertical center line — desktop only */}
           <div
@@ -203,7 +203,7 @@ export default async function HowItWorksPage({
                       {isTr ? 'ADIM' : 'STEP'} {step.id}
                     </span>
                     <h2
-                      className="text-[30px] sm:text-[36px] font-medium leading-[1.05] tracking-[-0.025em] text-[#0A0A0A]"
+                      className="text-[26px] sm:text-[36px] font-medium leading-[1.05] tracking-[-0.025em] text-[#0A0A0A]"
                       style={{ fontFamily: 'var(--font-heading)' }}
                     >
                       {step.title}
@@ -250,7 +250,7 @@ export default async function HowItWorksPage({
                       sideLeft ? 'lg:order-3' : 'lg:order-1'
                     }`}
                   >
-                    <div className="bg-[#FAFAFA] border border-[#EDEDED] rounded-2xl p-8 sm:p-10 flex items-center justify-center aspect-square max-w-[300px] w-full">
+                    <div className="bz-card-soft p-8 sm:p-10 flex items-center justify-center aspect-square max-w-[300px] w-full">
                       <step.Ill size={200} className="w-full h-auto max-w-[220px]" />
                     </div>
                   </div>

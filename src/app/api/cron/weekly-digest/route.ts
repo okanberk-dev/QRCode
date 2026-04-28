@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendWeeklyDigest } from '@/lib/email';
-import { ApiErrors } from '@/lib/api-errors';
 
 /**
  * Weekly digest cron endpoint.
@@ -81,7 +80,7 @@ export async function GET(req: NextRequest) {
         : 0;
 
       const dist: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-      distribution.forEach((row: any) => {
+      distribution.forEach((row) => {
         dist[row.rating] = row._count;
       });
 

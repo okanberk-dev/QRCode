@@ -64,7 +64,7 @@ export async function GET(
 
   // Per-user generation rate limit. Covers both legitimate admins and
   // compromised credentials that would otherwise flood QrGeneration rows.
-  const rl = rateLimit(`qr:gen:${actor.id}`, 120, 60 * 1000);
+  const rl = await rateLimit(`qr:gen:${actor.id}`, 120, 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Çok fazla QR isteği. Lütfen biraz bekleyin.' },
@@ -132,7 +132,7 @@ export async function GET(
         ...qrOptions,
       });
 
-      return new NextResponse(pngBuffer as any, {
+      return new NextResponse(new Uint8Array(pngBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'image/png',

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const ip = getClientIp(req.headers);
 
     // Rate limit: 5 registrations per IP per 30 minutes
-    const ipLimit = rateLimit(`register:ip:${ip}`, 5, 30 * 60 * 1000);
+    const ipLimit = await rateLimit(`register:ip:${ip}`, 5, 30 * 60 * 1000);
     if (!ipLimit.allowed) {
       return NextResponse.json(
         { error: 'Çok fazla kayıt denemesi. Lütfen bir süre sonra tekrar deneyin.' },
@@ -82,6 +82,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Welcome email — fire and forget. We don\'t want a Resend hiccup to
+    // block account creation; the cookie + redirect still succeeds.
+    const userLocale: 'tr' | 'en' = locale === 'en' ? 'en' : 'tr';
+    void (async () => {
+      try {
+        const { sendWelcomeEmail } = await import('@/lib/email');
+        await sendWelcomeEmail({ to: user.email, firstName: user.name, locale: userLocale });
+      } catch (err) {
+        console.error('[register] welcome mail failed', err);
+      }
+    })();
+
     // Sign tokens — no restaurantId yet; it's populated after onboarding completes.
     const token = await signJwt({
       userId: user.id,
@@ -125,10 +137,10 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error) {
     console.error('[AUTH_REGISTER]', error);
-    
-    if (error.message === 'USER_EXISTS') {
+
+    if (error instanceof Error && error.message === 'USER_EXISTS') {
       return NextResponse.json(
         { error: 'Bu e-posta adresiyle zaten bir hesap mevcut.' },
         { status: 409 }
@@ -136,7 +148,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Prisma Connection Timeout
-    if (error.code === 'P2024') {
+    const errCode = (error as { code?: string })?.code;
+    if (errCode === 'P2024') {
       return NextResponse.json(
         { error: 'Veritabanı bağlantı zaman aşımı. Lütfen biraz bekleyip tekrar deneyin.' },
         { status: 503 }

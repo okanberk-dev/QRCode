@@ -45,7 +45,6 @@ export default async function PricingPage({
 }) {
   const { locale } = await params;
   const t = getTranslations(locale);
-  const base = `/${locale}`;
   const isTr = locale === 'tr';
 
   const faqs = [
@@ -69,15 +68,38 @@ export default async function PricingPage({
         })),
       },
       {
-        '@type': 'Product',
-        name: 'Buaze Reputation Management',
+        '@type': 'SoftwareApplication',
+        name: 'Buaze',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web, iOS, Android',
         description: t.pricing_subtitle,
+        url: `https://buaze.com/${locale}/pricing`,
+        // No aggregateRating — must be backed by verifiable on-page reviews.
         offers: {
-          '@type': 'Offer',
-          price: isTr ? '500' : '10',
+          '@type': 'AggregateOffer',
           priceCurrency: isTr ? 'TRY' : 'USD',
+          lowPrice: isTr ? '500' : '10',
+          highPrice: isTr ? '1000' : '20',
+          offerCount: '2',
           availability: 'https://schema.org/InStock',
         },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: isTr ? 'Anasayfa' : 'Home',
+            item: `https://buaze.com/${locale}`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: isTr ? 'Fiyatlandırma' : 'Pricing',
+            item: `https://buaze.com/${locale}/pricing`,
+          },
+        ],
       },
     ],
   };
@@ -122,7 +144,7 @@ export default async function PricingPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-16 sm:pt-24 pb-14 sm:pb-20">
+      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-24 pb-14 sm:pb-20">
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
@@ -140,7 +162,7 @@ export default async function PricingPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Fiyatlar' : 'Pricing'}
           </span>
-          <h1 className="mt-5 text-[40px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+          <h1 className="mt-5 text-[38px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.95] sm:leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
             {isTr ? (
               <>
                 Basit. Şeffaf.
@@ -174,7 +196,7 @@ export default async function PricingPage({
       </section>
 
       {/* ─── Pricing Cards (client component with monthly/yearly toggle) ─── */}
-      <section className="px-6 sm:px-10 pb-20 sm:pb-28">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-28">
         <div className="max-w-[1200px] mx-auto">
           <PricingPlans
             locale={locale}
@@ -186,7 +208,7 @@ export default async function PricingPage({
       </section>
 
       {/* ─── Platform Integrations ─── */}
-      <section className="px-6 sm:px-10 py-14 sm:py-16 border-b border-[#EDEDED]">
+      <section className="px-5 sm:px-10 py-12 sm:py-16 border-b border-[#EDEDED]">
         <div className="max-w-[1200px] mx-auto text-center">
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Global platformlarla entegre' : 'Integrated with global platforms'}
@@ -206,13 +228,13 @@ export default async function PricingPage({
       </section>
 
       {/* ─── Comparison Table ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[960px] mx-auto">
           <div className="text-center mb-12">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Detaylı karşılaştırma' : 'Deep comparison'}
             </span>
-            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? 'Plan özelliklerini yan yana görün.' : 'See plan features side by side.'}
             </h2>
           </div>
@@ -259,7 +281,7 @@ export default async function PricingPage({
       </section>
 
       {/* ─── Testimonials ─── */}
-      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
           {testimonials.map((ts, i) => (
             <div key={i} className="bg-white p-8 rounded-3xl border border-[#EDEDED]">
@@ -268,7 +290,7 @@ export default async function PricingPage({
                   <span key={s} className="text-[18px]">★</span>
                 ))}
               </div>
-              <p className="text-[17px] text-[#0A0A0A] leading-[1.55] mb-6">"{ts.text}"</p>
+              <p className="text-[17px] text-[#0A0A0A] leading-[1.55] mb-6">&quot;{ts.text}&quot;</p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#0A0A0A] text-[#C6F24E] rounded-full flex items-center justify-center text-[14px] font-semibold">
                   {ts.author.charAt(0)}

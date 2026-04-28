@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : 'Restaurant & Café Reputation Management — Buaze';
   const description =
     locale === 'tr'
-      ? "Masaya QR koy, ilk hafta Google yorumun 10 kat artsın. Memnun müşteriyi Google'a, memnun olmayanı ekibine yönlendiriyoruz."
-      : 'Put a QR on the table and watch Google reviews multiply 10x in the first week. Happy customers route to Google, unhappy ones to your team.';
+      ? 'Masaya QR koy, ilk hafta Google yorumun 10 kat artsın. Her misafire Google bağlantısı sunulur; isteyen ek olarak işletmene özel geri bildirim de gönderir.'
+      : 'Put a QR on the table and watch Google reviews multiply 10x in the first week. Every guest gets the Google review link; private feedback is an optional extra step.';
   return {
     title,
     description,
@@ -74,14 +74,14 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero — light gray bg, 2-column */}
-      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-16 sm:py-20">
+      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-20">
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
           <div>
             <span className="pulse-eyebrow font-semibold text-[#C6F24E]">
               {isTr ? 'ÇÖZÜM · RESTORAN & KAFE' : 'SOLUTION · RESTAURANT & CAFÉ'}
             </span>
             <h1
-              className="mt-3 text-[40px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+              className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? (
@@ -98,10 +98,10 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
                 </>
               )}
             </h1>
-            <p className="mt-5 max-w-[520px] text-[16px] leading-[1.55] text-[#525252] sm:text-[17px]">
+            <p className="mt-5 max-w-[520px] text-[15px] leading-[1.55] text-[#525252] sm:text-[18px]">
               {isTr
-                ? "Masaya QR koy, ilk hafta Google yorumun 10 kat artsın. Memnun müşteriyi Google'a, memnun olmayanı ekibine yönlendiriyoruz. 1.200+ restoran ve kafe Buaze'i tercih ediyor."
-                : 'Put a QR on the table and watch Google reviews grow 10x in the first week. We route happy customers to Google and unhappy ones to your team. Trusted by 1,200+ restaurants and cafés.'}
+                ? "Masaya QR koy, ilk hafta Google yorumun 10 kat artsın. Her misafire Google bağlantısını sunuyoruz; ek olarak isteyen, ekibine özel geri bildirim de gönderebiliyor. 1.200+ restoran ve kafe Buaze'i tercih ediyor."
+                : 'Put a QR on the table and watch Google reviews grow 10x in the first week. Every guest gets the Google review link; anyone who wants to share private feedback with your team can do so in the same flow. Trusted by 1,200+ restaurants and cafés.'}
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -161,7 +161,7 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
       </section>
 
       {/* 3-stat grid */}
-      <section className="px-6 sm:px-10 py-14 sm:py-16">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
         <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 md:grid-cols-3">
           {stats.map((s) => (
             <div key={s.l} className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] p-7">
@@ -179,10 +179,10 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
       </section>
 
       {/* Use cases — 4-col */}
-      <section className="px-6 sm:px-10 pb-20 sm:pb-24">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
         <div className="mx-auto max-w-[1200px]">
           <h2
-            className="text-[32px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]"
+            className="text-[26px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr
@@ -218,10 +218,10 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
       </section>
 
       {/* Dark CTA band */}
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="mx-auto max-w-[900px] text-center">
           <h2
-            className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
+            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Her masa, bir fırsat.' : 'Every table, an opportunity.'}

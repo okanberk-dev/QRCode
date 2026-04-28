@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Bell, Check, Loader2, Mail, MessageSquare, Webhook } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
+import { PageHeader } from '@/components/ui';
 
 interface Prefs {
   lowRatingEmail: boolean;
@@ -108,16 +109,23 @@ function AdminNotificationsBody() {
   ];
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">{isTr ? 'PANEL / BİLDİRİMLER' : 'PANEL / NOTIFICATIONS'}</p>
-          <h1 className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
-            {isTr ? 'Bildirim tercihleri' : 'Notification preferences'}
-          </h1>
-        </div>
-        {notice && <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">{notice}</span>}
-      </header>
+    <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <PageHeader
+        eyebrow={isTr ? 'BİLDİRİMLER' : 'NOTIFICATIONS'}
+        title={isTr ? 'Bildirim tercihleri' : 'Notification preferences'}
+        description={
+          isTr
+            ? 'E-posta ve webhook kanallarına hangi olayların gönderileceğini buradan ayarla.'
+            : 'Configure which events get sent to email and webhook channels.'
+        }
+        actions={
+          notice ? (
+            <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">
+              {notice}
+            </span>
+          ) : null
+        }
+      />
 
       {loading ? (
         <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20 text-[#737373]">

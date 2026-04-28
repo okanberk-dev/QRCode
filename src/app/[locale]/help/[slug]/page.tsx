@@ -99,32 +99,50 @@ export default async function HelpArticlePage({ params }: PageParams) {
       .map((item) => ({ slug: item.slug, title: item.title, excerpt: item.excerpt }));
   }
 
-  const jsonLd = {
+  const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: article.title,
     description: article.excerpt ?? '',
     datePublished: article.updatedAt.toISOString(),
     dateModified: article.updatedAt.toISOString(),
-    author: { '@type': 'Organization', name: 'Buaze' },
+    inLanguage: locale,
+    image: 'https://buaze.com/favicon.svg',
+    author: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
     publisher: {
       '@type': 'Organization',
       name: 'Buaze',
       url: 'https://buaze.com',
+      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
     },
     mainEntityOfPage: `https://buaze.com/${locale}/help/${slug}`,
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım' : 'Help', item: `https://buaze.com/${locale}/help` },
+      { '@type': 'ListItem', position: 3, name: categoryLabel, item: `https://buaze.com/${locale}/help/category/${article.category}` },
+      { '@type': 'ListItem', position: 4, name: article.title, item: `https://buaze.com/${locale}/help/${slug}` },
+    ],
   };
 
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Header — breadcrumb + category + title */}
-      <section className="border-b border-[#EDEDED] bg-[#FAFAFA] px-6 sm:px-10 py-12 sm:py-16">
+      <section className="border-b border-[#EDEDED] bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-16">
         <div className="mx-auto max-w-[760px]">
           <nav
             aria-label={isTr ? 'Site yolu' : 'Breadcrumb'}
@@ -150,7 +168,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
             {(cat ? cat.symbol + '  ' : '') + categoryLabel.toUpperCase()}
           </span>
           <h1
-            className="mt-3 text-[32px] sm:text-[44px] lg:text-[52px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]"
+            className="mt-3 text-[28px] sm:text-[44px] lg:text-[52px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {article.title}
@@ -174,7 +192,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
       </section>
 
       {/* Body */}
-      <main className="mx-auto max-w-[720px] px-6 sm:px-10 py-12 sm:py-14">
+      <main className="mx-auto max-w-[720px] px-5 sm:px-10 py-[60px] sm:py-14">
         <article
           className="prose prose-lg max-w-none
             prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
@@ -214,7 +232,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
 
       {/* Related */}
       {related.length > 0 && (
-        <section className="border-t border-[#EDEDED] px-6 sm:px-10 py-14">
+        <section className="border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-14">
           <div className="mx-auto max-w-[1100px]">
             <div className="mb-6 flex items-end justify-between gap-4">
               <h2

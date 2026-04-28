@@ -1,6 +1,6 @@
 'use client';
 
-import { Star, CheckCircle2, MoreVertical, ThumbsUp, Share2 } from 'lucide-react';
+import { Star, MoreVertical, ThumbsUp, Share2 } from 'lucide-react';
 
 const REVIEWS = [
   {

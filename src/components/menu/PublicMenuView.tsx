@@ -52,14 +52,19 @@ interface PublicMenuViewProps {
 }
 
 const BADGE_META: Record<MenuBadge, { tr: string; en: string; icon: typeof Flame; cls: string }> = {
-  populer:     { tr: 'Popüler',       en: 'Popular',       icon: Star,     cls: 'bg-amber-100 text-amber-800' },
-  yeni:        { tr: 'Yeni',          en: 'New',           icon: Sparkles, cls: 'bg-blue-100 text-blue-800' },
-  vegan:       { tr: 'Vegan',         en: 'Vegan',         icon: Leaf,     cls: 'bg-emerald-100 text-emerald-800' },
-  vegetaryen:  { tr: 'Vejetaryen',    en: 'Vegetarian',    icon: Leaf,     cls: 'bg-lime-100 text-lime-800' },
-  aci:         { tr: 'Acı',           en: 'Spicy',         icon: Flame,    cls: 'bg-red-100 text-red-700' },
-  sef_onerisi: { tr: 'Şef Önerisi',   en: "Chef's Pick",   icon: Star,     cls: 'bg-purple-100 text-purple-800' },
+  populer:     { tr: 'Popüler',       en: 'Popular',       icon: Star,     cls: 'bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]' },
+  yeni:        { tr: 'Yeni',          en: 'New',           icon: Sparkles, cls: 'bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE]' },
+  vegan:       { tr: 'Vegan',         en: 'Vegan',         icon: Leaf,     cls: 'bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0]' },
+  vegetaryen:  { tr: 'Vejetaryen',    en: 'Vegetarian',    icon: Leaf,     cls: 'bg-[#EAF9B8] text-[#4D5C00] border border-[#D9EE7A]' },
+  aci:         { tr: 'Acı',           en: 'Spicy',         icon: Flame,    cls: 'bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]' },
+  sef_onerisi: { tr: 'Şef Önerisi',   en: "Chef's Pick",   icon: Star,     cls: 'bg-[#0A0A0A] text-[#C6F24E]' },
   glutensiz:   { tr: 'Glutensiz',     en: 'Gluten-Free',   icon: WheatOff, cls: 'bg-[#EAF9B8] text-[#0A0A0A]' },
 };
+
+// Single source of truth for the badge chip glyph size — keep icon size
+// equal to the surrounding text size (10px) so the chip renders crisply.
+// If chip text size changes, bump this in lockstep.
+const BADGE_ICON_SIZE = 10;
 
 function BadgeChip({ badge, locale }: { badge: string; locale: 'tr' | 'en' }) {
   const meta = BADGE_META[badge as MenuBadge];
@@ -67,7 +72,7 @@ function BadgeChip({ badge, locale }: { badge: string; locale: 'tr' | 'en' }) {
   const Icon = meta.icon;
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${meta.cls}`}>
-      <Icon size={10} strokeWidth={2} />
+      <Icon size={BADGE_ICON_SIZE} strokeWidth={2} />
       {meta[locale]}
     </span>
   );
@@ -82,7 +87,7 @@ function BadgeChipOnDark({ badge, locale, accent }: { badge: string; locale: 'tr
       className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/85"
       style={{ borderColor: `${accent}4D`, backgroundColor: `${accent}1A` }}
     >
-      <Icon size={10} strokeWidth={2} />
+      <Icon size={BADGE_ICON_SIZE} strokeWidth={2} />
       {meta[locale]}
     </span>
   );

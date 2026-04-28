@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
+import { parseBlogDate } from '@/lib/blog-date';
 
 async function requireSuperadmin(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
@@ -104,10 +105,10 @@ const BLOG_POSTS_TR = [
         <p>Burada sahip olacağınız <strong>4.7 ve üzeri tescilli bir puan</strong>, müşterilere doğrudan sizin web sitenizden komisyonsuz rezervasyon yapma güvenini aşılar.</p>
         <h2>Oteller İçin Geri Bildirim Toplama Taktikleri</h2>
         <h3>1. Check-out Stratejisi</h3>
-        <p>Misafirleriniz otelden ayrılırken mutlu görünüyorlarsa, resepsiyonistin nazik yönlendirmesiyle masadaki <strong>QR kodlu akıllı standa</strong> telefonlarını okutmalarını sağlayın.</p>
+        <p>Tüm misafirleriniz check-out anında <strong>QR kodlu akıllı standa</strong> davet edilmeli; sadece "mutlu görünenleri" seçmek Google politikalarına aykırıdır. Dürüst geri bildirim her zaman doğru tercihtir.</p>
         <img src="https://images.unsplash.com/photo-1551882547-ff40c0d120fb?auto=format&fit=crop&q=80&w=800&h=400" alt="Otel lobi ve resepsiyon alanı" style="border-radius: 12px; margin: 2rem 0;" />
         <h3>2. Buaze ile Profesyonel Geri Bildirim Yönetimi</h3>
-        <p>Düşük puanlı geri bildirimler Buaze sistemi üzerinden anlık olarak otel yönetimine özel bir akışla iletilir. Bu sayede her türlü misafir deneyimi operasyonel bir gelişim fırsatına dönüşür.</p>
+        <p>Buaze QR\'ı tarayan her misafire önce Google yorum bağlantısı sunulur. İsteyen misafir aynı akışta otel yönetimine özel geri bildirim de bırakır — yıldıza göre dallandırma yapılmaz. Böylece kamuya açık yorum yolu her zaman açık kalırken operasyonel sinyal de hızlıca yönetime ulaşır.</p>
       `,
   },
 ];
@@ -201,10 +202,10 @@ const BLOG_POSTS_EN = [
         <p>Having a stellar <strong>4.7+ rating</strong> gives guests the localized trust to click directly to your website and finalize their booking, saving you 15-20% in OTA commissions.</p>
         <h2>Strategic Reputation Collection</h2>
         <h3>1. Lobby and Check-out Checkpoint</h3>
-        <p>Implement a sleek, branded <strong>QR code stand</strong> at the reception desk. When guests look satisfied while checking out, prompt them to scan and review.</p>
+        <p>Implement a sleek, branded <strong>QR code stand</strong> at the reception desk. Invite every guest at check-out to scan and share their honest experience — never solicit only the visibly happy ones.</p>
         <img src="https://images.unsplash.com/photo-1551882547-ff40c0d120fb?auto=format&fit=crop&q=80&w=800&h=400" alt="Hotel reception desk" style="border-radius: 12px; margin: 2rem 0;" />
-        <h3>2. Defeat the Reputational Risk Automatically</h3>
-        <p>When a low rating is submitted via Buaze, it is <strong>NOT directed to public Google</strong>. Instead, it enters a private, structured feedback flow for hotel management to address operationally.</p>
+        <h3>2. Pair the Public Review Link with a Private Recovery Channel</h3>
+        <p>Every guest who scans the Buaze QR is offered the public Google review link first — no rating-based gating. Anyone who also wants to share private feedback with the hotel management can do so in the same flow, giving your team a fast operational signal without ever blocking or discouraging a public review.</p>
       `,
   },
 ];
@@ -216,10 +217,16 @@ export async function GET(req: NextRequest) {
   try {
     let seeded = 0;
     for (const post of [...BLOG_POSTS_TR, ...BLOG_POSTS_EN]) {
+      // Spread `createdAt` per post by parsing the human-readable `date`
+      // string. Without this every reseed collapses every post into one day,
+      // which makes `BlogPosting.dateModified` look identical for the whole
+      // archive (audit Section 8.2).
+      const parsed = parseBlogDate(post.date);
+      const createdAt = parsed ?? undefined;
       await prisma.blogPost.upsert({
         where: { slug_locale: { slug: post.slug, locale: post.locale } },
         update: { ...post },
-        create: { ...post },
+        create: { ...post, ...(createdAt ? { createdAt } : {}) },
       });
       seeded++;
     }

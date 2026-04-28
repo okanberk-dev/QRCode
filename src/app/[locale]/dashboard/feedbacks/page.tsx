@@ -52,10 +52,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const isTr = locale === 'tr';
 
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
+  const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'new' | 'attention' | 'replied'>(
-    (searchParams.get('tab') as 'all' | 'new' | 'attention' | 'replied') || 'all',
+  // Tabs: design source (`OwnerFeedback` in owner-pages-1.jsx) buckets feedbacks
+  // by rating + redirection state, not by reply state. Aligned 1:1 here.
+  const [activeTab, setActiveTab] = useState<'all' | 'low' | 'high' | 'redirected'>(
+    (searchParams.get('tab') as 'all' | 'low' | 'high' | 'redirected') || 'all',
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [replyDraft, setReplyDraft] = useState('');
@@ -77,6 +80,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           const rows: FeedbackRow[] = data.data ?? [];
           setFeedbacks(rows);
           if (rows.length > 0) setActiveId((curr) => curr ?? rows[0].id);
+          setDegraded(data?.meta?.degraded ?? null);
         }
       } catch (e) {
         console.error(e);
@@ -87,9 +91,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
   const filteredList = useMemo(() => {
     let rows = feedbacks;
-    if (activeTab === 'new') rows = rows.filter((r) => !r.isReplied);
-    else if (activeTab === 'attention') rows = rows.filter((r) => r.rating <= 2);
-    else if (activeTab === 'replied') rows = rows.filter((r) => r.isReplied);
+    if (activeTab === 'low') rows = rows.filter((r) => r.rating <= 3);
+    else if (activeTab === 'high') rows = rows.filter((r) => r.rating >= 4);
+    else if (activeTab === 'redirected') rows = rows.filter((r) => !!r.platform);
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       rows = rows.filter(
@@ -106,47 +110,22 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     [feedbacks, activeId, filteredList],
   );
 
-  // Initial counts from server aggregate (fast first paint) —
-  // /api/feedback/counts returns {all,new,attention,replied} using
-  // Prisma aggregates. Falls back to derived list counts when the
-  // endpoint is unavailable.
-  const [serverCounts, setServerCounts] = useState<{
-    all: number;
-    new: number;
-    attention: number;
-    replied: number;
-  } | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/feedback/counts');
-        if (res.ok && !cancelled) setServerCounts(await res.json());
-      } catch {
-        /* keep fallback */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const counts = useMemo(() => {
-    if (serverCounts && feedbacks.length === 0) return serverCounts;
-    return {
-      all: feedbacks.length,
-      new: feedbacks.filter((r) => !r.isReplied).length,
-      attention: feedbacks.filter((r) => r.rating <= 2).length,
-      replied: feedbacks.filter((r) => r.isReplied).length,
-    };
-  }, [feedbacks, serverCounts]);
+  // Counts derived from the loaded list. Tab semantics moved away from
+  // reply-state buckets (Phase 11.8 audit), so the legacy
+  // /api/feedback/counts endpoint shape doesn't match any more — counts
+  // are computed client-side over the fetched window.
+  const counts = useMemo(() => ({
+    all: feedbacks.length,
+    low: feedbacks.filter((r) => r.rating <= 3).length,
+    high: feedbacks.filter((r) => r.rating >= 4).length,
+    redirected: feedbacks.filter((r) => !!r.platform).length,
+  }), [feedbacks]);
 
   const tabs: { k: typeof activeTab; l: string; c: number }[] = [
-    { k: 'all', l: isTr ? 'Hepsi' : 'All', c: counts.all },
-    { k: 'new', l: isTr ? 'Yeni' : 'New', c: counts.new },
-    { k: 'attention', l: isTr ? 'Dikkat' : 'Attention', c: counts.attention },
-    { k: 'replied', l: isTr ? 'Yanıtlandı' : 'Replied', c: counts.replied },
+    { k: 'all', l: isTr ? 'Tümü' : 'All', c: counts.all },
+    { k: 'low', l: isTr ? 'Düşük puan (1-3)' : 'Low (1-3)', c: counts.low },
+    { k: 'high', l: isTr ? 'Yüksek puan (4-5)' : 'High (4-5)', c: counts.high },
+    { k: 'redirected', l: isTr ? 'Yönlendirilen' : 'Redirected', c: counts.redirected },
   ];
 
   // Static customer profile + history + SLA (frontend-only, backend to be wired later)
@@ -227,6 +206,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     if (!active || !replyDraft.trim() || sendingReply) return;
     setSendingReply(true);
     const wantsEmail = sendEmail && Boolean(active.customerEmail);
+    // Mirror /admin/reviews — track whether the reply originated from the
+    // AI Co-Pilot draft so trial-ending mail can count operator vs AI replies.
+    const replySource =
+      aiSource === 'openai'
+        ? 'ai_copilot'
+        : aiSource === 'template' || aiSource === 'template-fallback'
+          ? 'template_fallback'
+          : 'manual';
     try {
       const res = await fetch(`/api/feedback/${active.id}/reply`, {
         method: 'POST',
@@ -236,12 +223,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           channel: wantsEmail ? 'email' : 'internal',
           sendEmail: wantsEmail,
           locale,
+          source: replySource,
         }),
       });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
         setFeedbacks((list) => list.map((r) => (r.id === active.id ? { ...r, isReplied: true } : r)));
         setReplyDraft('');
+        setAiSource(null);
         const emailStatus = data?.email?.status as 'sent' | 'skipped' | 'failed' | undefined;
         if (emailStatus === 'sent') {
           flashReply(
@@ -299,22 +288,34 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     <div className="flex min-h-[calc(100vh-140px)] flex-col lg:h-[calc(100vh-140px)] lg:flex-row" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* ============ LEFT — review list ============ */}
       <aside className="flex max-h-[55vh] w-full flex-shrink-0 flex-col border-b border-[#EDEDED] bg-white lg:max-h-none lg:w-[340px] lg:border-b-0 lg:border-r">
+        {degraded && (
+          <div className="border-b border-[#FDE68A] bg-[#FFFBEB] px-4 py-2 text-[11px] font-medium text-[#92400E]">
+            {isTr
+              ? `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — DB senkronizasyonu bekleniyor.`
+              : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — DB sync pending.`}
+          </div>
+        )}
         <div className="border-b border-[#EDEDED] p-4">
-          <div className="flex flex-wrap gap-1.5">
+          {/* Mobile-screens-1.jsx MOwnerFeedback line 247-267: filter chips
+              horizontal scroll. Mobile'da no-wrap + overflow-x-auto;
+              desktop'ta wrap. */}
+          <div className="flex gap-1.5 overflow-x-auto md:flex-wrap no-scrollbar">
             {tabs.map((tab) => (
               <button
                 key={tab.k}
                 type="button"
                 onClick={() => setActiveTab(tab.k)}
-                className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
                   activeTab === tab.k
                     ? 'bg-[#0A0A0A] text-white'
                     : 'bg-[#F5F5F5] text-[#525252] hover:bg-[#EDEDED]'
                 }`}
               >
                 {tab.l}
-                <span className={`ml-1.5 ${activeTab === tab.k ? 'text-white/60' : 'text-[#737373]'}`}>
-                  · {tab.c}
+                <span
+                  className={`ml-1.5 font-mono ${activeTab === tab.k ? 'text-[#C6F24E]' : 'text-[#A3A3A3]'}`}
+                >
+                  {tab.c}
                 </span>
               </button>
             ))}
@@ -394,8 +395,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span
-                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${avatarBg}`}
-                            style={{ fontFamily: 'var(--font-heading)' }}
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-heading text-[10px] font-semibold ${avatarBg}`}
                           >
                             {initials(r.customerName)}
                           </span>
@@ -436,15 +436,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           <>
             <div className="flex items-start gap-4">
               <div
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0A0A0A] text-[18px] font-semibold text-[#C6F24E]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0A0A0A] text-[18px] font-semibold text-[#C6F24E] bz-h-tight"
               >
                 {initials(active.customerName)}
               </div>
               <div className="flex-1 min-w-0">
                 <h2
-                  className="text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
                 >
                   {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
                 </h2>
@@ -516,8 +514,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             <div className="mt-6 rounded-xl bg-[#0A0A0A] p-5 text-white">
               <div className="flex items-center gap-2">
                 <span
-                  className="flex h-5 w-5 items-center justify-center rounded bg-[#C6F24E] text-[10px] font-bold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="flex h-5 w-5 items-center justify-center rounded bg-[#C6F24E] text-[10px] font-bold text-[#0A0A0A] bz-h-tight"
                 >
                   AI
                 </span>
@@ -579,7 +576,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                       replyNotice.tone === 'success'
                         ? 'bg-[#EAF9B8] text-[#0A0A0A]'
                         : replyNotice.tone === 'error'
-                          ? 'bg-red-50 text-red-700'
+                          ? 'bg-[#FEF2F2] text-[#991B1B]'
                           : 'bg-[#F5F5F5] text-[#525252]'
                     }`}
                   >
@@ -603,7 +600,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                       onChange={(e) => setSendEmail(e.target.checked)}
                       className="h-4 w-4 accent-[#0A0A0A]"
                     />
-                    <Mail size={12} className="text-[#525252]" />
+                    <Mail size={12} className="text-current opacity-60" />
                     <span>
                       {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'}
                       <span className="ml-1 text-[#737373]">· {active.customerEmail}</span>
@@ -656,8 +653,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               <Inbox size={22} strokeWidth={2} />
             </div>
             <p
-              className="text-[16px] font-semibold text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[16px] font-semibold text-[#0A0A0A] bz-h-tight"
             >
               {isTr ? 'Bir yorum seç' : 'Select a review'}
             </p>
@@ -670,15 +666,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
       {/* ============ RIGHT — customer context (static, frontend only) ============ */}
       {active && (
-        <aside className="hidden xl:flex w-[340px] flex-shrink-0 flex-col overflow-y-auto border-l border-[#EDEDED] bg-[#FAFAFA] p-6">
+        <aside className="hidden lg:flex lg:w-[280px] xl:w-[340px] flex-shrink-0 flex-col overflow-y-auto border-l border-[#EDEDED] bg-[#FAFAFA] p-5 xl:p-6">
           <div className="pulse-eyebrow text-[#737373]">
             {isTr ? 'MÜŞTERİ PROFİLİ' : 'CUSTOMER PROFILE'}
           </div>
           <div className="mt-3 rounded-xl border border-[#EDEDED] bg-white p-5">
             <p className="text-[12px] text-[#737373]">{isTr ? 'Toplam ziyaret' : 'Total visits'}</p>
             <div
-              className="text-[32px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[32px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A] bz-h-tight"
             >
               1
             </div>
@@ -686,8 +681,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               <div>
                 <p className="pulse-eyebrow text-[#737373]">{isTr ? 'ORT. PUAN' : 'AVG. RATING'}</p>
                 <p
-                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A] bz-h-tight"
                 >
                   {active.rating.toFixed(1)} <span className="text-[#C6F24E]">★</span>
                 </p>
@@ -695,8 +689,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               <div>
                 <p className="pulse-eyebrow text-[#737373]">{isTr ? 'SADAKAT' : 'LOYALTY'}</p>
                 <p
-                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A] bz-h-tight"
                 >
                   {active.rating >= 4 ? (isTr ? 'Yüksek' : 'High') : isTr ? 'Orta' : 'Mid'}
                 </p>

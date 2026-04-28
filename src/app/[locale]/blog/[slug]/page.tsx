@@ -1,10 +1,11 @@
-import type { Metadata, ResolvingMetadata } from 'next';
+import type { Metadata } from 'next';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import { sanitizeBlogContent } from '@/lib/blog-content';
+import { blogDateToIso } from '@/lib/blog-date';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
@@ -17,7 +18,6 @@ export async function generateMetadata(
   }: {
     params: Promise<{ locale: Locale; slug: string }>;
   },
-  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { locale, slug } = await params;
   const post = await prisma.blogPost.findUnique({
@@ -166,6 +166,19 @@ export default async function BlogPostPage({
 
   if (!post) notFound();
 
+  // Fire-and-forget view counter — atomic increment, swallow P2022 (column
+  // not migrated yet on first deploy after schema change).
+  prisma.blogPost
+    .update({
+      where: { id: post.id },
+      data: { viewCount: { increment: 1 } },
+      select: { id: true },
+    })
+    .catch((err) => {
+      const code = (err as { code?: string })?.code;
+      if (code !== 'P2022') console.error('[blog viewCount]', err);
+    });
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -192,8 +205,17 @@ export default async function BlogPostPage({
         addressCountry: 'TR',
       },
     },
-    datePublished: post.date,
-    dateModified: post.updatedAt?.toISOString?.() || post.date,
+    // Google Article schema requires ISO 8601. `post.date` is the human-
+    // readable form ("March 15, 2026" / "15 Mart 2026"); fall back to the
+    // DB createdAt if parsing fails.
+    datePublished:
+      blogDateToIso(post.date)
+      ?? post.createdAt?.toISOString?.()
+      ?? post.date,
+    dateModified:
+      post.updatedAt?.toISOString?.()
+      ?? blogDateToIso(post.date)
+      ?? post.date,
     inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
     isAccessibleForFree: true,
     articleSection: isTr ? 'İtibar Yönetimi' : 'Reputation Management',
@@ -227,7 +249,7 @@ export default async function BlogPostPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero · lime bg + eyebrow + title + author row + ECG decoration ─── */}
-      <section className="relative overflow-hidden bg-[#C6F24E] px-6 sm:px-10 pt-12 sm:pt-16 pb-16 sm:pb-24">
+      <section className="relative overflow-hidden bg-[#C6F24E] px-5 sm:px-10 pt-[60px] sm:pt-16 pb-[60px] sm:pb-24">
         <svg
           aria-hidden
           viewBox="0 0 300 200"
@@ -262,7 +284,7 @@ export default async function BlogPostPage({
               {(isTr ? 'BUAZE' : 'BUAZE')} · {post.readTime.toUpperCase()}
             </div>
             <h1
-              className="mt-3 sm:mt-4 text-[36px] sm:text-[48px] lg:text-[56px] font-medium leading-[1] tracking-[-0.03em] text-[#0A0A0A]"
+              className="mt-3 sm:mt-4 text-[32px] sm:text-[48px] lg:text-[56px] font-medium leading-[1] tracking-[-0.03em] text-[#0A0A0A]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {post.title}
@@ -287,12 +309,12 @@ export default async function BlogPostPage({
       </section>
 
       {/* ─── Content grid · main article + sticky TOC/author sidebar ─── */}
-      <section className="px-6 sm:px-10 py-[60px]">
+      <section className="px-5 sm:px-10 py-[60px]">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-10 lg:gap-12">
           {/* Main column */}
           <div>
             {/* Lead (description) */}
-            <p className="text-[18px] sm:text-[20px] leading-[1.6] text-[#0A0A0A]">
+            <p className="text-[16px] sm:text-[20px] leading-[1.6] text-[#0A0A0A]">
               {post.description}
             </p>
 

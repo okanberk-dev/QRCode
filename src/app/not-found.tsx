@@ -1,12 +1,16 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
+import { detectLocaleFromAcceptLanguage } from '@/lib/translations';
 
 /**
  * 1:1 with .design/site/site-pages4.jsx:NotFoundPage — dark #0A0A0A bg,
  * horizontal ECG waveform at 6% opacity, lime #C6F24E giant "404",
  * Space Grotesk headline, dual CTA (home + help).
  */
-export default function NotFound() {
+export default async function NotFound() {
+  const h = await headers();
+  const locale = detectLocaleFromAcceptLanguage(h.get('accept-language'));
   return (
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#0A0A0A] px-6 py-12 text-center text-white font-sans">
       {/* ECG waveform background (design: horizontal pulse line, 6% opacity) */}
@@ -63,7 +67,7 @@ export default function NotFound() {
             Ana sayfaya dön
           </Link>
           <Link
-            href="/tr/help"
+            href={`/${locale}/help`}
             className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border border-[#333] px-6 py-3 text-[14px] font-medium text-white transition-colors hover:border-white/60"
           >
             Yardım al

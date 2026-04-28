@@ -29,7 +29,7 @@ import {
 import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import type { Locale } from '@/lib/translations';
+import type { Locale, Translations } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
 import WatchDemoButton from './WatchDemoButton';
 
@@ -38,7 +38,7 @@ interface MarketingNavbarProps {
   // The server wrapper passes the entire `t` object; we keep the signature
   // permissive and only use a few keys via locale ternaries (mirrors the
   // pattern in MarketingFooter).
-  t: any;
+  t: Translations;
   isLoggedIn?: boolean;
   logoUrl?: string | null;
 }
@@ -54,7 +54,6 @@ interface NavItem {
 
 export default function MarketingNavbarClient({
   locale,
-  t,
   isLoggedIn,
   logoUrl,
 }: MarketingNavbarProps) {
@@ -68,7 +67,7 @@ export default function MarketingNavbarClient({
   const [open, setOpen] = useState<DropdownId>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSection, setMobileSection] = useState<DropdownId>(null);
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [, setLangMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -127,7 +126,7 @@ export default function MarketingNavbarClient({
       icon: <QrCode size={16} />,
     },
     {
-      href: `${base}/features/ai-copilot`,
+      href: `${base}/features/pulse-ai`,
       label: 'Buaze Pulse AI',
       sub: isTr ? 'Yanıtı saniyede yaz' : 'Drafts in seconds',
       icon: <Sparkles size={16} />,
@@ -385,7 +384,7 @@ export default function MarketingNavbarClient({
                       : 'Buaze Pulse AI reply drafts for every review.'}
                   </p>
                   <Link
-                    href={`${base}/features/ai-copilot`}
+                    href={`${base}/features/pulse-ai`}
                     onClick={() => setOpen(null)}
                     className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-3 py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E]"
                   >
@@ -551,7 +550,7 @@ export default function MarketingNavbarClient({
             className="absolute inset-0 bg-black/30 backdrop-blur-sm"
           />
           <div
-            className="relative ml-auto h-[calc(100dvh-64px)] w-full max-w-md overflow-y-auto rounded-tl-[28px] border-l border-[#EDEDED] bg-white shadow-2xl"
+            className="no-scrollbar relative ml-auto h-[calc(100dvh-64px)] w-full max-w-md overflow-y-auto rounded-tl-[28px] border-l border-[#EDEDED] bg-white shadow-2xl"
             style={{
               paddingBottom: 'env(safe-area-inset-bottom)',
               paddingLeft: 'env(safe-area-inset-left)',
@@ -755,7 +754,6 @@ function DesktopDropdown({
 }
 
 function MobileSection({
-  id,
   label,
   tagline,
   open,
@@ -791,7 +789,10 @@ function MobileSection({
           className={`text-[#737373] transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
-      {open && <div className="space-y-1 pb-3">{children}</div>}
+      {/* Smooth max-height accordion — design buaze-mobil/buaze.html .accordion-body */}
+      <div className={`accordion-body${open ? ' open' : ''}`}>
+        <div className="space-y-1 pb-3">{children}</div>
+      </div>
     </div>
   );
 }

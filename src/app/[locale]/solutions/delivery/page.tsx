@@ -93,42 +93,42 @@ export default async function DeliveryPage({
   const flow = isTr
     ? [
         {
-          s: '5 ★',
-          t: 'Google + kampanya',
-          d: 'En memnun müşteri Google işletme profiline yönlendirilir + tekrar sipariş için kupon.',
+          s: '01',
+          t: 'Kamuya açık yorum',
+          d: 'Her müşteriye Google işletme profili ve sipariş verdiği paket platformunun yorum bağlantısı tek QR\'da sunulur. Hangisinde yazacağına müşteri karar verir.',
           bg: 'bg-[#C6F24E]',
         },
         {
-          s: '4 ★',
-          t: 'Paket platformu',
-          d: 'Sipariş verilen platforma geri götürülür; yorum bırakması kolaylaştırılır.',
+          s: '02',
+          t: 'Opsiyonel özel kanal',
+          d: 'İsteyen müşteri aynı akışta işletmene özel geri bildirim de bırakır. Bu adım opsiyoneldir; kamuya açık yorum hakkını engellemez.',
           bg: 'bg-[#EAF9B8]',
         },
         {
-          s: '1-3 ★',
-          t: 'Özel feedback',
-          d: 'Müşteri halka açık alanlara gitmez, size özel form doldurur. Düşük puan halka yayılmaz.',
-          bg: 'bg-[#FEE2E2]',
+          s: '03',
+          t: 'Sadakat kuponu',
+          d: 'Yorumu tamamlayan müşteriye tekrar sipariş için kupon önerebilirsin — yıldıza göre değil, tüm tamamlananlara aynı şekilde.',
+          bg: 'bg-[#FAFAFA]',
         },
       ]
     : [
         {
-          s: '5 ★',
-          t: 'Google + campaign',
-          d: 'Happiest customer goes to your Google Business Profile + a coupon for the next order.',
+          s: '01',
+          t: 'Public review',
+          d: 'Every customer sees the Google Business Profile link and the delivery platform review link they ordered from — all from one QR. They choose where to post.',
           bg: 'bg-[#C6F24E]',
         },
         {
-          s: '4 ★',
-          t: 'Delivery platform',
-          d: 'Routed back to the platform where they ordered — review flow is made easy.',
+          s: '02',
+          t: 'Optional private channel',
+          d: 'Anyone who also wants to share private feedback with your business can do so in the same flow. This step is optional and never blocks the public review path.',
           bg: 'bg-[#EAF9B8]',
         },
         {
-          s: '1-3 ★',
-          t: 'Private feedback',
-          d: 'Customer fills in your private form instead of public platforms. Low ratings stay in-house.',
-          bg: 'bg-[#FEE2E2]',
+          s: '03',
+          t: 'Loyalty coupon',
+          d: 'Offer a coupon for the next order to anyone who completes the flow — applied uniformly, not based on rating.',
+          bg: 'bg-[#FAFAFA]',
         },
       ];
 
@@ -136,13 +136,13 @@ export default async function DeliveryPage({
     ? [
         { k: '+312%', l: 'Yemeksepeti yorum artışı · 60 gün' },
         { k: '4.8', l: 'Ortalama Getir puanı · 3. ay' },
-        { k: '-68%', l: 'Negatif halka açık yorum' },
+        { k: '+184%', l: 'Toplam yorum hacmi · ilk 90 gün' },
         { k: '18sn', l: 'Ortalama tarama–yorum süresi' },
       ]
     : [
         { k: '+312%', l: 'Yemeksepeti review growth · 60 days' },
         { k: '4.8', l: 'Average Getir score · month 3' },
-        { k: '-68%', l: 'Negative public reviews' },
+        { k: '+184%', l: 'Total review volume · first 90 days' },
         { k: '18s', l: 'Average scan-to-review time' },
       ];
 
@@ -151,13 +151,13 @@ export default async function DeliveryPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* HERO */}
-      <section className="px-6 sm:px-10 py-16 sm:py-20">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-20">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
           <div>
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Sektör · Paket servis & Dark kitchen' : 'Sector · Delivery & Dark kitchen'}
             </span>
-            <h1 className="mt-4 text-[40px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
+            <h1 className="mt-4 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
               {isTr ? (
                 <>
                   Her pakette bir
@@ -174,7 +174,7 @@ export default async function DeliveryPage({
                 </>
               )}
             </h1>
-            <p className="mt-5 text-[16px] sm:text-[17px] text-[#525252] leading-[1.6] max-w-[540px]">
+            <p className="mt-5 text-[15px] sm:text-[18px] text-[#525252] leading-[1.6] max-w-[540px]">
               {isTr
                 ? 'Yemeksepeti, Getir Yemek ve Trendyol GO\'daki puanınız Google\'dan bile daha önemli. Paket içine koyduğunuz tek QR ile müşteriyi tam olarak yorum bırakacağı platforma yönlendirin.'
                 : 'Your score on Yemeksepeti, Getir Yemek and Trendyol GO can matter more than Google. One QR inside the package routes the customer to the exact platform they\'ll leave a review on.'}
@@ -281,21 +281,21 @@ export default async function DeliveryPage({
       </section>
 
       {/* PLATFORMS GRID */}
-      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[1200px] mx-auto">
           <div className="max-w-[720px]">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Platform entegrasyonları' : 'Platform integrations'}
             </span>
-            <h2 className="mt-4 text-[32px] sm:text-[44px] lg:text-[48px] font-medium leading-[1.02] tracking-[-0.03em]">
+            <h2 className="mt-4 text-[26px] sm:text-[44px] lg:text-[48px] font-medium leading-[1.02] tracking-[-0.03em]">
               {isTr
                 ? 'Tek QR. Dört platform. Dört kat geri bildirim.'
                 : 'One QR. Four platforms. Four times the feedback.'}
             </h2>
             <p className="mt-4 text-[15px] text-[#525252] leading-[1.6]">
               {isTr
-                ? 'Memnun müşteri doğrudan yüksek puan verdiği platforma gider. Memnun olmayan, size özel feedback formuna. Böylece düşük puanlar halka açık yerlerde değil, kendi panelinizde karşılanır.'
-                : 'Happy customers go straight to the platform where they rate high. Unhappy ones land on your private feedback form. Low ratings stay in-house, not public.'}
+                ? 'Her misafire kendi platformunun (Yemeksepeti, Getir, Trendyol GO, Google) yorum bağlantısı tek QR\'da sunulur. İsteyen aynı akışta işletmene özel geri bildirim de bırakır — yıldıza göre dallandırma yok.'
+                : 'Every guest gets a one-tap link to their platform of choice (Yemeksepeti, Getir, Trendyol GO, Google) from a single QR. Anyone who also wants to send private feedback can do so in the same flow — no rating-based gating.'}
             </p>
           </div>
 
@@ -303,7 +303,7 @@ export default async function DeliveryPage({
             {allPlatforms.map((p) => (
               <div
                 key={p.id}
-                className="bg-white border border-[#EDEDED] rounded-2xl p-5 flex flex-col gap-3"
+                className="bz-card p-5 flex flex-col gap-3"
               >
                 <div className="flex justify-between items-start">
                   <PlatformLogo id={p.id} size={44} rounded={10} />
@@ -323,9 +323,9 @@ export default async function DeliveryPage({
       </section>
 
       {/* SMART ROUTING FLOW */}
-      <section className="px-6 sm:px-10 py-20 sm:py-24">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[1200px] mx-auto">
-          <h2 className="text-[32px] sm:text-[44px] lg:text-[48px] font-medium tracking-[-0.03em] leading-[1]">
+          <h2 className="text-[26px] sm:text-[44px] lg:text-[48px] font-medium tracking-[-0.03em] leading-[1]">
             {isTr ? 'Akıllı yönlendirme.' : 'Smart routing.'}
           </h2>
           <p className="mt-3 text-[15px] text-[#525252] max-w-[600px]">
@@ -338,7 +338,7 @@ export default async function DeliveryPage({
             {flow.map((x) => (
               <div
                 key={x.s}
-                className="bg-[#FAFAFA] border border-[#EDEDED] rounded-2xl p-6 flex flex-col gap-3"
+                className="bz-card-soft p-6 flex flex-col gap-3"
               >
                 <div
                   className={`${x.bg} w-16 h-16 rounded-full flex items-center justify-center text-[20px] font-semibold`}
@@ -355,8 +355,8 @@ export default async function DeliveryPage({
       </section>
 
       {/* STATS DARK BANNER */}
-      <section className="px-6 sm:px-10 pb-20 sm:pb-24">
-        <div className="max-w-[1200px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-8 sm:p-12">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
+        <div className="max-w-[1200px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-6 sm:p-12">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((x) => (
               <div key={x.l}>

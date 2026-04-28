@@ -203,7 +203,6 @@ export default function GoogleConversionPanel({
               <RestaurantRow
                 key={rest.id}
                 rest={rest}
-                locale={locale}
                 copy={copy}
                 onClick={onRestaurantClick ? () => onRestaurantClick(rest.id) : undefined}
               />
@@ -263,12 +262,10 @@ function FunnelRow({
 
 function RestaurantRow({
   rest,
-  locale,
   copy,
   onClick,
 }: {
   rest: RestaurantConversion;
-  locale: 'tr' | 'en';
   copy: {
     noGoogleLink: string;
     setLink: string;

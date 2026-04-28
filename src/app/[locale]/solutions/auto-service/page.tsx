@@ -1,4 +1,4 @@
-import { Car, Star, ShieldCheck, TrendingUp, QrCode, Users, Wrench, BarChart3 } from 'lucide-react';
+import { Car, Star, ShieldCheck, TrendingUp, QrCode, Wrench, BarChart3 } from 'lucide-react';
 import SolutionPageLayout from '@/components/marketing/SolutionPageLayout';
 import { IllusAuto } from '@/components/marketing/solution-illustrations';
 import { getTranslations } from '@/lib/translations';
@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   const title = locale === 'tr'
     ? 'Oto Servis & Tamir İtibar Yönetimi — Buaze'
     : 'Auto Service & Repair Reputation Management — Buaze';
@@ -78,8 +77,8 @@ export default async function AutoServiceSolutionPage({ params }: { params: Prom
       icon: <Wrench size={20} className="text-[#64748b]" />,
     },
     {
-      title: isTr ? 'Olumsuz Yorum Önleme' : 'Negative Review Prevention',
-      desc: isTr ? 'Memnun olmayan müşteri önce size gelir. Büyümeden önce sorunu çözün.' : 'Unsatisfied customers come to you first. Solve the problem before it grows.',
+      title: isTr ? 'Hızlı Servis Kurtarma' : 'Fast Service Recovery',
+      desc: isTr ? 'Müşteri kamuya açık yorumun yanında işletmene özel geri bildirim de bırakırsa, anında haberdar olursun. Servis sorunlarını büyümeden çözersin — ama müşterinin Google\'a yazma hakkını engellemeyiz.' : 'When a customer also shares private feedback alongside the public review, you hear about it instantly — solve service issues before they grow, without ever blocking the customer\'s right to post on Google.',
       icon: <ShieldCheck size={20} className="text-[#64748b]" />,
     },
     {

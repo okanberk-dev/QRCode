@@ -27,7 +27,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await prisma.$transaction([
       ...categories.map((c) =>
         prisma.menuCategory.updateMany({
-          where: { id: c.id, restaurantId: id },
+          where: { id: c.id, restaurantId: id, deletedAt: null },
           data: { sortOrder: c.sortOrder },
         }),
       ),

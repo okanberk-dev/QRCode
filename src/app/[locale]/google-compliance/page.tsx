@@ -40,7 +40,7 @@ export default async function GoogleCompliancePage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-14 sm:pt-20 pb-14 sm:pb-20 border-b border-[#EDEDED]">
+      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-20 pb-[60px] sm:pb-20 border-b border-[#EDEDED]">
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
@@ -59,20 +59,20 @@ export default async function GoogleCompliancePage({
             <span className="w-2 h-2 rounded-full bg-[#16A34A] pulse-heartbeat" />
             <span className="pulse-eyebrow text-[#0A0A0A]">{t.google_compliance_badge}</span>
           </div>
-          <h1 className="mt-5 text-[36px] sm:text-[52px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]">
+          <h1 className="mt-5 text-[38px] sm:text-[52px] font-medium leading-[0.95] tracking-[-0.03em] text-[#0A0A0A]">
             {t.google_compliance_page_title}
           </h1>
-          <p className="mt-5 text-[16px] sm:text-[18px] text-[#525252] leading-[1.6] max-w-[640px] mx-auto">
+          <p className="mt-5 text-[15px] sm:text-[18px] text-[#525252] leading-[1.6] max-w-[640px] mx-auto">
             {t.google_compliance_page_subtitle}
           </p>
         </div>
       </section>
 
       {/* ─── Points ─── */}
-      <section className="px-6 sm:px-10 py-16 sm:py-20">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-20">
         <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
           {points.map((point, i) => (
-            <div key={i} className="bg-[#FAFAFA] border border-[#EDEDED] rounded-3xl p-7">
+            <div key={i} className="bz-card p-6 sm:p-7">
               <span className="pulse-eyebrow text-[#A8D62E]">
                 {String(i + 1).padStart(2, '0')}
               </span>
@@ -86,14 +86,14 @@ export default async function GoogleCompliancePage({
       </section>
 
       {/* ─── Policy card ─── */}
-      <section className="px-6 sm:px-10 pb-16 sm:pb-24">
-        <div className="max-w-[1000px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-8 sm:p-12 relative overflow-hidden">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
+        <div className="max-w-[1000px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-6 sm:p-12 relative overflow-hidden">
           <div className="absolute -top-20 -right-20 w-[360px] h-[360px] bg-[#C6F24E]/12 rounded-full blur-[100px] pointer-events-none" />
           <div className="relative max-w-[620px]">
             <span className="pulse-eyebrow text-[#C6F24E]">
               {isTr ? 'POLİTİKA BİLGİSİ' : 'POLICY INFORMATION'}
             </span>
-            <h2 className="mt-4 text-[26px] sm:text-[36px] font-medium text-white tracking-[-0.02em] leading-[1.1]">
+            <h2 className="mt-4 text-[24px] sm:text-[36px] font-medium text-white tracking-[-0.02em] leading-[1.1]">
               {t.google_compliance_policy_title}
             </h2>
             <p className="mt-4 text-[15px] sm:text-[16px] text-white/70 leading-[1.7]">
@@ -112,7 +112,7 @@ export default async function GoogleCompliancePage({
       </section>
 
       {/* ─── Closing quote ─── */}
-      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-6 sm:px-10 py-16 sm:py-20">
+      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-20">
         <div className="max-w-[720px] mx-auto text-center">
           <div className="flex justify-center gap-1 text-[#C6F24E] text-[18px]">
             {[0, 1, 2, 3, 4].map((i) => (

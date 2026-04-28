@@ -5,6 +5,7 @@ import { CreditCard, Download, FileText, Loader2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
+import { PageHeader, Badge } from '@/components/ui';
 
 interface BillingSummary {
   plan: string;
@@ -57,13 +58,16 @@ function AdminBillingBody() {
   const usedPct = summary ? Math.min(100, Math.round((summary.quota.used / Math.max(1, summary.quota.limit)) * 100)) : 0;
 
   return (
-    <div className="space-y-4">
-      <header>
-        <p className="pulse-eyebrow text-[#737373]">{isTr ? 'PANEL / FATURALANDIRMA' : 'PANEL / BILLING'}</p>
-        <h1 className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
-          {isTr ? 'Plan & faturalar' : 'Plan & invoices'}
-        </h1>
-      </header>
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <PageHeader
+        eyebrow={isTr ? 'FATURALANDIRMA' : 'BILLING'}
+        title={isTr ? 'Plan & faturalar' : 'Plan & invoices'}
+        description={
+          isTr
+            ? 'Mevcut planını yönet, fatura geçmişini indir ve aylık kullanım metriklerini takip et.'
+            : 'Manage your plan, download invoice history, and track monthly usage metrics.'
+        }
+      />
 
       {loading ? (
         <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20 text-[#737373]">
@@ -76,7 +80,7 @@ function AdminBillingBody() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="pulse-eyebrow text-[#737373]">{isTr ? 'MEVCUT PLAN' : 'CURRENT PLAN'}</p>
-                  <h2 className="mt-1 text-[24px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+                  <h2 className="mt-1 text-[24px] font-medium text-[#0A0A0A]">
                     {summary?.planLabel || (isTr ? 'Trial' : 'Trial')}
                   </h2>
                   <p className="mt-1 text-[13px] text-[#525252]">
@@ -128,12 +132,17 @@ function AdminBillingBody() {
                   {isTr ? 'Henüz ödeme yöntemi eklenmedi.' : 'No payment method added yet.'}
                 </p>
               )}
-              <button
-                onClick={() => alert(isTr ? 'Yakında bağlanacak' : 'Coming soon')}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] font-medium text-[#525252] hover:border-[#0A0A0A]"
-              >
-                {isTr ? 'Yöntem ekle' : 'Add method'}
-              </button>
+              <div className="mt-4 flex items-center gap-2">
+                <Badge kind="ghost">{isTr ? 'Yakında' : 'Coming soon'}</Badge>
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-2 text-[12px] font-medium text-[#A3A3A3]"
+                >
+                  {isTr ? 'Yöntem ekle' : 'Add method'}
+                </button>
+              </div>
             </div>
           </section>
 
@@ -141,7 +150,7 @@ function AdminBillingBody() {
             <div className="flex items-center justify-between border-b border-[#EDEDED] p-5">
               <div className="flex items-center gap-2">
                 <FileText size={14} className="text-[#0A0A0A]" />
-                <h3 className="text-[16px] font-semibold text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+                <h3 className="text-[16px] font-semibold text-[#0A0A0A]">
                   {isTr ? 'Fatura geçmişi' : 'Invoice history'}
                 </h3>
               </div>

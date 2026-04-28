@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, Flag, Inbox, Loader2, Mail, Search, Send, Sparkles, Star, UserPlus } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { buildReplyTemplate } from '@/lib/scaffolding';
+import { PageHeader } from '@/components/ui';
 
 type Source = 'openai' | 'template' | 'template-fallback' | null;
 type Tone = 'success' | 'info' | 'error';
@@ -56,6 +57,7 @@ export default function AdminReviewsPage() {
 
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [counts, setCounts] = useState<CountsResp | null>(null);
+  const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [tab, setTab] = useState<'all' | 'new' | 'attention' | 'replied'>('all');
@@ -82,6 +84,7 @@ export default function AdminReviewsPage() {
           const list: FeedbackRow[] = data.data ?? [];
           setRows(list);
           setActiveId((c) => c ?? list[0]?.id ?? null);
+          setDegraded(data?.meta?.degraded ?? null);
         }
         if (countsRes.ok) setCounts(await countsRes.json());
       } catch (err) {
@@ -164,6 +167,17 @@ export default function AdminReviewsPage() {
     if (!active || !draft.trim()) return;
     setSending(true);
     const wantsEmail = sendEmail && Boolean(active.customerEmail);
+    // Map suggest-reply's `source` into the wire-format used by FeedbackReply.
+    // Operators who edit the AI text and send it still count as ai_copilot —
+    // that's the model surfaced AI took the first pass; analytics tracks it.
+    // If the operator typed the reply from scratch (`aiSource` null), we
+    // record manual.
+    const replySource =
+      aiSource === 'openai'
+        ? 'ai_copilot'
+        : aiSource === 'template' || aiSource === 'template-fallback'
+          ? 'template_fallback'
+          : 'manual';
     try {
       const res = await fetch(`/api/feedback/${active.id}/reply`, {
         method: 'POST',
@@ -173,6 +187,7 @@ export default function AdminReviewsPage() {
           channel: wantsEmail ? 'email' : 'internal',
           sendEmail: wantsEmail,
           locale,
+          source: replySource,
         }),
       });
       if (res.ok) {
@@ -275,16 +290,29 @@ export default function AdminReviewsPage() {
         : 'bg-[#F5F5F5] text-[#0A0A0A]';
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">{isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS'}</p>
-          <h1 className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
-            {isTr ? 'Yorum gelen kutusu' : 'Review inbox'}
-          </h1>
+    <div className="mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <PageHeader
+        eyebrow={isTr ? 'YORUMLAR' : 'REVIEWS'}
+        title={isTr ? 'Yorum gelen kutusu' : 'Review inbox'}
+        description={
+          isTr
+            ? 'Tüm restoranlardan gelen yorumları tek panelden incele, yanıtla, işaretle veya sahibi atan.'
+            : 'Inspect, reply, flag, or assign reviews from all restaurants in one inbox.'
+        }
+        actions={
+          notice ? (
+            <span className={`pulse-eyebrow rounded-full px-3 py-1.5 ${noticeTone}`}>{notice.msg}</span>
+          ) : null
+        }
+      />
+
+      {degraded && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-900">
+          {isTr
+            ? `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — veritabanı senkronizasyonu bekleniyor.`
+            : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — database sync pending.`}
         </div>
-        {notice && <span className={`pulse-eyebrow rounded-full px-3 py-1.5 ${noticeTone}`}>{notice.msg}</span>}
-      </header>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <aside className="rounded-2xl border border-[#EDEDED] bg-white">
@@ -390,7 +418,7 @@ export default function AdminReviewsPage() {
                   <p className="pulse-eyebrow text-[#737373]">
                     {active.restaurant?.name || (isTr ? 'İşletme' : 'Location')} · {timeAgo(active.createdAt, isTr)}
                   </p>
-                  <h2 className="mt-0.5 text-[20px] font-semibold text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+                  <h2 className="mt-0.5 text-[20px] font-semibold text-[#0A0A0A]">
                     {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
                   </h2>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -512,7 +540,7 @@ export default function AdminReviewsPage() {
                         onChange={(e) => setSendEmail(e.target.checked)}
                         className="h-4 w-4 accent-[#0A0A0A]"
                       />
-                      <Mail size={12} className="text-[#525252]" />
+                      <Mail size={12} className="text-current opacity-60" />
                       <span>
                         {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'} ·
                         <span className="ml-1 text-[#737373]">{active.customerEmail}</span>

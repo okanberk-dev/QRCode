@@ -59,13 +59,13 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
     ? [
         { t: 'Tedavi sonrası anket', d: 'Randevu sisteminden otomatik tetiklenebilir. Hastaya SMS/QR ile gönderilir.' },
         { t: 'Doktor bazlı raporlama', d: 'Her hekimin bireysel memnuniyet skoru ve yorum dağılımı ayrı görünür.' },
-        { t: "Google'a yönlendirme", d: "Memnun hasta Google'a, şikayet eden hasta iç forma — KVKK uyumlu akış." },
+        { t: "Google bağlantısı + opsiyonel iç kanal", d: "Her hastaya Google yorum bağlantısı sunulur; isteyen aynı akışta kliniğe özel geri bildirim de bırakır — KVKK ve Google politikalarıyla uyumlu." },
         { t: 'Çok dilli destek', d: 'Medikal turizm için otomatik dil tespiti, Arapça dahil 12 dil.' },
       ]
     : [
         { t: 'Post-treatment survey', d: 'Auto-triggered from your scheduling system; delivered to the patient via SMS/QR.' },
         { t: 'Per-doctor reporting', d: 'Each clinician sees their own satisfaction score and review distribution.' },
-        { t: 'Google redirect', d: 'Happy patients route to Google, complaints stay internal — KVKK-compliant flow.' },
+        { t: 'Google link + optional private channel', d: 'Every patient sees the public Google review link; private feedback to the clinic is an optional extra step in the same flow — KVKK and Google policy compliant.' },
         { t: 'Multilingual support', d: 'Auto language detection for medical tourism — 12 languages including Arabic.' },
       ];
 
@@ -74,14 +74,14 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero — light gray bg */}
-      <section className="bg-[#FAFAFA] px-6 sm:px-10 py-16 sm:py-20">
+      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-20">
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-12">
           <div>
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'SEKTÖR · KLİNİK & SAĞLIK' : 'SECTOR · CLINIC & HEALTHCARE'}
             </span>
             <h1
-              className="mt-3 text-[40px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+              className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? (
@@ -102,7 +102,7 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
                 </>
               )}
             </h1>
-            <p className="mt-5 max-w-[500px] text-[16px] leading-[1.6] text-[#525252]">
+            <p className="mt-5 max-w-[500px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">
               {isTr
                 ? 'KVKK uyumlu hasta geri bildirimi. Tedavi sonrası QR ile deneyim toplayın, Google profilinizi güçlendirin. Sağlık sektörüne özel hassas akış.'
                 : 'KVKK-compliant patient feedback. Capture experience after treatment via QR and strengthen your Google profile. A flow tailored to healthcare.'}
@@ -176,10 +176,10 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
       </section>
 
       {/* 3-stat grid */}
-      <section className="px-6 sm:px-10 py-14 sm:py-16">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
         <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 md:grid-cols-3">
           {stats.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-[#EDEDED] bg-white p-6">
+            <div key={s.label} className="bz-card p-6">
               <div
                 className="text-[40px] sm:text-[48px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
                 style={{ fontFamily: 'var(--font-heading)' }}
@@ -193,7 +193,7 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
       </section>
 
       {/* 4-feature 2-col grid */}
-      <section className="px-6 sm:px-10 pb-20 sm:pb-24">
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
         <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-6 md:grid-cols-2">
           {features.map((f) => (
             <div key={f.t} className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] p-6">
@@ -210,10 +210,10 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
       </section>
 
       {/* Dark CTA band */}
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-24">
+      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="mx-auto max-w-[900px] text-center">
           <h2
-            className="text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
+            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Her hasta, saygı ile.' : 'Every patient, with respect.'}

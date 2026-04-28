@@ -21,10 +21,7 @@ export default function AdminError({
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
           <AlertTriangle size={24} strokeWidth={2} />
         </div>
-        <h1
-          className="text-[26px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A]"
-          style={{ fontFamily: 'var(--font-heading)' }}
-        >
+        <h1 className="text-[26px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A]">
           Panel yüklenemedi.
         </h1>
         <p className="mt-3 text-[14px] text-[#737373] leading-relaxed">
@@ -49,7 +46,7 @@ export default function AdminError({
             className="min-h-[44px] w-full flex items-center justify-center gap-2 bg-white text-[#0A0A0A] border border-[#E5E5E5] font-medium py-3 rounded-full hover:border-[#0A0A0A] transition-colors text-[14px]"
           >
             <Home size={15} strokeWidth={2} />
-            Dashboard'a dön
+            Dashboard&apos;a dön
           </Link>
         </div>
       </div>

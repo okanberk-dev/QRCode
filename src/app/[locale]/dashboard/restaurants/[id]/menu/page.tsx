@@ -14,10 +14,12 @@ import {
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import PublicMenuView, { type MenuCategoryView, type MenuItemView, type RestaurantView } from '@/components/menu/PublicMenuView';
+import { Modal, useConfirmDialog } from '@/components/ui';
 import { MENU_BADGES, MENU_THEMES, type MenuBadge, type MenuTheme } from '@/lib/validations';
 import { formatPrice, parsePriceInput } from '@/lib/format';
 import { compressImage } from '@/lib/client-image';
 import type { Locale } from '@/lib/translations';
+import { AlertBanner } from '@/components/ui';
 
 interface RestaurantShape extends RestaurantView {
   menuEnabled: boolean;
@@ -61,6 +63,7 @@ export default function RestaurantMenuBuilderPage() {
   const [publishBusy, setPublishBusy] = useState(false);
   const [themeSaving, setThemeSaving] = useState(false);
   const [qrModal, setQrModal] = useState(false);
+  const [confirmDialog, askConfirm] = useConfirmDialog();
 
   const copy = useMemo(
     () => ({
@@ -316,8 +319,18 @@ export default function RestaurantMenuBuilderPage() {
     setBusy(false);
   };
 
-  const deleteCategory = async (categoryId: string) => {
-    if (!confirm(copy.deleteCategoryConfirm)) return;
+  const deleteCategory = (categoryId: string) => {
+    askConfirm({
+      title: isTr ? 'Kategori silinsin mi?' : 'Delete category?',
+      body: copy.deleteCategoryConfirm,
+      confirmLabel: isTr ? 'Sil' : 'Delete',
+      cancelLabel: isTr ? 'İptal' : 'Cancel',
+      variant: 'danger',
+      onConfirm: () => doDeleteCategory(categoryId),
+    });
+  };
+
+  const doDeleteCategory = async (categoryId: string) => {
     setError(null);
     try {
       const res = await fetch(`/api/restaurants/${id}/menu/categories/${categoryId}`, { method: 'DELETE' });
@@ -402,8 +415,18 @@ export default function RestaurantMenuBuilderPage() {
     setBusy(false);
   };
 
-  const deleteItem = async (itemId: string) => {
-    if (!confirm(copy.deleteItemConfirm)) return;
+  const deleteItem = (itemId: string) => {
+    askConfirm({
+      title: isTr ? 'Ürün silinsin mi?' : 'Delete item?',
+      body: copy.deleteItemConfirm,
+      confirmLabel: isTr ? 'Sil' : 'Delete',
+      cancelLabel: isTr ? 'İptal' : 'Cancel',
+      variant: 'danger',
+      onConfirm: () => doDeleteItem(itemId),
+    });
+  };
+
+  const doDeleteItem = async (itemId: string) => {
     setError(null);
     try {
       const res = await fetch(`/api/restaurants/${id}/menu/items/${itemId}`, { method: 'DELETE' });
@@ -488,15 +511,15 @@ export default function RestaurantMenuBuilderPage() {
   }
   if (!restaurant) {
     return (
-      <div className="p-10 text-center text-sm font-bold text-red-600">{error ?? 'Yüklenemedi'}</div>
+      <div className="p-10 text-center text-sm font-bold text-[#DC2626]">{error ?? 'Yüklenemedi'}</div>
     );
   }
 
   const status = !restaurant.menuEnabled
     ? { label: copy.disabled, dot: 'bg-[#737373]', text: 'text-[#737373]' }
     : restaurant.menuPublished
-    ? { label: copy.published, dot: 'bg-emerald-500', text: 'text-emerald-700' }
-    : { label: copy.draft, dot: 'bg-amber-500', text: 'text-amber-700' };
+    ? { label: copy.published, dot: 'bg-[#16A34A]', text: 'text-[#166534]' }
+    : { label: copy.draft, dot: 'bg-[#D97706]', text: 'text-[#92400E]' };
 
   if (previewMode) {
     return (
@@ -599,7 +622,7 @@ export default function RestaurantMenuBuilderPage() {
                 disabled={publishBusy || !restaurant.menuEnabled}
                 className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-medium shadow-sm transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
                   restaurant.menuPublished
-                    ? 'bg-amber-50 text-amber-800 ring-1 ring-amber-200 hover:bg-amber-100'
+                    ? 'bg-[#FFFBEB] text-[#92400E] ring-1 ring-[#FDE68A] hover:bg-[#FEF3C7]'
                     : 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
                 }`}
               >
@@ -609,19 +632,17 @@ export default function RestaurantMenuBuilderPage() {
             </div>
           </div>
           {!restaurant.menuEnabled && (
-            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <AlertTriangle size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-amber-700" />
-              <p className="text-[13px] leading-relaxed text-amber-900">{copy.disabledByAdmin}</p>
-            </div>
+            <AlertBanner kind="warn" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
+              {copy.disabledByAdmin}
+            </AlertBanner>
           )}
         </div>
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4">
-          <AlertTriangle size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-red-600" />
-          <p className="text-[13px] leading-relaxed text-red-700">{error}</p>
-        </div>
+        <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
+          {error}
+        </AlertBanner>
       )}
 
       {/* Menu Design (theme + accent color + logo) */}
@@ -804,6 +825,9 @@ export default function RestaurantMenuBuilderPage() {
           onClose={() => setQrModal(false)}
         />
       )}
+
+      {/* Imperative confirm dialog (deleteCategory + deleteItem) */}
+      {confirmDialog}
     </div>
   );
 }
@@ -826,7 +850,7 @@ function CategoryModal({
   const [isVisible, setIsVisible] = useState(data.isVisible ?? true);
 
   return (
-    <Modal title={mode === 'create' ? copy.addCategory : copy.editCategory} onClose={onClose}>
+    <Modal size={620} title={mode === 'create' ? copy.addCategory : copy.editCategory} onClose={onClose}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -839,7 +863,7 @@ function CategoryModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.description}>
@@ -847,10 +871,10 @@ function CategoryModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full resize-none bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
-        <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
+        <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
           <input type="checkbox" checked={isVisible} onChange={(e) => setIsVisible(e.target.checked)} className="h-4 w-4 accent-[#C6F24E]" />
           <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.visible}</span>
         </label>
@@ -917,7 +941,7 @@ function ItemModal({
   };
 
   return (
-    <Modal title={mode === 'create' ? copy.addItem : copy.editItem} onClose={onClose}>
+    <Modal size={680} title={mode === 'create' ? copy.addItem : copy.editItem} onClose={onClose}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -946,7 +970,7 @@ function ItemModal({
             required
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           >
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -958,7 +982,7 @@ function ItemModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.description}>
@@ -966,7 +990,7 @@ function ItemModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full resize-none bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.price}>
@@ -977,7 +1001,7 @@ function ItemModal({
               value={priceInput}
               onChange={(e) => setPriceInput(e.target.value)}
               placeholder="0,00"
-              className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 pr-12 text-[15px] tabular-nums text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+              className="w-full bz-card px-4 py-3 pr-12 text-[15px] tabular-nums text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
               style={{ fontFamily: 'var(--font-mono)' }}
             />
             <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[13px] font-medium text-[#A3A3A3]">₺</span>
@@ -1061,44 +1085,23 @@ function ItemModal({
           </div>
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
+          <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
             <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="h-4 w-4 accent-[#C6F24E]" />
             <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.available}</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
+          <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
             <input type="checkbox" checked={isOutOfStock} onChange={(e) => setIsOutOfStock(e.target.checked)} className="h-4 w-4 accent-red-500" />
             <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.outOfStock}</span>
           </label>
         </div>
         {formError && (
-          <div className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-3">
-            <AlertTriangle size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-red-600" />
-            <p className="text-[13px] text-red-700">{formError}</p>
-          </div>
+          <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
+            {formError}
+          </AlertBanner>
         )}
         <ModalActions busy={busy} copy={copy} onClose={onClose} />
       </form>
     </Modal>
-  );
-}
-
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-6">
-      <div className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-[#EDEDED] bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:rounded-3xl sm:pb-0">
-        <div className="relative border-b border-[#EDEDED] px-6 py-5 sm:px-8 sm:py-6">
-          <h2 className="pr-10 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A] sm:text-[22px]">{title}</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
-          >
-            <X size={18} strokeWidth={2} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-6 py-5 sm:px-8 sm:py-7">{children}</div>
-      </div>
-    </div>
   );
 }
 
@@ -1188,7 +1191,7 @@ function SortableCategoryRow({
             {!category.isVisible && (
               <>
                 <span className="h-0.5 w-0.5 rounded-full bg-[#EDEDED]" aria-hidden />
-                <span className="inline-flex items-center gap-1 text-amber-700">
+                <span className="inline-flex items-center gap-1 text-[#92400E]">
                   <EyeOff size={10} strokeWidth={2.25} />
                   {copy.hidden}
                 </span>
@@ -1206,7 +1209,7 @@ function SortableCategoryRow({
         </button>
         <button
           onClick={onToggleVisible}
-          className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${category.isVisible ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-amber-600'}`}
+          className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${category.isVisible ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-[#D97706]'}`}
           title={copy.toggleVisible}
           aria-label={copy.toggleVisible}
         >
@@ -1215,7 +1218,7 @@ function SortableCategoryRow({
         <button onClick={onEdit} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A]" title={copy.editCategory} aria-label={copy.editCategory}>
           <Edit2 size={14} strokeWidth={2} />
         </button>
-        <button onClick={onDelete} className="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50" title={copy.delete} aria-label={copy.delete}>
+        <button onClick={onDelete} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#DC2626] transition-colors hover:bg-[#FEF2F2]" title={copy.delete} aria-label={copy.delete}>
           <Trash2 size={14} strokeWidth={2} />
         </button>
       </div>
@@ -1287,7 +1290,7 @@ function SortableItemRow({
               </span>
             )}
             {item.isOutOfStock && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600 ring-1 ring-red-100">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[10px] font-medium text-[#991B1B] ring-1 ring-[#FECACA]">
                 <AlertTriangle size={10} strokeWidth={2.25} />
                 {copy.outOfStock}
               </span>
@@ -1329,7 +1332,7 @@ function SortableItemRow({
         </button>
         <button
           onClick={onToggleAvailable}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isAvailable ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-amber-600'}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isAvailable ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-[#D97706]'}`}
           title={copy.toggleVisible}
           aria-label={copy.toggleVisible}
         >
@@ -1337,7 +1340,7 @@ function SortableItemRow({
         </button>
         <button
           onClick={onToggleOutOfStock}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isOutOfStock ? 'text-red-500' : 'text-[#525252] hover:text-[#0A0A0A]'}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isOutOfStock ? 'text-[#DC2626]' : 'text-[#525252] hover:text-[#0A0A0A]'}`}
           title={copy.toggleOutOfStock}
           aria-label={copy.toggleOutOfStock}
         >
@@ -1346,7 +1349,7 @@ function SortableItemRow({
         <button onClick={onEdit} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A]" aria-label={copy.editItem || 'Edit'}>
           <Edit2 size={16} strokeWidth={2} />
         </button>
-        <button onClick={onDelete} className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50" aria-label={copy.delete}>
+        <button onClick={onDelete} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#DC2626] transition-colors hover:bg-[#FEF2F2]" aria-label={copy.delete}>
           <Trash2 size={16} strokeWidth={2} />
         </button>
       </div>
@@ -1685,7 +1688,7 @@ function MenuQrModal({
   };
 
   return (
-    <Modal title={copy.menuQr} onClose={onClose}>
+    <Modal size={520} title={copy.menuQr} onClose={onClose}>
       <div className="space-y-5">
         <div className="flex items-center justify-center rounded-3xl bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-6 ring-1 ring-[#EDEDED] sm:p-8">
           {previewSvg ? (
@@ -1695,8 +1698,8 @@ function MenuQrModal({
             />
           ) : err ? (
             <div className="flex aspect-square w-full max-w-[240px] flex-col items-center justify-center gap-2 text-center">
-              <AlertTriangle size={24} strokeWidth={2} className="text-red-600" />
-              <p className="text-[13px] text-red-700">{err}</p>
+              <AlertTriangle size={24} strokeWidth={2} className="text-[#DC2626]" />
+              <p className="text-[13px] text-[#991B1B]">{err}</p>
             </div>
           ) : (
             <div className="flex aspect-square w-full max-w-[240px] items-center justify-center">

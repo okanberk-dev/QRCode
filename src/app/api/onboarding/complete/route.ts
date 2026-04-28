@@ -3,6 +3,9 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { sendMail } from '@/lib/email';
+import { pulseLayout } from '@/lib/email/layout';
+import { renderEyebrow, renderH1, renderP, renderButton, spacer } from '@/lib/email/components';
+import { PULSE } from '@/lib/email/tokens';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,12 +80,35 @@ export async function POST(req: NextRequest) {
 
   if (actor.email) {
     const bizName = bizNameRaw || null;
-    const greetingBiz = bizName ? ` · ${bizName}` : '';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+    const dashboardUrl = `${appUrl}/tr/dashboard`;
+    const subject = 'Buaze kurulumu tamamlandı — panele hoş geldiniz';
+    const innerContent = `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td class="bz-pad" style="padding:40px 40px 24px;">
+            ${renderEyebrow('Kurulum · Tamamlandı', PULSE.success)}
+            ${spacer(14)}
+            ${renderH1(bizName ? `${escape(bizName)} hazır.` : 'Hazırsın.', { size: 36 })}
+            ${spacer(16)}
+            ${renderP('Buaze kurulumun tamamlandı. Panelden QR\'larını indirebilir, yorumlarını izleyebilir, ekibini davet edebilirsin.')}
+            ${spacer(28)}
+            ${renderButton({ href: dashboardUrl, label: 'Panele git →', size: 'lg' })}
+          </td>
+        </tr>
+      </table>
+    `;
     sendMail({
       to: actor.email,
-      subject: 'Buaze kurulumu tamamlandı — panele hoş geldiniz',
-      text: `Merhaba${greetingBiz},\n\nBuaze kurulumu tamamlandı. Panelden QR'larınızı indirebilir, yorumlarınızı izleyebilirsiniz.\n\nhttps://buaze.com/tr/dashboard`,
-      html: `<p>Merhaba${greetingBiz ? ` <strong>${escape(bizName!)}</strong>` : ''},</p><p>Buaze kurulumu tamamlandı. Panelden QR'larınızı indirebilir, yorumlarınızı izleyebilirsiniz.</p><p><a href="https://buaze.com/tr/dashboard">Panele git →</a></p>`,
+      subject,
+      text: `${bizName ? bizName + ' · ' : ''}Buaze kurulumu tamamlandı. Panele git: ${dashboardUrl}`,
+      html: pulseLayout({
+        subject,
+        preheader: 'Panelden QR\'larını indirebilir, yorumlarını izleyebilir, ekibini davet edebilirsin.',
+        content: innerContent,
+        eyebrow: 'Kurulum',
+        footer: { locale: 'tr' },
+      }),
     }).catch((err) => {
       console.error('[onboarding/complete] welcome mail failed', err);
     });

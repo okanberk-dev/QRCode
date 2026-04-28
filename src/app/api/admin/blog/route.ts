@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get('search')?.trim();
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.BlogPostWhereInput = {};
     if (locale && VALID_LOCALES.has(locale)) {
       where.locale = locale;
     }
@@ -137,8 +138,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ post }, { status: 201 });
-  } catch (error: any) {
-    if (error?.code === 'P2002') {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return ApiErrors.conflict('Bu slug ve dil kombinasyonuyla bir yazı zaten mevcut');
     }
     console.error('[API blog POST]', error);

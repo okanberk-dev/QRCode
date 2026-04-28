@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Loader2, Save, Trash2 } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
+import { AlertBanner, ConfirmDialog, PageHeader } from '@/components/ui';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
 
@@ -94,11 +95,10 @@ export default function DashboardRestaurantDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(locale === 'tr' ? 'Bu işletme pasife alınacak. Devam edilsin mi?' : 'This location will be deactivated. Continue?')) {
-      return;
-    }
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const handleDelete = async () => {
+    setConfirmDelete(false);
     setDeleting(true);
     try {
       const response = await fetch(`/api/restaurants/${id}`, { method: 'DELETE' });
@@ -125,51 +125,44 @@ export default function DashboardRestaurantDetailPage() {
   }
 
   return (
-    <div
-      className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-8 lg:py-10"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
-      <div className="flex items-center gap-3">
-        <Link
-          href={`/${locale}/dashboard/restaurants`}
-          className="rounded-full border border-[#EDEDED] bg-white p-2.5 hover:border-[#0A0A0A] transition-colors"
-          aria-label="back"
-        >
-          <ArrowLeft size={16} strokeWidth={2} />
-        </Link>
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">
-            {locale === 'tr' ? 'KONUMLAR / DETAY' : 'LOCATIONS / DETAIL'}
-          </p>
-          <h1
-            className="mt-1 text-[24px] sm:text-[28px] font-semibold text-[#0A0A0A] tracking-[-0.02em] leading-[1.1]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            {formData.name || (locale === 'tr' ? 'İşletme' : 'Location')}
-          </h1>
-          <div className="mt-0.5 flex items-center gap-1.5">
-            <p className="pulse-eyebrow text-[#737373]">/{formData.slug}</p>
+    <div className="mx-auto max-w-[1100px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      <Link
+        href={`/${locale}/dashboard/restaurants`}
+        className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors"
+      >
+        <ArrowLeft size={12} strokeWidth={2} />
+        {locale === 'tr' ? 'Konumlara dön' : 'Back to locations'}
+      </Link>
+      <PageHeader
+        eyebrow={locale === 'tr' ? 'KONUM DETAYI' : 'LOCATION DETAIL'}
+        title={formData.name || (locale === 'tr' ? 'İşletme' : 'Location')}
+        description={
+          <span className="inline-flex items-center gap-1.5">
+            <span className="bz-mono" style={{ fontSize: 12 }}>/{formData.slug}</span>
             <CopyUrlButton
               url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${formData.slug}`}
             />
-          </div>
-        </div>
-      </div>
+          </span>
+        }
+      />
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">{error}</div>
+        <AlertBanner kind="danger" onDismiss={() => setError('')}>
+          {error}
+        </AlertBanner>
       )}
       {success && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-medium text-emerald-700">{success}</div>
+        <AlertBanner kind="success" onDismiss={() => setSuccess('')}>
+          {success}
+        </AlertBanner>
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
-        <div className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+        <div className="bz-card p-6 sm:p-7">
           <div className="mb-6 flex items-center gap-3">
             <div className="h-5 w-1.5 rounded-full" style={{ backgroundColor: formData.primaryColor }} />
             <h2
-              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
             >
               {locale === 'tr' ? 'Temel Bilgiler' : 'Basics'}
             </h2>
@@ -258,12 +251,11 @@ export default function DashboardRestaurantDetailPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-7">
+        <div className="bz-card p-6 sm:p-7">
           <div className="mb-6 flex items-center gap-3">
             <ExternalLink size={16} strokeWidth={2} className="text-[#0A0A0A]" />
             <h2
-              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
             >
               {locale === 'tr' ? 'Harici Bağlantılar ve Bildirimler' : 'External Links & Notifications'}
             </h2>
@@ -344,9 +336,9 @@ export default function DashboardRestaurantDetailPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => setConfirmDelete(true)}
             disabled={deleting}
-            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-5 py-2.5 text-[13px] font-medium text-red-600 hover:bg-red-100 disabled:opacity-60 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#FECACA] bg-[#FEF2F2] px-5 py-2.5 text-[13px] font-medium text-[#DC2626] hover:bg-[#FEE2E2] disabled:opacity-60 transition-colors"
           >
             {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 size={14} strokeWidth={2} />}
             {locale === 'tr' ? 'Pasife al' : 'Deactivate'}
@@ -372,6 +364,22 @@ export default function DashboardRestaurantDetailPage() {
           </div>
         </div>
       </form>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title={locale === 'tr' ? 'İşletmeyi pasife al?' : 'Deactivate location?'}
+        body={
+          locale === 'tr'
+            ? 'Bu işletme pasife alınacak. Müşteriler artık QR\'ı tarayamaz; istediğin zaman tekrar aktifleştirebilirsin.'
+            : 'This location will be deactivated. Customers can no longer scan its QR; you can reactivate any time.'
+        }
+        confirmLabel={locale === 'tr' ? 'Pasife al' : 'Deactivate'}
+        cancelLabel={locale === 'tr' ? 'İptal' : 'Cancel'}
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

@@ -50,7 +50,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const trimmed = body.name.trim().slice(0, 120);
     updates.name = trimmed || null;
   }
-  if (Array.isArray(body.locations) && body.locations.every((x) => typeof x === 'string')) {
+  if (body.locations !== undefined && body.locations !== null) {
+    if (
+      !Array.isArray(body.locations) ||
+      !body.locations.every((x) => typeof x === 'string' && x.length <= 64)
+    ) {
+      return NextResponse.json({ error: 'invalid_locations' }, { status: 400 });
+    }
     updates.locations = body.locations.slice(0, 40);
   }
 

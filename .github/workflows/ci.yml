@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  # Run on every PR regardless of base branch — stacked PRs (base = another
+  # claude/* branch) need validation too. CLAUDE.md §21.22 documents the
+  # stacked workflow; this filter would otherwise skip non-main bases and
+  # let typo'd code through.
+  pull_request:
+  push:
+    branches: [main]
+
+# Auto-cancel a stale run when a new commit lands on the same PR. Saves CI
+# minutes and surfaces only the latest verdict.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate (tsc + lint + prisma)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install deps
+        # Use npm ci against the lockfile so installs are deterministic and
+        # fail fast on lockfile drift. --no-audit shaves ~5s of unrelated noise.
+        run: npm ci --no-audit --no-fund --prefer-offline
+        env:
+          # Skip prisma's `postinstall` here — the validate step below runs
+          # `prisma generate` explicitly with a stub DATABASE_URL.
+          PRISMA_SKIP_POSTINSTALL_GENERATE: '1'
+
+      - name: Prisma generate (no DB)
+        # `db push` would need a real database; `generate` only needs the
+        # schema and produces the client used by tsc.
+        run: npx prisma generate
+        env:
+          # Stub URLs — prisma generate ignores them but the schema's
+          # env() calls require the variables to be defined.
+          DATABASE_URL: 'postgresql://stub:stub@localhost:5432/stub'
+          DIRECT_URL: 'postgresql://stub:stub@localhost:5432/stub'
+
+      - name: Prisma schema validate
+        run: npx prisma validate
+        env:
+          DATABASE_URL: 'postgresql://stub:stub@localhost:5432/stub'
+          DIRECT_URL: 'postgresql://stub:stub@localhost:5432/stub'
+
+      - name: TypeScript typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: ESLint
+        # Direct `eslint` CLI (Next 16 ready). `next lint` is deprecated and
+        # additionally requires interactive setup which CI can't satisfy.
+        # We don't pass `--max-warnings` — historical warnings (~210, mostly
+        # `no-explicit-any`) shouldn't block PRs; only fresh errors do. New
+        # rules can be tightened progressively as cleanup PRs ship.
+        run: npx eslint .

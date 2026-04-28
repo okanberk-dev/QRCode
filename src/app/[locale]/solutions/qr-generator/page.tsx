@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import QRGeneratorForm from '@/components/marketing/QRGeneratorForm';
@@ -65,7 +63,6 @@ export default async function QRGeneratorPage({
   }
 
   const t = getTranslations(locale);
-  const base = `/${locale}`;
   const isTr = locale === 'tr';
 
   const jsonLd = {
@@ -108,18 +105,6 @@ export default async function QRGeneratorPage({
     ],
   };
 
-  const benefits = isTr
-    ? [
-        { title: 'Saniyeler içinde hazır', desc: 'Kayıt gerekmez — URL girin, QR kodu indirin.' },
-        { title: 'Süresiz çalışır', desc: 'Bağlantı aktif olduğu sürece QR kodu işler.' },
-        { title: 'Yüksek çözünürlük', desc: 'Menü kartları, vitrinler ve baskı için ideal.' },
-      ]
-    : [
-        { title: 'Ready in seconds', desc: 'No signup required — enter a URL, download your QR.' },
-        { title: 'Works forever', desc: 'Your QR stays valid as long as the link works.' },
-        { title: 'High resolution', desc: 'Perfect for menus, window stickers, and print.' },
-      ];
-
   return (
     <div className="min-h-screen overflow-x-clip bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <script
@@ -130,110 +115,31 @@ export default async function QRGeneratorPage({
       <MarketingNavbar locale={locale} t={t} />
 
       <main>
-        {/* ─── Hero ─── */}
-        <section className="relative overflow-hidden pt-12 sm:pt-16 pb-10 px-6 sm:px-10">
-          <svg
-            aria-hidden
-            className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
-            width="100%"
-            height="100%"
+        {/* ─── Hero (design 1:1: site-more.jsx:13-21) ─── */}
+        <section className="px-5 sm:px-10 lg:px-12 pt-[60px] pb-10 text-center">
+          <span className="pulse-eyebrow text-[#737373]">
+            {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
+          </span>
+          <h1
+            className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[1.02] sm:leading-[1] tracking-[-0.035em] text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-heading)' }}
           >
-            <defs>
-              <pattern id="qrGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#qrGrid)" />
-          </svg>
-
-          <div className="relative max-w-[900px] mx-auto text-center">
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
-            </span>
-            <h1
-              className="mt-3 text-[40px] sm:text-[56px] lg:text-[68px] font-medium leading-[1] tracking-[-0.035em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              {isTr ? 'QR kod oluşturucu.' : 'QR code generator.'}
-            </h1>
-            <p className="mx-auto mt-4 max-w-[560px] text-[16px] leading-[1.6] text-[#525252] sm:text-[17px]">
-              {isTr
-                ? 'Hesap açmadan, ücretsiz, sınırsız QR kod üret. Markana göre özelleştir, PDF olarak indir.'
-                : 'Generate unlimited QR codes for free — no account required. Customize to your brand, download as PDF.'}
-            </p>
-          </div>
+            {isTr ? 'QR kod oluşturucu.' : 'QR code generator.'}
+          </h1>
+          <p className="mx-auto mt-3.5 max-w-[560px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">
+            {isTr
+              ? 'Hesap açmadan, ücretsiz, sınırsız QR kod üret. Markana göre özelleştir, PDF olarak indir.'
+              : 'Generate unlimited QR codes for free — no account required. Customize to your brand, download as PDF.'}
+          </p>
         </section>
 
-        {/* ─── Generator ─── */}
-        <section aria-labelledby="generator-title" className="pb-16 sm:pb-20 px-6 sm:px-10">
-          <div className="max-w-[1200px] mx-auto">
-            <div className="bg-white border border-[#EDEDED] rounded-3xl shadow-[0_8px_24px_rgba(10,10,10,0.04)] p-6 sm:p-10 lg:p-12">
-              <span className="pulse-eyebrow text-[#737373]">
-                {isTr ? 'Oluşturucu' : 'Generator'}
-              </span>
-              <h2
-                id="generator-title"
-                className="mt-3 text-[24px] sm:text-[30px] font-medium text-[#0A0A0A] tracking-[-0.02em] mb-2"
-              >
-                {isTr ? 'Bağlantınızı girin' : 'Paste your link'}
-              </h2>
-              <p className="text-[14px] text-[#525252] mb-8 max-w-[560px] leading-relaxed">
-                {isTr
-                  ? "Tam URL'yi yapıştırın — QR kodu ve indirme hemen sağda hazır olacak."
-                  : 'Paste the full URL — the QR code and download will appear on the right immediately.'}
-              </p>
-              <QRGeneratorForm locale={locale} />
-            </div>
-          </div>
-        </section>
-
-        {/* ─── Benefits ─── */}
+        {/* ─── Generator (design 1:1: site-more.jsx:23-87) ─── */}
         <section
-          aria-labelledby="benefits-title"
-          className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-16 sm:py-20"
+          aria-label={isTr ? 'QR kod oluşturucu' : 'QR code generator'}
+          className="px-5 sm:px-10 lg:px-12 pt-5 pb-20"
         >
           <div className="max-w-[1200px] mx-auto">
-            <div className="text-center max-w-[640px] mx-auto mb-12">
-              <span className="pulse-eyebrow text-[#737373]">
-                {isTr ? 'Neden Buaze' : 'Why Buaze'}
-              </span>
-              <h2
-                id="benefits-title"
-                className="mt-4 text-[28px] sm:text-[40px] font-medium text-[#0A0A0A] tracking-[-0.03em] leading-[1.05]"
-              >
-                {isTr ? 'Basit bir QR kodun ötesi.' : 'Beyond a simple QR code.'}
-              </h2>
-              <p className="mt-4 text-[15px] text-[#525252] leading-relaxed">
-                {isTr
-                  ? 'Bu araç ücretsiz. Buaze hesabı açtığınızda taramaları takip edin, yorum toplayın, dijital itibarınızı büyütün.'
-                  : 'This tool is free. With a Buaze account you can track scans, collect reviews, and grow your digital reputation.'}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {benefits.map((b, i) => (
-                <article
-                  key={b.title}
-                  className="bg-white border border-[#EDEDED] rounded-2xl p-7"
-                >
-                  <span className="pulse-eyebrow text-[#A8D62E]">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <h3 className="mt-3 text-[17px] font-medium text-[#0A0A0A]">{b.title}</h3>
-                  <p className="mt-2 text-[13px] text-[#525252] leading-[1.6]">{b.desc}</p>
-                </article>
-              ))}
-            </div>
-
-            <div className="mt-12 text-center">
-              <Link
-                href={`${base}/auth/register`}
-                className="inline-flex items-center gap-2 bg-[#0A0A0A] text-white text-[14px] font-medium px-6 py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors"
-              >
-                {isTr ? 'Ücretsiz hesap oluştur' : 'Create a free account'}
-                <ChevronRight size={14} />
-              </Link>
-            </div>
+            <QRGeneratorForm locale={locale} />
           </div>
         </section>
       </main>

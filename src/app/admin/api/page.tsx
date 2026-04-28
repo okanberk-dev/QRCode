@@ -12,9 +12,9 @@ import {
   ShieldCheck,
   Trash2,
   Webhook,
-  X,
 } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import { PageHeader, Badge, Modal } from '@/components/ui';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
 
 interface ApiKey {
@@ -179,28 +179,23 @@ function AdminApiBody() {
   };
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'PANEL / API & WEBHOOK' : 'PANEL / API & WEBHOOKS'}
-          </p>
-          <h1
-            className="mt-1 text-[22px] font-medium tracking-tight text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            {isTr ? 'API anahtarları & webhook\'lar' : 'API keys & webhooks'}
-          </h1>
-          <p className="mt-1 max-w-[560px] text-[13px] text-[#525252]">
-            {isTr
-              ? 'Kişisel API anahtarlarını yönet, webhook uç noktalarını tanımla, teslimat aktivitesini izle.'
-              : 'Manage personal API tokens, define webhook endpoints, track delivery activity.'}
-          </p>
-        </div>
-        {notice && (
-          <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">{notice}</span>
-        )}
-      </header>
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+      <PageHeader
+        eyebrow={isTr ? 'API & WEBHOOK' : 'API & WEBHOOKS'}
+        title={isTr ? 'API anahtarları & webhook\'lar' : 'API keys & webhooks'}
+        description={
+          isTr
+            ? 'Kişisel API anahtarlarını yönet, webhook uç noktalarını tanımla, teslimat aktivitesini izle.'
+            : 'Manage personal API tokens, define webhook endpoints, track delivery activity.'
+        }
+        actions={
+          notice ? (
+            <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">
+              {notice}
+            </span>
+          ) : null
+        }
+      />
 
       {newToken && (
         <section className="rounded-2xl border border-[#C6F24E] bg-[#F7FFE4] p-4">
@@ -303,12 +298,17 @@ function AdminApiBody() {
                   <Webhook size={14} className="text-[#0A0A0A]" />
                   <p className="pulse-eyebrow text-[#737373]">WEBHOOKS</p>
                 </div>
-                <button
-                  onClick={() => alert(isTr ? 'Yakında bağlanacak.' : 'Coming soon.')}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#F5F5F5]"
-                >
-                  <Plus size={12} /> {isTr ? 'Endpoint ekle' : 'Add endpoint'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <Badge kind="ghost">{isTr ? 'Yakında' : 'Coming soon'}</Badge>
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-3 py-1.5 text-[12px] font-semibold text-[#A3A3A3]"
+                  >
+                    <Plus size={12} /> {isTr ? 'Endpoint ekle' : 'Add endpoint'}
+                  </button>
+                </div>
               </div>
               <div className="divide-y divide-[#EDEDED]">
                 {webhooks.map((w) => (
@@ -396,64 +396,47 @@ function AdminApiBody() {
       )}
 
       {showKey && (
-        <div
-          className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
-          onClick={() => setShowKey(false)}
+        <Modal
+          size={440}
+          onClose={() => setShowKey(false)}
+          title={
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={16} className="text-[#0A0A0A]" />
+              <span>{isTr ? 'Yeni API anahtarı' : 'New API key'}</span>
+            </div>
+          }
         >
-          <div
-            className="w-full max-w-md rounded-t-2xl border border-[#EDEDED] bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-2xl sm:pb-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={16} className="text-[#0A0A0A]" />
-                <h3
-                  className="text-[18px] font-medium text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {isTr ? 'Yeni API anahtarı' : 'New API key'}
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowKey(false)}
-                aria-label="Close"
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[#737373] hover:bg-[#F5F5F5]"
-              >
-                <X size={14} />
-              </button>
-            </div>
-            <label className="mt-4 block">
-              <span className="pulse-eyebrow text-[#737373]">{isTr ? 'AÇIKLAMA' : 'LABEL'}</span>
-              <input
-                value={newKeyName}
-                onChange={(e) => setNewKeyName(e.target.value)}
-                placeholder={isTr ? 'örn. Retool prod dashboard' : 'e.g. Retool prod dashboard'}
-                className="mt-1 w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]"
-              />
-            </label>
-            <p className="mt-3 text-[11px] text-[#737373]">
-              {isTr
-                ? 'Varsayılan scope\'lar: feedback:read. Scope yönetimi backend bağlandığında eklenir.'
-                : "Default scope: feedback:read. Granular scope management ships with the backend."}
-            </p>
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setShowKey(false)}
-                className="rounded-lg border border-[#EDEDED] bg-white px-4 py-2 text-[12px] font-medium text-[#525252] hover:bg-[#F5F5F5]"
-              >
-                {isTr ? 'İptal' : 'Cancel'}
-              </button>
-              <button
-                onClick={onCreate}
-                disabled={creatingKey || !newKeyName.trim()}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-40"
-              >
-                {creatingKey ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
-                {isTr ? 'Oluştur' : 'Create'}
-              </button>
-            </div>
+          <label className="block">
+            <span className="pulse-eyebrow text-[#737373]">{isTr ? 'AÇIKLAMA' : 'LABEL'}</span>
+            <input
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              placeholder={isTr ? 'örn. Retool prod dashboard' : 'e.g. Retool prod dashboard'}
+              className="mt-1 w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]"
+            />
+          </label>
+          <p className="mt-3 text-[11px] text-[#737373]">
+            {isTr
+              ? 'Varsayılan scope\'lar: feedback:read. Scope yönetimi backend bağlandığında eklenir.'
+              : "Default scope: feedback:read. Granular scope management ships with the backend."}
+          </p>
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button
+              onClick={() => setShowKey(false)}
+              className="rounded-lg border border-[#EDEDED] bg-white px-4 py-2 text-[12px] font-medium text-[#525252] hover:bg-[#F5F5F5]"
+            >
+              {isTr ? 'İptal' : 'Cancel'}
+            </button>
+            <button
+              onClick={onCreate}
+              disabled={creatingKey || !newKeyName.trim()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-40"
+            >
+              {creatingKey ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
+              {isTr ? 'Oluştur' : 'Create'}
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

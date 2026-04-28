@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { sendMail } from '@/lib/email';
+import { sendMail, sendFormConfirmationEmail } from '@/lib/email';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 export const dynamic = 'force-dynamic';
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ip = getClientIp(req.headers);
-  const limit = rateLimit(`roi-save:${ip}`, 10, 10 * 60 * 1000);
+  const limit = await rateLimit(`roi-save:${ip}`, 10, 10 * 60 * 1000);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'rate_limited', retryAfter: limit.retryAfterSeconds },
@@ -95,6 +95,20 @@ export async function POST(req: NextRequest) {
     }).catch((err) => {
       console.error('[roi/save] sales mail failed', err);
     });
+  }
+
+  // User-facing ROI confirmation. Pulse template, fire and forget.
+  if (email) {
+    const details: Array<{ label: string; value: string }> = [];
+    if (row.restaurantName) details.push({ label: 'İşletme', value: row.restaurantName });
+    if (row.tables !== null) details.push({ label: 'Masa', value: String(row.tables) });
+    if (row.avgTicket) details.push({ label: 'Ortalama hesap', value: String(row.avgTicket) });
+    sendFormConfirmationEmail({
+      to: email,
+      formType: 'roi',
+      name: row.restaurantName,
+      details,
+    }).catch((err) => console.error('[roi/save] confirmation mail failed', err));
   }
 
   return NextResponse.json({ ok: true, id: row.id });

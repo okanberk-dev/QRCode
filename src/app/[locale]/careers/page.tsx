@@ -79,13 +79,13 @@ export default async function CareersPage({
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
 
-      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-10">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
+      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-10">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-12 items-center">
           <div>
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Kariyer' : 'Careers'}
             </span>
-            <h1 className="mt-4 text-[40px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
+            <h1 className="mt-4 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
               {isTr ? (
                 <>
                   Gerçek işletmeler için
@@ -105,13 +105,13 @@ export default async function CareersPage({
                 </>
               )}
             </h1>
-            <p className="mt-5 text-[16px] text-[#525252] max-w-[520px] leading-[1.6]">
+            <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[520px] leading-[1.6]">
               {isTr
                 ? '14 kişilik bir ekibiz. 3 ay içinde 22\'ye çıkıyoruz. Sen de bu hikayenin parçası olabilirsin.'
                 : 'We\'re a team of 14 scaling to 22 in the next 3 months. You could be part of this story.'}
             </p>
           </div>
-          <div className="bg-[#FAFAFA] border border-[#EDEDED] rounded-3xl p-8 sm:p-10">
+          <div className="bz-card p-6 sm:p-10">
             <div className="pulse-eyebrow text-[#737373]">{isTr ? 'Sayılarla biz' : 'By the numbers'}</div>
             <div className="mt-5 grid grid-cols-2 gap-6">
               {[
@@ -122,7 +122,7 @@ export default async function CareersPage({
               ].map((x) => (
                 <div key={x.l}>
                   <div
-                    className="text-[32px] sm:text-[36px] font-medium leading-none tracking-[-0.03em]"
+                    className="text-[28px] sm:text-[36px] font-medium leading-none tracking-[-0.03em]"
                     style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     {x.k}
@@ -135,16 +135,16 @@ export default async function CareersPage({
         </div>
       </section>
 
-      <section className="px-6 sm:px-10 py-20 sm:py-24 bg-[#FAFAFA]">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24 bg-[#FAFAFA]">
         <div className="max-w-[1200px] mx-auto">
-          <h2 className="text-[32px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1]">
+          <h2 className="text-[26px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1]">
             {isTr ? 'Değerlerimiz' : 'Our values'}
           </h2>
-          <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="mt-8 sm:mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {values.map((v) => (
-              <div key={v.n} className="bg-white border border-[#EDEDED] rounded-2xl p-7">
+              <div key={v.n} className="bz-card p-6 sm:p-7">
                 <span className="pulse-eyebrow text-[#A8D62E]">{v.n}</span>
-                <h3 className="mt-3 text-[22px] font-medium tracking-[-0.02em]">{v.t}</h3>
+                <h3 className="mt-3 text-[20px] sm:text-[22px] font-medium tracking-[-0.02em]">{v.t}</h3>
                 <p className="mt-3 text-[14px] text-[#525252] leading-[1.6]">{v.d}</p>
               </div>
             ))}
@@ -152,14 +152,14 @@ export default async function CareersPage({
         </div>
       </section>
 
-      <section className="px-6 sm:px-10 py-20 sm:py-24">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[1200px] mx-auto">
           <div className="flex items-end justify-between flex-wrap gap-4">
             <div>
               <span className="pulse-eyebrow text-[#737373]">
                 {isTr ? 'Açık pozisyonlar' : 'Open roles'}
               </span>
-              <h2 className="mt-3 text-[32px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1]">
+              <h2 className="mt-3 text-[26px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1]">
                 {isTr ? `${roles.length} pozisyon` : `${roles.length} open roles`}
               </h2>
             </div>

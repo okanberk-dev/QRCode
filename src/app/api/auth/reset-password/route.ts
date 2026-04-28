@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Rate limit: 10 attempts per IP / 10 min
-    const ipLimit = rateLimit(`pwr-submit:ip:${ip}`, 10, 10 * 60 * 1000);
+    const ipLimit = await rateLimit(`pwr-submit:ip:${ip}`, 10, 10 * 60 * 1000);
     if (!ipLimit.allowed) {
       return NextResponse.json(
         { error: 'Çok fazla deneme. Lütfen bir süre sonra tekrar deneyin.' },

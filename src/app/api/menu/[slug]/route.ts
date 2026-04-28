@@ -13,7 +13,7 @@ export async function GET(
       where: { slug },
       include: {
         menuCategories: {
-          where: { isVisible: true },
+          where: { isVisible: true, deletedAt: null },
           orderBy: { sortOrder: 'asc' },
           include: {
             items: {

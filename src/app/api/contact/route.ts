@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMail } from '@/lib/email';
+import { sendMail, sendFormConfirmationEmail } from '@/lib/email';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 // Must stay in sync with ContactForm.tsx — form under this dwell time is bot-like.
 const MIN_FILL_MS = 2500;
@@ -17,6 +18,18 @@ function esc(value: unknown): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit before parsing body — 3 contact form submissions per IP
+    // per 10 min. Resend mail send is per-submission so an unbounded form
+    // = unbounded mail spend.
+    const ip = getClientIp(req.headers);
+    const limit = await rateLimit(`contact:ip:${ip}`, 3, 10 * 60 * 1000);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: 'Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.' },
+        { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds || 600) } },
+      );
+    }
+
     const body = await req.json();
     const { name, email, phone, business, message, kvkk, marketing, website, renderedAt } = body;
 
@@ -69,9 +82,20 @@ export async function POST(req: NextRequest) {
 
     if (!success) throw new Error('Mail sending failed');
 
+    // User-facing confirmation — fire and forget; the contact submission
+    // already succeeded internally, no reason to fail the request if this
+    // hiccups.
+    void sendFormConfirmationEmail({
+      to: email,
+      formType: 'contact',
+      name,
+      details: business ? [{ label: 'İşletme', value: String(business) }] : undefined,
+    }).catch((err) => console.error('[contact] confirmation mail failed', err));
+
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Contact form email failed:', error);
-    return NextResponse.json({ error: error?.message || 'E-posta gönderilirken bir hata oluştu.' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'E-posta gönderilirken bir hata oluştu.';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

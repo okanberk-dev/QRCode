@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
   const title = locale === 'tr'
     ? 'Veteriner Kliniği İtibar Yönetimi — Buaze'
     : 'Veterinary Clinic Reputation Management — Buaze';
@@ -61,8 +60,8 @@ export default async function VeterinarySolutionPage({ params }: { params: Promi
       icon: <Users size={24} />,
       title: isTr ? 'Topluluk Oluştur' : 'Build Community',
       desc: isTr
-        ? 'Memnun evcil hayvan sahiplerini Google\'a yönlendirin. Ağızdan ağıza tavsiyeyi dijitale taşıyın.'
-        : "Direct satisfied pet owners to Google. Take word-of-mouth recommendations to the digital world.",
+        ? 'Her evcil hayvan sahibine kliniğin Google yorum bağlantısı sunulur. Ağızdan ağıza tavsiyeyi dijitale taşıyın — yıldıza göre dallandırma yok.'
+        : "Every pet owner is offered the clinic's Google review link. Take word-of-mouth recommendations to the digital world — no rating-based gating.",
     },
   ];
 

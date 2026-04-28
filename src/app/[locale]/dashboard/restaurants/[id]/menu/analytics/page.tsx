@@ -4,15 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft, ArrowDown, ArrowUp, BarChart3, Eye, Info, Loader2, Lightbulb,
-  MousePointerClick, RefreshCw, Sparkles, TrendingDown, TrendingUp, UtensilsCrossed, X,
+  ArrowLeft, BarChart3, Eye, Info, Loader2, Lightbulb,
+  MousePointerClick, RefreshCw, Sparkles, TrendingDown, TrendingUp, X,
 } from 'lucide-react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar,
 } from 'recharts';
-import { formatPrice } from '@/lib/format';
 import { formatPct } from '@/lib/analytics-heuristics';
 import type { Locale } from '@/lib/translations';
+import { AlertBanner } from '@/components/ui';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 
@@ -71,6 +71,71 @@ interface AnalyticsResponse {
   categories: { id: string; name: string }[];
 }
 
+function buildCopy(isTr: boolean) {
+  return {
+    back: isTr ? 'Menü Düzenleyici' : 'Menu Editor',
+    title: isTr ? 'Menü Analitiği' : 'Menu Analytics',
+    subtitle: isTr
+      ? 'En ilgi çeken ürünleri, kategori performansını ve menü iyileştirme fırsatlarını takip edin.'
+      : 'Track your most engaging products, category performance, and menu improvement opportunities.',
+    range7: isTr ? 'Son 7 gün' : 'Last 7 days',
+    range30: isTr ? 'Son 30 gün' : 'Last 30 days',
+    range90: isTr ? 'Son 90 gün' : 'Last 90 days',
+    rangeAll: isTr ? 'Tüm zamanlar' : 'All time',
+    allCategories: isTr ? 'Tüm kategoriler' : 'All categories',
+    allSources: isTr ? 'Tüm kaynaklar' : 'All sources',
+    refresh: isTr ? 'Yenile' : 'Refresh',
+    resetFilters: isTr ? 'Filtreleri temizle' : 'Reset filters',
+    allTimeTrendNote: isTr
+      ? 'Zaman içi grafik "Son 7/30/90 gün" seçildiğinde görüntülenir.'
+      : 'Trend chart appears when a 7/30/90-day range is selected.',
+    kpiMenuViews: isTr ? 'Menü Görüntülenme' : 'Menu Views',
+    kpiProductViews: isTr ? 'Ürün Görüntülenme' : 'Product Views',
+    kpiCategoryClicks: isTr ? 'Kategori Tıklamaları' : 'Category Interactions',
+    kpiClickRate: isTr ? 'Ürün Tıklama Oranı' : 'Product Click Rate',
+    previousPeriod: isTr ? 'önceki döneme göre' : 'vs previous period',
+    topProducts: isTr ? 'En Çok Görüntülenen Ürünler' : 'Top Viewed Products',
+    topProductsEmpty: isTr ? 'Henüz yeterli veri yok.' : 'Not enough data yet.',
+    topCategories: isTr ? 'En Çok Tıklanan Kategoriler' : 'Top Clicked Categories',
+    lowInterest: isTr ? 'Düşük İlgili Ürünler' : 'Low Interest Products',
+    lowInterestSub: isTr
+      ? 'Görüntülenmesi yüksek ama tıklama oranı düşük ürünler — görsel veya açıklamayı gözden geçirmeyi değerlendirin.'
+      : 'Products with solid exposure but weak engagement — consider improving photos or descriptions.',
+    upsell: isTr ? 'Upsell Fırsatları' : 'Upsell Opportunities',
+    upsellSub: isTr
+      ? 'Kurallı analizlerle menü düzenini ve sunumu iyileştirme önerileri.'
+      : 'Rule-based suggestions to improve menu flow and presentation.',
+    trends: isTr ? 'Zaman İçinde Menü Performansı' : 'Menu Performance Over Time',
+    columns: {
+      rank: '#',
+      product: isTr ? 'Ürün' : 'Product',
+      category: isTr ? 'Kategori' : 'Category',
+      views: isTr ? 'Görüntülenme' : 'Views',
+      clicks: isTr ? 'Tıklama' : 'Clicks',
+      ctr: isTr ? 'TO' : 'CTR',
+      share: isTr ? 'Pay' : 'Share',
+      status: isTr ? 'Durum' : 'Status',
+    },
+    emptyHeadline: isTr ? 'Henüz yeterli veri yok' : 'Not enough data yet',
+    emptyBody: isTr
+      ? 'Müşterileriniz menüyle etkileşim kurdukça içgörüler burada belirmeye başlayacak.'
+      : 'As customers interact with your menu, insights will appear here.',
+    statusLabels: {
+      low_interest: isTr ? 'Düşük İlgi' : 'Low Interest',
+      needs_review: isTr ? 'Gözden Geçir' : 'Needs Review',
+      check_description: isTr ? 'Açıklama/Görsel' : 'Check Description',
+    } as Record<LowInterestRow['status'], string>,
+    sourceLabels: {
+      qr: 'QR',
+      direct: isTr ? 'Doğrudan' : 'Direct',
+      table: isTr ? 'Masa' : 'Table',
+      link: isTr ? 'Bağlantı' : 'Link',
+      delivery: isTr ? 'Teslimat' : 'Delivery',
+    } as Record<string, string>,
+  };
+}
+type Copy = ReturnType<typeof buildCopy>;
+
 export default function MenuAnalyticsPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -84,62 +149,7 @@ export default function MenuAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const copy = useMemo(
-    () => ({
-      back: isTr ? 'Menü Düzenleyici' : 'Menu Editor',
-      title: isTr ? 'Menü Analitiği' : 'Menu Analytics',
-      subtitle: isTr
-        ? 'En ilgi çeken ürünleri, kategori performansını ve menü iyileştirme fırsatlarını takip edin.'
-        : 'Track your most engaging products, category performance, and menu improvement opportunities.',
-      range7: isTr ? 'Son 7 gün' : 'Last 7 days',
-      range30: isTr ? 'Son 30 gün' : 'Last 30 days',
-      range90: isTr ? 'Son 90 gün' : 'Last 90 days',
-      rangeAll: isTr ? 'Tüm zamanlar' : 'All time',
-      allCategories: isTr ? 'Tüm kategoriler' : 'All categories',
-      allSources: isTr ? 'Tüm kaynaklar' : 'All sources',
-      refresh: isTr ? 'Yenile' : 'Refresh',
-      resetFilters: isTr ? 'Filtreleri temizle' : 'Reset filters',
-      allTimeTrendNote: isTr
-        ? 'Zaman içi grafik "Son 7/30/90 gün" seçildiğinde görüntülenir.'
-        : 'Trend chart appears when a 7/30/90-day range is selected.',
-      kpiMenuViews: isTr ? 'Menü Görüntülenme' : 'Menu Views',
-      kpiProductViews: isTr ? 'Ürün Görüntülenme' : 'Product Views',
-      kpiCategoryClicks: isTr ? 'Kategori Tıklamaları' : 'Category Interactions',
-      kpiClickRate: isTr ? 'Ürün Tıklama Oranı' : 'Product Click Rate',
-      previousPeriod: isTr ? 'önceki döneme göre' : 'vs previous period',
-      topProducts: isTr ? 'En Çok Görüntülenen Ürünler' : 'Top Viewed Products',
-      topProductsEmpty: isTr ? 'Henüz yeterli veri yok.' : 'Not enough data yet.',
-      topCategories: isTr ? 'En Çok Tıklanan Kategoriler' : 'Top Clicked Categories',
-      lowInterest: isTr ? 'Düşük İlgili Ürünler' : 'Low Interest Products',
-      lowInterestSub: isTr
-        ? 'Görüntülenmesi yüksek ama tıklama oranı düşük ürünler — görsel veya açıklamayı gözden geçirmeyi değerlendirin.'
-        : 'Products with solid exposure but weak engagement — consider improving photos or descriptions.',
-      upsell: isTr ? 'Upsell Fırsatları' : 'Upsell Opportunities',
-      upsellSub: isTr
-        ? 'Kurallı analizlerle menü düzenini ve sunumu iyileştirme önerileri.'
-        : 'Rule-based suggestions to improve menu flow and presentation.',
-      trends: isTr ? 'Zaman İçinde Menü Performansı' : 'Menu Performance Over Time',
-      columns: {
-        rank: '#', product: isTr ? 'Ürün' : 'Product', category: isTr ? 'Kategori' : 'Category',
-        views: isTr ? 'Görüntülenme' : 'Views', clicks: isTr ? 'Tıklama' : 'Clicks',
-        ctr: isTr ? 'TO' : 'CTR', share: isTr ? 'Pay' : 'Share', status: isTr ? 'Durum' : 'Status',
-      },
-      emptyHeadline: isTr ? 'Henüz yeterli veri yok' : 'Not enough data yet',
-      emptyBody: isTr
-        ? 'Müşterileriniz menüyle etkileşim kurdukça içgörüler burada belirmeye başlayacak.'
-        : 'As customers interact with your menu, insights will appear here.',
-      statusLabels: {
-        low_interest: isTr ? 'Düşük İlgi' : 'Low Interest',
-        needs_review: isTr ? 'Gözden Geçir' : 'Needs Review',
-        check_description: isTr ? 'Açıklama/Görsel' : 'Check Description',
-      } as Record<LowInterestRow['status'], string>,
-      sourceLabels: {
-        qr: 'QR', direct: isTr ? 'Doğrudan' : 'Direct', table: isTr ? 'Masa' : 'Table',
-        link: isTr ? 'Bağlantı' : 'Link', delivery: isTr ? 'Teslimat' : 'Delivery',
-      } as Record<string, string>,
-    }),
-    [isTr],
-  );
+  const copy = useMemo(() => buildCopy(isTr), [isTr]);
 
   const fetchAnalytics = useCallback(async () => {
     if (!id) return;
@@ -183,7 +193,7 @@ export default function MenuAnalyticsPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-10">
       {/* Header */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-8">
+      <div className="flex flex-col gap-4 bz-card p-5 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-1">
             <Link
@@ -269,17 +279,17 @@ export default function MenuAnalyticsPage() {
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold uppercase tracking-widest text-red-700">
+        <AlertBanner kind="danger" onDismiss={() => setError(null)}>
           {error}
-        </div>
+        </AlertBanner>
       )}
 
       {loading && !data ? (
-        <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20">
+        <div className="flex items-center justify-center bz-card p-20">
           <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
         </div>
       ) : !data ? null : !hasAnyData ? (
-        <div className="rounded-2xl border border-[#EDEDED] bg-white p-16 text-center shadow-sm">
+        <div className="bz-card p-16 text-center shadow-sm">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#FFFFFF]">
             <Sparkles size={26} strokeWidth={2} className="text-[#6B7280]" />
           </div>
@@ -315,7 +325,7 @@ export default function MenuAnalyticsPage() {
 
 // ──────────────────────────────────────────────────────────────────────────
 
-function OverviewCards({ overview, copy }: { overview: AnalyticsResponse['overview']; copy: any }) {
+function OverviewCards({ overview, copy }: { overview: AnalyticsResponse['overview']; copy: Copy }) {
   const cards = [
     { label: copy.kpiMenuViews, value: overview.totalMenuViews, delta: overview.compare?.menuViews, icon: Eye, fmt: fmtNum },
     { label: copy.kpiProductViews, value: overview.totalProductViews, delta: overview.compare?.productViews, icon: Eye, fmt: fmtNum },
@@ -335,7 +345,7 @@ function OverviewCards({ overview, copy }: { overview: AnalyticsResponse['overvi
             </div>
             <p className="mt-2 text-3xl font-semibold tracking-tight text-[#0A0A0A]">{c.fmt(c.value)}</p>
             {c.delta !== null && c.delta !== undefined && (
-              <div className={`mt-1 inline-flex items-center gap-1 text-[11px] font-bold ${deltaPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+              <div className={`mt-1 inline-flex items-center gap-1 text-[11px] font-bold ${deltaPositive ? 'text-[#166534]' : 'text-[#991B1B]'}`}>
                 {deltaPositive ? <TrendingUp size={11} strokeWidth={2.5} /> : <TrendingDown size={11} strokeWidth={2.5} />}
                 {c.pctDelta ? `${c.delta >= 0 ? '+' : ''}${(c.delta * 100).toFixed(1)} pp` : `${c.delta >= 0 ? '+' : ''}${(c.delta * 100).toFixed(1)} %`}
                 <span className="font-medium text-[#6B7280]">· {copy.previousPeriod}</span>
@@ -348,7 +358,7 @@ function OverviewCards({ overview, copy }: { overview: AnalyticsResponse['overvi
   );
 }
 
-function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; copy: any; isTr: boolean }) {
+function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; copy: Copy; isTr: boolean }) {
   const dateFmt = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { month: 'short', day: 'numeric' });
@@ -357,7 +367,7 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
   // ~7 labels on 7-day, ~6 labels on 30-day, ~6 labels on 90-day.
   const tickInterval = trend.length <= 7 ? 0 : trend.length <= 30 ? 5 : Math.floor(trend.length / 6);
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="bz-card p-5 shadow-sm sm:p-6">
       <div className="mb-4">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.trends}</h2>
       </div>
@@ -390,9 +400,9 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
   );
 }
 
-function TopProductsTable({ rows, copy, isTr }: { rows: ProductRow[]; copy: any; isTr: boolean }) {
+function TopProductsTable({ rows, copy }: { rows: ProductRow[]; copy: Copy; isTr: boolean }) {
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="bz-card p-5 shadow-sm sm:p-6">
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.topProducts}</h2>
       {rows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
@@ -428,7 +438,7 @@ function TopProductsTable({ rows, copy, isTr }: { rows: ProductRow[]; copy: any;
   );
 }
 
-function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) {
+function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: Copy }) {
   // Truncate long category names so the YAxis label column doesn't push the
   // bars off the right edge on narrow screens.
   const truncate = (name: string) => (name.length > 14 ? `${name.slice(0, 13)}…` : name);
@@ -437,7 +447,7 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) 
     .slice(0, 8)
     .map((r) => ({ name: truncate(r.categoryName), fullName: r.categoryName, clicks: r.clicks, views: r.views }));
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="bz-card p-5 shadow-sm sm:p-6">
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.topCategories}</h2>
       {dataRows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
@@ -462,9 +472,9 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: any }) 
   );
 }
 
-function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any }) {
+function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: Copy }) {
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="bz-card p-5 shadow-sm sm:p-6">
       <div className="mb-4">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.lowInterest}</h2>
         <p className="mt-1 text-xs font-medium text-[#6B7280]">{copy.lowInterestSub}</p>
@@ -491,9 +501,9 @@ function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any })
                   <td className="py-3 pr-2 text-[#1A1A1A]">{r.categoryName ?? '—'}</td>
                   <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.views)}</td>
                   <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmtNum(r.clicks)}</td>
-                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-red-600">{formatPct(r.ctr, 1)}</td>
+                  <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#991B1B]">{formatPct(r.ctr, 1)}</td>
                   <td className="py-3 pr-2">
-                    <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-amber-700">
+                    <span className="inline-flex rounded-full bg-[#FFFBEB] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-[#92400E]">
                       {copy.statusLabels[r.status]}
                     </span>
                   </td>
@@ -507,9 +517,9 @@ function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: any })
   );
 }
 
-function UpsellInsights({ insights, copy }: { insights: Insight[]; copy: any }) {
+function UpsellInsights({ insights, copy }: { insights: Insight[]; copy: Copy }) {
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+    <div className="bz-card p-5 shadow-sm sm:p-6">
       <div className="mb-4">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.upsell}</h2>
         <p className="mt-1 text-xs font-medium text-[#6B7280]">{copy.upsellSub}</p>

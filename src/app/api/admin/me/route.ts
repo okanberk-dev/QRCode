@@ -72,16 +72,44 @@ export async function GET(req: NextRequest) {
 
   // Default — AdminUser (superadmin / manager)
   try {
-    const adminUser = await prisma.adminUser.findUnique({
-      where: { id: actor.id },
-      select: { id: true, username: true, role: true, restaurantId: true }
-    });
+    let adminUser: {
+      id: string;
+      username: string;
+      role: string;
+      restaurantId: string | null;
+      email: string | null;
+    } | null = null;
+    try {
+      adminUser = await prisma.adminUser.findUnique({
+        where: { id: actor.id },
+        select: {
+          id: true,
+          username: true,
+          role: true,
+          restaurantId: true,
+          email: true,
+        },
+      });
+    } catch (err) {
+      // P2022: 'email' column not migrated yet — retry without it
+      const code = (err as { code?: string })?.code;
+      if (code === 'P2022') {
+        const fallback = await prisma.adminUser.findUnique({
+          where: { id: actor.id },
+          select: { id: true, username: true, role: true, restaurantId: true },
+        });
+        adminUser = fallback ? { ...fallback, email: null } : null;
+      } else {
+        throw err;
+      }
+    }
 
     if (adminUser) {
       return NextResponse.json({
         id: adminUser.id,
         username: adminUser.username,
-        email: adminUser.username,
+        email: adminUser.email || adminUser.username,
+        recoveryEmail: adminUser.email || null,
         name: adminUser.username,
         role: adminUser.role || 'superadmin',
         plan: null,

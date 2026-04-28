@@ -1,7 +1,17 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Megaphone, X, Save, Loader2, AlertTriangle, Info, CheckCircle2, AlertOctagon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Megaphone, Save, Loader2 } from 'lucide-react';
+import {
+  AlertBanner,
+  Badge,
+  type BadgeKind,
+  EmptyState,
+  Modal,
+  PageHeader,
+  Tabs,
+  type TabItem,
+} from '@/components/ui';
 
 type Severity = 'info' | 'success' | 'warning' | 'critical';
 type Status = 'draft' | 'published';
@@ -52,11 +62,11 @@ const EMPTY_FORM: FormState = {
   isDismissible: true,
 };
 
-const SEVERITY_META: Record<Severity, { label: string; dot: string; chip: string; icon: typeof Info }> = {
-  info: { label: 'Bilgi', dot: 'bg-slate-500', chip: 'bg-slate-50 text-slate-600', icon: Info },
-  success: { label: 'Başarı', dot: 'bg-emerald-500', chip: 'bg-emerald-50 text-emerald-600', icon: CheckCircle2 },
-  warning: { label: 'Uyarı', dot: 'bg-amber-500', chip: 'bg-amber-50 text-amber-600', icon: AlertTriangle },
-  critical: { label: 'Kritik', dot: 'bg-red-500', chip: 'bg-red-50 text-red-600', icon: AlertOctagon },
+const SEVERITY_META: Record<Severity, { label: string; kind: BadgeKind }> = {
+  info: { label: 'Bilgi', kind: 'info' },
+  success: { label: 'Başarı', kind: 'ok' },
+  warning: { label: 'Uyarı', kind: 'warn' },
+  critical: { label: 'Kritik', kind: 'danger' },
 };
 
 const toLocalInputDateTime = (iso: string | null): string => {
@@ -178,168 +188,172 @@ export default function AdminAnnouncementsPage() {
 
   const filtered = filterStatus === 'all' ? announcements : announcements.filter(a => a.status === filterStatus);
 
+  const tabs: TabItem[] = [
+    { id: 'all', label: 'Tümü', count: announcements.length },
+    { id: 'published', label: 'Yayında', count: announcements.filter(a => a.status === 'published').length },
+    { id: 'draft', label: 'Taslak', count: announcements.filter(a => a.status === 'draft').length },
+  ];
+
   return (
-    <div className="flex-1 min-h-screen bg-[#FFFFFF] p-3 sm:p-6 md:p-10 space-y-8">
-      {/* Banner Header */}
-      <div className="bg-[#0A0A0A] rounded-2xl sm:rounded-2xl border border-white/10 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden text-white shadow-2xl">
-        <div className="relative z-10 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-[#C6F24E]/10 text-[#C6F24E] px-4 py-1.5 rounded-full pulse-eyebrow">
-            ✦ İLETİŞİM MERKEZİ
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight leading-tight">Duyurular</h1>
-          <p className="text-white/80 text-sm sm:text-base font-medium max-w-md">
-            İşletme panellerinin üstünde tüm müşterilerinize duyurular gösterin.
-          </p>
-        </div>
+    <div className="mx-auto max-w-[980px] px-4 sm:px-7 py-6 lg:py-8">
+      <PageHeader
+        eyebrow="SİSTEM DUYURULARI"
+        title="Tüm işletmelere ulaş"
+        actions={
+          <button onClick={openNew} className="bz-btn-primary">
+            <Plus size={14} strokeWidth={2} />
+            Yeni duyuru
+          </button>
+        }
+      />
 
-        <div className="flex items-center gap-3 self-start md:self-center relative z-10">
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/10 text-center">
-            <p className="text-2xl font-semibold text-white">{announcements.filter(a => a.status === 'published').length}</p>
-            <p className="text-[10px] pulse-eyebrow text-white/60 mt-1">Yayında</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/10 text-center">
-            <p className="text-2xl font-semibold text-white">{announcements.length}</p>
-            <p className="text-[10px] pulse-eyebrow text-white/60 mt-1">Toplam</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#EDEDED] shadow-sm">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {([
-            { k: 'all', label: 'TÜMÜ' },
-            { k: 'published', label: 'YAYINDA' },
-            { k: 'draft', label: 'TASLAK' },
-          ] as const).map(f => (
-            <button
-              key={f.k}
-              onClick={() => setFilterStatus(f.k as 'all' | Status)}
-              className={`px-4 py-2.5 rounded-xl pulse-eyebrow transition-all whitespace-nowrap ${
-                filterStatus === f.k ? 'bg-[#0A0A0A] text-white shadow-md' : 'bg-[#FFFFFF] text-[#6B7280] hover:bg-[#EDEDED]'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={openNew}
-          className="flex items-center gap-2 px-6 py-3 bg-[#C6F24E] text-[#0A0A0A] rounded-xl font-semibold text-[10px]  hover:bg-[#f5b914] transition-all shadow-lg shadow-[#C6F24E]/10 active:scale-95"
-        >
-          <Plus size={18} strokeWidth={2} />
-          Yeni Duyuru
-        </button>
-      </div>
+      {/* Status filter tabs */}
+      <Tabs
+        items={tabs}
+        active={filterStatus}
+        onChange={(id) => setFilterStatus(id as 'all' | Status)}
+        ariaLabel="Status filter"
+        className="mb-3.5"
+      />
 
       {/* Alerts */}
       {error && (
-        <div className="bg-red-50 border border-red-100 rounded-2xl px-6 py-4 text-red-600 text-sm font-bold flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+        <div className="mt-3.5">
+          <AlertBanner kind="danger" onDismiss={() => setError('')}>
             {error}
-          </div>
-          <button onClick={() => setError('')} className="p-1 hover:bg-red-100 rounded-lg transition-colors">
-            <X size={16} />
-          </button>
+          </AlertBanner>
         </div>
       )}
       {success && (
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl px-6 py-4 text-emerald-600 text-sm font-bold flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-          {success}
+        <div className="mt-3.5">
+          <AlertBanner kind="success">{success}</AlertBanner>
         </div>
       )}
 
       {/* List */}
       {loading ? (
         <div className="flex items-center justify-center py-24">
-          <Loader2 size={32} className="animate-spin text-[#C6F24E]" />
+          <Loader2 size={32} className="animate-spin text-[#0A0A0A]" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#EDEDED] p-16 text-center space-y-4">
-          <div className="w-20 h-20 bg-[#FFFFFF] rounded-2xl flex items-center justify-center mx-auto">
-            <Megaphone size={40} className="text-[#EDEDED]" />
-          </div>
-          <p className="text-xl font-semibold text-[#0A0A0A]">Henüz duyuru bulunamadı</p>
-          <p className="text-[#6B7280] text-sm max-w-sm mx-auto font-medium">
-            İşletme panellerinin üstünde görünecek ilk duyurunuzu oluşturun.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Megaphone size={22} />}
+          title="Henüz duyuru yok"
+          body="İşletme panellerinin üstünde görünecek ilk duyurunuzu oluşturun."
+          action={
+            <button onClick={openNew} className="bz-btn-primary">
+              <Plus size={14} strokeWidth={2} />
+              Yeni duyuru
+            </button>
+          }
+        />
       ) : (
-        <div className="grid gap-4">
+        <div className="flex flex-col gap-2.5">
           {filtered.map(a => {
             const sev = SEVERITY_META[a.severity];
-            const SevIcon = sev.icon;
-            const isLive = a.status === 'published' && (!a.endDate || new Date(a.endDate) >= new Date()) && (!a.startDate || new Date(a.startDate) <= new Date());
+            const isLive =
+              a.status === 'published' &&
+              (!a.endDate || new Date(a.endDate) >= new Date()) &&
+              (!a.startDate || new Date(a.startDate) <= new Date());
             return (
-              <div
+              <article
                 key={a.id}
-                className={`bg-white border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-5 transition-all hover:shadow-md hover:border-[#C6F24E]/30 ${
-                  a.status === 'published' ? 'border-[#EDEDED]' : 'border-[#EDEDED] opacity-70'
-                }`}
+                className="bz-card"
+                style={{ padding: 20, opacity: a.status === 'published' ? 1 : 0.7 }}
               >
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${sev.chip}`}>
-                  <SevIcon size={22} strokeWidth={2} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg ${sev.chip}`}>{sev.label}</span>
-                    <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg ${isLive ? 'bg-emerald-50 text-emerald-600' : 'bg-[#FFFFFF] text-[#6B7280]'}`}>
-                      {isLive ? 'YAYINDA' : a.status === 'draft' ? 'TASLAK' : 'YAYINDA DEĞİL'}
-                    </span>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg bg-[#FFFFFF] text-[#6B7280]">
-                      {a.locale === 'all' ? 'TÜM DİLLER' : a.locale === 'tr' ? 'TR' : 'EN'}
-                    </span>
-                    {a.priority !== 0 && (
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600">
-                        #P{a.priority}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                      {isLive ? (
+                        <Badge kind="ok">Yayında</Badge>
+                      ) : a.status === 'draft' ? (
+                        <Badge kind="ghost">Taslak</Badge>
+                      ) : (
+                        <Badge kind="warn">Planlı</Badge>
+                      )}
+                      {/* Audience chip — design 1:1 (locale-bazlı) */}
+                      <Badge kind="ghost">
+                        {a.locale === 'all' ? 'all' : a.locale.toLowerCase()}
+                      </Badge>
+                      {/* Severity badge sadece 'critical' ise göster (vurgu) */}
+                      {a.severity === 'critical' && (
+                        <Badge kind={sev.kind}>{sev.label}</Badge>
+                      )}
+                    </div>
+                    <div className="bz-h-tight mb-1.5" style={{ fontSize: 16 }}>
+                      {a.title}
+                    </div>
+                    <p style={{ margin: 0, fontSize: 13, color: '#525252', lineHeight: 1.55 }}>
+                      {a.message}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#A3A3A3]">
+                      <span>
+                        {new Date(a.createdAt).toLocaleDateString('tr-TR', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
                       </span>
+                      {(a.startDate || a.endDate) && (
+                        <span className="bz-mono">
+                          {a.startDate
+                            ? new Date(a.startDate).toLocaleString('tr-TR', {
+                                day: '2-digit',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '—'}{' '}
+                          →{' '}
+                          {a.endDate
+                            ? new Date(a.endDate).toLocaleString('tr-TR', {
+                                day: '2-digit',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '∞'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0" style={{ gap: 4 }}>
+                    <button
+                      onClick={() => openEdit(a)}
+                      className="bz-btn-icon"
+                      title="Düzenle"
+                      aria-label="Düzenle"
+                    >
+                      <Pencil size={14} strokeWidth={2} />
+                    </button>
+                    {deleteConfirm === a.id ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleDelete(a.id)}
+                          className="rounded-full bg-[#FEF2F2] px-3 py-1.5 text-[11px] font-semibold text-[#991B1B] hover:bg-[#FECACA]"
+                        >
+                          Sil
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(null)}
+                          className="rounded-full bg-[#F2F2F2] px-3 py-1.5 text-[11px] font-medium text-[#525252] hover:bg-[#EDEDED]"
+                        >
+                          İptal
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeleteConfirm(a.id)}
+                        className="bz-btn-icon"
+                        title="Sil"
+                        aria-label="Sil"
+                      >
+                        <Trash2 size={14} strokeWidth={2} className="text-[#991B1B]" />
+                      </button>
                     )}
                   </div>
-                  <h3 className="text-[#0A0A0A] font-bold text-[15px] leading-tight">{a.title}</h3>
-                  <p className="text-[#6B7280] text-sm mt-1 line-clamp-2">{a.message}</p>
-                  {(a.startDate || a.endDate) && (
-                    <p className="mt-2 text-[#6B7280] text-[11px] font-bold uppercase tracking-wider">
-                      {a.startDate ? new Date(a.startDate).toLocaleString('tr-TR') : '—'} → {a.endDate ? new Date(a.endDate).toLocaleString('tr-TR') : '∞'}
-                    </p>
-                  )}
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0 border-t sm:border-t-0 sm:border-l border-[#EDEDED] pt-4 sm:pt-0 sm:pl-4">
-                  <button
-                    onClick={() => openEdit(a)}
-                    className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center transition-all"
-                    title="Düzenle"
-                  >
-                    <Pencil size={18} strokeWidth={2} />
-                  </button>
-                  {deleteConfirm === a.id ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleDelete(a.id)}
-                        className="px-4 py-2 text-[10px] font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all shadow-lg shadow-red-500/20"
-                      >
-                        SİL
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirm(null)}
-                        className="px-4 py-2 text-[10px] font-semibold text-[#6B7280] bg-[#EDEDED] hover:bg-[#EDEDED] rounded-xl transition-all"
-                      >
-                        İPTAL
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setDeleteConfirm(a.id)}
-                      className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-all"
-                      title="Sil"
-                    >
-                      <Trash2 size={18} strokeWidth={2} />
-                    </button>
-                  )}
-                </div>
-              </div>
+              </article>
             );
           })}
         </div>
@@ -347,27 +361,26 @@ export default function AdminAnnouncementsPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-[#0A0A0A]/60 backdrop-blur-md z-60 flex items-start justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl sm:rounded-2xl w-full max-w-3xl my-4 sm:my-8 shadow-2xl border border-[#EDEDED] overflow-hidden">
-            <div className="flex items-center justify-between p-4 sm:p-6 md:p-8 border-b border-[#FFFFFF] gap-3">
-              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 bg-[#C6F24E]/10 rounded-2xl flex items-center justify-center">
-                  {editing ? <Pencil size={20} className="text-[#C6F24E]" strokeWidth={2} /> : <Plus size={20} className="text-[#C6F24E]" strokeWidth={2} />}
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-lg sm:text-xl font-semibold text-[#0A0A0A] truncate">{editing ? 'Duyuruyu Düzenle' : 'Yeni Duyuru'}</h2>
-                  <p className="text-[#6B7280] text-[10px] sm:text-xs font-semibold mt-0.5">İşletme panellerinde gösterilecek</p>
-                </div>
+        <Modal
+          size={760}
+          onClose={() => setShowForm(false)}
+          title={
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 shrink-0 bg-[#EAF9B8] rounded-xl flex items-center justify-center">
+                {editing ? <Pencil size={18} className="text-[#0A0A0A]" strokeWidth={2} /> : <Plus size={18} className="text-[#0A0A0A]" strokeWidth={2} />}
               </div>
-              <button
-                onClick={() => setShowForm(false)}
-                className="w-10 h-10 shrink-0 flex items-center justify-center text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#FFFFFF] rounded-xl transition-all"
-              >
-                <X size={20} strokeWidth={2} />
-              </button>
+              <div className="min-w-0">
+                <h2 className="text-[18px] font-medium tracking-[-0.015em] text-[#0A0A0A] truncate">
+                  {editing ? 'Duyuruyu düzenle' : 'Yeni duyuru'}
+                </h2>
+                <p className="pulse-eyebrow text-[#737373] mt-0.5">
+                  İşletme panellerinde gösterilecek
+                </p>
+              </div>
             </div>
-
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6">
+          }
+        >
+            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
               {/* Title */}
               <div>
                 <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BAŞLIK</label>
@@ -514,7 +527,7 @@ export default function AdminAnnouncementsPage() {
                   <button
                     type="button"
                     onClick={() => setForm(f => ({ ...f, status: f.status === 'published' ? 'draft' : 'published' }))}
-                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.status === 'published' ? 'bg-emerald-500' : 'bg-[#C9D0DB]'}`}
+                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.status === 'published' ? 'bg-[#C6F24E]' : 'bg-[#C9D0DB]'}`}
                   >
                     <span className={`absolute top-1 left-1 w-4.5 h-4.5 bg-white rounded-full transition-all duration-300 ${form.status === 'published' ? 'translate-x-5.5' : ''}`} />
                   </button>
@@ -522,26 +535,25 @@ export default function AdminAnnouncementsPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-6 border-t border-[#FFFFFF]">
+              <div className="flex items-center justify-end gap-2 pt-5 border-t border-[#EDEDED]">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-8 py-3.5 text-[#6B7280] hover:text-[#0A0A0A] font-semibold text-xs  transition-all"
+                  className="bz-btn-ghost"
                 >
-                  İPTAL
+                  İptal
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex items-center gap-2 px-10 py-3.5 bg-[#0A0A0A] text-white rounded-xl font-semibold text-xs  hover:bg-[#1A1A1A] transition-all shadow-xl shadow-[#EDEDED] disabled:opacity-50 active:scale-95"
+                  className="bz-btn-primary disabled:opacity-50"
                 >
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                  {editing ? 'GÜNCELLE' : 'KAYDET'}
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {editing ? 'Güncelle' : 'Kaydet'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

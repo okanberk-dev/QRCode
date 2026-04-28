@@ -50,7 +50,7 @@ export default async function FaqPage({
     ? [
         {
           q: "Buaze Google'ın politikalarına uyumlu mu?",
-          a: 'Evet. Gatekeeping yapmıyoruz — her müşteri istediği yere yorum bırakabilir. Sadece memnun müşterilere kolay bir yol gösteriyoruz.',
+          a: 'Evet. Her müşteriye Google yorum bağlantısı sunulur; yıldıza göre dallandırma yapmıyoruz. İsteyen müşteri ek olarak işletmeye özel geri bildirim de gönderebilir, fakat bu opsiyoneldir ve Google\'a yorum yazmasını engellemez.',
         },
         {
           q: 'Kurulum ne kadar sürer?',
@@ -84,7 +84,7 @@ export default async function FaqPage({
     : [
         {
           q: "Is Buaze compliant with Google's policies?",
-          a: "Yes. We don't gatekeep — every customer can leave a review anywhere they want. We just show satisfied customers an easy path.",
+          a: "Yes. Every customer is offered the Google review link with no rating-based branching. Anyone who also wants to share private feedback can do so in the same flow — but that step is optional and never blocks the public Google path.",
         },
         {
           q: 'How long does setup take?',
@@ -135,14 +135,14 @@ export default async function FaqPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Hero + FAQ — 2-col grid (1fr 2fr) */}
-      <section className="px-6 sm:px-10 pt-16 sm:pt-20 pb-10">
+      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-10">
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-10 lg:grid-cols-[1fr_2fr] lg:gap-12">
           <div>
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'SSS' : 'FAQ'}
             </span>
             <h1
-              className="mt-3 text-[44px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+              className="mt-3 text-[38px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? 'Cevaplar.' : 'Answers.'}
@@ -165,7 +165,7 @@ export default async function FaqPage({
       </section>
 
       {/* Contact CTA */}
-      <section className="border-t border-[#EDEDED] px-6 sm:px-10 py-16">
+      <section className="border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-16">
         <div className="max-w-[720px] mx-auto text-center">
           <h2
             className="text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-tight"

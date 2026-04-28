@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
     const sortOrderParam = searchParams.get('sortOrder');
     const sortOrder: 'asc' | 'desc' = sortOrderParam === 'asc' ? 'asc' : 'desc';
 
-    const where: any = {};
+    const where: Prisma.FeedbackWhereInput = {};
 
     // KVKK filter
     if (kvkkFilter === 'true') {
@@ -61,20 +62,24 @@ export async function GET(req: NextRequest) {
     }
 
     // Date filter
+    const createdAtBase: Prisma.DateTimeFilter =
+      where.createdAt && typeof where.createdAt === 'object' && !(where.createdAt instanceof Date)
+        ? (where.createdAt as Prisma.DateTimeFilter)
+        : {};
     if (daysParam === 'today' || daysParam === '1') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      where.createdAt = { ...where.createdAt, gte: today };
+      where.createdAt = { ...createdAtBase, gte: today };
     } else if (daysParam === 'month') {
       const now = new Date();
       const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-      where.createdAt = { ...where.createdAt, gte: firstOfMonth };
+      where.createdAt = { ...createdAtBase, gte: firstOfMonth };
     } else if (daysParam && daysParam !== 'all') {
       const days = parseInt(daysParam);
       if (Number.isFinite(days) && days > 0) {
         const pastDate = new Date();
         pastDate.setDate(pastDate.getDate() - days);
-        where.createdAt = { ...where.createdAt, gte: pastDate };
+        where.createdAt = { ...createdAtBase, gte: pastDate };
       }
     }
 
@@ -120,7 +125,7 @@ export async function GET(req: NextRequest) {
     // Generate CSV with Platform, Kaynak and KVKK columns
     const header = ['ID', 'Tarih', 'Puan', 'KVKK Onayı', 'Platform', 'Kaynak', 'Yorum', 'Restoran', 'Şube', 'Masa No'];
     const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const rows = feedbacks.map((f: any) => [
+    const rows = feedbacks.map((f) => [
       f.id,
       f.createdAt.toISOString(),
       f.rating.toString(),

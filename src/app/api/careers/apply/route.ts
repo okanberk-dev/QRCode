@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { sendMail } from '@/lib/email';
+import { sendMail, sendFormConfirmationEmail } from '@/lib/email';
 import { isStorageConfigured, uploadToStorage } from '@/lib/supabase-storage';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
@@ -35,7 +35,7 @@ function extFromMime(mime: string): string {
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req.headers);
-  const limit = rateLimit(`careers-apply:${ip}`, 5, 30 * 60 * 1000);
+  const limit = await rateLimit(`careers-apply:${ip}`, 5, 30 * 60 * 1000);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'rate_limited', retryAfter: limit.retryAfterSeconds },
@@ -148,6 +148,14 @@ export async function POST(req: NextRequest) {
       console.error('[careers/apply] hr mail failed', err);
     });
   }
+
+  // Applicant confirmation — Pulse template, fire and forget.
+  sendFormConfirmationEmail({
+    to: email,
+    formType: 'career',
+    name,
+    details: roleSlug ? [{ label: 'Pozisyon', value: roleSlug }] : undefined,
+  }).catch((err) => console.error('[careers/apply] confirmation mail failed', err));
 
   return NextResponse.json({ ok: true, id: row.id });
 }
