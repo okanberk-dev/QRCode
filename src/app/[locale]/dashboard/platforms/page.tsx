@@ -254,9 +254,15 @@ export default async function PlatformsPage({
 
   const enabledPlatformIds = visiblePlatforms.filter((p) => p.enabled).map((p) => p.id);
 
-  const editLink = firstRestaurant
-    ? `/${locale}/dashboard/restaurants/${firstRestaurant.id}`
-    : `/${locale}/dashboard/restaurants`;
+  // Per-card "Düzenle" deep-link. `?focus=<id>` makes the detail page
+  // smooth-scroll to and focus the matching platform input on mount —
+  // owner doesn't have to scroll/search inside a long form. Falls back
+  // to the list page when the owner has no restaurant yet.
+  const editLink = (platformId?: PlatformId): string => {
+    if (!firstRestaurant) return `/${locale}/dashboard/restaurants`;
+    const base = `/${locale}/dashboard/restaurants/${firstRestaurant.id}`;
+    return platformId ? `${base}?focus=${platformId}` : base;
+  };
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8">
@@ -440,7 +446,7 @@ export default async function PlatformsPage({
                 />
               )}
               <Link
-                href={editLink}
+                href={editLink(p.id)}
                 className="bz-btn-ghost"
                 style={{ padding: '6px 12px', fontSize: 12 }}
               >

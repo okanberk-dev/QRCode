@@ -24,6 +24,8 @@ import {
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, Badge, Eyebrow, PageHeader } from '@/components/ui';
+import { SECTORS } from '@/lib/sectors';
+import { detectSector } from '@/lib/sector-platforms';
 
 export default function ProfilePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = use(params);
@@ -327,20 +329,34 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
               </label>
               <label className="space-y-1.5 block">
                 <span className="pulse-eyebrow text-[#737373]">
-                  {isTr ? 'İŞLETME TÜRÜ' : 'BUSINESS TYPE'}
+                  {isTr ? 'SEKTÖR' : 'SECTOR'}
                 </span>
                 <select
-                  value={businessData.category}
+                  value={(() => {
+                    // Surface the canonical SECTOR label that matches the
+                    // current category. Legacy values ('Mağaza', 'Güzellik
+                    // salonu', 'Kafe') fuzzy-match to the right option for
+                    // display without mutating state — original value is
+                    // preserved in DB until the owner explicitly picks.
+                    const exact = SECTORS.find((s) => s.label === businessData.category);
+                    if (exact) return exact.label;
+                    const detected = detectSector(businessData.category);
+                    return SECTORS.find((s) => s.sectorKey === detected)?.label ?? SECTORS[0].label;
+                  })()}
                   onChange={(e) => setBusinessData((p) => ({ ...p, category: e.target.value }))}
                   className={`${inputCls} cursor-pointer`}
                 >
-                  <option value="Restoran">{isTr ? 'Restoran' : 'Restaurant'}</option>
-                  <option value="Klinik">{isTr ? 'Klinik' : 'Clinic'}</option>
-                  <option value="Güzellik salonu">{isTr ? 'Güzellik salonu' : 'Beauty salon'}</option>
-                  <option value="Otel">{isTr ? 'Otel' : 'Hotel'}</option>
-                  <option value="Mağaza">{isTr ? 'Mağaza' : 'Shop'}</option>
-                  <option value="Kafe">{isTr ? 'Kafe' : 'Cafe'}</option>
+                  {SECTORS.map((sector) => (
+                    <option key={sector.id} value={sector.label}>
+                      {sector.display[isTr ? 'tr' : 'en']}
+                    </option>
+                  ))}
                 </select>
+                <span className="block text-[11px] text-[#A3A3A3]">
+                  {isTr
+                    ? 'Sektörünüz, yorum yönlendirmesinde gösterilecek platformları belirler.'
+                    : 'Your sector decides which review platforms appear in the redirect.'}
+                </span>
               </label>
               <label className="space-y-1.5 block">
                 <span className="pulse-eyebrow text-[#737373]">

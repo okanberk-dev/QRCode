@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Building2, ExternalLink, Loader2, Power, PowerOff, Save } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import { AlertBanner, Badge, ConfirmDialog, PageHeader } from '@/components/ui';
@@ -13,8 +13,12 @@ import { SECTORS } from '@/lib/sectors';
 
 export default function DashboardRestaurantDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const locale = params.locale === 'en' ? 'en' : 'tr';
   const id = params.id as string;
+  // Deep-link target — the platforms page passes `?focus=<platformId>` so
+  // the owner lands directly on the input they came to fill in.
+  const focusField = searchParams.get('focus');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -88,6 +92,23 @@ export default function DashboardRestaurantDetailPage() {
 
     fetchRestaurant();
   }, [id, locale]);
+
+  // Deep-link from `/dashboard/platforms` cards — scroll the matching
+  // platform input into view and focus it once the form has hydrated.
+  // `prefers-reduced-motion: reduce` (globals.css blanket) automatically
+  // downgrades smooth scroll to instant — a11y-clean.
+  useEffect(() => {
+    if (loading || !focusField) return;
+    const wrapper = document.getElementById(`platform-${focusField}`);
+    if (!wrapper) return;
+    wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Defer focus until the smooth scroll settles — calling focus() mid-
+    // animation cancels the scroll on some browsers.
+    const handle = window.setTimeout(() => {
+      wrapper.querySelector('input')?.focus();
+    }, 350);
+    return () => window.clearTimeout(handle);
+  }, [loading, focusField]);
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -514,7 +535,7 @@ export default function DashboardRestaurantDetailPage() {
             </label>
 
             {allowedPlatforms.has('google') && (
-              <label className="space-y-2">
+              <label id="platform-google" className="space-y-2 scroll-mt-24">
                 <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
                   <PlatformLogo id="google" size={16} rounded={4} />
                   Google Place ID / Link
@@ -530,7 +551,7 @@ export default function DashboardRestaurantDetailPage() {
             )}
 
             {allowedPlatforms.has('getir') && (
-              <label className="space-y-2 sm:col-span-2">
+              <label id="platform-getir" className="space-y-2 sm:col-span-2 scroll-mt-24">
                 <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
                   <PlatformLogo id="getir-yemek" size={16} rounded={4} />
                   Getir Yemek URL
@@ -547,7 +568,7 @@ export default function DashboardRestaurantDetailPage() {
             )}
 
             {allowedPlatforms.has('yemeksepeti') && (
-              <label className="space-y-2">
+              <label id="platform-yemeksepeti" className="space-y-2 scroll-mt-24">
                 <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
                   <PlatformLogo id="yemeksepeti" size={16} rounded={4} />
                   Yemek Sepeti URL
@@ -564,7 +585,7 @@ export default function DashboardRestaurantDetailPage() {
             )}
 
             {allowedPlatforms.has('trendyol') && (
-              <label className="space-y-2">
+              <label id="platform-trendyol" className="space-y-2 scroll-mt-24">
                 <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
                   <PlatformLogo id="trendyol-go" size={16} rounded={4} />
                   Trendyol Yemek URL
@@ -581,7 +602,7 @@ export default function DashboardRestaurantDetailPage() {
             )}
 
             {allowedPlatforms.has('tripadvisor') && (
-              <label className="space-y-2">
+              <label id="platform-tripadvisor" className="space-y-2 scroll-mt-24">
                 <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
                   <PlatformLogo id="tripadvisor" size={16} rounded={4} />
                   Tripadvisor URL
@@ -598,7 +619,7 @@ export default function DashboardRestaurantDetailPage() {
             )}
 
             {allowedPlatforms.has('airbnb') && (
-              <label className="space-y-2">
+              <label id="platform-airbnb" className="space-y-2 scroll-mt-24">
                 <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
                   <PlatformLogo id="airbnb" size={16} rounded={4} />
                   Airbnb URL
