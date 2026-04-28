@@ -2,16 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, ExternalLink, Loader2, Save, Trash2 } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { ArrowLeft, Building2, ExternalLink, Link2, Loader2, Mail, MapPin, Power, PowerOff, Save } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, ConfirmDialog, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, ConfirmDialog, PageHeader } from '@/components/ui';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
 
 export default function DashboardRestaurantDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const locale = params.locale === 'en' ? 'en' : 'tr';
   const id = params.id as string;
 
@@ -20,6 +19,13 @@ export default function DashboardRestaurantDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [meta, setMeta] = useState<{
+    createdAt?: string;
+    updatedAt?: string;
+    feedbacks: number;
+    menuItems: number;
+    qrGenerations: number;
+  }>({ feedbacks: 0, menuItems: 0, qrGenerations: 0 });
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -39,7 +45,11 @@ export default function DashboardRestaurantDetailPage() {
     const fetchRestaurant = async () => {
       try {
         const response = await fetch(`/api/restaurants/${id}`);
-        if (!response.ok) return;
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          setError(data.error || (locale === 'tr' ? 'İşletme bilgisi alınamadı.' : 'Location could not be loaded.'));
+          return;
+        }
 
         const data = await response.json();
         setFormData({
@@ -55,6 +65,13 @@ export default function DashboardRestaurantDetailPage() {
           notificationEmail: data.notificationEmail || '',
           primaryColor: data.primaryColor || '#C6F24E',
           isActive: data.isActive ?? true,
+        });
+        setMeta({
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+          feedbacks: data._count?.feedbacks ?? 0,
+          menuItems: data._count?.menuItems ?? 0,
+          qrGenerations: data._count?.qrGenerations ?? 0,
         });
       } catch (fetchError) {
         console.error(fetchError);
@@ -76,7 +93,10 @@ export default function DashboardRestaurantDetailPage() {
       const response = await fetch(`/api/restaurants/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          googleReviewUrl: formData.googlePlaceId,
+        }),
       });
 
       const data = await response.json();
@@ -85,6 +105,21 @@ export default function DashboardRestaurantDetailPage() {
         return;
       }
 
+      setFormData((prev) => ({
+        ...prev,
+        name: data.name || prev.name,
+        slug: data.slug || prev.slug,
+        category: data.category || prev.category,
+        address: data.address || '',
+        phone: data.phone || '',
+        googlePlaceId: data.googlePlaceId || data.googleReviewUrl || '',
+        getirYemekUrl: data.getirYemekUrl || '',
+        yemekSepetiUrl: data.yemekSepetiUrl || '',
+        trendyolYemekUrl: data.trendyolYemekUrl || '',
+        notificationEmail: data.notificationEmail || '',
+        primaryColor: data.primaryColor || prev.primaryColor,
+        isActive: data.isActive ?? prev.isActive,
+      }));
       setSuccess(locale === 'tr' ? 'İşletme güncellendi.' : 'Location updated.');
       setTimeout(() => setSuccess(''), 2500);
     } catch (saveError) {
@@ -97,23 +132,40 @@ export default function DashboardRestaurantDetailPage() {
 
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const handleDelete = async () => {
-    setConfirmDelete(false);
+  const updateStatus = async (nextActive: boolean) => {
     setDeleting(true);
+    setError('');
+    setSuccess('');
     try {
-      const response = await fetch(`/api/restaurants/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/restaurants/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: nextActive }),
+      });
       if (!response.ok) {
-        setError(locale === 'tr' ? 'Pasife alma başarısız.' : 'Failed to deactivate.');
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || (locale === 'tr' ? 'Durum güncellenemedi.' : 'Status could not be updated.'));
         return;
       }
 
-      router.push(`/${locale}/dashboard/restaurants`);
+      setFormData((prev) => ({ ...prev, isActive: nextActive }));
+      setSuccess(
+        nextActive
+          ? locale === 'tr' ? 'İşletme tekrar aktifleştirildi.' : 'Location reactivated.'
+          : locale === 'tr' ? 'İşletme devre dışı bırakıldı.' : 'Location disabled.',
+      );
+      setTimeout(() => setSuccess(''), 2500);
     } catch (deleteError) {
       console.error(deleteError);
       setError(locale === 'tr' ? 'Bağlantı hatası oluştu.' : 'Connection error.');
     } finally {
       setDeleting(false);
     }
+  };
+
+  const handleDeactivate = async () => {
+    setConfirmDelete(false);
+    await updateStatus(false);
   };
 
   if (loading) {
@@ -123,6 +175,39 @@ export default function DashboardRestaurantDetailPage() {
       </div>
     );
   }
+
+  const missing = locale === 'tr' ? 'Belirtilmemiş' : 'Not specified';
+  const publicUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${formData.slug}`;
+  const integrationRows = [
+    {
+      id: 'google',
+      label: 'Google',
+      value: formData.googlePlaceId,
+      logo: <PlatformLogo id="google" size={18} rounded={5} />,
+      help: <PlatformUrlHelp platform="google" />,
+    },
+    {
+      id: 'getir',
+      label: 'Getir',
+      value: formData.getirYemekUrl,
+      logo: <PlatformLogo id="getir-yemek" size={18} rounded={5} />,
+      help: <PlatformUrlHelp platform="getir" />,
+    },
+    {
+      id: 'yemeksepeti',
+      label: 'Yemeksepeti',
+      value: formData.yemekSepetiUrl,
+      logo: <PlatformLogo id="yemeksepeti" size={18} rounded={5} />,
+      help: <PlatformUrlHelp platform="yemeksepeti" />,
+    },
+    {
+      id: 'trendyol',
+      label: 'Trendyol GO',
+      value: formData.trendyolYemekUrl,
+      logo: <PlatformLogo id="trendyol-go" size={18} rounded={5} />,
+      help: <PlatformUrlHelp platform="trendyol" />,
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
@@ -140,9 +225,45 @@ export default function DashboardRestaurantDetailPage() {
           <span className="inline-flex items-center gap-1.5">
             <span className="bz-mono" style={{ fontSize: 12 }}>/{formData.slug}</span>
             <CopyUrlButton
-              url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${formData.slug}`}
+              url={publicUrl}
             />
           </span>
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge kind={formData.isActive ? 'ok' : 'danger'}>
+              {formData.isActive
+                ? locale === 'tr' ? 'Aktif' : 'Active'
+                : locale === 'tr' ? 'Devre dışı' : 'Disabled'}
+            </Badge>
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={() => {
+                if (formData.isActive) {
+                  setConfirmDelete(true);
+                } else {
+                  updateStatus(true);
+                }
+              }}
+              className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-colors disabled:opacity-60 ${
+                formData.isActive
+                  ? 'border border-[#FECACA] bg-white text-[#991B1B] hover:bg-[#FEF2F2]'
+                  : 'border border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
+              }`}
+            >
+              {deleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : formData.isActive ? (
+                <PowerOff size={14} strokeWidth={2} />
+              ) : (
+                <Power size={14} strokeWidth={2} />
+              )}
+              {formData.isActive
+                ? locale === 'tr' ? 'Devre dışı bırak' : 'Disable'
+                : locale === 'tr' ? 'Aktifleştir' : 'Reactivate'}
+            </button>
+          </div>
         }
       />
 
@@ -156,6 +277,80 @@ export default function DashboardRestaurantDetailPage() {
           {success}
         </AlertBanner>
       )}
+
+      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="bz-card p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+              <Building2 size={18} strokeWidth={2} />
+            </div>
+            <div className="min-w-0">
+              <p className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'DURUM ÖZETİ' : 'STATUS SUMMARY'}</p>
+              <h2 className="mt-1 text-[17px] font-medium tracking-[-0.015em] text-[#0A0A0A] bz-h-tight">
+                {formData.isActive
+                  ? locale === 'tr' ? 'Müşteri akışı açık' : 'Customer flow is live'
+                  : locale === 'tr' ? 'Müşteri akışı kapalı' : 'Customer flow is disabled'}
+              </h2>
+              <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">
+                {formData.isActive
+                  ? locale === 'tr' ? 'QR sayfası ve yönlendirme akışları kullanılabilir.' : 'QR page and redirect flows are available.'
+                  : locale === 'tr' ? 'QR sayfası aktif müşterilere kapalıdır; tekrar aktifleştirilebilir.' : 'QR page is closed to customers; it can be reactivated.'}
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <MiniMetric label={locale === 'tr' ? 'Yorum' : 'Reviews'} value={String(meta.feedbacks)} />
+            <MiniMetric label={locale === 'tr' ? 'Menü' : 'Menu'} value={String(meta.menuItems)} />
+            <MiniMetric label="QR" value={String(meta.qrGenerations)} />
+          </div>
+        </section>
+
+        <section className="bz-card p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'ENTEGRASYONLAR' : 'INTEGRATIONS'}</p>
+              <h2 className="mt-1 text-[17px] font-medium tracking-[-0.015em] text-[#0A0A0A] bz-h-tight">
+                {locale === 'tr' ? 'Platform bağlantıları' : 'Platform links'}
+              </h2>
+            </div>
+            <Badge kind={integrationRows.some((row) => row.value.trim()) ? 'ok' : 'off'}>
+              {integrationRows.filter((row) => row.value.trim()).length}/4
+            </Badge>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {integrationRows.map((row) => {
+              const value = row.value.trim();
+              return (
+                <div key={row.id} className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      {row.logo}
+                      <span className="truncate text-[13px] font-medium text-[#0A0A0A]">{row.label}</span>
+                    </div>
+                    <Badge kind={value ? 'ok' : 'off'}>{value ? 'Bağlı' : 'Boş'}</Badge>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <p className="min-w-0 flex-1 truncate font-mono text-[11px] text-[#525252]">
+                      {value || missing}
+                    </p>
+                    {value && (
+                      <a
+                        href={value.startsWith('http') ? value : undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] ${value.startsWith('http') ? 'hover:border-[#0A0A0A]' : 'pointer-events-none opacity-40'}`}
+                        aria-label={`${row.label} ${locale === 'tr' ? 'bağlantısını aç' : 'open link'}`}
+                      >
+                        <ExternalLink size={12} strokeWidth={2} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
 
       <form onSubmit={handleSave} className="space-y-6">
         <div className="bz-card p-6 sm:p-7">

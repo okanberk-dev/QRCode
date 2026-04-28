@@ -43,15 +43,6 @@ interface AdminProfile {
   locationCount?: number | null;
 }
 
-function getTrialInfo(trialEndsAt: string | null | undefined): { daysLeft: number; isExpired: boolean } | null {
-  if (!trialEndsAt) return null;
-  const now = new Date();
-  const end = new Date(trialEndsAt);
-  const msLeft = end.getTime() - now.getTime();
-  const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
-  return { daysLeft, isExpired: daysLeft <= 0 };
-}
-
 const SIDEBAR_GROUP_STATE_KEY = 'buaze.admin.sidebarGroups';
 const SIDEBAR_SCROLL_KEY = 'buaze.admin.sidebarScroll';
 
@@ -168,12 +159,8 @@ export default function AdminSidebar() {
     };
   }, [mobileOpen]);
 
-  // Sidebar nav supports two entry kinds:
-  //   - 'item': flat link (Dashboard, QR vs.)
-  //   - 'group': collapsible parent that hides 2-4 related items under one
-  //     header (Mail / Kullanıcılar / İçerik). Click toggles expand;
-  //     clicking a child auto-keeps the group open if active route is
-  //     inside.
+  // Sidebar nav supports two entry kinds. Keep only the main landing page
+  // flat; related admin surfaces live under compact collapsible groups.
   type NavItem = {
     type: 'item';
     href: string;
@@ -193,46 +180,91 @@ export default function AdminSidebar() {
 
   const menuItems: Nav[] = [
     { type: 'item', href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { type: 'item', href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
-    { type: 'item', href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { type: 'item', href: '/admin/reviews', icon: Inbox, label: locale === 'en' ? 'Reviews' : 'Yorumlar', roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { type: 'item', href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik', roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    // Workspace-scoped features — shown only to restaurant_owner (and
-    // managers where it makes sense). Superadmin manages the platform
-    // globally via groups below; these workspace entries would only
-    // clutter that view.
-    { type: 'item', href: '/admin/campaigns', icon: Sparkles, label: locale === 'en' ? 'Campaigns' : 'Kampanyalar', roles: ['restaurant_owner'] },
-    { type: 'item', href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip', roles: ['restaurant_owner'] },
-    { type: 'item', href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma', roles: ['restaurant_owner'] },
-    { type: 'item', href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notification settings' : 'Bildirim ayarları', roles: ['manager', 'restaurant_owner'] },
-    { type: 'item', href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar', roles: ['restaurant_owner'] },
+    {
+      type: 'group',
+      id: 'operations',
+      icon: Inbox,
+      label: locale === 'en' ? 'Operations' : 'Operasyon',
+      roles: ['superadmin', 'manager', 'restaurant_owner'],
+      children: [
+        { href: '/admin/reviews', icon: Inbox, label: locale === 'en' ? 'Reviews' : 'Yorumlar' },
+        { href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik' },
+        { href: '/admin/qr', icon: QrCode, label: t('qr_codes') },
+        ...(role === 'manager' ? [] : [{ href: '/admin/restaurants', icon: Store, label: t('restaurants') }]),
+      ],
+    },
+    {
+      type: 'group',
+      id: 'workspace',
+      icon: Store,
+      label: locale === 'en' ? 'Workspace' : 'İşletme',
+      roles: ['restaurant_owner'],
+      children: [
+        { href: '/admin/campaigns', icon: Sparkles, label: locale === 'en' ? 'Campaigns' : 'Kampanyalar' },
+        { href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip' },
+        { href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma' },
+        { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notification settings' : 'Bildirim ayarları' },
+        { href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar' },
+      ],
+    },
+    {
+      type: 'group',
+      id: 'manager-settings',
+      icon: Bell,
+      label: locale === 'en' ? 'Settings' : 'Ayarlar',
+      roles: ['manager'],
+      children: [
+        { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notification settings' : 'Bildirim ayarları' },
+      ],
+    },
   ];
 
   if (role === 'superadmin') {
-    // Flat 12-item nav (Pulse 2026-04 design AdminSidebar 1:1, shell.jsx
-    // line 26-39). Previously grouped into Kullanıcılar/Mail/İçerik
-    // collapsibles — flattened for design parity.
     menuItems.push(
-      { type: 'item', href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri', roles: ['superadmin'] },
-      { type: 'item', href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler', roles: ['superadmin'] },
-      { type: 'item', href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler', roles: ['superadmin'] },
-      { type: 'item', href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog', roles: ['superadmin'] },
-      { type: 'item', href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular', roles: ['superadmin'] },
-      { type: 'item', href: '/admin/plans', icon: CreditCard, label: locale === 'en' ? 'Subscriptions' : 'Abonelikler', roles: ['superadmin'] },
-      { type: 'item', href: '/admin/site-settings', icon: Settings, label: locale === 'en' ? 'Site Settings' : 'Site Ayarları', roles: ['superadmin'] },
-      // Mail/newsletter — design'da explicit yok ama mevcut feature; flat
-      // listin sonunda admin tools olarak korunur.
-      { type: 'item', href: '/admin/newsletters', icon: Mail, label: locale === 'en' ? 'Newsletter' : 'Bülten Aboneleri', roles: ['superadmin'] },
-      { type: 'item', href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Campaigns' : 'Bülten Kampanyaları', roles: ['superadmin'] },
-      { type: 'item', href: '/admin/mail-templates', icon: FileEdit, label: locale === 'en' ? 'Mail Templates' : 'Mail İçerikleri', roles: ['superadmin'] },
+      {
+        type: 'group',
+        id: 'accounts',
+        icon: Crown,
+        label: locale === 'en' ? 'Accounts' : 'Hesaplar',
+        roles: ['superadmin'],
+        children: [
+          { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri' },
+          { href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler' },
+          { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler' },
+          { href: '/admin/plans', icon: CreditCard, label: locale === 'en' ? 'Subscriptions' : 'Abonelikler' },
+        ],
+      },
+      {
+        type: 'group',
+        id: 'content',
+        icon: BookOpen,
+        label: locale === 'en' ? 'Content' : 'İçerik',
+        roles: ['superadmin'],
+        children: [
+          { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog' },
+          { href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular' },
+          { href: '/admin/site-settings', icon: Settings, label: locale === 'en' ? 'Site Settings' : 'Site Ayarları' },
+        ],
+      },
+      {
+        type: 'group',
+        id: 'mail',
+        icon: Mail,
+        label: locale === 'en' ? 'Mail' : 'Mail',
+        roles: ['superadmin'],
+        children: [
+          { href: '/admin/newsletters', icon: Mail, label: locale === 'en' ? 'Newsletter' : 'Bülten Aboneleri' },
+          { href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Campaigns' : 'Bülten Kampanyaları' },
+          { href: '/admin/mail-templates', icon: FileEdit, label: locale === 'en' ? 'Mail Templates' : 'Mail İçerikleri' },
+        ],
+      },
     );
     if (process.env.NODE_ENV !== 'production') {
-      menuItems.push({
-        type: 'item',
+      const mailGroup = menuItems.find((item): item is NavGroup => item.type === 'group' && item.id === 'mail');
+      mailGroup?.children.push({
         href: '/admin/dev/mail-preview',
         icon: Mail,
         label: locale === 'en' ? 'Mail Preview (dev)' : 'Mail Önizleme (dev)',
-        roles: ['superadmin'],
       });
     }
   }
@@ -262,8 +294,6 @@ export default function AdminSidebar() {
   // against sentinel-only display names (single space, etc.) that would
   // otherwise render an empty avatar.
   const initial = displayName.trim().charAt(0).toUpperCase() || '·';
-  const trialInfo = profile?.plan === 'trial' ? getTrialInfo(profile?.trialEndsAt) : null;
-
   const workspaceName =
     profile?.workspaceName ||
     (role === 'superadmin' ? (locale === 'en' ? 'Buaze Admin' : 'Buaze Yönetim') : displayName);
@@ -277,24 +307,6 @@ export default function AdminSidebar() {
         : locale === 'en'
           ? 'SINGLE WORKSPACE'
           : 'TEK İŞLETME';
-
-  const planLabel = (() => {
-    if (role === 'superadmin') return locale === 'en' ? 'ADMIN' : 'ADMIN';
-    if (!profile?.plan || profile.plan === 'trial') return locale === 'en' ? 'TRIAL' : 'TRIAL';
-    if (profile.plan === 'monthly') return locale === 'en' ? 'MONTHLY' : 'AYLIK';
-    if (profile.plan === 'yearly') return locale === 'en' ? 'YEARLY' : 'YILLIK';
-    return profile.plan.toUpperCase();
-  })();
-
-  const quotaText = (() => {
-    if (role === 'superadmin') {
-      return locale === 'en' ? 'Full system access' : 'Tüm sistem erişimi';
-    }
-    if (trialInfo) {
-      return `${trialInfo.daysLeft} ${locale === 'en' ? 'day trial' : 'gün deneme'}`;
-    }
-    return locale === 'en' ? 'Unlimited reviews' : 'Sınırsız yorum';
-  })();
 
   const SidebarContent = ({ navRef: forwardedNavRef }: { navRef?: React.MutableRefObject<HTMLElement | null> } = {}) => (
     <div className="flex flex-col h-full bg-[#0A0A0A] text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -423,35 +435,6 @@ export default function AdminSidebar() {
             );
           })}
       </nav>
-
-      {/* Plan card (superadmin → "admin access" info · owner → trial/quota) */}
-      <div className="mx-3 my-3 rounded-lg bg-[#1A1A1A] p-3.5">
-        <div className="flex items-center gap-1.5">
-          {role === 'superadmin' && <Crown size={11} strokeWidth={2} className="text-[#C6F24E]" />}
-          {trialInfo && <BarChart3 size={11} strokeWidth={2} className="text-[#C6F24E]" />}
-          <span className="pulse-eyebrow text-[#C6F24E]">{planLabel}</span>
-        </div>
-        <p className="mt-2 text-[12px] text-white/70 leading-[1.45]">
-          {quotaText}
-        </p>
-        {trialInfo && !trialInfo.isExpired && (
-          <div className="mt-2 h-1 w-full bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#C6F24E] transition-all"
-              style={{ width: `${Math.min(100, (trialInfo.daysLeft / 14) * 100)}%` }}
-            />
-          </div>
-        )}
-        {role !== 'superadmin' && (
-          <Link
-            href="/admin/profile"
-            onClick={handleNavClick}
-            className="mt-2.5 block rounded-full bg-[#C6F24E] px-3 py-1.5 text-center text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
-          >
-            {locale === 'en' ? 'Manage plan' : 'Planı yönet'}
-          </Link>
-        )}
-      </div>
 
       {/* User card + locale switcher + logout */}
       <div className="border-t border-white/10 bg-black/20 p-3">

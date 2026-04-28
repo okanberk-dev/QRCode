@@ -177,34 +177,58 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     };
   }, [locale]);
 
-  // Sidebar navigation — flat top primary actions, then 3 collapsible groups
-  // for setup / insight / info, then a flat profile entry. Reduces visible
-  // surface from 11 items to ~7 (3 flat + 3 group headers + 1 flat).
+  // Sidebar navigation — keep the daily entry point flat, then collapse
+  // related pages into operational groups so the sidebar stays compact.
   type LucideIcon = typeof LayoutDashboard;
   type NavItem = { type: 'item'; href: string; icon: LucideIcon; label: string; badge?: number };
   type NavChild = { href: string; icon: LucideIcon; label: string };
   type NavGroup = { type: 'group'; id: string; icon: LucideIcon; label: string; children: NavChild[] };
   type Nav = NavItem | NavGroup;
 
-  const feedbackBadge =
-    workspace?.feedbackCount && workspace.feedbackCount > 0 ? workspace.feedbackCount : undefined;
-
-  // Flat 12-item nav (Pulse 2026-04 design ownerNav 1:1, shell.jsx line 12-23).
-  // Previously grouped Setup/Insight/Info — flattened for design parity.
-  // `restaurants` (multi-location yönetim) design'da explicit yok; flat list
-  // sonuna ek item olarak korunur. `integrations` (PR #156) Pulse-after entry.
   const navItems: Nav[] = [
     { type: 'item', href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
-    { type: 'item', href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks, badge: feedbackBadge },
-    { type: 'item', href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
-    { type: 'item', href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
-    { type: 'item', href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
-    { type: 'item', href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
-    { type: 'item', href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
-    { type: 'item', href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
-    { type: 'item', href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
-    { type: 'item', href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
-    { type: 'item', href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
+    {
+      type: 'group',
+      id: 'feedback',
+      icon: MessageSquareText,
+      label: locale === 'tr' ? 'Geri bildirim' : 'Feedback',
+      children: [
+        { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
+        { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
+        { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
+      ],
+    },
+    {
+      type: 'group',
+      id: 'growth',
+      icon: QrCode,
+      label: locale === 'tr' ? 'QR ve platformlar' : 'QR & platforms',
+      children: [
+        { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
+        { href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
+        { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
+      ],
+    },
+    {
+      type: 'group',
+      id: 'business',
+      icon: Store,
+      label: locale === 'tr' ? 'İşletme' : 'Business',
+      children: [
+        { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
+        { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
+      ],
+    },
+    {
+      type: 'group',
+      id: 'info',
+      icon: BookOpen,
+      label: locale === 'tr' ? 'Bilgi' : 'Info',
+      children: [
+        { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
+        { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
+      ],
+    },
     { type: 'item', href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
 
@@ -244,21 +268,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const primaryName = workspace?.primaryName ?? (locale === 'tr' ? 'İşletmen' : 'Your workspace');
   const locationCount = workspace?.locationCount ?? 0;
   const primaryInitial = (workspace?.primaryName || displayName).charAt(0).toUpperCase();
-
-  const quotaLabel = locale === 'tr' ? 'Yorum kotan' : 'Review quota';
-  const quotaValue =
-    user.plan === 'trial' && trialDaysLeft !== null
-      ? `${trialDaysLeft} ${locale === 'tr' ? 'gün deneme' : 'day trial'}`
-      : `${workspace?.feedbackCount ?? 0} / ∞`;
-  const planLabel =
-    user.plan === 'trial'
-      ? locale === 'tr'
-        ? 'TRIAL'
-        : 'TRIAL'
-      : (user.plan || 'growth').toUpperCase() + (locale === 'tr' ? ' PLAN' : ' PLAN');
-  const upgradeLabel = user.plan === 'trial'
-    ? (locale === 'tr' ? 'Yükselt' : 'Upgrade')
-    : (locale === 'tr' ? 'Planı yönet' : 'Manage plan');
 
   const SidebarContent = ({ navRef: forwardedNavRef }: { navRef?: React.MutableRefObject<HTMLElement | null> } = {}) => (
     <div className="flex h-full flex-col bg-[#0A0A0A] text-white">
@@ -397,28 +406,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           );
         })}
       </nav>
-
-      {/* Plan card */}
-      <div className="mx-3 my-3 rounded-lg bg-[#1A1A1A] p-3.5">
-        <div className="flex items-center gap-1.5">
-          {user.plan === 'trial' && <Crown size={11} strokeWidth={2} className="text-[#C6F24E]" />}
-          <span className="pulse-eyebrow text-[#C6F24E]">{planLabel}</span>
-        </div>
-        <p className="mt-2 text-[12px] text-white/70 leading-[1.45]">
-          {quotaLabel}:{' '}
-          <span
-            className="font-semibold text-white bz-h-tight"
-          >
-            {quotaValue}
-          </span>
-        </p>
-        <Link
-          href={`/${locale}/pricing`}
-          className="mt-2.5 block rounded-full bg-[#C6F24E] px-3 py-1.5 text-center text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
-        >
-          {upgradeLabel}
-        </Link>
-      </div>
 
       {/* User row + logout */}
       <div className="border-t border-white/10 bg-black/20 p-3">

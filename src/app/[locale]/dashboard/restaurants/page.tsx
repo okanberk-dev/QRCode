@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ExternalLink, Info, Loader2, MapPin, Plus, Search, Store } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, ErrorState, Modal, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, EmptyState, ErrorState, Modal, PageHeader, Tabs, type TabItem } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -24,11 +24,14 @@ export default function DashboardRestaurantsPage() {
   const locale = params.locale === 'en' ? 'en' : 'tr';
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'active' | 'all' | 'passive'>('active');
   const [loading, setLoading] = useState(true);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [fetchError, setFetchError] = useState('');
   const [createError, setCreateError] = useState('');
+  const [notice, setNotice] = useState<{ kind: 'success' | 'danger'; text: string } | null>(null);
   const [isManualSlug, setIsManualSlug] = useState(false);
   const [showGoogleInfo, setShowGoogleInfo] = useState(false);
   const [userEmail, setUserEmail] = useState('');
@@ -58,6 +61,15 @@ export default function DashboardRestaurantsPage() {
         category: 'Kategori',
         reviews: 'Yorum',
         search: 'İşletme ara',
+        active: 'Aktif',
+        all: 'Tümü',
+        inactive: 'Devre Dışı Bırakılanlar',
+        inactiveEmptyTitle: 'Devre dışı işletme yok',
+        inactiveEmptyText: 'Pasife alınan işletmeler burada görünür. Aktifleştirme işlemini bu listeden yapabilirsin.',
+        activate: 'Aktifleştir',
+        deactivate: 'Devre dışı bırak',
+        activeStatus: 'Aktif',
+        inactiveStatus: 'Devre dışı',
       }
     : {
         title: 'My Locations',
@@ -70,13 +82,22 @@ export default function DashboardRestaurantsPage() {
         category: 'Category',
         reviews: 'Reviews',
         search: 'Search locations',
+        active: 'Active',
+        all: 'All',
+        inactive: 'Disabled',
+        inactiveEmptyTitle: 'No disabled location',
+        inactiveEmptyText: 'Disabled locations appear here. You can reactivate them from this list.',
+        activate: 'Reactivate',
+        deactivate: 'Disable',
+        activeStatus: 'Active',
+        inactiveStatus: 'Disabled',
       };
 
   const fetchRestaurants = async () => {
     setLoading(true);
     setFetchError('');
     try {
-      const response = await fetch('/api/restaurants');
+      const response = await fetch(`/api/restaurants?status=${statusFilter}`);
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         setFetchError(errData.error || `Sunucu hatası (${response.status})`);
@@ -95,7 +116,9 @@ export default function DashboardRestaurantsPage() {
 
   useEffect(() => {
     fetchRestaurants();
-    
+  }, [statusFilter]);
+
+  useEffect(() => {
     // Fetch user profile to default the notification email
     fetch('/api/user/profile')
       .then((res) => res.json())
@@ -139,7 +162,10 @@ export default function DashboardRestaurantsPage() {
       const response = await fetch('/api/restaurants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          googleReviewUrl: formData.googlePlaceId,
+        }),
       });
 
       const data = await response.json();
@@ -173,15 +199,38 @@ export default function DashboardRestaurantsPage() {
   };
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
+    setActionLoadingId(id);
+    setNotice(null);
     try {
-      await fetch(`/api/restaurants/${id}`, {
+      const response = await fetch(`/api/restaurants/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !currentStatus }),
       });
-      fetchRestaurants();
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setNotice({
+          kind: 'danger',
+          text: data.error || (locale === 'tr' ? 'Durum güncellenemedi.' : 'Status could not be updated.'),
+        });
+        return;
+      }
+
+      setNotice({
+        kind: 'success',
+        text: !currentStatus
+          ? locale === 'tr' ? 'İşletme tekrar aktifleştirildi.' : 'Location reactivated.'
+          : locale === 'tr' ? 'İşletme devre dışı bırakıldı.' : 'Location disabled.',
+      });
+      await fetchRestaurants();
     } catch (error) {
       console.error(error);
+      setNotice({
+        kind: 'danger',
+        text: locale === 'tr' ? 'Bağlantı hatası oluştu.' : 'Connection error.',
+      });
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -211,6 +260,13 @@ export default function DashboardRestaurantsPage() {
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.category.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+  const statusTabs: TabItem[] = [
+    { id: 'active', label: copy.active },
+    { id: 'all', label: copy.all },
+    { id: 'passive', label: copy.inactive },
+  ];
+  const emptyTitle = statusFilter === 'passive' ? copy.inactiveEmptyTitle : copy.emptyTitle;
+  const emptyText = statusFilter === 'passive' ? copy.inactiveEmptyText : copy.emptyText;
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
@@ -226,30 +282,53 @@ export default function DashboardRestaurantsPage() {
         }
       />
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder={copy.search}
-          className="w-full rounded-full border border-[#EDEDED] bg-white py-3 pl-11 pr-5 text-[14px] text-[#0A0A0A] placeholder:text-[#737373] outline-none transition-all focus:border-[#C6F24E]"
+      {notice && (
+        <AlertBanner kind={notice.kind} onDismiss={() => setNotice(null)}>
+          {notice.text}
+        </AlertBanner>
+      )}
+
+      <div className="bz-card flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between">
+        <Tabs
+          items={statusTabs}
+          active={statusFilter}
+          onChange={(id) => setStatusFilter(id as 'active' | 'all' | 'passive')}
+          ariaLabel={locale === 'tr' ? 'İşletme durum filtresi' : 'Location status filter'}
+          className="overflow-x-auto"
         />
+        <div className="relative w-full lg:max-w-md">
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder={copy.search}
+            className="bz-input"
+            style={{ paddingLeft: 44 }}
+          />
+        </div>
       </div>
 
       {restaurants.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] px-6 py-14 text-center sm:px-10">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-[#EDEDED]">
-            <Store size={22} className="text-[#737373]" strokeWidth={2} />
-          </div>
-          <h2
-            className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
-          >
-            {copy.emptyTitle}
-          </h2>
-          <p className="mx-auto mt-2 max-w-md text-[14px] text-[#525252] leading-[1.55]">{copy.emptyText}</p>
-        </div>
+        <EmptyState
+          icon={<Store size={22} />}
+          title={emptyTitle}
+          body={emptyText}
+          action={
+            statusFilter !== 'passive' ? (
+              <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
+                <Plus size={14} strokeWidth={2} />
+                {copy.add}
+              </button>
+            ) : undefined
+          }
+        />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={<Search size={22} />}
+          title={locale === 'tr' ? 'Sonuç bulunamadı' : 'No results'}
+          body={locale === 'tr' ? 'Arama kriterlerini değiştirerek tekrar dene.' : 'Try changing the search term.'}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((restaurant) => {
@@ -259,14 +338,14 @@ export default function DashboardRestaurantsPage() {
                 ? 'active'
                 : 'new';
             const trendStyle = {
-              active: { bg: 'bg-[#EAF9B8]', fg: 'text-[#0A0A0A]', label: locale === 'tr' ? '↑ AKTİF' : '↑ ACTIVE' },
+              active: { bg: 'bg-[#EAF9B8]', fg: 'text-[#0A0A0A]', label: locale === 'tr' ? '↑ CANLI' : '↑ LIVE' },
               new: { bg: 'bg-[#F5F5F5]', fg: 'text-[#525252]', label: locale === 'tr' ? '→ YENİ' : '→ NEW' },
-              inactive: { bg: 'bg-[#FEE2E2]', fg: 'text-[#DC2626]', label: locale === 'tr' ? '· PASİF' : '· OFFLINE' },
+              inactive: { bg: 'bg-[#FEF2F2]', fg: 'text-[#991B1B]', label: locale === 'tr' ? '· DEVRE DIŞI' : '· DISABLED' },
             }[trend];
             return (
               <div
                 key={restaurant.id}
-                className={`overflow-hidden bz-card transition-colors ${!restaurant.isActive ? 'opacity-70' : 'hover:border-[#C6F24E]'}`}
+                className={`overflow-hidden bz-card transition-colors ${!restaurant.isActive ? 'border-[#FECACA] bg-[#FFFBFB]' : 'hover:border-[#C6F24E]'}`}
               >
                 <div className="p-5 sm:p-6">
                   {/* Header — name + address + trend badge (AdminLocations design) */}
@@ -279,18 +358,18 @@ export default function DashboardRestaurantsPage() {
                       </h3>
                       <p className="mt-1 text-[12px] text-[#737373] truncate">{restaurant.category}</p>
                     </div>
-                    <span className={`${trendStyle.bg} ${trendStyle.fg} shrink-0 pulse-eyebrow rounded px-2 py-1`}>
-                      {trendStyle.label}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                      <span className={`${trendStyle.bg} ${trendStyle.fg} shrink-0 pulse-eyebrow rounded px-2 py-1`}>
+                        {trendStyle.label}
+                      </span>
+                      <Badge kind={restaurant.isActive ? 'ok' : 'danger'}>
+                        {restaurant.isActive ? copy.activeStatus : copy.inactiveStatus}
+                      </Badge>
+                    </div>
                   </div>
 
                   {/* Mini map graphic — decorative, lime accent pin (AdminLocations §716-724) */}
-                  <button
-                    type="button"
-                    onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
-                    className="mt-4 block w-full aspect-[2/1] rounded-lg bg-[#F5F5F5] relative overflow-hidden hover:bg-[#EDEDED] transition-colors group"
-                    aria-label={restaurant.isActive ? 'deactivate' : 'activate'}
-                  >
+                  <div className="mt-4 block w-full aspect-[2/1] rounded-lg bg-[#F5F5F5] relative overflow-hidden">
                     <svg viewBox="0 0 200 100" className="w-full h-full" aria-hidden>
                       <path d="M0 50 Q30 40 60 48 Q90 55 120 42 Q150 30 200 38" stroke="#EDEDED" strokeWidth="1.5" fill="none" />
                       <path d="M20 70 Q60 60 100 65 Q140 70 180 62" stroke="#EDEDED" strokeWidth="1.5" fill="none" />
@@ -299,12 +378,10 @@ export default function DashboardRestaurantsPage() {
                       <circle cx="100" cy="50" r="10" fill={restaurant.primaryColor} opacity="0.6" />
                       <circle cx="100" cy="50" r="5" fill="#0A0A0A" />
                     </svg>
-                    <span className="absolute bottom-2 right-2 flex items-center gap-1.5 pulse-eyebrow text-[#737373] bg-white/80 rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {restaurant.isActive
-                        ? locale === 'tr' ? 'DEVRE DIŞI BIRAK' : 'DEACTIVATE'
-                        : locale === 'tr' ? 'ETKİNLEŞTİR' : 'ACTIVATE'}
+                    <span className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded bg-white/85 px-2 py-1 pulse-eyebrow text-[#737373]">
+                      {restaurant.isActive ? copy.activeStatus.toUpperCase() : copy.inactiveStatus.toUpperCase()}
                     </span>
-                  </button>
+                  </div>
 
                   {/* 4-col stat grid (AdminLocations §727-739) */}
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -313,7 +390,7 @@ export default function DashboardRestaurantsPage() {
                       { l: locale === 'tr' ? 'YORUM' : 'REVIEWS', v: String(restaurant._count.feedbacks) },
                       {
                         l: locale === 'tr' ? 'DURUM' : 'STATUS',
-                        v: restaurant.isActive ? (locale === 'tr' ? 'Açık' : 'Live') : (locale === 'tr' ? 'Kapalı' : 'Off'),
+                        v: restaurant.isActive ? copy.activeStatus : copy.inactiveStatus,
                       },
                       { l: 'URL', v: `/${restaurant.slug}`, mono: true },
                     ].map((x) => (
@@ -339,7 +416,7 @@ export default function DashboardRestaurantsPage() {
                   </div>
 
                   {/* Full-width "Detay aç" pill — matches AdminLocations §741 */}
-                  <div className="mt-4 grid grid-cols-[1fr_1fr_auto] gap-2">
+                  <div className="mt-4 grid grid-cols-2 gap-2">
                     <Link
                       href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
                       className="rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-4 py-2.5 text-center text-[12px] font-medium text-[#525252] hover:bg-[#0A0A0A] hover:text-white hover:border-[#0A0A0A] transition-colors"
@@ -352,13 +429,28 @@ export default function DashboardRestaurantsPage() {
                     >
                     {copy.qr}
                   </Link>
+                  <button
+                    type="button"
+                    disabled={actionLoadingId === restaurant.id}
+                    onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
+                    className={`rounded-full px-4 py-2.5 text-center text-[12px] font-medium transition-colors disabled:opacity-60 ${
+                      restaurant.isActive
+                        ? 'border border-[#FECACA] bg-white text-[#991B1B] hover:bg-[#FEF2F2]'
+                        : 'border border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
+                    }`}
+                  >
+                    {actionLoadingId === restaurant.id
+                      ? locale === 'tr' ? 'İşleniyor...' : 'Working...'
+                      : restaurant.isActive ? copy.deactivate : copy.activate}
+                  </button>
                   <Link
                     href={`/r/${restaurant.slug}`}
                     target="_blank"
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] hover:border-[#C6F24E] transition-colors"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[12px] font-medium text-[#0A0A0A] hover:border-[#C6F24E] transition-colors"
                     aria-label="Open public page"
                   >
                     <ExternalLink size={14} strokeWidth={2} />
+                    {locale === 'tr' ? 'Aç' : 'Open'}
                   </Link>
                 </div>
               </div>
