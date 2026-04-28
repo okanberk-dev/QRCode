@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileNav from '@/components/admin/AdminMobileNav';
+import AdminTopbar from '@/components/admin/AdminTopbar';
 import AnnouncementBanner, { type DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import { isAdminRole, verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -81,8 +82,14 @@ export default async function AdminLayout({
     <AdminTranslationProvider initialLocale={adminLocale as any}>
       <div className="flex flex-col lg:flex-row min-h-[100dvh] lg:h-screen bg-[#FFFFFF] lg:overflow-hidden font-sans selection:bg-[#C6F24E]/30">
         {showSidebar && <AdminSidebar />}
-        <div className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-28 lg:pb-0 pt-2 sm:pt-6'}`}>
-          <div className={showSidebar ? "max-w-7xl mx-auto w-full" : "w-full max-w-full"}>
+        <div className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-28 lg:pb-0'}`}>
+          {showSidebar && (
+            <AdminTopbar
+              announcements={announcements}
+              displayName={typeof payload?.username === 'string' ? payload.username : null}
+            />
+          )}
+          <div className={showSidebar ? "max-w-7xl mx-auto w-full pt-2 sm:pt-6" : "w-full max-w-full"}>
             {showSidebar && announcements.length > 0 && (
               <AnnouncementBanner announcements={announcements} locale={adminLocale} />
             )}

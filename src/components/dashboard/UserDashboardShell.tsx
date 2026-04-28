@@ -7,6 +7,7 @@ import { BarChart3, BookOpen, ChevronDown, Crown, LayoutDashboard, LogOut, Messa
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 interface DashboardUser {
   name: string | null;
@@ -277,6 +278,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 <Crown size={10} /> {trialDaysLeft}g
               </span>
             )}
+            <NotificationBell
+              locale={locale}
+              announcements={announcements}
+              panelBase={`/${locale}/dashboard`}
+              reviewsHref={`/${locale}/dashboard/feedbacks`}
+              notificationsSettingsHref="/admin/notifications"
+            />
             <button
               onClick={() => setDrawerOpen((v) => !v)}
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]"
@@ -314,6 +322,11 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                   ⌘K
                 </span>
               </div>
+              <NotificationBell
+                locale={locale}
+                announcements={announcements}
+                panelBase={`/${locale}/dashboard`}
+              />
               <Link
                 href={`/${locale}/dashboard/profile`}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors"
