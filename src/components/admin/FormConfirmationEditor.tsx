@@ -5,6 +5,7 @@ import { ArrowLeft, Eye, History, Loader2, Mail, RotateCcw, Save } from 'lucide-
 import Link from 'next/link';
 import MailFieldInput, { type MailFieldDef } from './MailFieldInput';
 import MailRevisionHistory from './MailRevisionHistory';
+import { useConfirmDialog } from '@/components/ui';
 import { MAIL_PLACEHOLDERS } from '@/lib/email/placeholders';
 
 type FormType = 'contact' | 'career' | 'roi' | 'newsletter';
@@ -58,6 +59,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
   const [reverting, setReverting] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [confirmDialog, askConfirm] = useConfirmDialog();
   const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -141,25 +143,33 @@ export default function FormConfirmationEditor({ locale }: Props) {
     }
   };
 
-  const onRevert = async () => {
-    if (!confirm('Tüm 4 variant\'ı silip kod-içi varsayılana dönmek istediğine emin misin?')) return;
-    setReverting(true);
-    setError(null);
-    setInfo(null);
-    try {
-      const res = await fetch(`/api/admin/mail-templates/form-confirmation/${locale}`, { method: 'DELETE' });
-      if (!res.ok && res.status !== 404) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || 'Silme başarısız');
-      }
-      setNested(emptyNested());
-      setSeeded(false);
-      setInfo('Varsayılana döndürüldü. Sonraki mailler kod-içi default ile gider.');
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setReverting(false);
-    }
+  const onRevert = () => {
+    askConfirm({
+      title: 'Varsayılana sıfırla',
+      body: 'Tüm 4 variant\'ı silip kod-içi varsayılana dönmek istediğine emin misin? Mevcut özelleştirmeler kaybolur (geçmiş kayıtlardan geri getirebilirsin).',
+      confirmLabel: 'Sıfırla',
+      cancelLabel: 'Vazgeç',
+      variant: 'danger',
+      onConfirm: async () => {
+        setReverting(true);
+        setError(null);
+        setInfo(null);
+        try {
+          const res = await fetch(`/api/admin/mail-templates/form-confirmation/${locale}`, { method: 'DELETE' });
+          if (!res.ok && res.status !== 404) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Silme başarısız');
+          }
+          setNested(emptyNested());
+          setSeeded(false);
+          setInfo('Varsayılana döndürüldü. Sonraki mailler kod-içi default ile gider.');
+        } catch (e) {
+          setError((e as Error).message);
+        } finally {
+          setReverting(false);
+        }
+      },
+    });
   };
 
   const onPreview = () => {
@@ -328,6 +338,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
           setInfo('Geri dönüş başarılı — içerik yenilendi.');
         }}
       />
+      {confirmDialog}
     </div>
   );
 }

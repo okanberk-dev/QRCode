@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Calendar, Send, Save, Eye, ArrowLeft, Mail, Trash2 } from 'lucide-react';
-import { AlertBanner, Badge, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, PageHeader, useConfirmDialog } from '@/components/ui';
 import Link from 'next/link';
 
 interface BlogPostOption {
@@ -50,6 +50,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
   const [sendingNow, setSendingNow] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDialog, askConfirm] = useConfirmDialog();
   const [info, setInfo] = useState<string | null>(null);
 
   // Mode: draft | scheduled | now (now is a UI-only mode that triggers send
@@ -152,21 +153,29 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
     }
   };
 
-  const onDelete = async () => {
+  const onDelete = () => {
     if (!isEdit || !initial?.id) return;
-    if (!confirm('Bu taslak kampanyayı kalıcı olarak silmek istediğine emin misin?')) return;
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/admin/newsletters/campaigns/${initial.id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || 'Silme başarısız');
-      }
-      router.push('/admin/newsletters/campaigns');
-    } catch (e) {
-      setError((e as Error).message);
-      setDeleting(false);
-    }
+    askConfirm({
+      title: 'Taslak kampanyayı sil',
+      body: 'Bu taslak kampanyayı kalıcı olarak silmek istediğine emin misin? İşlem geri alınamaz.',
+      confirmLabel: 'Sil',
+      cancelLabel: 'Vazgeç',
+      variant: 'danger',
+      onConfirm: async () => {
+        setDeleting(true);
+        try {
+          const res = await fetch(`/api/admin/newsletters/campaigns/${initial.id}`, { method: 'DELETE' });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Silme başarısız');
+          }
+          router.push('/admin/newsletters/campaigns');
+        } catch (e) {
+          setError((e as Error).message);
+          setDeleting(false);
+        }
+      },
+    });
   };
 
   const onPreview = () => {
@@ -418,6 +427,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
           {mode === 'now' ? 'Şimdi gönder' : mode === 'scheduled' ? 'Zamanla' : 'Taslağı kaydet'}
         </button>
       </div>
+      {confirmDialog}
     </div>
   );
 }
