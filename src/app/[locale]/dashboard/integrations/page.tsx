@@ -19,7 +19,6 @@ interface RestaurantRow {
   name: string;
   slug: string;
   category: string;
-  googleReviewUrl: string | null;
   googlePlaceId: string | null;
   yemekSepetiUrl: string | null;
   getirYemekUrl: string | null;
@@ -27,14 +26,12 @@ interface RestaurantRow {
 }
 
 type FieldKey =
-  | 'googleReviewUrl'
   | 'googlePlaceId'
   | 'yemekSepetiUrl'
   | 'getirYemekUrl'
   | 'trendyolYemekUrl';
 
 interface Draft {
-  googleReviewUrl: string;
   googlePlaceId: string;
   yemekSepetiUrl: string;
   getirYemekUrl: string;
@@ -42,7 +39,6 @@ interface Draft {
 }
 
 const EMPTY_DRAFT: Draft = {
-  googleReviewUrl: '',
   googlePlaceId: '',
   yemekSepetiUrl: '',
   getirYemekUrl: '',
@@ -51,7 +47,6 @@ const EMPTY_DRAFT: Draft = {
 
 function toDraft(r: RestaurantRow): Draft {
   return {
-    googleReviewUrl: r.googleReviewUrl ?? '',
     googlePlaceId: r.googlePlaceId ?? '',
     yemekSepetiUrl: r.yemekSepetiUrl ?? '',
     getirYemekUrl: r.getirYemekUrl ?? '',
@@ -95,8 +90,8 @@ export default function DashboardIntegrationsPage() {
       hint: {
         google:
           isTr
-            ? 'Google Place ID veya doğrudan g.page/r/... formatında yorum URL\'i. Boşsa Google\'a yönlendirme kapanır.'
-            : 'Either the Google Place ID or a g.page/r/... review URL. Leave empty to disable Google.',
+            ? 'Place ID (ChIJ…), Google Maps linki (maps.google.com / maps.app.goo.gl) veya yorum URL\'i (g.page/r/…) — hepsini kabul eder. Boşsa Google\'a yönlendirme kapanır.'
+            : 'Accepts a Place ID (ChIJ…), Google Maps link (maps.google.com / maps.app.goo.gl) or review URL (g.page/r/…). Leave empty to disable Google.',
         yemeksepeti:
           isTr ? 'Yemeksepeti restoran sayfası bağlantısı.' : 'Yemeksepeti restaurant page link.',
         getir: isTr ? 'Getir Yemek restoran sayfası bağlantısı.' : 'Getir Yemek restaurant page link.',
@@ -175,7 +170,6 @@ export default function DashboardIntegrationsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          googleReviewUrl: draft.googleReviewUrl.trim(),
           googlePlaceId: draft.googlePlaceId.trim(),
           yemekSepetiUrl: draft.yemekSepetiUrl.trim(),
           getirYemekUrl: draft.getirYemekUrl.trim(),
@@ -192,7 +186,6 @@ export default function DashboardIntegrationsPage() {
           r.id === active.id
             ? {
                 ...r,
-                googleReviewUrl: updated.googleReviewUrl ?? null,
                 googlePlaceId: updated.googlePlaceId ?? null,
                 yemekSepetiUrl: updated.yemekSepetiUrl ?? null,
                 getirYemekUrl: updated.getirYemekUrl ?? null,
@@ -296,32 +289,23 @@ export default function DashboardIntegrationsPage() {
                 </Link>
               </div>
 
-              {/* Google */}
+              {/* Google — accepts either Place ID or full review URL.
+                  Public review page (`/r/[slug]`) reads only googlePlaceId
+                  and uses startsWith('http') to detect URL vs raw ID. */}
               <PlatformField
                 logo={<PlatformLogo id="google" size={20} rounded={5} />}
                 label={copy.labels.google}
                 hint={copy.hint.google}
                 accent="#4285F4"
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <input
-                    type="url"
-                    inputMode="url"
-                    value={draft.googleReviewUrl}
-                    onChange={(e) => setField('googleReviewUrl', e.target.value)}
-                    placeholder="https://g.page/r/..."
-                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none focus:border-[#4285F4] transition-colors"
-                    aria-label="Google review URL"
-                  />
-                  <input
-                    type="text"
-                    value={draft.googlePlaceId}
-                    onChange={(e) => setField('googlePlaceId', e.target.value)}
-                    placeholder="Place ID (ChIJ…)"
-                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none focus:border-[#4285F4] transition-colors font-mono"
-                    aria-label="Google Place ID"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={draft.googlePlaceId}
+                  onChange={(e) => setField('googlePlaceId', e.target.value)}
+                  placeholder="ChIJ… · maps.google.com/… · g.page/r/…"
+                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none focus:border-[#4285F4] transition-colors"
+                  aria-label="Google Place ID or Maps link"
+                />
               </PlatformField>
 
               {/* Yemeksepeti */}

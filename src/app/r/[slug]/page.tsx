@@ -8,6 +8,7 @@ import FeedbackForm, { FeedbackFormHandle } from '@/components/FeedbackForm';
 import ThankYou from '@/components/ThankYou';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
+import { buildGoogleReviewUrl } from '@/lib/google-review';
 
 interface RestaurantData {
   id: string;
@@ -85,11 +86,9 @@ function SlugContent() {
     fetchRestaurant();
   }, [slug]);
 
-  const googleUrl = restaurant?.googlePlaceId
-    ? restaurant.googlePlaceId.startsWith('http')
-      ? restaurant.googlePlaceId
-      : `https://search.google.com/local/writereview?placeid=${restaurant.googlePlaceId}`
-    : null;
+  // Accepts: raw Place ID (ChIJ…), g.page/r/… link, search.google.com
+  // writereview link, or a /maps/place/ URL — see buildGoogleReviewUrl.
+  const googleUrl = buildGoogleReviewUrl(restaurant?.googlePlaceId ?? null);
 
   // Build available review platforms
   const platforms: ReviewPlatform[] = [];
