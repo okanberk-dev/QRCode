@@ -6,6 +6,7 @@ import Link from 'next/link';
 import MailFieldInput, { type MailFieldDef } from './MailFieldInput';
 import FormConfirmationEditor from './FormConfirmationEditor';
 import MailRevisionHistory from './MailRevisionHistory';
+import { useConfirmDialog } from '@/components/ui';
 import { MAIL_PLACEHOLDERS } from '@/lib/email/placeholders';
 
 // Schema-aware fields per template. Only string copy fields the admin
@@ -180,6 +181,7 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
   const [info, setInfo] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [confirmDialog, askConfirm] = useConfirmDialog();
 
   useEffect(() => {
     let alive = true;
@@ -254,25 +256,33 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
     }
   };
 
-  const onRevert = async () => {
-    if (!confirm('Tüm bu içeriği silip kod-içi varsayılana dönmek istediğine emin misin?')) return;
-    setReverting(true);
-    setError(null);
-    setInfo(null);
-    try {
-      const res = await fetch(`/api/admin/mail-templates/${templateKey}/${locale}`, { method: 'DELETE' });
-      if (!res.ok && res.status !== 404) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || 'Silme başarısız');
-      }
-      setContent(Object.fromEntries(fields.map((f) => [f.key, ''])));
-      setSeeded(false);
-      setInfo('Varsayılana döndürüldü. Sonraki mail kod-içi default ile gider.');
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setReverting(false);
-    }
+  const onRevert = () => {
+    askConfirm({
+      title: 'Varsayılan içeriğe dön',
+      body: 'Tüm bu içeriği silip kod-içi varsayılana dönmek istediğine emin misin? Mevcut özelleştirmeler kaybolur (geçmiş kayıtlardan geri getirebilirsin).',
+      confirmLabel: 'Sıfırla',
+      cancelLabel: 'Vazgeç',
+      variant: 'danger',
+      onConfirm: async () => {
+        setReverting(true);
+        setError(null);
+        setInfo(null);
+        try {
+          const res = await fetch(`/api/admin/mail-templates/${templateKey}/${locale}`, { method: 'DELETE' });
+          if (!res.ok && res.status !== 404) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'Silme başarısız');
+          }
+          setContent(Object.fromEntries(fields.map((f) => [f.key, ''])));
+          setSeeded(false);
+          setInfo('Varsayılana döndürüldü. Sonraki mail kod-içi default ile gider.');
+        } catch (e) {
+          setError((e as Error).message);
+        } finally {
+          setReverting(false);
+        }
+      },
+    });
   };
 
   const onPreview = () => {
@@ -418,6 +428,7 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
           setInfo('Geri dönüş başarılı — içerik yenilendi.');
         }}
       />
+      {confirmDialog}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { GitCompare, History, Loader2, RotateCcw, X } from 'lucide-react';
 import MailRevisionDiff from './MailRevisionDiff';
+import { useConfirmDialog } from '@/components/ui';
 
 interface Revision {
   id: string;
@@ -57,6 +58,7 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [reverting, setReverting] = useState<string | null>(null);
+  const [confirmDialog, askConfirm] = useConfirmDialog();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [diffOpenFor, setDiffOpenFor] = useState<string | null>(null);
 
@@ -89,24 +91,31 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
     return () => { alive = false; };
   }, [open, templateKey, locale]);
 
-  const onRevert = async (revisionId: string) => {
-    if (!confirm('Bu sürüme geri dönmek istediğine emin misin? Mevcut içerik tarihçeye eklenir.')) return;
-    setReverting(revisionId);
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/admin/mail-templates/${templateKey}/${locale}/revisions/${revisionId}/revert`,
-        { method: 'POST' },
-      );
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || 'Geri dönüş başarısız');
-      onReverted();
-      onClose();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setReverting(null);
-    }
+  const onRevert = (revisionId: string) => {
+    askConfirm({
+      title: 'Bu sürüme geri dön',
+      body: 'Bu sürüme geri dönmek istediğine emin misin? Mevcut içerik otomatik olarak geçmişe (tarihçeye) eklenir, kaybolmaz.',
+      confirmLabel: 'Geri dön',
+      cancelLabel: 'Vazgeç',
+      onConfirm: async () => {
+        setReverting(revisionId);
+        setError(null);
+        try {
+          const res = await fetch(
+            `/api/admin/mail-templates/${templateKey}/${locale}/revisions/${revisionId}/revert`,
+            { method: 'POST' },
+          );
+          const body = await res.json();
+          if (!res.ok) throw new Error(body.error || 'Geri dönüş başarısız');
+          onReverted();
+          onClose();
+        } catch (e) {
+          setError((e as Error).message);
+        } finally {
+          setReverting(null);
+        }
+      },
+    });
   };
 
   const toggleExpand = (id: string) => {
@@ -236,6 +245,7 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
           </div>
         )}
       </div>
+      {confirmDialog}
     </div>
   );
 }
