@@ -152,7 +152,7 @@ export default function RestaurantsPage() {
       const res = await fetch('/api/restaurants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, googleReviewUrl: formData.googlePlaceId }),
       });
 
       const data = await res.json();

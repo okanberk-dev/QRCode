@@ -415,7 +415,7 @@ export default function DashboardRestaurantsPage() {
                     <p className="pulse-eyebrow text-[#737373] truncate">/r/{restaurant.slug}</p>
                   </div>
 
-                  {/* Full-width "Detay aç" pill — matches AdminLocations §741 */}
+                  {/* Action grid — detay / qr / activate-deactivate / open public */}
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <Link
                       href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
@@ -427,35 +427,35 @@ export default function DashboardRestaurantsPage() {
                       href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
                       className="rounded-full border border-[#0A0A0A] px-4 py-2.5 text-center text-[12px] font-medium text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"
                     >
-                    {copy.qr}
-                  </Link>
-                  <button
-                    type="button"
-                    disabled={actionLoadingId === restaurant.id}
-                    onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
-                    className={`rounded-full px-4 py-2.5 text-center text-[12px] font-medium transition-colors disabled:opacity-60 ${
-                      restaurant.isActive
-                        ? 'border border-[#FECACA] bg-white text-[#991B1B] hover:bg-[#FEF2F2]'
-                        : 'border border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
-                    }`}
-                  >
-                    {actionLoadingId === restaurant.id
-                      ? locale === 'tr' ? 'İşleniyor...' : 'Working...'
-                      : restaurant.isActive ? copy.deactivate : copy.activate}
-                  </button>
-                  <Link
-                    href={`/r/${restaurant.slug}`}
-                    target="_blank"
-                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[12px] font-medium text-[#0A0A0A] hover:border-[#C6F24E] transition-colors"
-                    aria-label="Open public page"
-                  >
-                    <ExternalLink size={14} strokeWidth={2} />
-                    {locale === 'tr' ? 'Aç' : 'Open'}
-                  </Link>
+                      {copy.qr}
+                    </Link>
+                    <button
+                      type="button"
+                      disabled={actionLoadingId === restaurant.id}
+                      onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
+                      className={`rounded-full px-4 py-2.5 text-center text-[12px] font-medium transition-colors disabled:opacity-60 ${
+                        restaurant.isActive
+                          ? 'border border-[#FECACA] bg-white text-[#991B1B] hover:bg-[#FEF2F2]'
+                          : 'border border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
+                      }`}
+                    >
+                      {actionLoadingId === restaurant.id
+                        ? locale === 'tr' ? 'İşleniyor...' : 'Working...'
+                        : restaurant.isActive ? copy.deactivate : copy.activate}
+                    </button>
+                    <Link
+                      href={`/r/${restaurant.slug}`}
+                      target="_blank"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[12px] font-medium text-[#0A0A0A] hover:border-[#C6F24E] transition-colors"
+                      aria-label="Open public page"
+                    >
+                      <ExternalLink size={14} strokeWidth={2} />
+                      {locale === 'tr' ? 'Aç' : 'Open'}
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
+            );
           })}
         </div>
       )}
