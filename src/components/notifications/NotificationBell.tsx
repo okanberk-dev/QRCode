@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Bell,
@@ -36,12 +36,44 @@ interface NotificationBellProps {
    *  `/${locale}/dashboard/feedbacks`, not `/dashboard/reviews`, so
    *  callers should pass an explicit href. */
   reviewsHref?: string;
-  /** Where the gear icon + "settings" footer link goes. Admin has
-   *  `/admin/notifications`; owner doesn't have its own route so it
-   *  re-uses the admin path (which works for owner role too). */
+  /** Where the gear icon + "settings" footer link goes. Admin uses
+   *  `/admin/notifications`; owner now has its own page at
+   *  `/${locale}/dashboard/notifications` (added 2026-04 — fixes the
+   *  cross-panel jump that previously dropped owners into the admin
+   *  shell). */
   notificationsSettingsHref?: string;
   /** Optional accent (defaults to lime — Pulse). */
   iconColor?: string;
+}
+
+// Unread-state storage key. We keep one key per `panelBase` so that admin
+// vs owner panels track their own last-viewed timestamps independently
+// (otherwise an admin checking the bell would silently mark owner-side
+// alerts as read on the same browser).
+const LAST_VIEWED_KEY_PREFIX = 'buaze.notifications.lastViewedAt:';
+// How long we trust the in-memory snapshot before refetching on open.
+const STALE_MS = 30_000;
+// Background poll interval while the tab is visible. Cheap — single GET
+// hitting `/api/feedback?rating=low&limit=5` returns at most 5 rows.
+const POLL_MS = 60_000;
+
+function readLastViewed(scope: string): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = window.localStorage.getItem(LAST_VIEWED_KEY_PREFIX + scope);
+    const n = raw ? Number(raw) : 0;
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+function writeLastViewed(scope: string, ts: number) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(LAST_VIEWED_KEY_PREFIX + scope, String(ts));
+  } catch {
+    /* quota / private mode — silently degrade to "always unread" */
+  }
 }
 
 /**
@@ -49,16 +81,18 @@ interface NotificationBellProps {
  * AdminTopbar. Two data sources:
  *   1. Server-fetched announcements (passed in, no refetch).
  *   2. Last 5 low-rating feedbacks (`/api/feedback?rating=low&limit=5`)
- *      fetched lazily when the dropdown opens — keeps the initial paint
- *      cheap on every page load.
+ *      fetched lazily on first open + refreshed in the background while
+ *      the tab is visible. Page refresh restarts the cycle from scratch.
  *
  * UX:
- *   • Badge shows count of (announcements + attention feedback) capped at 99+.
+ *   • Badge shows count of items newer than `lastViewedAt` (per-panel
+ *     localStorage timestamp). Opening the dropdown marks all items
+ *     read and clears the badge until something newer arrives.
+ *   • Lime pulse dot when there is at least one unread item — gives a
+ *     subtle "live" cue without being noisy.
  *   • Click outside / Escape closes.
  *   • Empty state when there's truly nothing.
  *   • "Bildirim ayarları" link bottom-right.
- *
- * Keeps zero dependencies on form / save flows — purely read.
  */
 export default function NotificationBell({
   locale,
@@ -72,50 +106,98 @@ export default function NotificationBell({
   const base = panelBase ?? '/admin';
   const reviewsLink = reviewsHref ?? `${base}/reviews`;
   const settingsLink = notificationsSettingsHref ?? `${base}/notifications`;
+  // Use the panel base as the storage scope so admin + owner tabs in
+  // the same browser don't clobber each other's read-state.
+  const scope = base;
 
   const [open, setOpen] = useState(false);
   const [attention, setAttention] = useState<AttentionFeedback[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [lastFetchedAt, setLastFetchedAt] = useState(0);
+  const [lastViewedAt, setLastViewedAt] = useState(0);
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Lazy fetch on first open. Subsequent opens reuse the snapshot to
-  // avoid hammering the API (page refresh restarts the cycle).
+  // Hydrate last-viewed timestamp on mount (SSR-safe).
   useEffect(() => {
-    if (!open || loaded) return;
-    let cancelled = false;
+    setLastViewedAt(readLastViewed(scope));
+  }, [scope]);
+
+  const fetchAttention = useCallback(async () => {
     setLoading(true);
-    (async () => {
-      try {
-        const res = await fetch('/api/feedback?rating=low&limit=5');
-        if (!res.ok) {
-          if (!cancelled) {
-            setAttention([]);
-            setLoaded(true);
-          }
-          return;
-        }
-        const json = await res.json();
-        const list: AttentionFeedback[] = Array.isArray(json) ? json : json?.data ?? [];
-        if (!cancelled) {
-          setAttention(list);
-          setLoaded(true);
-        }
-      } catch {
-        if (!cancelled) {
-          setAttention([]);
-          setLoaded(true);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+    try {
+      const res = await fetch('/api/feedback?rating=low&limit=5', { cache: 'no-store' });
+      if (!res.ok) {
+        setAttention([]);
+        return;
       }
-    })();
-    return () => {
-      cancelled = true;
+      const json = await res.json();
+      const list: AttentionFeedback[] = Array.isArray(json) ? json : json?.data ?? [];
+      setAttention(list);
+    } catch {
+      // Network blip — leave the previous snapshot intact rather than
+      // flashing an empty list.
+    } finally {
+      setLoading(false);
+      setLastFetchedAt(Date.now());
+    }
+  }, []);
+
+  // Lazy fetch on first open, refresh if the snapshot is older than
+  // STALE_MS so a long-idle tab still shows fresh data when re-opened.
+  useEffect(() => {
+    if (!open) return;
+    if (Date.now() - lastFetchedAt > STALE_MS) {
+      void fetchAttention();
+    }
+  }, [open, lastFetchedAt, fetchAttention]);
+
+  // Background poll while tab is visible. Runs even when the dropdown
+  // is closed so the badge stays accurate without the user having to
+  // open the bell. Throttled by visibility — minimised tabs don't poll.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const start = () => {
+      if (pollTimerRef.current) return;
+      pollTimerRef.current = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          void fetchAttention();
+        }
+      }, POLL_MS);
     };
-  }, [open, loaded]);
+    const stop = () => {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+
+    // Kick off an initial fetch so the badge is correct on first paint
+    // (otherwise the user has to open the bell once before it lights up).
+    if (lastFetchedAt === 0) {
+      void fetchAttention();
+    }
+    start();
+    const onVis = () => {
+      if (document.visibilityState === 'visible') {
+        // Returning to the tab — refresh immediately, then resume the
+        // polling cadence.
+        void fetchAttention();
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      stop();
+    };
+    // We intentionally do not depend on `lastFetchedAt` here; the timer
+    // updates it itself. Re-creating the interval on every fetch would
+    // shift the cadence forward unpredictably.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchAttention]);
 
   // Click-outside / Escape — close the panel.
   useEffect(() => {
@@ -136,26 +218,73 @@ export default function NotificationBell({
     };
   }, [open]);
 
+  // Mark all visible items as read whenever the dropdown is opened.
+  // Cheap, idempotent — clears the badge instantly.
+  const markAllRead = useCallback(() => {
+    const now = Date.now();
+    writeLastViewed(scope, now);
+    setLastViewedAt(now);
+  }, [scope]);
+
   const totalCount = announcements.length + attention.length;
+
+  // Unread = items strictly newer than `lastViewedAt`. Falling back to
+  // `totalCount` on the very first render (before localStorage is read)
+  // ensures the badge reflects reality immediately rather than briefly
+  // flickering to 0.
+  const unreadCount = useMemo(() => {
+    if (lastViewedAt === 0) return totalCount;
+    const annNew = announcements.filter((a) => {
+      const t = Date.parse(a.updatedAt);
+      return Number.isFinite(t) && t > lastViewedAt;
+    }).length;
+    const attNew = attention.filter((f) => {
+      const t = Date.parse(f.createdAt);
+      return Number.isFinite(t) && t > lastViewedAt;
+    }).length;
+    return annNew + attNew;
+  }, [announcements, attention, lastViewedAt, totalCount]);
+
   const badgeText = useMemo(() => {
-    if (totalCount === 0) return '';
-    if (totalCount > 99) return '99+';
-    return String(totalCount);
-  }, [totalCount]);
+    if (unreadCount === 0) return '';
+    if (unreadCount > 99) return '99+';
+    return String(unreadCount);
+  }, [unreadCount]);
+
+  const handleToggle = () => {
+    setOpen((v) => {
+      const next = !v;
+      if (next) markAllRead();
+      return next;
+    });
+  };
 
   return (
     <div className="relative">
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label={isTr ? 'Bildirimler' : 'Notifications'}
+        onClick={handleToggle}
+        aria-label={
+          unreadCount > 0
+            ? isTr
+              ? `Bildirimler · ${unreadCount} yeni`
+              : `Notifications · ${unreadCount} new`
+            : isTr
+              ? 'Bildirimler'
+              : 'Notifications'
+        }
         aria-haspopup="dialog"
         aria-expanded={open}
         className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
       >
-        <Bell size={16} strokeWidth={2} className={iconColor ? '' : 'text-[#0A0A0A]'} style={iconColor ? { color: iconColor } : undefined} />
-        {totalCount > 0 && (
+        <Bell
+          size={16}
+          strokeWidth={2}
+          className={iconColor ? '' : 'text-[#0A0A0A]'}
+          style={iconColor ? { color: iconColor } : undefined}
+        />
+        {unreadCount > 0 && (
           <span
             aria-hidden
             className="absolute -right-0.5 -top-0.5 inline-flex min-w-[16px] h-[16px] items-center justify-center rounded-full bg-[#DC2626] px-1 text-[9px] font-semibold text-white"
@@ -270,9 +399,9 @@ export default function NotificationBell({
                                 className={f.rating <= 2 ? 'text-[#DC2626]' : 'text-[#F59E0B]'}
                               />
                             }
-                            title={`${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)} · ${f.name || (isTr ? 'Anonim' : 'Anonymous')}${
-                              f.restaurant?.name ? ` · ${f.restaurant.name}` : ''
-                            }`}
+                            title={`${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)} · ${
+                              f.name || (isTr ? 'Anonim' : 'Anonymous')
+                            }${f.restaurant?.name ? ` · ${f.restaurant.name}` : ''}`}
                             message={
                               f.comment?.trim() ||
                               (isTr ? 'Yorum bırakılmadı' : 'No comment left')

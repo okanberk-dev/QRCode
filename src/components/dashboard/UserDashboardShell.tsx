@@ -477,7 +477,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               announcements={announcements}
               panelBase={`/${locale}/dashboard`}
               reviewsHref={`/${locale}/dashboard/feedbacks`}
-              notificationsSettingsHref="/admin/notifications"
+              notificationsSettingsHref={`/${locale}/dashboard/notifications`}
             />
             <button
               onClick={() => setDrawerOpen((v) => !v)}
@@ -532,6 +532,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               locale={locale}
               announcements={announcements}
               panelBase={`/${locale}/dashboard`}
+              reviewsHref={`/${locale}/dashboard/feedbacks`}
+              notificationsSettingsHref={`/${locale}/dashboard/notifications`}
             />
             <Link
               href={`/${locale}/dashboard/profile`}
