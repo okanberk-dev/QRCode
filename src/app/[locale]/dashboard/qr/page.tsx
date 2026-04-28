@@ -21,6 +21,15 @@ interface Restaurant {
   slug: string;
   name: string;
   isActive?: boolean;
+  // Forwarded to <CreateQRModal> so the platform grid can be filtered to
+  // (sector ∩ configured URLs) instead of the legacy hardcoded 4.
+  category?: string | null;
+  googlePlaceId?: string | null;
+  yemekSepetiUrl?: string | null;
+  getirYemekUrl?: string | null;
+  trendyolYemekUrl?: string | null;
+  tripAdvisorUrl?: string | null;
+  airbnbUrl?: string | null;
 }
 
 interface QrHistoryItem {
@@ -39,6 +48,8 @@ const PLATFORM_TO_CHIP: Record<string, PlatformId> = {
   yemeksepeti: 'yemeksepeti',
   getir: 'getir',
   trendyol_go: 'trendyol_go',
+  tripadvisor: 'tripadvisor',
+  airbnb: 'airbnb',
 };
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -46,6 +57,8 @@ const PLATFORM_LABELS: Record<string, string> = {
   yemeksepeti: 'Yemeksepeti',
   getir: 'Getir Yemek',
   trendyol_go: 'Trendyol GO',
+  tripadvisor: 'Tripadvisor',
+  airbnb: 'Airbnb',
 };
 
 export default function DashboardQrPage() {
@@ -596,7 +609,18 @@ export default function DashboardQrPage() {
         <CreateQRModal
           restaurants={restaurants
             .filter((r) => r.isActive !== false)
-            .map((r) => ({ id: r.id, name: r.name, slug: r.slug }))}
+            .map((r) => ({
+              id: r.id,
+              name: r.name,
+              slug: r.slug,
+              category: r.category ?? null,
+              googlePlaceId: r.googlePlaceId ?? null,
+              yemekSepetiUrl: r.yemekSepetiUrl ?? null,
+              getirYemekUrl: r.getirYemekUrl ?? null,
+              trendyolYemekUrl: r.trendyolYemekUrl ?? null,
+              tripAdvisorUrl: r.tripAdvisorUrl ?? null,
+              airbnbUrl: r.airbnbUrl ?? null,
+            }))}
           defaultRestaurantId={preselected || undefined}
           locale={locale}
           onClose={() => setShowCreate(false)}

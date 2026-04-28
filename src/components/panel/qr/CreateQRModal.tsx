@@ -1,13 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, QrCode } from "lucide-react";
-import { Field, Modal, PlatformChip, RadioCard } from "@/components/ui";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Loader2, QrCode, Link2 } from "lucide-react";
+import { Field, Modal, PlatformChip, RadioCard, type PlatformId } from "@/components/ui";
+import { getSectorPlatforms } from "@/lib/sector-platforms";
 
 interface RestaurantOption {
   id: string;
   name: string;
   slug: string;
+  // Optional — when present the modal filters the platform grid to platforms
+  // that are (a) allowed by the restaurant's sector and (b) actually
+  // configured (URL filled). Falls back to "show all 4 delivery platforms"
+  // for callers that haven't been updated yet (defensive).
+  category?: string | null;
+  googlePlaceId?: string | null;
+  yemekSepetiUrl?: string | null;
+  getirYemekUrl?: string | null;
+  trendyolYemekUrl?: string | null;
+  tripAdvisorUrl?: string | null;
+  airbnbUrl?: string | null;
 }
 
 export interface QRGenerationResult {
@@ -29,19 +42,30 @@ interface CreateQRModalProps {
   onCreated: (result: QRGenerationResult) => void;
 }
 
-const PLATFORMS = [
-  { key: "google", label: "Google Maps" },
-  { key: "yemeksepeti", label: "Yemeksepeti" },
-  { key: "getir", label: "Getir Yemek" },
-  { key: "trendyol_go", label: "Trendyol GO" },
-] as const;
+// QR-flow platform key → meta. Keys MUST mirror `/r/[slug]` platformUrls map
+// + `/api/restaurants/[id]/qr` validPlatforms whitelist. `sectorKey` bridges
+// sector-platforms.ts ('trendyol' without _go) ↔ QR/Feedback ('trendyol_go').
+type UrlField =
+  | "googlePlaceId"
+  | "yemekSepetiUrl"
+  | "getirYemekUrl"
+  | "trendyolYemekUrl"
+  | "tripAdvisorUrl"
+  | "airbnbUrl";
 
-const PLATFORM_TO_CHIP: Record<string, "google" | "yemeksepeti" | "getir" | "trendyol_go"> = {
-  google: "google",
-  yemeksepeti: "yemeksepeti",
-  getir: "getir",
-  trendyol_go: "trendyol_go",
+const PLATFORM_META: Record<
+  string,
+  { label: string; chipId: PlatformId; urlField: UrlField; sectorKey: string }
+> = {
+  google: { label: "Google Maps", chipId: "google", urlField: "googlePlaceId", sectorKey: "google" },
+  yemeksepeti: { label: "Yemeksepeti", chipId: "yemeksepeti", urlField: "yemekSepetiUrl", sectorKey: "yemeksepeti" },
+  getir: { label: "Getir Yemek", chipId: "getir", urlField: "getirYemekUrl", sectorKey: "getir" },
+  trendyol_go: { label: "Trendyol GO", chipId: "trendyol_go", urlField: "trendyolYemekUrl", sectorKey: "trendyol" },
+  tripadvisor: { label: "Tripadvisor", chipId: "tripadvisor", urlField: "tripAdvisorUrl", sectorKey: "tripadvisor" },
+  airbnb: { label: "Airbnb", chipId: "airbnb", urlField: "airbnbUrl", sectorKey: "airbnb" },
 };
+
+const FALLBACK_KEYS = ["google", "yemeksepeti", "getir", "trendyol_go"] as const;
 
 export function CreateQRModal({
   restaurants,
@@ -62,10 +86,61 @@ export function CreateQRModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const activeRestaurant = useMemo(
+    () => restaurants.find((r) => r.id === restaurantId),
+    [restaurants, restaurantId],
+  );
+
+  // Derive the platform grid: sector whitelist ∩ filled URL fields. Falls
+  // back to the legacy 4-platform delivery list if the caller didn't pass
+  // category/URL data — backward-compatible.
+  const availablePlatforms = useMemo(() => {
+    if (!activeRestaurant) return [] as { key: string; label: string; chipId: PlatformId }[];
+
+    const hasPlatformShape =
+      "category" in activeRestaurant ||
+      "googlePlaceId" in activeRestaurant ||
+      "yemekSepetiUrl" in activeRestaurant ||
+      "getirYemekUrl" in activeRestaurant ||
+      "trendyolYemekUrl" in activeRestaurant ||
+      "tripAdvisorUrl" in activeRestaurant ||
+      "airbnbUrl" in activeRestaurant;
+
+    if (!hasPlatformShape) {
+      return FALLBACK_KEYS.map((key) => ({
+        key,
+        label: PLATFORM_META[key].label,
+        chipId: PLATFORM_META[key].chipId,
+      }));
+    }
+
+    const sectorAllowed = getSectorPlatforms(activeRestaurant.category ?? null);
+
+    return Object.entries(PLATFORM_META)
+      .filter(([, meta]) => sectorAllowed.has(meta.sectorKey as PlatformId))
+      .filter(([, meta]) => {
+        const value = activeRestaurant[meta.urlField];
+        return typeof value === "string" && value.trim().length > 0;
+      })
+      .map(([key, meta]) => ({ key, label: meta.label, chipId: meta.chipId }));
+  }, [activeRestaurant]);
+
   // Auto-pick the first restaurant if none preselected and list loads after mount
   useEffect(() => {
     if (!restaurantId && restaurants[0]?.id) setRestaurantId(restaurants[0].id);
   }, [restaurantId, restaurants]);
+
+  // Keep `platform` valid against the dynamic list — when the active
+  // restaurant changes (or its config doesn't include the current pick),
+  // snap to the first available platform. Avoids submitting a key the
+  // server would reject as un-configured.
+  useEffect(() => {
+    if (linkType !== "platform") return;
+    if (availablePlatforms.length === 0) return;
+    if (!availablePlatforms.some((p) => p.key === platform)) {
+      setPlatform(availablePlatforms[0].key);
+    }
+  }, [linkType, availablePlatforms, platform]);
 
   const submit = async () => {
     if (!restaurantId) {
@@ -140,6 +215,8 @@ export function CreateQRModal({
     }
   };
 
+  const platformLocked = linkType === "platform" && availablePlatforms.length === 0;
+
   return (
     <Modal
       title={isTr ? "Yeni QR kodu oluştur" : "Create new QR code"}
@@ -208,27 +285,49 @@ export function CreateQRModal({
                   : "Customer scanning this QR is sent only to this platform"
               }
             />
-            {linkType === "platform" && (
-              <div className="mt-1 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-                {PLATFORMS.map((p) => {
+            {linkType === "platform" && availablePlatforms.length > 0 && (
+              <div className="mt-1 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                {availablePlatforms.map((p) => {
                   const active = platform === p.key;
                   return (
                     <button
                       key={p.key}
                       type="button"
                       onClick={() => setPlatform(p.key)}
-                      className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-medium transition-colors"
+                      aria-pressed={active}
+                      className="flex min-h-[44px] items-center gap-2 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors text-left"
                       style={{
                         border: `1px solid ${active ? "#0A0A0A" : "#EDEDED"}`,
                         background: active ? "#FAFAFA" : "#fff",
                         fontFamily: "inherit",
                       }}
                     >
-                      <PlatformChip id={PLATFORM_TO_CHIP[p.key]} size={18} />
+                      <PlatformChip id={p.chipId} size={20} />
                       <span className="truncate">{p.label}</span>
                     </button>
                   );
                 })}
+              </div>
+            )}
+            {linkType === "platform" && platformLocked && activeRestaurant && (
+              <div className="mt-1 rounded-xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] px-3 py-3 text-[12.5px] leading-relaxed text-[#525252]">
+                <p className="font-medium text-[#0A0A0A]">
+                  {isTr
+                    ? "Bu işletme için yapılandırılmış platform yok."
+                    : "No platform configured for this location yet."}
+                </p>
+                <p className="mt-1">
+                  {isTr
+                    ? "Önce işletme ayarlarından en az bir platform URL'si ekleyin (Google, Yemeksepeti, Getir, Trendyol GO veya Tripadvisor)."
+                    : "Add at least one platform URL from the location settings first."}
+                </p>
+                <Link
+                  href={`/${locale}/dashboard/restaurants/${activeRestaurant.id}`}
+                  className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#A8D62E]"
+                >
+                  <Link2 size={12} />
+                  {isTr ? "Platform URL'lerini düzenle" : "Edit platform URLs"}
+                </Link>
               </div>
             )}
           </div>
@@ -257,11 +356,11 @@ export function CreateQRModal({
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-1">
+        <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="bz-btn-ghost"
+            className="bz-btn-ghost w-full sm:w-auto"
             disabled={submitting}
           >
             {isTr ? "İptal" : "Cancel"}
@@ -269,8 +368,8 @@ export function CreateQRModal({
           <button
             type="button"
             onClick={submit}
-            className="bz-btn-primary inline-flex items-center gap-1.5"
-            disabled={submitting || !restaurantId}
+            className="bz-btn-primary inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
+            disabled={submitting || !restaurantId || platformLocked}
           >
             {submitting ? <Loader2 size={14} className="animate-spin" /> : <QrCode size={14} />}
             {submitting

@@ -74,7 +74,10 @@ export async function GET(
   const format = (searchParams.get('format') || 'svg').toLowerCase();
   const platform = searchParams.get('platform') || '';
 
-  const validPlatforms = ['google', 'yemeksepeti', 'getir', 'trendyol_go'];
+  // Whitelist mirrors `/r/[slug]` `platformUrls` map + restaurant PUT
+  // `ALLOWED_DEFAULT_PLATFORMS`. Konaklama / catch-all sectors need
+  // tripadvisor + airbnb so their QRs honour `?platform=` correctly.
+  const validPlatforms = ['google', 'yemeksepeti', 'getir', 'trendyol_go', 'tripadvisor', 'airbnb'];
   const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : '';
 
 

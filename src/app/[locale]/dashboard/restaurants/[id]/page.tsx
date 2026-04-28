@@ -419,20 +419,20 @@ export default function DashboardRestaurantDetailPage() {
                 required
                 value={formData.name}
                 onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
+                className="bz-input"
               />
             </label>
 
             <label className="space-y-2">
               <span className="pulse-eyebrow text-[#737373]">URL Slug</span>
-              <div className="flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 focus-within:border-[#C6F24E] transition-colors">
-                <span className="pulse-eyebrow shrink-0 text-[#737373]">buaze.com/r/</span>
+              <div className="flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-3 sm:px-4 focus-within:border-[#0A0A0A] transition-colors">
+                <span className="pulse-eyebrow shrink-0 text-[#737373] truncate">buaze.com/r/</span>
                 <input
                   type="text"
                   required
                   value={formData.slug}
                   onChange={(event) => setFormData((prev) => ({ ...prev, slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
-                  className="w-full bg-transparent py-3 text-[14px] text-[#0A0A0A] outline-none"
+                  className="w-full bg-transparent py-3 text-[14px] text-[#0A0A0A] outline-none min-w-0"
                 />
               </div>
             </label>
@@ -451,7 +451,7 @@ export default function DashboardRestaurantDetailPage() {
                   return SECTORS.find((s) => s.sectorKey === detected)?.label ?? SECTORS[0].label;
                 })()}
                 onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
+                className="bz-input"
               >
                 {SECTORS.map((sector) => (
                   <option key={sector.id} value={sector.label}>
@@ -459,18 +459,18 @@ export default function DashboardRestaurantDetailPage() {
                   </option>
                 ))}
               </select>
-              <span className="block text-[11px] text-[#A3A3A3]">
+              <span className="block text-[11px] leading-relaxed text-[#737373]">
                 {locale === 'tr'
                   ? 'Sektörünüz, yorum yönlendirmesinde gösterilecek platformları belirler.'
                   : 'Your sector decides which review platforms appear in the redirect.'}
               </span>
-              <div aria-live="polite">
+              <div aria-live="polite" className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2.5">
                 <span className="pulse-eyebrow block text-[#737373]">
                   {locale === 'tr' ? 'Bu sektörde görünecek' : 'Visible in this sector'}
                 </span>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                <div className="mt-2 flex flex-wrap gap-x-2.5 gap-y-1.5">
                   {Array.from(allowedPlatforms).map((platform) => (
-                    <PlatformChip key={platform} id={platform} size={20} withLabel />
+                    <PlatformChip key={platform} id={platform} size={18} withLabel />
                   ))}
                 </div>
               </div>
@@ -478,14 +478,15 @@ export default function DashboardRestaurantDetailPage() {
 
             <label className="space-y-2">
               <span className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'Tema Rengi' : 'Theme Color'}</span>
-              <div className="flex h-[48px] items-center gap-3 rounded-xl border border-[#EDEDED] bg-white px-4">
+              <div className="flex h-[48px] items-center gap-3 rounded-xl border border-[#EDEDED] bg-white px-3 sm:px-4">
                 <input
                   type="color"
                   value={formData.primaryColor}
                   onChange={(event) => setFormData((prev) => ({ ...prev, primaryColor: event.target.value }))}
-                  className="h-8 w-10 cursor-pointer rounded-lg border-0 bg-transparent"
+                  aria-label={locale === 'tr' ? 'Tema rengi seç' : 'Pick theme color'}
+                  className="h-9 w-11 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent"
                 />
-                <span className="text-[13px] font-medium text-[#0A0A0A] font-mono">{formData.primaryColor}</span>
+                <span className="text-[13px] font-medium text-[#0A0A0A] font-mono truncate">{formData.primaryColor.toUpperCase()}</span>
               </div>
             </label>
 
@@ -495,17 +496,19 @@ export default function DashboardRestaurantDetailPage() {
                 type="text"
                 value={formData.address}
                 onChange={(event) => setFormData((prev) => ({ ...prev, address: event.target.value }))}
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
+                className="bz-input"
               />
             </label>
 
             <label className="space-y-2">
               <span className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'Telefon' : 'Phone'}</span>
               <input
-                type="text"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 value={formData.phone}
                 onChange={(event) => setFormData((prev) => ({ ...prev, phone: event.target.value }))}
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
+                className="bz-input"
               />
             </label>
 
@@ -514,7 +517,7 @@ export default function DashboardRestaurantDetailPage() {
               <select
                 value={formData.isActive ? '1' : '0'}
                 onChange={(event) => setFormData((prev) => ({ ...prev, isActive: event.target.value === '1' }))}
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
+                className="bz-input"
               >
                 <option value="1">{locale === 'tr' ? 'Aktif' : 'Active'}</option>
                 <option value="0">{locale === 'tr' ? 'Pasif' : 'Inactive'}</option>
@@ -534,18 +537,20 @@ export default function DashboardRestaurantDetailPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <label className="space-y-2">
+            <label className="space-y-2 sm:col-span-2">
               <span className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'Bildirim E-postası' : 'Notification Email'}</span>
               <input
                 type="email"
+                inputMode="email"
+                autoComplete="email"
                 value={formData.notificationEmail}
                 onChange={(event) => setFormData((prev) => ({ ...prev, notificationEmail: event.target.value }))}
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
+                className="bz-input"
               />
             </label>
 
             {allowedPlatforms.has('google') && (
-              <label id="platform-google" className="space-y-2 scroll-mt-24">
+              <label id="platform-google" className="space-y-2 sm:col-span-2 scroll-mt-24">
                 <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
                   <PlatformLogo id="google" size={16} rounded={4} />
                   Google Place ID / Link
@@ -553,9 +558,10 @@ export default function DashboardRestaurantDetailPage() {
                 </span>
                 <input
                   type="text"
+                  inputMode="url"
                   value={formData.googlePlaceId}
                   onChange={(event) => setFormData((prev) => ({ ...prev, googlePlaceId: event.target.value }))}
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#C6F24E]"
+                  className="bz-input"
                 />
               </label>
             )}
@@ -569,10 +575,11 @@ export default function DashboardRestaurantDetailPage() {
                 </span>
                 <input
                   type="url"
+                  inputMode="url"
                   value={formData.getirYemekUrl}
                   onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
                   placeholder="https://getir.com/yemek/..."
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#5D3EBD]"
+                  className="bz-input"
                 />
               </label>
             )}
@@ -586,10 +593,11 @@ export default function DashboardRestaurantDetailPage() {
                 </span>
                 <input
                   type="url"
+                  inputMode="url"
                   value={formData.yemekSepetiUrl}
                   onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
                   placeholder="https://www.yemeksepeti.com/..."
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#FA0050]"
+                  className="bz-input"
                 />
               </label>
             )}
@@ -603,10 +611,11 @@ export default function DashboardRestaurantDetailPage() {
                 </span>
                 <input
                   type="url"
+                  inputMode="url"
                   value={formData.trendyolYemekUrl}
                   onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
                   placeholder="https://www.trendyol.com/..."
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#F27A1A]"
+                  className="bz-input"
                 />
               </label>
             )}
@@ -620,10 +629,11 @@ export default function DashboardRestaurantDetailPage() {
                 </span>
                 <input
                   type="url"
+                  inputMode="url"
                   value={formData.tripAdvisorUrl}
                   onChange={(event) => setFormData((prev) => ({ ...prev, tripAdvisorUrl: event.target.value }))}
                   placeholder="https://www.tripadvisor.com/..."
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#00AA6C]"
+                  className="bz-input"
                 />
               </label>
             )}
@@ -637,10 +647,11 @@ export default function DashboardRestaurantDetailPage() {
                 </span>
                 <input
                   type="url"
+                  inputMode="url"
                   value={formData.airbnbUrl}
                   onChange={(event) => setFormData((prev) => ({ ...prev, airbnbUrl: event.target.value }))}
                   placeholder="https://www.airbnb.com/rooms/..."
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#FF5A5F]"
+                  className="bz-input"
                 />
               </label>
             )}

@@ -31,6 +31,10 @@ export async function GET(req: NextRequest) {
           getirYemekUrl: true,
           yemekSepetiUrl: true,
           trendyolYemekUrl: true,
+          // Konaklama / non-delivery vertical platforms — public surface
+          // needs them to honour `?platform=tripadvisor|airbnb` QR params.
+          tripAdvisorUrl: true,
+          airbnbUrl: true,
           primaryColor: true,
           isActive: true,
           // `defaultRedirectPlatform` powers the public review surface's
