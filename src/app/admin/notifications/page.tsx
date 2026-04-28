@@ -111,12 +111,12 @@ function AdminNotificationsBody() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       <PageHeader
-        eyebrow={isTr ? 'BİLDİRİMLER' : 'NOTIFICATIONS'}
+        eyebrow={isTr ? 'BİLDİRİM AYARLARI' : 'NOTIFICATION SETTINGS'}
         title={isTr ? 'Bildirim tercihleri' : 'Notification preferences'}
         description={
           isTr
-            ? 'E-posta ve webhook kanallarına hangi olayların gönderileceğini buradan ayarla.'
-            : 'Configure which events get sent to email and webhook channels.'
+            ? 'E-posta ve webhook kanallarına hangi olayların gönderileceğini buradan ayarla. Anlık panel uyarıları her zaman zil simgesinde görünür.'
+            : 'Configure which events get sent to email and webhook channels. In-panel toasts always appear in the bell icon.'
         }
         actions={
           notice ? (

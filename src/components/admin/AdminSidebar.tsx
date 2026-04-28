@@ -204,7 +204,7 @@ export default function AdminSidebar() {
     { type: 'item', href: '/admin/campaigns', icon: Sparkles, label: locale === 'en' ? 'Campaigns' : 'Kampanyalar', roles: ['restaurant_owner'] },
     { type: 'item', href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip', roles: ['restaurant_owner'] },
     { type: 'item', href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma', roles: ['restaurant_owner'] },
-    { type: 'item', href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notifications' : 'Bildirimler', roles: ['manager', 'restaurant_owner'] },
+    { type: 'item', href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notification settings' : 'Bildirim ayarları', roles: ['manager', 'restaurant_owner'] },
     { type: 'item', href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar', roles: ['restaurant_owner'] },
   ];
 
