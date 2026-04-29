@@ -2393,6 +2393,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 | `@radix-ui/react-{dialog,dropdown-menu,tabs,tooltip,popover,select}` | ✅ Kurulu | Sadece a11y-heavy yeni primitive ihtiyacında. Mevcut `src/components/ui/*` toplu migrate edilmez (§27.2) |
 | `firebase ^12.12` | ✅ Kurulu | Sadece Google Sign-in için. Primary auth değil — `jose` JWT + httpOnly cookie (§4) |
 | `jose ^6.2` | ✅ Kurulu | Custom JWT auth — edge compatible, Vercel middleware ile uyumlu (§4) |
+| `@vercel/speed-insights` | ✅ Vercel platformu tarafından sağlanır | Real-user Core Web Vitals (LCP/CLS/INP/FCP/TTFB). Vercel agent / Marketplace integration paketi ve root layout mount'unu otomatik provision eder; manuel `npm i` veya layout edit'i **gereksiz**. Lokal dev'de no-op, sadece Vercel deployment'ta data toplar. Sentry'yi (§26) **replace etmez** — bkz. §31 |
 
 ### 30.4 Önerilen ama kurulmaya gerek olmayan lib'ler (revised)
 
@@ -2413,7 +2414,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 
 | Lib | Tetik koşul |
 |---|---|
-| `@vercel/speed-insights` + `@vercel/analytics` | Marketing pages traffic >10K/ay — Web Vitals + funnel analysis |
+| `@vercel/analytics` | Marketing funnel analysis lazım olduğunda — page-view + conversion tracking. Speed Insights (§31) zaten kurulu, Web Vitals tarafını karşılıyor |
 | `iyzipay-node` (veya REST direct) | Iyzico Wave 3.5 başlatıldığında billing write-side için |
 | `react-hook-form` | Bir form 8+ alana çıktığında veya complex validation chain gerekirse |
 | `next-intl` | 3. locale eklenirken (TR + EN dışı) — current pattern 2 locale için uygun, 3+ ölçeklemiyor |
@@ -2426,3 +2427,48 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 - Bir feature için dep eklerken aynı PR'da başka bir dep daha eklemek (scope creep).
 - "Belki ileride lazım olur" diye kurulum (`react-hook-form` örneği — frontend task'ı açılana kadar bekle).
 - shadcn'in default styled wrapper'larını Pulse token'larına geçirmeden kopyala-yapıştır.
+
+---
+
+## 31. Vercel Speed Insights — Real-User Web Vitals
+
+`@vercel/speed-insights/next` ile gerçek-kullanıcı Core Web Vitals takibi. **Vercel agent / Marketplace integration tarafından otomatik kurulur** — paketi elle `npm i` etme veya `<SpeedInsights />`'ı `src/app/layout.tsx`'e elle eklemeye gerek yok. Tek mount root layout seviyesinde olur ve `[locale]/layout.tsx` + `admin/layout.tsx` dahil tüm panel + marketing + public surface'leri kapsar.
+
+### 31.1 Speed Insights vs Sentry — net rol ayrımı
+
+| Araç | Ne için |
+|---|---|
+| **Vercel Speed Insights** | Real User Monitoring (RUM): LCP, CLS, INP, FCP, TTFB. Production trafiğinden örneklem alır, Vercel dashboard'unda Web Vitals trend'i gösterir. **Performance / UX odaklıdır.** |
+| **Sentry** (§26) | Error monitoring, exception capture, performance tracing, debugging. Stack trace + breadcrumbs + replay (on-error). **Hata / debug odaklıdır.** |
+
+**Speed Insights, Sentry'nin yerine geçmez** ve geçemez:
+- Speed Insights yalnız Web Vitals metriklerini ölçer; uncaught exception, API 500, broken UI state hakkında hiçbir şey söylemez.
+- Sentry'nin `tracesSampleRate` ile yaptığı transaction tracing daha derin (Prisma query'leri, fetch span'leri, custom span'ler). Speed Insights bunu yapmaz.
+- Speed Insights data-point'leri pseudonim, payload yok — hangi user, hangi request, hangi stack kayıtlı değil.
+
+İkisi paralel kalır: Speed Insights "siteyi kullanıcılar nasıl deneyimliyor", Sentry "ne kırılıyor".
+
+### 31.2 Behavior
+
+- **Lokal dev**: SDK no-op çalışır; data göndermez. `npm run dev`'de console temizdir.
+- **Vercel Preview + Production**: Vercel platform tarafından otomatik provision edilir; ek env var gerekmez. Preview deployment'lar da metric basar (sayfa hızı regresyonu kullanıcıya çıkmadan yakalanır).
+- **Bundle**: ~1.5 KB gzip, beacon API kullanır — main thread'i bloklamaz.
+- **Privacy**: KVKK/GDPR-friendly. Pseudonim, çerez yok, IP truncate'lenir.
+
+### 31.3 Sample rate (gelecek için)
+
+Şu an default `sampleRate: 1` (her sayfa view kayıt). Aylık trafik artarsa Vercel data point quota'sı dolabilir. O zaman:
+
+```tsx
+<SpeedInsights sampleRate={0.5} />  // 50% örneklem
+```
+
+veya `0.1` (10%) — büyük ölçekte istatistiksel olarak yeterli, dashboard tutarlılığını korur. Quota sınırına yaklaşmadan değiştirme (Vercel dashboard'da uyarı gelir).
+
+### 31.4 Wired endpoints (yok — passive)
+
+Manuel `track()` çağrısı yok; sadece otomatik Web Vitals beacons. `@vercel/analytics`'ın `track()` API'si ayrıdır (custom event); şu an kurulmadı (§30.5'te tetik koşulu marketing funnel ihtiyacı).
+
+### 31.5 Yeni layout / SSG sayfa eklerken
+
+Yeni route `app/` ağacında otomatik kapsanır (Vercel agent root layout'a tek mount koymuş, alt layout'lar inherit eder). Ayrı bir `<SpeedInsights />` mount **etme** — duplicate beacon gönderir, quota tüketir. Manuel olarak `@vercel/speed-insights` import etmeye veya `package.json`'a eklemeye gerek yok; Vercel platform integration bunu yönetir.
