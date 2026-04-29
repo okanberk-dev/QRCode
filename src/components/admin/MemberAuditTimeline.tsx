@@ -13,7 +13,7 @@ interface AuditEntry {
   id: string;
   action: string;
   actorSource: 'admin' | 'user';
-  actor: { id: string; email: string; name: string | null; role: string | null } | null;
+  actor: { id: string; email: string | null; name: string | null; role: string | null } | null;
   payload: unknown;
   createdAt: string;
 }

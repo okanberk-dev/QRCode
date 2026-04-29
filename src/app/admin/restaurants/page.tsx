@@ -565,7 +565,49 @@ interface RestaurantTableProps {
 }
 
 function RestaurantTable({ rows, onToggle }: RestaurantTableProps) {
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  // The desktop table lives inside `overflow-x-auto`, which clips
+  // absolute-positioned dropdowns vertically (browsers treat `overflow-x: auto`
+  // as also clipping `overflow-y`). Anchoring the menu via `position: fixed`
+  // with viewport-space coords escapes both clip contexts.
+  const [openMenu, setOpenMenu] = useState<
+    | { id: string; top: number; right: number }
+    | null
+  >(null);
+
+  useEffect(() => {
+    if (!openMenu) return;
+    const close = () => setOpenMenu(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    // capture-phase scroll so nested scroll containers (the table itself)
+    // also dismiss the menu.
+    document.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      document.removeEventListener('click', close);
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [openMenu]);
+
+  const toggleMenu = (id: string, target: HTMLElement) => {
+    if (openMenu?.id === id) {
+      setOpenMenu(null);
+      return;
+    }
+    const rect = target.getBoundingClientRect();
+    setOpenMenu({
+      id,
+      top: rect.bottom + 4,
+      right: Math.max(8, window.innerWidth - rect.right),
+    });
+  };
+
+  const openRow = openMenu ? rows.find((r) => r.id === openMenu.id) : null;
 
   return (
     <div className="bz-card overflow-hidden">
@@ -619,53 +661,18 @@ function RestaurantTable({ rows, onToggle }: RestaurantTableProps) {
                     {r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}
                   </td>
                   <td>
-                    <div className="relative inline-block">
-                      <button
-                        className="bz-btn-icon"
-                        onClick={() => setOpenMenu(openMenu === r.id ? null : r.id)}
-                        aria-label="İşlemler"
-                        aria-expanded={openMenu === r.id}
-                      >
-                        <MoreHorizontal size={14} strokeWidth={2} />
-                      </button>
-                      {openMenu === r.id && (
-                        <div
-                          className="absolute right-0 top-9 z-20 w-48 rounded-xl border border-[#EDEDED] bg-white shadow-lg"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Link
-                            href={`/admin/restaurants/${r.id}`}
-                            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
-                            onClick={() => setOpenMenu(null)}
-                          >
-                            Düzenle
-                          </Link>
-                          <Link
-                            href={`/admin/restaurants/${r.id}/menu`}
-                            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
-                            onClick={() => setOpenMenu(null)}
-                          >
-                            <UtensilsCrossed size={13} strokeWidth={2} />
-                            Menü
-                          </Link>
-                          <Link
-                            href={`/admin/qr?restaurant=${r.id}`}
-                            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
-                            onClick={() => setOpenMenu(null)}
-                          >
-                            <Link2 size={13} strokeWidth={2} />
-                            QR yönetimi
-                          </Link>
-                          <button
-                            onClick={() => { onToggle(r.id, r.isActive); setOpenMenu(null); }}
-                            className="flex w-full items-center gap-2 border-t border-[#EDEDED] px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
-                          >
-                            {r.isActive ? <ToggleRight size={13} strokeWidth={2} /> : <ToggleLeft size={13} strokeWidth={2} />}
-                            {r.isActive ? 'Duraklat' : 'Aktifleştir'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      className="bz-btn-icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleMenu(r.id, e.currentTarget);
+                      }}
+                      aria-label="İşlemler"
+                      aria-haspopup="menu"
+                      aria-expanded={openMenu?.id === r.id}
+                    >
+                      <MoreHorizontal size={14} strokeWidth={2} />
+                    </button>
                   </td>
                 </tr>
               );
@@ -673,6 +680,61 @@ function RestaurantTable({ rows, onToggle }: RestaurantTableProps) {
           </tbody>
         </table>
       </div>
+
+      {/* Viewport-anchored row menu (escapes the table's overflow-x-auto
+          clipping context). Rendered once per open menu; coords come from
+          the trigger button's bounding rect at click time. */}
+      {openRow && openMenu && (
+        <div
+          role="menu"
+          className="fixed z-50 w-48 rounded-xl border border-[#EDEDED] bg-white shadow-lg overflow-hidden"
+          style={{ top: openMenu.top, right: openMenu.right }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Link
+            href={`/admin/restaurants/${openRow.id}`}
+            role="menuitem"
+            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+            onClick={() => setOpenMenu(null)}
+          >
+            Düzenle
+          </Link>
+          <Link
+            href={`/admin/restaurants/${openRow.id}/menu`}
+            role="menuitem"
+            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+            onClick={() => setOpenMenu(null)}
+          >
+            <UtensilsCrossed size={13} strokeWidth={2} />
+            Menü
+          </Link>
+          <Link
+            href={`/admin/qr?restaurant=${openRow.id}`}
+            role="menuitem"
+            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+            onClick={() => setOpenMenu(null)}
+          >
+            <Link2 size={13} strokeWidth={2} />
+            QR yönetimi
+          </Link>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              onToggle(openRow.id, openRow.isActive);
+              setOpenMenu(null);
+            }}
+            className="flex w-full items-center gap-2 border-t border-[#EDEDED] px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+          >
+            {openRow.isActive ? (
+              <ToggleRight size={13} strokeWidth={2} />
+            ) : (
+              <ToggleLeft size={13} strokeWidth={2} />
+            )}
+            {openRow.isActive ? 'Duraklat' : 'Aktifleştir'}
+          </button>
+        </div>
+      )}
 
       {/* Mobile: compact horizontal card list (1:1 design MAdminBusinesses) */}
       <div className="flex flex-col gap-2 p-3 md:hidden">

@@ -5,7 +5,18 @@ import { getAdminFromRequest } from '@/lib/auth';
 // GET /api/admin/members/[id]/audit — last 50 admin actions targeting this
 // user. Joined with actor name/email so the timeline UI can show who did what.
 // Action label translation lives client-side (TR/EN map per action key).
+//
+// Resilience: any unexpected DB error (schema drift on a preview deploy that
+// hasn't run `prisma db push` yet, transient connection blip, malformed
+// payload column) used to bubble up as a 500 and break the member detail page.
+// We now degrade gracefully — log + return empty data so the timeline shows
+// its empty state instead of a console error wall.
 export const dynamic = 'force-dynamic';
+
+function isPrismaSchemaDriftError(error: unknown) {
+  const code = (error as { code?: string } | null)?.code;
+  return code === 'P2021' || code === 'P2022';
+}
 
 export async function GET(
   req: NextRequest,
@@ -18,39 +29,70 @@ export async function GET(
 
   const { id } = await params;
 
-  const entries = await prisma.adminAuditLog.findMany({
-    where: { targetId: id },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-    select: {
-      id: true,
-      actorId: true,
-      actorSource: true,
-      action: true,
-      payload: true,
-      createdAt: true,
-    },
-  });
+  let entries: Array<{
+    id: string;
+    actorId: string;
+    actorSource: string;
+    action: string;
+    payload: unknown;
+    createdAt: Date;
+  }> = [];
+
+  try {
+    entries = await prisma.adminAuditLog.findMany({
+      where: { targetId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        actorId: true,
+        actorSource: true,
+        action: true,
+        payload: true,
+        createdAt: true,
+      },
+    });
+  } catch (error) {
+    console.error('[admin/members/audit] adminAuditLog query failed', {
+      targetId: id,
+      code: (error as { code?: string } | null)?.code,
+      error,
+    });
+    // Schema drift or any other read failure → empty timeline. The UI's
+    // EmptyState ("Henüz admin aksiyonu yok") is a strictly better UX than
+    // a console-error 500.
+    if (isPrismaSchemaDriftError(error)) {
+      return NextResponse.json({ data: [], degraded: 'schema_drift' });
+    }
+    return NextResponse.json({ data: [], degraded: 'read_failed' });
+  }
 
   // Resolve actor names — actorSource='admin' → AdminUser, 'user' → User. Bulk
   // fetch for both to avoid N+1.
   const adminIds = entries.filter((e) => e.actorSource === 'admin').map((e) => e.actorId);
   const userIds = entries.filter((e) => e.actorSource === 'user').map((e) => e.actorId);
 
-  const [adminUsers, users] = await Promise.all([
-    adminIds.length === 0
-      ? []
-      : prisma.adminUser.findMany({
-          where: { id: { in: adminIds } },
-          select: { id: true, email: true, name: true, role: true },
-        }),
-    userIds.length === 0
-      ? []
-      : prisma.user.findMany({
-          where: { id: { in: userIds } },
-          select: { id: true, email: true, name: true },
-        }),
-  ]);
+  let adminUsers: Array<{ id: string; email: string | null; name: string | null; role: string }> = [];
+  let users: Array<{ id: string; email: string; name: string | null }> = [];
+  try {
+    [adminUsers, users] = await Promise.all([
+      adminIds.length === 0
+        ? Promise.resolve([])
+        : prisma.adminUser.findMany({
+            where: { id: { in: adminIds } },
+            select: { id: true, email: true, name: true, role: true },
+          }),
+      userIds.length === 0
+        ? Promise.resolve([])
+        : prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, email: true, name: true },
+          }),
+    ]);
+  } catch (error) {
+    console.error('[admin/members/audit] actor resolve failed', error);
+    // Non-fatal: render entries without actor names rather than 500.
+  }
 
   const adminMap = new Map(adminUsers.map((a) => [a.id, a]));
   const userMap = new Map(users.map((u) => [u.id, u]));
