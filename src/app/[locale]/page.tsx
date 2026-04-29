@@ -4,7 +4,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
 import { IllusMountain, IllusShield } from '@/components/marketing/PulseIllustrations';
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
-import { BarChart3, Inbox, QrCode, Star } from 'lucide-react';
+import { BarChart3, Inbox, QrCode, Sparkles, Star } from 'lucide-react';
 import MarqueeRow from '@/components/marketing/MarqueeRow';
 import WatchDemoButton from '@/components/marketing/WatchDemoButton';
 import StickyCtaBar from '@/components/marketing/StickyCtaBar';
@@ -600,6 +600,213 @@ export default async function LandingPage({
 
           <div className="flex justify-center lg:justify-end">
             <IllusShield size={300} className="w-full max-w-[300px] h-auto" />
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          5.5 BENTO — Tek panelde dört süper güç
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-24">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="max-w-[720px] mb-10 sm:mb-14">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Tek platform' : 'One platform'}
+            </span>
+            <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[46px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] text-balance">
+              {isTr ? 'Tek panelde, dört süper güç.' : 'One panel, four superpowers.'}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2">
+            {/* QR Studio — large dark hero (2x2) */}
+            <div className="bz-fade-up bz-d1 pulse-card-hover relative overflow-hidden rounded-2xl border border-[#0A0A0A] bg-[#0A0A0A] p-6 text-white sm:p-7 lg:col-span-2 lg:row-span-2">
+              <div
+                className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-[#C6F24E]/10 blur-3xl"
+                aria-hidden
+              />
+              <div className="relative">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="pulse-eyebrow text-[#C6F24E]">QR STUDIO</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
+                    </span>
+                    <span className="pulse-eyebrow text-white/70">{isTr ? 'CANLI' : 'LIVE'}</span>
+                  </span>
+                </div>
+                <h3
+                  className="mt-3 text-[26px] sm:text-[34px] font-medium leading-[1.05] tracking-[-0.025em] text-white"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {isTr ? 'Tasarla. Yerleştir. Takip et.' : 'Design. Place. Track.'}
+                </h3>
+                <p className="mt-3 max-w-[400px] text-[14px] leading-[1.6] text-white/70">
+                  {isTr
+                    ? 'Markana özel QR şablonları, dört yerleştirme yolu (masa / fatura / kapı / paket), ham rapor.'
+                    : 'Branded QR templates, four placement modes (table / receipt / door / pack), raw reports.'}
+                </p>
+                <div className="mt-8 flex items-end justify-between gap-6">
+                  {/* Realistic QR mock — 3 finder patterns + scattered data cells */}
+                  <svg viewBox="0 0 100 100" className="h-32 w-32 sm:h-36 sm:w-36" aria-hidden>
+                    <rect x="2" y="2" width="96" height="96" rx="8" fill="#C6F24E" />
+                    <g fill="#0A0A0A">
+                      {[
+                        [10, 10],
+                        [70, 10],
+                        [10, 70],
+                      ].map(([x, y], i) => (
+                        <g key={i}>
+                          <rect x={x} y={y} width="20" height="20" rx="2" />
+                          <rect x={x + 4} y={y + 4} width="12" height="12" fill="#C6F24E" />
+                          <rect x={x + 7} y={y + 7} width="6" height="6" />
+                        </g>
+                      ))}
+                      {[
+                        [36, 12], [42, 12], [48, 12], [54, 12], [60, 12],
+                        [36, 18], [48, 18], [60, 18],
+                        [36, 24], [42, 24], [54, 24],
+                        [12, 36], [18, 36], [30, 36], [36, 42], [48, 42], [60, 42],
+                        [12, 48], [24, 48], [36, 48], [42, 48], [54, 48], [60, 48],
+                        [12, 54], [30, 54], [36, 54], [60, 54],
+                        [36, 60], [42, 60], [54, 60],
+                        [40, 72], [46, 72], [58, 72], [70, 72], [78, 72],
+                        [40, 78], [52, 78], [64, 78],
+                        [40, 84], [64, 84], [78, 84],
+                        [46, 90], [58, 90], [70, 90],
+                      ].map(([x, y], i) => (
+                        <rect key={`d-${i}`} x={x} y={y} width="4" height="4" />
+                      ))}
+                    </g>
+                  </svg>
+                  <div className="text-right">
+                    <p
+                      className="text-[40px] sm:text-[52px] font-semibold leading-none tracking-tight text-[#C6F24E]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      +184%
+                    </p>
+                    <p className="pulse-eyebrow mt-1.5 text-white/60">
+                      {isTr ? 'ORGANİK YORUM' : 'ORGANIC REVIEWS'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Buaze Pulse AI — top-right tile */}
+            <div className="bz-fade-up bz-d2 pulse-card-hover relative overflow-hidden rounded-2xl border border-[#C6F24E] bg-gradient-to-br from-[#EAF9B8]/70 to-[#EAF9B8]/30 p-6">
+              <div className="flex items-center gap-2">
+                <span className="pulse-eyebrow text-[#0A0A0A]">BUAZE PULSE AI</span>
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0A0A0A]">
+                  <Sparkles size={11} className="text-[#C6F24E]" strokeWidth={2.5} />
+                </span>
+              </div>
+              <h3
+                className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {isTr ? 'Yanıtı saniyede yaz.' : 'Draft replies in seconds.'}
+              </h3>
+              <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">
+                {isTr
+                  ? 'Her yorum için Buaze Pulse AI ile Türkçe yanıt taslağı.'
+                  : 'Turkish/English reply drafts with Buaze Pulse AI.'}
+              </p>
+              <div className="mt-4 rounded-xl bg-[#0A0A0A] px-3 py-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="pulse-eyebrow text-[#C6F24E]">DRAFT</span>
+                  <span
+                    className="text-[10px] text-[#A3A3A3]"
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                  >
+                    0.8s
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-snug text-white/85">
+                  {isTr
+                    ? '"Merhaba Mert, harika yorumun için çok teşekkür ederiz…"'
+                    : '"Hi Mark, thank you so much for taking the time…"'}
+                </p>
+              </div>
+            </div>
+
+            {/* Analitik — top-right corner tile */}
+            <div className="bz-fade-up bz-d3 pulse-card-hover relative rounded-2xl border border-[#EDEDED] bg-white p-6">
+              <div className="flex items-center gap-2">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'ANALİTİK' : 'ANALYTICS'}
+                </span>
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
+                </span>
+              </div>
+              <h3
+                className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {isTr ? 'Nabzını canlı izle.' : 'Watch your pulse live.'}
+              </h3>
+              <svg viewBox="0 0 220 56" className="mt-4 w-full" aria-hidden>
+                <defs>
+                  <linearGradient id="bentoG" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#C6F24E" stopOpacity="0.5" />
+                    <stop offset="100%" stopColor="#C6F24E" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {[14, 28, 42].map((y) => (
+                  <line key={y} x1="0" y1={y} x2="220" y2={y} stroke="#F5F5F5" strokeWidth="1" />
+                ))}
+                <path
+                  d="M0 42 L25 38 L50 32 L75 22 L100 26 L125 16 L150 18 L175 10 L200 8 L220 6 L220 56 L0 56 Z"
+                  fill="url(#bentoG)"
+                />
+                <path
+                  d="M0 42 L25 38 L50 32 L75 22 L100 26 L125 16 L150 18 L175 10 L200 8 L220 6"
+                  fill="none"
+                  stroke="#0A0A0A"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <circle cx="220" cy="6" r="4" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
+              </svg>
+              <p className="mt-3 text-[12px] text-[#737373]">
+                {isTr ? 'NPS, trend, konum kırılımı.' : 'NPS, trend, per-location breakdown.'}
+              </p>
+            </div>
+
+            {/* Entegrasyonlar — bottom-right wide tile */}
+            <div className="bz-fade-up bz-d4 pulse-card-hover relative rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-6 sm:col-span-2">
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'ENTEGRASYONLAR' : 'INTEGRATIONS'}
+              </span>
+              <h3
+                className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {isTr ? 'Türkiye ve dünya — aynı panelde.' : 'Turkey and the world, same panel.'}
+              </h3>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(['google', 'yemeksepeti', 'getir-yemek', 'trendyol-go', 'yelp', 'tripadvisor', 'booking'] as const).map(
+                  (id) => (
+                    <div
+                      key={id}
+                      className="flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-white px-2.5 py-1.5 transition-colors hover:border-[#0A0A0A]"
+                    >
+                      <PlatformLogo id={id} size={22} rounded={4} />
+                      <span className="text-[11px] font-medium capitalize text-[#0A0A0A]">
+                        {id.replace('-', ' ')}
+                      </span>
+                    </div>
+                  ),
+                )}
+                <div className="flex items-center gap-1.5 rounded-lg border border-dashed border-[#D4D4D4] bg-transparent px-2.5 py-1.5 text-[11px] font-medium text-[#737373]">
+                  + {isTr ? '12 daha' : '12 more'}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
