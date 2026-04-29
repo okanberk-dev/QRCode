@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  AlertTriangle, ArrowLeft, ArrowDown, ArrowUp, BarChart3, Check, ChevronRight, Coffee, Croissant,
-  Download, Edit2, Eye, EyeOff, GripVertical, Image as ImageIcon, Loader2, Pizza, Plus, QrCode,
-  Save, Sparkles, Trash2, UtensilsCrossed, Wine, X,
+  AlertTriangle, ArrowLeft, ArrowDown, ArrowUp, BarChart3, BedDouble, Check, ChevronRight, Coffee,
+  Croissant, Download, Edit2, Eye, EyeOff, GripVertical, Image as ImageIcon, Info, Loader2,
+  PartyPopper, Pizza, Plus, QrCode, Save, ShieldAlert, Sparkles, Trash2, Truck, UtensilsCrossed,
+  Wine, X,
 } from 'lucide-react';
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
@@ -16,7 +17,7 @@ import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 import PublicMenuView, { type MenuCategoryView, type MenuItemView, type RestaurantView } from '@/components/menu/PublicMenuView';
 import { Modal, useConfirmDialog } from '@/components/ui';
-import { MENU_THEMES, type MenuBadge, type MenuTheme } from '@/lib/validations';
+import { MENU_THEMES, type MenuAllergen, type MenuBadge, type MenuTheme } from '@/lib/validations';
 import { formatPrice, parsePriceInput } from '@/lib/format';
 import { compressImage } from '@/lib/client-image';
 import type { Locale } from '@/lib/translations';
@@ -75,11 +76,36 @@ const BADGE_GROUPS: { tr: string; en: string; items: MenuBadge[] }[] = [
   { tr: 'Kalite', en: 'Quality', items: ['organik', 'taze', 'ev_yapimi'] },
 ];
 
+// Allergen labels used in the picker — full TR/EN copy. The public chip uses a
+// short 2-letter code (PublicMenuView.ALLERGEN_META.short). Order is the EU
+// 1169/2011 disclosure order plus most-frequent-first within groups.
+const ALLERGEN_LABELS: Record<MenuAllergen, { tr: string; en: string }> = {
+  gluten:    { tr: 'Gluten',                en: 'Gluten' },
+  sut:       { tr: 'Süt / laktoz',          en: 'Milk / lactose' },
+  yumurta:   { tr: 'Yumurta',               en: 'Egg' },
+  findik:    { tr: 'Sert kabuklu yemiş',    en: 'Tree nut' },
+  fistik:    { tr: 'Yer fıstığı',           en: 'Peanut' },
+  soya:      { tr: 'Soya',                  en: 'Soy' },
+  balik:     { tr: 'Balık',                 en: 'Fish' },
+  kabuklu:   { tr: 'Kabuklu deniz ürünü',   en: 'Crustacean' },
+  yumusakca: { tr: 'Yumuşakça',             en: 'Mollusc' },
+  susam:     { tr: 'Susam',                 en: 'Sesame' },
+  hardal:    { tr: 'Hardal',                en: 'Mustard' },
+  kereviz:   { tr: 'Kereviz',               en: 'Celery' },
+};
+
+const ALLERGEN_GROUPS: { tr: string; en: string; items: MenuAllergen[] }[] = [
+  { tr: 'Tahıl & süt', en: 'Grain & dairy', items: ['gluten', 'sut', 'yumurta'] },
+  { tr: 'Yemiş',       en: 'Nuts',          items: ['findik', 'fistik', 'susam'] },
+  { tr: 'Deniz',       en: 'Seafood',       items: ['balik', 'kabuklu', 'yumusakca'] },
+  { tr: 'Diğer',       en: 'Other',         items: ['soya', 'hardal', 'kereviz'] },
+];
+
 // Quick-start category presets so a new owner doesn't stare at an empty list.
 // Picking one POSTs ~6 categories with sensible Turkish names; the user can
 // rename / delete after. English mirror is included for the EN locale.
 type StarterPreset = {
-  id: 'restaurant' | 'cafe' | 'fastfood' | 'bakery' | 'bar';
+  id: 'restaurant' | 'cafe' | 'fastfood' | 'bakery' | 'bar' | 'hotel' | 'winebar' | 'foodtruck' | 'catering';
   tr: { label: string; hint: string; categories: string[] };
   en: { label: string; hint: string; categories: string[] };
 };
@@ -147,6 +173,58 @@ const STARTER_PRESETS: StarterPreset[] = [
       label: 'Bar',
       hint: 'Cocktails & snacks',
       categories: ['Cocktails', 'Wines', 'Beers', 'Mezze', 'Snacks', 'Soft Drinks'],
+    },
+  },
+  {
+    id: 'hotel',
+    tr: {
+      label: 'Otel · Oda Servisi',
+      hint: '24 saat oda menüsü',
+      categories: ['Kahvaltı', 'Sandviçler', 'Ana Yemekler', 'Tatlılar', 'İçecekler', 'Gece Menüsü'],
+    },
+    en: {
+      label: 'Hotel · Room Service',
+      hint: '24-hour in-room menu',
+      categories: ['Breakfast', 'Sandwiches', 'Mains', 'Desserts', 'Beverages', 'Late Night'],
+    },
+  },
+  {
+    id: 'winebar',
+    tr: {
+      label: 'Şarap Bar',
+      hint: 'Şarap, peynir, kuru meze',
+      categories: ['Beyaz Şaraplar', 'Kırmızı Şaraplar', 'Köpüklü', 'Peynir Tabağı', 'Şarküteri', 'Bar Atıştırmalıkları'],
+    },
+    en: {
+      label: 'Wine Bar',
+      hint: 'Wine, cheese, charcuterie',
+      categories: ['White Wines', 'Red Wines', 'Sparkling', 'Cheese Board', 'Charcuterie', 'Bar Bites'],
+    },
+  },
+  {
+    id: 'foodtruck',
+    tr: {
+      label: 'Food Truck',
+      hint: 'Mobil servis, kısa menü',
+      categories: ['İmza Tabaklar', 'Tacolar / Wraplar', 'Patates Çeşitleri', 'Soslar', 'İçecekler'],
+    },
+    en: {
+      label: 'Food Truck',
+      hint: 'Street menu, short list',
+      categories: ['Signatures', 'Tacos / Wraps', 'Fries & Sides', 'Sauces', 'Drinks'],
+    },
+  },
+  {
+    id: 'catering',
+    tr: {
+      label: 'Catering',
+      hint: 'Etkinlik & toplu sipariş',
+      categories: ['Açık Büfe', 'Soğuk Tabaklar', 'Sıcak Tabaklar', 'Kanepeler', 'Tatlı Standı', 'Servis İçecekleri'],
+    },
+    en: {
+      label: 'Catering',
+      hint: 'Events & bulk orders',
+      categories: ['Buffet', 'Cold Plates', 'Hot Plates', 'Canapés', 'Dessert Station', 'Drink Service'],
     },
   },
 ];
@@ -224,6 +302,7 @@ export default function RestaurantMenuBuilderPage() {
       themeGastronomy: isTr ? 'Gastronomi' : 'Gastronomy',
       themeMinimal: isTr ? 'Minimal' : 'Minimal',
       themeBistro: isTr ? 'Bistro' : 'Bistro',
+      themePulse: isTr ? 'Pulse' : 'Pulse',
       accentColor: isTr ? 'Renk' : 'Accent Color',
       menuQr: isTr ? 'Menü QR' : 'Menu QR',
       downloadQr: isTr ? 'İndir' : 'Download',
@@ -536,6 +615,7 @@ export default function RestaurantMenuBuilderPage() {
           priceCents: payload.priceCents ?? 0,
           imageUrl: payload.imageUrl ?? null,
           badges: payload.badges ?? [],
+          allergens: payload.allergens ?? [],
           isAvailable: payload.isAvailable ?? true,
           isOutOfStock: payload.isOutOfStock ?? false,
         }),
@@ -1138,6 +1218,7 @@ function ItemModal({
   const [priceInput, setPriceInput] = useState(data.priceCents ? (data.priceCents / 100).toFixed(2) : '0');
   const [imageUrl, setImageUrl] = useState(data.imageUrl ?? '');
   const [badges, setBadges] = useState<string[]>(data.badges ?? []);
+  const [allergens, setAllergens] = useState<string[]>(data.allergens ?? []);
   const [isAvailable, setIsAvailable] = useState(data.isAvailable ?? true);
   const [isOutOfStock, setIsOutOfStock] = useState(data.isOutOfStock ?? false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -1146,6 +1227,10 @@ function ItemModal({
 
   const toggleBadge = (b: string) => {
     setBadges((prev) => (prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]));
+  };
+
+  const toggleAllergen = (a: string) => {
+    setAllergens((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
   };
 
   const handleFilePick = async (file: File) => {
@@ -1194,6 +1279,7 @@ function ItemModal({
             priceCents: cents,
             imageUrl: imageUrl.trim() || null,
             badges,
+            allergens,
             isAvailable,
             isOutOfStock,
           });
@@ -1338,6 +1424,63 @@ function ItemModal({
             ))}
           </div>
         </Field>
+
+        {/* Allergens — regulatory disclosure, intentionally distinct visual
+            treatment from marketing badges (amber warning palette). */}
+        <Field
+          label={
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldAlert size={11} strokeWidth={2.25} className="text-[#92400E]" />
+              {locale === 'tr' ? 'Alerjenler (opsiyonel)' : 'Allergens (optional)'}
+            </span>
+          }
+        >
+          <div className="space-y-3 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB]/60 p-3">
+            <p className="flex items-start gap-2 text-[11px] leading-relaxed text-[#92400E]">
+              <Info size={12} strokeWidth={2} className="mt-0.5 shrink-0" />
+              {locale === 'tr'
+                ? 'Üründe doğal olarak bulunan veya çapraz bulaşma riski taşıyan içerikleri seç. Müşteriler menüde uyarı olarak görür.'
+                : 'Mark allergens that are present or risk cross-contamination. Customers see this as a warning in the public menu.'}
+            </p>
+            {ALLERGEN_GROUPS.map((group) => (
+              <div key={group.tr} className="space-y-1.5">
+                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#92400E]/80">
+                  {locale === 'tr' ? group.tr : group.en}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {group.items.map((a) => {
+                    const active = allergens.includes(a);
+                    return (
+                      <button
+                        key={a}
+                        type="button"
+                        onClick={() => toggleAllergen(a)}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all ${
+                          active
+                            ? 'border-[#92400E] bg-[#FEF3C7] text-[#92400E] shadow-sm'
+                            : 'border-[#FDE68A]/60 bg-white text-[#92400E]/80 hover:border-[#92400E] hover:text-[#92400E]'
+                        }`}
+                      >
+                        {active && <Check size={11} strokeWidth={2.5} />}
+                        {ALLERGEN_LABELS[a][locale]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            {allergens.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setAllergens([])}
+                className="text-[11px] font-medium text-[#92400E] underline-offset-2 hover:underline"
+              >
+                {locale === 'tr' ? 'Tümünü temizle' : 'Clear all'}
+              </button>
+            )}
+          </div>
+        </Field>
+
         <div className="grid grid-cols-2 gap-3">
           <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
             <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="h-4 w-4 accent-[#C6F24E]" />
@@ -1359,7 +1502,7 @@ function ItemModal({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <label className="pulse-eyebrow text-[#737373]">{label}</label>
@@ -1398,13 +1541,20 @@ function PresetGlyph({ id }: { id: StarterPreset['id'] }) {
     : id === 'cafe' ? Coffee
     : id === 'fastfood' ? Pizza
     : id === 'bakery' ? Croissant
+    : id === 'hotel' ? BedDouble
+    : id === 'foodtruck' ? Truck
+    : id === 'catering' ? PartyPopper
     : Wine;
   const palette: Record<StarterPreset['id'], { bg: string; fg: string }> = {
     restaurant: { bg: '#FEF3C7', fg: '#854D0E' },
-    cafe: { bg: '#F5F3FF', fg: '#5B21B6' },
-    fastfood: { bg: '#FEF2F2', fg: '#991B1B' },
-    bakery: { bg: '#FFEDD5', fg: '#9A3412' },
-    bar: { bg: '#ECFEFF', fg: '#155E75' },
+    cafe:       { bg: '#F5F3FF', fg: '#5B21B6' },
+    fastfood:   { bg: '#FEF2F2', fg: '#991B1B' },
+    bakery:     { bg: '#FFEDD5', fg: '#9A3412' },
+    bar:        { bg: '#ECFEFF', fg: '#155E75' },
+    hotel:      { bg: '#EFF6FF', fg: '#1E40AF' },
+    winebar:    { bg: '#FAE8FF', fg: '#86198F' },
+    foodtruck:  { bg: '#FEF3C7', fg: '#A16207' },
+    catering:   { bg: '#ECFDF5', fg: '#14532D' },
   };
   const { bg, fg } = palette[id];
   return (
@@ -1613,6 +1763,15 @@ function SortableItemRow({
                 )}
               </div>
             )}
+            {item.allergens && item.allergens.length > 0 && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full border border-[#FDE68A] bg-[#FFFBEB] px-2 py-0.5 text-[10px] font-medium text-[#92400E]"
+                title={isTr ? `${item.allergens.length} alerjen işaretli` : `${item.allergens.length} allergens flagged`}
+              >
+                <ShieldAlert size={9} strokeWidth={2.25} />
+                {item.allergens.length}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -1668,12 +1827,13 @@ const THEME_SWATCH_GROUPS: { tr: string; en: string; colors: string[] }[] = [
 // Hint per theme — small TR/EN copy chip on the card so a brand-new owner can
 // pick the layout that fits their venue without opening the public preview.
 const THEME_VIBES: Record<MenuTheme, { tr: string; en: string }> = {
-  classic:    { tr: 'Restoran · Aile',     en: 'Restaurant · Family' },
-  modern:     { tr: 'Fast food · Burger',  en: 'Fast food · Burger' },
-  elegant:    { tr: 'Fine dining',         en: 'Fine dining' },
-  gastronomy: { tr: 'Şef · Bar · Gece',    en: 'Chef · Bar · Night' },
-  minimal:    { tr: 'Cafe · Pastane',      en: 'Cafe · Bakery' },
-  bistro:     { tr: 'Bistro · Kahvaltı',   en: 'Bistro · Brunch' },
+  classic:    { tr: 'Restoran · Aile',         en: 'Restaurant · Family' },
+  modern:     { tr: 'Fast food · Burger',      en: 'Fast food · Burger' },
+  elegant:    { tr: 'Fine dining',             en: 'Fine dining' },
+  gastronomy: { tr: 'Şef · Bar · Gece',        en: 'Chef · Bar · Night' },
+  minimal:    { tr: 'Cafe · Pastane',          en: 'Cafe · Bakery' },
+  bistro:     { tr: 'Bistro · Kahvaltı',       en: 'Bistro · Brunch' },
+  pulse:      { tr: 'Pulse · Marka uyumlu',    en: 'Pulse · Brand-aligned' },
 };
 
 function ThemePanel({
@@ -1693,6 +1853,7 @@ function ThemePanel({
     { id: 'gastronomy', label: copy.themeGastronomy },
     { id: 'minimal', label: copy.themeMinimal },
     { id: 'bistro', label: copy.themeBistro },
+    { id: 'pulse', label: copy.themePulse },
   ];
   const currentAccent = restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#C6F24E';
   const logoFileRef = useRef<HTMLInputElement | null>(null);
@@ -1988,6 +2149,36 @@ function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+  if (theme === 'pulse') {
+    // Buaze design system layout: pure white + ECG line + 2-col card grid +
+    // mono price + lime accent dot. Mirrors the live PulseLayout.
+    return (
+      <div className="relative h-28 overflow-hidden rounded-xl bg-white p-2.5 ring-1 ring-[#EDEDED]">
+        <div className="flex items-center gap-1">
+          <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: accent }} aria-hidden />
+          <div className="h-1 flex-1 rounded bg-[#0A0A0A]" />
+          <div className="h-1 w-4 rounded bg-[#0A0A0A]/60" style={{ fontFamily: 'var(--font-mono)' }} />
+        </div>
+        <svg viewBox="0 0 100 8" className="mt-1.5 h-2 w-full" preserveAspectRatio="none" aria-hidden>
+          <path d="M0 4 L24 4 L28 1 L34 7 L40 4 L46 2 L52 6 L58 4 L100 4" stroke={accent} strokeWidth="1" fill="none" strokeLinecap="round" />
+        </svg>
+        <div className="mt-1.5 grid grid-cols-2 gap-1">
+          {[0, 1].map((i) => (
+            <div key={i} className="overflow-hidden rounded-lg ring-1 ring-[#EDEDED]">
+              <div className="h-3.5 bg-[#FAFAFA]" />
+              <div className="space-y-0.5 p-1">
+                <div className="flex items-center gap-1">
+                  <div className="h-1 flex-1 rounded bg-[#0A0A0A]/85" />
+                  <div className="h-1 w-3 rounded bg-[#0A0A0A]/85" />
+                </div>
+                <div className="h-0.5 w-full rounded bg-[#A3A3A3]/40" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Clock, MapPin, Phone, Flame, Leaf, Star, Sparkles, WheatOff,
-  Sun, Sprout, Heart, CalendarRange, Droplets,
+  Sun, Sprout, Heart, CalendarRange, Droplets, Info,
 } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
-import type { MenuBadge, MenuTheme } from '@/lib/validations';
+import type { MenuAllergen, MenuBadge, MenuTheme } from '@/lib/validations';
 import { useMenuAnalytics, useProductViewTracking } from '@/hooks/useMenuAnalytics';
 import ProductDetailModal from './ProductDetailModal';
 import MenuSplash from './MenuSplash';
@@ -19,6 +19,7 @@ export interface MenuItemView {
   currency: string;
   imageUrl: string | null;
   badges: string[];
+  allergens?: string[];
   isAvailable: boolean;
   isOutOfStock: boolean;
   sortOrder: number;
@@ -98,6 +99,55 @@ function BadgeChipOnDark({ badge, locale, accent }: { badge: string; locale: 'tr
       <Icon size={BADGE_ICON_SIZE} strokeWidth={2} />
       {meta[locale]}
     </span>
+  );
+}
+
+// Allergen meta — short single-letter glyph for inline density (chip size <
+// badge), TR long-name + EN short-name. Shown as a quiet info row below the
+// price; not a marketing chip.
+const ALLERGEN_META: Record<MenuAllergen, { short: string; tr: string; en: string }> = {
+  gluten:    { short: 'GL', tr: 'Gluten',                en: 'Gluten' },
+  sut:       { short: 'SÜ', tr: 'Süt / laktoz',          en: 'Milk / lactose' },
+  yumurta:   { short: 'YU', tr: 'Yumurta',               en: 'Egg' },
+  findik:    { short: 'FI', tr: 'Sert kabuklu yemiş',    en: 'Tree nut' },
+  fistik:    { short: 'FT', tr: 'Yer fıstığı',           en: 'Peanut' },
+  soya:      { short: 'SO', tr: 'Soya',                  en: 'Soy' },
+  balik:     { short: 'BA', tr: 'Balık',                 en: 'Fish' },
+  kabuklu:   { short: 'KB', tr: 'Kabuklu deniz ürünü',   en: 'Crustacean' },
+  yumusakca: { short: 'YM', tr: 'Yumuşakça',             en: 'Mollusc' },
+  susam:     { short: 'SU', tr: 'Susam',                 en: 'Sesame' },
+  hardal:    { short: 'HA', tr: 'Hardal',                en: 'Mustard' },
+  kereviz:   { short: 'KE', tr: 'Kereviz',               en: 'Celery' },
+};
+
+function AllergenList({ allergens, locale, dark = false }: { allergens: string[]; locale: 'tr' | 'en'; dark?: boolean }) {
+  if (!allergens?.length) return null;
+  const valid = allergens.filter((a): a is MenuAllergen => a in ALLERGEN_META);
+  if (!valid.length) return null;
+  const label = locale === 'tr' ? 'İçerik' : 'Allergens';
+  const fg = dark ? 'text-white/60' : 'text-[#737373]';
+  const chipBase = dark
+    ? 'bg-white/10 text-white/80 ring-1 ring-white/15'
+    : 'bg-[#FAFAFA] text-[#525252] ring-1 ring-[#EDEDED]';
+  return (
+    <div className={`flex flex-wrap items-center gap-1 text-[10px] ${fg}`}>
+      <span className="inline-flex items-center gap-0.5 font-medium uppercase tracking-[0.14em]">
+        <Info size={9} strokeWidth={2.25} />
+        {label}
+      </span>
+      {valid.map((a) => {
+        const meta = ALLERGEN_META[a];
+        return (
+          <span
+            key={a}
+            title={meta[locale]}
+            className={`inline-flex items-center rounded-full px-1.5 py-px font-mono text-[9px] font-semibold tracking-wider ${chipBase}`}
+          >
+            {meta.short}
+          </span>
+        );
+      })}
+    </div>
   );
 }
 
@@ -231,6 +281,7 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr', 
       case 'gastronomy': return <GastronomyLayout {...layoutProps} />;
       case 'minimal':    return <MinimalLayout {...layoutProps} />;
       case 'bistro':     return <BistroLayout {...layoutProps} />;
+      case 'pulse':      return <PulseLayout {...layoutProps} />;
       case 'classic':
       default:           return <ClassicLayout {...layoutProps} />;
     }
@@ -1023,6 +1074,251 @@ function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale,
               );
             })}
             <Footer />
+          </main>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Pulse — Buaze design system layout. Pure white + graphite + lime accent,
+// Space Grotesk display, JetBrains Mono prices, pulse-heartbeat live dot.
+// Mobile-first per CLAUDE.md §25 (px-5 / py-[60px] base).
+
+function PulseLayout({
+  restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale,
+  setProductRef, onCategoryClick, onProductClick,
+}: LayoutProps) {
+  const brand = restaurant.menuAccentColor || accent;
+  return (
+    <div className="min-h-full bg-white text-[#0A0A0A]">
+      {/* Sticky brand bar */}
+      <header className="sticky top-0 z-40 border-b border-[#EDEDED] bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3 sm:px-7">
+          <div className="flex min-w-0 items-center gap-2.5">
+            {restaurant.menuLogoUrl ? (
+              <span className="h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-[#EDEDED] bg-white">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+              </span>
+            ) : (
+              <span
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[14px] font-bold"
+                style={{ backgroundColor: brand, color: '#0A0A0A' }}
+              >
+                {restaurant.name.charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="truncate text-[14px] font-medium leading-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+                {restaurant.name}
+              </p>
+              <p className="truncate text-[10px] font-medium uppercase tracking-[0.18em] text-[#737373]" style={{ fontFamily: 'var(--font-mono)' }}>
+                {restaurant.category}
+              </p>
+            </div>
+          </div>
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-white"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            <span className="bz-pulse-dot h-1.5 w-1.5 rounded-full" style={{ backgroundColor: brand }} aria-hidden />
+            <span className="hidden sm:inline">{copy.menuOf}</span>
+            <span className="sm:hidden">PULSE</span>
+          </span>
+        </div>
+      </header>
+
+      {visibleCategories.length === 0 ? (
+        <EmptyState copy={copy} />
+      ) : (
+        <>
+          {/* Hero — eyebrow + h1 + hairline divider */}
+          <section className="border-b border-[#EDEDED] bg-white">
+            <div className="mx-auto max-w-6xl px-5 py-[60px] sm:px-7 sm:py-20">
+              <p
+                className="inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-mono)' }}
+              >
+                <span className="bz-pulse-dot inline-block h-2 w-2 rounded-full" style={{ backgroundColor: brand }} aria-hidden />
+                {locale === 'tr' ? 'CANLI MENÜ · PULSE' : 'LIVE MENU · PULSE'}
+              </p>
+              <h1
+                className="mt-3 max-w-3xl text-[38px] font-medium leading-[0.95] tracking-[-0.025em] sm:text-[64px]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {restaurant.name}.
+              </h1>
+              <p className="mt-4 max-w-xl text-[15px] leading-[1.6] text-[#525252]">
+                {locale === 'tr'
+                  ? 'Her tabağın bir nabzı vardır. Kategorilerden seç, detayları aç, sipariş etmeden önce göz at.'
+                  : 'Every plate has a pulse. Browse categories, open details, decide before you order.'}
+              </p>
+              <div className="mt-6">
+                <RestaurantMeta restaurant={restaurant} variant="light" />
+              </div>
+            </div>
+          </section>
+
+          {/* Sticky category pills — no-scrollbar horizontal strip */}
+          <nav className="sticky top-[57px] z-30 border-b border-[#EDEDED] bg-white/95 backdrop-blur">
+            <div className="mx-auto max-w-6xl px-5 sm:px-7">
+              <div className="no-scrollbar overflow-x-auto">
+                <div className="flex min-w-max gap-1.5 py-3">
+                  {visibleCategories.map((c) => {
+                    const isActive = activeId === c.id;
+                    return (
+                      <a
+                        key={c.id}
+                        href={`#cat-${c.id}`}
+                        onClick={() => onCategoryClick(c.id)}
+                        className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all active:scale-95 ${
+                          isActive
+                            ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white shadow-sm'
+                            : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]'
+                        }`}
+                        style={isActive ? { boxShadow: `0 0 0 3px ${brand}40` } : undefined}
+                      >
+                        {c.name}
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </nav>
+
+          {/* Sections */}
+          <main className="mx-auto max-w-6xl space-y-12 px-5 py-12 sm:space-y-16 sm:px-7 sm:py-16">
+            {visibleCategories.map((category) => {
+              const items = category.items.filter((i) => i.isAvailable).sort((a, b) => a.sortOrder - b.sortOrder);
+              if (items.length === 0) return null;
+              return (
+                <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-32">
+                  <header className="mb-5 flex items-end justify-between gap-3 border-b border-[#EDEDED] pb-3">
+                    <div className="min-w-0">
+                      <p
+                        className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#737373]"
+                        style={{ fontFamily: 'var(--font-mono)' }}
+                      >
+                        {locale === 'tr' ? 'KATEGORİ' : 'CATEGORY'} · {String(items.length).padStart(2, '0')}
+                      </p>
+                      <h2
+                        className="mt-1 text-[26px] font-medium leading-tight tracking-[-0.02em] sm:text-[32px]"
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                      >
+                        {category.name}
+                      </h2>
+                      {category.description && (
+                        <p className="mt-1.5 text-[13px] leading-relaxed text-[#525252]">{category.description}</p>
+                      )}
+                    </div>
+                    <span
+                      className="hidden h-px flex-1 self-end sm:block"
+                      style={{ background: `linear-gradient(to right, transparent, ${brand}66, transparent)` }}
+                      aria-hidden
+                    />
+                  </header>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+                    {items.map((item) => (
+                      <article
+                        key={item.id}
+                        data-pid={item.id}
+                        ref={(el) => setProductRef(item.id, el)}
+                        onClick={() => onProductClick(item, category.id)}
+                        className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white transition-all hover:-translate-y-0.5 hover:border-[#0A0A0A] hover:shadow-md ${
+                          item.isOutOfStock ? 'opacity-70' : ''
+                        }`}
+                      >
+                        <div className="relative aspect-[16/10] overflow-hidden bg-[#FAFAFA]">
+                          {item.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={item.imageUrl}
+                              alt={item.name}
+                              loading="lazy"
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                            />
+                          ) : (
+                            <Placeholder accent={brand} />
+                          )}
+                          {item.badges.length > 0 && (
+                            <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-1">
+                              {item.badges.slice(0, 2).map((b) => (
+                                <BadgeChip key={b} badge={b} locale={locale} />
+                              ))}
+                            </div>
+                          )}
+                          {item.isOutOfStock && (
+                            <span
+                              className="absolute right-3 top-3 rounded-full bg-[#0A0A0A] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-white"
+                              style={{ fontFamily: 'var(--font-mono)' }}
+                            >
+                              {copy.outOfStock}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-1 flex-col gap-2 p-4 sm:p-5">
+                          <div className="flex items-start justify-between gap-3">
+                            <h3
+                              className="min-w-0 flex-1 text-[16px] font-medium leading-tight tracking-[-0.01em] sm:text-[17px]"
+                              style={{ fontFamily: 'var(--font-heading)' }}
+                            >
+                              {item.name}
+                            </h3>
+                            <span
+                              className="shrink-0 text-[15px] font-semibold tabular-nums tracking-tight text-[#0A0A0A] sm:text-[16px]"
+                              style={{ fontFamily: 'var(--font-mono)' }}
+                            >
+                              {formatPrice(item.priceCents, item.currency, priceLocale)}
+                            </span>
+                          </div>
+                          {item.description && (
+                            <p className="line-clamp-2 text-[13px] leading-[1.55] text-[#525252]">{item.description}</p>
+                          )}
+                          {item.badges.length > 2 && (
+                            <div className="flex flex-wrap gap-1">
+                              {item.badges.slice(2).map((b) => (
+                                <BadgeChip key={b} badge={b} locale={locale} />
+                              ))}
+                            </div>
+                          )}
+                          {item.allergens && item.allergens.length > 0 && (
+                            <AllergenList allergens={item.allergens} locale={locale} />
+                          )}
+                        </div>
+                        <span
+                          aria-hidden
+                          className="pointer-events-none absolute inset-x-4 bottom-0 h-px origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100"
+                          style={{ backgroundColor: brand }}
+                        />
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+
+            {/* ECG-line footer signature */}
+            <div className="flex flex-col items-center gap-3 border-t border-[#EDEDED] pt-10">
+              <svg width="120" height="20" viewBox="0 0 120 20" fill="none" aria-hidden>
+                <path
+                  d="M0 10 L30 10 L36 4 L42 16 L48 10 L54 6 L60 14 L66 10 L120 10"
+                  stroke={brand}
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <p
+                className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#737373]"
+                style={{ fontFamily: 'var(--font-mono)' }}
+              >
+                Powered by Buaze
+              </p>
+            </div>
           </main>
         </>
       )}

@@ -159,7 +159,7 @@ export function validateAnnouncement(body: unknown): { ok: true; data: Announcem
 
 // ─── Menu ───────────────────────────────────────────────────────────────────
 
-export const MENU_THEMES = ['classic', 'modern', 'elegant', 'gastronomy', 'minimal', 'bistro'] as const;
+export const MENU_THEMES = ['classic', 'modern', 'elegant', 'gastronomy', 'minimal', 'bistro', 'pulse'] as const;
 export type MenuTheme = (typeof MENU_THEMES)[number];
 export function isValidMenuTheme(v: unknown): v is MenuTheme {
   return typeof v === 'string' && (MENU_THEMES as readonly string[]).includes(v);
@@ -170,6 +170,16 @@ export const MENU_BADGES = [
   'kahvalti', 'organik', 'taze', 'sezonluk', 'ev_yapimi',
 ] as const;
 export type MenuBadge = (typeof MENU_BADGES)[number];
+
+// EU 1169/2011 14-allergen disclosure list, trimmed to the 12 most-applicable
+// for restaurant + cafe + bar venues. Fistik vs findik separate (peanut /
+// tree-nut). lupin + sülfit edge cases dropped — owners rarely need them and
+// the picker stays under the cognitive-load ceiling.
+export const MENU_ALLERGENS = [
+  'gluten', 'sut', 'yumurta', 'findik', 'fistik', 'soya',
+  'balik', 'kabuklu', 'yumusakca', 'susam', 'hardal', 'kereviz',
+] as const;
+export type MenuAllergen = (typeof MENU_ALLERGENS)[number];
 
 export interface MenuCategoryInput {
   name: string;
@@ -186,6 +196,7 @@ export interface MenuItemInput {
   currency: string;
   imageUrl: string | null;
   badges: MenuBadge[];
+  allergens: MenuAllergen[];
   isAvailable: boolean;
   isOutOfStock: boolean;
   sortOrder: number;
@@ -268,6 +279,13 @@ export function validateMenuItem(body: unknown, opts: { partial?: boolean } = {}
       (x): x is MenuBadge => typeof x === 'string' && (MENU_BADGES as readonly string[]).includes(x),
     );
     out.badges = Array.from(new Set(filtered));
+  }
+  if ('allergens' in b) {
+    if (!Array.isArray(b.allergens)) return { ok: false, error: 'Alerjenler liste olmalı' };
+    const filtered = (b.allergens as unknown[]).filter(
+      (x): x is MenuAllergen => typeof x === 'string' && (MENU_ALLERGENS as readonly string[]).includes(x),
+    );
+    out.allergens = Array.from(new Set(filtered));
   }
   if ('isAvailable' in b) out.isAvailable = Boolean(b.isAvailable);
   if ('isOutOfStock' in b) out.isOutOfStock = Boolean(b.isOutOfStock);
