@@ -39,6 +39,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         author: true,
         coverImage: true,
         isActive: true,
+        authorBio: true,
+        authorRole: true,
+        tags: true,
+        pullQuote: true,
+        pullQuoteAuthor: true,
+        ctaTitle: true,
+        ctaSubtitle: true,
+        ctaButtonLabel: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -67,6 +75,30 @@ function estimateReadTime(content: string, locale: string) {
   return locale === 'en' ? `${minutes} min read` : `${minutes} dk okuma`;
 }
 
+function nullableText(value: unknown, max: number): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, max);
+}
+
+function normalizeTags(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of value) {
+    if (typeof raw !== 'string') continue;
+    const tag = raw.trim().replace(/^#+/, '').replace(/\s+/g, ' ').slice(0, 40);
+    if (!tag) continue;
+    const key = tag.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(tag);
+    if (out.length >= 12) break;
+  }
+  return out;
+}
+
 function normalizeBlogPayload(body: Record<string, unknown>) {
   const slug = normalizeText(body.slug).toLowerCase();
   const locale = normalizeText(body.locale, 'tr').toLowerCase();
@@ -86,6 +118,16 @@ function normalizeBlogPayload(body: Record<string, unknown>) {
   const coverImage = normalizeText(body.coverImage);
   const isActive = typeof body.isActive === 'boolean' ? body.isActive : true;
 
+  // Optional public-render overrides — null when blank, fall back to defaults.
+  const authorBio = nullableText(body.authorBio, 320);
+  const authorRole = nullableText(body.authorRole, 60);
+  const tags = normalizeTags(body.tags);
+  const pullQuote = nullableText(body.pullQuote, 320);
+  const pullQuoteAuthor = nullableText(body.pullQuoteAuthor, 80);
+  const ctaTitle = nullableText(body.ctaTitle, 140);
+  const ctaSubtitle = nullableText(body.ctaSubtitle, 200);
+  const ctaButtonLabel = nullableText(body.ctaButtonLabel, 40);
+
   if (!slug || !locale || !title || !description || !content) {
     return { ok: false as const, error: 'Slug, dil, başlık, açıklama ve içerik zorunludur.' };
   }
@@ -104,7 +146,26 @@ function normalizeBlogPayload(body: Record<string, unknown>) {
 
   return {
     ok: true as const,
-    data: { slug, locale, title, description, content, date, readTime, author, coverImage, isActive },
+    data: {
+      slug,
+      locale,
+      title,
+      description,
+      content,
+      date,
+      readTime,
+      author,
+      coverImage,
+      isActive,
+      authorBio,
+      authorRole,
+      tags,
+      pullQuote,
+      pullQuoteAuthor,
+      ctaTitle,
+      ctaSubtitle,
+      ctaButtonLabel,
+    },
   };
 }
 

@@ -485,6 +485,19 @@ model BlogPost {
   // Public page view counter — fire-and-forget incremented when the post
   // renders at /[locale]/blog/[slug]. Default 0 keeps existing rows safe.
   viewCount   Int      @default(0) @map("view_count")
+
+  // Optional public-render overrides — fall back to defaults when null.
+  // Wired by BlogPostEditor "Public görünüm" panel; consumed in
+  // src/app/[locale]/blog/[slug]/page.tsx.
+  authorBio       String?  @map("author_bio") @db.Text
+  authorRole      String?  @map("author_role")
+  tags            String[] @default([]) @map("tags")
+  pullQuote       String?  @map("pull_quote") @db.Text
+  pullQuoteAuthor String?  @map("pull_quote_author")
+  ctaTitle        String?  @map("cta_title")
+  ctaSubtitle     String?  @map("cta_subtitle") @db.Text
+  ctaButtonLabel  String?  @map("cta_button_label")
+
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
