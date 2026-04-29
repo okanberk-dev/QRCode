@@ -403,7 +403,7 @@ export default async function LandingPage({
               {isTr ? (
                 <>
                   Her yorum, tek bir{' '}
-                  <span className="inline-block bg-[#C6F24E] text-white rounded-lg px-3 -skew-y-1">
+                  <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
                     panelde
                   </span>
                   .
@@ -411,7 +411,7 @@ export default async function LandingPage({
               ) : (
                 <>
                   Every review in a single{' '}
-                  <span className="inline-block bg-[#C6F24E] text-white rounded-lg px-3 -skew-y-1">
+                  <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
                     panel
                   </span>
                   .
@@ -793,7 +793,7 @@ export default async function LandingPage({
                 {isTr ? (
                   <>
                     Saniyede{' '}
-                    <span className="inline-block bg-[#C6F24E] text-white rounded-lg px-3 -skew-y-1">
+                    <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
                       QR kodu
                     </span>{' '}
                     oluştur.
@@ -801,7 +801,7 @@ export default async function LandingPage({
                 ) : (
                   <>
                     Generate a{' '}
-                    <span className="inline-block bg-[#C6F24E] text-white rounded-lg px-3 -skew-y-1">
+                    <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
                       QR code
                     </span>{' '}
                     in seconds.

@@ -17,9 +17,14 @@ export type PlatformId =
   | 'opentable'
   | 'ubereats'
   | 'doordash'
+  | 'deliveroo'
   | 'instagram'
   | 'zomato'
-  | 'airbnb';
+  | 'airbnb'
+  | 'slack'
+  | 'teams'
+  | 'whatsapp'
+  | 'zapier';
 
 type Props = {
   id: PlatformId;
@@ -43,9 +48,14 @@ const PLATFORM_ASSET: Partial<Record<PlatformId, string>> = {
   opentable: '/platforms/opentable.svg',
   ubereats: '/platforms/ubereats.svg',
   doordash: '/platforms/doordash.svg',
+  deliveroo: '/platforms/deliveroo.svg',
   instagram: '/platforms/instagram.svg',
   zomato: '/platforms/zomato.svg',
   airbnb: '/platforms/airbnb.svg',
+  slack: '/platforms/slack.svg',
+  teams: '/platforms/teams.svg',
+  whatsapp: '/platforms/whatsapp.svg',
+  zapier: '/platforms/zapier.svg',
 };
 
 export default function PlatformLogo({ id, size = 40, rounded = 10, className }: Props) {
@@ -81,7 +91,7 @@ export const TR_DELIVERY: PlatformItem[] = [
   { id: 'yemeksepeti', name: 'Yemeksepeti', tag: 'Paket servis · Türkiye' },
   { id: 'getir-yemek', name: 'Getir Yemek', tag: 'Paket servis · Türkiye' },
   { id: 'trendyol-go', name: 'Trendyol GO', tag: 'Paket servis · Türkiye' },
-  { id: 'migros-hemen', name: 'Migros Hemen', tag: 'Market · Türkiye' },
+  { id: 'ubereats', name: 'Uber Eats', tag: 'Paket servis · Global' },
 ];
 
 export const TR_REVIEW: PlatformItem[] = [
@@ -104,5 +114,5 @@ export const GLOBAL_REVIEW: PlatformItem[] = [
 export const GLOBAL_DELIVERY: PlatformItem[] = [
   { id: 'ubereats', name: 'Uber Eats', tag: 'Delivery · Global' },
   { id: 'doordash', name: 'DoorDash', tag: 'Delivery · US' },
-  { id: 'zomato', name: 'Zomato', tag: 'Delivery · Global' },
+  { id: 'deliveroo', name: 'Deliveroo', tag: 'Delivery · UK/EU' },
 ];

@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import PlatformLogo, { TR_DELIVERY, TR_REVIEW } from '@/components/marketing/PlatformLogo';
-import type { PlatformId, PlatformItem } from '@/components/marketing/PlatformLogo';
+import PlatformLogo, { GLOBAL_DELIVERY, GLOBAL_REVIEW, TR_DELIVERY, TR_REVIEW } from '@/components/marketing/PlatformLogo';
+import type { PlatformItem } from '@/components/marketing/PlatformLogo';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
@@ -25,7 +25,7 @@ export async function generateMetadata({
   const description =
     locale === 'tr'
       ? 'İşletmenizde zaten kullandığınız araçlarla Buaze tek tıkla konuşur. Google, Yemeksepeti, Getir, Slack, Teams, WhatsApp, Zapier ve daha fazlası.'
-      : 'Buaze talks with the tools you already use. Google, Yemeksepeti, Getir, Slack, Teams, WhatsApp, Zapier and more.';
+      : 'Buaze talks with the tools you already use. Google, Uber Eats, DoorDash, Deliveroo, Slack, Teams, WhatsApp, Zapier and more.';
   return {
     metadataBase: new URL('https://buaze.com'),
     title,
@@ -37,8 +37,6 @@ export async function generateMetadata({
     openGraph: { title, description, url: `https://buaze.com/${locale}/integrations` },
   };
 }
-
-type SimpleItem = { id: string; name: string; tag: string };
 
 export default async function IntegrationsPage({
   params,
@@ -53,7 +51,7 @@ export default async function IntegrationsPage({
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
-  const teamTools: SimpleItem[] = isTr
+  const teamTools: PlatformItem[] = isTr
     ? [
         { id: 'slack', name: 'Slack', tag: 'Kanal bildirimleri' },
         { id: 'teams', name: 'Microsoft Teams', tag: 'Kurumsal bildirim' },
@@ -70,19 +68,19 @@ export default async function IntegrationsPage({
   const groups: Array<{
     title: string;
     subtitle: string;
-    items: Array<PlatformItem | SimpleItem>;
+    items: PlatformItem[];
   }> = [
     {
       title: isTr ? 'Yorum platformları' : 'Review platforms',
       subtitle: isTr
         ? 'Müşteriler nerede konuşursa orada olun.'
         : 'Be where customers are talking.',
-      items: TR_REVIEW,
+      items: isTr ? TR_REVIEW : GLOBAL_REVIEW,
     },
     {
       title: isTr ? 'Paket servis' : 'Delivery',
       subtitle: isTr ? 'Her paket bir fırsat.' : 'Every package is an opportunity.',
-      items: TR_DELIVERY,
+      items: isTr ? TR_DELIVERY : GLOBAL_DELIVERY,
     },
     {
       title: isTr ? 'Takım araçları' : 'Team tools',
@@ -92,9 +90,6 @@ export default async function IntegrationsPage({
       items: teamTools,
     },
   ];
-
-  const hasLogo = (id: string): id is PlatformId =>
-    ['yemeksepeti', 'getir-yemek', 'trendyol-go', 'migros-hemen', 'google', 'facebook', 'instagram', 'foursquare'].includes(id);
 
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
@@ -148,16 +143,7 @@ export default async function IntegrationsPage({
                       key={it.id}
                       className="p-4 bg-[#FAFAFA] border border-[#EDEDED] rounded-xl flex items-center gap-4"
                     >
-                      {hasLogo(it.id) ? (
-                        <PlatformLogo id={it.id} size={40} rounded={10} />
-                      ) : (
-                        <div
-                          className="w-10 h-10 rounded-lg bg-[#0A0A0A] text-[#C6F24E] flex items-center justify-center text-[16px] font-semibold"
-                          style={{ fontFamily: 'var(--font-heading)' }}
-                        >
-                          {it.name.charAt(0)}
-                        </div>
-                      )}
+                      <PlatformLogo id={it.id} size={40} rounded={10} />
                       <div className="flex-1 min-w-0">
                         <div className="text-[14px] font-semibold truncate">{it.name}</div>
                         <div className="pulse-eyebrow text-[#737373] mt-0.5 truncate">{it.tag}</div>
