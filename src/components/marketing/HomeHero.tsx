@@ -542,7 +542,7 @@ function ReputationCluster({
   return (
     <div className="relative w-full" style={{ perspective: '1200px' }}>
       <div className="relative">
-        {/* layer 1 — top: AI Inbox */}
+        {/* layer 1 — top: AI Inbox + corner-mounted speed sticker */}
         <div
           className="relative z-30 mx-auto w-[88%] sm:w-[78%]"
           style={{
@@ -551,6 +551,39 @@ function ReputationCluster({
           }}
         >
           <InboxCard isTr={isTr} />
+
+          {/* Speed sticker — overhangs the card's top-left corner.
+              Anchored inside the card layer so it never collides with the
+              card's header text on narrower viewports. */}
+          <div
+            className="absolute -top-3 -left-2 z-50 flex items-center gap-1.5 rounded-2xl bg-[#C6F24E] px-2 py-1.5 sm:-top-4 sm:-left-4 sm:gap-2 sm:px-3 sm:py-2"
+            style={{
+              boxShadow: '0 14px 30px rgba(168,214,46,0.45)',
+              transform: 'rotate(-4deg)',
+            }}
+            aria-hidden
+          >
+            <span
+              className="text-[15px] font-semibold leading-none tracking-tight text-[#0A0A0A] sm:text-[20px]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              0.8s
+            </span>
+            <div className="border-l border-[#0A0A0A]/20 pl-1.5 sm:pl-2">
+              <span
+                className="block text-[8px] font-semibold uppercase leading-tight tracking-[0.16em] text-[#0A0A0A] sm:text-[10px] sm:tracking-[0.18em]"
+                style={{ fontFamily: 'var(--font-mono)' }}
+              >
+                {isTr ? 'YANIT' : 'REPLY'}
+              </span>
+              <div
+                className="text-[7px] font-semibold leading-tight tracking-[0.1em] text-[#0A0A0A]/70 sm:text-[9px] sm:tracking-[0.12em]"
+                style={{ fontFamily: 'var(--font-mono)' }}
+              >
+                AI · {isTr ? 'TASLAK' : 'DRAFT'}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* layer 2 — middle: Sentiment Dial, lower-left */}
@@ -792,38 +825,13 @@ export default function HomeHero({ locale }: Props) {
               </div>
             </div>
 
-            {/* RIGHT — cluster */}
+            {/* RIGHT — cluster (sticker now mounted inside the cluster's
+                inbox-card layer, anchored to the card's top-left corner) */}
             <div
               className="bz-scale-in relative"
               style={{ animationDelay: '0.35s' }}
             >
               <ReputationCluster cursor={cursor} isTr={isTr} />
-
-              {/* Speed sticker (lg only) */}
-              <div
-                className="absolute -left-2 top-2 z-40 hidden items-center gap-2 rounded-2xl bg-[#C6F24E] px-3 py-2 lg:flex"
-                style={{
-                  boxShadow: '0 14px 30px rgba(168,214,46,0.45)',
-                  transform: 'rotate(-4deg)',
-                }}
-                aria-hidden
-              >
-                <span
-                  className="text-[20px] font-semibold leading-none tracking-tight text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  0.8s
-                </span>
-                <div className="border-l border-[#0A0A0A]/20 pl-2">
-                  <Mono color="#0A0A0A">{isTr ? 'YANIT' : 'REPLY'}</Mono>
-                  <div
-                    className="text-[9px] font-semibold tracking-[0.12em] text-[#0A0A0A]/70"
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                  >
-                    AI · {isTr ? 'TASLAK' : 'DRAFT'}
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
