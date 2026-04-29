@@ -109,6 +109,10 @@ export async function PUT(
       facebookUrl,
       whatsappUrl,
       reservationUrl,
+      // Faz 3 — Operasyonel ayarlar
+      workingHours,
+      temporarilyClosed,
+      closedReason,
     } = body;
 
     // Phase 12.6 — defaultRedirectPlatform whitelist. NULL or '' = clear
@@ -135,6 +139,19 @@ export async function PUT(
       } catch {
         return ApiErrors.badRequest('Geçersiz web sitesi adresi', 'INVALID_WEBSITE');
       }
+    }
+
+    // Section 7 — Çalışma saatleri format kontrolü (Faz 3). Tek string,
+    // "08:00-22:00" pattern. Boş veya tek "-" → null. Gün-bazlı V2.
+    if (workingHours !== undefined && workingHours !== null && workingHours !== '' && typeof workingHours === 'string') {
+      const trimmed = workingHours.trim();
+      if (trimmed && !/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(trimmed)) {
+        return ApiErrors.badRequest('Çalışma saati formatı: 08:00-22:00', 'INVALID_WORKING_HOURS');
+      }
+    }
+
+    if (closedReason !== undefined && typeof closedReason === 'string' && closedReason.length > 500) {
+      return ApiErrors.badRequest('Sebep en fazla 500 karakter', 'INVALID_CLOSED_REASON');
     }
 
     // Section 3 — sosyal medya URL validation (Faz 2). Boş = clear.
@@ -252,6 +269,16 @@ export async function PUT(
         }),
         ...(reservationUrl !== undefined && {
           reservationUrl: typeof reservationUrl === 'string' && reservationUrl.trim() ? reservationUrl.trim().slice(0, 500) : null,
+        }),
+        // Faz 3 — Operasyonel
+        ...(workingHours !== undefined && {
+          workingHours: typeof workingHours === 'string' && workingHours.trim() ? workingHours.trim() : null,
+        }),
+        ...(temporarilyClosed !== undefined && {
+          temporarilyClosed: Boolean(temporarilyClosed),
+        }),
+        ...(closedReason !== undefined && {
+          closedReason: typeof closedReason === 'string' && closedReason.trim() ? closedReason.trim().slice(0, 500) : null,
         }),
         ...(phone !== undefined && { phone: phone || null }),
         ...(googlePlaceId !== undefined && { googlePlaceId: googlePlaceId || null }),
