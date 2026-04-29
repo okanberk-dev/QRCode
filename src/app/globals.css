@@ -247,6 +247,54 @@ body {
   box-shadow: 0 20px 50px -36px rgba(10, 10, 10, 0.45);
 }
 
+.pulse-blog-content h2,
+.pulse-blog-content h3,
+.pulse-blog-content p,
+.pulse-blog-content ul,
+.pulse-blog-content ol,
+.pulse-blog-content blockquote,
+.pulse-blog-content img,
+.pulse-blog-content hr {
+  margin-bottom: 24px;
+}
+
+.pulse-blog-content h2,
+.pulse-blog-content h3 {
+  color: #0A0A0A;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.pulse-blog-content h2 {
+  margin-top: 48px;
+  font-size: clamp(26px, 4vw, 32px);
+}
+
+.pulse-blog-content h3 {
+  margin-top: 34px;
+  font-size: clamp(20px, 3vw, 24px);
+}
+
+.pulse-blog-content p,
+.pulse-blog-content li {
+  color: #525252;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.pulse-blog-content strong,
+.pulse-blog-content b {
+  color: #0A0A0A;
+  font-weight: 600;
+}
+
+.pulse-blog-content em,
+.pulse-blog-content i {
+  color: #1A1A1A;
+}
+
 .pulse-blog-content blockquote::before {
   content: "“";
   position: absolute;
@@ -297,13 +345,34 @@ body {
   padding: 18px 22px 18px 34px;
 }
 
+.pulse-blog-content ul {
+  list-style: disc;
+}
+
+.pulse-blog-content ol {
+  list-style: decimal;
+}
+
+.pulse-blog-content li {
+  margin-bottom: 8px;
+}
+
 .pulse-blog-content li::marker {
   color: #A8D62E;
   font-weight: 700;
 }
 
 .pulse-blog-content a {
+  color: #0A0A0A;
+  font-weight: 500;
+  text-decoration-line: underline;
+  text-decoration-color: #C6F24E;
   text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.pulse-blog-content a:hover {
+  color: #A8D62E;
 }
 
 .pulse-blog-content code {
@@ -313,6 +382,21 @@ body {
   padding: 2px 6px;
   font-family: var(--font-mono);
   font-size: 0.88em;
+}
+
+.pulse-blog-content img {
+  width: 100%;
+  height: auto;
+  border-radius: 20px;
+  border: 1px solid #EDEDED;
+  box-shadow: 0 24px 60px -42px rgba(10, 10, 10, 0.45);
+}
+
+.pulse-blog-content hr {
+  border: 0;
+  border-top: 1px solid #EDEDED;
+  margin-top: 40px;
+  margin-bottom: 40px;
 }
 
 /* Lead paragraph dropcap — first-letter lime pill on blog post detail. */

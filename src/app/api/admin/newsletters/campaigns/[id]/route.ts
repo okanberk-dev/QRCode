@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
-import { validateCampaignInput } from '../route';
+import { validateCampaignInput } from '@/lib/newsletter-campaigns';
 
 export const dynamic = 'force-dynamic';
 

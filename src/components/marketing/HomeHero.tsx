@@ -198,37 +198,6 @@ function SectorWord({ isTr }: { isTr: boolean }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// LiveStrip — viewers + 4.9★ + Google compliant
-// ─────────────────────────────────────────────────────────────
-
-function LiveStrip({ isTr }: { isTr: boolean }) {
-  const viewers = useCountUp(47, 1400);
-  return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[#525252] sm:text-[13px]">
-      <span className="inline-flex items-center gap-1.5">
-        <LiveDot size={6} />
-        <span>
-          {isTr ? 'Şu an' : 'Right now'}{' '}
-          <strong className="font-semibold text-[#0A0A0A]">{viewers}</strong>{' '}
-          {isTr ? 'işletme bu sayfayı izliyor' : 'businesses are watching this page'}
-        </span>
-      </span>
-      <span className="hidden h-3 w-px bg-black/10 sm:block" />
-      <span className="inline-flex items-center gap-1.5">
-        <StarsRow n={5} size={11} />
-        <strong className="font-semibold text-[#0A0A0A]">4.9</strong>
-        <span>· {isTr ? '2.140+ işletme' : '2,140+ businesses'}</span>
-      </span>
-      <span className="hidden h-3 w-px bg-black/10 sm:block" />
-      <span className="inline-flex items-center gap-1.5">
-        <CheckMark size={12} color="#16A34A" />
-        {isTr ? 'Google politika uyumlu' : 'Google policy compliant'}
-      </span>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
 // ROIStrip — managed reviews / rating lift / response time
 // ─────────────────────────────────────────────────────────────
 
@@ -688,7 +657,7 @@ export default function HomeHero({ locale }: Props) {
         </div>
       </div>
 
-      <section className="relative px-5 pb-20 pt-8 sm:px-8 sm:pt-12 lg:px-10 lg:pb-28 lg:pt-12">
+      <section className="relative px-5 pb-20 pt-11 sm:px-8 sm:pt-[60px] lg:px-10 lg:pb-28 lg:pt-[60px]">
         <div className="mx-auto max-w-[1240px]">
           {/* Two-column grid */}
           <div className="grid grid-cols-1 items-start gap-x-10 gap-y-12 lg:grid-cols-[1.05fr_1fr] lg:gap-y-0">
@@ -722,12 +691,9 @@ export default function HomeHero({ locale }: Props) {
               >
                 {isTr ? (
                   <>
-                    Buaze; QR ile gerçek müşteri yorumlarını toplayan, AI ile saniyeler
-                    içinde yanıtlayan ve itibarınızı tek panelden yöneten{' '}
-                    <strong className="font-semibold text-[#0A0A0A]">
-                      Reputation OS
-                    </strong>
-                    .
+                    Buaze, QR ile gerçek müşteri yorumlarını toplar; yapay zeka
+                    ile saniyeler içinde yanıt taslakları hazırlar ve dijital
+                    itibarınızı tek panelden yönetmenizi sağlar.
                   </>
                 ) : (
                   <>
@@ -785,11 +751,6 @@ export default function HomeHero({ locale }: Props) {
                   </span>
                   {isTr ? 'Nasıl çalışır?' : 'How it works?'}
                 </Link>
-              </div>
-
-              {/* Trust strip */}
-              <div className="bz-fade-up mt-7" style={{ animationDelay: '0.75s' }}>
-                <LiveStrip isTr={isTr} />
               </div>
 
               {/* ROI strip */}

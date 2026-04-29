@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
-import { runMonthlyNewsletter } from '@/app/api/cron/monthly-newsletter/route';
+import { runMonthlyNewsletter } from '@/lib/monthly-newsletter';
 
 export const dynamic = 'force-dynamic';
 
