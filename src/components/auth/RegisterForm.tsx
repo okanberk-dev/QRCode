@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
@@ -46,11 +46,33 @@ interface RegisterFormProps {
 
 export default function RegisterForm({ locale, t }: RegisterFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Davet maili'nden gelen kullanıcı için: email + inviteToken query parametreleriyle
+  // formu pre-fill et (Faz 4 § auto-activate akışı). Token register handler'a
+  // body'de geçer; başarılı kayıttan sonra TeamMember status invited→active.
+  const inviteToken = searchParams.get('inviteToken') ?? '';
+  const inviteEmail = searchParams.get('email') ?? '';
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', businessName: '', password: '', website: '' });
+  const [form, setForm] = useState({ name: '', email: inviteEmail, businessName: '', password: '', website: '' });
+
+  // Email query'si ile gelmişse field'ı locked tut + bilgilendirici notice göster.
+  useEffect(() => {
+    if (inviteEmail && !form.email) {
+      setForm((prev) => ({ ...prev, email: inviteEmail }));
+    }
+    if (inviteToken && !notice) {
+      setNotice(
+        locale === 'tr'
+          ? 'Bu adres bir Buaze ekibine davet edildi. Hesabını oluşturduğunda davet otomatik kabul edilir.'
+          : 'This email was invited to a Buaze team. The invite is auto-accepted on register.',
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inviteEmail, inviteToken]);
 
   const finalizeGoogleSignUp = async (idToken: string) => {
     const recaptchaToken = await getRecaptchaToken('auth_google');
@@ -145,7 +167,14 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, recaptchaToken, locale }),
+        body: JSON.stringify({
+          ...form,
+          recaptchaToken,
+          locale,
+          // Faz 4 § auto-activate — register handler'ı email match + token
+          // valid ise TeamMember status'ünü 'active' yapar.
+          ...(inviteToken ? { inviteToken } : {}),
+        }),
       });
 
       const data = await res.json();
@@ -156,7 +185,11 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         return;
       }
 
-      router.push(`/${locale}/onboarding`);
+      // Davet üzerinden geliyorsa onboarding'i atla, doğrudan dashboard'a.
+      // Davet maili'ndeki workspace'in bir parçasısın artık — yeni işletme
+      // kurulum akışına ihtiyaç yok.
+      const target = data.invitedAccepted ? `/${locale}/dashboard` : `/${locale}/onboarding`;
+      router.push(target);
       router.refresh();
     } catch {
       setError(locale === 'tr' ? 'Bağlantı hatası. Lütfen tekrar deneyin.' : 'Connection error. Please try again.');

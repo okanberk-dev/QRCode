@@ -1,5 +1,7 @@
 import * as jose from 'jose';
 import { NextRequest } from 'next/server';
+import { prisma } from './prisma';
+import { hashToken } from './session-hash';
 
 export type AdminRole = 'superadmin' | 'manager';
 
@@ -83,6 +85,35 @@ async function getTokenPayload(req: NextRequest, cookieName: 'admin_token' | 'us
   return await verifyJwt(token);
 }
 
+/**
+ * UserSession revoke check (Section 8 — force-logout).
+ *
+ * Logout veya "Tüm diğer oturumlardan çıkış" UserSession.revokedAt set eder.
+ * Burada her user_token isteği DB'ye 1 PK lookup atar (tokenHash UNIQUE index).
+ * Maliyet: ~1ms. Cache yok — revoke etkisi anında.
+ *
+ * Backward compat: UserSession kaydı YOKSA (eski login'ler) izin verilir.
+ * Sadece revokedAt non-null ise reddedilir. Bu sayede Faz 3 öncesi cookie'ler
+ * deploy sonrası kırılmaz.
+ *
+ * Auth.ts'ye bilinçli olarak prisma import edildi — middleware (edge) auth.ts
+ * import etmiyor, kendi inline jwt verify'sini kullanıyor.
+ */
+async function isUserSessionRevoked(rawToken: string): Promise<boolean> {
+  try {
+    const session = await prisma.userSession.findUnique({
+      where: { tokenHash: hashToken(rawToken) },
+      select: { revokedAt: true },
+    });
+    if (!session) return false; // legacy / pre-feature session
+    return session.revokedAt !== null;
+  } catch {
+    // DB hata → fail-open (kullanıcıyı kilitle değil). Ops alert'i prisma
+    // tarafında zaten log'lanır.
+    return false;
+  }
+}
+
 export async function getAdminFromRequest(req: NextRequest) {
   const payload = await getTokenPayload(req, 'admin_token');
   if (!payload || !isAdminRole(payload.role)) {
@@ -92,8 +123,15 @@ export async function getAdminFromRequest(req: NextRequest) {
 }
 
 export async function getUserFromRequest(req: NextRequest) {
-  const payload = await getTokenPayload(req, 'user_token');
+  const rawToken = req.cookies.get('user_token')?.value || getBearerToken(req);
+  if (!rawToken) return null;
+  const payload = await verifyJwt(rawToken);
   if (!payload || typeof payload.userId !== 'string') {
+    return null;
+  }
+  // UserSession revoke check — sessions panelinden "Çıkış yap" yapılan token
+  // burada engellenir. Cookie hâlâ tarayıcıda olabilir ama bu istek 401 alır.
+  if (await isUserSessionRevoked(rawToken)) {
     return null;
   }
   return payload;
