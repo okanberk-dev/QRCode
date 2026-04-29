@@ -79,15 +79,23 @@ export async function POST(req: NextRequest) {
     let restaurantId: string | null = null;
     let notificationEmail: string | null = null;
     let restaurantName: string = 'Restoran';
+    let ownerUserId: string | null = null;
 
     if (restaurantSlug) {
       const restaurant = await prisma.restaurant.findUnique({
         where: { slug: restaurantSlug },
+        select: {
+          id: true,
+          name: true,
+          notificationEmail: true,
+          userId: true,
+        },
       });
       if (restaurant) {
         restaurantId = restaurant.id;
         notificationEmail = restaurant.notificationEmail;
         restaurantName = restaurant.name;
+        ownerUserId = restaurant.userId;
       }
     }
 
@@ -115,9 +123,23 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Send email for 1, 2, 3 stars
+    // Resolve owner notification preferences once (UI toggles in
+    // /dashboard/account?section=notifications). Defaults: lowRatingEmail
+    // true, no slackWebhook — same as DEFAULT_PREFS in /api/notifications.
+    const prefs = ownerUserId
+      ? await prisma.notificationPreference.findUnique({
+          where: { userId: ownerUserId },
+          select: { lowRatingEmail: true, slackWebhook: true },
+        })
+      : null;
+    const lowRatingEmailEnabled = prefs?.lowRatingEmail ?? true;
+    const slackWebhookUrl = prefs?.slackWebhook ?? null;
+
+    // Send email for 1, 2, 3 stars — only when the owner left low-rating
+    // alerts enabled. Toggling it off in the dashboard now actually skips
+    // the send (previously the toggle was UI-only).
     let emailSent: boolean | null = null;
-    if (rating <= 3) {
+    if (rating <= 3 && lowRatingEmailEnabled) {
       emailSent = false;
       try {
         await sendFeedbackNotification({
@@ -138,6 +160,33 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         // Log but don't fail the entire request - the feedback IS in the DB!
         console.error('Email notification failed but saving succeeded:', err);
+      }
+    }
+
+    // Slack webhook fan-out for low ratings. Fire-and-forget; the request
+    // succeeds whether or not Slack accepts. Owner pastes the URL in the
+    // notifications panel — already validated for https?:// shape there.
+    if (rating <= 3 && slackWebhookUrl) {
+      const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+      const lines = [
+        `*${rating}/5 — ${restaurantName}*`,
+        branch ? `Şube: ${branch}` : null,
+        tableNumber ? `Masa: ${tableNumber}` : null,
+        comment ? `> ${String(comment).slice(0, 500)}` : null,
+        name ? `— ${name}` : null,
+      ].filter(Boolean);
+      const slackText = `${stars}  ${lines.join(' · ')}`;
+      try {
+        await fetch(slackWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: slackText }),
+          // 5s timeout via AbortSignal — Slack is fast; long delays would
+          // hold up the customer's submit response.
+          signal: AbortSignal.timeout(5000),
+        });
+      } catch (err) {
+        console.error('Slack webhook failed (low-rating):', err);
       }
     }
 
