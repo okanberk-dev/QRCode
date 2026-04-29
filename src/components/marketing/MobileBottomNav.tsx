@@ -109,7 +109,7 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
               // 52x52 + -20mt + shadow blur 16 mirrors design buaze-mobil
               // bundle (layout.jsx:534) so the FAB lifts above the bar.
               return (
-                <li key={item.href} className="flex-1 flex items-start justify-center -mt-5">
+                <li key={item.href} className="relative flex-1 flex items-start justify-center -mt-5">
                   <Link
                     href={item.href}
                     onClick={tapHaptic}
@@ -118,6 +118,15 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
                   >
                     <item.Icon size={22} className="text-[#0A0A0A]" strokeWidth={2} />
                   </Link>
+                  {/* Decorative metric badge above-right of the FAB,
+                      design buaze-mobil/layout.jsx parity. aria-hidden so
+                      screen readers skip the marketing chrome. */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute -top-1 right-2 text-[10px] font-bold leading-none tracking-tight text-[#0A0A0A]"
+                  >
+                    +184%
+                  </span>
                 </li>
               );
             }

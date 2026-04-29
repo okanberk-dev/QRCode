@@ -522,7 +522,7 @@ export default async function LandingPage({
               <div className="relative">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <span className="pulse-eyebrow text-[#C6F24E]">QR STUDIO</span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
+                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
@@ -632,7 +632,7 @@ export default async function LandingPage({
                 <span className="pulse-eyebrow text-[#737373]">
                   {isTr ? 'ANALİTİK' : 'ANALYTICS'}
                 </span>
-                <span className="relative flex h-1.5 w-1.5">
+                <span className="hidden sm:flex relative h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
                 </span>
@@ -687,16 +687,18 @@ export default async function LandingPage({
                   (id) => (
                     <div
                       key={id}
-                      className="flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-white px-2.5 py-1.5 transition-colors hover:border-[#0A0A0A]"
+                      className="flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 transition-colors hover:border-[#0A0A0A] sm:rounded-lg sm:px-2.5"
                     >
-                      <PlatformLogo id={id} size={22} rounded={4} />
-                      <span className="text-[11px] font-medium capitalize text-[#0A0A0A]">
+                      <span className="hidden sm:inline-flex">
+                        <PlatformLogo id={id} size={22} rounded={4} />
+                      </span>
+                      <span className="text-[12px] font-medium capitalize text-[#0A0A0A] sm:text-[11px]">
                         {id.replace('-', ' ')}
                       </span>
                     </div>
                   ),
                 )}
-                <div className="flex items-center gap-1.5 rounded-lg border border-dashed border-[#D4D4D4] bg-transparent px-2.5 py-1.5 text-[11px] font-medium text-[#737373]">
+                <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-dashed border-[#D4D4D4] bg-transparent px-2.5 py-1.5 text-[11px] font-medium text-[#737373]">
                   + {isTr ? '12 daha' : '12 more'}
                 </div>
               </div>
@@ -811,19 +813,19 @@ export default async function LandingPage({
                   ? 'Web sitenizin, menünüzün veya herhangi bir linkinizin yüksek çözünürlüklü QR kodunu hemen indirin. Kayıt gerekmez — Buaze deneyimine ısınırken kullanabileceğiniz bir araç.'
                   : "Instantly download a high-resolution QR code for your website, menu or any link. No signup needed — a tool you can use while warming up to the Buaze experience."}
               </p>
-              <div className="mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="mt-7 flex flex-row items-center gap-2 sm:gap-3">
                 <Link
                   href={`${base}/solutions/qr-generator`}
-                  className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#A8D62E] transition-colors"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap bg-[#C6F24E] text-[#0A0A0A] px-4 py-3 rounded-full text-[13px] font-medium hover:bg-[#A8D62E] transition-colors sm:px-6 sm:py-3.5 sm:text-[14px]"
                 >
                   {isTr ? 'QR oluşturucuya git' : 'Open the generator'}
                   <span aria-hidden>→</span>
                 </Link>
                 <Link
                   href={`${base}/solutions`}
-                  className="inline-flex items-center justify-center gap-2 border border-white/20 text-white px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-white/10 transition-colors"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap border border-white/20 text-white px-4 py-3 rounded-full text-[13px] font-medium hover:bg-white/10 transition-colors sm:px-6 sm:py-3.5 sm:text-[14px]"
                 >
-                  {isTr ? 'Tüm çözümleri gör' : 'See all solutions'}
+                  {isTr ? 'Tüm çözümler' : 'All solutions'}
                 </Link>
               </div>
             </div>
@@ -935,10 +937,10 @@ export default async function LandingPage({
               </div>
             </div>
 
-            <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+            <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-6">
               {caseStats.map((s) => (
                 <div key={s.l} className="border-t-2 border-[#0A0A0A] pt-3">
-                  <div className="text-[22px] sm:text-[26px] font-medium leading-none text-[#0A0A0A] tracking-[-0.02em]">
+                  <div className="text-[18px] sm:text-[26px] font-medium leading-none text-[#0A0A0A] tracking-[-0.02em]">
                     {s.v}
                   </div>
                   <div className="pulse-eyebrow text-[#737373] mt-2">{s.l}</div>
