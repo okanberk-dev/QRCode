@@ -307,6 +307,11 @@ export default async function LandingPage({
 
       <MarketingNavbar locale={locale} t={t} />
 
+      {/* a11y: explicit <main> landmark — PageSpeed/Lighthouse flagged
+          the document as missing one. Screen-reader users use it to skip
+          past nav/header to the actual page content. */}
+      <main id="main-content">
+
       {/* ═══════════════════════════════════════════════════════════
           1. HERO — Reputation OS edition
       ═══════════════════════════════════════════════════════════ */}
@@ -994,6 +999,8 @@ export default async function LandingPage({
           </div>
         </div>
       </section>
+
+      </main>
 
       <MarketingFooter locale={locale} t={t} />
 
