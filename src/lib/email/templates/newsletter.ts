@@ -115,7 +115,7 @@ export async function renderNewsletter(
   const exploreUrl = params.exploreUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/${isTr ? 'tr' : 'en'}/blog`;
   const editorNoteUrl = featured?.url ?? exploreUrl;
 
-  // Featured dark card. JSX prototipinde sağda statik bir AI Co-Pilot demo
+  // Featured dark card. JSX prototipinde sağda statik bir Pulse AI demo
   // code block vardı ("input.tone / model.draft / latency: 1.2s") — sadece
   // o sayının kapak yazısı için anlamlıydı. Gerçek mailde her ay farklı bir
   // post seçildiğinden çelişkili duruyordu, kaldırdık. Card artık tek sütun:

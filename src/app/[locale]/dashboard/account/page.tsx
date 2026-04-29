@@ -8,6 +8,7 @@ import {
   Loader2,
   ShieldCheck,
   ShieldQuestion,
+  Sparkles,
   User,
   Users,
 } from "lucide-react";
@@ -20,6 +21,7 @@ import { BusinessNotificationSettings } from "@/components/dashboard/settings/se
 import { BusinessBillingSettings } from "@/components/dashboard/settings/sections/BusinessBillingSettings";
 import { BusinessUsersRolesSettings } from "@/components/dashboard/settings/sections/BusinessUsersRolesSettings";
 import { BusinessLegalSettings } from "@/components/dashboard/settings/sections/BusinessLegalSettings";
+import { BusinessPulseAiSettings } from "@/components/dashboard/settings/sections/BusinessPulseAiSettings";
 
 /**
  * Workspace-level Settings hub (`/dashboard/account`) — unified Hub.
@@ -45,6 +47,7 @@ const TABS: SettingsTab[] = [
   { id: "profile", label: "Profil", group: "personal" },
   { id: "security", label: "Güvenlik", group: "personal" },
   { id: "notifications", label: "Bildirim", group: "workspace" },
+  { id: "ai", label: "Pulse AI", group: "workspace" },
   { id: "billing", label: "Faturalandırma", group: "workspace" },
   { id: "team", label: "Kullanıcılar", group: "workspace" },
   { id: "legal", label: "KVKK & Yasal", group: "workspace" },
@@ -229,9 +232,28 @@ export default function AccountSettingsPage() {
       </SettingsSection>
 
       <SettingsSection
+        id="ai"
+        active={active === "ai"}
+        eyebrow={isTr ? "04 — PULSE AI" : "04 — PULSE AI"}
+        title={isTr ? "Pulse AI yanıt taslakları" : "Pulse AI reply drafts"}
+        description={
+          isTr
+            ? "Düşük puanlı yorumlara otomatik taslak hazırlama ve varsayılan ton seçimi (her işletme için)."
+            : "Auto-prepared drafts for low-rating reviews and default tone (per location)."
+        }
+        actions={
+          <span className="text-[#737373]" aria-hidden="true">
+            <Sparkles size={18} />
+          </span>
+        }
+      >
+        <BusinessPulseAiSettings restaurants={restaurants} locale={locale} />
+      </SettingsSection>
+
+      <SettingsSection
         id="billing"
         active={active === "billing"}
-        eyebrow={isTr ? "04 — FATURALANDIRMA" : "04 — BILLING"}
+        eyebrow={isTr ? "05 — FATURALANDIRMA" : "05 — BILLING"}
         title={isTr ? "Plan ve fatura geçmişi" : "Plan & invoices"}
         description={
           isTr
@@ -250,7 +272,7 @@ export default function AccountSettingsPage() {
       <SettingsSection
         id="team"
         active={active === "team"}
-        eyebrow={isTr ? "05 — KULLANICILAR" : "05 — USERS"}
+        eyebrow={isTr ? "06 — KULLANICILAR" : "06 — USERS"}
         title={isTr ? "Ekip ve roller" : "Team & roles"}
         description={
           isTr
@@ -273,7 +295,7 @@ export default function AccountSettingsPage() {
       <SettingsSection
         id="legal"
         active={active === "legal"}
-        eyebrow={isTr ? "06 — KVKK & YASAL" : "06 — LEGAL"}
+        eyebrow={isTr ? "07 — KVKK & YASAL" : "07 — LEGAL"}
         title={isTr ? "KVKK & yasal" : "KVKK & legal"}
         description={
           isTr

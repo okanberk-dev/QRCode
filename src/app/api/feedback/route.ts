@@ -8,6 +8,8 @@ import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/v
 import { ApiErrors } from '@/lib/api-errors';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { rateLimit } from '@/lib/rate-limit';
+import { hasOpenAIKey } from '@/lib/openai';
+import { coerceTone, generateAiDraftBackground } from '@/lib/ai-draft';
 
 function parseAspectRating(value: unknown): number | null {
   const n = typeof value === 'number' ? value : Number(value);
@@ -75,19 +77,31 @@ export async function POST(req: NextRequest) {
       return ApiErrors.badRequest('Geçersiz telefon', 'INVALID_PHONE');
     }
 
-    // Find restaurant by slug
+    // Find restaurant by slug. Explicit `select` is mandatory (CLAUDE.md §14.1)
+    // — drift-immune against schema-vs-DB lag in preview deploys.
     let restaurantId: string | null = null;
     let notificationEmail: string | null = null;
     let restaurantName: string = 'Restoran';
+    let aiDraftEnabled = false;
+    let aiDraftTone: string = 'warm';
 
     if (restaurantSlug) {
       const restaurant = await prisma.restaurant.findUnique({
         where: { slug: restaurantSlug },
+        select: {
+          id: true,
+          name: true,
+          notificationEmail: true,
+          enableAiDraft: true,
+          aiDraftTone: true,
+        },
       });
       if (restaurant) {
         restaurantId = restaurant.id;
         notificationEmail = restaurant.notificationEmail;
         restaurantName = restaurant.name;
+        aiDraftEnabled = restaurant.enableAiDraft;
+        aiDraftTone = restaurant.aiDraftTone;
       }
     }
 
@@ -138,6 +152,20 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         // Log but don't fail the entire request - the feedback IS in the DB!
         console.error('Email notification failed but saving succeeded:', err);
+      }
+
+      // Pulse AI auto-draft (CLAUDE.md §15) — fire-and-forget when owner has
+      // opted in and the OpenAI key is set. Generation latency must not block
+      // the customer's 201 response. Errors are swallowed; the inbox simply
+      // shows no draft and the operator can manually trigger suggest-reply.
+      if (aiDraftEnabled && hasOpenAIKey()) {
+        void generateAiDraftBackground(
+          feedback.id,
+          coerceTone(aiDraftTone, 'warm'),
+          body.locale === 'en' ? 'en' : 'tr',
+        ).catch((err) => {
+          console.error('Pulse AI auto-draft failed (non-fatal):', err);
+        });
       }
     }
 
@@ -315,15 +343,41 @@ export async function GET(req: NextRequest) {
 
     const total = await prisma.feedback.count({ where });
 
+    // Pulse AI draft lookup — separate from the main include chain so a
+    // missing table (preview without `prisma db push`) doesn't cascade into
+    // the existing 3-tier resilience. Map by feedbackId for O(1) join.
+    let aiDraftAvailable = true;
+    const aiDraftMap = new Map<string, { tone: string; source: string }>();
+    if (feedbacks.length > 0) {
+      try {
+        const ids = feedbacks.map((f) => f.id as string);
+        const drafts = await prisma.feedbackAiDraft.findMany({
+          where: { feedbackId: { in: ids } },
+          select: { feedbackId: true, tone: true, source: true },
+        });
+        for (const d of drafts) {
+          aiDraftMap.set(d.feedbackId, { tone: d.tone, source: d.source });
+        }
+      } catch (err) {
+        console.warn(
+          '[feedback] FeedbackAiDraft lookup failed — did `prisma db push` run?',
+          (err as Error).message,
+        );
+        aiDraftAvailable = false;
+      }
+    }
+
     const data = feedbacks.map((raw) => {
       const f = raw as Record<string, unknown> & {
         name?: string;
         email?: string;
+        id?: string;
         _count?: { replies?: number };
         flag?: unknown;
         assignment?: { assigneeId?: string | null };
         tags?: unknown[];
       };
+      const draft = f.id ? aiDraftMap.get(f.id) : undefined;
       return {
         ...f,
         customerName: f.name,
@@ -333,6 +387,8 @@ export async function GET(req: NextRequest) {
         isAssigned: joinsAvailable ? Boolean(f.assignment) : false,
         assigneeId: joinsAvailable ? f.assignment?.assigneeId ?? null : null,
         tags: joinsAvailable && tagsAvailable ? (f.tags ?? []) : [],
+        hasPendingAiDraft: aiDraftAvailable && Boolean(draft),
+        aiDraftTone: draft?.tone ?? null,
       };
     });
 
@@ -346,8 +402,8 @@ export async function GET(req: NextRequest) {
         // UI uses these flags to surface "feature unavailable" notices when
         // schema sync hasn't happened yet (e.g. preview deploys, fresh DBs).
         degraded:
-          !joinsAvailable || !tagsAvailable
-            ? { joins: !joinsAvailable, tags: !tagsAvailable }
+          !joinsAvailable || !tagsAvailable || !aiDraftAvailable
+            ? { joins: !joinsAvailable, tags: !tagsAvailable, aiDraft: !aiDraftAvailable }
             : null,
       },
     });

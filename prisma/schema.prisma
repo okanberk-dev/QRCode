@@ -129,6 +129,13 @@ model Restaurant {
   menuUpdatedAt     DateTime? @map("menu_updated_at")
   menuTheme         String    @default("classic") @map("menu_theme")
   menuAccentColor   String?   @map("menu_accent_color")
+  // Pulse AI auto-draft (CLAUDE.md §15). Owner opts in per-restaurant. When
+  // enabled, low-rating (≤3★) feedback POSTs trigger an async draft that
+  // surfaces in the inbox. Default tone seeds suggest-reply when caller does
+  // not override. Auto-send is intentionally NOT supported — owner approval is
+  // always required (KVKK + brand voice).
+  enableAiDraft     Boolean   @default(false) @map("enable_ai_draft")
+  aiDraftTone       String    @default("warm") @map("ai_draft_tone") // warm | formal | apologetic
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
@@ -196,6 +203,7 @@ model Feedback {
   flag       FeedbackFlag?
   assignment FeedbackAssignment?
   tags       FeedbackTag[]
+  aiDraft    FeedbackAiDraft?
 
   @@index([restaurantId, createdAt])
   @@index([ipAddress, createdAt])
@@ -221,6 +229,23 @@ model FeedbackReply {
   @@index([feedbackId, createdAt])
   @@index([source, createdAt])
   @@map("feedback_replies")
+}
+
+// Pulse AI auto-draft (CLAUDE.md §15 / §21.8.1). Background-generated reply
+// suggestion that waits in the inbox for owner approval. One pending draft
+// per feedback; consumed (deleted) when the owner sends the reply.
+model FeedbackAiDraft {
+  id          String   @id @default(cuid())
+  feedbackId  String   @unique @map("feedback_id")
+  feedback    Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  body        String   @db.Text
+  tone        String   // warm | formal | apologetic
+  source      String   @default("ai_copilot") // ai_copilot | template_fallback
+  generatedAt DateTime @default(now()) @map("generated_at")
+  latencyMs   Int?     @map("latency_ms")
+
+  @@index([feedbackId])
+  @@map("feedback_ai_drafts")
 }
 
 model FeedbackFlag {

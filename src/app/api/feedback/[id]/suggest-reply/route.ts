@@ -1,13 +1,12 @@
-// AI Co-Pilot reply suggestion. Calls OpenAI when `OPENAI_API_KEY` is
+// Pulse AI reply suggestion. Calls OpenAI when `OPENAI_API_KEY` is
 // set; otherwise falls back to a deterministic template so the UI keeps
 // working in dev/preview without the secret.
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant, resolveOwnerUserId } from '@/lib/panel-access';
-import { buildReplyTemplate } from '@/lib/scaffolding';
-import { chatCompletion, hasOpenAIKey } from '@/lib/openai';
 import { rateLimit } from '@/lib/rate-limit';
+import { coerceTone, generateReplyDraft, type AiDraftTone } from '@/lib/ai-draft';
 
 export async function POST(
   req: NextRequest,
@@ -31,7 +30,7 @@ export async function POST(
   }
 
   const { id } = await params;
-  let body: { locale?: 'tr' | 'en' } = {};
+  let body: { locale?: 'tr' | 'en'; tone?: AiDraftTone } = {};
   try {
     body = await req.json();
   } catch {
@@ -48,11 +47,11 @@ export async function POST(
       name: true,
       platform: true,
       restaurantId: true,
-      restaurant: { select: { name: true, category: true } },
+      restaurant: { select: { name: true, category: true, aiDraftTone: true } },
     },
   });
 
-  if (!feedback || !feedback.restaurantId) {
+  if (!feedback || !feedback.restaurantId || !feedback.restaurant) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
@@ -60,71 +59,38 @@ export async function POST(
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const fallback = buildReplyTemplate({
-    name: feedback.name,
-    rating: feedback.rating,
+  // Tone precedence: explicit body.tone → restaurant default → 'warm'.
+  const tone = coerceTone(body.tone, coerceTone(feedback.restaurant.aiDraftTone, 'warm'));
+
+  const draft = await generateReplyDraft(
+    {
+      restaurantName: feedback.restaurant.name,
+      restaurantCategory: feedback.restaurant.category,
+      customerName: feedback.name,
+      rating: feedback.rating,
+      platform: feedback.platform,
+      comment: feedback.comment,
+    },
+    tone,
     locale,
-  });
-
-  if (!hasOpenAIKey()) {
-    return NextResponse.json({
-      feedbackId: id,
-      suggestion: fallback,
-      source: 'template',
-    });
-  }
-
-  const systemPrompt =
-    locale === 'tr'
-      ? `Sen bir restoran itibar yönetim uzmanısın. Restoran sahibinin müşteri yorumuna yanıt taslağı yazıyorsun. Kurallar:
-- Samimi, profesyonel, kısa (2-4 cümle, maks. 80 kelime).
-- Olumlu yorumlar için teşekkür et, yeniden ağırlamaya davet et.
-- Olumsuz yorumlar için önce özür dile, sorumluluğu kabul et, somut düzeltme sözü ver (ücretsiz ikramdan bahsetme), tekrar gelme fırsatı ver.
-- Emoji kullanma. Klişelerden kaçın. Müşteri adını varsa ilk adıyla kullan.
-- Sadece yanıt metnini yaz; "İşte yanıt:" gibi ön söz ekleme.`
-      : `You're a restaurant reputation expert drafting replies to customer reviews. Rules:
-- Warm, professional, short (2-4 sentences, max 80 words).
-- For positive reviews: thank them, invite them back.
-- For negative reviews: apologize first, acknowledge specifics, promise a concrete fix (do NOT offer free items), invite them to give you another chance.
-- No emojis. Avoid clichés. Use the customer's first name if available.
-- Output ONLY the reply text; no "Here's the reply:" preamble.`;
-
-  const userPrompt = [
-    locale === 'tr' ? 'İşletme:' : 'Business:',
-    `${feedback.restaurant?.name ?? '—'}${feedback.restaurant?.category ? ` (${feedback.restaurant.category})` : ''}`,
-    '',
-    locale === 'tr' ? 'Müşteri:' : 'Customer:',
-    feedback.name ?? (locale === 'tr' ? 'Bilinmiyor' : 'Unknown'),
-    '',
-    locale === 'tr' ? 'Puan:' : 'Rating:',
-    `${feedback.rating}/5`,
-    '',
-    locale === 'tr' ? 'Platform:' : 'Platform:',
-    feedback.platform ?? (locale === 'tr' ? 'Doğrudan' : 'Direct'),
-    '',
-    locale === 'tr' ? 'Yorum:' : 'Comment:',
-    feedback.comment ?? (locale === 'tr' ? '(yorum yazmamış)' : '(no comment)'),
-  ].join('\n');
-
-  const suggestion = await chatCompletion(
-    [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-    { temperature: 0.7, maxTokens: 300 },
   );
 
-  if (!suggestion) {
-    return NextResponse.json({
-      feedbackId: id,
-      suggestion: fallback,
-      source: 'template-fallback',
-    });
-  }
+  // Wire-format `source` matches the existing UI badge expectation:
+  //   ai_copilot       → 'openai'        (LIVE badge)
+  //   template_fallback (no key)         → 'template'
+  //   template_fallback (api fail)       → 'template-fallback'
+  // Distinguishing the two fallback reasons keeps the badge accurate.
+  const wireSource =
+    draft.source === 'ai_copilot'
+      ? 'openai'
+      : draft.latencyMs === 0
+        ? 'template'
+        : 'template-fallback';
 
   return NextResponse.json({
     feedbackId: id,
-    suggestion,
-    source: 'openai',
+    suggestion: draft.body,
+    source: wireSource,
+    tone,
   });
 }
