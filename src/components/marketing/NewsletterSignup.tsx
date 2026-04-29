@@ -14,9 +14,15 @@ interface Props {
    * (e.g. "popup", "blog_inline") when adding more entry points.
    */
   source?: string;
+  /**
+   * Force the input + submit to stack vertically instead of going side-by-side
+   * at sm+. Use when embedding the form in a narrow container (e.g. a 260px
+   * blog sidebar) where the default `sm:flex-row` would overflow.
+   */
+  stacked?: boolean;
 }
 
-export default function NewsletterSignup({ locale, source = 'footer' }: Props) {
+export default function NewsletterSignup({ locale, source = 'footer', stacked = false }: Props) {
   const isTr = locale === 'tr';
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
@@ -59,7 +65,7 @@ export default function NewsletterSignup({ locale, source = 'footer' }: Props) {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-2">
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className={`flex flex-col gap-2 ${stacked ? '' : 'sm:flex-row'}`}>
         <input
           type="email"
           required
@@ -67,12 +73,12 @@ export default function NewsletterSignup({ locale, source = 'footer' }: Props) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder={isTr ? 'e-posta@işletme.com' : 'your@email.com'}
           aria-label={isTr ? 'E-posta adresi' : 'Email address'}
-          className="min-h-[44px] flex-1 rounded-full border border-[#333] bg-[#1A1A1A] px-4 py-3 text-[16px] text-white outline-none placeholder:text-[#737373] focus:border-[#C6F24E] sm:px-5 sm:text-[14px]"
+          className={`min-h-[44px] flex-1 rounded-full border border-[#333] bg-[#1A1A1A] px-4 py-3 text-[16px] text-white outline-none placeholder:text-[#737373] focus:border-[#C6F24E] ${stacked ? '' : 'sm:px-5 sm:text-[14px]'}`}
         />
         <button
           type="submit"
           disabled={status === 'loading'}
-          className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-5 py-3 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] disabled:opacity-60 sm:w-auto"
+          className={`inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-5 py-3 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] disabled:opacity-60 ${stacked ? '' : 'sm:w-auto'}`}
         >
           {status === 'loading' ? <Loader2 size={14} className="animate-spin" /> : null}
           {isTr ? 'Abone ol' : 'Subscribe'} →
