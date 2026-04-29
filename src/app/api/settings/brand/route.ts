@@ -9,13 +9,13 @@ export const dynamic = 'force-dynamic';
 const VALID_FONTS = new Set(['Space Grotesk', 'Inter', 'Manrope', 'system']);
 const SLOGAN_MAX = 140;
 
-function normalizeImageUrl(value: unknown) {
+function normalizeImageUrl(value: unknown, maxDataUrlBytes = 300_000) {
   if (value === null || value === undefined || value === '') return null;
   if (typeof value !== 'string') return 'invalid';
   const raw = value.trim();
   if (!raw) return null;
   const isDataUrl = raw.startsWith('data:image/');
-  if (isDataUrl && raw.length <= 300_000) return raw;
+  if (isDataUrl && raw.length <= maxDataUrlBytes) return raw;
   try {
     const url = new URL(raw);
     if ((url.protocol === 'http:' || url.protocol === 'https:') && raw.length <= 1000) return raw;
@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
     name: restaurant.name,
     logoUrl: settings?.logoUrl ?? restaurant.menuLogoUrl ?? null,
     faviconUrl: settings?.faviconUrl ?? null,
+    coverImageUrl: settings?.coverImageUrl ?? null,
     primaryColor: settings?.primaryColor ?? restaurant.primaryColor,
     secondaryColor: settings?.secondaryColor ?? null,
     accentColor: settings?.accentColor ?? restaurant.menuAccentColor ?? restaurant.primaryColor,
@@ -108,6 +109,14 @@ export async function PUT(req: NextRequest) {
   const faviconUrl = normalizeImageUrl(body.faviconUrl);
   if (faviconUrl === 'invalid') return NextResponse.json({ error: 'invalid_favicon_url' }, { status: 400 });
 
+  // Section 2 — Kapak görseli (Faz 1 MVP). 16:9 görsel; base64 data URL daha
+  // geniş olabilir (yaklaşık 500KB). Boş string clear, undefined dokunma.
+  const coverImageUrl =
+    body.coverImageUrl === undefined ? undefined : normalizeImageUrl(body.coverImageUrl, 500_000);
+  if (coverImageUrl === 'invalid') {
+    return NextResponse.json({ error: 'invalid_cover_image_url' }, { status: 400 });
+  }
+
   const primaryColor = normalizeColor(body.primaryColor);
   if (primaryColor === 'invalid') return NextResponse.json({ error: 'invalid_primary_color' }, { status: 400 });
 
@@ -129,8 +138,28 @@ export async function PUT(req: NextRequest) {
 
   const settings = await prisma.brandSettings.upsert({
     where: { restaurantId },
-    create: { restaurantId, logoUrl, faviconUrl, primaryColor, secondaryColor, accentColor, accentFont, slogan },
-    update: { logoUrl, faviconUrl, primaryColor, secondaryColor, accentColor, accentFont, slogan },
+    create: {
+      restaurantId,
+      logoUrl,
+      faviconUrl,
+      // coverImageUrl undefined → omit on create (Prisma default null).
+      ...(coverImageUrl !== undefined ? { coverImageUrl } : {}),
+      primaryColor,
+      secondaryColor,
+      accentColor,
+      accentFont,
+      slogan,
+    },
+    update: {
+      logoUrl,
+      faviconUrl,
+      ...(coverImageUrl !== undefined ? { coverImageUrl } : {}),
+      primaryColor,
+      secondaryColor,
+      accentColor,
+      accentFont,
+      slogan,
+    },
   });
 
   // Mirror logo + accent + primary onto Restaurant for public-surface read perf
@@ -149,6 +178,7 @@ export async function PUT(req: NextRequest) {
     restaurantId: settings.restaurantId,
     logoUrl: settings.logoUrl,
     faviconUrl: settings.faviconUrl,
+    coverImageUrl: settings.coverImageUrl,
     primaryColor: settings.primaryColor,
     secondaryColor: settings.secondaryColor,
     accentColor: settings.accentColor,

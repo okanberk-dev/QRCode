@@ -10,13 +10,20 @@ const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const MAX_OPTIMIZED_BYTES = 220 * 1024; // ~300KB base64 after encode
 
 // Kinds affect target dimensions. "logo" is square-ish, "item" is card-sized,
-// "favicon" is small square (browser tab icon).
-type UploadKind = 'item' | 'logo' | 'favicon';
+// "favicon" is small square (browser tab icon), "cover" is 16:9 hero image.
+type UploadKind = 'item' | 'logo' | 'favicon' | 'cover';
 
 const DIMENSIONS: Record<UploadKind, { width: number; height: number | null; fit: 'cover' | 'inside' }> = {
   item: { width: 1200, height: null, fit: 'inside' },
   logo: { width: 512, height: 512, fit: 'cover' },
   favicon: { width: 256, height: 256, fit: 'cover' },
+  // Section 2 — Marka Kimliği kapak görseli. 16:9 (Pulse 2026-04 hero).
+  cover: { width: 1600, height: 900, fit: 'cover' },
+};
+
+// Cover'lar logo/item/favicon'dan büyük base64 üretir; bu kind için ayrı tavan.
+const MAX_OPTIMIZED_BY_KIND: Partial<Record<UploadKind, number>> = {
+  cover: 380 * 1024, // ~500KB base64 sonrası
 };
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -46,7 +53,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const file = form.get('file');
   const kindRaw = form.get('kind');
   const kind: UploadKind =
-    kindRaw === 'logo' ? 'logo' : kindRaw === 'favicon' ? 'favicon' : 'item';
+    kindRaw === 'logo'
+      ? 'logo'
+      : kindRaw === 'favicon'
+        ? 'favicon'
+        : kindRaw === 'cover'
+          ? 'cover'
+          : 'item';
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'Dosya bulunamadı' }, { status: 400 });
@@ -75,7 +88,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Görsel işlenemedi' }, { status: 400 });
   }
 
-  if (optimized.byteLength > MAX_OPTIMIZED_BYTES) {
+  const cap = MAX_OPTIMIZED_BY_KIND[kind] ?? MAX_OPTIMIZED_BYTES;
+  if (optimized.byteLength > cap) {
     // Rare — very complex image that didn't compress below cap. Reduce quality and retry once.
     try {
       optimized = await sharp(buffer)
@@ -86,7 +100,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     } catch {
       return NextResponse.json({ error: 'Görsel işlenemedi' }, { status: 400 });
     }
-    if (optimized.byteLength > MAX_OPTIMIZED_BYTES) {
+    if (optimized.byteLength > cap) {
       return NextResponse.json({ error: 'Görsel çok büyük. Daha düşük çözünürlükte tekrar deneyin.' }, { status: 413 });
     }
   }

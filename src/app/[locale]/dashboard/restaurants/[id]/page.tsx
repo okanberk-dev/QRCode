@@ -343,6 +343,15 @@ export default function DashboardRestaurantDetailPage() {
                 ? locale === 'tr' ? 'Aktif' : 'Active'
                 : locale === 'tr' ? 'Devre dışı' : 'Disabled'}
             </Badge>
+            {/* Faz 1 — yeni Business Settings hub'ına geçiş. Eski 3 tab burada
+                kalır (Faz 4'te basitleşir); link kullanıcıyı keşfettirir. */}
+            <Link
+              href={`/${locale}/dashboard/restaurants/${id}/settings`}
+              className="bz-btn-ghost inline-flex items-center gap-1.5"
+            >
+              <SettingsIcon size={14} strokeWidth={2} />
+              {locale === 'tr' ? 'Ayarlar' : 'Settings'}
+            </Link>
             <button
               type="button"
               disabled={deleting}

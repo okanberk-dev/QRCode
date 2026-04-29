@@ -43,6 +43,11 @@ model Restaurant {
   slug              String    @unique
   name              String
   category          String    @default("Restoran")
+  // Kısa açıklama (Section 1 — Genel Bilgiler). ≤280 char client+server slice.
+  // Public review surface ve admin restaurant detail kartlarında gösterilir.
+  description       String?   @db.Text
+  // İşletme web sitesi (Section 1). new URL() validation; null → "yok".
+  website           String?
   address           String?
   phone             String?
   workingHours      String?   @map("working_hours")
@@ -252,6 +257,10 @@ model BrandSettings {
   // @db.Text required: 1200/512px WebP base64 ~140-300 KB exceeds VARCHAR(255).
   logoUrl      String?  @map("logo_url") @db.Text
   faviconUrl   String?  @map("favicon_url") @db.Text
+  // Kapak görseli (Section 2 Marka Kimliği MVP). 16:9 aspect-ratio, base64
+  // data URL (≤500KB) veya http(s) URL. @db.Text zorunlu (büyük WebP base64).
+  // Null → BrandIdentityCard preview'da placeholder.
+  coverImageUrl String?  @map("cover_image_url") @db.Text
   // Brand palette — primary mirrors Restaurant.primaryColor; secondary &
   // accent are brand-only. Hex strings ("#0A0A0A"). Null → use defaults.
   primaryColor    String? @map("primary_color")

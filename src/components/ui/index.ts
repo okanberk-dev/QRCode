@@ -6,6 +6,8 @@
 export { AlertBanner, type AlertKind } from "./AlertBanner";
 export { Avatar } from "./Avatar";
 export { Badge, type BadgeKind } from "./Badge";
+export { BusinessStatusBadge, type BusinessStatusKind } from "./BusinessStatusBadge";
+export { IntegrationStatusBadge, type IntegrationStatusKind } from "./IntegrationStatusBadge";
 export { BarChart } from "./BarChart";
 export { ColorPicker } from "./ColorPicker";
 export { ConfirmDialog, useConfirmDialog } from "./ConfirmDialog";
