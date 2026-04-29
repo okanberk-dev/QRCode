@@ -229,7 +229,7 @@ export default function MarketingNavbarClient({
       icon: <Star size={16} />,
     },
     {
-      href: `${base}/customer-stories`,
+      href: `${base}/case-study`,
       label: isTr ? 'Vaka Çalışmaları' : 'Case Studies',
       sub: isTr ? '+184% yorum, 3 sektör' : '+184% reviews, 3 sectors',
       icon: <ShoppingBag size={16} />,
