@@ -240,9 +240,21 @@ model ApiKey {
 
 model BrandSettings {
   restaurantId String   @id @map("restaurant_id")
-  logoUrl      String?  @map("logo_url")
-  accentColor  String?  @map("accent_color")
+  // Logo & favicon — base64 data URL or http(s) URL (CLAUDE.md §3 storage).
+  // @db.Text required: 1200/512px WebP base64 ~140-300 KB exceeds VARCHAR(255).
+  logoUrl      String?  @map("logo_url") @db.Text
+  faviconUrl   String?  @map("favicon_url") @db.Text
+  // Brand palette — primary mirrors Restaurant.primaryColor; secondary &
+  // accent are brand-only. Hex strings ("#0A0A0A"). Null → use defaults.
+  primaryColor    String? @map("primary_color")
+  secondaryColor  String? @map("secondary_color")
+  accentColor     String? @map("accent_color")
+  // Accent font — restricted whitelist (Space Grotesk / Inter / Manrope /
+  // system). Validated server-side in /api/settings/brand PUT.
   accentFont   String?  @map("accent_font")
+  // Short brand description / slogan (≤140 char). Surfaced under the
+  // restaurant name on public review surface and printed QR cards.
+  slogan       String?  @map("slogan")
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
   restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)

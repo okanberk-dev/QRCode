@@ -7,8 +7,9 @@ import { isValidHexColor } from '@/lib/validations';
 export const dynamic = 'force-dynamic';
 
 const VALID_FONTS = new Set(['Space Grotesk', 'Inter', 'Manrope', 'system']);
+const SLOGAN_MAX = 140;
 
-function normalizeLogoUrl(value: unknown) {
+function normalizeImageUrl(value: unknown) {
   if (value === null || value === undefined || value === '') return null;
   if (typeof value !== 'string') return 'invalid';
   const raw = value.trim();
@@ -22,6 +23,23 @@ function normalizeLogoUrl(value: unknown) {
     // handled below
   }
   return 'invalid';
+}
+
+function normalizeColor(value: unknown): string | null | 'invalid' {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value !== 'string') return 'invalid';
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return isValidHexColor(trimmed) ? trimmed.toUpperCase() : 'invalid';
+}
+
+function normalizeSlogan(value: unknown): string | null | 'invalid' {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value !== 'string') return 'invalid';
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > SLOGAN_MAX) return 'invalid';
+  return trimmed;
 }
 
 async function requireAccess(req: NextRequest, restaurantId: string) {
@@ -44,7 +62,7 @@ export async function GET(req: NextRequest) {
     prisma.brandSettings.findUnique({ where: { restaurantId } }),
     prisma.restaurant.findUnique({
       where: { id: restaurantId },
-      select: { id: true, menuLogoUrl: true, menuAccentColor: true, primaryColor: true },
+      select: { id: true, name: true, menuLogoUrl: true, menuAccentColor: true, primaryColor: true },
     }),
   ]);
 
@@ -52,9 +70,14 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     restaurantId,
+    name: restaurant.name,
     logoUrl: settings?.logoUrl ?? restaurant.menuLogoUrl ?? null,
+    faviconUrl: settings?.faviconUrl ?? null,
+    primaryColor: settings?.primaryColor ?? restaurant.primaryColor,
+    secondaryColor: settings?.secondaryColor ?? null,
     accentColor: settings?.accentColor ?? restaurant.menuAccentColor ?? restaurant.primaryColor,
     accentFont: settings?.accentFont ?? 'Space Grotesk',
+    slogan: settings?.slogan ?? null,
     updatedAt: settings?.updatedAt?.toISOString() ?? null,
   });
 }
@@ -79,15 +102,20 @@ export async function PUT(req: NextRequest) {
   });
   if (!restaurant) return NextResponse.json({ error: 'restaurant_not_found' }, { status: 404 });
 
-  const logoUrl = normalizeLogoUrl(body.logoUrl);
+  const logoUrl = normalizeImageUrl(body.logoUrl);
   if (logoUrl === 'invalid') return NextResponse.json({ error: 'invalid_logo_url' }, { status: 400 });
 
-  const accentColor = body.accentColor === null || body.accentColor === ''
-    ? null
-    : typeof body.accentColor === 'string' && isValidHexColor(body.accentColor)
-      ? body.accentColor
-      : undefined;
-  if (accentColor === undefined) return NextResponse.json({ error: 'invalid_accent_color' }, { status: 400 });
+  const faviconUrl = normalizeImageUrl(body.faviconUrl);
+  if (faviconUrl === 'invalid') return NextResponse.json({ error: 'invalid_favicon_url' }, { status: 400 });
+
+  const primaryColor = normalizeColor(body.primaryColor);
+  if (primaryColor === 'invalid') return NextResponse.json({ error: 'invalid_primary_color' }, { status: 400 });
+
+  const secondaryColor = normalizeColor(body.secondaryColor);
+  if (secondaryColor === 'invalid') return NextResponse.json({ error: 'invalid_secondary_color' }, { status: 400 });
+
+  const accentColor = normalizeColor(body.accentColor);
+  if (accentColor === 'invalid') return NextResponse.json({ error: 'invalid_accent_color' }, { status: 400 });
 
   const accentFont = body.accentFont === null || body.accentFont === ''
     ? null
@@ -96,17 +124,23 @@ export async function PUT(req: NextRequest) {
       : undefined;
   if (accentFont === undefined) return NextResponse.json({ error: 'invalid_accent_font' }, { status: 400 });
 
+  const slogan = normalizeSlogan(body.slogan);
+  if (slogan === 'invalid') return NextResponse.json({ error: 'invalid_slogan' }, { status: 400 });
+
   const settings = await prisma.brandSettings.upsert({
     where: { restaurantId },
-    create: { restaurantId, logoUrl, accentColor, accentFont },
-    update: { logoUrl, accentColor, accentFont },
+    create: { restaurantId, logoUrl, faviconUrl, primaryColor, secondaryColor, accentColor, accentFont, slogan },
+    update: { logoUrl, faviconUrl, primaryColor, secondaryColor, accentColor, accentFont, slogan },
   });
 
+  // Mirror logo + accent + primary onto Restaurant for public-surface read perf
+  // (CLAUDE.md §19.3 edge cache; menu/PublicMenuView/QR landing reuse).
   await prisma.restaurant.update({
     where: { id: restaurantId },
     data: {
       menuLogoUrl: logoUrl,
       menuAccentColor: accentColor,
+      ...(primaryColor ? { primaryColor } : {}),
     },
   });
 
@@ -114,8 +148,12 @@ export async function PUT(req: NextRequest) {
     ok: true,
     restaurantId: settings.restaurantId,
     logoUrl: settings.logoUrl,
+    faviconUrl: settings.faviconUrl,
+    primaryColor: settings.primaryColor,
+    secondaryColor: settings.secondaryColor,
     accentColor: settings.accentColor,
     accentFont: settings.accentFont,
+    slogan: settings.slogan,
     updatedAt: settings.updatedAt.toISOString(),
   });
 }
