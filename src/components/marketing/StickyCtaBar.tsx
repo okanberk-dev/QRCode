@@ -60,8 +60,7 @@ export default function StickyCtaBar({ locale, threshold = 600 }: Props) {
 
   return (
     <div
-      className="fixed inset-x-0 z-40 animate-slide-in border-t border-[#1F1F1F] bg-[#0A0A0A] text-white shadow-[0_-18px_48px_-30px_rgba(0,0,0,0.55)]"
-      style={{ bottom: 'var(--mobile-nav-h, 0px)' }}
+      className="hidden md:block fixed inset-x-0 bottom-0 z-40 animate-slide-in border-t border-[#1F1F1F] bg-[#0A0A0A] text-white shadow-[0_-18px_48px_-30px_rgba(0,0,0,0.55)]"
     >
       <div
         className="mx-auto flex max-w-7xl flex-col items-center gap-3 py-3 sm:flex-row sm:justify-between sm:py-3.5"
