@@ -26,13 +26,7 @@ interface FeedbackTableProps {
   locale?: string;
 }
 
-const PLATFORM_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  google: { label: 'Google', color: 'text-white', bg: 'bg-[#4285F4]', border: 'border-[#3367D6]' },
-  yemeksepeti: { label: 'Yemeksepeti', color: 'text-white', bg: 'bg-[#FA0050]', border: 'border-[#D10044]' },
-  getir: { label: 'Getir', color: 'text-white', bg: 'bg-[#5D3EBC]', border: 'border-[#4A2FA0]' },
-  trendyol_go: { label: 'Trendyol GO', color: 'text-white', bg: 'bg-[#F27A1A]', border: 'border-[#D66A15]' },
-  unspecified: { label: 'Genel', color: 'text-[#1A1A1A]', bg: 'bg-[#EDEDED]', border: 'border-[#EDEDED]' },
-};
+import PlatformChip from '@/components/ui/PlatformChip';
 
 export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTableProps) {
   const isTr = locale === 'tr';
@@ -56,17 +50,11 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
     );
   }
 
-  const getPlatformBadge = (platform: string | null) => {
-    const p = platform || 'unspecified';
-    return PLATFORM_CONFIG[p] || null;
-  };
-
   return (
     <>
       {/* Mobile: card list */}
       <div className="space-y-2 md:hidden">
         {feedbacks.map((f) => {
-          const platformBadge = getPlatformBadge(f.platform);
           const isLow = f.rating <= 2;
           const hasSubRatings = f.foodRating || f.serviceRating || f.atmosphereRating;
           return (
@@ -148,12 +136,8 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
               )}
 
               <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[#F5F5F5] pt-3">
-                {platformBadge && (
-                  <span
-                    className={`inline-flex items-center rounded pulse-eyebrow ${platformBadge.bg} ${platformBadge.color} px-1.5 py-0.5`}
-                  >
-                    {platformBadge.label}
-                  </span>
+                {f.platform && (
+                  <PlatformChip id={f.platform} size={16} withLabel />
                 )}
                 {f.hasKvkkConsent ? (
                   <span className="inline-flex items-center rounded pulse-eyebrow bg-[#EAF9B8] text-[#0A0A0A] px-1.5 py-0.5">
@@ -195,7 +179,6 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
           </thead>
           <tbody>
             {feedbacks.map((f) => {
-              const platformBadge = getPlatformBadge(f.platform);
               return (
                 <tr
                   key={f.id}
@@ -258,12 +241,10 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                   </td>
                   <td className="px-4 py-4 sm:px-6">
                     <div className="flex flex-col gap-1.5">
-                      {platformBadge && (
-                        <span
-                          className={`inline-flex self-start items-center rounded pulse-eyebrow ${platformBadge.bg} ${platformBadge.color} px-1.5 py-0.5`}
-                        >
-                          {platformBadge.label}
-                        </span>
+                      {f.platform && (
+                        <div className="mb-1">
+                          <PlatformChip id={f.platform} size={16} withLabel />
+                        </div>
                       )}
                       <p className="text-[13px] text-[#0A0A0A] leading-[1.5] line-clamp-3">
                         {f.comment && f.comment !== SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT

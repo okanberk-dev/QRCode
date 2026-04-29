@@ -710,15 +710,28 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           6. INDUSTRY TABS — interactive sector switcher
       ═══════════════════════════════════════════════════════════ */}
-      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-28">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-10 max-w-[720px] mx-auto">
+      <section className="relative overflow-hidden bg-[#FAFAFA] border-t border-[#EDEDED] px-4 py-[56px] sm:px-10 sm:py-24 lg:py-28">
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#C6F24E]/60 to-transparent"
+        />
+        <div
+          aria-hidden
+          className="absolute right-[-12%] top-16 hidden h-[360px] w-[360px] rounded-full bg-[#C6F24E]/20 blur-[100px] sm:block"
+        />
+        <div className="relative max-w-[1200px] mx-auto">
+          <div className="mb-8 max-w-[760px] sm:mx-auto sm:mb-12 sm:text-center">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Sektörler' : 'Industries'}
             </span>
-            <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[34px] sm:text-[52px] lg:text-[64px] font-medium leading-[0.98] tracking-[-0.045em] text-[#0A0A0A]">
               {isTr ? 'Her sektör için, tam oturur.' : 'Fits every industry, perfectly.'}
             </h2>
+            <p className="mt-4 text-[15px] leading-[1.7] text-[#525252] sm:mx-auto sm:max-w-[620px] sm:text-[17px]">
+              {isTr
+                ? 'Temas noktası, platform önerisi ve rapor dili sektörünüze göre şekillenir; mobilde de aynı netlikle çalışır.'
+                : 'Touchpoints, platform suggestions and reporting language adapt to your industry and stay clear on mobile.'}
+            </p>
           </div>
           <HomeIndustryTabs locale={locale} />
         </div>

@@ -153,83 +153,165 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
       </div>
 
       {/* Link grid */}
-      <div className="px-5 py-12 sm:px-10 sm:py-14">
-        <div className="mx-auto grid max-w-[1240px] grid-cols-2 gap-8 sm:gap-10 lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:gap-8">
-          {/* Brand */}
-          <div className="col-span-2 lg:col-span-1">
-            <Link href={base} className="inline-flex items-center gap-2 group">
-              <BuazeLogo
-                size={32}
-                variant="on-dark"
-                imageUrl={s.logoUrl}
-                className="opacity-90 transition-opacity group-hover:opacity-100"
-              />
-              <span
-                className="text-[18px] font-medium tracking-[-0.03em] text-white"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                buaze<span className="text-[#C6F24E]">.</span>
-              </span>
-            </Link>
-            <p className="mt-4 max-w-[280px] text-[13px] leading-[1.7] text-[#A3A3A3]">
-              {t.siteDescription ||
-                (isTr
-                  ? 'İşletmeler için dijital itibar platformu. QR ile topla, tek panelden yönet, gerçek zamanlı izle.'
-                  : 'Digital reputation platform for businesses. Collect via QR, manage from one panel, track in real time.')}
-            </p>
-            <div className="mt-5 flex gap-2">
-              {SOCIAL.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={s.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[11px] font-semibold text-white transition-transform hover:scale-110"
-                  style={{ background: s.bg, fontFamily: 'var(--font-jetbrains-mono)' }}
+      <div className="px-4 py-10 sm:px-10 sm:py-14">
+        <div className="mx-auto max-w-[1240px]">
+          {/* Mobile footer — large tap targets, no cramped two-column links. */}
+          <div className="space-y-3 md:hidden">
+            <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+              <Link href={base} className="inline-flex items-center gap-2 group">
+                <BuazeLogo
+                  size={32}
+                  variant="on-dark"
+                  imageUrl={s.logoUrl}
+                  className="opacity-90 transition-opacity group-hover:opacity-100"
+                />
+                <span
+                  className="text-[18px] font-medium tracking-[-0.03em] text-white"
+                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
-                  {s.label}
-                </a>
-              ))}
-            </div>
-            {/* Trust micro-row */}
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/40 bg-[#C6F24E]/10 px-2.5 py-1">
-                <span className="text-[#C6F24E]">★</span>
-                <span className="pulse-eyebrow text-[#C6F24E]">
-                  {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
+                  buaze<span className="text-[#C6F24E]">.</span>
                 </span>
-              </span>
+              </Link>
+              <p className="mt-4 text-[13px] leading-[1.7] text-[#A3A3A3]">
+                {t.siteDescription ||
+                  (isTr
+                    ? 'İşletmeler için dijital itibar platformu. QR ile topla, tek panelden yönet, gerçek zamanlı izle.'
+                    : 'Digital reputation platform for businesses. Collect via QR, manage from one panel, track in real time.')}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/40 bg-[#C6F24E]/10 px-2.5 py-1">
+                  <span className="text-[#C6F24E]">★</span>
+                  <span className="pulse-eyebrow text-[#C6F24E]">
+                    {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
+                  </span>
+                </span>
+              </div>
+              <div className="mt-5 grid grid-cols-4 gap-2">
+                {SOCIAL.map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.label}
+                    className="flex min-h-[44px] items-center justify-center rounded-2xl text-[11px] font-semibold text-white"
+                    style={{ background: s.bg, fontFamily: 'var(--font-jetbrains-mono)' }}
+                  >
+                    {s.label}
+                  </a>
+                ))}
+              </div>
             </div>
+
+            {cols.map((col) => (
+              <details
+                key={col.title}
+                className="group rounded-[20px] border border-white/10 bg-white/[0.04] open:bg-white/[0.06]"
+              >
+                <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                  <span className="pulse-eyebrow text-[#C6F24E]">{col.title}</span>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-[20px] leading-none text-white transition-transform group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <ul className="grid gap-1 px-4 pb-4">
+                  {col.items.map((item) => (
+                    <li key={item.href + item.label}>
+                      <Link
+                        href={item.href}
+                        className="flex min-h-[44px] items-center justify-between gap-3 rounded-2xl px-3 text-[14px] text-[#D4D4D4] transition-colors hover:bg-white/10 hover:text-white"
+                      >
+                        <span>{item.label}</span>
+                        {item.badge && (
+                          <span className="pulse-eyebrow shrink-0 rounded-full bg-[#C6F24E] px-1.5 py-0.5 text-[#0A0A0A]">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ))}
           </div>
 
-          {cols.map((col) => (
-            <div key={col.title}>
-              <h4 className="pulse-eyebrow mb-4 text-[#C6F24E]">{col.title}</h4>
-              <ul className="space-y-2.5">
-                {col.items.map((item) => (
-                  <li key={item.href + item.label}>
-                    <Link
-                      href={item.href}
-                      className="group inline-flex items-center gap-1.5 text-[13px] text-[#A3A3A3] transition-colors hover:text-white"
-                    >
-                      <span>{item.label}</span>
-                      {item.badge && (
-                        <span className="pulse-eyebrow rounded-full bg-[#C6F24E] px-1.5 py-0.5 text-[#0A0A0A]">
-                          {item.badge}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
+          <div className="hidden grid-cols-2 gap-8 sm:gap-10 md:grid lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:gap-8">
+            {/* Brand */}
+            <div className="col-span-2 lg:col-span-1">
+              <Link href={base} className="inline-flex items-center gap-2 group">
+                <BuazeLogo
+                  size={32}
+                  variant="on-dark"
+                  imageUrl={s.logoUrl}
+                  className="opacity-90 transition-opacity group-hover:opacity-100"
+                />
+                <span
+                  className="text-[18px] font-medium tracking-[-0.03em] text-white"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  buaze<span className="text-[#C6F24E]">.</span>
+                </span>
+              </Link>
+              <p className="mt-4 max-w-[280px] text-[13px] leading-[1.7] text-[#A3A3A3]">
+                {t.siteDescription ||
+                  (isTr
+                    ? 'İşletmeler için dijital itibar platformu. QR ile topla, tek panelden yönet, gerçek zamanlı izle.'
+                    : 'Digital reputation platform for businesses. Collect via QR, manage from one panel, track in real time.')}
+              </p>
+              <div className="mt-5 flex gap-2">
+                {SOCIAL.map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.label}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-[11px] font-semibold text-white transition-transform hover:scale-110"
+                    style={{ background: s.bg, fontFamily: 'var(--font-jetbrains-mono)' }}
+                  >
+                    {s.label}
+                  </a>
                 ))}
-              </ul>
+              </div>
+              {/* Trust micro-row */}
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/40 bg-[#C6F24E]/10 px-2.5 py-1">
+                  <span className="text-[#C6F24E]">★</span>
+                  <span className="pulse-eyebrow text-[#C6F24E]">
+                    {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
+                  </span>
+                </span>
+              </div>
             </div>
-          ))}
+
+            {cols.map((col) => (
+              <div key={col.title}>
+                <h4 className="pulse-eyebrow mb-4 text-[#C6F24E]">{col.title}</h4>
+                <ul className="space-y-2.5">
+                  {col.items.map((item) => (
+                    <li key={item.href + item.label}>
+                      <Link
+                        href={item.href}
+                        className="group inline-flex items-center gap-1.5 text-[13px] text-[#A3A3A3] transition-colors hover:text-white"
+                      >
+                        <span>{item.label}</span>
+                        {item.badge && (
+                          <span className="pulse-eyebrow rounded-full bg-[#C6F24E] px-1.5 py-0.5 text-[#0A0A0A]">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Bottom rail — copyright + legal mini-links */}
-      <div className="border-t border-[#1F1F1F] py-5 pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] sm:pl-[max(2.5rem,env(safe-area-inset-left))] sm:pr-[max(2.5rem,env(safe-area-inset-right))]">
+      <div className="border-t border-[#1F1F1F] pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(2.5rem,env(safe-area-inset-left))] sm:pr-[max(2.5rem,env(safe-area-inset-right))] md:pb-5">
         <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-4 text-center lg:flex-row lg:justify-between lg:gap-6 lg:text-left">
           <p className="pulse-eyebrow text-[#A3A3A3]">
             © {new Date().getFullYear()} BUAZE BİLİŞİM A.Ş. · İSTANBUL

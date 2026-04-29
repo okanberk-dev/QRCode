@@ -7,6 +7,9 @@ export type PlatformId =
   | "trendyol_go"
   | "getir"
   | "foursquare"
+  | "yelp"
+  | "trustpilot"
+  | "zomato"
   | "custom";
 
 export interface PlatformConfig {
@@ -26,6 +29,9 @@ export const PLATFORMS: Record<PlatformId, PlatformConfig> = {
   trendyol_go: { label: "Trendyol GO", short: "TY", color: "#F27A1A", urlHost: "tgoapp.com/..." },
   getir: { label: "Getir Yemek", short: "GT", color: "#5D3EBC", urlHost: "getir.com/yemek/..." },
   foursquare: { label: "Foursquare", short: "4SQ", color: "#F94877", urlHost: "foursquare.com/..." },
+  yelp: { label: "Yelp", short: "YLP", color: "#FF1A1A", urlHost: "yelp.com/..." },
+  trustpilot: { label: "Trustpilot", short: "TP", color: "#00B67A", urlHost: "trustpilot.com/..." },
+  zomato: { label: "Zomato", short: "ZM", color: "#CB202D", urlHost: "zomato.com/..." },
   custom: { label: "Özel link", short: "★", color: "#525252", urlHost: "..." },
 };
 
@@ -38,28 +44,54 @@ interface PlatformChipProps {
 
 export function PlatformChip({ id, size = 24, withLabel = false, className = "" }: PlatformChipProps) {
   const p = (PLATFORMS as Record<string, PlatformConfig>)[id] || PLATFORMS.custom;
+  
+  const isCustom = id === "custom" || !p;
+  
+  // PNG kullanan platformlar (kullanıcının yükledikleri)
+  const isPng = ["yemeksepeti", "getir", "trendyol", "trendyol_go"].includes(id);
+  
+  let imgSrc = "";
+  if (!isCustom) {
+    const fileName = id === "trendyol" || id === "trendyol_go" ? "trendyol-go" : id;
+    imgSrc = `/platforms/${fileName}.${isPng ? "png" : "svg"}`;
+  }
+
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
-      <span
-        aria-hidden="true"
-        style={{
-          width: size,
-          height: size,
-          borderRadius: 6,
-          background: p.color,
-          color: "#fff",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: Math.round(size * 0.42),
-          fontWeight: 700,
-          fontFamily: "var(--font-heading)",
-          letterSpacing: "-0.03em",
-          flexShrink: 0,
-        }}
-      >
-        {p.short}
-      </span>
+      {!isCustom ? (
+        <img
+          src={imgSrc}
+          alt={p.label}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: 6,
+            objectFit: "cover",
+            flexShrink: 0,
+          }}
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          style={{
+            width: size,
+            height: size,
+            borderRadius: 6,
+            background: p.color,
+            color: "#fff",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: Math.round(size * 0.42),
+            fontWeight: 700,
+            fontFamily: "var(--font-heading)",
+            letterSpacing: "-0.03em",
+            flexShrink: 0,
+          }}
+        >
+          {p.short}
+        </span>
+      )}
       {withLabel && <span style={{ fontWeight: 600, fontSize: 13 }}>{p.label}</span>}
     </span>
   );

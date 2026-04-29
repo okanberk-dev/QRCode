@@ -35,9 +35,9 @@ type Props = {
 
 const PLATFORM_ASSET: Partial<Record<PlatformId, string>> = {
   google: '/platforms/google.svg',
-  yemeksepeti: '/platforms/yemeksepeti.svg',
-  'getir-yemek': '/platforms/getir.svg',
-  'trendyol-go': '/platforms/trendyol-go.svg',
+  yemeksepeti: '/platforms/yemeksepeti.png',
+  'getir-yemek': '/platforms/getir.png',
+  'trendyol-go': '/platforms/trendyol-go.png',
   'migros-hemen': '/platforms/migros-hemen.svg',
   yelp: '/platforms/yelp.svg',
   tripadvisor: '/platforms/tripadvisor.svg',

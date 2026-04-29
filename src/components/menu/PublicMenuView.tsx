@@ -827,7 +827,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                 </section>
               );
             })}
-            <footer className="pt-4 pb-6 text-center text-[10px] font-bold uppercase tracking-widest text-white/40">
+            <footer className="pt-4 pb-6 text-center text-[10px] font-bold uppercase tracking-widest text-white/60">
               Powered by Buaze
             </footer>
           </main>

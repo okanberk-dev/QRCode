@@ -298,11 +298,11 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-semibold text-white leading-tight">{primaryName}</p>
-            <p className="pulse-eyebrow text-white/50 mt-0.5">
+            <p className="pulse-eyebrow text-white/70 mt-0.5">
               {locationCount} {locale === 'tr' ? 'KONUM' : 'LOCATIONS'}
             </p>
           </div>
-          <ChevronDown size={14} className="text-white/40 shrink-0" strokeWidth={2} />
+          <ChevronDown size={14} className="text-white/60 shrink-0" strokeWidth={2} />
         </div>
       </div>
 
@@ -377,7 +377,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 <ChevronRight
                   size={14}
                   strokeWidth={2}
-                  className={`text-white/50 transition-transform duration-200 ${
+                  className={`text-white/60 transition-transform duration-200 ${
                     isExpanded ? 'rotate-90' : ''
                   }`}
                 />
@@ -422,7 +422,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           </div>
           <div className="min-w-0">
             <p className="truncate text-[12px] font-medium text-white">{displayName}</p>
-            <p className="truncate text-[10px] text-white/50">{user.email}</p>
+            <p className="truncate text-[10px] text-white/70">{user.email}</p>
           </div>
         </div>
         <button
@@ -635,12 +635,12 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <div className="mb-3 flex items-center justify-between px-2">
-              <p className="pulse-eyebrow text-white/60">{copy.more}</p>
+              <p className="pulse-eyebrow text-white/70">{copy.more}</p>
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}
                 aria-label="close"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-white/60 hover:bg-white/5 hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/5 hover:text-white"
               >
                 <X size={18} strokeWidth={2} />
               </button>
