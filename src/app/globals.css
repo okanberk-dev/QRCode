@@ -111,8 +111,11 @@ body {
 :where(h1, h2, h3, h4, h5, h6) {
   font-family: var(--font-heading);
   letter-spacing: -0.025em;
-  color: var(--color-text-main);
   font-weight: 500;
+  /* color: inherit from parent so dark hero sections (text-white) work.
+     The previous explicit `color: var(--color-text-main)` lived in an
+     unlayered rule, which beats Tailwind v4's layered `text-white` utility
+     even at zero :where() specificity. */
 }
 
 /* Pulse eyebrow / mono label pattern — JetBrains Mono, uppercase, tracked */
