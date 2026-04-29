@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, LogOut, Megaphone, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -207,7 +207,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       label: locale === 'tr' ? 'QR ve platformlar' : 'QR & platforms',
       children: [
         { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
-        { href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
+        // "Platform bağlantıları" + "Entegrasyonlar" aynı redirect'e gidiyordu;
+        // tek menü item bırakıldı. /platforms route'u backward-compat redirect.
         { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
       ],
     },
@@ -246,9 +247,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   ];
   const moreSheetItems = [
     { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
-    { href: `/${locale}/dashboard/platforms`, icon: Link2, label: copy.platforms },
-    { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
+    { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
     { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
     { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
