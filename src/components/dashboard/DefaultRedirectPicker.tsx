@@ -16,6 +16,9 @@ const STORAGE_VALUE: Record<PlatformId, string> = {
   tripadvisor: 'tripadvisor',
   airbnb: 'airbnb',
   foursquare: 'foursquare',
+  yelp: 'yelp',
+  trustpilot: 'trustpilot',
+  zomato: 'zomato',
   custom: 'custom',
 };
 
@@ -29,6 +32,9 @@ const STORAGE_LABEL: Record<string, string> = {
   tripadvisor: 'Tripadvisor',
   airbnb: 'Airbnb',
   foursquare: 'Foursquare',
+  yelp: 'Yelp',
+  trustpilot: 'Trustpilot',
+  zomato: 'Zomato',
   custom: 'Custom',
 };
 

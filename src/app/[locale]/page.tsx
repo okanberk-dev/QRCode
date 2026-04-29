@@ -418,7 +418,7 @@ export default async function LandingPage({
                 </>
               )}
             </h2>
-            <p className="mt-5 text-[16px] text-[#A3A3A3] leading-[1.6] max-w-[480px]">
+            <p className="mt-5 text-[16px] text-white leading-[1.6] max-w-[480px]">
               {isTr
                 ? 'Google, Tripadvisor, Yemeksepeti, Getir — tüm platformlardaki yorumlar Buaze\'de buluşur. Olumsuzu önce sen gör, kriz büyümeden çöz.'
                 : 'Google, Tripadvisor, Yemeksepeti, Getir — reviews from every platform meet inside Buaze. Spot the negative first and resolve it before it grows.'}
@@ -454,7 +454,7 @@ export default async function LandingPage({
                   </span>
                   <div>
                     <div className="text-[14px] font-medium text-white">{f.t}</div>
-                    <div className="text-[12px] text-[#A3A3A3] mt-0.5">{f.d}</div>
+                    <div className="text-[12px] text-white mt-0.5">{f.d}</div>
                   </div>
                 </div>
               ))}
