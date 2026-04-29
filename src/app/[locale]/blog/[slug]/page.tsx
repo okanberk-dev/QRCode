@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import NewsletterSignup from '@/components/marketing/NewsletterSignup';
+import BlogReadingProgress from '@/components/marketing/BlogReadingProgress';
+import BlogCopyLinkButton from '@/components/marketing/BlogCopyLinkButton';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
@@ -9,6 +12,26 @@ import { blogDateToIso } from '@/lib/blog-date';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
+
+// Brand SVGs — lucide-react dropped Twitter/Linkedin/Whatsapp icons; inline
+// glyph paths keep the share row dependency-free and recolour via currentColor.
+const SHARE_ICONS = {
+  twitter: (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  ),
+  linkedin: (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden>
+      <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.11 2.06 2.06 0 0 1 0 4.11zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z" />
+    </svg>
+  ),
+  whatsapp: (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden>
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.966-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
+    </svg>
+  ),
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -166,6 +189,13 @@ export default async function BlogPostPage({
 
   if (!post) notFound();
 
+  const relatedPosts = await prisma.blogPost.findMany({
+    where: { locale, isActive: true, slug: { not: slug } },
+    orderBy: { createdAt: 'desc' },
+    take: 3,
+    select: { slug: true, title: true, readTime: true, author: true, date: true },
+  });
+
   // Fire-and-forget view counter — atomic increment, swallow P2022 (column
   // not migrated yet on first deploy after schema change).
   prisma.blogPost
@@ -308,132 +338,264 @@ export default async function BlogPostPage({
         </div>
       </section>
 
-      {/* ─── Content grid · main article + sticky TOC/author sidebar ─── */}
-      <section className="px-5 sm:px-10 py-[60px]">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-10 lg:gap-12">
-          {/* Main column */}
-          <div>
-            {/* Lead (description) */}
-            <p className="text-[16px] sm:text-[20px] leading-[1.6] text-[#0A0A0A]">
-              {post.description}
-            </p>
+      {/* ─── Content grid · 3-col (TOC + article + meta) ─── */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-20">
+        {(() => {
+          const postUrl = `https://buaze.com/${locale}/blog/${slug}`;
+          const tags = getBlogKeywords(post.title, post.description, locale).slice(0, 6);
+          const takeaways = tocItems.slice(0, 4);
+          const shareText = encodeURIComponent(post.title);
+          const shareUrl = encodeURIComponent(postUrl);
+          const ttRoles = isTr ? 'Buaze · Yazar' : 'Buaze · Author';
 
-            {/* Body */}
-            <article
-              className="pulse-blog-content mt-8 prose prose-lg max-w-none
-                prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
-                prose-h2:text-[26px] sm:prose-h2:text-[28px] prose-h2:mt-10 prose-h2:mb-4
-                prose-h3:text-[20px] prose-h3:mt-8 prose-h3:mb-3
-                prose-p:text-[#525252] prose-p:leading-[1.7] prose-p:mb-6 prose-p:text-[16px]
-                prose-strong:font-semibold prose-strong:text-[#0A0A0A]
-                prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4 hover:prose-a:text-[#A8D62E]
-                prose-li:text-[#525252] prose-li:leading-[1.7]
-                prose-blockquote:not-italic
-                prose-img:rounded-2xl prose-img:border prose-img:border-[#EDEDED]
-                prose-hr:border-[#EDEDED]
-                break-words"
-              style={{ fontFamily: 'var(--font-body)' }}
-              dangerouslySetInnerHTML={{ __html: content }}
-            />
+          return (
+            <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-10 lg:grid-cols-[260px_minmax(0,1fr)_260px] lg:gap-14">
+              {/* ── LEFT — TOC + Reading progress + Share (desktop only) ── */}
+              <aside className="hidden lg:block">
+                <div className="sticky top-24 flex flex-col gap-5">
+                  {tocItems.length > 0 && (
+                    <div>
+                      <div className="pulse-eyebrow text-[#737373]">
+                        {isTr ? 'İçindekiler' : 'Contents'}
+                      </div>
+                      <nav className="mt-3.5 flex flex-col border-l border-[#EDEDED]">
+                        {tocItems.map((item, index) => (
+                          <a
+                            key={`${item.id}-${index}`}
+                            href={`#${item.id}`}
+                            className={`relative -ml-px py-2.5 pl-4 text-[13px] leading-[1.4] transition-colors ${
+                              index === 0
+                                ? 'border-l-2 border-[#C6F24E] font-semibold text-[#0A0A0A]'
+                                : 'border-l-2 border-transparent text-[#737373] hover:text-[#0A0A0A]'
+                            }`}
+                          >
+                            <span
+                              className="mr-2 text-[10px] tracking-[0.08em] text-[#A3A3A3]"
+                              style={{ fontFamily: 'var(--font-mono)' }}
+                            >
+                              {String(index + 1).padStart(2, '0')}
+                            </span>
+                            {item.text}
+                          </a>
+                        ))}
+                      </nav>
+                    </div>
+                  )}
 
-            {/* CTA box (from design) */}
-            <div className="mt-12 rounded-[18px] bg-[#0A0A0A] text-white p-7 sm:p-9">
-              <h3
-                className="text-[24px] sm:text-[28px] font-medium leading-[1.15] tracking-[-0.02em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                {isTr
-                  ? 'Google politikalarına uyumlu büyümeye hazır mısınız?'
-                  : 'Ready to grow in a Google-policy-safe way?'}
-              </h3>
-              <p className="mt-2 text-[14px] text-white/70">
-                {isTr
-                  ? 'Buaze, akışın her adımını denetler. 14 gün ücretsiz başlayın.'
-                  : 'Buaze monitors every step of the flow. Start free for 14 days.'}
-              </p>
-              <Link
-                href={`${base}/auth/register`}
-                className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#C6F24E] px-5 py-3 text-[14px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
-              >
-                {isTr ? 'Ücretsiz başla' : 'Start free'}
-                <span aria-hidden>→</span>
-              </Link>
-            </div>
-          </div>
+                  <BlogReadingProgress readTime={post.readTime} locale={locale} />
 
-          {/* Sidebar · meta + author (sticky on desktop) */}
-          <aside className="lg:pl-2">
-            <div className="lg:sticky lg:top-24 flex flex-col gap-5">
-              <div className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] p-5">
-                <div
-                  className="text-[10px] font-semibold tracking-[0.14em] text-[#737373]"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {isTr ? 'İÇERİK' : 'CONTENT'}
-                </div>
-                <ul className="mt-4 space-y-1">
-                  {(tocItems.length ? tocItems : [{ text: post.title, id: 'top' }]).map((item, index) => (
-                    <li key={`${item.id}-${index}`}>
+                  <div className="border-t border-[#EDEDED] pt-5">
+                    <div className="pulse-eyebrow text-[#737373]">
+                      {isTr ? 'Paylaş' : 'Share'}
+                    </div>
+                    <div className="mt-3 flex gap-1.5">
                       <a
-                        href={`#${item.id}`}
-                        className={`block border-l-2 py-1.5 pl-3 text-[13px] leading-5 transition-colors ${
-                          index === 0
-                            ? 'border-[#C6F24E] font-semibold text-[#0A0A0A]'
-                            : 'border-transparent font-medium text-[#737373] hover:border-[#EAF9B8] hover:text-[#0A0A0A]'
-                        }`}
+                        href={`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={isTr ? "X'te paylaş" : 'Share on X'}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
                       >
-                        {item.text}
+                        {SHARE_ICONS.twitter}
                       </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="rounded-[14px] border border-[#EDEDED] bg-white p-5">
-                <div
-                  className="text-[10px] font-semibold tracking-[0.14em] text-[#737373]"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {isTr ? 'SEO ÖZETİ' : 'SEO SNAPSHOT'}
-                </div>
-                <dl className="mt-3 space-y-2 text-[13px]">
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-[#737373]">{isTr ? 'Dil' : 'Language'}</dt>
-                    <dd className="font-semibold text-[#0A0A0A]">{locale.toUpperCase()}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-[#737373]">{isTr ? 'Okuma' : 'Read'}</dt>
-                    <dd className="font-semibold text-[#0A0A0A]">{post.readTime}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-[#737373]">{isTr ? 'Kapsam' : 'Coverage'}</dt>
-                    <dd className="font-semibold text-[#0A0A0A]">{isTr ? 'Türkiye' : 'Turkey'}</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div className="rounded-[14px] bg-[#EAF9B8] p-5">
-                <div
-                  className="text-[10px] font-semibold tracking-[0.14em] text-[#737373]"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {isTr ? 'YAZAR' : 'AUTHOR'}
-                </div>
-                <div className="mt-3 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]">
-                    {authorInitials(post.author)}
-                  </div>
-                  <div>
-                    <div className="text-[14px] font-semibold text-[#0A0A0A]">{post.author}</div>
-                    <div className="text-[12px] text-[#525252]">
-                      {isTr ? 'Buaze · Yazar' : 'Buaze · Author'}
+                      <a
+                        href={`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={isTr ? "LinkedIn'de paylaş" : 'Share on LinkedIn'}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
+                      >
+                        {SHARE_ICONS.linkedin}
+                      </a>
+                      <a
+                        href={`https://api.whatsapp.com/send?text=${shareText}%20${shareUrl}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={isTr ? "WhatsApp'ta paylaş" : 'Share on WhatsApp'}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
+                      >
+                        {SHARE_ICONS.whatsapp}
+                      </a>
+                      <BlogCopyLinkButton url={postUrl} locale={locale} />
                     </div>
                   </div>
                 </div>
-              </div>
+              </aside>
+
+              {/* ── CENTER — Article ── */}
+              <article id="article-body" className="lg:max-w-[680px]">
+                <div className="pulse-blog-lead">{post.description}</div>
+
+                <div
+                  className="pulse-blog-content prose prose-lg max-w-none
+                    prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
+                    prose-h2:text-[26px] sm:prose-h2:text-[32px] prose-h2:mt-12 prose-h2:mb-4
+                    prose-h3:text-[20px] prose-h3:mt-8 prose-h3:mb-3
+                    prose-p:text-[#525252] prose-p:leading-[1.75] prose-p:mb-6 prose-p:text-[16px]
+                    prose-strong:font-semibold prose-strong:text-[#0A0A0A]
+                    prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4 hover:prose-a:text-[#A8D62E]
+                    prose-li:text-[#525252] prose-li:leading-[1.7]
+                    prose-blockquote:not-italic
+                    prose-img:rounded-2xl prose-img:border prose-img:border-[#EDEDED]
+                    prose-hr:border-[#EDEDED]
+                    break-words"
+                  style={{ fontFamily: 'var(--font-body)' }}
+                  dangerouslySetInnerHTML={{ __html: content }}
+                />
+
+                {takeaways.length > 0 && (
+                  <div className="mt-14 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-7 sm:p-8">
+                    <div className="pulse-eyebrow text-[#737373]">
+                      {isTr ? 'Özet · Yanına alacakların' : 'Takeaways · For your back pocket'}
+                    </div>
+                    <h3
+                      className="mt-3 text-[22px] sm:text-[24px] font-medium leading-[1.2] tracking-[-0.02em] text-[#0A0A0A]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      {isTr ? `${takeaways.length} başlık, 1 sayfada.` : `${takeaways.length} ideas, on one page.`}
+                    </h3>
+                    <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {takeaways.map((item, i) => (
+                        <a
+                          key={item.id}
+                          href={`#${item.id}`}
+                          className="flex items-center gap-3 rounded-xl border border-[#EDEDED] bg-white px-4 py-3.5 text-[14px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A]"
+                        >
+                          <span
+                            className="text-[10px] tracking-[0.1em] text-[#737373]"
+                            style={{ fontFamily: 'var(--font-mono)' }}
+                          >
+                            {String(i + 1).padStart(2, '0')}
+                          </span>
+                          <span className="line-clamp-2 leading-[1.35]">{item.text}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-10 grid grid-cols-1 gap-6 rounded-[18px] bg-[#0A0A0A] p-7 text-white sm:grid-cols-[1fr_auto] sm:items-center sm:gap-8 sm:p-9">
+                  <div>
+                    <div className="pulse-eyebrow text-[#C6F24E]">
+                      {isTr ? 'Hemen başla' : 'Get started'}
+                    </div>
+                    <h3
+                      className="mt-2.5 text-[24px] sm:text-[28px] font-medium leading-[1.15] tracking-[-0.02em]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      {isTr
+                        ? 'Google politikalarına uyumlu büyümeye hazır mısın?'
+                        : 'Ready to grow the Google-compliant way?'}
+                    </h3>
+                    <p className="mt-2 text-[13px] text-white/65">
+                      {isTr
+                        ? '14 gün ücretsiz · kredi kartı gerekmez · 5 dakikada kurulum'
+                        : '14 days free · no card required · 5-minute setup'}
+                    </p>
+                  </div>
+                  <Link
+                    href={`${base}/auth/register`}
+                    className="inline-flex items-center justify-center gap-2 self-start rounded-full bg-[#C6F24E] px-6 py-3.5 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] sm:self-auto"
+                  >
+                    {isTr ? 'Ücretsiz başla' : 'Start free'}
+                    <span aria-hidden>→</span>
+                  </Link>
+                </div>
+
+                <div className="mt-10 flex flex-wrap items-center gap-2">
+                  <span className="pulse-eyebrow text-[#737373] mr-1">
+                    {isTr ? 'Etiketler' : 'Tags'}
+                  </span>
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-[#F2F2F2] px-3 py-1.5 text-[12px] tracking-[0.04em] text-[#525252]"
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </article>
+
+              {/* ── RIGHT — Author + Related + Newsletter ── */}
+              <aside>
+                <div className="lg:sticky lg:top-24 flex flex-col gap-5">
+                  <div className="rounded-[14px] border border-[#EDEDED] bg-white p-5">
+                    <div className="pulse-eyebrow text-[#737373]">
+                      {isTr ? 'Yazar' : 'Author'}
+                    </div>
+                    <div className="mt-3.5 flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0A0A0A] text-[14px] font-semibold text-[#C6F24E]">
+                        {authorInitials(post.author)}
+                      </div>
+                      <div>
+                        <div className="text-[14px] font-semibold text-[#0A0A0A]">{post.author}</div>
+                        <div className="text-[12px] text-[#525252]">{ttRoles}</div>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-[12px] leading-[1.55] text-[#525252]">
+                      {isTr
+                        ? 'Buaze ekibinden, restoran ve perakende için itibar yönetimi üzerine yazıyor.'
+                        : 'Writes about restaurant and retail reputation management for the Buaze team.'}
+                    </p>
+                  </div>
+
+                  {relatedPosts.length > 0 && (
+                    <div className="rounded-[14px] border border-[#EDEDED] bg-white p-5">
+                      <div className="pulse-eyebrow text-[#737373]">
+                        {isTr ? 'İlgili yazılar' : 'Related posts'}
+                      </div>
+                      <ul className="mt-3.5 flex flex-col gap-3">
+                        {relatedPosts.map((rp, i) => (
+                          <li
+                            key={rp.slug}
+                            className={i < relatedPosts.length - 1 ? 'border-b border-[#EDEDED] pb-3' : ''}
+                          >
+                            <Link href={`${base}/blog/${rp.slug}`} className="group block">
+                              <div
+                                className="text-[14px] font-semibold leading-[1.3] tracking-[-0.01em] text-[#0A0A0A] group-hover:underline group-hover:decoration-[#C6F24E] group-hover:decoration-2 group-hover:underline-offset-4"
+                                style={{ fontFamily: 'var(--font-heading)' }}
+                              >
+                                {rp.title}
+                              </div>
+                              <div
+                                className="mt-1.5 text-[10px] tracking-[0.08em] text-[#737373]"
+                                style={{ fontFamily: 'var(--font-mono)' }}
+                              >
+                                {rp.readTime} · {rp.date}
+                              </div>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div className="rounded-[14px] bg-[#0A0A0A] p-5 text-white">
+                    <div className="pulse-eyebrow text-[#C6F24E]">
+                      {isTr ? 'Bülten' : 'Newsletter'}
+                    </div>
+                    <div
+                      className="mt-2 text-[18px] font-medium leading-[1.2] tracking-[-0.015em]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      {isTr ? 'Haftada bir, sadece taktik.' : 'One email a week. Pure tactics.'}
+                    </div>
+                    <p className="mt-2 text-[12px] leading-[1.55] text-white/60">
+                      {isTr
+                        ? 'Spam yok, sadece test edilmiş öneriler.'
+                        : 'No spam — only field-tested ideas.'}
+                    </p>
+                    <div className="mt-3.5">
+                      <NewsletterSignup locale={locale} source="blog_inline" stacked />
+                    </div>
+                  </div>
+                </div>
+              </aside>
             </div>
-          </aside>
-        </div>
+          );
+        })()}
       </section>
 
       <MarketingFooter locale={locale} t={t} />
