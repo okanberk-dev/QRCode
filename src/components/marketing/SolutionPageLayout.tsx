@@ -300,7 +300,7 @@ export default function SolutionPageLayout({
                 className="bg-[#FAFAFA] border border-[#EDEDED] rounded-3xl p-7 sm:p-8 flex flex-col"
               >
                 <div className="flex items-center justify-between mb-5">
-                  <span className="pulse-eyebrow text-[#A8D62E]">
+                  <span className="pulse-eyebrow text-[#737373]">
                     {isTr ? 'ADIM' : 'STEP'} {String(i + 1).padStart(2, '0')}
                   </span>
                   <div className="w-10 h-10 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">

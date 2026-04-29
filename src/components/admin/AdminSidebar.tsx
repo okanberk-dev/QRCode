@@ -334,9 +334,9 @@ export default function AdminSidebar() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-semibold text-white leading-tight">{workspaceName}</p>
-            <p className="pulse-eyebrow text-white/50 mt-0.5">{workspaceMeta}</p>
+            <p className="pulse-eyebrow text-white/70 mt-0.5">{workspaceMeta}</p>
           </div>
-          <ChevronDown size={14} className="text-white/40 shrink-0" strokeWidth={2} />
+          <ChevronDown size={14} className="text-white/60 shrink-0" strokeWidth={2} />
         </div>
       </div>
 
@@ -447,7 +447,7 @@ export default function AdminSidebar() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[12px] font-medium text-white">{displayName}</p>
-            <p className="truncate pulse-eyebrow text-white/50 mt-0.5">{roleLabel}</p>
+            <p className="truncate pulse-eyebrow text-white/70 mt-0.5">{roleLabel}</p>
           </div>
         </div>
 

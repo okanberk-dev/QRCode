@@ -35,7 +35,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
       <div className="max-w-[1240px] mx-auto">
         {/* Header */}
         <div className="text-center mb-16 max-w-[720px] mx-auto">
-          <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#C6F24E] mb-4">
+          <p className="pulse-eyebrow text-[#737373] mb-4">
             {isTr ? 'ÜRÜN TURU' : 'PRODUCT TOUR'}
           </p>
           <h2
@@ -75,7 +75,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
               <div className="p-6 bg-white">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#C6F24E] mb-1">
+                    <p className="pulse-eyebrow text-[#737373] mb-1">
                       {isTr ? 'QR OLUŞTURUCU' : 'QR BUILDER'}
                     </p>
                     <h3 className="text-[18px] font-extrabold text-[#0A0A0A]">
@@ -94,7 +94,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                     <div className="bg-white p-3 rounded-lg border border-[#0A0A0A]">
                       <QrCode size={96} className="text-[#0A0A0A]" strokeWidth={1.5} />
                     </div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#C6F24E] mt-3">
+                    <p className="pulse-eyebrow text-[#C6F24E] mt-3">
                       Gourmet Eats
                     </p>
                     <p className="text-[9px] text-white/60 mt-0.5">
@@ -191,7 +191,7 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                 {/* notch */}
                 <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-16 h-4 bg-[#0A0A0A] rounded-full" />
                 <div className="pt-5 space-y-3">
-                  <p className="text-center text-[11px] font-black uppercase tracking-widest text-[#1A1A1A]">
+                  <p className="pulse-eyebrow text-[#737373] text-center">
                     Gourmet Eats
                   </p>
                   <p className="text-center text-[13px] font-extrabold text-[#0A0A0A] leading-tight">

@@ -144,7 +144,7 @@ export default function ComparisonLayout({
                 <span className="text-[18px] text-[#0A0A0A]">✦</span>
               </div>
               <div>
-                <div className="pulse-eyebrow text-[#A8D62E]">BUAZE {isTr ? 'ETKİSİ' : 'IMPACT'}</div>
+                <div className="pulse-eyebrow text-[#737373]">BUAZE {isTr ? 'ETKİSİ' : 'IMPACT'}</div>
                 <div className="text-[13px] font-medium text-[#0A0A0A] mt-0.5">
                   {isTr ? 'Gerçek zamanlı veri' : 'Real-time data'}
                 </div>
