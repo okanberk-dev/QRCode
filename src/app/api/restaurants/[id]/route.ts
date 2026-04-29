@@ -104,6 +104,11 @@ export async function PUT(
       airbnbUrl,
       tripAdvisorEnabled,
       airbnbEnabled,
+      // Faz 2 — Sosyal medya entegrasyonları
+      instagramUrl,
+      facebookUrl,
+      whatsappUrl,
+      reservationUrl,
     } = body;
 
     // Phase 12.6 — defaultRedirectPlatform whitelist. NULL or '' = clear
@@ -129,6 +134,25 @@ export async function PUT(
         }
       } catch {
         return ApiErrors.badRequest('Geçersiz web sitesi adresi', 'INVALID_WEBSITE');
+      }
+    }
+
+    // Section 3 — sosyal medya URL validation (Faz 2). Boş = clear.
+    const SOCIAL_FIELDS: Array<[string, unknown]> = [
+      ['instagramUrl', instagramUrl],
+      ['facebookUrl', facebookUrl],
+      ['whatsappUrl', whatsappUrl],
+      ['reservationUrl', reservationUrl],
+    ];
+    for (const [name, value] of SOCIAL_FIELDS) {
+      if (value === undefined || value === null || value === '' || typeof value !== 'string') continue;
+      try {
+        const u = new URL(value);
+        if (!/^https?:$/.test(u.protocol)) {
+          return ApiErrors.badRequest(`${name} http(s):// ile başlamalı`, 'INVALID_SOCIAL_URL');
+        }
+      } catch {
+        return ApiErrors.badRequest(`Geçersiz ${name} adresi`, 'INVALID_SOCIAL_URL');
       }
     }
 
@@ -215,6 +239,19 @@ export async function PUT(
             typeof website === 'string' && website.trim()
               ? website.trim().slice(0, 500)
               : null,
+        }),
+        // Faz 2 — sosyal medya alanları (Section 3)
+        ...(instagramUrl !== undefined && {
+          instagramUrl: typeof instagramUrl === 'string' && instagramUrl.trim() ? instagramUrl.trim().slice(0, 500) : null,
+        }),
+        ...(facebookUrl !== undefined && {
+          facebookUrl: typeof facebookUrl === 'string' && facebookUrl.trim() ? facebookUrl.trim().slice(0, 500) : null,
+        }),
+        ...(whatsappUrl !== undefined && {
+          whatsappUrl: typeof whatsappUrl === 'string' && whatsappUrl.trim() ? whatsappUrl.trim().slice(0, 500) : null,
+        }),
+        ...(reservationUrl !== undefined && {
+          reservationUrl: typeof reservationUrl === 'string' && reservationUrl.trim() ? reservationUrl.trim().slice(0, 500) : null,
         }),
         ...(phone !== undefined && { phone: phone || null }),
         ...(googlePlaceId !== undefined && { googlePlaceId: googlePlaceId || null }),
