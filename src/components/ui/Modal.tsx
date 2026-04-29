@@ -35,6 +35,17 @@ export function Modal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
+  // Stash onClose in a ref so the mount/unmount effect below can stay
+  // dependency-free. Without this, callers passing an inline arrow
+  // (`onClose={() => setOpen(false)}`) re-create the closure on every
+  // parent render — which used to re-run the effect on every keystroke,
+  // restoring focus to the trigger button mid-typing and dropping
+  // characters from inputs inside the modal.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     // 1. Remember the element that triggered the modal so we can restore focus on close
     previouslyFocused.current =
@@ -55,7 +66,7 @@ export function Modal({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
       // 3. Focus trap: keep Tab/Shift+Tab cycling inside the dialog
@@ -98,7 +109,9 @@ export function Modal({
         }
       }
     };
-  }, [onClose]);
+    // Mount/unmount only — onClose accessed via ref so an unstable
+    // closure in the consumer doesn't trigger the focus-restore loop.
+  }, []);
 
   return (
     <div
