@@ -228,7 +228,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
         </div>
       </div>
 
-      {/* Bottom rail — copyright + legal mini-links + status */}
+      {/* Bottom rail — copyright + legal mini-links */}
       <div className="border-t border-[#1F1F1F] py-5 pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] sm:pl-[max(2.5rem,env(safe-area-inset-left))] sm:pr-[max(2.5rem,env(safe-area-inset-right))]">
         <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-4 text-center lg:flex-row lg:justify-between lg:gap-6 lg:text-left">
           <p className="pulse-eyebrow text-[#A3A3A3]">
@@ -259,15 +259,6 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
               </li>
             ))}
           </ul>
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#16A34A]" />
-            </span>
-            <span className="text-[12px] text-[#A3A3A3]">
-              {isTr ? 'Tüm sistemler çalışıyor' : 'All systems operational'}
-            </span>
-          </div>
         </div>
       </div>
     </footer>
