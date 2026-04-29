@@ -274,7 +274,15 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const locationCount = workspace?.locationCount ?? 0;
   const primaryInitial = (workspace?.primaryName || displayName).charAt(0).toUpperCase();
 
-  const SidebarContent = ({ navRef: forwardedNavRef }: { navRef?: React.MutableRefObject<HTMLElement | null> } = {}) => (
+  // SidebarContent was previously declared as an inner function component
+  // (`const SidebarContent = ({ navRef }) => …`). Every parent re-render
+  // produced a fresh function reference, so React treated `<SidebarContent />`
+  // as a new component type, *unmounted* the entire <nav>, and remounted it.
+  // The remount reset scrollTop to 0 — the user perceived it as "the sidebar
+  // jumps every time I click a link." Switching to a render helper that
+  // returns JSX (not a component) keeps reconciliation in place: only the
+  // active-state classes are diffed and patched.
+  const renderSidebar = (forwardedNavRef?: React.MutableRefObject<HTMLElement | null>) => (
     <div className="flex h-full flex-col bg-[#0A0A0A] text-white">
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
@@ -327,10 +335,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 href={item.href}
                 onClick={handleNavClick}
                 aria-current={isActive ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
+                className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
                   isActive
-                    ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold shadow-[0_2px_8px_-2px_rgba(198,242,78,0.4)]'
-                    : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
+                    ? 'bg-[#C6F24E] text-[#0A0A0A]'
+                    : 'text-white/70 hover:bg-white/5 hover:text-white'
                 }`}
               >
                 <Icon size={16} strokeWidth={2} />
@@ -365,10 +373,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               <button
                 type="button"
                 onClick={() => toggleGroup(item.id)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
                   childActive
-                    ? 'bg-white/[0.07] text-white font-semibold'
-                    : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
+                    ? 'bg-white/[0.07] text-white'
+                    : 'text-white/70 hover:bg-white/5 hover:text-white'
                 }`}
                 aria-expanded={isExpanded}
               >
@@ -382,31 +390,45 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                   }`}
                 />
               </button>
-              {isExpanded && (
-                <div className="mt-1 ml-5 space-y-0.5 border-l border-white/10 pl-3 pb-1">
-                  {item.children.map((child) => {
-                    const ChildIcon = child.icon;
-                    const isActive =
-                      pathname === child.href || pathname?.startsWith(`${child.href}/`);
-                    return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        onClick={handleNavClick}
-                        aria-current={isActive ? 'page' : undefined}
-                        className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-all ${
-                          isActive
-                            ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
-                            : 'text-white/60 hover:bg-white/5 hover:text-white font-medium'
-                        }`}
-                      >
-                        <ChildIcon size={14} strokeWidth={2} />
-                        <span className="truncate">{child.label}</span>
-                      </Link>
-                    );
-                  })}
+              {/* Smooth expand/collapse — grid-template-rows trick lets us
+                  animate `0fr → 1fr` even though the inner content has no
+                  fixed height. Falls back to instant render on browsers
+                  without grid-fr animation support (rare in 2026). */}
+              <div
+                className="grid transition-[grid-template-rows,opacity] duration-200 ease-out"
+                style={{
+                  gridTemplateRows: isExpanded ? '1fr' : '0fr',
+                  opacity: isExpanded ? 1 : 0,
+                }}
+                aria-hidden={!isExpanded}
+              >
+                <div className="overflow-hidden">
+                  <div className="mt-1 ml-5 space-y-0.5 border-l border-white/10 pl-3 pb-1">
+                    {item.children.map((child) => {
+                      const ChildIcon = child.icon;
+                      const isActive =
+                        pathname === child.href || pathname?.startsWith(`${child.href}/`);
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={handleNavClick}
+                          aria-current={isActive ? 'page' : undefined}
+                          tabIndex={isExpanded ? 0 : -1}
+                          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#C6F24E] text-[#0A0A0A]'
+                              : 'text-white/60 hover:bg-white/5 hover:text-white'
+                          }`}
+                        >
+                          <ChildIcon size={14} strokeWidth={2} />
+                          <span className="truncate">{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           );
         })}
@@ -427,7 +449,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/60 transition-all hover:bg-white/5 hover:text-red-300"
+          className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-red-300"
         >
           <LogOut size={13} strokeWidth={2} />
           {copy.logout}
@@ -443,7 +465,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       </a>
       {/* Desktop sidebar */}
       <aside className="hidden h-full w-64 shrink-0 border-r border-white/5 lg:flex">
-        <SidebarContent navRef={navRef} />
+        {renderSidebar(navRef)}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto">
@@ -552,9 +574,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       {/* Mobile drawer */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div className="h-full w-72 max-w-[85vw] shadow-2xl">
-            <SidebarContent />
-          </div>
+          <div className="h-full w-72 max-w-[85vw] shadow-2xl">{renderSidebar()}</div>
           <button
             className="flex-1 bg-black/50 backdrop-blur-sm"
             onClick={() => setDrawerOpen(false)}
@@ -590,7 +610,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                       isActive ? 'bg-[#0A0A0A] text-[#C6F24E]' : 'text-[#737373]'
                     }`}
                   >
-                    <Icon size={16} strokeWidth={isActive ? 2.25 : 2} />
+                    <Icon size={16} strokeWidth={2} />
                   </span>
                   <span className="pulse-eyebrow truncate max-w-full" style={{ fontSize: 9.5 }}>{item.label}</span>
                 </Link>
@@ -613,7 +633,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                   moreActive ? 'bg-[#0A0A0A] text-[#C6F24E]' : 'text-[#737373]'
                 }`}
               >
-                <MoreHorizontal size={16} strokeWidth={moreActive ? 2.25 : 2} />
+                <MoreHorizontal size={16} strokeWidth={2} />
               </span>
               <span className="pulse-eyebrow truncate max-w-full" style={{ fontSize: 9.5 }}>{copy.more}</span>
             </button>
