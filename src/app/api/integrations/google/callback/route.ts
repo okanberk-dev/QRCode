@@ -13,7 +13,9 @@ function ownerRef(actor: PanelActor) {
 
 function redirectBack(req: NextRequest, status: string) {
   const url = new URL(req.nextUrl.origin);
-  url.pathname = '/tr/dashboard/profile';
+  // /profile redirects to /account; aim straight at the account hub.
+  url.pathname = '/tr/dashboard/account';
+  url.searchParams.set('section', 'notifications');
   url.searchParams.set('google', status);
   return Response.redirect(url.toString(), 302);
 }

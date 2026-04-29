@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -57,7 +57,8 @@ function useTopBar(locale: Locale, pathname: string | null) {
   if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
   if (rest.startsWith('/account')) return { breadcrumb: isTr ? 'PANEL / HESABIM' : 'PANEL / ACCOUNT', title: isTr ? 'Hesabım' : 'Account' };
-  if (rest.startsWith('/profile')) return { breadcrumb: isTr ? 'AYARLAR / HESAP' : 'SETTINGS / ACCOUNT', title: isTr ? 'Ayarlar' : 'Settings' };
+  // /profile redirects to /account; breadcrumb retained for the brief hop.
+  if (rest.startsWith('/profile')) return { breadcrumb: isTr ? 'PANEL / HESABIM' : 'PANEL / ACCOUNT', title: isTr ? 'Hesabım' : 'Account' };
   return null;
 }
 
@@ -162,7 +163,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       menu: isTr ? 'Menü' : 'Menu',
       integrations: isTr ? 'Entegrasyonlar' : 'Integrations',
       guide: isTr ? 'Kılavuz' : 'Guide',
-      profile: isTr ? 'Ayarlar' : 'Settings',
       account: isTr ? 'Hesabım' : 'Account',
       logout: isTr ? 'Çıkış' : 'Logout',
       plan: isTr ? 'Plan' : 'Plan',
@@ -231,10 +231,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
       ],
     },
-    // Workspace-level settings hub (Faz 2). Faturalandırma + Kullanıcılar &
-    // Roller + Bildirim. Per-restaurant ayarlar /restaurants/[id]/settings'te.
+    // Unified Settings hub: Profile + Security + Notifications + Billing +
+    // Team + Legal. Per-restaurant ayarlar /restaurants/[id]/settings'te.
+    // Legacy /profile redirect'i hâlâ canlı; sidebar'da tek entry yeterli.
     { type: 'item', href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
-    { type: 'item', href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
 
   // Mobile bottom nav: 4 primary tabs + "More" sheet for the rest.
@@ -253,7 +253,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
     { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
     { href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
-    { href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
   const moreActive = moreSheetItems.some(
     (i) => pathname === i.href || pathname?.startsWith(`${i.href}/`),
@@ -529,7 +528,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               notificationsSettingsHref={`/${locale}/dashboard/notifications`}
             />
             <Link
-              href={`/${locale}/dashboard/profile`}
+              href={`/${locale}/dashboard/account?section=profile`}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors bz-h-tight"
               aria-label={displayName}
             >
@@ -704,7 +703,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           { href: `/${locale}/dashboard/integrations`, label: copy.integrations, keywords: ['entegrasyon', 'integration', 'google', 'yemeksepeti', 'getir', 'trendyol', 'platform', 'url'] },
           { href: `/${locale}/dashboard/leads`, label: copy.leads, keywords: ['müşteri', 'customer', 'lead'] },
           { href: `/${locale}/dashboard/guide`, label: copy.guide, keywords: ['kılavuz', 'guide', 'help', 'yardım'] },
-          { href: `/${locale}/dashboard/profile`, label: copy.profile, keywords: ['ayar', 'settings', 'profil', 'profile', 'hesap', 'account'] },
+          { href: `/${locale}/dashboard/account`, label: copy.account, keywords: ['ayar', 'settings', 'profil', 'profile', 'hesap', 'account', 'şifre', 'password', '2fa', 'güvenlik', 'security', 'fatura', 'billing', 'ekip', 'team', 'kvkk', 'legal', 'bildirim', 'notification'] },
         ]}
       />
     </div>
