@@ -454,7 +454,7 @@ export default async function LandingPage({
                   </span>
                   <div>
                     <div className="text-[14px] font-medium text-white">{f.t}</div>
-                    <div className="text-[12px] text-[#A3A3A3] mt-0.5">{f.d}</div>
+                    <div className="text-[12px] text-white mt-0.5">{f.d}</div>
                   </div>
                 </div>
               ))}
