@@ -298,7 +298,7 @@ export default function MembersPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse sm:min-w-[600px]">
               <thead>
-                <tr className="bg-[#1f2937] pulse-eyebrow text-[#9ca3af]">
+                <tr className="bg-[#0A0A0A] pulse-eyebrow text-white/60">
                   <th className="px-3 py-4 sm:px-5">İŞLETME SAHİBİ</th>
                   <th className="hidden md:table-cell px-3 py-4 sm:px-5">PLAN</th>
                   <th className="hidden lg:table-cell px-3 py-4 sm:px-5">DENEME / BİTİŞ</th>
@@ -307,7 +307,7 @@ export default function MembersPage() {
                   <th className="px-3 py-4 sm:px-5 text-right">EYLEM</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#FFFFFF]">
+              <tbody className="divide-y divide-[#EDEDED]">
                 {members.map((m) => {
                   const dl = daysLeft(m.trialEndsAt);
                   const trialExpired = m.plan === 'trial' && dl !== null && dl <= 0;

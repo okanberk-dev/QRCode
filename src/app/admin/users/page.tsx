@@ -247,14 +247,14 @@ export default function UsersPage() {
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left border-collapse sm:min-w-[600px]">
             <thead>
-              <tr className="bg-[#1f2937] pulse-eyebrow text-[#9ca3af]">
+              <tr className="bg-[#0A0A0A] pulse-eyebrow text-white/60">
                 <th className="px-3 py-4 sm:px-6">YÖNETİCİ</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-6">ROL / YETKİ</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-6">RESTORAN / ŞUBE</th>
                 <th className="px-3 py-4 sm:px-6 text-right">EYLEMLER</th>
               </tr>
             </thead>
-            <tbody className="divide-y-2 divide-[#FFFFFF] text-sm">
+            <tbody className="divide-y divide-[#EDEDED] text-sm">
               {users.filter(u =>
                 u.username.toLowerCase().includes(searchTerm.toLowerCase())
               ).map(user => (
@@ -318,7 +318,7 @@ export default function UsersPage() {
                       </button>
                       <button
                         onClick={() => handleDelete(user.id)}
-                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#ef4444] border border-[#EDEDED] rounded-xl hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
+                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#991B1B] border border-[#EDEDED] rounded-xl hover:bg-[#7F1D1D] active:translate-y-1 active:shadow-none transition-all"
                         title="Sil"
                       >
                         <Trash2 size={18} strokeWidth={2} />
