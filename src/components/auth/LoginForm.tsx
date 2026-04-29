@@ -41,6 +41,12 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: '', password: '', rememberMe: false });
 
+  // 2FA challenge state — login route twoFactorEnabled=true ise needs2FA döner.
+  // challengeToken (5dk JWT) ve email hatırla, 6 haneli kod girişi göster.
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [challengeEmail, setChallengeEmail] = useState<string>('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+
   const finalizeGoogleSignIn = async (idToken: string) => {
     const recaptchaToken = await getRecaptchaToken('auth_google');
     const res = await fetch('/api/auth/google', {
@@ -153,6 +159,15 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         return;
       }
 
+      // 2FA challenge — şifre doğru ama hesapta 2FA aktif. ChallengeToken sakla,
+      // UI 6 haneli kod input'una geçer; cookie hâlâ set EDİLMEDİ.
+      if (data.needs2FA && typeof data.challengeToken === 'string') {
+        setChallengeToken(data.challengeToken);
+        setChallengeEmail(data.email || form.email);
+        setLoading(false);
+        return;
+      }
+
       const redirectPath = searchParams.get('redirect') || `/${locale}/dashboard`;
       window.location.href = redirectPath;
     } catch {
@@ -160,6 +175,86 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
       setLoading(false);
     }
   };
+
+  const handle2FASubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!challengeToken || loading) return;
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login/2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ challengeToken, code: twoFactorCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || (locale === 'tr' ? 'Doğrulama başarısız.' : 'Verification failed.'));
+        setLoading(false);
+        return;
+      }
+      const redirectPath = searchParams.get('redirect') || `/${locale}/dashboard`;
+      window.location.href = redirectPath;
+    } catch {
+      setError(locale === 'tr' ? 'Bağlantı hatası.' : 'Connection error.');
+      setLoading(false);
+    }
+  };
+
+  const cancelTwoFactor = () => {
+    setChallengeToken(null);
+    setTwoFactorCode('');
+    setError('');
+    setLoading(false);
+  };
+
+  // 2FA challenge state'inde Google + email/password formu gizle, sadece 6 haneli
+  // kod prompt'u render et. Geri al butonu form state'i temizler.
+  if (challengeToken) {
+    return (
+      <form onSubmit={handle2FASubmit} className="flex flex-col gap-3.5">
+        {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+        <div className="rounded-[10px] border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-[13px] text-[#525252]">
+          {locale === 'tr' ? 'İki adımlı doğrulama aktif.' : 'Two-step verification is active.'}{' '}
+          {locale === 'tr'
+            ? 'Authenticator uygulamandaki 6 haneli kodu (veya yedek kod) gir.'
+            : 'Enter the 6-digit code from your authenticator app (or a backup code).'}
+          {challengeEmail && (
+            <div className="mt-1 bz-mono text-[11px] text-[#737373]">{challengeEmail}</div>
+          )}
+        </div>
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          autoFocus
+          value={twoFactorCode}
+          onChange={(e) => setTwoFactorCode(e.target.value.replace(/[^0-9A-Za-z-]/g, '').slice(0, 12))}
+          placeholder="000000"
+          className="bz-input bz-mono"
+          style={{ letterSpacing: '0.3em', textAlign: 'center', fontSize: 18 }}
+          maxLength={12}
+          required
+        />
+        <button
+          type="submit"
+          disabled={loading || twoFactorCode.length < 6}
+          className="bz-btn-primary inline-flex items-center justify-center gap-1.5 w-full min-h-[48px]"
+        >
+          {loading && <Loader2 size={14} className="animate-spin" />}
+          {locale === 'tr' ? 'Doğrula ve giriş yap' : 'Verify and sign in'}
+        </button>
+        <button
+          type="button"
+          onClick={cancelTwoFactor}
+          className="text-[12px] text-[#737373] hover:text-[#0A0A0A] transition-colors self-center"
+        >
+          {locale === 'tr' ? '← Şifre adımına dön' : '← Back to password'}
+        </button>
+        <RecaptchaNotice locale={locale} />
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">

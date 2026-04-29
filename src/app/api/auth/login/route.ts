@@ -2,8 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { signJwt } from '@/lib/auth';
+import { hashToken } from '@/lib/session-hash';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
+import * as jose from 'jose';
+
+// 2FA challenge JWT — login sonrasında geçerli kullanıcının kimliğini taşıyan
+// kısa ömürlü token. 5 dakika içinde 6 haneli kod doğrulanmazsa expire olur.
+// Çalınmış challenge token = sadece 5 dk geçerli + sadece yeni 2FA verify
+// endpoint'inde kabul (cookie set etmez).
+const CHALLENGE_TTL = '5m';
+
+async function signChallengeJwt(payload: Record<string, unknown>): Promise<string> {
+  const DEV_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET || DEV_FALLBACK_SECRET);
+  return new jose.SignJWT({ ...payload, kind: 'login_challenge' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(CHALLENGE_TTL)
+    .sign(secret);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -78,7 +96,7 @@ export async function POST(req: NextRequest) {
     // Check trial status
     const now = new Date();
     const isTrialExpired = user.plan === 'trial' && user.trialEndsAt && user.trialEndsAt < now;
-    
+
     if (isTrialExpired) {
       return NextResponse.json(
         {
@@ -96,47 +114,30 @@ export async function POST(req: NextRequest) {
       await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_CORRECT');
     }
 
-    // Sign user JWT — restaurantId is intentionally omitted; owners can have
-    // multiple restaurants and scoping is resolved per-request via getScopedRestaurantIds().
-    const token = await signJwt({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      plan: user.plan,
-    });
-
-    const response = NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
+    // 2FA challenge — şifre doğru, kullanıcı twoFactorEnabled=true ise cookie
+    // set ETME, kısa ömürlü challenge JWT döner. Client /api/auth/login/2fa
+    // endpoint'ine 6 haneli kod ile birlikte challengeToken'ı geri gönderir;
+    // sadece o aşamada user_token cookie set edilir + UserSession row create.
+    if (user.twoFactorEnabled) {
+      const challengeToken = await signChallengeJwt({
+        userId: user.id,
         email: user.email,
-        name: user.name,
-        plan: user.plan,
-        trialEndsAt: user.trialEndsAt,
-      },
+        rememberMe: !!rememberMe,
+      });
+      return NextResponse.json({
+        success: true,
+        needs2FA: true,
+        challengeToken,
+        // E-posta hint — UI'da hangi hesaba doğrulandığını göstermek için.
+        email: user.email,
+      });
+    }
+
+    return await issueLoginSession({
+      req,
+      user,
+      rememberMe: !!rememberMe,
     });
-
-    const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 1; // 30 days or 1 day
-    const isSecure = process.env.NODE_ENV === 'production' && 
-                     (req.headers.get('x-forwarded-proto') === 'https' || req.nextUrl.protocol === 'https:');
-
-    response.cookies.set('user_token', token, {
-      httpOnly: true,
-      secure: isSecure,
-      sameSite: 'lax',
-      maxAge: cookieMaxAge,
-      path: '/',
-    });
-
-    response.cookies.set('admin_token', '', {
-      httpOnly: true,
-      secure: isSecure,
-      sameSite: 'lax',
-      maxAge: 0,
-      path: '/',
-    });
-
-    return response;
   } catch (error) {
     console.error('[AUTH_LOGIN]', error);
     return NextResponse.json(
@@ -144,4 +145,76 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Login son adımı — JWT imzala, UserSession row create, cookie set.
+ * 2FA olmayan akışın ve /api/auth/login/2fa verify akışının paylaştığı yol.
+ */
+export async function issueLoginSession(args: {
+  req: NextRequest;
+  user: { id: string; email: string; name: string | null; role: string; plan: string; trialEndsAt: Date | null };
+  rememberMe: boolean;
+}): Promise<NextResponse> {
+  const { req, user, rememberMe } = args;
+
+  const token = await signJwt({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    plan: user.plan,
+  });
+
+  // UserSession row create — Section 8 ActiveSessionsTable + force-logout
+  // (logout'ta revokedAt set, getPanelActorFromRequest revoked ise null döner).
+  // tokenHash UNIQUE constraint'i çatışmazsa bu insert'tir; çakışırsa (aynı
+  // sub-second login retry) silently skip.
+  const userAgent = req.headers.get('user-agent') ?? null;
+  const ip = getClientIp(req.headers);
+  try {
+    await prisma.userSession.create({
+      data: {
+        userId: user.id,
+        tokenHash: hashToken(token),
+        userAgent: userAgent?.slice(0, 500) ?? null,
+        ipAddress: ip ?? null,
+      },
+    });
+  } catch (err) {
+    // P2002 duplicate token hash (impossible with random secret) — log + continue.
+    console.error('[AUTH_LOGIN] UserSession create failed:', (err as Error).message);
+  }
+
+  const response = NextResponse.json({
+    success: true,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      plan: user.plan,
+      trialEndsAt: user.trialEndsAt,
+    },
+  });
+
+  const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 1; // 30 days or 1 day
+  const isSecure = process.env.NODE_ENV === 'production' &&
+                   (req.headers.get('x-forwarded-proto') === 'https' || req.nextUrl.protocol === 'https:');
+
+  response.cookies.set('user_token', token, {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: 'lax',
+    maxAge: cookieMaxAge,
+    path: '/',
+  });
+
+  response.cookies.set('admin_token', '', {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: 'lax',
+    maxAge: 0,
+    path: '/',
+  });
+
+  return response;
 }

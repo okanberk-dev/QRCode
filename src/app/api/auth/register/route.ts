@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password, name, website, recaptchaToken, locale } = await req.json();
+    const { email, password, name, website, recaptchaToken, locale, inviteToken } = await req.json();
     const captchaLocale = locale === 'en' ? 'en' : 'tr';
 
     // Honeypot check
@@ -72,15 +72,52 @@ export async function POST(req: NextRequest) {
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
+    const normalizedEmail = email.toLowerCase().trim();
     const user = await prisma.user.create({
       data: {
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
         passwordHash,
         name: name?.trim() || null,
         plan: 'trial',
         trialEndsAt,
       },
     });
+
+    // Auto-activate TeamMember after register (Section 5 davet kabul akışı).
+    // Davet maili'ndeki link kullanıcıyı /auth/register?inviteToken=... ile buraya
+    // getirir. Email match + token geçerli ise TeamMember status invited→active +
+    // token tek-seferlik silinir. Email mismatch veya geçersiz token sessizce
+    // ignored — register zaten başarılı, kullanıcı /accept-invite'a tekrar giderse
+    // yine işler.
+    let invitedAccepted = false;
+    if (typeof inviteToken === 'string' && inviteToken.length >= 32) {
+      try {
+        const member = await prisma.teamMember.findUnique({
+          where: { inviteToken },
+          select: { id: true, email: true, status: true, inviteTokenExpiresAt: true },
+        });
+        const tokenValid =
+          member &&
+          member.email === normalizedEmail &&
+          member.status === 'invited' &&
+          (!member.inviteTokenExpiresAt || member.inviteTokenExpiresAt.getTime() > Date.now());
+        if (tokenValid && member) {
+          await prisma.teamMember.update({
+            where: { id: member.id },
+            data: {
+              status: 'active',
+              inviteToken: null,
+              inviteTokenExpiresAt: null,
+            },
+          });
+          invitedAccepted = true;
+        }
+      } catch (err) {
+        // Token mismatch veya DB hata — fail-open, kullanıcı /accept-invite'a
+        // tekrar giderse manuel akış yine çalışır.
+        console.error('[register] invite auto-activate failed:', (err as Error).message);
+      }
+    }
 
     // Welcome email — fire and forget. We don\'t want a Resend hiccup to
     // block account creation; the cookie + redirect still succeeds.
@@ -109,6 +146,7 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json(
       {
         success: true,
+        invitedAccepted,
         user: {
           id: user.id,
           email: user.email,
