@@ -67,10 +67,6 @@ export default async function DeliveryPage({
       tr: 'Kurye geri bildirimi ayrıştırma, restoran skoru üzerinde odak.',
       en: 'Courier feedback separation, focus on restaurant score.',
     },
-    'migros-hemen': {
-      tr: 'Market ürün yorumları ve teslimat deneyimi ayrı raporlarda.',
-      en: 'Grocery product reviews and delivery experience in separate reports.',
-    },
     google: {
       tr: 'Sipariş sonrası müşteriyi Google işletme profiline yönlendir.',
       en: 'Route the customer to your Google Business Profile after the order.',

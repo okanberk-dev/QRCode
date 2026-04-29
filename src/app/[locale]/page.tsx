@@ -430,7 +430,7 @@ export default async function LandingPage({
                 {isTr ? 'DESTEKLENEN PLATFORMLAR' : 'SUPPORTED PLATFORMS'}
               </span>
               <div className="mt-3 flex flex-wrap items-center gap-2.5">
-                {(['google', 'tripadvisor', 'yemeksepeti', 'getir-yemek', 'trendyol-go', 'migros-hemen'] as const).map(
+                {(['google', 'tripadvisor', 'yemeksepeti', 'getir-yemek', 'trendyol-go'] as const).map(
                   (id) => (
                     <div
                       key={id}

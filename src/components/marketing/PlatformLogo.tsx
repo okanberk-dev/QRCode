@@ -7,7 +7,6 @@ export type PlatformId =
   | 'yemeksepeti'
   | 'getir-yemek'
   | 'trendyol-go'
-  | 'migros-hemen'
   | 'yelp'
   | 'tripadvisor'
   | 'booking'
@@ -38,7 +37,6 @@ const PLATFORM_ASSET: Partial<Record<PlatformId, string>> = {
   yemeksepeti: '/platforms/yemeksepeti.png',
   'getir-yemek': '/platforms/getir.png',
   'trendyol-go': '/platforms/trendyol-go.png',
-  'migros-hemen': '/platforms/migros-hemen.svg',
   yelp: '/platforms/yelp.svg',
   tripadvisor: '/platforms/tripadvisor.svg',
   booking: '/platforms/booking.svg',
