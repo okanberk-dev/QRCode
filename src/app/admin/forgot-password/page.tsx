@@ -3,13 +3,13 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Loader2, Mail, ShieldCheck, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, AtSign, Info, Loader2, Mail, ShieldCheck } from 'lucide-react';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import { AlertBanner } from '@/components/ui';
 
 function ForgotPasswordContent() {
   const router = useRouter();
-  const [username, setUsername] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -17,8 +17,9 @@ function ForgotPasswordContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!username.trim()) {
-      setError('Kullanıcı adı zorunlu.');
+    const value = identifier.trim();
+    if (!value) {
+      setError('Kullanıcı adı veya e-posta zorunlu.');
       return;
     }
     setLoading(true);
@@ -26,7 +27,9 @@ function ForgotPasswordContent() {
       const res = await fetch('/api/admin/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim() }),
+        // Server her iki anahtarı da kabul eder (identifier yeni, username
+        // legacy). Kullanıcı email girerse server email lookup yapar.
+        body: JSON.stringify({ identifier: value, username: value }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -81,8 +84,8 @@ function ForgotPasswordContent() {
               >
                 Şifremi unuttum
               </h1>
-              <p className="mt-2.5 text-[13px] sm:text-sm text-[#737373] leading-[1.55] max-w-[340px] mx-auto">
-                Kullanıcı adını gir; profilinde kayıtlı kurtarma e-postasına 6 haneli kod
+              <p className="mt-2.5 text-[13px] sm:text-sm text-[#737373] leading-[1.55] max-w-[360px] mx-auto">
+                Kullanıcı adını veya kayıtlı kurtarma e-postanı gir; bu adrese 6 haneli kod
                 göndereceğiz.
               </p>
             </div>
@@ -106,7 +109,15 @@ function ForgotPasswordContent() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => router.push(`/admin/reset-password?username=${encodeURIComponent(username.trim())}`)}
+                    onClick={() => {
+                      // Email girilmiş olabilir; reset sayfası username ister.
+                      // Kullanıcı email girdiyse, kullanıcı adını orada
+                      // tekrar yazsın. URL'e ipucu sadece email-değilse koy.
+                      const value = identifier.trim();
+                      const isEmail = value.includes('@');
+                      const qs = isEmail ? '' : `?username=${encodeURIComponent(value)}`;
+                      router.push(`/admin/reset-password${qs}`);
+                    }}
                     className="mt-5 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0A0A0A] px-5 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A]"
                   >
                     Kodumu girdim
@@ -132,10 +143,10 @@ function ForgotPasswordContent() {
 
                   <div className="space-y-2">
                     <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
-                      Kullanıcı adı
+                      Kullanıcı adı veya e-posta
                     </label>
                     <div className="relative">
-                      <User
+                      <AtSign
                         className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
                         size={16}
                         strokeWidth={2}
@@ -144,16 +155,20 @@ function ForgotPasswordContent() {
                         type="text"
                         required
                         autoComplete="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
                         className="w-full min-h-[48px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-4 text-[14px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:bg-white"
-                        placeholder="admin"
+                        placeholder="admin veya admin@buaze.com"
                         autoFocus
                       />
                     </div>
-                    <p className="text-[11px] text-[#737373] leading-[1.5]">
-                      Profilinde kurtarma e-postası yoksa kod gönderilemez. Yöneticinle iletiş.
-                    </p>
+                    <div className="flex items-start gap-1.5 text-[11px] text-[#737373] leading-[1.55]">
+                      <Info size={11} strokeWidth={2} className="mt-0.5 shrink-0" />
+                      <span>
+                        Hesabında kayıtlı kurtarma e-postası yoksa kod gönderilemez. Bir
+                        superadmin&apos;den e-posta eklenmesini iste; sonra tekrar dene.
+                      </span>
+                    </div>
                   </div>
 
                   <button

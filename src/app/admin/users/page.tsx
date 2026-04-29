@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Loader2, Store, User, ShieldCheck, Search } from 'lucide-react';
+import { AlertTriangle, Mail, Plus, Trash2, Loader2, Store, User, ShieldCheck, Search } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { AlertBanner, Badge, Modal, PageHeader, TableSkeleton, useConfirmDialog } from '@/components/ui';
 
 interface User {
   id: string;
   username: string;
+  email: string | null;
   role: string;
   restaurantId: string | null;
   restaurant: { name: string } | null;
@@ -34,6 +35,7 @@ export default function UsersPage() {
   
   const [formData, setFormData] = useState({
     username: '',
+    email: '',
     password: '',
     role: 'manager',
     restaurantId: ''
@@ -89,6 +91,7 @@ export default function UsersPage() {
     setEditingId(user.id);
     setFormData({
       username: user.username,
+      email: user.email || '',
       password: '', // Şifreyi boş bırak, sadece değişmek istiyorsa doldursun
       role: user.role,
       restaurantId: user.restaurantId || ''
@@ -157,7 +160,7 @@ export default function UsersPage() {
       } else {
         setShowModal(false);
         setEditingId(null);
-        setFormData({ username: '', password: '', role: 'manager', restaurantId: '' });
+        setFormData({ username: '', email: '', password: '', role: 'manager', restaurantId: '' });
         setIsNewRestaurant(false);
         setRestaurantData({ name: '', slug: '', address: '', phone: '' });
         setIsManualSlug(false);
@@ -212,7 +215,7 @@ export default function UsersPage() {
         description="Buaze sistem yöneticilerini ve restoran yöneticisi hesaplarını tanımla."
         actions={
           <button
-            onClick={() => { setEditingId(null); setFormData({ username: '', password: '', role: 'manager', restaurantId: '' }); setShowModal(true); }}
+            onClick={() => { setEditingId(null); setFormData({ username: '', email: '', password: '', role: 'manager', restaurantId: '' }); setShowModal(true); }}
             className="bz-btn-primary"
           >
             <Plus size={14} strokeWidth={2} />
@@ -263,6 +266,20 @@ export default function UsersPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <span className="font-bold text-[#0A0A0A] text-[14px] truncate block">{user.username}</span>
+                        {user.email ? (
+                          <span className="text-[11px] text-[#737373] truncate flex items-center gap-1 mt-0.5">
+                            <Mail size={10} strokeWidth={2} />
+                            {user.email}
+                          </span>
+                        ) : (
+                          <span
+                            className="text-[11px] text-[#D97706] truncate flex items-center gap-1 mt-0.5"
+                            title="Kurtarma e-postası yoksa şifremi unuttum akışı çalışmaz"
+                          >
+                            <AlertTriangle size={10} strokeWidth={2} />
+                            Kurtarma e-postası yok
+                          </span>
+                        )}
                         {/* Mobile-only badges */}
                         <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
                           <Badge kind={user.role === 'superadmin' ? 'info' : 'ok'}>
@@ -361,6 +378,27 @@ export default function UsersPage() {
                     className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-[15px] font-bold transition-all placeholder:text-[13px] placeholder:font-medium"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-semibold text-[#6B7280] ml-1 flex items-center gap-1.5">
+                  <Mail size={11} strokeWidth={2} />
+                  Kurtarma e-postası
+                  <span className="text-[10px] font-normal text-[#A3A3A3] normal-case">
+                    (şifremi unuttum için zorunlu)
+                  </span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value.trim()})}
+                  placeholder="ornek@buaze.com"
+                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-[15px] font-bold transition-all placeholder:text-[13px] placeholder:font-medium"
+                />
+                <p className="text-[11px] text-[#737373] ml-1 leading-[1.55]">
+                  Bu hesabın şifresini unuttuğunda kurtarma kodu bu adrese gider. Boş
+                  bırakılırsa kullanıcı kendi profilinden ekleyebilir.
+                </p>
               </div>
 
               <div className="space-y-2">
