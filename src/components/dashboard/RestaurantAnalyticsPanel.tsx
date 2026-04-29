@@ -11,12 +11,12 @@ import PlatformDistribution from '@/components/admin/PlatformDistribution';
 
 const TrendsChart = dynamic(() => import('@/components/admin/TrendsChart'), {
   ssr: false,
-  loading: () => <div className="h-[320px] w-full animate-pulse rounded-3xl bg-[#FFFFFF]" />,
+  loading: () => <div className="h-[260px] sm:h-[320px] md:h-[350px] w-full animate-pulse rounded-3xl bg-[#FFFFFF]" />,
 });
 
 const DayDistributionChart = dynamic(() => import('@/components/admin/DayDistributionChart'), {
   ssr: false,
-  loading: () => <div className="h-[320px] w-full animate-pulse rounded-3xl bg-[#FFFFFF]" />,
+  loading: () => <div className="h-[260px] sm:h-[320px] md:h-[350px] w-full animate-pulse rounded-3xl bg-[#FFFFFF]" />,
 });
 
 interface RestaurantOption {
