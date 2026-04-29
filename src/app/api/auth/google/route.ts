@@ -5,6 +5,7 @@ import { signJwt } from '@/lib/auth';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { verifyFirebaseIdToken, getFirebaseProjectId } from '@/lib/firebase-admin';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { handleOAuthSignIn, type OAuthDeps } from '@/lib/oauth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,82 +29,45 @@ export async function POST(req: NextRequest) {
 
     const { idToken, recaptchaToken, locale } = await req.json();
     const captchaLocale = locale === 'en' ? 'en' : 'tr';
-    if (!idToken || typeof idToken !== 'string') {
-      return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
-    }
 
     const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_google', captchaLocale);
     if (!captcha.ok) {
       return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
-    const claims = await verifyFirebaseIdToken(idToken);
-    if (!claims) {
-      return NextResponse.json({ error: 'Kimlik doğrulanamadı.' }, { status: 401 });
+    const deps: OAuthDeps = {
+      verifyToken: verifyFirebaseIdToken,
+      findUser: (email) => prisma.user.findUnique({ where: { email } }),
+      createUser: async (data) => {
+        // Google tarafından gelen kullanıcı → parolasız hesap. Rastgele güçlü
+        // bir hash saklıyoruz ki e-posta yolundan giriş denenemesin.
+        const randomSecret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
+        const passwordHash = await bcrypt.hash(randomSecret, 12);
+        return prisma.user.create({
+          data: {
+            email: data.email,
+            passwordHash,
+            name: data.name,
+            plan: 'trial',
+            trialEndsAt: data.trialEndsAt,
+          },
+        });
+      },
+      signToken: signJwt,
+      now: () => new Date(),
+    };
+
+    const result = await handleOAuthSignIn({ idToken }, deps);
+
+    if (!result.ok) {
+      const body: Record<string, unknown> = { error: result.error };
+      if (result.trialExpired) body.trialExpired = true;
+      return NextResponse.json(body, { status: result.status });
     }
 
-    const email = claims.email?.toLowerCase().trim();
-    if (!email) {
-      return NextResponse.json(
-        { error: 'E-posta adresi alınamadı. Lütfen e-posta ile giriş yapın.' },
-        { status: 400 },
-      );
-    }
-    if (claims.email_verified === false) {
-      return NextResponse.json(
-        { error: 'E-posta adresiniz doğrulanmamış.' },
-        { status: 403 },
-      );
-    }
-
-    let user = await prisma.user.findUnique({ where: { email } });
-    const now = new Date();
-    let isNewUser = false;
-
-    if (!user) {
-      isNewUser = true;
-      // Google tarafından gelen kullanıcı → parolasız hesap. Rastgele güçlü
-      // bir hash saklıyoruz ki e-posta yolundan giriş denenemesin.
-      const randomSecret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
-      const passwordHash = await bcrypt.hash(randomSecret, 12);
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
-
-      user = await prisma.user.create({
-        data: {
-          email,
-          passwordHash,
-          name: claims.name?.trim() || null,
-          plan: 'trial',
-          trialEndsAt,
-        },
-      });
-    }
-
-    if (!user.isActive) {
-      return NextResponse.json(
-        { error: 'Hesabınız askıya alınmıştır.' },
-        { status: 403 },
-      );
-    }
-
-    const isTrialExpired =
-      user.plan === 'trial' && user.trialEndsAt && user.trialEndsAt < now;
-    if (isTrialExpired) {
-      return NextResponse.json(
-        { error: 'Ücretsiz deneme süreniz sona ermiştir.', trialExpired: true },
-        { status: 402 },
-      );
-    }
+    const { user, isNewUser, token } = result;
 
     resetRateLimit(`google-auth:ip:${ip}`);
-
-    const token = await signJwt({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      plan: user.plan,
-    });
 
     const isSecure =
       process.env.NODE_ENV === 'production' &&
