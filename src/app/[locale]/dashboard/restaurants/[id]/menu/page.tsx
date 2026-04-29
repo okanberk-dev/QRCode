@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  AlertTriangle, ArrowLeft, ArrowDown, ArrowUp, BarChart3, Check, ChevronRight, Download, Edit2,
-  Eye, EyeOff, GripVertical, Image as ImageIcon, Loader2, Plus, QrCode, Save, Trash2, UtensilsCrossed, X,
+  AlertTriangle, ArrowLeft, ArrowDown, ArrowUp, BarChart3, Check, ChevronRight, Coffee, Croissant,
+  Download, Edit2, Eye, EyeOff, GripVertical, Image as ImageIcon, Loader2, Pizza, Plus, QrCode,
+  Save, Sparkles, Trash2, UtensilsCrossed, Wine, X,
 } from 'lucide-react';
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
@@ -15,7 +16,7 @@ import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 import PublicMenuView, { type MenuCategoryView, type MenuItemView, type RestaurantView } from '@/components/menu/PublicMenuView';
 import { Modal, useConfirmDialog } from '@/components/ui';
-import { MENU_BADGES, MENU_THEMES, type MenuBadge, type MenuTheme } from '@/lib/validations';
+import { MENU_THEMES, type MenuBadge, type MenuTheme } from '@/lib/validations';
 import { formatPrice, parsePriceInput } from '@/lib/format';
 import { compressImage } from '@/lib/client-image';
 import type { Locale } from '@/lib/translations';
@@ -40,7 +41,115 @@ const BADGE_LABELS: Record<MenuBadge, { tr: string; en: string }> = {
   aci: { tr: 'Acı', en: 'Spicy' },
   sef_onerisi: { tr: 'Şef Önerisi', en: "Chef's Pick" },
   glutensiz: { tr: 'Glutensiz', en: 'Gluten-Free' },
+  kahvalti: { tr: 'Kahvaltı', en: 'Breakfast' },
+  organik: { tr: 'Organik', en: 'Organic' },
+  taze: { tr: 'Taze', en: 'Fresh' },
+  sezonluk: { tr: 'Sezonluk', en: 'Seasonal' },
+  ev_yapimi: { tr: 'Ev Yapımı', en: 'Homemade' },
 };
+
+// Inline color hint per badge — consistent with PublicMenuView's BADGE_META so
+// the builder previews how a chip will look on the live menu without importing
+// the public render module.
+const BADGE_TINTS: Record<MenuBadge, { bg: string; fg: string; border?: string }> = {
+  populer:     { bg: '#FFFBEB', fg: '#92400E', border: '#FDE68A' },
+  yeni:        { bg: '#EFF6FF', fg: '#1E40AF', border: '#BFDBFE' },
+  vegan:       { bg: '#F0FDF4', fg: '#166534', border: '#BBF7D0' },
+  vegetaryen:  { bg: '#EAF9B8', fg: '#4D5C00', border: '#D9EE7A' },
+  aci:         { bg: '#FEF2F2', fg: '#991B1B', border: '#FECACA' },
+  sef_onerisi: { bg: '#0A0A0A', fg: '#C6F24E' },
+  glutensiz:   { bg: '#EAF9B8', fg: '#0A0A0A' },
+  kahvalti:    { bg: '#FFEDD5', fg: '#9A3412', border: '#FED7AA' },
+  organik:     { bg: '#ECFDF5', fg: '#14532D', border: '#A7F3D0' },
+  taze:        { bg: '#ECFEFF', fg: '#155E75', border: '#A5F3FC' },
+  sezonluk:    { bg: '#F5F3FF', fg: '#5B21B6', border: '#DDD6FE' },
+  ev_yapimi:   { bg: '#FEF3C7', fg: '#854D0E', border: '#FDE68A' },
+};
+
+// Group badges by intent so the form picker reads as semantic rows instead of
+// one wall of pills. Order is meaningful — most-used first.
+const BADGE_GROUPS: { tr: string; en: string; items: MenuBadge[] }[] = [
+  { tr: 'Vurgu', en: 'Highlights', items: ['populer', 'yeni', 'sef_onerisi'] },
+  { tr: 'Diyet', en: 'Diet', items: ['vegan', 'vegetaryen', 'glutensiz'] },
+  { tr: 'Karakter', en: 'Character', items: ['aci', 'kahvalti', 'sezonluk'] },
+  { tr: 'Kalite', en: 'Quality', items: ['organik', 'taze', 'ev_yapimi'] },
+];
+
+// Quick-start category presets so a new owner doesn't stare at an empty list.
+// Picking one POSTs ~6 categories with sensible Turkish names; the user can
+// rename / delete after. English mirror is included for the EN locale.
+type StarterPreset = {
+  id: 'restaurant' | 'cafe' | 'fastfood' | 'bakery' | 'bar';
+  tr: { label: string; hint: string; categories: string[] };
+  en: { label: string; hint: string; categories: string[] };
+};
+const STARTER_PRESETS: StarterPreset[] = [
+  {
+    id: 'restaurant',
+    tr: {
+      label: 'Restoran',
+      hint: 'Klasik yemek menüsü',
+      categories: ['Başlangıçlar', 'Çorbalar', 'Salatalar', 'Ana Yemekler', 'Tatlılar', 'İçecekler'],
+    },
+    en: {
+      label: 'Restaurant',
+      hint: 'Classic dining menu',
+      categories: ['Starters', 'Soups', 'Salads', 'Mains', 'Desserts', 'Beverages'],
+    },
+  },
+  {
+    id: 'cafe',
+    tr: {
+      label: 'Cafe',
+      hint: 'Kahve, çay, tatlı',
+      categories: ['Kahveler', 'Sıcak İçecekler', 'Soğuk İçecekler', 'Atıştırmalıklar', 'Tatlılar', 'Kahvaltı'],
+    },
+    en: {
+      label: 'Cafe',
+      hint: 'Coffee, tea, treats',
+      categories: ['Coffee', 'Hot Drinks', 'Cold Drinks', 'Snacks', 'Desserts', 'Breakfast'],
+    },
+  },
+  {
+    id: 'fastfood',
+    tr: {
+      label: 'Fast Food',
+      hint: 'Burger, pizza, döner',
+      categories: ['Burgerler', 'Pizzalar', 'Tavuk', 'Wraplar', 'Yan Ürünler', 'İçecekler'],
+    },
+    en: {
+      label: 'Fast Food',
+      hint: 'Burger, pizza, wraps',
+      categories: ['Burgers', 'Pizzas', 'Chicken', 'Wraps', 'Sides', 'Beverages'],
+    },
+  },
+  {
+    id: 'bakery',
+    tr: {
+      label: 'Pastane',
+      hint: 'Hamur işi & tatlı',
+      categories: ['Pastalar', 'Kurabiyeler', 'Tuzlular', 'Ekmek', 'Sıcak İçecekler', 'Soğuk İçecekler'],
+    },
+    en: {
+      label: 'Bakery',
+      hint: 'Pastry & dessert',
+      categories: ['Cakes', 'Cookies', 'Savory', 'Bread', 'Hot Drinks', 'Cold Drinks'],
+    },
+  },
+  {
+    id: 'bar',
+    tr: {
+      label: 'Bar',
+      hint: 'Kokteyl & meze',
+      categories: ['Kokteyller', 'Şaraplar', 'Biralar', 'Mezeler', 'Atıştırmalıklar', 'Alkolsüzler'],
+    },
+    en: {
+      label: 'Bar',
+      hint: 'Cocktails & snacks',
+      categories: ['Cocktails', 'Wines', 'Beers', 'Mezze', 'Snacks', 'Soft Drinks'],
+    },
+  },
+];
 
 export default function RestaurantMenuBuilderPage() {
   const params = useParams();
@@ -287,6 +396,32 @@ export default function RestaurantMenuBuilderPage() {
       })));
       setError((e as Error).message);
     }
+  };
+
+  // ── Quick-start preset (only meaningful when categories list is empty) ──
+  const [presetBusy, setPresetBusy] = useState<StarterPreset['id'] | null>(null);
+  const applyStarterPreset = async (preset: StarterPreset) => {
+    setPresetBusy(preset.id);
+    setError(null);
+    const names = preset[isTr ? 'tr' : 'en'].categories;
+    try {
+      // Sequential to keep deterministic sortOrder; ~6 calls so latency is fine.
+      for (const name of names) {
+        const res = await fetch(`/api/restaurants/${id}/menu/categories`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, isVisible: true }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Kategori oluşturulamadı');
+        }
+      }
+      await fetchAll();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setPresetBusy(null);
   };
 
   // ── Category ops ──
@@ -554,7 +689,23 @@ export default function RestaurantMenuBuilderPage() {
         {restaurant.menuPublished && (
           <div className="absolute inset-x-0 top-0 h-[3px] bg-[#C6F24E]" aria-hidden />
         )}
-        <div className="flex flex-col gap-5 p-6 sm:p-8">
+        {/* Soft accent halo + dotted texture so the header doesn't read as a flat
+            white card. Pure decoration — pointer-events-none + aria-hidden. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-[0.18] blur-3xl"
+          style={{ backgroundColor: restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#C6F24E' }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 1px 1px, #0A0A0A 1px, transparent 0)',
+            backgroundSize: '14px 14px',
+          }}
+        />
+        <div className="relative flex flex-col gap-5 p-6 sm:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-3">
               <Link
@@ -565,8 +716,14 @@ export default function RestaurantMenuBuilderPage() {
                 {copy.backToMenus}
               </Link>
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
+                <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E] shadow-sm">
                   <UtensilsCrossed size={20} strokeWidth={2} />
+                  {restaurant.menuPublished && (
+                    <span
+                      aria-hidden
+                      className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#16A34A] ring-2 ring-white"
+                    />
+                  )}
                 </span>
                 <h1 className="truncate text-[26px] font-medium tracking-[-0.02em] text-[#0A0A0A] sm:text-[32px]">
                   {restaurant.name}
@@ -649,6 +806,7 @@ export default function RestaurantMenuBuilderPage() {
       <ThemePanel
         restaurant={restaurant}
         copy={copy}
+        locale={locale}
         saving={themeSaving}
         onChange={saveTheme}
         onUploadLogo={uploadLogo}
@@ -672,14 +830,16 @@ export default function RestaurantMenuBuilderPage() {
             </button>
           </div>
           {categories.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
-                <UtensilsCrossed size={22} strokeWidth={2} />
-              </span>
-              <p className="text-[13px] leading-relaxed text-[#525252]">{copy.noCategories}</p>
+            <div className="px-4 py-5">
+              <div className="flex flex-col items-center gap-2 text-center">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+                  <UtensilsCrossed size={18} strokeWidth={2} />
+                </span>
+                <p className="max-w-[260px] text-[12px] leading-relaxed text-[#525252]">{copy.noCategories}</p>
+              </div>
               <button
                 onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
-                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white transition-all hover:bg-[#1A1A1A] active:scale-95"
+                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[12px] font-medium text-white transition-all hover:bg-[#1A1A1A] active:scale-95"
               >
                 <Plus size={12} strokeWidth={2.25} />
                 {copy.addCategory}
@@ -740,34 +900,87 @@ export default function RestaurantMenuBuilderPage() {
             )}
           </div>
           {!activeCategory ? (
-            <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-              {categories.length === 0 ? (
-                <>
-                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+            categories.length === 0 ? (
+              <div className="px-5 py-8 sm:px-8 sm:py-10">
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#EAF9B8] to-[#C6F24E] text-[#0A0A0A] shadow-sm">
                     <UtensilsCrossed size={24} strokeWidth={2} />
                   </span>
-                  <p className="max-w-[280px] text-[13px] leading-relaxed text-[#525252]">
-                    {isTr
-                      ? 'Önce bir kategori oluştur — sonra ona ürün ekleyebilirsin.'
-                      : 'Create a category first — then you can add items to it.'}
-                  </p>
-                  <button
-                    onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
-                    className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white transition-all hover:bg-[#1A1A1A] active:scale-95"
-                  >
-                    <Plus size={12} strokeWidth={2.25} />
-                    {copy.addCategory}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5F5F5] text-[#737373]">
-                    <ChevronRight size={24} strokeWidth={2} />
+                  <div>
+                    <h3 className="bz-h-tight text-[18px] text-[#0A0A0A]">
+                      {isTr ? 'Hızlı başla' : 'Quick start'}
+                    </h3>
+                    <p className="mt-1 max-w-[420px] text-[13px] leading-relaxed text-[#525252]">
+                      {isTr
+                        ? 'İşletmene en yakın şablonu seç — kategorileri biz oluşturalım, sen ürünlerini ekle. Sonradan istediğini yeniden adlandırabilir veya silebilirsin.'
+                        : 'Pick the template that fits your venue — we create the categories, you add the items. Rename or delete anything you want later.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                  {STARTER_PRESETS.map((p) => {
+                    const localized = p[isTr ? 'tr' : 'en'];
+                    const busy = presetBusy === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => applyStarterPreset(p)}
+                        disabled={presetBusy !== null}
+                        className="group relative flex flex-col items-start gap-2 overflow-hidden rounded-2xl border border-[#EDEDED] bg-white p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#0A0A0A] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <div className="flex w-full items-center justify-between">
+                          <span className="inline-flex items-center gap-1.5">
+                            <PresetGlyph id={p.id} />
+                            <span className="text-[14px] font-medium text-[#0A0A0A]">{localized.label}</span>
+                          </span>
+                          {busy ? (
+                            <Loader2 size={14} className="animate-spin text-[#0A0A0A]" />
+                          ) : (
+                            <ChevronRight size={14} strokeWidth={2} className="text-[#A3A3A3] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0A0A0A]" />
+                          )}
+                        </div>
+                        <p className="text-[11px] text-[#737373]">{localized.hint}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {localized.categories.slice(0, 4).map((c) => (
+                            <span
+                              key={c}
+                              className="inline-flex items-center rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-2 py-0.5 text-[10px] font-medium text-[#525252]"
+                            >
+                              {c}
+                            </span>
+                          ))}
+                          <span className="inline-flex items-center rounded-full border border-dashed border-[#EDEDED] px-2 py-0.5 text-[10px] font-medium text-[#A3A3A3]">
+                            +{localized.categories.length - 4}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-5 flex items-center gap-3 border-t border-dashed border-[#EDEDED] pt-4">
+                  <span className="h-px flex-1 bg-[#EDEDED]" aria-hidden />
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-[#A3A3A3]">
+                    {isTr ? 'veya' : 'or'}
                   </span>
-                  <p className="max-w-[260px] text-[13px] leading-relaxed text-[#525252]">{copy.noCategorySelected}</p>
-                </>
-              )}
-            </div>
+                  <span className="h-px flex-1 bg-[#EDEDED]" aria-hidden />
+                </div>
+                <button
+                  onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
+                  disabled={presetBusy !== null}
+                  className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[12px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Plus size={13} strokeWidth={2.25} />
+                  {isTr ? 'Boş kategoriyle başla' : 'Start with an empty category'}
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+                <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5F5F5] text-[#737373]">
+                  <ChevronRight size={24} strokeWidth={2} />
+                </span>
+                <p className="max-w-[260px] text-[13px] leading-relaxed text-[#525252]">{copy.noCategorySelected}</p>
+              </div>
+            )
           ) : activeCategory.items.length === 0 ? (
             <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
@@ -1085,25 +1298,44 @@ function ItemModal({
           </div>
         </Field>
         <Field label={copy.badges}>
-          <div className="flex flex-wrap gap-2">
-            {MENU_BADGES.map((b) => {
-              const active = badges.includes(b);
-              return (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => toggleBadge(b)}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all ${
-                    active
-                      ? 'border-[#0A0A0A] bg-[#C6F24E] text-[#0A0A0A] shadow-sm'
-                      : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-[#0A0A0A]'
-                  }`}
-                >
-                  {active && <Check size={11} strokeWidth={2.5} />}
-                  {BADGE_LABELS[b][locale]}
-                </button>
-              );
-            })}
+          <div className="space-y-3">
+            {BADGE_GROUPS.map((group) => (
+              <div key={group.tr} className="space-y-1.5">
+                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#A3A3A3]">
+                  {locale === 'tr' ? group.tr : group.en}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {group.items.map((b) => {
+                    const active = badges.includes(b);
+                    const tint = BADGE_TINTS[b];
+                    return (
+                      <button
+                        key={b}
+                        type="button"
+                        onClick={() => toggleBadge(b)}
+                        style={
+                          active
+                            ? {
+                                backgroundColor: tint.bg,
+                                color: tint.fg,
+                                borderColor: tint.border ?? tint.bg,
+                              }
+                            : undefined
+                        }
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all ${
+                          active
+                            ? 'shadow-sm'
+                            : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-[#0A0A0A]'
+                        }`}
+                      >
+                        {active && <Check size={11} strokeWidth={2.5} />}
+                        {BADGE_LABELS[b][locale]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </Field>
         <div className="grid grid-cols-2 gap-3">
@@ -1155,6 +1387,33 @@ function ModalActions({ busy, copy, onClose }: { busy: boolean; copy: Record<str
         {copy.save}
       </button>
     </div>
+  );
+}
+
+// Tiny themed icon for the starter-preset cards. Each glyph picks a recognizable
+// venue silhouette (bistro plate, espresso cup, slice, croissant, wine glass).
+function PresetGlyph({ id }: { id: StarterPreset['id'] }) {
+  const Icon =
+    id === 'restaurant' ? UtensilsCrossed
+    : id === 'cafe' ? Coffee
+    : id === 'fastfood' ? Pizza
+    : id === 'bakery' ? Croissant
+    : Wine;
+  const palette: Record<StarterPreset['id'], { bg: string; fg: string }> = {
+    restaurant: { bg: '#FEF3C7', fg: '#854D0E' },
+    cafe: { bg: '#F5F3FF', fg: '#5B21B6' },
+    fastfood: { bg: '#FEF2F2', fg: '#991B1B' },
+    bakery: { bg: '#FFEDD5', fg: '#9A3412' },
+    bar: { bg: '#ECFEFF', fg: '#155E75' },
+  };
+  const { bg, fg } = palette[id];
+  return (
+    <span
+      className="inline-flex h-7 w-7 items-center justify-center rounded-xl"
+      style={{ backgroundColor: bg, color: fg }}
+    >
+      <Icon size={14} strokeWidth={2} />
+    </span>
   );
 }
 
@@ -1327,14 +1586,26 @@ function SortableItemRow({
             </span>
             {item.badges.length > 0 && (
               <div className="flex flex-wrap gap-1">
-                {item.badges.slice(0, 3).map((b) => (
-                  <span
-                    key={b}
-                    className="inline-flex items-center rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[10px] font-medium text-[#0A0A0A]"
-                  >
-                    {BADGE_LABELS[b as MenuBadge]?.[locale] || b}
-                  </span>
-                ))}
+                {item.badges.slice(0, 3).map((b) => {
+                  const tint = BADGE_TINTS[b as MenuBadge];
+                  return (
+                    <span
+                      key={b}
+                      style={
+                        tint
+                          ? {
+                              backgroundColor: tint.bg,
+                              color: tint.fg,
+                              boxShadow: tint.border ? `inset 0 0 0 1px ${tint.border}` : undefined,
+                            }
+                          : undefined
+                      }
+                      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+                    >
+                      {BADGE_LABELS[b as MenuBadge]?.[locale] || b}
+                    </span>
+                  );
+                })}
                 {item.badges.length > 3 && (
                   <span className="inline-flex items-center rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-[#525252]">
                     +{item.badges.length - 3}
@@ -1382,13 +1653,35 @@ function SortableItemRow({
 // ──────────────────────────────────────────────────────────────────────────
 // Theme panel
 
-const THEME_SWATCHES = ['#C6F24E', '#E85A4F', '#0A0A0A', '#0E7C66', '#8B5CF6', '#EC4899', '#0EA5E9', '#8CB81E'];
+// Curated palette covering common venue moods. Grouped visually in the picker
+// (lime/warm/dark/herb/floral) so a cafe owner and a fine-dining owner can
+// each find a fitting accent without opening the color wheel.
+const THEME_SWATCH_GROUPS: { tr: string; en: string; colors: string[] }[] = [
+  { tr: 'Marka', en: 'Brand', colors: ['#C6F24E', '#A8D62E', '#8CB81E'] },
+  { tr: 'Sıcak', en: 'Warm', colors: ['#E85A4F', '#D97706', '#F59E0B', '#9A3412'] },
+  { tr: 'Koyu', en: 'Dark', colors: ['#0A0A0A', '#1F2937', '#3F3F46'] },
+  { tr: 'Bitki', en: 'Herb', colors: ['#0E7C66', '#15803D', '#65A30D'] },
+  { tr: 'Soğuk', en: 'Cool', colors: ['#0EA5E9', '#1D4ED8', '#0F766E'] },
+  { tr: 'Zarif', en: 'Soft', colors: ['#8B5CF6', '#EC4899', '#BE185D', '#A16207'] },
+];
+
+// Hint per theme — small TR/EN copy chip on the card so a brand-new owner can
+// pick the layout that fits their venue without opening the public preview.
+const THEME_VIBES: Record<MenuTheme, { tr: string; en: string }> = {
+  classic:    { tr: 'Restoran · Aile',     en: 'Restaurant · Family' },
+  modern:     { tr: 'Fast food · Burger',  en: 'Fast food · Burger' },
+  elegant:    { tr: 'Fine dining',         en: 'Fine dining' },
+  gastronomy: { tr: 'Şef · Bar · Gece',    en: 'Chef · Bar · Night' },
+  minimal:    { tr: 'Cafe · Pastane',      en: 'Cafe · Bakery' },
+  bistro:     { tr: 'Bistro · Kahvaltı',   en: 'Bistro · Brunch' },
+};
 
 function ThemePanel({
-  restaurant, copy, saving, onChange, onUploadLogo,
+  restaurant, copy, locale, saving, onChange, onUploadLogo,
 }: {
   restaurant: RestaurantShape;
   copy: Record<string, string>;
+  locale: Locale;
   saving: boolean;
   onChange: (patch: { menuTheme?: MenuTheme; menuAccentColor?: string | null; menuLogoUrl?: string | null }) => void;
   onUploadLogo: (file: File) => void;
@@ -1407,11 +1700,16 @@ function ThemePanel({
   return (
     <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
       <div className="flex items-center justify-between gap-3 border-b border-[#EDEDED] px-6 py-4">
-        <div className="min-w-0">
-          <p className="pulse-eyebrow text-[#737373]">{copy.menuDesign}</p>
-          <p className="mt-0.5 text-[12px] text-[#737373]">
-            {copy.themeLabel} · {copy.accentColor} · {copy.logo}
-          </p>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#EAF9B8] text-[#0A0A0A]">
+            <Sparkles size={14} strokeWidth={2.25} />
+          </span>
+          <div className="min-w-0">
+            <p className="pulse-eyebrow text-[#737373]">{copy.menuDesign}</p>
+            <p className="mt-0.5 text-[12px] text-[#737373]">
+              {copy.themeLabel} · {copy.accentColor} · {copy.logo}
+            </p>
+          </div>
         </div>
         {saving && (
           <span className="inline-flex items-center gap-1.5 text-[11px] text-[#737373]">
@@ -1433,6 +1731,7 @@ function ThemePanel({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {themes.map((t) => {
               const active = restaurant.menuTheme === t.id;
+              const vibe = THEME_VIBES[t.id];
               return (
                 <button
                   key={t.id}
@@ -1444,12 +1743,17 @@ function ThemePanel({
                   }`}
                 >
                   <ThemeThumb theme={t.id} accent={currentAccent} />
-                  <div className="flex items-center justify-between px-0.5">
-                    <span className={`text-[13px] ${active ? 'font-medium text-[#0A0A0A]' : 'text-[#525252]'}`}>
-                      {t.label}
-                    </span>
+                  <div className="flex items-start justify-between gap-2 px-0.5">
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-[13px] leading-tight ${active ? 'font-medium text-[#0A0A0A]' : 'text-[#525252]'}`}>
+                        {t.label}
+                      </p>
+                      <p className="mt-0.5 truncate text-[10px] uppercase tracking-[0.1em] text-[#A3A3A3]">
+                        {locale === 'tr' ? vibe.tr : vibe.en}
+                      </p>
+                    </div>
                     {active && (
-                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#C6F24E]">
+                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#C6F24E]">
                         <Check size={11} strokeWidth={3} className="text-[#0A0A0A]" />
                       </span>
                     )}
@@ -1468,48 +1772,60 @@ function ThemePanel({
               {currentAccent.toUpperCase()}
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            {THEME_SWATCHES.map((c) => {
-              const active = currentAccent.toLowerCase() === c.toLowerCase();
-              return (
+          <div className="space-y-3">
+            {THEME_SWATCH_GROUPS.map((group) => (
+              <div key={group.tr} className="flex items-center gap-3">
+                <p className="w-14 shrink-0 text-[10px] font-medium uppercase tracking-[0.14em] text-[#A3A3A3]">
+                  {locale === 'tr' ? group.tr : group.en}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {group.colors.map((c) => {
+                    const active = currentAccent.toLowerCase() === c.toLowerCase();
+                    return (
+                      <button
+                        key={c}
+                        onClick={() => onChange({ menuAccentColor: c })}
+                        style={{ backgroundColor: c }}
+                        className={`relative h-9 w-9 rounded-full transition-all active:scale-90 ${
+                          active
+                            ? 'ring-2 ring-[#0A0A0A] ring-offset-2'
+                            : 'shadow-sm ring-1 ring-black/5 hover:scale-110'
+                        }`}
+                        title={c}
+                        aria-label={c}
+                      >
+                        {active && (
+                          <span className="absolute inset-0 flex items-center justify-center">
+                            <Check size={13} strokeWidth={3} className="text-white drop-shadow" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <div className="flex flex-wrap items-center gap-2 border-t border-[#F5F5F5] pt-3">
+              <label className="relative inline-flex h-9 cursor-pointer items-center gap-2 overflow-hidden rounded-full border-2 border-dashed border-[#A3A3A3] px-3 text-[11px] font-medium text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]">
+                <input
+                  type="color"
+                  value={currentAccent}
+                  onChange={(e) => onChange({ menuAccentColor: e.target.value })}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
+                <Plus size={12} strokeWidth={2.25} />
+                {locale === 'tr' ? 'Özel renk' : 'Custom'}
+              </label>
+              {restaurant.menuAccentColor && (
                 <button
-                  key={c}
-                  onClick={() => onChange({ menuAccentColor: c })}
-                  style={{ backgroundColor: c }}
-                  className={`relative h-10 w-10 rounded-full transition-all active:scale-90 ${
-                    active
-                      ? 'ring-2 ring-[#0A0A0A] ring-offset-2'
-                      : 'shadow-sm ring-1 ring-black/5 hover:scale-110'
-                  }`}
-                  title={c}
-                  aria-label={c}
+                  onClick={() => onChange({ menuAccentColor: null })}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
                 >
-                  {active && (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <Check size={14} strokeWidth={3} className="text-[#0A0A0A] drop-shadow" />
-                    </span>
-                  )}
+                  <X size={11} strokeWidth={2} />
+                  {copy.resetAccent}
                 </button>
-              );
-            })}
-            <label className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[#A3A3A3] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]">
-              <input
-                type="color"
-                value={currentAccent}
-                onChange={(e) => onChange({ menuAccentColor: e.target.value })}
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              />
-              <Plus size={14} strokeWidth={2.25} />
-            </label>
-            {restaurant.menuAccentColor && (
-              <button
-                onClick={() => onChange({ menuAccentColor: null })}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
-              >
-                <X size={11} strokeWidth={2} />
-                {copy.resetAccent}
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
@@ -1572,52 +1888,82 @@ function ThemePanel({
 function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
   if (theme === 'classic') {
     return (
-      <div className="relative h-24 overflow-hidden rounded-xl bg-white ring-1 ring-[#EDEDED]">
-        <div className="h-7 w-full" style={{ backgroundColor: accent }} />
+      <div className="relative h-28 overflow-hidden rounded-xl bg-white ring-1 ring-[#EDEDED]">
+        <div className="relative h-9 w-full" style={{ backgroundColor: accent }}>
+          <div className="absolute right-2 top-1.5 h-2.5 w-2.5 rounded-full bg-white/40" />
+          <div className="absolute right-5 top-1.5 h-2.5 w-2.5 rounded-full bg-white/25" />
+        </div>
         <div className="space-y-1.5 p-2.5">
-          <div className="h-2 w-2/3 rounded bg-[#0A0A0A]/85" />
+          <div className="flex items-center gap-1.5">
+            <div className="h-3 w-3 rounded-sm bg-[#0A0A0A]/70" />
+            <div className="h-1.5 flex-1 rounded bg-[#0A0A0A]/85" />
+            <div className="h-1.5 w-5 rounded bg-[#0A0A0A]/85" />
+          </div>
           <div className="h-1 w-full rounded bg-[#A3A3A3]/40" />
+          <div className="flex items-center gap-1.5">
+            <div className="h-3 w-3 rounded-sm bg-[#0A0A0A]/40" />
+            <div className="h-1.5 flex-1 rounded bg-[#0A0A0A]/60" />
+            <div className="h-1.5 w-5 rounded bg-[#0A0A0A]/60" />
+          </div>
           <div className="h-1 w-4/5 rounded bg-[#A3A3A3]/40" />
-          <div className="h-1 w-3/5 rounded bg-[#A3A3A3]/40" />
         </div>
       </div>
     );
   }
   if (theme === 'modern') {
     return (
-      <div className="relative grid h-24 grid-cols-3 gap-1.5 overflow-hidden rounded-xl bg-[#FAFAFA] p-2 ring-1 ring-[#EDEDED]">
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="rounded-md bg-white shadow-sm" style={{ borderBottom: `2px solid ${accent}` }} />
+      <div className="relative grid h-28 grid-cols-2 gap-1.5 overflow-hidden rounded-xl bg-[#FAFAFA] p-2 ring-1 ring-[#EDEDED]">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="relative overflow-hidden rounded-md bg-white shadow-sm">
+            <div className="h-5 w-full" style={{ backgroundColor: accent, opacity: 0.85 - i * 0.12 }} />
+            <div className="space-y-0.5 p-1">
+              <div className="h-1 w-3/4 rounded bg-[#0A0A0A]/85" />
+              <div className="h-0.5 w-full rounded bg-[#A3A3A3]/40" />
+              <div className="h-1 w-1/3 rounded" style={{ backgroundColor: accent }} />
+            </div>
+          </div>
         ))}
       </div>
     );
   }
   if (theme === 'elegant') {
     return (
-      <div className="relative flex h-24 flex-col gap-1.5 overflow-hidden rounded-xl bg-white p-2.5 ring-1 ring-[#EDEDED]">
-        <div className="mx-auto h-[3px] w-10 rounded" style={{ backgroundColor: accent }} />
-        <div className="mx-auto h-2 w-1/2 rounded bg-[#0A0A0A]" />
-        <div className="mt-1 h-px w-full bg-[#EDEDED]" />
-        <div className="mt-1 space-y-1">
-          <div className="h-1 w-full rounded bg-[#A3A3A3]/40" />
-          <div className="h-1 w-4/5 rounded bg-[#A3A3A3]/40" />
-          <div className="h-1 w-3/5 rounded bg-[#A3A3A3]/40" />
+      <div className="relative flex h-28 flex-col items-center gap-1.5 overflow-hidden rounded-xl bg-white p-3 ring-1 ring-[#EDEDED]">
+        <div className="h-[3px] w-8 rounded" style={{ backgroundColor: accent }} />
+        <div className="h-2 w-3/5 rounded bg-[#0A0A0A]" />
+        <div className="h-px w-2/3 bg-[#EDEDED]" />
+        <div className="mt-0.5 w-full space-y-1.5">
+          <div className="flex items-baseline gap-1.5">
+            <div className="h-1.5 flex-1 rounded bg-[#0A0A0A]/85" />
+            <div className="h-1 w-px bg-[#A3A3A3]" />
+            <div className="h-1.5 w-5 rounded bg-[#0A0A0A]/60" />
+          </div>
+          <div className="h-0.5 w-4/5 rounded bg-[#A3A3A3]/40" />
+          <div className="flex items-baseline gap-1.5">
+            <div className="h-1.5 flex-1 rounded bg-[#0A0A0A]/85" />
+            <div className="h-1 w-px bg-[#A3A3A3]" />
+            <div className="h-1.5 w-5 rounded bg-[#0A0A0A]/60" />
+          </div>
         </div>
       </div>
     );
   }
   if (theme === 'minimal') {
     return (
-      <div className="relative h-24 overflow-hidden rounded-xl bg-white p-3 ring-1 ring-[#EDEDED]">
+      <div className="relative h-28 overflow-hidden rounded-xl bg-white p-3 ring-1 ring-[#EDEDED]">
         <div className="flex items-center gap-1.5">
-          <div className="h-1 flex-1 rounded bg-[#0A0A0A]" />
-          <div className="h-1 w-8 rounded" style={{ backgroundColor: accent }} />
+          <div className="h-1.5 flex-1 rounded bg-[#0A0A0A]" />
+          <div className="h-1.5 w-6 rounded" style={{ backgroundColor: accent }} />
         </div>
-        <div className="mt-3 space-y-2">
-          {[0, 1, 2].map((i) => (
+        <div className="mt-2 h-px w-full bg-[#EDEDED]" />
+        <div className="mt-2 space-y-2">
+          {[0, 1, 2, 3].map((i) => (
             <div key={i} className="flex items-center gap-1.5">
-              <div className="h-0.5 flex-1 rounded bg-[#A3A3A3]/40" />
-              <div className="h-0.5 w-6 rounded" style={{ backgroundColor: accent, opacity: 0.7 }} />
+              <div className="h-0.5 flex-1 rounded bg-[#A3A3A3]/45" />
+              <div
+                className="h-0.5 rounded"
+                style={{ backgroundColor: accent, opacity: 0.85 - i * 0.15, width: 18 + i * 2 }}
+              />
             </div>
           ))}
         </div>
@@ -1626,25 +1972,48 @@ function ThemeThumb({ theme, accent }: { theme: MenuTheme; accent: string }) {
   }
   if (theme === 'bistro') {
     return (
-      <div className="relative grid h-24 grid-cols-2 gap-1.5 overflow-hidden rounded-xl p-2 ring-1 ring-[#E8E0D2]" style={{ backgroundColor: '#FAF7F0' }}>
+      <div className="relative grid h-28 grid-cols-2 gap-1.5 overflow-hidden rounded-xl p-2 ring-1 ring-[#E8E0D2]" style={{ backgroundColor: '#FAF7F0' }}>
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="rounded-lg bg-white shadow-sm"
-            style={{ borderBottom: `2px solid ${accent}` }}
-          />
+            className="relative overflow-hidden rounded-lg bg-white shadow-sm"
+          >
+            <div
+              className="absolute inset-x-0 top-0 h-3"
+              style={{ background: `linear-gradient(135deg, ${accent}, ${accent}99)` }}
+            />
+            <div className="space-y-0.5 p-1 pt-3.5">
+              <div className="h-1 w-2/3 rounded bg-[#3F3F46]" />
+              <div className="h-0.5 w-full rounded bg-[#A3A3A3]/40" />
+            </div>
+          </div>
         ))}
       </div>
     );
   }
   // gastronomy
   return (
-    <div className="relative h-24 overflow-hidden rounded-xl bg-[#0A0A0A] p-2.5 ring-1 ring-black">
-      <div className="h-2 w-1/3 rounded" style={{ backgroundColor: accent }} />
-      <div className="mt-2 h-1.5 w-2/3 rounded bg-white/85" />
-      <div className="mt-1.5 h-1 w-full rounded bg-white/30" />
-      <div className="mt-1 h-1 w-4/5 rounded bg-white/30" />
-      <div className="mt-2 h-1 w-1/4 rounded" style={{ backgroundColor: accent }} />
+    <div className="relative h-28 overflow-hidden rounded-xl bg-[#0A0A0A] p-2.5 ring-1 ring-black">
+      <div className="absolute -right-3 -top-3 h-12 w-12 rounded-full opacity-30 blur-xl" style={{ backgroundColor: accent }} />
+      <div className="relative">
+        <div className="h-2 w-1/3 rounded" style={{ backgroundColor: accent }} />
+        <div className="mt-2 h-2 w-3/4 rounded bg-white/85" />
+        <div className="mt-2 h-px w-full bg-white/15" />
+        <div className="mt-2 space-y-1">
+          <div className="flex items-baseline gap-1.5">
+            <div className="h-1 flex-1 rounded bg-white/45" />
+            <div className="h-1 w-5 rounded" style={{ backgroundColor: accent, opacity: 0.85 }} />
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <div className="h-1 flex-1 rounded bg-white/35" />
+            <div className="h-1 w-4 rounded" style={{ backgroundColor: accent, opacity: 0.7 }} />
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <div className="h-1 w-3/4 rounded bg-white/30" />
+            <div className="h-1 w-3 rounded" style={{ backgroundColor: accent, opacity: 0.55 }} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
