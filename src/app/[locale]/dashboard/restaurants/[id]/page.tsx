@@ -3,13 +3,17 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Building2, ExternalLink, Loader2, Power, PowerOff, Save } from 'lucide-react';
+import { ArrowLeft, Bell, Building2, ExternalLink, Layers, Loader2, Power, PowerOff, Save, Settings as SettingsIcon } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, Badge, ConfirmDialog, PageHeader, PlatformChip } from '@/components/ui';
+import { AlertBanner, Badge, ConfirmDialog, PageHeader, PlatformChip, Tabs, type TabItem } from '@/components/ui';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
 import { detectSector, getSectorPlatforms } from '@/lib/sector-platforms';
 import { SECTORS } from '@/lib/sectors';
+
+type SettingsTab = 'general' | 'platforms' | 'notifications';
+
+const VALID_TABS: SettingsTab[] = ['general', 'platforms', 'notifications'];
 
 export default function DashboardRestaurantDetailPage() {
   const params = useParams();
@@ -19,12 +23,37 @@ export default function DashboardRestaurantDetailPage() {
   // Deep-link target — the platforms page passes `?focus=<platformId>` so
   // the owner lands directly on the input they came to fill in.
   const focusField = searchParams.get('focus');
+  // URL-synced tab. `?tab=general|platforms|notifications` — bookmarkable +
+  // notification deep-link friendly. Focus deep-link auto-snaps to the
+  // platforms tab when the matching field lives there.
+  const initialTab = ((): SettingsTab => {
+    const fromUrl = searchParams.get('tab');
+    if (fromUrl && (VALID_TABS as string[]).includes(fromUrl)) return fromUrl as SettingsTab;
+    if (focusField) {
+      // Notification email focus → notifications tab; everything else is a
+      // platform URL → platforms tab.
+      return focusField === 'notification-email' ? 'notifications' : 'platforms';
+    }
+    return 'general';
+  })();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+
+  const handleTabChange = (next: string) => {
+    if (!(VALID_TABS as string[]).includes(next)) return;
+    setActiveTab(next as SettingsTab);
+    // URL replace (not push) — back button shouldn't bounce through tabs.
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', next);
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
   const [meta, setMeta] = useState<{
     createdAt?: string;
     updatedAt?: string;
@@ -205,13 +234,43 @@ export default function DashboardRestaurantDetailPage() {
     );
   }
 
-  const missing = locale === 'tr' ? 'Belirtilmemiş' : 'Not specified';
   const publicUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${formData.slug}`;
   // Sector → platform whitelist. Hides input groups that don't make sense for
   // the owner's vertical. Live-recomputed on every render so changing the
   // category dropdown immediately reflects in the form. Hidden inputs keep
   // their value in state — refresh-after-toggle restores them.
   const allowedPlatforms = getSectorPlatforms(formData.category);
+
+  const tabItems: TabItem[] = [
+    {
+      id: 'general',
+      label: (
+        <span className="inline-flex items-center gap-1.5">
+          <SettingsIcon size={13} strokeWidth={2} />
+          {locale === 'tr' ? 'Genel' : 'General'}
+        </span>
+      ),
+    },
+    {
+      id: 'platforms',
+      label: (
+        <span className="inline-flex items-center gap-1.5">
+          <Layers size={13} strokeWidth={2} />
+          {locale === 'tr' ? 'Platformlar' : 'Platforms'}
+        </span>
+      ),
+    },
+    {
+      id: 'notifications',
+      label: (
+        <span className="inline-flex items-center gap-1.5">
+          <Bell size={13} strokeWidth={2} />
+          {locale === 'tr' ? 'Bildirimler' : 'Notifications'}
+        </span>
+      ),
+    },
+  ];
+
   const integrationRows = [
     {
       id: 'google' as const,
@@ -326,9 +385,14 @@ export default function DashboardRestaurantDetailPage() {
         </AlertBanner>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="bz-card p-5 sm:p-6">
-          <div className="flex items-start gap-3">
+      {/* Compact summary strip — collapses the legacy 2-card hero (Status +
+          Integrations preview) into a single full-width card. The Integrations
+          preview was a read-only mirror of the Platforms tab content; removed
+          to dedupe. Connection count badge surfaces the same "X/Y" signal
+          in one glance. */}
+      <section className="bz-card p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3 min-w-0">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
               <Building2 size={18} strokeWidth={2} />
             </div>
@@ -346,61 +410,37 @@ export default function DashboardRestaurantDetailPage() {
               </p>
             </div>
           </div>
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            <MiniMetric label={locale === 'tr' ? 'Yorum' : 'Reviews'} value={String(meta.feedbacks)} />
-            <MiniMetric label={locale === 'tr' ? 'Menü' : 'Menu'} value={String(meta.menuItems)} />
-            <MiniMetric label="QR" value={String(meta.qrGenerations)} />
-          </div>
-        </section>
-
-        <section className="bz-card p-5 sm:p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'ENTEGRASYONLAR' : 'INTEGRATIONS'}</p>
-              <h2 className="mt-1 text-[17px] font-medium tracking-[-0.015em] text-[#0A0A0A] bz-h-tight">
-                {locale === 'tr' ? 'Platform bağlantıları' : 'Platform links'}
-              </h2>
-            </div>
+          <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-end">
             <Badge kind={integrationRows.some((row) => row.value.trim()) ? 'ok' : 'off'}>
+              {locale === 'tr' ? 'Platform' : 'Platforms'}{' '}
               {integrationRows.filter((row) => row.value.trim()).length}/{integrationRows.length}
             </Badge>
+            <button
+              type="button"
+              onClick={() => handleTabChange('platforms')}
+              className="text-[12px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#A8D62E]"
+            >
+              {locale === 'tr' ? 'Yönet →' : 'Manage →'}
+            </button>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {integrationRows.map((row) => {
-              const value = row.value.trim();
-              return (
-                <div key={row.id} className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      {row.logo}
-                      <span className="truncate text-[13px] font-medium text-[#0A0A0A]">{row.label}</span>
-                    </div>
-                    <Badge kind={value ? 'ok' : 'off'}>{value ? 'Bağlı' : 'Boş'}</Badge>
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <p className="min-w-0 flex-1 truncate font-mono text-[11px] text-[#525252]">
-                      {value || missing}
-                    </p>
-                    {value && (
-                      <a
-                        href={value.startsWith('http') ? value : undefined}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] ${value.startsWith('http') ? 'hover:border-[#0A0A0A]' : 'pointer-events-none opacity-40'}`}
-                        aria-label={`${row.label} ${locale === 'tr' ? 'bağlantısını aç' : 'open link'}`}
-                      >
-                        <ExternalLink size={12} strokeWidth={2} />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      </div>
+        </div>
+        <div className="mt-5 grid grid-cols-3 gap-3">
+          <MiniMetric label={locale === 'tr' ? 'Yorum' : 'Reviews'} value={String(meta.feedbacks)} />
+          <MiniMetric label={locale === 'tr' ? 'Menü' : 'Menu'} value={String(meta.menuItems)} />
+          <MiniMetric label="QR" value={String(meta.qrGenerations)} />
+        </div>
+      </section>
 
-      <form onSubmit={handleSave} className="space-y-6">
+      <Tabs
+        items={tabItems}
+        active={activeTab}
+        onChange={handleTabChange}
+        ariaLabel={locale === 'tr' ? 'İşletme ayarları' : 'Location settings'}
+        className="!mt-2"
+      />
+
+      <form onSubmit={handleSave} className="space-y-6 pb-24 sm:pb-20">
+        {activeTab === 'general' && (
         <div className="bz-card p-6 sm:p-7">
           <div className="mb-6 flex items-center gap-3">
             <div className="h-5 w-1.5 rounded-full" style={{ backgroundColor: formData.primaryColor }} />
@@ -526,29 +566,25 @@ export default function DashboardRestaurantDetailPage() {
           </div>
         </div>
 
+        )}
+
+        {activeTab === 'platforms' && (
         <div className="bz-card p-6 sm:p-7">
-          <div className="mb-6 flex items-center gap-3">
-            <ExternalLink size={16} strokeWidth={2} className="text-[#0A0A0A]" />
-            <h2
-              className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
-            >
-              {locale === 'tr' ? 'Harici Bağlantılar ve Bildirimler' : 'External Links & Notifications'}
-            </h2>
+          <div className="mb-6 flex items-start gap-3">
+            <Layers size={16} strokeWidth={2} className="mt-0.5 text-[#0A0A0A]" />
+            <div>
+              <h2 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight">
+                {locale === 'tr' ? 'Platform Bağlantıları' : 'Platform Links'}
+              </h2>
+              <p className="mt-1 text-[12.5px] leading-relaxed text-[#737373]">
+                {locale === 'tr'
+                  ? 'Yüksek puan veren müşterilerin yönlendirileceği yorumların URL\'leri. Sektörünüze uygun platformlar burada görünür.'
+                  : "URLs that high-rating customers are redirected to. Only platforms relevant to your sector appear here."}
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <label className="space-y-2 sm:col-span-2">
-              <span className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'Bildirim E-postası' : 'Notification Email'}</span>
-              <input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                value={formData.notificationEmail}
-                onChange={(event) => setFormData((prev) => ({ ...prev, notificationEmail: event.target.value }))}
-                className="bz-input"
-              />
-            </label>
-
             {allowedPlatforms.has('google') && (
               <label id="platform-google" className="space-y-2 sm:col-span-2 scroll-mt-24">
                 <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
@@ -657,53 +693,99 @@ export default function DashboardRestaurantDetailPage() {
             )}
           </div>
         </div>
+        )}
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            type="button"
-            onClick={() => {
-              if (formData.isActive) {
-                setConfirmDelete(true);
-              } else {
-                updateStatus(true);
-              }
-            }}
-            disabled={deleting}
-            className={`inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 text-[13px] font-medium disabled:opacity-60 transition-colors ${
-              formData.isActive
-                ? 'border border-[#FECACA] bg-[#FEF2F2] text-[#DC2626] hover:bg-[#FEE2E2]'
-                : 'border border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
-            }`}
-          >
-            {deleting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : formData.isActive ? (
-              <PowerOff size={14} strokeWidth={2} />
-            ) : (
-              <Power size={14} strokeWidth={2} />
-            )}
-            {formData.isActive
-              ? locale === 'tr' ? 'Pasife al' : 'Deactivate'
-              : locale === 'tr' ? 'Aktifleştir' : 'Reactivate'}
-          </button>
+        {activeTab === 'notifications' && (
+        <div className="bz-card p-6 sm:p-7">
+          <div className="mb-6 flex items-start gap-3">
+            <Bell size={16} strokeWidth={2} className="mt-0.5 text-[#0A0A0A]" />
+            <div>
+              <h2 className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight">
+                {locale === 'tr' ? 'Bildirimler' : 'Notifications'}
+              </h2>
+              <p className="mt-1 text-[12.5px] leading-relaxed text-[#737373]">
+                {locale === 'tr'
+                  ? 'Düşük puanlı yorumlar, müşteri yanıtları ve haftalık özetlerin gönderileceği e-posta adresi.'
+                  : 'Email address for low-rating alerts, customer replies and weekly digests.'}
+              </p>
+            </div>
+          </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Link
-              href={`/r/${formData.slug}`}
-              target="_blank"
-              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
-            >
-              <ExternalLink size={14} strokeWidth={2} />
-              {locale === 'tr' ? 'Önizle' : 'Preview'}
-            </Link>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-60 transition-colors"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={14} strokeWidth={2} />}
-              {locale === 'tr' ? 'Kaydet' : 'Save'}
-            </button>
+          <label id="platform-notification-email" className="block max-w-[420px] space-y-2 scroll-mt-24">
+            <span className="pulse-eyebrow text-[#737373]">
+              {locale === 'tr' ? 'Bildirim E-postası' : 'Notification Email'}
+            </span>
+            <input
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={formData.notificationEmail}
+              onChange={(event) => setFormData((prev) => ({ ...prev, notificationEmail: event.target.value }))}
+              placeholder="ornek@isletme.com"
+              className="bz-input"
+            />
+            <span className="block text-[11px] leading-relaxed text-[#737373]">
+              {locale === 'tr'
+                ? 'Boş bırakılırsa hesabın varsayılan e-postası kullanılır.'
+                : 'Defaults to the account email if left empty.'}
+            </span>
+          </label>
+
+          <div className="mt-6 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-3">
+            <p className="text-[12px] leading-relaxed text-[#525252]">
+              {locale === 'tr' ? (
+                <>
+                  Daha ayrıntılı bildirim tercihleri için{' '}
+                  <Link href={`/${locale}/dashboard/notifications`} className="font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#A8D62E]">
+                    Bildirim Ayarları
+                  </Link>{' '}
+                  sayfasına gidebilirsin.
+                </>
+              ) : (
+                <>
+                  For more detailed notification preferences, visit the{' '}
+                  <Link href={`/${locale}/dashboard/notifications`} className="font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#A8D62E]">
+                    Notification Settings
+                  </Link>{' '}
+                  page.
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+        )}
+
+        {/* Sticky save bar — replaces the legacy bottom action row. The
+            "Pasife al" button used to be duplicated here and in PageHeader
+            actions; it now lives only in PageHeader (one canonical action). */}
+        <div
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EDEDED] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          <div className="mx-auto flex max-w-[1100px] items-center justify-between gap-3 px-4 sm:px-7 py-3">
+            <span className="hidden text-[12px] text-[#737373] sm:inline">
+              {locale === 'tr'
+                ? 'Değişiklikler sadece kaydet sonrasında uygulanır.'
+                : 'Changes apply only after save.'}
+            </span>
+            <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
+              <Link
+                href={`/r/${formData.slug}`}
+                target="_blank"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors sm:flex-none"
+              >
+                <ExternalLink size={14} strokeWidth={2} />
+                {locale === 'tr' ? 'Önizle' : 'Preview'}
+              </Link>
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-60 transition-colors sm:flex-none"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={14} strokeWidth={2} />}
+                {locale === 'tr' ? 'Kaydet' : 'Save'}
+              </button>
+            </div>
           </div>
         </div>
       </form>
