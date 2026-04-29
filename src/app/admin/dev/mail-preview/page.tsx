@@ -14,6 +14,7 @@ const TEMPLATES = [
   { key: 'newsletter', label: 'Aylık bülten', desc: 'Featured article + post listesi' },
   { key: 'customer-reply', label: 'Müşteriye yanıt', desc: 'Düşük puanlı müşteriye kişisel cevap' },
   { key: 'trial-ending', label: 'Deneme bitiyor', desc: 'Plan kartları + ÖNERİLEN badge' },
+  { key: 'contact-admin', label: 'İletişim formu (admin)', desc: 'Yeni iletişim talebi bildirimi' },
 ] as const;
 
 export default function MailPreviewIndex() {

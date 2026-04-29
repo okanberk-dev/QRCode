@@ -11,6 +11,7 @@ import type { WeeklyReportParams } from '@/lib/email/templates/weekly-report';
 import type { NewsletterParams } from '@/lib/email/templates/newsletter';
 import type { CustomerReplyParams } from '@/lib/email/templates/customer-reply';
 import type { TrialEndingParams } from '@/lib/email/templates/trial-ending';
+import type { ContactAdminParams } from '@/lib/email/templates/contact-admin';
 
 export const PREVIEW_TEMPLATES = [
   'forgot-password',
@@ -22,6 +23,7 @@ export const PREVIEW_TEMPLATES = [
   'newsletter',
   'customer-reply',
   'trial-ending',
+  'contact-admin',
 ] as const;
 
 export type PreviewTemplate = (typeof PREVIEW_TEMPLATES)[number];
@@ -139,5 +141,15 @@ export const SEEDS = {
     daysLeft: 3,
     usage: { reviews: 47, avgRating: 4.6, aiReplies: 38, growthPct: 184 },
     upgradeUrl: `${APP_URL}/tr/dashboard/billing`,
+  }),
+  'contact-admin': (): ContactAdminParams => ({
+    name: 'Mert Demir',
+    email: 'mert@kadikoybistro.co',
+    phone: '+90 532 555 12 34',
+    business: 'Kadıköy Bistro',
+    message:
+      'Merhaba, restoranımızda 3 şubemiz var ve QR ile yorum toplama akışını kurmak istiyoruz. Demo için uygun bir gün ayarlayabilir miyiz?\n\nGetir Yemek + Yemeksepeti entegrasyonu da bizim için kritik. Teşekkürler.',
+    marketingConsent: true,
+    sourcePath: 'buaze.com/iletisim',
   }),
 } satisfies Record<PreviewTemplate, () => unknown>;

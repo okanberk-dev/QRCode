@@ -24,3 +24,6 @@ export type { CustomerReplyParams } from './customer-reply';
 
 export { renderTrialEnding } from './trial-ending';
 export type { TrialEndingParams } from './trial-ending';
+
+export { renderContactAdmin } from './contact-admin';
+export type { ContactAdminParams } from './contact-admin';
