@@ -38,6 +38,14 @@ interface CreateQRModalProps {
   /** Pre-selected restaurant — if owner has a single one or admin pre-scoped */
   defaultRestaurantId?: string;
   locale?: "tr" | "en";
+  /**
+   * Panel-scope base for the "edit platform URLs" deep link in the empty
+   * state. Owner panel passes `/${locale}/dashboard`; admin panel passes
+   * `/admin`. Modal appends `/restaurants/${id}`. Required because the
+   * modal is mounted from both panels but their restaurant detail routes
+   * are not the same — `/admin/...` has no `[locale]` segment.
+   */
+  panelBase: string;
   onClose: () => void;
   onCreated: (result: QRGenerationResult) => void;
 }
@@ -71,6 +79,7 @@ export function CreateQRModal({
   restaurants,
   defaultRestaurantId,
   locale = "tr",
+  panelBase,
   onClose,
   onCreated,
 }: CreateQRModalProps) {
@@ -322,7 +331,7 @@ export function CreateQRModal({
                     : "Add at least one platform URL from the location settings first."}
                 </p>
                 <Link
-                  href={`/${locale}/dashboard/restaurants/${activeRestaurant.id}`}
+                  href={`${panelBase}/restaurants/${activeRestaurant.id}`}
                   className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#A8D62E]"
                 >
                   <Link2 size={12} />

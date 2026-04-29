@@ -540,6 +540,7 @@ function AdminQrContent() {
             }))}
           defaultRestaurantId={preselected || undefined}
           locale="tr"
+          panelBase="/admin"
           onClose={() => setShowCreate(false)}
           onCreated={handleCreated}
         />

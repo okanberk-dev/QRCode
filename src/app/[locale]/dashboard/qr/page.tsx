@@ -623,6 +623,7 @@ export default function DashboardQrPage() {
             }))}
           defaultRestaurantId={preselected || undefined}
           locale={locale}
+          panelBase={`/${locale}/dashboard`}
           onClose={() => setShowCreate(false)}
           onCreated={handleCreated}
         />
