@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Check, Flag, Inbox, Loader2, Mail, Search, Send, Sparkles, Star, UserPlus } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { buildReplyTemplate } from '@/lib/scaffolding';
@@ -51,17 +52,28 @@ function timeAgo(iso: string, isTr: boolean) {
   return new Date(iso).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'short' });
 }
 
-export default function AdminReviewsPage() {
+function AdminReviewsContent() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
+  const searchParams = useSearchParams();
+
+  // Notification deep-link target — `?focus=<feedbackId>` from the
+  // NotificationBell. When present, the page auto-selects that feedback,
+  // forces tab=all so the row is visible regardless of state, and scrolls
+  // + lime-pulses the matching list item once the data lands.
+  const focusId = searchParams.get('focus');
 
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [counts, setCounts] = useState<CountsResp | null>(null);
   const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [tab, setTab] = useState<'all' | 'new' | 'attention' | 'replied'>('all');
+  const [activeId, setActiveId] = useState<string | null>(focusId);
+  const [tab, setTab] = useState<'all' | 'new' | 'attention' | 'replied'>(focusId ? 'all' : 'all');
   const [search, setSearch] = useState('');
+
+  // One-shot scroll-into-view + lime pulse when arriving via notification.
+  const focusAppliedRef = useRef(false);
+  const [pulsedId, setPulsedId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [flagging, setFlagging] = useState(false);
@@ -93,6 +105,22 @@ export default function AdminReviewsPage() {
       setLoading(false);
     })();
   }, []);
+
+  // Apply notification deep-link once data has landed: scroll the matching
+  // list row into view and trigger a 1.6s lime pulse so the user sees
+  // exactly where the bell sent them. Idempotent — guarded by `focusAppliedRef`.
+  useEffect(() => {
+    if (!focusId || loading || focusAppliedRef.current) return;
+    if (!rows.some((r) => r.id === focusId)) return;
+    focusAppliedRef.current = true;
+    setActiveId(focusId);
+    requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLElement>(`[data-feedback-id="${focusId}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setPulsedId(focusId);
+      setTimeout(() => setPulsedId(null), 1800);
+    });
+  }, [focusId, loading, rows]);
 
   const filtered = useMemo(() => {
     let out = rows;
@@ -359,10 +387,11 @@ export default function AdminReviewsPage() {
                 return (
                   <button
                     key={r.id}
+                    data-feedback-id={r.id}
                     onClick={() => setActiveId(r.id)}
                     className={`flex w-full items-start gap-3 px-3 py-3 text-left transition-colors ${
                       isActive ? 'bg-[#EAF9B8]/40' : 'hover:bg-[#FAFAFA]'
-                    }`}
+                    } ${pulsedId === r.id ? 'animate-pulse ring-2 ring-[#C6F24E] ring-inset' : ''}`}
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[11px] font-semibold text-white">
                       {initials(r.customerName)}
@@ -580,5 +609,19 @@ export default function AdminReviewsPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+export default function AdminReviewsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
+        </div>
+      }
+    >
+      <AdminReviewsContent />
+    </Suspense>
   );
 }

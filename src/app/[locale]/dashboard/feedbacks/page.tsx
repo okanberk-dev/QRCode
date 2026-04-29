@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Loader2, Search, Flag, Mail, UserPlus, Sparkles, RotateCw, Pencil, Send, Plus, Inbox } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
@@ -51,22 +51,38 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const searchParams = useSearchParams();
   const isTr = locale === 'tr';
 
+  // Notification deep-link target — `?focus=<feedbackId>` from the
+  // NotificationBell. When present, the page auto-selects that feedback
+  // (forces tab=all so the row is reachable) and scrolls + lime-pulses
+  // the matching list item once the data lands.
+  const focusId = searchParams.get('focus');
+
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
   const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(focusId);
   // Tabs: design source (`OwnerFeedback` in owner-pages-1.jsx) buckets feedbacks
   // by rating + redirection state, not by reply state. Aligned 1:1 here.
+  // Focus deep-link forces tab=all so the row is guaranteed visible
+  // regardless of rating / redirect state.
   const [activeTab, setActiveTab] = useState<'all' | 'low' | 'high' | 'redirected'>(
-    (searchParams.get('tab') as 'all' | 'low' | 'high' | 'redirected') || 'all',
+    focusId ? 'all' : ((searchParams.get('tab') as 'all' | 'low' | 'high' | 'redirected') || 'all'),
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [replyDraft, setReplyDraft] = useState('');
   const [sendEmail, setSendEmail] = useState(true);
   const [sendingReply, setSendingReply] = useState(false);
   const [replyNotice, setReplyNotice] = useState<{ msg: string; tone: 'success' | 'error' | 'info' } | null>(null);
-  const [filterRating, setFilterRating] = useState(searchParams.get('rating') || 'all');
-  const [daysFilter, setDaysFilter] = useState(searchParams.get('days') || 'all');
+  // Focus deep-link also widens the date window so even a not-recent
+  // feedback is fetched into the loaded list.
+  const [filterRating, setFilterRating] = useState(focusId ? 'all' : (searchParams.get('rating') || 'all'));
+  const [daysFilter, setDaysFilter] = useState(focusId ? 'all' : (searchParams.get('days') || 'all'));
+
+  // One-shot scroll-into-view + lime pulse highlight when arriving via
+  // notification. Cleared on first apply so subsequent state changes
+  // don't re-scroll.
+  const focusAppliedRef = useRef(false);
+  const [pulsedId, setPulsedId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -88,6 +104,23 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       setLoading(false);
     })();
   }, [daysFilter, filterRating]);
+
+  // Apply notification deep-link once data has landed: scroll the matching
+  // list row into view and trigger a 1.6s lime pulse so the user sees
+  // exactly where the bell sent them. Idempotent — guarded by `focusAppliedRef`.
+  useEffect(() => {
+    if (!focusId || loading || focusAppliedRef.current) return;
+    if (!feedbacks.some((r) => r.id === focusId)) return;
+    focusAppliedRef.current = true;
+    setActiveId(focusId);
+    // Defer to next paint so the list has rendered the row.
+    requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLElement>(`[data-feedback-id="${focusId}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setPulsedId(focusId);
+      setTimeout(() => setPulsedId(null), 1800);
+    });
+  }, [focusId, loading, feedbacks]);
 
   const filteredList = useMemo(() => {
     let rows = feedbacks;
@@ -384,13 +417,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 const avatarBg =
                   r.rating === 5 ? 'bg-[#0A0A0A] text-[#C6F24E]' : r.rating <= 2 ? 'bg-[#FEE2E2] text-[#DC2626]' : 'bg-[#F5F5F5] text-[#0A0A0A]';
                 return (
-                  <li key={r.id}>
+                  <li key={r.id} data-feedback-id={r.id}>
                     <button
                       type="button"
                       onClick={() => setActiveId(r.id)}
                       className={`flex w-full flex-col gap-1.5 border-b border-[#F5F5F5] px-4 py-3.5 text-left transition-colors ${
                         isActive ? 'bg-[#EAF9B8] border-l-[3px] border-l-[#0A0A0A]' : 'hover:bg-[#FAFAFA] border-l-[3px] border-l-transparent'
-                      }`}
+                      } ${pulsedId === r.id ? 'animate-pulse ring-2 ring-[#C6F24E]' : ''}`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
