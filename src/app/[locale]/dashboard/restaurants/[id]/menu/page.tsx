@@ -741,10 +741,32 @@ export default function RestaurantMenuBuilderPage() {
           </div>
           {!activeCategory ? (
             <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5F5F5] text-[#737373]">
-                <ChevronRight size={24} strokeWidth={2} />
-              </span>
-              <p className="max-w-[260px] text-[13px] leading-relaxed text-[#525252]">{copy.noCategorySelected}</p>
+              {categories.length === 0 ? (
+                <>
+                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+                    <UtensilsCrossed size={24} strokeWidth={2} />
+                  </span>
+                  <p className="max-w-[280px] text-[13px] leading-relaxed text-[#525252]">
+                    {isTr
+                      ? 'Önce bir kategori oluştur — sonra ona ürün ekleyebilirsin.'
+                      : 'Create a category first — then you can add items to it.'}
+                  </p>
+                  <button
+                    onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
+                    className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white transition-all hover:bg-[#1A1A1A] active:scale-95"
+                  >
+                    <Plus size={12} strokeWidth={2.25} />
+                    {copy.addCategory}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5F5F5] text-[#737373]">
+                    <ChevronRight size={24} strokeWidth={2} />
+                  </span>
+                  <p className="max-w-[260px] text-[13px] leading-relaxed text-[#525252]">{copy.noCategorySelected}</p>
+                </>
+              )}
             </div>
           ) : activeCategory.items.length === 0 ? (
             <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
