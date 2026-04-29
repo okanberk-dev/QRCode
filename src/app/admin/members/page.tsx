@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Check, AlertTriangle, Crown, RefreshCw, Store, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Loader2, Check, AlertTriangle, Crown, CreditCard, RefreshCw, Store, ToggleLeft, ToggleRight } from 'lucide-react';
 import { AlertBanner, Badge, type BadgeKind, Modal, PageHeader, TableSkeleton } from '@/components/ui';
+import MemberBillingModal from '@/components/admin/MemberBillingModal';
 
 interface Member {
   id: string;
@@ -39,6 +40,7 @@ export default function MembersPage() {
   const [editPlan, setEditPlan] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
   const [editTrialEndsAt, setEditTrialEndsAt] = useState('');
+  const [billingMember, setBillingMember] = useState<Member | null>(null);
 
   const fetchMembers = async () => {
     setLoading(true);
@@ -208,13 +210,24 @@ export default function MembersPage() {
                       </Badge>
                     </td>
                     <td className="px-2 py-4 sm:px-5 text-right">
-                      <button
-                        onClick={() => openEdit(m)}
-                        className="bz-btn-ghost"
-                        style={{ padding: '6px 12px', fontSize: 12 }}
-                      >
-                        Düzenle
-                      </button>
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          onClick={() => setBillingMember(m)}
+                          className="bz-btn-ghost"
+                          style={{ padding: '6px 12px', fontSize: 12 }}
+                          title="Faturalandırma"
+                        >
+                          <CreditCard size={12} strokeWidth={2} />
+                          <span className="hidden sm:inline">Fatura</span>
+                        </button>
+                        <button
+                          onClick={() => openEdit(m)}
+                          className="bz-btn-ghost"
+                          style={{ padding: '6px 12px', fontSize: 12 }}
+                        >
+                          Düzenle
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -316,6 +329,20 @@ export default function MembersPage() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Faturalandırma Modal — Faz 3 admin per-user billing edit */}
+      {billingMember && (
+        <MemberBillingModal
+          userId={billingMember.id}
+          email={billingMember.email}
+          name={billingMember.name}
+          onClose={() => setBillingMember(null)}
+          onSaved={() => {
+            setSuccess('Faturalandırma güncellendi.');
+            fetchMembers();
+          }}
+        />
       )}
     </div>
   );
