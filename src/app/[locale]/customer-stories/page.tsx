@@ -4,6 +4,7 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { CUSTOMER_STORIES, storyText } from '@/lib/customer-stories';
 import { notFound } from 'next/navigation';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
@@ -49,27 +50,6 @@ export default async function CustomerStoriesPage({
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
-  // 1:1 with .design/site/site-pages3.jsx:CustomerStoriesPage — flat colored
-  // stat block on top (accent color per story), pull-quote below, "read full
-  // story" + zero-padded index. First two cards use lime tones, rest neutral.
-  const stories = isTr
-    ? [
-        { c: '#C6F24E', b: 'Ark Bistro', s: 'Restoran · Kadıköy', m: '+184%', ml: 'yorum · 90 gün', q: 'Google puanımız 4.2\'den 4.8\'e çıktı.' },
-        { c: '#EAF9B8', b: 'Hotel Nora', s: 'Otel · Bodrum', m: '4.9/5', ml: 'Booking', q: 'Oda QR\'ları ile her misafir Booking\'e yönleniyor.' },
-        { c: '#F5F5F5', b: 'Derma+', s: 'Klinik · Ankara', m: '+62%', ml: 'aylık randevu', q: 'Düşük puanlar halka açık platforma gitmiyor artık.' },
-        { c: '#F5F5F5', b: 'Kahve Dükkan', s: 'Kafe · Çeşme · 4 şube', m: '3.8→4.7', ml: 'Google', q: 'Tüm şubelerin performansını tek panelde görüyorum.' },
-        { c: '#F5F5F5', b: 'Law&Co', s: 'Hukuk ofisi · İstanbul', m: '+90', ml: 'net yorum', q: 'Danışma sonrası her müvekkilden yorum alıyoruz.' },
-        { c: '#F5F5F5', b: 'Spa Ren', s: 'Güzellik · Nişantaşı', m: '4.95', ml: 'ort. puan', q: 'Instagram + Google + Foursquare üçgeninde zirve.' },
-      ]
-    : [
-        { c: '#C6F24E', b: 'Ark Bistro', s: 'Restaurant · Kadıköy', m: '+184%', ml: 'reviews · 90 days', q: 'Our Google rating climbed from 4.2 to 4.8.' },
-        { c: '#EAF9B8', b: 'Hotel Nora', s: 'Hotel · Bodrum', m: '4.9/5', ml: 'Booking', q: 'Room QR codes route every guest to Booking.' },
-        { c: '#F5F5F5', b: 'Derma+', s: 'Clinic · Ankara', m: '+62%', ml: 'monthly bookings', q: 'Low scores no longer end up on public platforms.' },
-        { c: '#F5F5F5', b: 'Kahve Dükkan', s: 'Café · Çeşme · 4 branches', m: '3.8→4.7', ml: 'Google', q: 'I see the performance of every branch on one dashboard.' },
-        { c: '#F5F5F5', b: 'Law&Co', s: 'Legal · Istanbul', m: '+90', ml: 'net reviews', q: 'Every consultation ends with a review request.' },
-        { c: '#F5F5F5', b: 'Spa Ren', s: 'Beauty · Nişantaşı', m: '4.95', ml: 'avg. rating', q: 'Top of the Instagram + Google + Foursquare triangle.' },
-      ];
-
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
@@ -95,33 +75,33 @@ export default async function CustomerStoriesPage({
 
       <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {stories.map((st, i) => (
+          {CUSTOMER_STORIES.map((st, i) => (
             <article
-              key={st.b}
+              key={st.slug}
               className="overflow-hidden rounded-[18px] border border-[#EDEDED] bg-[#FAFAFA] transition-transform duration-300 hover:-translate-y-1"
             >
               {/* Top: flat accent stat block */}
               <div
                 className="px-7 py-8 sm:px-8 sm:py-9 min-h-[220px] flex flex-col"
-                style={{ background: st.c }}
+                style={{ background: st.color }}
               >
                 <span className="pulse-eyebrow text-[#0A0A0A]/70">
-                  {st.s.toUpperCase()}
+                  {`${storyText(st.sector, locale)} · ${st.location}`.toUpperCase()}
                 </span>
                 <h3
                   className="mt-2 text-[24px] sm:text-[30px] font-medium leading-none tracking-[-0.02em] text-[#0A0A0A]"
                   style={{ fontFamily: 'var(--font-heading)' }}
                 >
-                  {st.b}
+                  {st.brand}
                 </h3>
                 <div className="mt-auto flex items-baseline gap-2.5 pt-6">
                   <span
                     className="text-[40px] sm:text-[56px] font-medium leading-none tracking-[-0.035em] text-[#0A0A0A]"
                     style={{ fontFamily: 'var(--font-heading)' }}
                   >
-                    {st.m}
+                    {st.metric}
                   </span>
-                  <span className="text-[12px] text-[#0A0A0A]/70">{st.ml}</span>
+                  <span className="text-[12px] text-[#0A0A0A]/70">{storyText(st.metricLabel, locale)}</span>
                 </div>
               </div>
 
@@ -131,11 +111,11 @@ export default async function CustomerStoriesPage({
                   className="text-[16px] sm:text-[17px] font-medium leading-[1.35] tracking-[-0.01em] text-[#0A0A0A]"
                   style={{ fontFamily: 'var(--font-heading)' }}
                 >
-                  &ldquo;{st.q}&rdquo;
+                  &ldquo;{storyText(st.quote, locale)}&rdquo;
                 </p>
                 <div className="mt-5 flex items-center justify-between text-[12px] text-[#737373]">
                   <Link
-                    href={`${base}/contact`}
+                    href={`${base}/customer-stories/${st.slug}`}
                     className="inline-flex items-center gap-1 hover:text-[#0A0A0A] transition-colors"
                   >
                     {isTr ? 'Tam hikayeyi oku' : 'Read full story'} →

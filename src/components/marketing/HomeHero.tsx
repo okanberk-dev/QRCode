@@ -617,7 +617,7 @@ export default function HomeHero({ locale }: Props) {
   } as CSSProperties;
 
   return (
-    <div ref={stageRef} className="relative mt-3 overflow-hidden bg-[#FAFAFA]">
+    <div ref={stageRef} className="relative overflow-hidden bg-[#FAFAFA]">
       {/* Spotlight */}
       <div
         aria-hidden
@@ -657,7 +657,7 @@ export default function HomeHero({ locale }: Props) {
         </div>
       </div>
 
-      <section className="relative px-5 pb-20 pt-8 sm:px-8 sm:pt-12 lg:px-10 lg:pb-28 lg:pt-12">
+      <section className="relative px-5 pb-20 pt-11 sm:px-8 sm:pt-[60px] lg:px-10 lg:pb-28 lg:pt-[60px]">
         <div className="mx-auto max-w-[1240px]">
           {/* Two-column grid */}
           <div className="grid grid-cols-1 items-start gap-x-10 gap-y-12 lg:grid-cols-[1.05fr_1fr] lg:gap-y-0">
