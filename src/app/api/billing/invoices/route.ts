@@ -22,11 +22,16 @@ export async function GET(req: NextRequest) {
 
   const data = invoices.map((inv) => ({
     id: inv.id,
+    // Display number — admin-set "INV-2026-04" or auto-generated.
+    invoiceNumber: inv.invoiceNumber,
     date: inv.issuedAt.toISOString(),
     amount: Number(inv.amount),
     status: inv.status,
     url: inv.pdfUrl ?? undefined,
     currency: inv.currency,
+    description: inv.description,
+    // adminNotes deliberately excluded — admin-only (Faz 4 privacy guard,
+    // mirrors BillingSubscription.adminNotes pattern).
   }));
 
   return NextResponse.json({ data });

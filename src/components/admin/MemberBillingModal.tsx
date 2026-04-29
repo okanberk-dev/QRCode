@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Check, Loader2, ShieldCheck } from 'lucide-react';
-import { AlertBanner, Modal } from '@/components/ui';
+import { AlertBanner, Modal, Tabs, type TabItem } from '@/components/ui';
+import MemberInvoicesPanel from './MemberInvoicesPanel';
 
 interface MemberBillingModalProps {
   userId: string;
@@ -93,6 +94,12 @@ export default function MemberBillingModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'plan' | 'invoices'>('plan');
+
+  const tabs: TabItem[] = [
+    { id: 'plan', label: 'Plan & Adres' },
+    { id: 'invoices', label: 'Faturalar' },
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -191,6 +198,17 @@ export default function MemberBillingModal({
         </div>
       ) : (
         <div className="space-y-5">
+          <Tabs
+            items={tabs}
+            active={activeTab}
+            onChange={(id) => setActiveTab(id as 'plan' | 'invoices')}
+            ariaLabel="Faturalandırma sekmeleri"
+          />
+
+          {activeTab === 'invoices' ? (
+            <MemberInvoicesPanel userId={userId} />
+          ) : (
+            <div className="space-y-5">
           {error && (
             <AlertBanner kind="danger" onDismiss={() => setError(null)}>
               {error}
@@ -399,6 +417,8 @@ export default function MemberBillingModal({
               Kaydet
             </button>
           </div>
+            </div>
+          )}
         </div>
       )}
     </Modal>

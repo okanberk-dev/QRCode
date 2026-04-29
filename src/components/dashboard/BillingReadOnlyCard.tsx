@@ -29,28 +29,33 @@ interface BillingSummary {
 
 interface Invoice {
   id: string;
+  invoiceNumber?: string | null;
   date: string;
   amount: number;
-  status: 'paid' | 'pending' | 'failed';
+  status: 'paid' | 'pending' | 'failed' | 'refunded';
   url?: string;
   currency?: string;
+  description?: string | null;
 }
 
 const STATUS_LABELS_TR: Record<Invoice['status'], string> = {
   paid: 'ÖDENDİ',
   pending: 'BEKLİYOR',
   failed: 'BAŞARISIZ',
+  refunded: 'İADE',
 };
 const STATUS_LABELS_EN: Record<Invoice['status'], string> = {
   paid: 'PAID',
   pending: 'PENDING',
   failed: 'FAILED',
+  refunded: 'REFUNDED',
 };
 
-const STATUS_KIND: Record<Invoice['status'], 'lime' | 'ghost' | 'danger'> = {
+const STATUS_KIND: Record<Invoice['status'], 'lime' | 'ghost' | 'danger' | 'info'> = {
   paid: 'lime',
   pending: 'ghost',
   failed: 'danger',
+  refunded: 'info',
 };
 
 function formatCurrency(amount: number, currency: string | null, locale: 'tr' | 'en') {
@@ -362,10 +367,15 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                       className="px-5 py-3.5 text-[#525252]"
                       style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
                     >
-                      {inv.id.startsWith('INV-') ? inv.id : inv.id.slice(0, 10).toUpperCase()}
+                      {inv.invoiceNumber || inv.id.slice(0, 10).toUpperCase()}
                     </td>
-                    <td className="px-5 py-3.5 font-medium text-[#0A0A0A]">
-                      {formatCurrency(inv.amount, inv.currency || null, isTr ? 'tr' : 'en')}
+                    <td className="px-5 py-3.5">
+                      <div className="font-medium text-[#0A0A0A]">
+                        {formatCurrency(inv.amount, inv.currency || null, isTr ? 'tr' : 'en')}
+                      </div>
+                      {inv.description && (
+                        <div className="text-[11px] text-[#737373] mt-0.5">{inv.description}</div>
+                      )}
                     </td>
                     <td className="px-5 py-3.5">
                       <Badge kind={STATUS_KIND[inv.status]}>
@@ -409,9 +419,12 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                       <span>{dateFormat(inv.date)}</span>
                       <span>·</span>
                       <span style={{ fontFamily: 'var(--font-mono)' }}>
-                        {inv.id.startsWith('INV-') ? inv.id : inv.id.slice(0, 8).toUpperCase()}
+                        {inv.invoiceNumber || inv.id.slice(0, 8).toUpperCase()}
                       </span>
                     </div>
+                    {inv.description && (
+                      <div className="mt-0.5 text-[11px] text-[#737373]">{inv.description}</div>
+                    )}
                   </div>
                   {inv.url && (
                     <a
