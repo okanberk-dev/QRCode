@@ -3,15 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Camera,
+  CheckCircle2,
   ExternalLink,
   Globe,
   Loader2,
-  MessageCircle,
   Phone,
   Plug,
   RefreshCw,
   Trash2,
-  Users,
+  XCircle,
 } from "lucide-react";
 import {
   AlertBanner,
@@ -24,6 +24,11 @@ import {
 } from "@/components/ui";
 import DefaultRedirectPicker from "@/components/dashboard/DefaultRedirectPicker";
 import { getSectorPlatforms } from "@/lib/sector-platforms";
+import {
+  checkProviderUrl,
+  describeDomainError,
+  type IntegrationProvider,
+} from "@/lib/integration-domains";
 import { SettingsCard } from "../SettingsCard";
 import { UnsavedChangesBar } from "../UnsavedChangesBar";
 
@@ -81,26 +86,69 @@ interface PlatformDef {
   urlKey: keyof FormState;
   /** API field name for enable flag */
   enabledKey: keyof FormState;
-  /** Test endpoint provider id */
-  testProvider: string;
+  /** Test endpoint provider id (also used for domain validation). */
+  testProvider: IntegrationProvider;
   label: string;
-  helpUrl?: string;
+  placeholder: string;
 }
 
 const PLATFORM_DEFS: PlatformDef[] = [
-  { id: "google", urlKey: "googleReviewUrl", enabledKey: "googleEnabled", testProvider: "google", label: "Google İşletme" },
-  { id: "yemeksepeti", urlKey: "yemekSepetiUrl", enabledKey: "yemekSepetiEnabled", testProvider: "yemeksepeti", label: "Yemeksepeti" },
-  { id: "getir", urlKey: "getirYemekUrl", enabledKey: "getirEnabled", testProvider: "getir", label: "Getir Yemek" },
-  { id: "trendyol", urlKey: "trendyolYemekUrl", enabledKey: "trendyolEnabled", testProvider: "trendyol_go", label: "Trendyol GO" },
-  { id: "tripadvisor", urlKey: "tripAdvisorUrl", enabledKey: "tripAdvisorEnabled", testProvider: "tripadvisor", label: "Tripadvisor" },
-  { id: "airbnb", urlKey: "airbnbUrl", enabledKey: "airbnbEnabled", testProvider: "airbnb", label: "Airbnb" },
+  {
+    id: "google",
+    urlKey: "googleReviewUrl",
+    enabledKey: "googleEnabled",
+    testProvider: "google",
+    label: "Google İşletme",
+    placeholder: "https://g.page/r/...",
+  },
+  {
+    id: "yemeksepeti",
+    urlKey: "yemekSepetiUrl",
+    enabledKey: "yemekSepetiEnabled",
+    testProvider: "yemeksepeti",
+    label: "Yemeksepeti",
+    placeholder: "https://www.yemeksepeti.com/restaurant/...",
+  },
+  {
+    id: "getir",
+    urlKey: "getirYemekUrl",
+    enabledKey: "getirEnabled",
+    testProvider: "getir",
+    label: "Getir Yemek",
+    placeholder: "https://getir.com/yemek/restaurant/...",
+  },
+  {
+    id: "trendyol",
+    urlKey: "trendyolYemekUrl",
+    enabledKey: "trendyolEnabled",
+    testProvider: "trendyol_go",
+    label: "Trendyol GO",
+    placeholder: "https://tgoapp.com/restaurant/...",
+  },
+  {
+    id: "tripadvisor",
+    urlKey: "tripAdvisorUrl",
+    enabledKey: "tripAdvisorEnabled",
+    testProvider: "tripadvisor",
+    label: "Tripadvisor",
+    placeholder: "https://www.tripadvisor.com/Restaurant_Review-...",
+  },
+  {
+    id: "airbnb",
+    urlKey: "airbnbUrl",
+    enabledKey: "airbnbEnabled",
+    testProvider: "airbnb",
+    label: "Airbnb",
+    placeholder: "https://www.airbnb.com/rooms/...",
+  },
 ];
 
 interface SocialDef {
+  /** Logo path under /public/platforms/. */
+  logoFile: string;
   key: keyof FormState;
-  testProvider: string;
+  testProvider: IntegrationProvider;
   label: string;
-  icon: typeof Camera;
   placeholder: string;
 }
 
@@ -109,28 +157,28 @@ const SOCIAL_DEFS: SocialDef[] = [
     key: "instagramUrl",
     testProvider: "instagram",
     label: "Instagram",
-    icon: Camera,
+    logoFile: "instagram",
     placeholder: "https://instagram.com/isletmem",
   },
   {
     key: "facebookUrl",
     testProvider: "facebook",
     label: "Facebook",
-    icon: Users,
+    logoFile: "facebook",
     placeholder: "https://facebook.com/isletmem",
   },
   {
     key: "whatsappUrl",
     testProvider: "whatsapp",
     label: "WhatsApp",
-    icon: MessageCircle,
+    logoFile: "whatsapp",
     placeholder: "https://wa.me/905551112233",
   },
   {
     key: "reservationUrl",
     testProvider: "reservation",
     label: "Rezervasyon linki",
-    icon: Phone,
+    logoFile: "", // free-form, lucide Phone icon fallback
     placeholder: "https://reservation.example.com/isletmem",
   },
 ];
@@ -238,36 +286,35 @@ export function BusinessIntegrationSettings({
     [visibleDefs, form],
   );
 
-  const validateUrls = (): string | null => {
-    const fields: Array<[string, string]> = [
-      ["googleReviewUrl", form.googleReviewUrl],
-      ["yemekSepetiUrl", form.yemekSepetiUrl],
-      ["getirYemekUrl", form.getirYemekUrl],
-      ["trendyolYemekUrl", form.trendyolYemekUrl],
-      ["tripAdvisorUrl", form.tripAdvisorUrl],
-      ["airbnbUrl", form.airbnbUrl],
-      ["instagramUrl", form.instagramUrl],
-      ["facebookUrl", form.facebookUrl],
-      ["whatsappUrl", form.whatsappUrl],
-      ["reservationUrl", form.reservationUrl],
+  // Per-field domain check — runs on every keystroke so the inline error
+  // appears next to the offending row, not as a single banner at save time.
+  const fieldErrors = useMemo<Partial<Record<keyof FormState, string>>>(() => {
+    const errors: Partial<Record<keyof FormState, string>> = {};
+    const checks: Array<[keyof FormState, IntegrationProvider]> = [
+      ...PLATFORM_DEFS.map((d) => [d.urlKey, d.testProvider] as [keyof FormState, IntegrationProvider]),
+      ...SOCIAL_DEFS.map((d) => [d.key, d.testProvider] as [keyof FormState, IntegrationProvider]),
     ];
-    for (const [name, value] of fields) {
-      if (!value.trim()) continue;
-      try {
-        const u = new URL(value.trim());
-        if (!/^https?:$/.test(u.protocol)) return `${name} https:// ile başlamalı.`;
-      } catch {
-        return `Geçersiz ${name}.`;
+    for (const [field, provider] of checks) {
+      const value = form[field] as string;
+      if (!value || !value.trim()) continue;
+      const result = checkProviderUrl(provider, value);
+      if (!result.ok) {
+        errors[field] = describeDomainError(provider, result, locale);
       }
     }
-    return null;
-  };
+    return errors;
+  }, [form, locale]);
+
+  const hasFieldErrors = Object.keys(fieldErrors).length > 0;
 
   const handleSave = async () => {
     if (saving) return;
-    const err = validateUrls();
-    if (err) {
-      setError(err);
+    if (hasFieldErrors) {
+      setError(
+        locale === "tr"
+          ? "Bazı bağlantılar marka adresine işaret etmiyor. Aşağıdaki uyarıları düzeltip tekrar dene."
+          : "Some links don't point to the brand domain. Fix the warnings below and try again.",
+      );
       return;
     }
     setSaving(true);
@@ -319,7 +366,7 @@ export function BusinessIntegrationSettings({
     setSuccess(null);
   };
 
-  const runTest = async (urlKey: string, testProvider: string) => {
+  const runTest = async (urlKey: string, testProvider: IntegrationProvider) => {
     if (testing) return;
     if (dirty) {
       setError("Test etmeden önce değişiklikleri kaydet.");
@@ -341,23 +388,6 @@ export function BusinessIntegrationSettings({
     } finally {
       setTesting(null);
     }
-  };
-
-  const renderTestResult = (urlKey: string) => {
-    const r = testResults[urlKey];
-    if (!r) return null;
-    if (r.ok) {
-      return (
-        <span className="bz-mono text-[11px] text-[#166534]">
-          ✓ HTTP {r.statusCode} · {r.latencyMs}ms
-        </span>
-      );
-    }
-    return (
-      <span className="bz-mono text-[11px] text-[#991B1B]">
-        ✗ {r.error || `HTTP ${r.statusCode}`}
-      </span>
-    );
   };
 
   const hidden = visibleDefs.length === 0;
@@ -394,91 +424,37 @@ export function BusinessIntegrationSettings({
           title="Yorum platformları"
           description={`Sektörüne (${restaurant.category}) uygun platformları aşağıda yönet.`}
         >
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {visibleDefs.map((def) => {
               const url = form[def.urlKey] as string;
               const enabled = form[def.enabledKey] as boolean;
               const status = deriveStatus(url, enabled);
               const isThisTesting = testing === def.urlKey;
               return (
-                <div
+                <IntegrationCard
                   key={def.id}
-                  className="flex flex-col sm:flex-row gap-3 sm:items-start p-4"
-                  style={{ background: "#FAFAFA", border: "1px solid #EDEDED", borderRadius: 12 }}
-                >
-                  <div className="flex items-center gap-3 sm:w-[180px] shrink-0">
-                    <PlatformChip id={def.id} size={32} />
-                    <div className="min-w-0">
-                      <div className="bz-h-tight text-[14px] truncate">{def.label}</div>
-                      <IntegrationStatusBadge status={status} className="mt-1" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <Field label="URL" htmlFor={`url-${def.id}`}>
-                      <input
-                        id={`url-${def.id}`}
-                        className="bz-input bz-mono"
-                        type="url"
-                        value={url}
-                        onChange={(e) => set(def.urlKey, e.target.value as never)}
-                        placeholder={`https://...`}
-                      />
-                    </Field>
-                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <Toggle
-                          checked={enabled}
-                          onChange={(next) => set(def.enabledKey, next as never)}
-                          ariaLabel={`${def.label} aktif`}
-                        />
-                        <span className="text-[12px] text-[#525252]">
-                          {enabled ? "Aktif" : "Pasif"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {renderTestResult(def.urlKey)}
-                        <button
-                          type="button"
-                          onClick={() => runTest(def.urlKey, def.testProvider)}
-                          disabled={!url || isThisTesting || dirty}
-                          className="bz-btn-ghost inline-flex items-center gap-1 text-[12px]"
-                          style={{ height: 28, padding: "0 10px", borderRadius: 999 }}
-                        >
-                          {isThisTesting ? (
-                            <Loader2 size={12} className="animate-spin" />
-                          ) : (
-                            <RefreshCw size={12} />
-                          )}
-                          Test et
-                        </button>
-                        {url && (
-                          <>
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="bz-btn-ghost inline-flex items-center gap-1 text-[12px]"
-                              style={{ height: 28, padding: "0 10px", borderRadius: 999 }}
-                              aria-label={`${def.label} aç`}
-                            >
-                              <ExternalLink size={12} />
-                              Aç
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => set(def.urlKey, "" as never)}
-                              className="bz-btn-icon"
-                              aria-label="URL'yi temizle"
-                              title="Kaldır"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  logo={<PlatformChip id={def.id} size={36} />}
+                  label={def.label}
+                  status={status}
+                  url={url}
+                  placeholder={def.placeholder}
+                  fieldId={`url-${def.id}`}
+                  fieldError={fieldErrors[def.urlKey] ?? null}
+                  onUrlChange={(v) => set(def.urlKey, v as never)}
+                  onClear={() => set(def.urlKey, "" as never)}
+                  onTest={() => runTest(def.urlKey, def.testProvider)}
+                  testing={isThisTesting}
+                  testResult={testResults[def.urlKey]}
+                  testDisabled={dirty || Boolean(fieldErrors[def.urlKey])}
+                  toggle={
+                    <Toggle
+                      checked={enabled}
+                      onChange={(next) => set(def.enabledKey, next as never)}
+                      ariaLabel={`${def.label} aktif`}
+                    />
+                  }
+                  toggleLabel={enabled ? "Aktif" : "Pasif"}
+                />
               );
             })}
           </div>
@@ -490,83 +466,35 @@ export function BusinessIntegrationSettings({
         title="Sosyal medya & rezervasyon"
         description="İşletmenin sosyal medya kanalları ve rezervasyon linki."
       >
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {SOCIAL_DEFS.map((def) => {
             const url = form[def.key] as string;
             const status: IntegrationStatusKind = url ? "connected" : "not_configured";
             const isThisTesting = testing === String(def.key);
-            const Icon = def.icon;
+            const logo = def.logoFile ? (
+              <SocialLogo file={def.logoFile} alt={def.label} />
+            ) : (
+              <FallbackIconChip>
+                <Phone size={18} />
+              </FallbackIconChip>
+            );
             return (
-              <div
+              <IntegrationCard
                 key={def.key as string}
-                className="flex flex-col sm:flex-row gap-3 sm:items-start p-4"
-                style={{ background: "#FAFAFA", border: "1px solid #EDEDED", borderRadius: 12 }}
-              >
-                <div className="flex items-center gap-3 sm:w-[180px] shrink-0">
-                  <div
-                    className="flex items-center justify-center"
-                    style={{ width: 32, height: 32, borderRadius: 10, background: "#0A0A0A", color: "#C6F24E" }}
-                  >
-                    <Icon size={16} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="bz-h-tight text-[14px] truncate">{def.label}</div>
-                    <IntegrationStatusBadge status={status} className="mt-1" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0 space-y-2">
-                  <Field label="URL" htmlFor={`url-${String(def.key)}`}>
-                    <input
-                      id={`url-${String(def.key)}`}
-                      className="bz-input bz-mono"
-                      type="url"
-                      value={url}
-                      onChange={(e) => set(def.key, e.target.value as never)}
-                      placeholder={def.placeholder}
-                    />
-                  </Field>
-                  <div className="flex items-center justify-end gap-2 flex-wrap">
-                    {renderTestResult(String(def.key))}
-                    <button
-                      type="button"
-                      onClick={() => runTest(String(def.key), def.testProvider)}
-                      disabled={!url || isThisTesting || dirty}
-                      className="bz-btn-ghost inline-flex items-center gap-1 text-[12px]"
-                      style={{ height: 28, padding: "0 10px", borderRadius: 999 }}
-                    >
-                      {isThisTesting ? (
-                        <Loader2 size={12} className="animate-spin" />
-                      ) : (
-                        <RefreshCw size={12} />
-                      )}
-                      Test et
-                    </button>
-                    {url && (
-                      <>
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bz-btn-ghost inline-flex items-center gap-1 text-[12px]"
-                          style={{ height: 28, padding: "0 10px", borderRadius: 999 }}
-                        >
-                          <ExternalLink size={12} />
-                          Aç
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => set(def.key, "" as never)}
-                          className="bz-btn-icon"
-                          aria-label="URL'yi temizle"
-                          title="Kaldır"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
+                logo={logo}
+                label={def.label}
+                status={status}
+                url={url}
+                placeholder={def.placeholder}
+                fieldId={`url-${String(def.key)}`}
+                fieldError={fieldErrors[def.key] ?? null}
+                onUrlChange={(v) => set(def.key, v as never)}
+                onClear={() => set(def.key, "" as never)}
+                onTest={() => runTest(String(def.key), def.testProvider)}
+                testing={isThisTesting}
+                testResult={testResults[String(def.key)]}
+                testDisabled={dirty || Boolean(fieldErrors[def.key])}
+              />
             );
           })}
         </div>
@@ -585,3 +513,200 @@ export function BusinessIntegrationSettings({
 }
 
 export default BusinessIntegrationSettings;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+
+interface IntegrationCardProps {
+  logo: React.ReactNode;
+  label: string;
+  status: IntegrationStatusKind;
+  url: string;
+  placeholder: string;
+  fieldId: string;
+  fieldError: string | null;
+  onUrlChange: (next: string) => void;
+  onClear: () => void;
+  onTest: () => void;
+  testing: boolean;
+  testResult?: TestResult;
+  testDisabled: boolean;
+  toggle?: React.ReactNode;
+  toggleLabel?: string;
+}
+
+function IntegrationCard({
+  logo,
+  label,
+  status,
+  url,
+  placeholder,
+  fieldId,
+  fieldError,
+  onUrlChange,
+  onClear,
+  onTest,
+  testing,
+  testResult,
+  testDisabled,
+  toggle,
+  toggleLabel,
+}: IntegrationCardProps) {
+  return (
+    <div
+      className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 sm:p-5"
+    >
+      {/* Header — logo + label + status. Stacks vertically on small phones,
+          horizontal at >=400px. */}
+      <div className="flex items-center gap-3">
+        <div className="shrink-0">{logo}</div>
+        <div className="min-w-0 flex-1">
+          <div className="bz-h-tight text-[14px] sm:text-[15px] truncate">{label}</div>
+          <IntegrationStatusBadge status={status} className="mt-1" />
+        </div>
+        {toggle && (
+          <div className="flex shrink-0 items-center gap-2">
+            {toggle}
+            <span className="hidden sm:inline text-[12px] text-[#525252]">
+              {toggleLabel}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* URL input + inline domain error */}
+      <div className="mt-4">
+        <Field label="URL" htmlFor={fieldId} error={fieldError ?? undefined}>
+          <input
+            id={fieldId}
+            className="bz-input bz-mono text-[13px]"
+            type="url"
+            inputMode="url"
+            autoComplete="off"
+            spellCheck={false}
+            value={url}
+            onChange={(e) => onUrlChange(e.target.value)}
+            placeholder={placeholder}
+          />
+        </Field>
+      </div>
+
+      {/* Test result (if any) — shown above actions so it stays visible on
+          phones even when the action row wraps. */}
+      {testResult && (
+        <div className="mt-3">
+          <TestResultLine result={testResult} />
+        </div>
+      )}
+
+      {/* Actions — full-width grid on mobile (44px+ touch targets), inline
+          flex on tablet/desktop. */}
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
+        <button
+          type="button"
+          onClick={onTest}
+          disabled={!url || testing || testDisabled}
+          className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 rounded-full text-[13px] sm:text-[12px]"
+          style={{ minHeight: 40 }}
+        >
+          {testing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+          Test et
+        </button>
+        {url ? (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 rounded-full text-[13px] sm:text-[12px]"
+            style={{ minHeight: 40 }}
+            aria-label={`${label} aç`}
+          >
+            <ExternalLink size={14} />
+            Aç
+          </a>
+        ) : (
+          <span aria-hidden className="hidden sm:block" />
+        )}
+        {url && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white text-[12.5px] text-[#737373] hover:text-[#991B1B] hover:border-[#FECACA] sm:col-span-1"
+            style={{ minHeight: 40, padding: "0 14px" }}
+            aria-label="URL'yi temizle"
+            title="Kaldır"
+          >
+            <Trash2 size={14} />
+            Kaldır
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TestResultLine({ result }: { result: TestResult }) {
+  if (result.ok) {
+    return (
+      <div
+        role="status"
+        className="flex items-center gap-2 rounded-lg bg-[#F0FDF4] px-3 py-2 text-[12px] text-[#166534]"
+      >
+        <CheckCircle2 size={14} className="shrink-0" />
+        <span className="bz-mono">
+          HTTP {result.statusCode} · {result.latencyMs}ms
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div
+      role="alert"
+      className="flex items-start gap-2 rounded-lg bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]"
+    >
+      <XCircle size={14} className="shrink-0 mt-0.5" />
+      <span>{result.error || `HTTP ${result.statusCode}`}</span>
+    </div>
+  );
+}
+
+function SocialLogo({ file, alt }: { file: string; alt: string }) {
+  return (
+    <span
+      className="inline-flex items-center justify-center"
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 8,
+        background: "#fff",
+        border: "1px solid #EDEDED",
+        flexShrink: 0,
+      }}
+    >
+      <img
+        src={`/platforms/${file}.svg`}
+        alt={alt}
+        width={24}
+        height={24}
+        style={{ objectFit: "contain" }}
+      />
+    </span>
+  );
+}
+
+function FallbackIconChip({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      className="inline-flex items-center justify-center"
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        background: "#0A0A0A",
+        color: "#C6F24E",
+        flexShrink: 0,
+      }}
+    >
+      {children}
+    </span>
+  );
+}

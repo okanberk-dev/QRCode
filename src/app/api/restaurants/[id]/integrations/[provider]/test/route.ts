@@ -3,6 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { requireRestaurantAccess } from '@/lib/menu-access';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { ApiErrors } from '@/lib/api-errors';
+import {
+  checkProviderUrl,
+  describeDomainError,
+  type IntegrationProvider,
+} from '@/lib/integration-domains';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -120,17 +125,23 @@ export async function POST(
     );
   }
 
-  // URL doğrulama — başka biri DB'ye doğrudan eklemiş olabilir
-  let target: URL;
-  try {
-    target = new URL(url);
-    if (!/^https?:$/.test(target.protocol)) throw new Error('protocol');
-  } catch {
+  // URL doğrulama — sahibi yanlış slot'a (örn. Yemeksepeti URL'ini Getir
+  // alanına) yapıştırmış olabilir. Domain whitelist'i marka eşleşmesini
+  // garanti eder; HEAD isteği yanlış host'a hiç gitmez.
+  const domainCheck = checkProviderUrl(provider as IntegrationProvider, url);
+  if (!domainCheck.ok) {
     return NextResponse.json(
-      { ok: false, statusCode: 0, latencyMs: 0, error: 'Geçersiz URL formatı.', url },
+      {
+        ok: false,
+        statusCode: 0,
+        latencyMs: 0,
+        error: describeDomainError(provider as IntegrationProvider, domainCheck),
+        url,
+      },
       { status: 200 },
     );
   }
+  const target = new URL(url);
 
   const controller = new AbortController();
   const timeoutMs = 5000;

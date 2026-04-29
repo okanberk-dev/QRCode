@@ -46,14 +46,15 @@ export function PlatformChip({ id, size = 24, withLabel = false, className = "" 
   const p = (PLATFORMS as Record<string, PlatformConfig>)[id] || PLATFORMS.custom;
   
   const isCustom = id === "custom" || !p;
-  
-  // PNG kullanan platformlar (kullanıcının yükledikleri)
-  const isPng = ["yemeksepeti", "getir", "trendyol", "trendyol_go"].includes(id);
-  
+
+  // Tüm logolar /public/platforms/ altında SVG olarak duruyor. Eski PNG
+  // listesi 404 attığı için (dosyalar SVG olarak commit'lenmişti) yemeksepeti /
+  // getir / trendyol kartlarında logo görünmüyordu — birleşik SVG path'ine
+  // geçildi.
   let imgSrc = "";
   if (!isCustom) {
     const fileName = id === "trendyol" || id === "trendyol_go" ? "trendyol-go" : id;
-    imgSrc = `/platforms/${fileName}.${isPng ? "png" : "svg"}`;
+    imgSrc = `/platforms/${fileName}.svg`;
   }
 
   return (
