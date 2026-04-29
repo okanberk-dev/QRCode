@@ -106,7 +106,7 @@ export default function LiveReviewTicker({ locale, rotateMs = 2800 }: Props) {
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
           </span>
           <span className="pulse-eyebrow text-[#C6F24E]">
-            {isTr ? 'CANLI AKIŞ' : 'LIVE STREAM'}
+            {isTr ? 'AKIŞ' : 'STREAM'}
           </span>
         </div>
 
@@ -175,7 +175,7 @@ export default function LiveReviewTicker({ locale, rotateMs = 2800 }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-white/[0.03] px-4 py-3.5 sm:px-5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'CANLI AKIŞ' : 'LIVE STREAM'}
+              {isTr ? 'AKIŞ' : 'STREAM'}
             </span>
             <span className="pulse-eyebrow rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[#D4D4D4]">
               {isTr ? '3 YENİ' : '3 NEW'}

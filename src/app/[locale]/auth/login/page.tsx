@@ -111,7 +111,7 @@ export default async function LoginPage({
         <div className="relative z-10 inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-[#C6F24E]/15 border border-[#C6F24E]/30">
           <span className="w-1.5 h-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat" />
           <span className="pulse-eyebrow text-[#C6F24E]">
-            {isTr ? 'CANLI · 340K+ YORUM' : 'LIVE · 340K+ REVIEWS'}
+            {isTr ? '340K+ YORUM' : '340K+ REVIEWS'}
           </span>
         </div>
 

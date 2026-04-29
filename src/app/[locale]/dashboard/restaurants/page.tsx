@@ -344,7 +344,7 @@ export default function DashboardRestaurantsPage() {
                 ? 'active'
                 : 'new';
             const trendStyle = {
-              active: { bg: 'bg-[#EAF9B8]', fg: 'text-[#0A0A0A]', label: locale === 'tr' ? '↑ CANLI' : '↑ LIVE' },
+              active: { bg: 'bg-[#EAF9B8]', fg: 'text-[#0A0A0A]', label: locale === 'tr' ? '↑ AKTİF' : '↑ ACTIVE' },
               new: { bg: 'bg-[#F5F5F5]', fg: 'text-[#525252]', label: locale === 'tr' ? '→ YENİ' : '→ NEW' },
               inactive: { bg: 'bg-[#FEF2F2]', fg: 'text-[#991B1B]', label: locale === 'tr' ? '· DEVRE DIŞI' : '· DISABLED' },
             }[trend];

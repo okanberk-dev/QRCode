@@ -82,10 +82,6 @@ export default function ProductShowcase({ locale }: ProductShowcaseProps) {
                       {isTr ? 'Yeni QR Kod' : 'New QR Code'}
                     </h3>
                   </div>
-                  <div className="inline-flex items-center gap-1.5 bg-[#16A34A]/10 text-[#16A34A] px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-[#16A34A]/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse" />
-                    {isTr ? 'CANLI' : 'LIVE'}
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-5 gap-5">

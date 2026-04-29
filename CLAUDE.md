@@ -27,11 +27,13 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 | DB | PostgreSQL **via Supabase** | `DATABASE_URL` (pgbouncer 6543) + `DIRECT_URL` (5432 migration için) |
 | ORM | Prisma 6 | `prisma db push` Dockerfile'da otomatik |
 | Auth | Custom JWT (`jose`) + httpOnly cookie | `src/lib/auth.ts` — edge compatible |
+| Auth (Google Sign-in) | Firebase Web SDK (`firebase`) | `src/lib/firebase-client.ts` + `firebase-admin.ts` — sadece Google OAuth için, primary auth değil |
 | UI | Tailwind v4 (PostCSS) + lucide-react (ikonlar) | **shadcn/ui kullanılmıyor** — elle yazılmış bileşenler |
 | Charts | recharts | |
 | Görsel işleme | sharp (WebP dönüşüm + resize) | |
 | QR | qrcode | `/api/restaurants/[id]/qr` |
 | Mail | Resend HTTP API | `src/lib/email.ts` — SMTP yok, fetch tabanlı |
+| Hata izleme | `@sentry/nextjs` | env-gated; `instrumentation.ts` + `instrumentation-client.ts` (CLAUDE.md §26) |
 | i18n | `src/app/[locale]/...` + `src/lib/translations.ts` | tr / en |
 | Deploy | Vercel (Production) | Otomatik Git entegrasyonu |
 
@@ -482,6 +484,11 @@ Public path (`/api/restaurants?slug=`) zaten Faz 1'de süpürüldü (PR #118). S
 **Opsiyonel:**
 - `OPENAI_API_KEY` — AI Co-Pilot yanıt önerileri için (§15). Yoksa endpoint deterministik şablona düşer, UI çalışmaya devam eder.
 - `OPENAI_MODEL` — Varsayılan `gpt-4o-mini`.
+- `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` — error tracking (§26). Yoksa SDK no-op çalışır. Vercel Sentry Marketplace integration tüm Sentry env'lerini (`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` dahil) otomatik provision eder.
+- `NEXT_PUBLIC_FIREBASE_*` (4 env) — Google Sign-in için Firebase client config. Yoksa Google OAuth butonu disable, e-posta+şifre auth çalışmaya devam eder.
+- `FIREBASE_AUTH_PROXY_TARGET` — `next.config.ts` rewrite hedefi (Firebase Auth proxy). `__/auth/*` ve `__/firebase/init.json` path'lerini Firebase'e yönlendirir. Boşsa rewrite eklenmez.
+- `FIREBASE_ADMIN_PROJECT_ID` — server-side Firebase Admin SDK için.
+- `RECAPTCHA_ENTERPRISE_API_KEY` + `RECAPTCHA_ENTERPRISE_SERVICE_ACCOUNT_JSON` + `RECAPTCHA_ENTERPRISE_PROJECT_ID` — reCAPTCHA Enterprise score-based bot koruması (`src/lib/recaptcha.ts`). `RECAPTCHA_ENFORCE='true'` set edilince düşük skorlu istek reddedilir; default `false` (sadece skor logla).
 
 ### 14.2 Rate limit (Upstash Redis + in-memory fallback)
 
@@ -573,6 +580,13 @@ Tüm motion `prefers-reduced-motion: reduce` altında devre dışı (globals.css
 | `CRON_SECRET` | Cron kullanılıyorsa | `/api/cron/*` endpoint'leri `Authorization: Bearer ${CRON_SECRET}` zorunlu |
 | `IP_RETENTION_DAYS` | Opsiyonel | Default 90; KVKK IP anonimleştirme cron'u için |
 | `IYZICO_*` (POS, henüz yok) | Yok | Wave 3.5'te eklenecek |
+| `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, projectId, appId) | Opsiyonel | Google Sign-in client config; eksikse OAuth butonu UI'da disable, e-posta+şifre flow intact |
+| `FIREBASE_AUTH_PROXY_TARGET` | Opsiyonel | `__/auth/*` path'lerini Firebase'e proxy'ler (`next.config.ts:rewrites`); boşsa rewrite hiç eklenmez |
+| `FIREBASE_ADMIN_PROJECT_ID` | Opsiyonel | Server-side Firebase Admin SDK için (token verify) |
+| `RECAPTCHA_ENTERPRISE_API_KEY` + `RECAPTCHA_ENTERPRISE_SERVICE_ACCOUNT_JSON` + `RECAPTCHA_ENTERPRISE_PROJECT_ID` | Opsiyonel | reCAPTCHA Enterprise score-based bot guard (`src/lib/recaptcha.ts`); eksikse skor 1.0 varsayılır (geçer), `NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY` client-side widget için |
+| `RECAPTCHA_ENFORCE` | Opsiyonel | `'true'` ise düşük skorlu istek reddedilir; default `'false'` sadece logla — Stripe Radar / Cloudflare Turnstile rollout pattern |
+| `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` | Opsiyonel | Hata izleme (§26). Vercel Sentry Marketplace integration set ederse `SENTRY_AUTH_TOKEN` + `SENTRY_ORG` + `SENTRY_PROJECT` source-map upload için ek olarak gelir |
+| `OPS_EMAIL` | Opsiyonel | Kritik mail send fail'da operatöre uyarı (§21.33); yoksa `NOTIFICATION_EMAIL` fallback, hiçbiri yoksa sessiz log |
 
 Tüm env'ler `.env.example`'da. Vercel production'da yüklü; local dev için manuel kopyalama. Build script `node scripts/validate-env.js` ile zorunlu env'leri doğrular (eksik → exit 1).
 
@@ -2105,3 +2119,62 @@ Bundle README + user prompt: *"mobil uygulama değil responsive olacak sadece"*.
 ### 25.7 Tasarım kaynağı (referans, `src/`'ye kopyalanmaz)
 
 `/tmp/buaze-design/buaze-mobil/` (Claude Design handoff bundle, **git-tracked değil**, lokal `.design/` analoji). 5 dosya: `buaze.html` (global CSS + Tailwind config + animation keyframe'leri), `layout.jsx` (BuazeNav + BuazeFooter + MobileBottomNav), `home.jsx` (HeroDashboard + IndustryTabs + 8 section), `pages.jsx` (Features/Pricing/Solutions/Blog/About/Contact/Help/FAQ), `app.jsx` (hash router). Pulse token'ları zaten `globals.css` `@theme {}` block'unda — yeni token tanımı yapılmadı. Logo `BuazeLogo.tsx` korundu, font'lar `layout.tsx`'te yüklü. Mobil pass kalıcı çıktıları: §25.2 listesi.
+
+---
+
+## 26. Sentry — Hata İzleme & Performans
+
+`@sentry/nextjs` ^10.51 ile **production gözlem** katmanı. Vercel Sentry Marketplace integration kuruldu — env'ler (`SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`) Production + Preview + Development scope'larında otomatik provision. Lokal dev'de DSN yoksa SDK tamamen no-op.
+
+### 26.1 Dosya yapısı (canonical SDK skill pattern)
+
+| Dosya | Görev |
+|---|---|
+| `instrumentation.ts` | `register()` runtime'a göre lazy import + `onRequestError = Sentry.captureRequestError` (Next 15 unhandled server error hook, SDK >= 8.28) |
+| `sentry.server.config.ts` | Server runtime init; `includeLocalVariables: true` (stack trace'de local vars) |
+| `sentry.edge.config.ts` | Edge runtime init |
+| `instrumentation-client.ts` | Browser init + `Sentry.replayIntegration()` + `onRouterTransitionStart` |
+| `src/app/global-error.tsx` | Uncaught error boundary; `NextError statusCode={0}` + `Sentry.captureException` |
+| `next.config.ts` | Koşulsuz `withSentryConfig` wrap; auth token yoksa source-map upload silently skip |
+
+### 26.2 KVKK / GDPR sapmaları (skill default'undan)
+
+Resmi skill `sendDefaultPii: true` öner — restoran müşteri verileri için yasal risk. Bu projede:
+
+- **`sendDefaultPii: false`** — IP / cookies / form bodies / user-identifiable headers Sentry'ye otomatik gönderilmez. Gerekirse explicit `Sentry.setUser({})` ile event başına eklenir, legitimate-interest review sonrası.
+- **`replaysSessionSampleRate: 0`** — background session replay yok. Sadece `replaysOnErrorSampleRate: 1.0` ile hata anında 60 sn'lik replay yakalanır. Müşteri privacy footprint düşük, Sentry quota burn minimum.
+- **`tracesSampleRate: 0.1`** prod (skill default `0.1`) / `1.0` dev — performance tracing %10 örneklem, free tier yeterli.
+
+### 26.3 Tunnel route + Middleware
+
+`tunnelRoute: '/monitoring'` ad-blocker'ları bypass eder — Sentry trafiği app origin'inden tünellenir. Mevcut middleware matcher `'/admin/:path*'`, `/monitoring` zaten dışarıda — exclude eklemeye gerek yok.
+
+### 26.4 Smoke test
+
+`GET /api/sentry-test` — kasıtlı 500 fırlatır (`Error: [Sentry smoke test] Synthetic error...`), tag `sentry.smoketest=true`. Production'da default disable, `ENABLE_SENTRY_TEST=1` env ile aç. Doğrulama sonrası endpoint kullanılmaz, kalabilir.
+
+### 26.5 Manuel capture pattern'leri (opsiyonel)
+
+`onRequestError` çoğu server hatasını otomatik yakalar. Manuel capture sadece `try/catch` bloklarında veya warning-level event'ler için:
+
+```ts
+// Mail send fail (src/lib/email.ts)
+Sentry.captureMessage('Mail send failed', { level: 'error', tags: { template, recipient_domain } });
+
+// AI Co-Pilot fallback (src/app/api/feedback/[id]/suggest-reply)
+Sentry.captureMessage('OpenAI suggest-reply fallback', { level: 'warning' });
+
+// Cron job catch
+Sentry.captureException(error, { tags: { cron: 'monthly-newsletter' } });
+```
+
+### 26.6 Yapma
+
+- `sendDefaultPii: true` set etme — KVKK ihlali. Spesifik bir event için PII gerekirse o event'e özel `Sentry.setContext('user', { ... })` kullan.
+- `replaysSessionSampleRate > 0` set etme — session başı replay quota'yı patlatır + müşteri privacy footprint büyür.
+- DSN'i koda commit etme — `process.env.SENTRY_DSN` referansı yeter, env Vercel project settings'te.
+- Test endpoint'i production'da `ENABLE_SENTRY_TEST=1` bırakma — synthetic noise birikir.
+
+### 26.7 Maliyet
+
+Free tier: 5K error event + 10K transaction + 50 replay / ay. Mevcut Buaze trafiğine göre yıllar sürecek. Üst limit'e yaklaşırsa Sentry dashboard'da uyarı geliyor; o zaman plan upgrade veya `tracesSampleRate` düşür (`0.1` → `0.05`).

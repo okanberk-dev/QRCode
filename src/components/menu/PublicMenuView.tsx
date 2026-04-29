@@ -1142,7 +1142,7 @@ function PulseLayout({
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
                 <span className="bz-pulse-dot inline-block h-2 w-2 rounded-full" style={{ backgroundColor: brand }} aria-hidden />
-                {locale === 'tr' ? 'CANLI MENÜ · PULSE' : 'LIVE MENU · PULSE'}
+                {locale === 'tr' ? 'MENÜ · PULSE' : 'MENU · PULSE'}
               </p>
               <h1
                 className="mt-3 max-w-3xl text-[38px] font-medium leading-[0.95] tracking-[-0.025em] sm:text-[64px]"

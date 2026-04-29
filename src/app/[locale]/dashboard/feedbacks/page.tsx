@@ -613,7 +613,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 </span>
                 {!aiLoading && aiSource === 'openai' && (
                   <span className="pulse-eyebrow rounded-full bg-[#C6F24E] px-2 py-0.5 text-[#0A0A0A]">
-                    {isTr ? 'CANLI' : 'LIVE'}
+                    {isTr ? 'AI' : 'AI'}
                   </span>
                 )}
                 {!aiLoading && (aiSource === 'template' || aiSource === 'template-fallback') && (

@@ -43,14 +43,14 @@ export async function renderNewReview(
   ].filter(Boolean).join(' · ');
 
   const inlineDefault = isTr ? {
-    eyebrow: 'Canlı · Az önce geldi',
+    eyebrow: 'Az önce geldi',
     title: '${rating} yıldız.',
     titleSub: 'Hak ettin.',
     primaryCta: 'Teşekkür yaz →',
     secondaryCta: 'Google\'da paylaş',
     noComment: 'Yorum bırakılmadı.',
   } : {
-    eyebrow: 'Live · Just now',
+    eyebrow: 'Just now',
     title: '${rating} stars.',
     titleSub: 'You earned it.',
     primaryCta: 'Write a thank-you →',

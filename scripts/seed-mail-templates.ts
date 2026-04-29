@@ -162,7 +162,7 @@ const LOW_RATING_ALERT_EN: Copy = {
 };
 
 const NEW_REVIEW_TR: Copy = {
-  eyebrow: 'Canlı · Az önce geldi',
+  eyebrow: 'Az önce geldi',
   titleSub: 'Hak ettin.',
   primaryCta: 'Teşekkür yaz →',
   secondaryCta: 'Google\'da paylaş',
@@ -170,7 +170,7 @@ const NEW_REVIEW_TR: Copy = {
 };
 
 const NEW_REVIEW_EN: Copy = {
-  eyebrow: 'Live · Just now',
+  eyebrow: 'Just now',
   titleSub: 'You earned it.',
   primaryCta: 'Write a thank-you →',
   secondaryCta: 'Share on Google',
