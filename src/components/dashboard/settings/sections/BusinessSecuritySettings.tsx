@@ -197,7 +197,16 @@ export function BusinessSecuritySettings({
       const res = await fetch("/api/api-keys");
       if (!res.ok) throw new Error("load_failed");
       const data = await res.json();
-      setApiKeys(data.keys ?? data ?? []);
+      // The endpoint historically returned either { keys: [...] } or a bare
+      // array. The previous `?? data ?? []` chain only guarded against
+      // null/undefined — an `{ error }` envelope on 200 would slip through
+      // and crash the .map below. Be strict about the array shape.
+      const list = Array.isArray(data?.keys)
+        ? data.keys
+        : Array.isArray(data)
+          ? data
+          : [];
+      setApiKeys(list);
     } catch {
       setApiKeys([]);
     } finally {

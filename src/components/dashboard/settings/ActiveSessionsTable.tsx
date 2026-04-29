@@ -34,7 +34,10 @@ export function ActiveSessionsTable() {
       const res = await fetch("/api/account/sessions");
       if (!res.ok) throw new Error("Yüklenemedi");
       const data = await res.json();
-      setSessions(data.sessions ?? []);
+      // Defensive: a 200 with an unexpected body shape ({}, error envelope,
+      // etc.) would slip through `?? []` and crash the .map below. Force an
+      // array regardless of what the endpoint hands back.
+      setSessions(Array.isArray(data?.sessions) ? data.sessions : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Yüklenemedi");
     } finally {

@@ -124,7 +124,8 @@ export function BusinessUsersRolesSettings({
       const res = await fetch("/api/team");
       if (!res.ok) throw new Error("load_failed");
       const data = await res.json();
-      const rows: TeamRow[] = (data.members ?? []).map(
+      const rawMembers = Array.isArray(data?.members) ? data.members : [];
+      const rows: TeamRow[] = rawMembers.map(
         (m: Partial<TeamRow> & { locations?: string[] | null }): TeamRow => ({
           id: String(m.id),
           email: String(m.email),
