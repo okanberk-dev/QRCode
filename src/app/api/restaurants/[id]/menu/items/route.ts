@@ -59,6 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       currency: parsed.data.currency ?? 'TRY',
       imageUrl: parsed.data.imageUrl ?? null,
       badges: parsed.data.badges ?? [],
+      allergens: parsed.data.allergens ?? [],
       isAvailable: parsed.data.isAvailable ?? true,
       isOutOfStock: parsed.data.isOutOfStock ?? false,
       sortOrder: nextSort,

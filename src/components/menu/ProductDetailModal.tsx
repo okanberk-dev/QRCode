@@ -1,10 +1,25 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Flame, Leaf, Star, Sparkles, WheatOff, X, Sun, Sprout, Heart, CalendarRange, Droplets } from 'lucide-react';
+import { Flame, Leaf, Star, Sparkles, WheatOff, X, Sun, Sprout, Heart, CalendarRange, Droplets, Info } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
-import type { MenuBadge } from '@/lib/validations';
+import type { MenuAllergen, MenuBadge } from '@/lib/validations';
 import type { MenuItemView } from './PublicMenuView';
+
+const ALLERGEN_LABELS: Record<MenuAllergen, { tr: string; en: string }> = {
+  gluten:    { tr: 'Gluten',                en: 'Gluten' },
+  sut:       { tr: 'Süt / laktoz',          en: 'Milk / lactose' },
+  yumurta:   { tr: 'Yumurta',               en: 'Egg' },
+  findik:    { tr: 'Sert kabuklu yemiş',    en: 'Tree nut' },
+  fistik:    { tr: 'Yer fıstığı',           en: 'Peanut' },
+  soya:      { tr: 'Soya',                  en: 'Soy' },
+  balik:     { tr: 'Balık',                 en: 'Fish' },
+  kabuklu:   { tr: 'Kabuklu deniz ürünü',   en: 'Crustacean' },
+  yumusakca: { tr: 'Yumuşakça',             en: 'Mollusc' },
+  susam:     { tr: 'Susam',                 en: 'Sesame' },
+  hardal:    { tr: 'Hardal',                en: 'Mustard' },
+  kereviz:   { tr: 'Kereviz',               en: 'Celery' },
+};
 
 const BADGE_META: Record<MenuBadge, { tr: string; en: string; icon: typeof Flame; cls: string }> = {
   populer:     { tr: 'Popüler',       en: 'Popular',       icon: Star,     cls: 'bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]' },
@@ -127,6 +142,32 @@ export default function ProductDetailModal({ item, accent, locale, onClose }: Pr
             <p className="whitespace-pre-line text-[15px] font-medium leading-relaxed text-[#1A1A1A]">
               {item.description}
             </p>
+          )}
+
+          {item.allergens && item.allergens.length > 0 && (
+            <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3">
+              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#737373]">
+                <Info size={11} strokeWidth={2.25} />
+                {locale === 'tr' ? 'Alerjen bilgisi' : 'Allergen info'}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {item.allergens
+                  .filter((a): a is MenuAllergen => a in ALLERGEN_LABELS)
+                  .map((a) => (
+                    <span
+                      key={a}
+                      className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-[#525252] ring-1 ring-[#EDEDED]"
+                    >
+                      {ALLERGEN_LABELS[a][locale]}
+                    </span>
+                  ))}
+              </div>
+              <p className="mt-2 text-[10px] leading-relaxed text-[#A3A3A3]">
+                {locale === 'tr'
+                  ? 'Bu ürün listelenen alerjenleri içerir veya çapraz bulaşma riski taşır.'
+                  : 'This item contains or may have come into contact with the listed allergens.'}
+              </p>
+            </div>
           )}
 
           <button
