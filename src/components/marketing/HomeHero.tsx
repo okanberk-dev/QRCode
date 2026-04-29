@@ -695,7 +695,7 @@ export default function HomeHero({ locale }: Props) {
           {/* Announcement pill */}
           <div className="mb-7 flex sm:mb-9">
             <Link
-              href={`${base}#how-it-works`}
+              href={`${base}/how-it-works`}
               className="group inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-2.5 py-1.5 shadow-sm transition-shadow hover:shadow-md"
             >
               <span
@@ -793,8 +793,8 @@ export default function HomeHero({ locale }: Props) {
                     →
                   </span>
                 </Link>
-                <a
-                  href="#how-it-works"
+                <Link
+                  href={`${base}/how-it-works`}
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-black/15 bg-white px-6 py-4 text-[15px] font-semibold text-[#0A0A0A] hover:bg-black/[0.03]"
                 >
                   <span
@@ -812,7 +812,7 @@ export default function HomeHero({ locale }: Props) {
                     </svg>
                   </span>
                   {isTr ? 'Nasıl çalışır?' : 'How it works?'}
-                </a>
+                </Link>
               </div>
 
               {/* Trust strip */}
