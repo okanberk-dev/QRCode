@@ -2,7 +2,6 @@
 
 import { Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import AnimatedCounter from './AnimatedCounter';
 
 interface Props {
   locale: 'tr' | 'en';
@@ -40,8 +39,8 @@ const HERO_PULSE_SNAPSHOTS: Snapshot[] = [
         stars: 5,
         platform: 'Google',
         text: {
-          tr: 'Servis harikaydı, çıkmadan yorum bıraktım.',
-          en: 'Service was great, I left a review before leaving.',
+          tr: 'Servis harikaydı!',
+          en: 'Service was great!',
         },
       },
       {
@@ -50,18 +49,8 @@ const HERO_PULSE_SNAPSHOTS: Snapshot[] = [
         stars: 5,
         platform: 'Tripadvisor',
         text: {
-          tr: 'Kahvesi çok iyi, ekip de hızlıydı.',
-          en: 'Coffee was excellent and the team moved fast.',
-        },
-      },
-      {
-        initial: 'S',
-        name: 'S. Kara',
-        stars: 4,
-        platform: 'Google',
-        text: {
-          tr: 'Rezervasyon akışı pürüzsüzdü.',
-          en: 'The reservation flow felt seamless.',
+          tr: 'Kahvesi çok iyi.',
+          en: 'Coffee was excellent.',
         },
       },
     ],
@@ -78,8 +67,8 @@ const HERO_PULSE_SNAPSHOTS: Snapshot[] = [
         stars: 5,
         platform: 'Yemeksepeti',
         text: {
-          tr: 'Paket çok hızlı geldi, notlar okunmuştu.',
-          en: 'Delivery arrived fast and they followed the notes.',
+          tr: 'Paket çok hızlı geldi.',
+          en: 'Delivery arrived fast.',
         },
       },
       {
@@ -88,18 +77,8 @@ const HERO_PULSE_SNAPSHOTS: Snapshot[] = [
         stars: 5,
         platform: 'Google',
         text: {
-          tr: 'Tatlılar için tekrar geleceğiz.',
-          en: 'We are coming back for the desserts.',
-        },
-      },
-      {
-        initial: 'B',
-        name: 'B. Çetin',
-        stars: 4,
-        platform: 'Tripadvisor',
-        text: {
-          tr: 'Mekân doluydu ama ekip iyi yönetti.',
-          en: 'The place was busy but the team handled it well.',
+          tr: 'Tatlılar harikaydı.',
+          en: 'Desserts were amazing.',
         },
       },
     ],
@@ -116,8 +95,8 @@ const HERO_PULSE_SNAPSHOTS: Snapshot[] = [
         stars: 5,
         platform: 'Google',
         text: {
-          tr: 'Yorum bırakmak çok kolaydı, QR akışı temiz.',
-          en: 'Leaving feedback was easy, the QR flow is clean.',
+          tr: 'QR akışı çok temiz.',
+          en: 'QR flow is clean.',
         },
       },
       {
@@ -126,18 +105,8 @@ const HERO_PULSE_SNAPSHOTS: Snapshot[] = [
         stars: 5,
         platform: 'Getir',
         text: {
-          tr: 'Sipariş sıcak geldi, deneyim çok iyiydi.',
-          en: 'The order arrived warm and the experience was strong.',
-        },
-      },
-      {
-        initial: 'J',
-        name: 'J. Adams',
-        stars: 4,
-        platform: 'Google',
-        text: {
-          tr: 'Ekip hızlı yanıt verdi, güven verdi.',
-          en: 'The team replied fast and built confidence.',
+          tr: 'Sipariş sıcak geldi.',
+          en: 'Order arrived warm.',
         },
       },
     ],
@@ -154,8 +123,8 @@ const HERO_PULSE_SNAPSHOTS: Snapshot[] = [
         stars: 5,
         platform: 'Google',
         text: {
-          tr: 'Şikâyetim aynı gün çözüldü, sonra yoruma döndüm.',
-          en: 'My issue was solved the same day, then I updated my review.',
+          tr: 'Hizmet çok hızlıydı.',
+          en: 'Service was so quick.',
         },
       },
       {
@@ -164,18 +133,8 @@ const HERO_PULSE_SNAPSHOTS: Snapshot[] = [
         stars: 5,
         platform: 'Tripadvisor',
         text: {
-          tr: 'Atmosfer ve servis birlikte çok güçlü.',
-          en: 'Atmosphere and service both feel strong.',
-        },
-      },
-      {
-        initial: 'Z',
-        name: 'Z. Tunç',
-        stars: 4,
-        platform: 'Yemeksepeti',
-        text: {
-          tr: 'Menü daha net, karar vermek kolaylaştı.',
-          en: 'The menu is clearer, choosing became easier.',
+          tr: 'Atmosfer harikaydı.',
+          en: 'Atmosphere was great.',
         },
       },
     ],
@@ -213,47 +172,22 @@ export default function HomeHeroDashboard({ locale }: Props) {
       <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#C6F24E]/15 blur-3xl" />
 
       <div className="relative">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'YORUM RİTMİ · CANLI' : 'REVIEW PULSE · LIVE'}
-            </p>
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
-              </span>
-              <span className="text-[11px] font-semibold text-[#16A34A]">
-                {isTr ? 'Canlı güncelleniyor' : 'Auto-updating live'}
-              </span>
-            </div>
-          </div>
-
-          {/* Inline delta tile removed — `+184%` now renders as a floating
-              badge on the homepage hero (page.tsx). Keeps `delta` in the
-              snapshot data unused but available for future surfaces. */}
-          <div className="flex flex-col gap-2 sm:items-end">
-            <div className="min-w-[120px] rounded-[18px] border border-[#EAEAEA] bg-white/90 px-4 py-3 shadow-[0_18px_34px_-26px_rgba(10,10,10,0.3)] backdrop-blur">
-              <p className="pulse-eyebrow text-[#737373]">{isTr ? 'ŞİMDİ' : 'NOW'}</p>
-              <div
-                className="mt-1 text-[28px] font-medium tracking-tight text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
-              >
-                {mounted ? (
-                  <AnimatedCounter
-                    key={`hero-count-${snapshotIndex}`}
-                    to={activeSnapshot.total}
-                    locale={isTr ? 'tr-TR' : 'en-US'}
-                  />
-                ) : (
-                  <span>0</span>
-                )}
-              </div>
-            </div>
-
-            <p className="pulse-eyebrow pr-1 text-[#737373]">
-              {isTr ? 'SON 15 DK · OTOMATİK AKIŞ' : 'LAST 15 MIN · LIVE FEED'}
-            </p>
+        {/* Header — eyebrow + live status only. Counter tile + right-side
+            caption removed because the floating `+184% YORUM ARTIŞI` badge
+            in page.tsx sits on top of this corner; competing tiles overlap.
+            "SON 15 DK · OTOMATİK AKIŞ" caption moved under the chart. */}
+        <div className="mb-4 max-w-[60%]">
+          <p className="pulse-eyebrow text-[#737373]">
+            {isTr ? 'YORUM RİTMİ · CANLI' : 'REVIEW PULSE · LIVE'}
+          </p>
+          <div className="mt-1 flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
+            </span>
+            <span className="text-[11px] font-semibold text-[#16A34A]">
+              {isTr ? 'Canlı güncelleniyor' : 'Auto-updating live'}
+            </span>
           </div>
         </div>
 
@@ -306,42 +240,33 @@ export default function HomeHeroDashboard({ locale }: Props) {
           </svg>
         </div>
 
-        <div className="mt-4 grid gap-2.5">
+        <div className="mt-3 grid gap-2.5">
           {activeSnapshot.reviews.map((review, index) => (
             <div
               key={`${snapshotIndex}-${review.name}-${index}`}
-              className="flex flex-col gap-3 rounded-[18px] border border-[#EDEDED] bg-white/90 px-3.5 py-3 shadow-[0_18px_30px_-26px_rgba(10,10,10,0.28)] sm:flex-row sm:items-center"
+              className="flex items-center gap-3 rounded-[14px] border border-[#EDEDED] bg-white px-3.5 py-2.5 shadow-[0_8px_20px_-18px_rgba(10,10,10,0.18)]"
               style={{
                 opacity: mounted ? 1 : 0,
                 transform: mounted ? 'translateY(0)' : 'translateY(8px)',
                 transition: `opacity 420ms ease ${150 + index * 90}ms, transform 420ms ease ${150 + index * 90}ms`,
               }}
             >
-              <div className="flex min-w-0 flex-1 items-start gap-3">
-                <span
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EAF9B8] text-[12px] font-semibold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-space-grotesk)' }}
-                >
-                  {review.initial}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <strong className="text-[13px] font-semibold text-[#0A0A0A]">{review.name}</strong>
-                    <span className="pulse-eyebrow inline-flex rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-2 py-1 text-[#737373]">
-                      {review.platform}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[12px] leading-[1.55] text-[#525252] sm:text-[13px]">
-                    {review.text[isTr ? 'tr' : 'en']}
-                  </p>
-                </div>
-              </div>
               <span
-                className="pulse-star-pill w-fit"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF9B8] text-[12px] font-semibold text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                {review.initial}
+              </span>
+              <p className="min-w-0 flex-1 truncate text-[13px] text-[#0A0A0A]">
+                <strong className="font-semibold">{review.name}</strong>{' '}
+                <span className="text-[#525252]">{review.text[isTr ? 'tr' : 'en']}</span>
+              </p>
+              <span
+                className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-[#0A0A0A] px-2 py-1 text-[#C6F24E]"
                 aria-label={`${review.stars} ${isTr ? 'yıldız' : 'stars'}`}
               >
                 {Array.from({ length: review.stars }).map((_, starIndex) => (
-                  <Star key={starIndex} size={12} fill="currentColor" strokeWidth={0} />
+                  <Star key={starIndex} size={9} fill="currentColor" strokeWidth={0} />
                 ))}
               </span>
             </div>
