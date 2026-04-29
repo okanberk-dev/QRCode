@@ -208,35 +208,35 @@ function ROIStrip({ isTr }: { isTr: boolean }) {
 
   return (
     <div className="grid grid-cols-3 divide-x divide-black/10 rounded-2xl border border-black/10 bg-white">
-      <div className="px-4 py-3.5 sm:px-5 sm:py-4">
+      <div className="px-2.5 py-2.5 sm:px-5 sm:py-4">
         <div
-          className="text-[22px] font-semibold leading-none tracking-tight text-[#0A0A0A] sm:text-[26px]"
+          className="text-[18px] font-semibold leading-none tracking-tight text-[#0A0A0A] sm:text-[26px]"
           style={{ fontFamily: 'var(--font-heading)' }}
         >
           {reviews.toLocaleString(isTr ? 'tr-TR' : 'en-US')}+
         </div>
-        <Mono className="mt-1.5">{isTr ? 'YÖNETİLEN YORUM' : 'REVIEWS MANAGED'}</Mono>
+        <Mono className="mt-1 block !tracking-[0.12em] sm:!tracking-[0.18em]">{isTr ? 'YÖNETİLEN YORUM' : 'REVIEWS MANAGED'}</Mono>
       </div>
-      <div className="px-4 py-3.5 sm:px-5 sm:py-4">
+      <div className="px-2.5 py-2.5 sm:px-5 sm:py-4">
         <div className="flex items-baseline gap-1">
           <span
-            className="text-[22px] font-semibold leading-none tracking-tight text-[#0A0A0A] sm:text-[26px]"
+            className="text-[18px] font-semibold leading-none tracking-tight text-[#0A0A0A] sm:text-[26px]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             +{(stars / 10).toFixed(1)}
           </span>
-          <StarSvg size={14} fill="#C6F24E" />
+          <StarSvg size={12} fill="#C6F24E" />
         </div>
-        <Mono className="mt-1.5">{isTr ? 'ORT. PUAN ARTIŞI' : 'AVG. RATING LIFT'}</Mono>
+        <Mono className="mt-1 block !tracking-[0.12em] sm:!tracking-[0.18em]">{isTr ? 'ORT. PUAN ARTIŞI' : 'AVG. RATING LIFT'}</Mono>
       </div>
-      <div className="px-4 py-3.5 sm:px-5 sm:py-4">
+      <div className="px-2.5 py-2.5 sm:px-5 sm:py-4">
         <div
-          className="text-[22px] font-semibold leading-none tracking-tight text-[#0A0A0A] sm:text-[26px]"
+          className="text-[18px] font-semibold leading-none tracking-tight text-[#0A0A0A] sm:text-[26px]"
           style={{ fontFamily: 'var(--font-heading)' }}
         >
           %{time}
         </div>
-        <Mono className="mt-1.5">{isTr ? 'YANIT SÜRESİ ↓' : 'RESPONSE TIME ↓'}</Mono>
+        <Mono className="mt-1 block !tracking-[0.12em] sm:!tracking-[0.18em]">{isTr ? 'YANIT SÜRESİ ↓' : 'RESPONSE TIME ↓'}</Mono>
       </div>
     </div>
   );
