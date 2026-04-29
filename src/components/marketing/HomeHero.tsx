@@ -610,12 +610,10 @@ function ReputationCluster({
           <LiveSignal isTr={isTr} />
         </div>
 
-        {/* invisible spacer reserves cluster height — only adds extra
-            room on sm+ where the absolute Dial + Signal layers render.
-            On mobile it collapses to the inbox card's natural height. */}
-        <div className="invisible" aria-hidden>
+        {/* Desktop-only spacer reserves room for the absolute lower layers. */}
+        <div className="invisible hidden sm:block" aria-hidden>
           <InboxCard isTr={isTr} />
-          <div className="h-0 sm:h-40" />
+          <div className="h-40" />
         </div>
       </div>
     </div>
@@ -692,32 +690,6 @@ export default function HomeHero({ locale }: Props) {
 
       <section className="relative px-5 pb-20 pt-8 sm:px-8 sm:pt-12 lg:px-10 lg:pb-28 lg:pt-12">
         <div className="mx-auto max-w-[1240px]">
-          {/* Announcement pill */}
-          <div className="mb-7 flex sm:mb-9">
-            <Link
-              href={`${base}/how-it-works`}
-              className="group inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-2.5 py-1.5 shadow-sm transition-shadow hover:shadow-md"
-            >
-              <span
-                className="rounded-full bg-[#0A0A0A] px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-[#C6F24E]"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                {isTr ? 'YENİ' : 'NEW'}
-              </span>
-              <Mono color="#0A0A0A">
-                {isTr
-                  ? "PULSE AI · 0.8sn'de yanıt taslağı"
-                  : 'PULSE AI · reply draft in 0.8s'}
-              </Mono>
-              <span
-                className="text-[#A3A3A3] transition-transform group-hover:translate-x-0.5"
-                aria-hidden
-              >
-                →
-              </span>
-            </Link>
-          </div>
-
           {/* Two-column grid */}
           <div className="grid grid-cols-1 items-start gap-x-10 gap-y-12 lg:grid-cols-[1.05fr_1fr] lg:gap-y-0">
             {/* LEFT */}

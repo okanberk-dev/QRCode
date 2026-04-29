@@ -20,10 +20,66 @@ const TEMPLATES: Record<TemplateKey, { card: string; fg: string; border: string;
 
 const DEFAULT_URL = 'https://buaze.com';
 
-const escapeHtml = (s: string) =>
-  s.replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string),
-  );
+const getQrHostname = (value: string) => {
+  try {
+    return new URL(value).hostname.replace(/^www\./, '') || 'qr';
+  } catch {
+    return 'qr';
+  }
+};
+
+const drawRoundedRect = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) => {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+};
+
+const wrapCanvasText = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number,
+) => {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = '';
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (ctx.measureText(next).width <= maxWidth) {
+      current = next;
+      continue;
+    }
+
+    if (current) lines.push(current);
+    current = word;
+    if (lines.length === maxLines) break;
+  }
+
+  if (current && lines.length < maxLines) lines.push(current);
+
+  if (lines.length === maxLines && words.join(' ') !== lines.join(' ')) {
+    let last = lines[maxLines - 1];
+    while (last.length > 1 && ctx.measureText(`${last}...`).width > maxWidth) {
+      last = last.slice(0, -1);
+    }
+    lines[maxLines - 1] = `${last}...`;
+  }
+
+  return lines.length ? lines : [text];
+};
 
 export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
   const isTr = locale === 'tr';
@@ -39,6 +95,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
   const [submittedUrl, setSubmittedUrl] = useState(DEFAULT_URL);
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDesignDownloading, setIsDesignDownloading] = useState(false);
 
   const normalizeUrl = useCallback((raw: string): string => {
     const trimmed = raw.trim();
@@ -91,69 +148,85 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const link = document.createElement('a');
-    const hostname = (() => {
-      try {
-        return new URL(submittedUrl).hostname.replace(/^www\./, '');
-      } catch {
-        return 'qr';
-      }
-    })();
+    const hostname = getQrHostname(submittedUrl);
     link.download = `qr-${hostname}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   };
 
-  const handlePdfDownload = () => {
+  const handleDesignDownload = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL('image/png');
-    const palette = TEMPLATES[template];
-    const safeBiz = escapeHtml((businessName || 'BUAZE').toUpperCase().slice(0, 60));
-    const safeMsg = escapeHtml(message || defaultMessage);
-    const safeFooter = isTr ? 'BUAZE · TARA &#10022; PAYLAŞ' : 'BUAZE · SCAN &#10022; SHARE';
+    setIsDesignDownloading(true);
+    try {
+      await document.fonts?.ready;
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    printWindow.document.write(`<!DOCTYPE html>
-<html lang="${isTr ? 'tr' : 'en'}">
-<head>
-<meta charset="utf-8" />
-<title>${safeBiz} QR</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; }
-  .card { background: ${palette.card}; color: ${palette.fg}; border: 1px solid ${palette.border === 'transparent' ? palette.card : palette.border}; padding: 56px 40px; border-radius: 24px; width: 100%; max-width: 520px; aspect-ratio: 3 / 4; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; }
-  .eyebrow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.2em; color: ${palette.eyebrow}; }
-  h1 { font-size: 38px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin: 12px 0 0; white-space: pre-line; }
-  .qr-wrap { background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 1px 0 rgba(10,10,10,0.05); }
-  .qr-wrap img { display: block; width: 200px; height: 200px; }
-  .footer { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.18em; color: ${palette.eyebrow}; }
-  @media print {
-    body { background: #fff; padding: 0; }
-    .card { box-shadow: none; }
-    @page { size: A5 portrait; margin: 12mm; }
-  }
-</style>
-</head>
-<body>
-  <div class="card">
-    <div>
-      <div class="eyebrow">${safeBiz}</div>
-      <h1>${safeMsg}</h1>
-    </div>
-    <div class="qr-wrap"><img src="${dataUrl}" alt="QR" /></div>
-    <div class="footer">${safeFooter}</div>
-  </div>
-  <script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 250); });</script>
-</body>
-</html>`);
-    printWindow.document.close();
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = 1200;
+      exportCanvas.height = 1600;
+      const ctx = exportCanvas.getContext('2d');
+      if (!ctx) return;
+
+      const palette = TEMPLATES[template];
+      const hostname = getQrHostname(submittedUrl);
+      const title = (businessName || 'BUAZE').toUpperCase().slice(0, 60);
+      const headline = message || defaultMessage;
+      const footer = isTr ? 'BUAZE · TARA ✦ PAYLAŞ' : 'BUAZE · SCAN ✦ SHARE';
+
+      ctx.fillStyle = palette.card;
+      ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+      if (palette.border !== 'transparent') {
+        ctx.strokeStyle = palette.border;
+        ctx.lineWidth = 6;
+        ctx.strokeRect(3, 3, exportCanvas.width - 6, exportCanvas.height - 6);
+      }
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      ctx.fillStyle = palette.eyebrow;
+      ctx.font = '600 30px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText(title, exportCanvas.width / 2, 190, 920);
+
+      ctx.fillStyle = palette.fg;
+      ctx.font = '500 92px "Space Grotesk", system-ui, sans-serif';
+      const headlineLines = wrapCanvasText(ctx, headline, 920, 3);
+      const headlineLineHeight = 98;
+      const headlineStartY = 315 - ((headlineLines.length - 1) * headlineLineHeight) / 2;
+      headlineLines.forEach((line, index) => {
+        ctx.fillText(line, exportCanvas.width / 2, headlineStartY + index * headlineLineHeight);
+      });
+
+      const qrBoxSize = 600;
+      const qrBoxX = (exportCanvas.width - qrBoxSize) / 2;
+      const qrBoxY = 715;
+      drawRoundedRect(ctx, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 56);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill();
+      ctx.shadowColor = 'rgba(10,10,10,0.08)';
+      ctx.shadowBlur = 28;
+      ctx.shadowOffsetY = 10;
+      ctx.drawImage(canvas, qrBoxX + 52, qrBoxY + 52, qrBoxSize - 104, qrBoxSize - 104);
+      ctx.shadowColor = 'transparent';
+
+      ctx.fillStyle = palette.eyebrow;
+      ctx.font = '600 28px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText(footer, exportCanvas.width / 2, 1440, 920);
+
+      const link = document.createElement('a');
+      link.download = `qr-design-${hostname}.png`;
+      link.href = exportCanvas.toDataURL('image/png');
+      link.click();
+    } finally {
+      setIsDesignDownloading(false);
+    }
   };
 
   const palette = TEMPLATES[template];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
+    <div className="grid min-w-0 grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
       {/* ─── 1. Form (FAFAFA card) ───
           On mobile, form comes first (DOM order) so the user can see the
           numbered "1. Bilgilerini gir" → "2. Önizle ve indir" sequence in
@@ -296,7 +369,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
       </form>
 
       {/* ─── 2. Preview (design 1:1: site-more.jsx:53-86) ─── */}
-      <div className="lg:order-2">
+      <div className="min-w-0 lg:order-2">
         <h2
           className="text-[22px] sm:text-[24px] font-semibold text-[#0A0A0A] tracking-[-0.015em] mb-5"
           style={{ fontFamily: 'var(--font-heading)' }}
@@ -305,7 +378,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
         </h2>
 
         <figure
-          className="rounded-[18px] flex flex-col items-center justify-between text-center transition-colors w-full"
+          className="mx-auto flex w-full max-w-[420px] flex-col items-center justify-between overflow-hidden rounded-[18px] text-center transition-colors sm:max-w-none"
           style={{
             background: palette.card,
             color: palette.fg,
@@ -348,15 +421,16 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           </div>
 
           <div
-            className="bg-white shrink-0"
-            style={{ borderRadius: 16, padding: 16 }}
+            className="max-w-full shrink-0 bg-white"
+            style={{ borderRadius: 16, padding: 'clamp(10px, 3vw, 16px)' }}
           >
             <canvas
               ref={canvasRef}
               className="block"
               style={{
-                width: 'clamp(128px, 22vw, 160px)',
-                height: 'clamp(128px, 22vw, 160px)',
+                width: 'min(44vw, 160px)',
+                height: 'min(44vw, 160px)',
+                maxWidth: '100%',
               }}
               width={480}
               height={480}
@@ -385,7 +459,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           {isGenerating ? (isTr ? 'Oluşturuluyor…' : 'Generating…') : submittedUrl}
         </p>
 
-        <div className="mt-3.5 grid grid-cols-2 gap-2.5">
+        <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <button
             type="button"
             onClick={handlePngDownload}
@@ -396,10 +470,14 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           </button>
           <button
             type="button"
-            onClick={handlePdfDownload}
+            onClick={handleDesignDownload}
+            disabled={isDesignDownloading}
             className="inline-flex items-center justify-center gap-1.5 bg-white text-[#0A0A0A] text-[13px] font-medium px-[18px] py-3 rounded-full border border-[#0A0A0A] hover:bg-[#FAFAFA] transition-colors"
           >
-            {isTr ? 'PDF olarak' : 'As PDF'}
+            <Download size={13} aria-hidden />
+            {isDesignDownloading
+              ? (isTr ? 'Hazırlanıyor' : 'Preparing')
+              : (isTr ? 'Tasarım ile indir' : 'Download design')}
           </button>
         </div>
       </div>
