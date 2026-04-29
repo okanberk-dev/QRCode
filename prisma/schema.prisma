@@ -13,7 +13,11 @@ model User {
   email               String    @unique
   passwordHash        String    @map("password_hash")
   name                String?
-  role                String    @default("restaurant_owner")
+  // Optional contact phone (collected on team-invite acceptance, §22 davet akışı).
+  // Format free-form (TR `+90 5XX...` placeholder); not validated server-side
+  // because mevcut validations.ts pattern minimal — admin paneli görüntüler.
+  phoneNumber         String?   @map("phone_number")
+  role                String    @default("restaurant_owner") // restaurant_owner | team_member
   plan                String    @default("trial") // trial | monthly | yearly
   trialEndsAt         DateTime? @map("trial_ends_at")
   locale              String    @default("tr")
@@ -37,6 +41,13 @@ model User {
   twoFactorEnabled     Boolean   @default(false) @map("two_factor_enabled")
   // Backup codes — bcrypt hash array (one-time use, 8 adet).
   twoFactorBackupCodes String[]  @default([]) @map("two_factor_backup_codes")
+  // Email verification (CLAUDE.md §22 davet akışı). Self-signup ve davet akışı
+  // her ikisi için emailVerified=false ile başlar; verify endpoint set eder.
+  // Login flow emailVerified=false ise 403 + "/auth/check-email" yönlendirir.
+  // emailVerifyToken 32 byte hex unique, 24h TTL.
+  emailVerified             Boolean   @default(false) @map("email_verified")
+  emailVerifyToken          String?   @unique @map("email_verify_token")
+  emailVerifyTokenExpiresAt DateTime? @map("email_verify_token_expires_at")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 

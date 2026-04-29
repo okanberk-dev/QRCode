@@ -152,9 +152,17 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
               ? 'Ücretsiz deneme süreniz sona ermiştir. Devam etmek için plan yükseltin.'
               : 'Your free trial has expired. Please upgrade to continue.'
           );
-        } else {
-          setError(data.error || (locale === 'tr' ? 'Giriş yapılamadı.' : 'Login failed.'));
+          setLoading(false);
+          return;
         }
+        if (data.error === 'email_not_verified' && data.email) {
+          // §22 — Davet akışında oluşan team_member hesabı, mail onayı henüz
+          // gelmemiş. Kullanıcıyı check-email sayfasına yönlendir; orada
+          // "Tekrar gönder" butonuyla yeni mail isteyebilir.
+          window.location.href = `/${locale}/auth/check-email?email=${encodeURIComponent(String(data.email))}`;
+          return;
+        }
+        setError(data.error || (locale === 'tr' ? 'Giriş yapılamadı.' : 'Login failed.'));
         setLoading(false);
         return;
       }

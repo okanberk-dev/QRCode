@@ -93,6 +93,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // §22 — Email verify hard gate. Davet akışında oluşan team_member
+    // hesapları emailVerified=false ile başlar; verify mail'indeki linke
+    // tıklamadan panele giremez. Backward compat için sadece team_member
+    // role'üne uygulanır — eski owner'lar (restaurant_owner) emailVerified
+    // false ile kayıtlı olabilir, onlar etkilenmez.
+    if (user.role === 'team_member' && user.emailVerified === false) {
+      return NextResponse.json(
+        {
+          error: 'email_not_verified',
+          message: 'E-postanı onaylaman gerekiyor.',
+          email: user.email,
+          needsVerification: true,
+        },
+        { status: 403 },
+      );
+    }
+
     // Check trial status
     const now = new Date();
     const isTrialExpired = user.plan === 'trial' && user.trialEndsAt && user.trialEndsAt < now;

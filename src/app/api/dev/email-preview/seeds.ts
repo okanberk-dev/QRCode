@@ -12,6 +12,7 @@ import type { NewsletterParams } from '@/lib/email/templates/newsletter';
 import type { CustomerReplyParams } from '@/lib/email/templates/customer-reply';
 import type { TrialEndingParams } from '@/lib/email/templates/trial-ending';
 import type { ContactAdminParams } from '@/lib/email/templates/contact-admin';
+import type { VerifyEmailParams } from '@/lib/email/templates/verify-email';
 
 export const PREVIEW_TEMPLATES = [
   'forgot-password',
@@ -24,6 +25,7 @@ export const PREVIEW_TEMPLATES = [
   'customer-reply',
   'trial-ending',
   'contact-admin',
+  'verify-email',
 ] as const;
 
 export type PreviewTemplate = (typeof PREVIEW_TEMPLATES)[number];
@@ -151,5 +153,9 @@ export const SEEDS = {
       'Merhaba, restoranımızda 3 şubemiz var ve QR ile yorum toplama akışını kurmak istiyoruz. Demo için uygun bir gün ayarlayabilir miyiz?\n\nGetir Yemek + Yemeksepeti entegrasyonu da bizim için kritik. Teşekkürler.',
     marketingConsent: true,
     sourcePath: 'buaze.com/iletisim',
+  }),
+  'verify-email': (): VerifyEmailParams => ({
+    firstName: 'Mert',
+    verifyUrl: `${APP_URL}/tr/auth/verify-email?token=4f8e2bd71pulseabc123`,
   }),
 } satisfies Record<PreviewTemplate, () => unknown>;

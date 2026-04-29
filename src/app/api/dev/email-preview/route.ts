@@ -12,6 +12,7 @@ import {
   renderCustomerReply,
   renderTrialEnding,
   renderContactAdmin,
+  renderVerifyEmail,
 } from '@/lib/email/templates';
 import { isPreviewTemplate, SEEDS, type PreviewTemplate } from './seeds';
 import { getUnsubscribeUrl } from '@/lib/email';
@@ -130,5 +131,7 @@ export async function renderTemplate(
       return renderTrialEnding(SEEDS['trial-ending'](), locale);
     case 'contact-admin':
       return renderContactAdmin(SEEDS['contact-admin'](), locale);
+    case 'verify-email':
+      return renderVerifyEmail(SEEDS['verify-email'](), locale);
   }
 }

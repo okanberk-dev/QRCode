@@ -390,6 +390,28 @@ const FORM_CONFIRMATION_EN = {
   },
 };
 
+// §22 davet akışı — verify-email gate (welcome'dan farklı: hesap oluşturma
+// sonrası ZORUNLU onay maili). Locked field'lar `locked-fields.ts` tarafından
+// admin override'dan korunur (statusText/notYouTitle/notYouBody) — tek
+// kullanılan editlenebilir alanlar eyebrow/title/intro/cta.
+const VERIFY_EMAIL_TR: Copy = {
+  eyebrow: 'E-POSTA ONAYI',
+  title: 'Hesabını birkaç',
+  titleAccent: 'saniyede aç',
+  intro: 'Merhaba <strong style="color:#0A0A0A;font-weight:500;">${firstName}</strong>. Buaze hesabını oluşturduğun için teşekkürler. Devam edebilmek için aşağıdaki butonla e-posta adresini onayla. Bağlantı 24 saat geçerli.',
+  cardEyebrow: 'Tek kullanımlık link',
+  cta: 'E-postamı onayla →',
+};
+
+const VERIFY_EMAIL_EN: Copy = {
+  eyebrow: 'EMAIL VERIFICATION',
+  title: 'Activate your account',
+  titleAccent: 'in seconds',
+  intro: 'Hi <strong style="color:#0A0A0A;font-weight:500;">${firstName}</strong>. Thanks for creating a Buaze account. To continue, confirm your email address with the button below. The link is valid for 24 hours.',
+  cardEyebrow: 'One-time link',
+  cta: 'Verify my email →',
+};
+
 const SEEDS: Array<{ key: string; locale: string; content: Copy }> = [
   { key: 'welcome', locale: 'tr', content: WELCOME_TR },
   { key: 'welcome', locale: 'en', content: WELCOME_EN },
@@ -409,6 +431,8 @@ const SEEDS: Array<{ key: string; locale: string; content: Copy }> = [
   { key: 'customer-reply', locale: 'en', content: CUSTOMER_REPLY_EN },
   { key: 'form-confirmation', locale: 'tr', content: FORM_CONFIRMATION_TR },
   { key: 'form-confirmation', locale: 'en', content: FORM_CONFIRMATION_EN },
+  { key: 'verify-email', locale: 'tr', content: VERIFY_EMAIL_TR },
+  { key: 'verify-email', locale: 'en', content: VERIFY_EMAIL_EN },
 ];
 
 async function main() {

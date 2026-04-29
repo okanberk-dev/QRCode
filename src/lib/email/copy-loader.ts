@@ -43,6 +43,8 @@ export const SUPPORTED_MAIL_KEYS = [
   // because it has 4 formType variants. Loader keeps the same signature;
   // validation below also accepts plain objects at the top level.
   'form-confirmation',
+  // §22 davet akışı: e-posta onay gate'i için kullanılır.
+  'verify-email',
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];
