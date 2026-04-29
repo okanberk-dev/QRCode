@@ -238,18 +238,59 @@ export default async function LandingPage({
       iconBg: '#EAF9B8',
       iconFg: '#0A0A0A',
       visual: (
-        <svg viewBox="0 0 200 48" className="w-full" aria-hidden>
-          {[12, 24, 36].map((y) => (
-            <line key={y} x1="0" y1={y} x2="200" y2={y} stroke="#EDEDED" strokeWidth="0.8" />
+        <svg viewBox="0 0 260 140" className="w-full" aria-hidden>
+          {/* Browser-style card */}
+          <rect x="8" y="20" width="244" height="115" rx="10" fill="#FFFFFF" stroke="#EDEDED" strokeWidth="1.5" />
+          {/* Title placeholders */}
+          <rect x="22" y="32" width="60" height="6" rx="3" fill="#0A0A0A" />
+          <rect x="22" y="42" width="40" height="4" rx="2" fill="#EDEDED" />
+          {/* Grid lines */}
+          {[60, 85, 110].map((y) => (
+            <line key={y} x1="22" y1={y} x2="240" y2={y} stroke="#F5F5F5" strokeWidth="1" />
           ))}
+          {/* Bars — 5 bars, 3rd one (peak) is lime */}
+          {([
+            [45, 50],
+            [80, 70],
+            [115, 100],
+            [150, 55],
+            [185, 80],
+          ] as const).map(([x, h], i) => (
+            <rect
+              key={x}
+              x={x - 9}
+              y={120 - h}
+              width="18"
+              height={h}
+              rx="2.5"
+              fill={i === 2 ? '#C6F24E' : '#0A0A0A'}
+            />
+          ))}
+          {/* Trend line — dashed, connects bar tops */}
           <path
-            d="M0 36 L30 30 L60 24 L90 18 L120 14 L150 8 L180 6 L200 4"
+            d="M45 70 L80 50 L115 20 L150 65 L185 40"
             fill="none"
             stroke="#0A0A0A"
-            strokeWidth="2.5"
-            strokeLinecap="round"
+            strokeWidth="1.5"
+            strokeDasharray="3,3"
           />
-          <circle cx="200" cy="4" r="4" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
+          {/* Leader line from peak to +184% pill */}
+          <path d="M115 20 L195 11" fill="none" stroke="#0A0A0A" strokeWidth="1" />
+          {/* +184% pill — top-right floating badge */}
+          <rect x="195" y="2" width="55" height="18" rx="9" fill="#0A0A0A" />
+          <text
+            x="222.5"
+            y="14.5"
+            textAnchor="middle"
+            fontFamily="var(--font-mono)"
+            fontSize="10"
+            fill="#C6F24E"
+            fontWeight="600"
+          >
+            +184%
+          </text>
+          {/* Peak dot — lime fill, graphite stroke */}
+          <circle cx="115" cy="20" r="6" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
         </svg>
       ),
     },
