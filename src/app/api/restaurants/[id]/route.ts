@@ -80,6 +80,8 @@ export async function PUT(
       address,
       city,
       kvkkText,
+      description,
+      website,
       phone,
       googlePlaceId,
       googleReviewUrl,
@@ -115,6 +117,18 @@ export async function PUT(
     if (defaultRedirectPlatform !== undefined && defaultRedirectPlatform !== null && defaultRedirectPlatform !== '') {
       if (typeof defaultRedirectPlatform !== 'string' || !ALLOWED_DEFAULT_PLATFORMS.has(defaultRedirectPlatform)) {
         return ApiErrors.badRequest('Geçersiz varsayılan platform', 'INVALID_DEFAULT_PLATFORM');
+      }
+    }
+
+    // Section 1 — website URL validation (Faz 1). Empty string clears it.
+    if (website !== undefined && website !== null && website !== '' && typeof website === 'string') {
+      try {
+        const u = new URL(website);
+        if (!/^https?:$/.test(u.protocol)) {
+          return ApiErrors.badRequest('Web sitesi http(s):// ile başlamalı', 'INVALID_WEBSITE');
+        }
+      } catch {
+        return ApiErrors.badRequest('Geçersiz web sitesi adresi', 'INVALID_WEBSITE');
       }
     }
 
@@ -188,6 +202,19 @@ export async function PUT(
         }),
         ...(kvkkText !== undefined && {
           kvkkText: typeof kvkkText === 'string' && kvkkText.trim() ? kvkkText : null,
+        }),
+        // Section 1 — Genel Bilgiler. description ≤280 char, website new URL().
+        ...(description !== undefined && {
+          description:
+            typeof description === 'string' && description.trim()
+              ? description.trim().slice(0, 280)
+              : null,
+        }),
+        ...(website !== undefined && {
+          website:
+            typeof website === 'string' && website.trim()
+              ? website.trim().slice(0, 500)
+              : null,
         }),
         ...(phone !== undefined && { phone: phone || null }),
         ...(googlePlaceId !== undefined && { googlePlaceId: googlePlaceId || null }),
