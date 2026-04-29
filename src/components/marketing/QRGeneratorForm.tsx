@@ -295,7 +295,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
         </div>
       </form>
 
-      {/* ─── 2. Preview ─── */}
+      {/* ─── 2. Preview (design 1:1: site-more.jsx:53-86) ─── */}
       <div className="lg:order-2">
         <h2
           className="text-[22px] sm:text-[24px] font-semibold text-[#0A0A0A] tracking-[-0.015em] mb-5"
@@ -305,34 +305,37 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
         </h2>
 
         <figure
-          className="rounded-[18px] flex flex-col items-center justify-between text-center transition-colors mx-auto w-full max-w-[420px]"
+          className="rounded-[18px] flex flex-col items-center justify-between text-center transition-colors w-full"
           style={{
             background: palette.card,
             color: palette.fg,
             border: palette.border === 'transparent' ? '1px solid transparent' : `1px solid ${palette.border}`,
-            // 3:4 ratio capped between 360-560px so the card never collapses
-            // (long messages were pushing the QR off-centre on small screens)
-            // and never balloons on tablet portrait.
             aspectRatio: '3 / 4',
-            minHeight: 360,
-            maxHeight: 560,
-            padding: 'clamp(18px, 5vw, 40px)',
-            gap: 12,
+            padding: 'clamp(24px, 5vw, 40px)',
           }}
         >
           <div className="w-full min-w-0">
             <div
-              className="pulse-eyebrow truncate"
-              style={{ color: palette.eyebrow, fontSize: 10, letterSpacing: '0.2em' }}
+              className="truncate"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: palette.eyebrow,
+                opacity: 1,
+              }}
             >
-              {(businessName || 'BUAZE').toUpperCase().slice(0, 28)}
+              {(businessName || 'BUAZE').slice(0, 28)}
             </div>
             <div
-              className="mt-2.5 leading-[1.02] tracking-[-0.03em] whitespace-pre-line break-words"
+              className="mt-2.5 break-words"
               style={{
                 fontFamily: 'var(--font-heading)',
-                fontSize: 'clamp(20px, 4vw, 38px)',
+                fontSize: 'clamp(24px, 4.4vw, 38px)',
                 fontWeight: 500,
+                lineHeight: 1,
+                letterSpacing: '-0.03em',
                 color: palette.fg,
                 display: '-webkit-box',
                 WebkitLineClamp: 3,
@@ -344,10 +347,17 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-[0_1px_0_rgba(10,10,10,0.05)] shrink-0">
+          <div
+            className="bg-white shrink-0"
+            style={{ borderRadius: 16, padding: 16 }}
+          >
             <canvas
               ref={canvasRef}
-              className="block w-[128px] h-[128px] sm:w-[160px] sm:h-[160px]"
+              className="block"
+              style={{
+                width: 'clamp(128px, 22vw, 160px)',
+                height: 'clamp(128px, 22vw, 160px)',
+              }}
               width={480}
               height={480}
               role="img"
@@ -358,26 +368,28 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           </div>
 
           <div
-            className="pulse-eyebrow truncate w-full"
-            style={{ color: palette.eyebrow, fontSize: 10, letterSpacing: '0.18em' }}
+            className="truncate w-full"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: palette.eyebrow,
+            }}
           >
             {isTr ? 'BUAZE · TARA ✦ PAYLAŞ' : 'BUAZE · SCAN ✦ SHARE'}
           </div>
         </figure>
 
-        <figcaption
-          className="mt-3 font-mono text-[11px] sm:text-[12px] text-[#737373] break-all leading-relaxed text-center px-1"
-          style={{ fontFamily: 'var(--font-mono)' }}
-          aria-live="polite"
-        >
+        <p className="sr-only" aria-live="polite">
           {isGenerating ? (isTr ? 'Oluşturuluyor…' : 'Generating…') : submittedUrl}
-        </figcaption>
+        </p>
 
         <div className="mt-3.5 grid grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={handlePngDownload}
-            className="inline-flex items-center justify-center gap-1.5 bg-[#0A0A0A] text-white text-[13px] font-medium px-4 py-3 rounded-full hover:bg-[#1A1A1A] transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 bg-[#0A0A0A] text-white text-[13px] font-medium px-[18px] py-3 rounded-full hover:bg-[#1A1A1A] transition-colors"
           >
             <Download size={13} aria-hidden />
             {isTr ? 'PNG indir' : 'PNG download'}
@@ -385,7 +397,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           <button
             type="button"
             onClick={handlePdfDownload}
-            className="inline-flex items-center justify-center gap-1.5 bg-white text-[#0A0A0A] text-[13px] font-medium px-4 py-3 rounded-full border border-[#0A0A0A] hover:bg-[#FAFAFA] transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 bg-white text-[#0A0A0A] text-[13px] font-medium px-[18px] py-3 rounded-full border border-[#0A0A0A] hover:bg-[#FAFAFA] transition-colors"
           >
             {isTr ? 'PDF olarak' : 'As PDF'}
           </button>
