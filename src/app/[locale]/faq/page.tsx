@@ -133,6 +133,7 @@ export default async function FaqPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* Hero + FAQ — 2-col grid (1fr 2fr) */}
       <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-10">
@@ -186,6 +187,7 @@ export default async function FaqPage({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

@@ -110,6 +110,7 @@ export default async function FeaturesPage({
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-8">
         <div className="max-w-[1200px] mx-auto">
@@ -218,6 +219,7 @@ export default async function FeaturesPage({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

@@ -65,6 +65,7 @@ export default async function ContactPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* ─── Hero ─── */}
       <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-24 pb-10 sm:pb-14">
@@ -172,6 +173,7 @@ export default async function ContactPage({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );
