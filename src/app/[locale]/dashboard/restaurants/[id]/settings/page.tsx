@@ -3,13 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, Loader2, Palette, Plug } from "lucide-react";
-import { AlertBanner, Badge, BusinessStatusBadge, PageHeader } from "@/components/ui";
+import { AlertOctagon, ArrowLeft, Building2, Clock, Loader2, Lock, Palette, Plug } from "lucide-react";
+import { AlertBanner, BusinessStatusBadge, PageHeader } from "@/components/ui";
 import { SettingsLayout, type SettingsTab } from "@/components/dashboard/settings/SettingsLayout";
 import { SettingsSection } from "@/components/dashboard/settings/SettingsSection";
 import { BusinessGeneralSettings } from "@/components/dashboard/settings/sections/BusinessGeneralSettings";
 import { BusinessBrandSettings } from "@/components/dashboard/settings/sections/BusinessBrandSettings";
 import { BusinessIntegrationSettings } from "@/components/dashboard/settings/sections/BusinessIntegrationSettings";
+import { BusinessOperationalSettings } from "@/components/dashboard/settings/sections/BusinessOperationalSettings";
+import { BusinessSecuritySettings } from "@/components/dashboard/settings/sections/BusinessSecuritySettings";
+import { DangerZone } from "@/components/dashboard/settings/sections/DangerZone";
 
 interface RestaurantPayload {
   id: string;
@@ -42,15 +45,19 @@ interface RestaurantPayload {
   facebookUrl: string | null;
   whatsappUrl: string | null;
   reservationUrl: string | null;
+  workingHours: string | null;
+  temporarilyClosed: boolean;
+  closedReason: string | null;
+  kvkkText: string | null;
 }
 
 const SECTION_TABS: SettingsTab[] = [
   { id: "general", label: "Genel" },
   { id: "brand", label: "Marka" },
   { id: "integrations", label: "Entegrasyonlar" },
-  { id: "operations", label: "Operasyonel", badge: <Badge kind="ghost" dot={false}>Yakında</Badge>, disabled: true },
-  { id: "security", label: "Güvenlik", badge: <Badge kind="ghost" dot={false}>Yakında</Badge>, disabled: true },
-  { id: "danger", label: "Tehlikeli bölge", badge: <Badge kind="ghost" dot={false}>Yakında</Badge>, disabled: true },
+  { id: "operations", label: "Operasyonel" },
+  { id: "security", label: "Güvenlik" },
+  { id: "danger", label: "Tehlikeli bölge" },
 ];
 
 const VALID_SECTION_IDS = new Set(SECTION_TABS.filter((t) => !t.disabled).map((t) => t.id));
@@ -123,6 +130,10 @@ export default function RestaurantSettingsPage() {
           facebookUrl: data.facebookUrl ?? null,
           whatsappUrl: data.whatsappUrl ?? null,
           reservationUrl: data.reservationUrl ?? null,
+          workingHours: data.workingHours ?? null,
+          temporarilyClosed: data.temporarilyClosed ?? false,
+          closedReason: data.closedReason ?? null,
+          kvkkText: data.kvkkText ?? null,
         });
       } catch (err) {
         if (!cancelled) setError((err as Error).message);
@@ -148,8 +159,11 @@ export default function RestaurantSettingsPage() {
     setRestaurant((prev) => (prev ? { ...prev, category } : prev));
   };
 
-  const handleSaved = (next: RestaurantPayload) => {
-    setRestaurant(next);
+  // Section component'leri kendi alt-tipiyle (RestaurantData) callback yapar.
+  // Parent burada Partial olarak kabul edip mevcut state'in üzerine merge eder.
+  // Bu sayede General + Brand + Integrations farklı subset'leri bağımsız save'leyebilir.
+  const handleSaved = (partial: Partial<RestaurantPayload>) => {
+    setRestaurant((prev) => (prev ? { ...prev, ...partial } : prev));
   };
 
   if (loading) {
@@ -255,7 +269,7 @@ export default function RestaurantSettingsPage() {
         title="Entegrasyonlar"
         description="Yorum platformları, sosyal medya kanalları ve varsayılan yönlendirme."
         actions={
-          <span className="text-[#737373] text-[20px]" aria-hidden="true">
+          <span className="text-[#737373]" aria-hidden="true">
             <Plug size={18} />
           </span>
         }
@@ -264,6 +278,61 @@ export default function RestaurantSettingsPage() {
           restaurant={restaurant}
           locale={locale === "tr" ? "tr" : "en"}
           onSaved={handleSaved}
+        />
+      </SettingsSection>
+
+      <SettingsSection
+        id="operations"
+        active={active === "operations"}
+        eyebrow="04 — OPERASYONEL"
+        title="Operasyonel ayarlar"
+        description="Çalışma saatleri ve geçici kapalı durumu."
+        actions={
+          <span className="text-[#737373]" aria-hidden="true">
+            <Clock size={18} />
+          </span>
+        }
+      >
+        <BusinessOperationalSettings
+          restaurant={restaurant}
+          onSaved={handleSaved}
+        />
+      </SettingsSection>
+
+      <SettingsSection
+        id="security"
+        active={active === "security"}
+        eyebrow="05 — GÜVENLİK"
+        title="Güvenlik & erişim"
+        description="2FA, aktif oturumlar, API anahtarları, KVKK metni ve aktiflik."
+        actions={
+          <span className="text-[#737373]" aria-hidden="true">
+            <Lock size={18} />
+          </span>
+        }
+      >
+        <BusinessSecuritySettings
+          restaurant={restaurant}
+          onSaved={handleSaved}
+        />
+      </SettingsSection>
+
+      <SettingsSection
+        id="danger"
+        active={active === "danger"}
+        eyebrow="06 — TEHLİKELİ BÖLGE"
+        title="Tehlikeli bölge"
+        description="Geri alınamaz veya yıkıcı işlemler. Dikkatli kullan."
+        actions={
+          <span className="text-[#991B1B]" aria-hidden="true">
+            <AlertOctagon size={18} />
+          </span>
+        }
+      >
+        <DangerZone
+          restaurant={restaurant}
+          locale={locale === "tr" ? "tr" : "en"}
+          onDeactivated={(next) => handleSaved(next)}
         />
       </SettingsSection>
     </SettingsLayout>

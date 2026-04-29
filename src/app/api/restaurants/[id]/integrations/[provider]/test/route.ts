@@ -29,7 +29,20 @@ type ProviderId =
   | 'website'
   | 'reservation';
 
-const PROVIDER_FIELD_MAP: Record<ProviderId, keyof Awaited<ReturnType<typeof loadRestaurant>>> = {
+type RestaurantUrlField =
+  | 'googleReviewUrl'
+  | 'yemekSepetiUrl'
+  | 'getirYemekUrl'
+  | 'trendyolYemekUrl'
+  | 'tripAdvisorUrl'
+  | 'airbnbUrl'
+  | 'instagramUrl'
+  | 'facebookUrl'
+  | 'whatsappUrl'
+  | 'website'
+  | 'reservationUrl';
+
+const PROVIDER_FIELD_MAP: Record<ProviderId, RestaurantUrlField> = {
   google: 'googleReviewUrl',
   yemeksepeti: 'yemekSepetiUrl',
   getir: 'getirYemekUrl',
@@ -93,7 +106,7 @@ export async function POST(
   if (!restaurant) return ApiErrors.notFound('İşletme bulunamadı');
 
   const fieldKey = PROVIDER_FIELD_MAP[provider];
-  const url = (restaurant[fieldKey] as string | null) ?? '';
+  const url = restaurant[fieldKey] ?? '';
   if (!url) {
     return NextResponse.json(
       {

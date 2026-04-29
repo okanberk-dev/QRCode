@@ -2,16 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  Camera,
   ExternalLink,
-  Facebook,
   Globe,
-  Instagram,
   Loader2,
   MessageCircle,
   Phone,
   Plug,
   RefreshCw,
   Trash2,
+  Users,
 } from "lucide-react";
 import {
   AlertBanner,
@@ -100,7 +100,7 @@ interface SocialDef {
   key: keyof FormState;
   testProvider: string;
   label: string;
-  icon: typeof Instagram;
+  icon: typeof Camera;
   placeholder: string;
 }
 
@@ -109,14 +109,14 @@ const SOCIAL_DEFS: SocialDef[] = [
     key: "instagramUrl",
     testProvider: "instagram",
     label: "Instagram",
-    icon: Instagram,
+    icon: Camera,
     placeholder: "https://instagram.com/isletmem",
   },
   {
     key: "facebookUrl",
     testProvider: "facebook",
     label: "Facebook",
-    icon: Facebook,
+    icon: Users,
     placeholder: "https://facebook.com/isletmem",
   },
   {
@@ -486,7 +486,7 @@ export function BusinessIntegrationSettings({
       )}
 
       <SettingsCard
-        icon={<Instagram size={18} />}
+        icon={<Camera size={18} />}
         title="Sosyal medya & rezervasyon"
         description="İşletmenin sosyal medya kanalları ve rezervasyon linki."
       >
