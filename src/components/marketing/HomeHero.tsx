@@ -552,14 +552,14 @@ function ReputationCluster({
         >
           <InboxCard isTr={isTr} />
 
-          {/* Speed sticker — overhangs the card's top-left corner.
-              Anchored inside the card layer so it never collides with the
-              card's header text on narrower viewports. */}
+          {/* Speed sticker — sits diagonally above the card's top-left
+              corner so it never overlaps the card's header row. Pushed
+              further up + left at sm+ for a stronger floating-tag look. */}
           <div
-            className="absolute -top-3 -left-2 z-50 flex items-center gap-1.5 rounded-2xl bg-[#C6F24E] px-2 py-1.5 sm:-top-4 sm:-left-4 sm:gap-2 sm:px-3 sm:py-2"
+            className="absolute -top-7 -left-3 z-50 flex items-center gap-1.5 rounded-2xl bg-[#C6F24E] px-2 py-1.5 sm:-top-9 sm:-left-7 sm:gap-2 sm:px-3 sm:py-2"
             style={{
               boxShadow: '0 14px 30px rgba(168,214,46,0.45)',
-              transform: 'rotate(-4deg)',
+              transform: 'rotate(-6deg)',
             }}
             aria-hidden
           >
@@ -586,9 +586,10 @@ function ReputationCluster({
           </div>
         </div>
 
-        {/* layer 2 — middle: Sentiment Dial, lower-left */}
+        {/* layer 2 — middle: Sentiment Dial, lower-left.
+            Hidden on mobile to keep the cluster clean (sm: 640px+). */}
         <div
-          className="absolute -left-2 top-[48%] z-20 w-[58%] sm:-left-6 sm:w-[52%]"
+          className="absolute top-[48%] z-20 hidden sm:-left-6 sm:block sm:w-[52%]"
           style={{
             transform: `${layerTransform(0.6)} rotate(-3deg)`,
             transition: cursor.active ? 'transform .2s ease-out' : 'transform .9s ease',
@@ -597,9 +598,10 @@ function ReputationCluster({
           <SentimentDial isTr={isTr} />
         </div>
 
-        {/* layer 3 — bottom: Live Signal, lower-right */}
+        {/* layer 3 — bottom: Live Signal, lower-right.
+            Hidden on mobile to keep the cluster clean. */}
         <div
-          className="absolute -right-2 top-[68%] z-10 w-[62%] sm:-right-6 sm:w-[56%]"
+          className="absolute top-[68%] z-10 hidden sm:-right-6 sm:block sm:w-[56%]"
           style={{
             transform: `${layerTransform(0.3)} rotate(2deg)`,
             transition: cursor.active ? 'transform .25s ease-out' : 'transform 1s ease',
@@ -608,10 +610,12 @@ function ReputationCluster({
           <LiveSignal isTr={isTr} />
         </div>
 
-        {/* invisible spacer reserves cluster height */}
+        {/* invisible spacer reserves cluster height — only adds extra
+            room on sm+ where the absolute Dial + Signal layers render.
+            On mobile it collapses to the inbox card's natural height. */}
         <div className="invisible" aria-hidden>
           <InboxCard isTr={isTr} />
-          <div className="h-32 sm:h-40" />
+          <div className="h-0 sm:h-40" />
         </div>
       </div>
     </div>
