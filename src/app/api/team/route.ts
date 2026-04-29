@@ -3,6 +3,13 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { resolveOwnerUserId } from '@/lib/panel-access';
 import { isValidEmail } from '@/lib/validations';
+import {
+  INVITE_TOKEN_TTL_DAYS,
+  generateInviteToken,
+  inviteExpiresAt,
+  roleLabel,
+} from '@/lib/team-invite';
+import { sendTeamInviteEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,6 +85,11 @@ export async function POST(req: NextRequest) {
     locations = body.locations.slice(0, 40);
   }
 
+  // Faz 4 — invite token üret + mail tetikle. Token unique, expiresAt 7 gün.
+  const inviteToken = await generateInviteToken();
+  const inviteTokenExpiresAt = inviteExpiresAt();
+  const now = new Date();
+
   const member = await prisma.teamMember.upsert({
     where: { ownerId_email: { ownerId: actor.id, email } },
     create: {
@@ -87,13 +99,63 @@ export async function POST(req: NextRequest) {
       role,
       locations: locations ?? undefined,
       status: 'invited',
+      inviteToken,
+      inviteTokenExpiresAt,
+      lastInvitedAt: now,
     },
     update: {
       name: name ?? undefined,
       role,
       locations: locations ?? undefined,
       status: 'invited',
+      // Re-invite (yeni token + expires yenilenir, eski token geçersiz)
+      inviteToken,
+      inviteTokenExpiresAt,
+      lastInvitedAt: now,
     },
+  });
+
+  // Mail gönderim — owner workspace info'su için User'ı oku.
+  // Restoran adları locations[] (veya tüm restoranlar) için lookup.
+  const owner = await prisma.user.findUnique({
+    where: { id: actor.id },
+    select: { name: true, email: true, locale: true },
+  });
+
+  let restaurantNames: string[] = [];
+  if (locations && locations.length > 0) {
+    const rows = await prisma.restaurant.findMany({
+      where: { id: { in: locations }, userId: actor.id },
+      select: { name: true },
+    });
+    restaurantNames = rows.map((r) => r.name);
+  } else {
+    // Tüm konumlar — owner'ın restoranlarını listele (ad olarak göster).
+    const rows = await prisma.restaurant.findMany({
+      where: { userId: actor.id },
+      select: { name: true },
+      take: 6,
+    });
+    restaurantNames = rows.map((r) => r.name);
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const localeStr: 'tr' | 'en' = owner?.locale === 'en' ? 'en' : 'tr';
+  const acceptUrl = `${appUrl}/${localeStr}/accept-invite?token=${inviteToken}`;
+
+  // Fire-and-forget — mail başarısız olursa DB row yine yazılı kalır,
+  // owner panelinden "Daveti yenile" ile retry edilebilir.
+  void sendTeamInviteEmail({
+    to: email,
+    name: name,
+    ownerName: owner?.name || owner?.email || 'Buaze',
+    restaurantNames,
+    roleLabel: roleLabel({ role, locale: localeStr }),
+    acceptUrl,
+    expiresInDays: INVITE_TOKEN_TTL_DAYS,
+    locale: localeStr,
+  }).catch((err) => {
+    console.error('[team:invite] mail send failed:', (err as Error).message);
   });
 
   return NextResponse.json({
@@ -105,6 +167,7 @@ export async function POST(req: NextRequest) {
       role: member.role,
       status: member.status,
       lastSeenAt: null,
+      lastInvitedAt: member.lastInvitedAt?.toISOString() ?? null,
       createdAt: member.createdAt.toISOString(),
     },
   });
