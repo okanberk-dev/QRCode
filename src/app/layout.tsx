@@ -4,6 +4,7 @@ import Script from 'next/script';
 import './globals.css';
 import { getSiteSettings } from '@/lib/site-settings';
 import { QueryProvider } from '@/components/providers/QueryProvider';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export const dynamic = 'force-dynamic';
 const GA_MEASUREMENT_ID = 'G-Y1H5FLYZ9R';
@@ -111,6 +112,7 @@ export default function RootLayout({
           }}
         />
         <QueryProvider>{children}</QueryProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
