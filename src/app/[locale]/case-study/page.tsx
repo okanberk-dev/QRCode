@@ -140,6 +140,7 @@ export default async function CaseStudiesPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       <section className="relative overflow-hidden border-b border-[#EDEDED] bg-[#FAFAFA] px-5 py-[56px] sm:px-10 sm:py-20">
         <div
@@ -370,6 +371,7 @@ export default async function CaseStudiesPage({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

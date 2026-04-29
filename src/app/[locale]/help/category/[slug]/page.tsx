@@ -109,6 +109,7 @@ export default async function HelpCategoryPage({ params }: PageParams) {
         />
       )}
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* Hero */}
       <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-16">
@@ -240,6 +241,7 @@ export default async function HelpCategoryPage({ params }: PageParams) {
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

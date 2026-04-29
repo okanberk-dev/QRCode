@@ -79,6 +79,7 @@ export default async function ComparisonPage({
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* ─── Hero ─── */}
       <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-24 pb-12 sm:pb-16">
@@ -335,6 +336,7 @@ export default async function ComparisonPage({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

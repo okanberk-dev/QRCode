@@ -87,6 +87,7 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* Hero — light gray bg, 2-column */}
       <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-20">
@@ -258,6 +259,7 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

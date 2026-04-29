@@ -38,6 +38,7 @@ export default async function GoogleCompliancePage({
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* ─── Hero ─── */}
       <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-20 pb-[60px] sm:pb-20 border-b border-[#EDEDED]">
@@ -127,6 +128,7 @@ export default async function GoogleCompliancePage({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

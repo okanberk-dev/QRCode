@@ -185,6 +185,7 @@ export default async function PressPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* ─── Hero ─── */}
       <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-12">
@@ -420,6 +421,7 @@ export default async function PressPage({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );
