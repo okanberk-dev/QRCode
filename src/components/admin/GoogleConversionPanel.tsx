@@ -198,7 +198,7 @@ export default function GoogleConversionPanel({
             </div>
           </div>
 
-          <div className="divide-y divide-[#FFFFFF]">
+          <div className="divide-y divide-[#EDEDED]">
             {byRestaurant.map((rest) => (
               <RestaurantRow
                 key={rest.id}

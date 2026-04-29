@@ -1487,7 +1487,7 @@ function ItemModal({
             <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.available}</span>
           </label>
           <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
-            <input type="checkbox" checked={isOutOfStock} onChange={(e) => setIsOutOfStock(e.target.checked)} className="h-4 w-4 accent-red-500" />
+            <input type="checkbox" checked={isOutOfStock} onChange={(e) => setIsOutOfStock(e.target.checked)} className="h-4 w-4 accent-[#D97706]" />
             <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.outOfStock}</span>
           </label>
         </div>

@@ -239,11 +239,11 @@ export default async function AdminDashboardPage() {
         </div>
         <div className="mt-3.5 grid grid-cols-2 gap-2.5">
           <div className="rounded-[10px] bg-white/[0.04] p-3">
-            <div className="pulse-eyebrow text-[8px] text-white/45">İŞLETME</div>
+            <div className="pulse-eyebrow text-[10px] text-white/45">İŞLETME</div>
             <div className="bz-h-tight mt-1 text-[18px]">{totalBusinesses}</div>
           </div>
           <div className="rounded-[10px] bg-white/[0.04] p-3">
-            <div className="pulse-eyebrow text-[8px] text-white/45">AKTİF DENEMELER</div>
+            <div className="pulse-eyebrow text-[10px] text-white/45">AKTİF DENEMELER</div>
             <div className="bz-h-tight mt-1 text-[18px]">{activeTrials}</div>
           </div>
         </div>
