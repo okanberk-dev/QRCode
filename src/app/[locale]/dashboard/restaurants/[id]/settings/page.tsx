@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, Loader2, Palette } from "lucide-react";
-import { AlertBanner, BusinessStatusBadge, PageHeader } from "@/components/ui";
+import { ArrowLeft, Building2, Loader2, Palette, Plug } from "lucide-react";
+import { AlertBanner, Badge, BusinessStatusBadge, PageHeader } from "@/components/ui";
 import { SettingsLayout, type SettingsTab } from "@/components/dashboard/settings/SettingsLayout";
 import { SettingsSection } from "@/components/dashboard/settings/SettingsSection";
 import { BusinessGeneralSettings } from "@/components/dashboard/settings/sections/BusinessGeneralSettings";
 import { BusinessBrandSettings } from "@/components/dashboard/settings/sections/BusinessBrandSettings";
+import { BusinessIntegrationSettings } from "@/components/dashboard/settings/sections/BusinessIntegrationSettings";
 
 interface RestaurantPayload {
   id: string;
@@ -23,14 +24,36 @@ interface RestaurantPayload {
   googlePlaceId: string | null;
   notificationEmail: string | null;
   isActive: boolean;
+  // Faz 2 — entegrasyon alanları
+  googleReviewUrl: string | null;
+  googleEnabled: boolean;
+  yemekSepetiUrl: string | null;
+  yemekSepetiEnabled: boolean;
+  getirYemekUrl: string | null;
+  getirEnabled: boolean;
+  trendyolYemekUrl: string | null;
+  trendyolEnabled: boolean;
+  tripAdvisorUrl: string | null;
+  tripAdvisorEnabled: boolean;
+  airbnbUrl: string | null;
+  airbnbEnabled: boolean;
+  defaultRedirectPlatform: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  whatsappUrl: string | null;
+  reservationUrl: string | null;
 }
 
-const FAZ1_TABS: SettingsTab[] = [
+const SECTION_TABS: SettingsTab[] = [
   { id: "general", label: "Genel" },
   { id: "brand", label: "Marka" },
+  { id: "integrations", label: "Entegrasyonlar" },
+  { id: "operations", label: "Operasyonel", badge: <Badge kind="ghost" dot={false}>Yakında</Badge>, disabled: true },
+  { id: "security", label: "Güvenlik", badge: <Badge kind="ghost" dot={false}>Yakında</Badge>, disabled: true },
+  { id: "danger", label: "Tehlikeli bölge", badge: <Badge kind="ghost" dot={false}>Yakında</Badge>, disabled: true },
 ];
 
-const VALID_SECTION_IDS = new Set(FAZ1_TABS.map((t) => t.id));
+const VALID_SECTION_IDS = new Set(SECTION_TABS.filter((t) => !t.disabled).map((t) => t.id));
 
 /**
  * Per-restaurant Business Settings hub. Faz 1 — Genel + Marka.
@@ -83,6 +106,23 @@ export default function RestaurantSettingsPage() {
           googlePlaceId: data.googlePlaceId ?? null,
           notificationEmail: data.notificationEmail ?? null,
           isActive: data.isActive ?? true,
+          googleReviewUrl: data.googleReviewUrl ?? null,
+          googleEnabled: data.googleEnabled ?? true,
+          yemekSepetiUrl: data.yemekSepetiUrl ?? null,
+          yemekSepetiEnabled: data.yemekSepetiEnabled ?? true,
+          getirYemekUrl: data.getirYemekUrl ?? null,
+          getirEnabled: data.getirEnabled ?? true,
+          trendyolYemekUrl: data.trendyolYemekUrl ?? null,
+          trendyolEnabled: data.trendyolEnabled ?? true,
+          tripAdvisorUrl: data.tripAdvisorUrl ?? null,
+          tripAdvisorEnabled: data.tripAdvisorEnabled ?? true,
+          airbnbUrl: data.airbnbUrl ?? null,
+          airbnbEnabled: data.airbnbEnabled ?? true,
+          defaultRedirectPlatform: data.defaultRedirectPlatform ?? null,
+          instagramUrl: data.instagramUrl ?? null,
+          facebookUrl: data.facebookUrl ?? null,
+          whatsappUrl: data.whatsappUrl ?? null,
+          reservationUrl: data.reservationUrl ?? null,
         });
       } catch (err) {
         if (!cancelled) setError((err as Error).message);
@@ -164,7 +204,7 @@ export default function RestaurantSettingsPage() {
 
   return (
     <SettingsLayout
-      tabs={FAZ1_TABS}
+      tabs={SECTION_TABS}
       active={active}
       onChange={handleSectionChange}
       header={header}
@@ -205,6 +245,25 @@ export default function RestaurantSettingsPage() {
           restaurantId={restaurant.id}
           restaurantName={restaurant.name}
           isTr={locale === "tr"}
+        />
+      </SettingsSection>
+
+      <SettingsSection
+        id="integrations"
+        active={active === "integrations"}
+        eyebrow="03 — ENTEGRASYONLAR"
+        title="Entegrasyonlar"
+        description="Yorum platformları, sosyal medya kanalları ve varsayılan yönlendirme."
+        actions={
+          <span className="text-[#737373] text-[20px]" aria-hidden="true">
+            <Plug size={18} />
+          </span>
+        }
+      >
+        <BusinessIntegrationSettings
+          restaurant={restaurant}
+          locale={locale === "tr" ? "tr" : "en"}
+          onSaved={handleSaved}
         />
       </SettingsSection>
     </SettingsLayout>

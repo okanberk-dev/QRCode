@@ -1,36 +1,16 @@
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import type { Metadata } from 'next';
-import { verifyJwt } from '@/lib/auth';
 import type { Locale } from '@/lib/translations';
-import OwnerNotificationsForm from './OwnerNotificationsForm';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  return {
-    title: locale === 'tr' ? 'Bildirim ayarları — Buaze' : 'Notification settings — Buaze',
-    robots: { index: false, follow: false },
-  };
-}
-
+// Faz 2 — Bildirim ayarları artık /dashboard/account#notifications içinde.
+// 308 redirect → mevcut bookmark'lar + e-posta linkleri kırılmaz.
+// OwnerNotificationsForm component'i Section 6 içinden kullanılmaya devam ediyor.
 export const dynamic = 'force-dynamic';
 
-export default async function OwnerNotificationsPage({
+export default async function OwnerNotificationsRedirect({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
-
-  const cookieStore = await cookies();
-  const token = cookieStore.get('user_token')?.value;
-  if (!token) redirect(`/${locale}/auth/login`);
-  const payload = await verifyJwt(token);
-  if (!payload) redirect(`/${locale}/auth/login`);
-
-  return <OwnerNotificationsForm locale={locale} />;
+  redirect(`/${locale}/dashboard/account?section=notifications`);
 }

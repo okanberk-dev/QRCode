@@ -48,6 +48,12 @@ model Restaurant {
   description       String?   @db.Text
   // İşletme web sitesi (Section 1). new URL() validation; null → "yok".
   website           String?
+  // Sosyal medya entegrasyonları (Section 3 — Faz 2). new URL() validate.
+  // Boş string → null. UI'da IntegrationStatusBadge connected/not_configured.
+  instagramUrl      String?   @map("instagram_url")
+  facebookUrl       String?   @map("facebook_url")
+  whatsappUrl       String?   @map("whatsapp_url")
+  reservationUrl    String?   @map("reservation_url")
   address           String?
   phone             String?
   workingHours      String?   @map("working_hours")
