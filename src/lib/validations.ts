@@ -165,7 +165,10 @@ export function isValidMenuTheme(v: unknown): v is MenuTheme {
   return typeof v === 'string' && (MENU_THEMES as readonly string[]).includes(v);
 }
 
-export const MENU_BADGES = ['populer', 'yeni', 'vegan', 'vegetaryen', 'aci', 'sef_onerisi', 'glutensiz'] as const;
+export const MENU_BADGES = [
+  'populer', 'yeni', 'vegan', 'vegetaryen', 'aci', 'sef_onerisi', 'glutensiz',
+  'kahvalti', 'organik', 'taze', 'sezonluk', 'ev_yapimi',
+] as const;
 export type MenuBadge = (typeof MENU_BADGES)[number];
 
 export interface MenuCategoryInput {

@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Clock, MapPin, Phone, Flame, Leaf, Star, Sparkles, WheatOff } from 'lucide-react';
+import {
+  Clock, MapPin, Phone, Flame, Leaf, Star, Sparkles, WheatOff,
+  Sun, Sprout, Heart, CalendarRange, Droplets,
+} from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import type { MenuBadge, MenuTheme } from '@/lib/validations';
 import { useMenuAnalytics, useProductViewTracking } from '@/hooks/useMenuAnalytics';
@@ -59,6 +62,11 @@ const BADGE_META: Record<MenuBadge, { tr: string; en: string; icon: typeof Flame
   aci:         { tr: 'Acı',           en: 'Spicy',         icon: Flame,    cls: 'bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]' },
   sef_onerisi: { tr: 'Şef Önerisi',   en: "Chef's Pick",   icon: Star,     cls: 'bg-[#0A0A0A] text-[#C6F24E]' },
   glutensiz:   { tr: 'Glutensiz',     en: 'Gluten-Free',   icon: WheatOff, cls: 'bg-[#EAF9B8] text-[#0A0A0A]' },
+  kahvalti:    { tr: 'Kahvaltı',      en: 'Breakfast',     icon: Sun,            cls: 'bg-[#FFEDD5] text-[#9A3412] border border-[#FED7AA]' },
+  organik:     { tr: 'Organik',       en: 'Organic',       icon: Sprout,         cls: 'bg-[#ECFDF5] text-[#14532D] border border-[#A7F3D0]' },
+  taze:        { tr: 'Taze',          en: 'Fresh',         icon: Droplets,       cls: 'bg-[#ECFEFF] text-[#155E75] border border-[#A5F3FC]' },
+  sezonluk:    { tr: 'Sezonluk',      en: 'Seasonal',      icon: CalendarRange,  cls: 'bg-[#F5F3FF] text-[#5B21B6] border border-[#DDD6FE]' },
+  ev_yapimi:   { tr: 'Ev Yapımı',     en: 'Homemade',      icon: Heart,          cls: 'bg-[#FEF3C7] text-[#854D0E] border border-[#FDE68A]' },
 };
 
 // Single source of truth for the badge chip glyph size — keep icon size
