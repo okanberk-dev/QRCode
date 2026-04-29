@@ -235,6 +235,7 @@ export default async function GoogleTwentyTwentySixPost({
   return (
     <div id="top" className="min-h-screen bg-white text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* ─── Lime Hero ─── */}
       <section className="relative overflow-hidden bg-[#C6F24E] px-5 sm:px-10 pt-[60px] sm:pt-16 pb-[60px] sm:pb-24">
@@ -595,6 +596,7 @@ export default async function GoogleTwentyTwentySixPost({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

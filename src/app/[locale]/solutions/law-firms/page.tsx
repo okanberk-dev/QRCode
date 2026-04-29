@@ -86,6 +86,7 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* Hero — white bg, 2-column with document+seal SVG */}
       <section className="px-5 sm:px-10 py-[60px] sm:py-20">
@@ -243,6 +244,7 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

@@ -106,6 +106,7 @@ export default async function CustomerStoryPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       <section className="border-b border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 sm:px-10">
         <div className="mx-auto max-w-[1200px]">
@@ -341,6 +342,7 @@ export default async function CustomerStoryPage({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

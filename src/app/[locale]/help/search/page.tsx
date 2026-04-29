@@ -90,6 +90,7 @@ export default async function HelpSearchPage({ params, searchParams }: PageParam
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* Header with search bar */}
       <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-14">
@@ -187,6 +188,7 @@ export default async function HelpSearchPage({ params, searchParams }: PageParam
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

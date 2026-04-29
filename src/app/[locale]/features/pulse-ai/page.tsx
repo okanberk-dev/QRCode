@@ -108,6 +108,7 @@ export default async function PulseAiPage({
   return (
     <div className="min-h-screen bg-white pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* Hero — dark, dual CTA, live draft mockup (1:1 with .design/site/site-pages4.jsx:FeatureAIPage) */}
       <section className="relative overflow-hidden bg-[#0A0A0A] px-6 sm:px-10 py-20 sm:py-24 text-white">
@@ -329,6 +330,7 @@ export default async function PulseAiPage({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

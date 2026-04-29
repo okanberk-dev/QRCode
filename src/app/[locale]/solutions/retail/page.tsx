@@ -104,6 +104,7 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* Hero — dark (1:1 .design/site/site-pages4.jsx:246-267) */}
       <section className="bg-[#0A0A0A] px-5 sm:px-10 pt-[60px] pb-10 sm:pt-20 text-white">
@@ -278,6 +279,7 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

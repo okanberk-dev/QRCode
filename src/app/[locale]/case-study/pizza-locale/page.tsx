@@ -144,6 +144,7 @@ export default async function PizzaLocaleCaseStudy({
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* ─── Hero ─── */}
       <section className="relative bg-[#0A0A0A] text-white px-6 sm:px-10 pt-16 sm:pt-24 pb-24 sm:pb-32 overflow-hidden">
@@ -376,6 +377,7 @@ export default async function PizzaLocaleCaseStudy({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

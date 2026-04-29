@@ -124,6 +124,7 @@ export default async function CaseStudyPage({
   return (
     <div className="min-h-screen bg-white pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* Breadcrumb */}
       <div className="border-b border-[#EDEDED] bg-[#FAFAFA] px-6 py-4 sm:px-10">
@@ -315,6 +316,7 @@ export default async function CaseStudyPage({
         </section>
       )}
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

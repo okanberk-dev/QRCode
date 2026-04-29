@@ -64,6 +64,7 @@ export default async function BlogIndexPage({
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* Header */}
       <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-10">
@@ -253,6 +254,7 @@ export default async function BlogIndexPage({
         </>
       )}
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

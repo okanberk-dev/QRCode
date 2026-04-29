@@ -164,6 +164,7 @@ export default async function DeliveryPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* HERO */}
       <section className="px-5 sm:px-10 py-[60px] sm:py-20">
@@ -388,6 +389,7 @@ export default async function DeliveryPage({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );
