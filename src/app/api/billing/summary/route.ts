@@ -80,5 +80,19 @@ export async function GET(req: NextRequest) {
     renewsAt: renewsAt ? renewsAt.toISOString() : null,
     quota: { used, limit },
     paymentMethod,
+    // Pricing snapshot — Faz 2 owner-readonly billing card. Null when admin
+    // hasn't seeded values yet; UI falls back to plan-derived label.
+    amount: subscription?.amount ? Number(subscription.amount) : null,
+    currency: subscription?.currency ?? 'TRY',
+    billingCycle: subscription?.billingCycle ?? null,
+    // Billing address — never surface adminNotes (admin-only).
+    billingAddress: subscription
+      ? {
+          companyName: subscription.companyName,
+          taxNumber: subscription.taxNumber,
+          address: subscription.billingAddress,
+          city: subscription.billingCity,
+        }
+      : null,
   });
 }

@@ -672,6 +672,23 @@ model BillingSubscription {
   providerRef  String?   @unique @map("provider_ref")
   paymentBrand String?   @map("payment_brand")
   paymentLast4 String?   @map("payment_last4")
+  // Pricing snapshot (Faz 2 — owner-readonly billing card). Manual values
+  // until Iyzico provider wires real payment events. amount in major currency
+  // unit (TRY default); billingCycle is informational, mirrors plan suffix.
+  amount       Decimal?  @db.Decimal(10, 2)
+  currency     String?   @default("TRY")
+  billingCycle String?   @map("billing_cycle") // monthly | yearly
+  // Billing address — invoice "Fatura Adresi" card source. Owner-readonly,
+  // admin-editable (Faz 3). Free-text Turkish formatting acceptable;
+  // taxNumber is VKN/TCKN (10 or 11 digits, validated server-side in admin
+  // edit endpoint).
+  companyName    String? @map("company_name")
+  taxNumber      String? @map("tax_number")
+  billingAddress String? @map("billing_address") @db.Text
+  billingCity    String? @map("billing_city")
+  // Free-text admin notes — visible only on admin panel; never surfaced
+  // owner-side (privacy: ops may store internal context like discount reason).
+  adminNotes     String? @map("admin_notes") @db.Text
   updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
 
   @@map("billing_subscriptions")
