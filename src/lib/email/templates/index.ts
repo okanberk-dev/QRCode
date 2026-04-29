@@ -27,3 +27,6 @@ export type { TrialEndingParams } from './trial-ending';
 
 export { renderContactAdmin } from './contact-admin';
 export type { ContactAdminParams } from './contact-admin';
+
+export { renderTeamInvite } from './team-invite';
+export type { TeamInviteParams } from './team-invite';

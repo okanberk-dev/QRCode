@@ -2,30 +2,38 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { Bell, Lock, Mail, Users } from "lucide-react";
-import { AlertBanner, Badge, PageHeader } from "@/components/ui";
+import { Bell, CreditCard, Loader2, Users } from "lucide-react";
+import { AlertBanner, PageHeader } from "@/components/ui";
 import { SettingsLayout, type SettingsTab } from "@/components/dashboard/settings/SettingsLayout";
 import { SettingsSection } from "@/components/dashboard/settings/SettingsSection";
 import { BusinessNotificationSettings } from "@/components/dashboard/settings/sections/BusinessNotificationSettings";
+import { BusinessBillingSettings } from "@/components/dashboard/settings/sections/BusinessBillingSettings";
+import { BusinessUsersRolesSettings } from "@/components/dashboard/settings/sections/BusinessUsersRolesSettings";
 
 /**
  * Workspace-level Settings (`/dashboard/account`).
  *
- * Faz 2 — sadece Bildirim Ayarları aktif. Faz 3+'da:
- *  - Billing (read-only — Faz 4)
- *  - Kullanıcılar & Roller (TeamMember CRUD — Faz 4)
- *  - User profile (name/email/password/locale — Faz 4'te /profile redirect ile)
- *
+ * Faz 2 — Bildirim. Faz 4 — Faturalandırma (read-only) + Kullanıcılar & Roller.
  * Per-restaurant ayarlar `/dashboard/restaurants/[id]/settings`'te.
  */
 
-const FAZ2_TABS: SettingsTab[] = [
+const FAZ4_TABS: SettingsTab[] = [
   { id: "notifications", label: "Bildirim" },
-  { id: "billing", label: "Faturalandırma", badge: <Badge kind="ghost" dot={false}>Yakında</Badge>, disabled: true },
-  { id: "team", label: "Kullanıcılar", badge: <Badge kind="ghost" dot={false}>Yakında</Badge>, disabled: true },
+  { id: "billing", label: "Faturalandırma" },
+  { id: "team", label: "Kullanıcılar" },
 ];
 
-const VALID_SECTION_IDS = new Set(FAZ2_TABS.filter((t) => !t.disabled).map((t) => t.id));
+const VALID_SECTION_IDS = new Set(FAZ4_TABS.map((t) => t.id));
+
+interface RestaurantOption {
+  id: string;
+  name: string;
+}
+
+interface UserProfile {
+  email: string;
+  name: string | null;
+}
 
 export default function AccountSettingsPage() {
   const params = useParams();
@@ -39,6 +47,48 @@ export default function AccountSettingsPage() {
   }, [searchParams]);
 
   const [active, setActive] = useState<string>(initialSection);
+  const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [resR, resP] = await Promise.all([
+          fetch("/api/restaurants?limit=100"),
+          fetch("/api/user/profile"),
+        ]);
+        const restaurantsData = resR.ok ? await resR.json() : { data: [] };
+        const profileData = resP.ok ? await resP.json() : null;
+        if (cancelled) return;
+        const list: RestaurantOption[] = Array.isArray(restaurantsData)
+          ? restaurantsData.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }))
+          : Array.isArray(restaurantsData?.data)
+            ? restaurantsData.data.map((r: { id: string; name: string }) => ({
+                id: r.id,
+                name: r.name,
+              }))
+            : [];
+        setRestaurants(list);
+        if (profileData) {
+          setProfile({
+            email: profileData.email ?? "",
+            name: profileData.name ?? null,
+          });
+        }
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Yüklenemedi");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSectionChange = (next: string) => {
     setActive(next);
@@ -56,14 +106,31 @@ export default function AccountSettingsPage() {
     />
   );
 
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[1200px] px-5 sm:px-7 py-12">
+        <div className="flex items-center justify-center gap-2 text-[#737373] text-[13px]">
+          <Loader2 size={14} className="animate-spin" />
+          Yükleniyor…
+        </div>
+      </div>
+    );
+  }
+
   return (
     <SettingsLayout
-      tabs={FAZ2_TABS}
+      tabs={FAZ4_TABS}
       active={active}
       onChange={handleSectionChange}
       header={header}
       ariaLabel="Hesap ayarları bölümleri"
     >
+      {error && (
+        <AlertBanner kind="danger" onDismiss={() => setError(null)}>
+          {error}
+        </AlertBanner>
+      )}
+
       <SettingsSection
         id="notifications"
         active={active === "notifications"}
@@ -84,12 +151,14 @@ export default function AccountSettingsPage() {
         active={active === "billing"}
         eyebrow="02 — FATURALANDIRMA"
         title="Plan ve fatura geçmişi"
-        description="Sonraki fazla aktif olur (Faz 4)."
+        description="Plan değişikliği için admin panelle iletişime geç. Fatura geçmişi aşağıda."
+        actions={
+          <span className="text-[#737373]" aria-hidden="true">
+            <CreditCard size={18} />
+          </span>
+        }
       >
-        <AlertBanner kind="info">
-          Faturalandırma görünümü ileri faza alındı. Plan değişikliği için
-          admin paneliyle iletişime geç.
-        </AlertBanner>
+        <BusinessBillingSettings locale={locale} />
       </SettingsSection>
 
       <SettingsSection
@@ -97,11 +166,18 @@ export default function AccountSettingsPage() {
         active={active === "team"}
         eyebrow="03 — KULLANICILAR"
         title="Ekip ve roller"
-        description="Sonraki fazla aktif olur (Faz 4)."
+        description="Workspace üyeleri, rolleri ve konum erişimleri."
+        actions={
+          <span className="text-[#737373]" aria-hidden="true">
+            <Users size={18} />
+          </span>
+        }
       >
-        <AlertBanner kind="info">
-          Üye davet, rol değişikliği ve oturum yönetimi sonraki fazla geliyor.
-        </AlertBanner>
+        <BusinessUsersRolesSettings
+          restaurants={restaurants}
+          ownerEmail={profile?.email ?? ""}
+          ownerName={profile?.name ?? null}
+        />
       </SettingsSection>
     </SettingsLayout>
   );
