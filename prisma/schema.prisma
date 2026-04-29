@@ -697,12 +697,22 @@ model BillingSubscription {
 model BillingInvoice {
   id          String   @id @default(cuid())
   userId      String   @map("user_id")
+  // Human-readable invoice number (display only) — e.g. "INV-2026-04".
+  // Generated server-side at create time when admin omits one. Distinct
+  // from `id` (cuid) which stays as primary key for FK stability.
+  invoiceNumber String?  @unique @map("invoice_number")
   amount      Decimal  @db.Decimal(10, 2)
   currency    String   @default("TRY")
   status      String   @default("paid") // paid | pending | failed | refunded
   providerRef String?  @unique @map("provider_ref")
   pdfUrl      String?  @map("pdf_url")
+  // What was billed — surfaced on owner panel ("Yıllık abonelik · Mart 2026").
+  description String?
+  // Admin-only notes (NEVER returned via owner endpoints; analogous to
+  // BillingSubscription.adminNotes privacy guard).
+  adminNotes  String?  @map("admin_notes") @db.Text
   issuedAt    DateTime @default(now()) @map("issued_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@index([userId, issuedAt])
   @@map("billing_invoices")
