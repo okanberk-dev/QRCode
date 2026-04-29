@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendWeeklyDigest } from '@/lib/email';
+import { getNotificationPrefsForUser } from '@/lib/notification-preferences';
 
 /**
  * Weekly digest cron endpoint.
@@ -33,17 +34,27 @@ export async function GET(req: NextRequest) {
         slug: true,
         notificationEmail: true,
         googlePlaceId: true,
+        userId: true,
         user: { select: { email: true, locale: true } },
       },
     });
 
     let sent = 0;
     let skipped = 0;
+    let optedOut = 0;
 
     for (const rest of restaurants) {
       const email = rest.notificationEmail || rest.user?.email;
       if (!email) {
         skipped++;
+        continue;
+      }
+
+      // Honor the owner's notification preferences. If the user has turned
+      // the weekly report off in /dashboard/notifications, skip them.
+      const prefs = await getNotificationPrefsForUser(rest.userId);
+      if (!prefs.weeklyReport) {
+        optedOut++;
         continue;
       }
 
@@ -126,6 +137,7 @@ export async function GET(req: NextRequest) {
       ok: true,
       sent,
       skipped,
+      optedOut,
       total: restaurants.length,
     });
   } catch (error) {

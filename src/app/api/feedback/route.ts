@@ -10,6 +10,10 @@ import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { rateLimit } from '@/lib/rate-limit';
 import { hasOpenAIKey } from '@/lib/openai';
 import { coerceTone, generateAiDraftBackground } from '@/lib/ai-draft';
+import {
+  getNotificationPrefsForRestaurant,
+  postSlackWebhook,
+} from '@/lib/notification-preferences';
 
 function parseAspectRating(value: unknown): number | null {
   const n = typeof value === 'number' ? value : Number(value);
@@ -129,34 +133,59 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Send email for 1, 2, 3 stars
+    // Notification preferences (owner toggles in /dashboard/notifications).
+    // Pulled once per request — used both for the low-rating mail gate and
+    // the Slack webhook fan-out below.
+    const notifPrefs = await getNotificationPrefsForRestaurant(restaurantId);
+
+    // Send email for 1, 2, 3 stars — but only when the owner has the
+    // "low-rating alert" toggle enabled. When disabled the feedback is
+    // still stored; the owner just doesn't get pinged.
     let emailSent: boolean | null = null;
     if (rating <= 3) {
-      emailSent = false;
-      try {
-        await sendFeedbackNotification({
-          rating,
-          name,
-          email,
-          phone,
-          comment,
-          branch,
-          tableNumber,
-          restaurantName,
-          toEmail: notificationEmail,
-          aspects,
-          feedbackId: feedback.id,
-          locale: body.locale === 'en' ? 'en' : 'tr',
-        });
-        emailSent = true;
-      } catch (err) {
-        // Log but don't fail the entire request - the feedback IS in the DB!
-        console.error('Email notification failed but saving succeeded:', err);
+      if (notifPrefs.lowRatingEmail) {
+        emailSent = false;
+        try {
+          await sendFeedbackNotification({
+            rating,
+            name,
+            email,
+            phone,
+            comment,
+            branch,
+            tableNumber,
+            restaurantName,
+            toEmail: notificationEmail,
+            aspects,
+            feedbackId: feedback.id,
+            locale: body.locale === 'en' ? 'en' : 'tr',
+          });
+          emailSent = true;
+        } catch (err) {
+          // Log but don't fail the entire request - the feedback IS in the DB!
+          console.error('Email notification failed but saving succeeded:', err);
+        }
       }
 
-      // Pulse AI auto-draft (CLAUDE.md §15) — fire-and-forget when owner has
-      // opted in and the OpenAI key is set. Generation latency must not block
-      // the customer's 201 response. Errors are swallowed; the inbox simply
+      // Slack webhook — fire-and-forget when configured. Same gate as the
+      // low-rating email: only for ≤3★ feedback. Format kept short so it
+      // renders cleanly in Slack's preview.
+      if (notifPrefs.slackWebhook) {
+        const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+        const trimmedComment = (comment || '').toString().slice(0, 280);
+        const text = [
+          `*${restaurantName}* — yeni düşük puan`,
+          `${stars} (${rating}/5)${branch ? ` · ${branch}` : ''}`,
+          trimmedComment ? `> ${trimmedComment}` : null,
+        ]
+          .filter(Boolean)
+          .join('\n');
+        void postSlackWebhook(notifPrefs.slackWebhook, text);
+      }
+
+      // Pulse AI auto-draft — fire-and-forget when owner has opted in and
+      // the OpenAI key is set. Generation latency must not block the
+      // customer's 201 response. Errors are swallowed; the inbox simply
       // shows no draft and the operator can manually trigger suggest-reply.
       if (aiDraftEnabled && hasOpenAIKey()) {
         void generateAiDraftBackground(

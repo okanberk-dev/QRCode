@@ -28,7 +28,7 @@ import { ActiveSessionsTable } from "../ActiveSessionsTable";
 interface RestaurantData {
   id: string;
   isActive: boolean;
-  kvkkText: string | null;
+  kvkkText?: string | null;
 }
 
 interface BusinessSecuritySettingsProps {
@@ -52,7 +52,6 @@ interface ApiKeyCreatedResponse extends ApiKey {
   token: string;
 }
 
-const KVKK_MAX = 50000;
 const SCOPE_OPTIONS = [
   { id: "feedback:read", label: "Yorumları oku" },
   { id: "feedback:write", label: "Yoruma yanıt" },
@@ -65,25 +64,24 @@ const SCOPE_OPTIONS = [
 
 interface FormState {
   isActive: boolean;
-  kvkkText: string;
 }
 
 function toForm(r: RestaurantData): FormState {
-  return { isActive: r.isActive, kvkkText: r.kvkkText ?? "" };
+  return { isActive: r.isActive };
 }
 
 function isDirty(a: FormState, b: FormState) {
-  return a.isActive !== b.isActive || a.kvkkText !== b.kvkkText;
+  return a.isActive !== b.isActive;
 }
 
 /**
- * Section 8 — Güvenlik & Erişim (Faz 3).
+ * Section 8 — Güvenlik & Erişim.
  *
  * 5 alt-bölüm:
  *  1. 2FA TOTP — Toggle + Setup Modal + Disable flow
  *  2. Aktif Oturumlar — UserSession listesi + revoke
  *  3. API Anahtarları — list + create modal + revoke
- *  4. KVKK Aydınlatma metni — textarea (Restaurant.kvkkText)
+ *  4. KVKK Aydınlatma metni — Buaze tarafından sağlanan default metin (read-only info)
  *  5. İşletmeyi devre dışı bırak — isActive Toggle
  */
 export function BusinessSecuritySettings({
@@ -113,17 +111,12 @@ export function BusinessSecuritySettings({
 
   const handleSave = async () => {
     if (saving) return;
-    if (form.kvkkText.length > KVKK_MAX) {
-      setError(`KVKK metni en fazla ${KVKK_MAX} karakter olabilir.`);
-      return;
-    }
     setSaving(true);
     setError(null);
     setSuccess(null);
     try {
       const payload: Partial<RestaurantData> = {
         isActive: form.isActive,
-        kvkkText: form.kvkkText.trim() || null,
       };
       const res = await fetch(`/api/restaurants/${restaurant.id}`, {
         method: "PUT",
@@ -450,22 +443,17 @@ export function BusinessSecuritySettings({
       <SettingsCard
         icon={<FileText size={18} />}
         title="KVKK aydınlatma metni"
-        description={'Müşterinin /r/[slug] sayfasında "KVKK metnini oku" linkinde gösterilir.'}
+        description="Müşterinin yorum sayfasında gösterilen KVKK aydınlatma metni Buaze tarafından hazırlanmış güncel şablondan otomatik olarak yüklenir."
+        actions={<Badge kind="ok">Aktif</Badge>}
       >
-        <Field
-          label="Aydınlatma metni"
-          hint={`${form.kvkkText.length}/${KVKK_MAX} karakter`}
-        >
-          <textarea
-            className="bz-input"
-            rows={10}
-            value={form.kvkkText}
-            maxLength={KVKK_MAX}
-            onChange={(e) => set("kvkkText", e.target.value.slice(0, KVKK_MAX))}
-            placeholder="6698 Sayılı KVKK çerçevesinde..."
-            style={{ resize: "vertical", minHeight: 200 }}
-          />
-        </Field>
+        <p className="text-[13px] leading-[1.6] text-[#525252]">
+          Yasal güncelleme gerektiğinde metin merkezi olarak güncellenir; ayrıca düzenleme yapmana gerek yoktur.
+          Özel bir metne ihtiyacın olursa{" "}
+          <a className="underline text-[#0A0A0A]" href="mailto:legal@buaze.com">
+            legal@buaze.com
+          </a>{" "}
+          adresinden bize yazabilirsin.
+        </p>
       </SettingsCard>
 
       {/* 5. isActive */}
