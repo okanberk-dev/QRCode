@@ -106,8 +106,12 @@ export async function PUT(
 
     // Phase 12.6 — defaultRedirectPlatform whitelist. NULL or '' = clear
     // (back to legacy Google fallback). Anything else must be one of the
-    // four supported keys; mirrors Feedback.platform values.
-    const ALLOWED_DEFAULT_PLATFORMS = new Set(['google', 'yemeksepeti', 'getir', 'trendyol_go']);
+    // supported keys; mirrors Feedback.platform values + /r/[slug]
+    // platformUrls map. Konaklama / catch-all sectors can default to
+    // tripadvisor/airbnb when those URLs are filled in.
+    const ALLOWED_DEFAULT_PLATFORMS = new Set([
+      'google', 'yemeksepeti', 'getir', 'trendyol_go', 'tripadvisor', 'airbnb',
+    ]);
     if (defaultRedirectPlatform !== undefined && defaultRedirectPlatform !== null && defaultRedirectPlatform !== '') {
       if (typeof defaultRedirectPlatform !== 'string' || !ALLOWED_DEFAULT_PLATFORMS.has(defaultRedirectPlatform)) {
         return ApiErrors.badRequest('Geçersiz varsayılan platform', 'INVALID_DEFAULT_PLATFORM');
@@ -145,6 +149,8 @@ export async function PUT(
       yemeksepeti: yemekSepetiUrl,
       getir: getirYemekUrl,
       trendyol_go: trendyolYemekUrl,
+      tripadvisor: tripAdvisorUrl,
+      airbnb: airbnbUrl,
     };
     const orphanedDefault =
       defaultRedirectPlatform === undefined &&

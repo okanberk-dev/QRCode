@@ -21,6 +21,8 @@ interface RestaurantData {
   getirYemekUrl: string | null;
   yemekSepetiUrl: string | null;
   trendyolYemekUrl: string | null;
+  tripAdvisorUrl: string | null;
+  airbnbUrl: string | null;
   primaryColor: string;
   isActive: boolean;
   // Phase 12.6 — owner-picked fallback when QR has no `?platform=` param.
@@ -132,6 +134,8 @@ function ReviewContent() {
     yemeksepeti: restaurant.yemekSepetiUrl,
     getir: restaurant.getirYemekUrl,
     trendyol_go: restaurant.trendyolYemekUrl,
+    tripadvisor: restaurant.tripAdvisorUrl,
+    airbnb: restaurant.airbnbUrl,
   };
 
   // Resolve the platform: explicit `?platform=` wins, then owner-picked

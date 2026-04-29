@@ -154,7 +154,9 @@ export default async function PlatformsPage({
       ? 'trendyol'
       : storedDefault === 'google' ||
           storedDefault === 'yemeksepeti' ||
-          storedDefault === 'getir'
+          storedDefault === 'getir' ||
+          storedDefault === 'tripadvisor' ||
+          storedDefault === 'airbnb'
         ? (storedDefault as PlatformId)
         : null;
 
@@ -231,7 +233,7 @@ export default async function PlatformsPage({
       hasUrl: Boolean(firstUrl('tripAdvisorUrl')),
       enabledFlag: flagOf('tripAdvisorEnabled'),
       enabled: Boolean(firstUrl('tripAdvisorUrl')) && flagOf('tripAdvisorEnabled'),
-      isDefault: false,
+      isDefault: storedDefaultUiKey === 'tripadvisor',
       monthlyClicks: platformClicks('tripadvisor'),
     },
     {
@@ -241,7 +243,7 @@ export default async function PlatformsPage({
       hasUrl: Boolean(firstUrl('airbnbUrl')),
       enabledFlag: flagOf('airbnbEnabled'),
       enabled: Boolean(firstUrl('airbnbUrl')) && flagOf('airbnbEnabled'),
-      isDefault: false,
+      isDefault: storedDefaultUiKey === 'airbnb',
       monthlyClicks: platformClicks('airbnb'),
     },
   ];

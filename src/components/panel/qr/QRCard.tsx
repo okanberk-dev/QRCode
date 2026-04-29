@@ -39,6 +39,8 @@ const PLATFORM_TO_CHIP: Record<string, PlatformId> = {
   yemeksepeti: "yemeksepeti",
   getir: "getir",
   trendyol_go: "trendyol_go",
+  tripadvisor: "tripadvisor",
+  airbnb: "airbnb",
 };
 
 const PLATFORM_LABEL: Record<string, string> = {
@@ -46,6 +48,8 @@ const PLATFORM_LABEL: Record<string, string> = {
   yemeksepeti: "Yemeksepeti",
   getir: "Getir Yemek",
   trendyol_go: "Trendyol GO",
+  tripadvisor: "Tripadvisor",
+  airbnb: "Airbnb",
 };
 
 export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "tr", onDelete }: QRCardProps) {
