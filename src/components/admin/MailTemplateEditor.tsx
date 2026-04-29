@@ -91,7 +91,7 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'noComment', label: '"Yorum yok" hint metni' },
   ],
   'new-review': [
-    { key: 'eyebrow', label: 'Status pill', hint: '"● Canlı · Az önce geldi"' },
+    { key: 'eyebrow', label: 'Status pill', hint: '"● Az önce geldi"' },
     { key: 'title', label: 'Başlık', hint: '"${rating} yıldız."', placeholders: MAIL_PLACEHOLDERS['new-review'] },
     { key: 'titleSub', label: 'Başlık alt satır', hint: '"Hak ettin."', placeholders: MAIL_PLACEHOLDERS['new-review'] },
     { key: 'primaryCta', label: 'Birincil CTA', hint: '"Teşekkür yaz →"' },

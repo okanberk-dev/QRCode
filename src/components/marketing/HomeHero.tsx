@@ -107,21 +107,6 @@ function Mono({
   );
 }
 
-function LiveDot({ color = '#16A34A', size = 6 }: { color?: string; size?: number }) {
-  return (
-    <span className="relative inline-flex" style={{ width: size, height: size }}>
-      <span
-        className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
-        style={{ background: color }}
-      />
-      <span
-        className="relative inline-flex rounded-full"
-        style={{ width: size, height: size, background: color }}
-      />
-    </span>
-  );
-}
-
 function StarSvg({ size = 11, fill = '#C6F24E' }: { size?: number; fill?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} aria-hidden>
@@ -833,10 +818,6 @@ function InboxCard({ isTr }: { isTr: boolean }) {
             {isTr ? 'PULSE AI · GELEN KUTUSU' : 'PULSE AI · INBOX'}
           </Mono>
         </div>
-        <span className="flex items-center gap-1.5">
-          <LiveDot />
-          <Mono>{isTr ? 'CANLI' : 'LIVE'}</Mono>
-        </span>
       </div>
 
       {/* Review */}

@@ -208,9 +208,6 @@ export default async function PulseAiPage({
                   <p className="pulse-eyebrow text-[#C6F24E]">
                     {isTr ? 'BUAZE PULSE AI ÖNERİSİ' : 'BUAZE PULSE AI DRAFT'}
                   </p>
-                  <span className="pulse-eyebrow ml-auto rounded-full bg-[#C6F24E] px-2 py-0.5 text-[#0A0A0A]">
-                    {isTr ? 'CANLI' : 'LIVE'}
-                  </span>
                 </div>
                 <p className="mt-2.5 text-[13px] leading-[1.65] text-white/85">{exampleReply}</p>
                 <div className="mt-3 flex gap-2">

@@ -27,11 +27,14 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 | DB | PostgreSQL **via Supabase** | `DATABASE_URL` (pgbouncer 6543) + `DIRECT_URL` (5432 migration için) |
 | ORM | Prisma 6 | `prisma db push` Dockerfile'da otomatik |
 | Auth | Custom JWT (`jose`) + httpOnly cookie | `src/lib/auth.ts` — edge compatible |
-| UI | Tailwind v4 (PostCSS) + lucide-react (ikonlar) | **shadcn/ui kullanılmıyor** — elle yazılmış bileşenler |
+| Auth (Google Sign-in) | Firebase Web SDK (`firebase`) | `src/lib/firebase-client.ts` + `firebase-admin.ts` — sadece Google OAuth için, primary auth değil |
+| UI | Tailwind v4 (PostCSS) + lucide-react (ikonlar) | Elle yazılmış bileşenler + Radix UI primitive'leri (`@radix-ui/react-dialog`, `dropdown-menu`, `tabs`, `tooltip`, `popover`, `select`) headless infrastructure |
+| Server-state | `@tanstack/react-query` | Admin/dashboard fetch dağınıklığı için cache + dedup + retry. `<QueryProvider>` `src/app/layout.tsx`'te root'ta (CLAUDE.md §27) |
 | Charts | recharts | |
 | Görsel işleme | sharp (WebP dönüşüm + resize) | |
 | QR | qrcode | `/api/restaurants/[id]/qr` |
 | Mail | Resend HTTP API | `src/lib/email.ts` — SMTP yok, fetch tabanlı |
+| Hata izleme | `@sentry/nextjs` | env-gated; `instrumentation.ts` + `instrumentation-client.ts` (CLAUDE.md §26) |
 | i18n | `src/app/[locale]/...` + `src/lib/translations.ts` | tr / en |
 | Deploy | Vercel (Production) | Otomatik Git entegrasyonu |
 
@@ -160,7 +163,7 @@ src/
 │   ├── auth.ts                # JWT + actor resolve + IDOR helpers
 │   ├── prisma.ts              # Tek instance (HMR-safe)
 │   ├── translations.ts        # tr/en string haritası
-│   ├── validations.ts         # Zod yok; elle doğrulama
+│   ├── validations.ts         # form/API validation helpers
 │   └── menu-access.ts         # Menü erişim kontrolü
 └── prisma/
     └── schema.prisma          # Tüm modeller
@@ -181,8 +184,6 @@ Aşağıdakiler **bilinçli kararlar** — değiştirmek için güçlü sebep ge
 - Uzun dropdown / toolbar'larda mobilde `flex-col md:flex-row` + `w-full sm:w-auto`.
 
 ### ❌ Yapma
-- **shadcn/ui veya headless UI ekleme** — mevcut stil deseni Tailwind + basit `<select>`/`<button>`.
-- **Zod ekleme** — elle validasyon tercih edilmiş, küçük ölçekli projeye yeterli.
 - **Prisma migration dosyası (`prisma/migrations/...`) oluşturma** — deploy akışı `prisma db push --accept-data-loss` üzerine kurulu, `migrate dev` kullanılmıyor.
 - **Ortak abstraction'lar** (shared PLATFORM_CONFIG modülü gibi) **üç yerden fazla tekrar** olmadıkça yazma.
 - **AI / otomasyon / rol refactor** ekleme — kullanıcının açıkça istediği scope'a sadık kal.
@@ -482,6 +483,11 @@ Public path (`/api/restaurants?slug=`) zaten Faz 1'de süpürüldü (PR #118). S
 **Opsiyonel:**
 - `OPENAI_API_KEY` — AI Co-Pilot yanıt önerileri için (§15). Yoksa endpoint deterministik şablona düşer, UI çalışmaya devam eder.
 - `OPENAI_MODEL` — Varsayılan `gpt-4o-mini`.
+- `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` — error tracking (§26). Yoksa SDK no-op çalışır. Vercel Sentry Marketplace integration tüm Sentry env'lerini (`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` dahil) otomatik provision eder.
+- `NEXT_PUBLIC_FIREBASE_*` (4 env) — Google Sign-in için Firebase client config. Yoksa Google OAuth butonu disable, e-posta+şifre auth çalışmaya devam eder.
+- `FIREBASE_AUTH_PROXY_TARGET` — `next.config.ts` rewrite hedefi (Firebase Auth proxy). `__/auth/*` ve `__/firebase/init.json` path'lerini Firebase'e yönlendirir. Boşsa rewrite eklenmez.
+- `FIREBASE_ADMIN_PROJECT_ID` — server-side Firebase Admin SDK için.
+- `RECAPTCHA_ENTERPRISE_API_KEY` + `RECAPTCHA_ENTERPRISE_SERVICE_ACCOUNT_JSON` + `RECAPTCHA_ENTERPRISE_PROJECT_ID` — reCAPTCHA Enterprise score-based bot koruması (`src/lib/recaptcha.ts`). `RECAPTCHA_ENFORCE='true'` set edilince düşük skorlu istek reddedilir; default `false` (sadece skor logla).
 
 ### 14.2 Rate limit (Upstash Redis + in-memory fallback)
 
@@ -573,6 +579,13 @@ Tüm motion `prefers-reduced-motion: reduce` altında devre dışı (globals.css
 | `CRON_SECRET` | Cron kullanılıyorsa | `/api/cron/*` endpoint'leri `Authorization: Bearer ${CRON_SECRET}` zorunlu |
 | `IP_RETENTION_DAYS` | Opsiyonel | Default 90; KVKK IP anonimleştirme cron'u için |
 | `IYZICO_*` (POS, henüz yok) | Yok | Wave 3.5'te eklenecek |
+| `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, projectId, appId) | Opsiyonel | Google Sign-in client config; eksikse OAuth butonu UI'da disable, e-posta+şifre flow intact |
+| `FIREBASE_AUTH_PROXY_TARGET` | Opsiyonel | `__/auth/*` path'lerini Firebase'e proxy'ler (`next.config.ts:rewrites`); boşsa rewrite hiç eklenmez |
+| `FIREBASE_ADMIN_PROJECT_ID` | Opsiyonel | Server-side Firebase Admin SDK için (token verify) |
+| `RECAPTCHA_ENTERPRISE_API_KEY` + `RECAPTCHA_ENTERPRISE_SERVICE_ACCOUNT_JSON` + `RECAPTCHA_ENTERPRISE_PROJECT_ID` | Opsiyonel | reCAPTCHA Enterprise score-based bot guard (`src/lib/recaptcha.ts`); eksikse skor 1.0 varsayılır (geçer), `NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY` client-side widget için |
+| `RECAPTCHA_ENFORCE` | Opsiyonel | `'true'` ise düşük skorlu istek reddedilir; default `'false'` sadece logla — Stripe Radar / Cloudflare Turnstile rollout pattern |
+| `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` | Opsiyonel | Hata izleme (§26). Vercel Sentry Marketplace integration set ederse `SENTRY_AUTH_TOKEN` + `SENTRY_ORG` + `SENTRY_PROJECT` source-map upload için ek olarak gelir |
+| `OPS_EMAIL` | Opsiyonel | Kritik mail send fail'da operatöre uyarı (§21.33); yoksa `NOTIFICATION_EMAIL` fallback, hiçbiri yoksa sessiz log |
 
 Tüm env'ler `.env.example`'da. Vercel production'da yüklü; local dev için manuel kopyalama. Build script `node scripts/validate-env.js` ile zorunlu env'leri doğrular (eksik → exit 1).
 
@@ -2105,3 +2118,311 @@ Bundle README + user prompt: *"mobil uygulama değil responsive olacak sadece"*.
 ### 25.7 Tasarım kaynağı (referans, `src/`'ye kopyalanmaz)
 
 `/tmp/buaze-design/buaze-mobil/` (Claude Design handoff bundle, **git-tracked değil**, lokal `.design/` analoji). 5 dosya: `buaze.html` (global CSS + Tailwind config + animation keyframe'leri), `layout.jsx` (BuazeNav + BuazeFooter + MobileBottomNav), `home.jsx` (HeroDashboard + IndustryTabs + 8 section), `pages.jsx` (Features/Pricing/Solutions/Blog/About/Contact/Help/FAQ), `app.jsx` (hash router). Pulse token'ları zaten `globals.css` `@theme {}` block'unda — yeni token tanımı yapılmadı. Logo `BuazeLogo.tsx` korundu, font'lar `layout.tsx`'te yüklü. Mobil pass kalıcı çıktıları: §25.2 listesi.
+
+---
+
+## 26. Sentry — Hata İzleme & Performans
+
+`@sentry/nextjs` ^10.51 ile **production gözlem** katmanı. Vercel Sentry Marketplace integration kuruldu — env'ler (`SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`) Production + Preview + Development scope'larında otomatik provision. Lokal dev'de DSN yoksa SDK tamamen no-op.
+
+### 26.1 Dosya yapısı (canonical SDK skill pattern)
+
+| Dosya | Görev |
+|---|---|
+| `instrumentation.ts` | `register()` runtime'a göre lazy import + `onRequestError = Sentry.captureRequestError` (Next 15 unhandled server error hook, SDK >= 8.28) |
+| `sentry.server.config.ts` | Server runtime init; `includeLocalVariables: true` (stack trace'de local vars) |
+| `sentry.edge.config.ts` | Edge runtime init |
+| `instrumentation-client.ts` | Browser init + `Sentry.replayIntegration()` + `onRouterTransitionStart` |
+| `src/app/global-error.tsx` | Uncaught error boundary; `NextError statusCode={0}` + `Sentry.captureException` |
+| `next.config.ts` | Koşulsuz `withSentryConfig` wrap; auth token yoksa source-map upload silently skip |
+
+### 26.2 KVKK / GDPR sapmaları (skill default'undan)
+
+Resmi skill `sendDefaultPii: true` öner — restoran müşteri verileri için yasal risk. Bu projede:
+
+- **`sendDefaultPii: false`** — IP / cookies / form bodies / user-identifiable headers Sentry'ye otomatik gönderilmez. Gerekirse explicit `Sentry.setUser({})` ile event başına eklenir, legitimate-interest review sonrası.
+- **`replaysSessionSampleRate: 0`** — background session replay yok. Sadece `replaysOnErrorSampleRate: 1.0` ile hata anında 60 sn'lik replay yakalanır. Müşteri privacy footprint düşük, Sentry quota burn minimum.
+- **`tracesSampleRate: 0.1`** prod (skill default `0.1`) / `1.0` dev — performance tracing %10 örneklem, free tier yeterli.
+
+### 26.3 Tunnel route + Middleware
+
+`tunnelRoute: '/monitoring'` ad-blocker'ları bypass eder — Sentry trafiği app origin'inden tünellenir. Mevcut middleware matcher `'/admin/:path*'`, `/monitoring` zaten dışarıda — exclude eklemeye gerek yok.
+
+### 26.4 Smoke test
+
+`GET /api/sentry-test` — kasıtlı 500 fırlatır (`Error: [Sentry smoke test] Synthetic error...`), tag `sentry.smoketest=true`. Production'da default disable, `ENABLE_SENTRY_TEST=1` env ile aç. Doğrulama sonrası endpoint kullanılmaz, kalabilir.
+
+### 26.5 Manuel capture pattern'leri (opsiyonel)
+
+`onRequestError` çoğu server hatasını otomatik yakalar. Manuel capture sadece `try/catch` bloklarında veya warning-level event'ler için:
+
+```ts
+// Mail send fail (src/lib/email.ts)
+Sentry.captureMessage('Mail send failed', { level: 'error', tags: { template, recipient_domain } });
+
+// AI Co-Pilot fallback (src/app/api/feedback/[id]/suggest-reply)
+Sentry.captureMessage('OpenAI suggest-reply fallback', { level: 'warning' });
+
+// Cron job catch
+Sentry.captureException(error, { tags: { cron: 'monthly-newsletter' } });
+```
+
+### 26.6 Yapma
+
+- `sendDefaultPii: true` set etme — KVKK ihlali. Spesifik bir event için PII gerekirse o event'e özel `Sentry.setContext('user', { ... })` kullan.
+- `replaysSessionSampleRate > 0` set etme — session başı replay quota'yı patlatır + müşteri privacy footprint büyür.
+- DSN'i koda commit etme — `process.env.SENTRY_DSN` referansı yeter, env Vercel project settings'te.
+- Test endpoint'i production'da `ENABLE_SENTRY_TEST=1` bırakma — synthetic noise birikir.
+
+### 26.7 Maliyet
+
+Free tier: 5K error event + 10K transaction + 50 replay / ay. Mevcut Buaze trafiğine göre yıllar sürecek. Üst limit'e yaklaşırsa Sentry dashboard'da uyarı geliyor; o zaman plan upgrade veya `tracesSampleRate` düşür (`0.1` → `0.05`).
+
+---
+
+## 27. React Query + Radix UI — Infrastructure Dep'leri
+
+İki yeni dep tek amaca hizmet eder: **panel performansı + a11y baseline**. CLAUDE.md §7 minimum-dep disiplinine aykırı değil çünkü bu **abstraction değil infrastructure** — her ikisi de mevcut pattern'leri replace etmek için değil, ortak ihtiyaçları tek noktadan çözmek için.
+
+### 27.1 `@tanstack/react-query` (server-state)
+
+**Sorun:** Admin + dashboard'da her component kendi `fetch + useState + useEffect` pattern'ini yazıyor. `dashboard/feedbacks/page.tsx` 800+ satır, 10+ ayrı fetch hook'u. Cache yok → her route geçişinde yeniden fetch (gereksiz Postgres round-trip + ms latency). Race conditions → kullanıcı 2 kez tıklayınca duplicate request.
+
+**Setup:**
+- `src/components/providers/QueryProvider.tsx` — `<QueryClientProvider>` wrap, `useState` ile single instance, default options:
+  - `staleTime: 60_000` (60 sn fresh window)
+  - `gcTime: 5 * 60_000` (5 dk cache GC)
+  - `retry: 1` (transient hatalar için tek retry; 4xx loop'unu önler)
+  - `refetchOnWindowFocus: false` (panel chart'ları ağır, focus'ta refetch istemiyoruz)
+- `src/app/layout.tsx` root'ta `<QueryProvider>` ile children sarılı — tüm `[locale]` + `admin` + `r/[slug]` + `menu/[slug]` route'ları kapsar.
+- Devtools: sadece `NODE_ENV !== 'production'`'da render (sağ-altta floating button).
+
+**Migration pattern (PR PR ile):**
+```ts
+// Önce
+const [data, setData] = useState(null);
+const [loading, setLoading] = useState(true);
+useEffect(() => { fetch('/api/X').then(r => r.json()).then(d => { setData(d); setLoading(false); }); }, []);
+
+// Sonra
+const { data, isLoading } = useQuery({ queryKey: ['x'], queryFn: () => fetch('/api/X').then(r => r.json()) });
+```
+
+**Yap:** Yeni client component eklerken `useQuery` ile başla. Mevcut fetch'leri opportunistic refactor — heavy admin sayfalarından başla (dashboard, feedbacks, analytics).
+
+**Yapma:** Server component'lerde React Query — server-side fetch + Prisma direct kalsın, RQ sadece client-side için. SSR initial state için `dehydrate` / `hydrate` pattern'i gerekirse sonradan eklenir.
+
+### 27.2 Radix UI primitive'leri (a11y headless)
+
+Mevcut UI primitive'leri (`src/components/ui/Modal`, `Tabs`, vb.) elle yazılmış focus-trap + ARIA + ESC handler. Çalışıyor ama:
+- Focus trap subtle bug'ları kolay (mod-tab ordering, refs, restoration)
+- Screen reader announcement'lar manuel — `aria-live`, `role="dialog"` doğru kombinasyon zor
+- Touch dismiss gestures yok
+- Animated mount/unmount manuel state machine
+
+**Eklenen primitive'ler:**
+- `@radix-ui/react-dialog` — Modal + slide-over (mevcut `<Modal>` replace edilebilir)
+- `@radix-ui/react-dropdown-menu` — Admin sidebar dropdown'ları
+- `@radix-ui/react-tabs` — mevcut `<Tabs>` replace edilebilir (a11y baseline yükseltir)
+- `@radix-ui/react-tooltip` — yardım metinleri için (henüz tooltip primitive yok)
+- `@radix-ui/react-popover` — settings dropdown'ları, range pickers
+- `@radix-ui/react-select` — form `<select>` replace (mobile-friendly + searchable)
+
+Radix `Primitive.Trigger` / `Primitive.Content` headless component'ler — kendi className'imizi (`bz-card`, `bz-btn-primary`, vb.) Tailwind ile uygulayacağız.
+
+**Yap:** Yeni complex UI (combobox, command palette, date range picker) eklemek gerekirse Radix primitive'inden başla, üstüne Tailwind ile Pulse styling.
+
+**Yapma:** Mevcut `src/components/ui/*` primitive'lerini toplu Radix'e migrate etme — sadece a11y bug fix gerektiği veya yeni feature gerektirdiği yerlerde değiştir. Phase 7+ backlog: opportunistic Modal/Tabs migration.
+
+### 27.3 Bundle size
+
+| Lib | Gzip cost (~) |
+|---|---|
+| `@tanstack/react-query` | 13 KB |
+| `@tanstack/react-query-devtools` | dev-only, prod bundle'da yok |
+| `@radix-ui/react-dialog` | 8 KB |
+| `@radix-ui/react-dropdown-menu` | 10 KB |
+| `@radix-ui/react-tabs` | 4 KB |
+| `@radix-ui/react-tooltip` | 6 KB |
+| `@radix-ui/react-popover` | 7 KB |
+| `@radix-ui/react-select` | 12 KB |
+| **Toplam** | ~60 KB gzip (tree-shake'le sadece kullanılan kısım yüklenir) |
+
+Mobil 3G'de ek ~150 ms parse, kabul edilir. Server-state caching kazançı bunu çoktan karşılar.
+
+---
+
+## 28. Backend Validation Strategy
+
+Buaze 125+ API endpoint'i çoğunlukla elle validation kullanıyor (CLAUDE.md §6 `validations.ts`). Bu pattern bilinçli ve çalışıyor — **toplu refactor yok**. Zod opsiyonel ek katmandır, mevcut endpoint'leri zorla migrate etmez.
+
+### 28.1 Kurallar
+
+1. **Çalışan mevcut endpoint'leri elle, somut bir feature/bug fix için değiştirmiyorsan, oldukları gibi bırak.** Çalışan validation bozulmaz.
+2. **Tüm endpoint'leri Zod'a otomatik migrate etme.** Toplu refactor scope creep'tir, regression riski büyüktür, code review yükü çoğaltır.
+3. **Zod sadece yeni veya yüksek-risk modüller için.** Mevcut bir route'a sadece zaten o feature için PR açmışsan ekle.
+4. **Zod tercih edilen alanlar:**
+   - Google Business Profile entegrasyonu (gelecek)
+   - Billing / subscription / invoice flow'ları (Iyzico Wave 3.5)
+   - Campaign create / update
+   - QR create / update
+   - Onboarding multi-step state
+   - Admin role / permission güncellemeleri
+   - Webhook / API key oluşturma
+   - Feedback submission (public, kullanıcı kontrolünde değil)
+   - Karmaşık public form'lar
+5. **Elle validation kabul edilebilir alanlar:**
+   - Basit GET / list endpoint'leri
+   - Health / status endpoint'leri
+   - Cron health check'leri
+   - Tek-iki alanlı küçük update/toggle endpoint'leri
+6. **Yeni validation katmanı incremental, typed, küçük, Vercel serverless uyumlu olmalı.** Build-time generated runtime SDK'lar yok (tRPC), heavy decorator pattern'leri yok (NestJS).
+7. **Büyük framework değişiklikleri yapma:** NestJS migration, tRPC migration, full NextAuth migration, BullMQ worker mimarisi — explicit istek olmadıkça **hayır**.
+
+### 28.2 Helper: `src/lib/api/validate.ts`
+
+Tek export: `validateBody(schema, body)` — Zod schema kabul eder, typed parsed data veya 400 response döner. Kullanım pattern'i:
+
+```ts
+import { z } from 'zod';
+import { validateBody } from '@/lib/api/validate';
+
+const Body = z.object({
+  name: z.string().min(1).max(120),
+  platforms: z.array(z.string()).max(10),
+});
+
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => null);
+  const parsed = validateBody(Body, body);
+  if (!parsed.ok) return parsed.response;
+  // parsed.data fully typed — { name: string; platforms: string[] }
+}
+```
+
+Hata response'u stable contract:
+```json
+{
+  "error": "validation_error",
+  "message": "Request body failed validation.",
+  "issues": [{ "path": "platforms.0", "message": "..." }]
+}
+```
+
+Client kod `error === 'validation_error'` ile auth (401) / authz (403) / server (500) hatalarından ayırt edebilir.
+
+### 28.3 Yapma
+
+- Mevcut endpoint'i Zod'a migrate ederken **ilgisiz refactor ekleme** (response shape değişikliği, error handling tweak, vb.) — minimum diff.
+- `validateBody`'yi `@/lib/validations`'la karıştırma — eski elle helper'lar kalır, yeni Zod kullanımı için ayrı dosya.
+- Form library (react-hook-form, @hookform/resolvers) ekleme — bu task **backend-only**. Frontend form'ları ayrı scope.
+- Schema'ları ortak modüle çıkarmaya zorlama — 3+ yerden import edilene kadar route-local kalsın (CLAUDE.md §7 abstraction kaçınma ilkesi).
+
+---
+
+## 29. Backend API Foundation Plan
+
+Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microservice yok, NestJS yok, tRPC yok, BullMQ yok.
+
+### 29.1 Şu anki durum + öneri sırası
+
+| # | Modül | Mevcut | Öneri |
+|---|---|---|---|
+| 1 | Shared API response helper | Yok (her route kendi `NextResponse.json`'ı) | İncremental — `src/lib/api/response.ts` opsiyonel, sadece tekrar çıkarsa |
+| 2 | Shared error handler + Sentry | `onRequestError` global hook (§26) | Yeterli; manuel `Sentry.captureException` yüksek-risk yerler için |
+| 3 | Shared auth/role guard | `getPanelActorFromRequest` + `requireRestaurantAccess` (§4) | Çalışıyor, dokunma |
+| 4 | Optional Zod validation helper | **Bu task** — `validateBody` (§28) | Yeni complex route'larda kullan |
+| 5 | Shared Upstash rate-limit helper | `rateLimit()` (§14.2, distributed) | Yeterli; yeni public endpoint'lerde kullan |
+| 6 | Audit log helper | `AdminAuditLog` model şemada var, kullanılmıyor | Yeni admin write action'larında kullanılması önerilir |
+| 7 | Vercel Cron endpoints | 4 cron çalışıyor (§21.12) | BullMQ yerine bu pattern kalır |
+| 8 | Centralized mail service | `src/lib/email.ts` + `src/lib/email/` (§21) | Mevcut, mail gönderimi route içinde değil |
+| 9 | Google Business Profile OAuth | Yok | Stratejik gelecek modülü — Zod ile başla (§28.1.4) |
+
+### 29.2 Mimari kuralları
+
+**Yap:**
+- Monolitik Next.js App Router yapısını koru
+- Vercel serverless uyumlu kal (request-scoped state, no in-memory queues)
+- Scheduled job'lar için **Vercel Cron + API route + Upstash/DB** üçlüsü
+- Sentry'yi şu kategorilerde kullan:
+  - Caught error'lar (try/catch içinde explicit `captureException`)
+  - Error boundary'ler (`global-error.tsx` zaten yapıyor)
+  - API failure'lar (`onRequestError` zaten yakalıyor)
+  - Cron failure'lar (cron handler `try/catch` + `captureException` + tag `{ cron: 'name' }`)
+  - Önemli integration failure'lar (OpenAI, Resend, Iyzico — fallback öncesi capture)
+
+**Yapma:**
+- Microservice'lere bölme
+- Long-running worker'lar (BullMQ, Bee-Queue, Sidekiq-style)
+- Background queue managerleri (Vercel serverless 10s gateway timeout, queue worker yeri yok)
+- Mevcut DB schema'yı bir feature gerektirmedikçe değiştirme
+- Authentication'ı yeniden yazma (mevcut `jose` JWT + httpOnly cookie çalışıyor)
+- UI'ı bu task'ta değiştirme — backend-only scope
+
+---
+
+## 30. Dependency Policy + Stack Audit (2026-04 güncellendi)
+
+### 30.1 Yeni library ekleme kuralı (kanonik)
+
+**Yeni bir library ekleme — **somut, mevcut bir sorunu çözmüyorsa.** "Olsa iyi olur", "modern stack", "best practice" yeterli sebep **değil**. Her ek dep:
+
+- Vercel bundle size + cold start'a yük bindirir
+- npm audit attack surface'ini büyütür
+- Yeni AI session'ları için bilişsel yük artırır
+- Maintenance + lockfile drift riski oluşturur
+
+### 30.2 Yeni dep evaluation checklist (her dep eklemeden önce 8 soru)
+
+1. **Hangi tam sorunu çözüyor?** Soyut "performance" / "DX" cevabı değer taşımaz; somut bir kod patolojisini işaret etmeli.
+2. **Mevcut stack güvenle çözebilir mi?** Tailwind, jose, Prisma, Radix, React Query, Sentry, Zod — bu sekiz altyapı çoğu sorunu zaten kapsıyor.
+3. **Bundle size + cold start'a etkisi?** Client-side dep'lerde >20 KB gzip dikkat. Server-side dep'lerde cold start >100 ms artıyorsa kabul edilemez.
+4. **External API key, paid service, Redis, background worker, long-running process gerektiriyor mu?** Vercel serverless'ta yok yatırım. Upstash + Vercel Cron + Sentry üçlüsü dışına çıkma.
+5. **Mevcut monolitik Next.js mimarisiyle uyumlu mu?** Microservice / sidecar / Docker compose gerektiren dep'ler reddedilir.
+6. **Vercel serverless deployment ile uyumlu mu?** Edge / Node runtime sınırları, 10s gateway timeout, ephemeral FS — bunları aşan dep'ler reddedilir.
+7. **Çalışan kod refactor'u olmadan incremental adopte edilebilir mi?** Toplu migration zorlayan dep (örn. NestJS, tRPC) reddedilir.
+8. **Mevcut auth / design system / validation pattern / deploy modeliyle çatışıyor mu?** Çatışırsa düşük teknik borç olarak alternatif bul veya elle yaz.
+
+### 30.3 Stack snapshot (2026-04 itibarıyla)
+
+| Lib | Durum | Karar |
+|---|---|---|
+| `@sentry/nextjs ^10.51` | ✅ Kurulu | Production observability — caught error'lar, cron failure'lar, integration failure'ları, error boundary'leri için **tutarlı kullan** (§26) |
+| `zod ^4.4` | ✅ Kurulu | Sadece yeni veya yüksek-risk backend route'larında. Mevcut elle validation'ı **toplu migrate etme** (§28) |
+| `@tanstack/react-query ^5.100` | ✅ Kurulu | `<QueryProvider>` root layout'ta. Yeni client component'lerde `useQuery` ile başla; mevcut fetch+useState pattern'leri opportunistic refactor (§27.1) |
+| `@radix-ui/react-{dialog,dropdown-menu,tabs,tooltip,popover,select}` | ✅ Kurulu | Sadece a11y-heavy yeni primitive ihtiyacında. Mevcut `src/components/ui/*` toplu migrate edilmez (§27.2) |
+| `firebase ^12.12` | ✅ Kurulu | Sadece Google Sign-in için. Primary auth değil — `jose` JWT + httpOnly cookie (§4) |
+| `jose ^6.2` | ✅ Kurulu | Custom JWT auth — edge compatible, Vercel middleware ile uyumlu (§4) |
+
+### 30.4 Önerilen ama kurulmaya gerek olmayan lib'ler (revised)
+
+| Lib | Karar | Sebep |
+|---|---|---|
+| **NextAuth.js / Auth.js** | ❌ Reject | Custom JWT (`jose`) zaten çalışıyor, edge-compatible, IDOR helper'ları kurulmuş (§4). Migration scope creep. |
+| **Chakra UI / MUI** | ❌ Reject | Tailwind + Radix + custom `bz-*` design system var (§11, §23). UI dili çatışır, refactor maliyeti yüksek. |
+| **BullMQ / Bee-Queue** | ❌ Reject | Vercel serverless'ta worker runtime yok. 4 cron `vercel.json`'da çalışıyor (§21.12). Upstash ile sufficient. |
+| **SWR** | ❌ Reject | React Query zaten kurulu — overlap. Mutation, invalidation, pagination, optimistic updates için RQ daha uygun. |
+| **Pino / Winston** | ❌ Reject (şimdilik) | Sentry log + structured event capture yeterli (§26). Backend'e ayrı log aggregation gerekirse yeniden değerlendir. |
+| **next-intl / next-international** | ❌ Reject (şimdilik) | Mevcut `src/lib/translations.ts` + `src/app/[locale]/...` pattern'i çalışıyor. Migration ~80 sayfa + helper'ları yeniden yazmayı gerektirir. SSG / dinamik route ile uyumsuzluk riski. Tekrar değerlendirme tetikleyici: 3+ locale + dinamik string interpolation ihtiyacı. |
+| **react-hook-form + @hookform/resolvers** | ⚠️ Defer | Backend Zod task'ında kurulmadı (kasıtlı). Frontend form refactor task'ı açıldığında yeniden değerlendir. Mevcut elle form state çoğu Buaze form'unda yeterli (4-6 alan). |
+| **react-email / mjml** | ❌ Reject | `src/lib/email/` Pulse layout helper'ları çalışıyor (§21). DB-driven copy + placeholder substitution + revision audit zaten var. |
+| **NestJS / tRPC migration** | ❌ Reject | Monolitik Next.js App Router pattern'i bilinçli karar. Migration tüm 125+ route + DI pattern + decorator yeniden yazımı demek. |
+| **shadcn/ui** | ⚠️ Allowed (pattern restricted) | Yasak değil ama 138 mevcut component elle yazılmış (`bz-*` token'larıyla). Yeni complex UI'da yararlı olabilir; eklenirse styled wrapper'ları Pulse token'larıyla **tamamen override etmek zorunda**. |
+
+### 30.5 Tetik olduğunda ek edilebilecekler
+
+| Lib | Tetik koşul |
+|---|---|
+| `@vercel/speed-insights` + `@vercel/analytics` | Marketing pages traffic >10K/ay — Web Vitals + funnel analysis |
+| `iyzipay-node` (veya REST direct) | Iyzico Wave 3.5 başlatıldığında billing write-side için |
+| `react-hook-form` | Bir form 8+ alana çıktığında veya complex validation chain gerekirse |
+| `next-intl` | 3. locale eklenirken (TR + EN dışı) — current pattern 2 locale için uygun, 3+ ölçeklemiyor |
+| `@upstash/qstash` | Cron yeterli olmazsa — async job queue ihtiyacı çıkarsa (delay scheduling, retry policy) |
+| `pino-pretty` + `pino` | Sentry dışına structured log aggregation gerekirse (Datadog, Loki) |
+
+### 30.6 Yapma
+
+- "Modern stack şu kullanıyor" gerekçesiyle dep ekleme — Buaze stack'i bilinçli ve yeterli.
+- Bir feature için dep eklerken aynı PR'da başka bir dep daha eklemek (scope creep).
+- "Belki ileride lazım olur" diye kurulum (`react-hook-form` örneği — frontend task'ı açılana kadar bekle).
+- shadcn'in default styled wrapper'larını Pulse token'larına geçirmeden kopyala-yapıştır.

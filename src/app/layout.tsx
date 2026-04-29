@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
 import { getSiteSettings } from '@/lib/site-settings';
+import { QueryProvider } from '@/components/providers/QueryProvider';
 
 export const dynamic = 'force-dynamic';
 const GA_MEASUREMENT_ID = 'G-Y1H5FLYZ9R';
@@ -109,7 +110,7 @@ export default function RootLayout({
             __html: `<div><img src="https://mc.yandex.ru/watch/${YM_ID}" style="position:absolute;left:-9999px;" alt="" /></div>`,
           }}
         />
-        {children}
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   );
