@@ -14,9 +14,9 @@ interface PlatformDistributionProps {
 
 const PLATFORM_COLORS: Record<string, { bg: string; bar: string; text: string; icon: React.ReactNode }> = {
   google: { bg: 'bg-blue-50', bar: 'bg-[#4285F4]', text: 'text-[#4285F4]', icon: <img src="/platforms/google.svg" alt="Google" className="w-4 h-4 object-cover rounded-sm" /> },
-  yemeksepeti: { bg: 'bg-red-50', bar: 'bg-[#FA0050]', text: 'text-[#FA0050]', icon: <img src="/platforms/yemeksepeti.png" alt="Yemeksepeti" className="w-4 h-4 object-cover rounded-sm" /> },
-  getir: { bg: 'bg-purple-50', bar: 'bg-[#5D3EBC]', text: 'text-[#5D3EBC]', icon: <img src="/platforms/getir.png" alt="Getir" className="w-4 h-4 object-cover rounded-sm" /> },
-  trendyol_go: { bg: 'bg-[#EAF9B8]', bar: 'bg-[#F27A1A]', text: 'text-[#F27A1A]', icon: <img src="/platforms/trendyol-go.png" alt="Trendyol" className="w-4 h-4 object-cover rounded-sm" /> },
+  yemeksepeti: { bg: 'bg-red-50', bar: 'bg-[#FA0050]', text: 'text-[#FA0050]', icon: <img src="/platforms/yemeksepeti.svg" alt="Yemeksepeti" className="w-4 h-4 object-cover rounded-sm" /> },
+  getir: { bg: 'bg-purple-50', bar: 'bg-[#5D3EBC]', text: 'text-[#5D3EBC]', icon: <img src="/platforms/getir.svg" alt="Getir" className="w-4 h-4 object-cover rounded-sm" /> },
+  trendyol_go: { bg: 'bg-[#EAF9B8]', bar: 'bg-[#F27A1A]', text: 'text-[#F27A1A]', icon: <img src="/platforms/trendyol-go.svg" alt="Trendyol" className="w-4 h-4 object-cover rounded-sm" /> },
   unspecified: { bg: 'bg-[#FFFFFF]', bar: 'bg-[#C9D0DB]', text: 'text-[#6B7280]', icon: '—' },
 };
 
