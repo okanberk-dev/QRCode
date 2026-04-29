@@ -328,7 +328,7 @@ export default async function BlogPostPage({
                 <div>
                   <div className="text-[14px] font-semibold text-[#0A0A0A]">{post.author}</div>
                   <div className="text-[12px] text-[#0A0A0A]/70">
-                    {isTr ? 'Buaze · Yazar' : 'Buaze · Author'}
+                    {post.authorRole || (isTr ? 'Buaze · Yazar' : 'Buaze · Author')}
                   </div>
                 </div>
               </div>
@@ -342,11 +342,25 @@ export default async function BlogPostPage({
       <section className="px-5 sm:px-10 py-[60px] sm:py-20">
         {(() => {
           const postUrl = `https://buaze.com/${locale}/blog/${slug}`;
-          const tags = getBlogKeywords(post.title, post.description, locale).slice(0, 6);
+          // Admin override → manual tag list, fallback → keyword auto-derive.
+          const tags = (post.tags && post.tags.length > 0)
+            ? post.tags.slice(0, 6)
+            : getBlogKeywords(post.title, post.description, locale).slice(0, 6);
           const takeaways = tocItems.slice(0, 4);
           const shareText = encodeURIComponent(post.title);
           const shareUrl = encodeURIComponent(postUrl);
-          const ttRoles = isTr ? 'Buaze · Yazar' : 'Buaze · Author';
+          const authorRole = post.authorRole || (isTr ? 'Buaze · Yazar' : 'Buaze · Author');
+          const authorBio = post.authorBio || (isTr
+            ? 'Buaze ekibinden, restoran ve perakende için itibar yönetimi üzerine yazıyor.'
+            : 'Writes about restaurant and retail reputation management for the Buaze team.');
+          const ctaTitle = post.ctaTitle || (isTr
+            ? 'Google politikalarına uyumlu büyümeye hazır mısın?'
+            : 'Ready to grow the Google-compliant way?');
+          const ctaSubtitle = post.ctaSubtitle || (isTr
+            ? '14 gün ücretsiz · kredi kartı gerekmez · 5 dakikada kurulum'
+            : '14 days free · no card required · 5-minute setup');
+          const ctaButtonLabel = post.ctaButtonLabel || (isTr ? 'Ücretsiz başla' : 'Start free');
+          const pullQuoteAuthorName = post.pullQuoteAuthor || post.author;
 
           return (
             <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-10 lg:grid-cols-[260px_minmax(0,1fr)_260px] lg:gap-14">
@@ -443,6 +457,28 @@ export default async function BlogPostPage({
                   dangerouslySetInnerHTML={{ __html: content }}
                 />
 
+                {post.pullQuote && (
+                  <div className="my-14 border-y border-[#0A0A0A] py-9">
+                    <blockquote
+                      className="text-[22px] sm:text-[28px] font-medium leading-[1.25] tracking-[-0.02em] text-[#0A0A0A]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      <span className="mr-1.5 text-[#A8D62E]">&ldquo;</span>
+                      {post.pullQuote}
+                      <span className="ml-1 text-[#A8D62E]">&rdquo;</span>
+                    </blockquote>
+                    <div className="mt-5 flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]">
+                        {authorInitials(pullQuoteAuthorName)}
+                      </div>
+                      <div>
+                        <div className="text-[14px] font-semibold text-[#0A0A0A]">{pullQuoteAuthorName}</div>
+                        <div className="text-[12px] text-[#737373]">{authorRole}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {takeaways.length > 0 && (
                   <div className="mt-14 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-7 sm:p-8">
                     <div className="pulse-eyebrow text-[#737373]">
@@ -483,21 +519,15 @@ export default async function BlogPostPage({
                       className="mt-2.5 text-[24px] sm:text-[28px] font-medium leading-[1.15] tracking-[-0.02em]"
                       style={{ fontFamily: 'var(--font-heading)' }}
                     >
-                      {isTr
-                        ? 'Google politikalarına uyumlu büyümeye hazır mısın?'
-                        : 'Ready to grow the Google-compliant way?'}
+                      {ctaTitle}
                     </h3>
-                    <p className="mt-2 text-[13px] text-white/65">
-                      {isTr
-                        ? '14 gün ücretsiz · kredi kartı gerekmez · 5 dakikada kurulum'
-                        : '14 days free · no card required · 5-minute setup'}
-                    </p>
+                    <p className="mt-2 text-[13px] text-white/65">{ctaSubtitle}</p>
                   </div>
                   <Link
                     href={`${base}/auth/register`}
                     className="inline-flex items-center justify-center gap-2 self-start rounded-full bg-[#C6F24E] px-6 py-3.5 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] sm:self-auto"
                   >
-                    {isTr ? 'Ücretsiz başla' : 'Start free'}
+                    {ctaButtonLabel}
                     <span aria-hidden>→</span>
                   </Link>
                 </div>
@@ -531,14 +561,10 @@ export default async function BlogPostPage({
                       </div>
                       <div>
                         <div className="text-[14px] font-semibold text-[#0A0A0A]">{post.author}</div>
-                        <div className="text-[12px] text-[#525252]">{ttRoles}</div>
+                        <div className="text-[12px] text-[#525252]">{authorRole}</div>
                       </div>
                     </div>
-                    <p className="mt-3 text-[12px] leading-[1.55] text-[#525252]">
-                      {isTr
-                        ? 'Buaze ekibinden, restoran ve perakende için itibar yönetimi üzerine yazıyor.'
-                        : 'Writes about restaurant and retail reputation management for the Buaze team.'}
-                    </p>
+                    <p className="mt-3 text-[12px] leading-[1.55] text-[#525252]">{authorBio}</p>
                   </div>
 
                   {relatedPosts.length > 0 && (

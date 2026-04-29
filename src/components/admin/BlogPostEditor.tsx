@@ -8,6 +8,7 @@ import {
   Bold,
   CheckCircle2,
   Eye,
+  ExternalLink,
   FileText,
   Globe,
   Heading2,
@@ -22,7 +23,10 @@ import {
   Quote,
   Save,
   Sparkles,
+  Tag,
+  User,
   Wand2,
+  X,
 } from 'lucide-react';
 import { plainTextToBlogContent, sanitizeBlogContent } from '@/lib/blog-content';
 
@@ -38,6 +42,14 @@ interface BlogPost {
   author: string;
   coverImage: string;
   isActive: boolean;
+  authorBio?: string | null;
+  authorRole?: string | null;
+  tags?: string[] | null;
+  pullQuote?: string | null;
+  pullQuoteAuthor?: string | null;
+  ctaTitle?: string | null;
+  ctaSubtitle?: string | null;
+  ctaButtonLabel?: string | null;
 }
 
 const EMPTY_FORM = {
@@ -51,6 +63,14 @@ const EMPTY_FORM = {
   author: 'Buaze İçerik Ekibi',
   coverImage: '',
   isActive: true,
+  authorBio: '',
+  authorRole: '',
+  tags: [] as string[],
+  pullQuote: '',
+  pullQuoteAuthor: '',
+  ctaTitle: '',
+  ctaSubtitle: '',
+  ctaButtonLabel: '',
 };
 
 function createSlug(value: string) {
@@ -154,6 +174,14 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
           author: post.author,
           coverImage: post.coverImage,
           isActive: post.isActive,
+          authorBio: post.authorBio || '',
+          authorRole: post.authorRole || '',
+          tags: Array.isArray(post.tags) ? post.tags : [],
+          pullQuote: post.pullQuote || '',
+          pullQuoteAuthor: post.pullQuoteAuthor || '',
+          ctaTitle: post.ctaTitle || '',
+          ctaSubtitle: post.ctaSubtitle || '',
+          ctaButtonLabel: post.ctaButtonLabel || '',
         };
         setForm(next);
         window.setTimeout(() => syncEditorFromState(next.content), 0);
@@ -214,6 +242,28 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
     const text = event.clipboardData.getData('text/plain');
     document.execCommand('insertHTML', false, plainTextToBlogContent(text));
     handleEditorInput();
+  };
+
+  const [tagDraft, setTagDraft] = useState('');
+
+  const addTag = (raw: string) => {
+    const value = raw.trim().replace(/^#+/, '').replace(/\s+/g, ' ');
+    if (!value) return;
+    setForm(f => (f.tags.includes(value) ? f : { ...f, tags: [...f.tags, value] }));
+    setTagDraft('');
+  };
+
+  const removeTag = (value: string) => {
+    setForm(f => ({ ...f, tags: f.tags.filter(t => t !== value) }));
+  };
+
+  const handleTagKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      addTag(tagDraft);
+    } else if (event.key === 'Backspace' && !tagDraft && form.tags.length) {
+      setForm(f => ({ ...f, tags: f.tags.slice(0, -1) }));
+    }
   };
 
   const insertStarterTemplate = () => {
@@ -583,6 +633,147 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   <p className="mt-2 text-2xl font-semibold">{form.locale.toUpperCase()}</p>
                   <p className="text-[11px] font-semibold text-[#0A0A0A]/65">Dil</p>
                 </div>
+              </div>
+            </div>
+
+            {/* Public görünüm — opsiyonel override'lar; boş bırakılırsa public sayfa default'a düşer */}
+            <div className="rounded-[28px] border border-[#EDEDED] bg-white p-5">
+              <p className="pulse-eyebrow text-[#737373]">PUBLIC GÖRÜNÜM</p>
+              <p className="mt-2 text-[11px] leading-[1.55] text-[#737373]">
+                Boş bırakılan alanlar public sayfada Buaze default&rsquo;larına düşer.
+              </p>
+
+              {/* Yazar bio */}
+              <div className="mt-5">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+                  <User size={13} />
+                  Yazar açıklaması
+                </label>
+                <textarea
+                  rows={3}
+                  maxLength={280}
+                  value={form.authorBio}
+                  onChange={event => setForm(f => ({ ...f, authorBio: event.target.value }))}
+                  placeholder={form.locale === 'en'
+                    ? 'Two short sentences shown next to the author chip on the public page.'
+                    : 'Public sayfa sağ kenarda yazarın yanında görünen 2 cümlelik açıklama.'}
+                  className="mt-2 w-full resize-none rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-sm leading-[1.55] text-[#0A0A0A] outline-none focus:border-[#C6F24E] focus:bg-white"
+                />
+              </div>
+
+              {/* Yazar rolü */}
+              <div className="mt-4">
+                <label className="text-xs font-semibold text-[#737373]">Yazar rolü</label>
+                <input
+                  type="text"
+                  maxLength={60}
+                  value={form.authorRole}
+                  onChange={event => setForm(f => ({ ...f, authorRole: event.target.value }))}
+                  placeholder={form.locale === 'en' ? 'Buaze · Author' : 'Buaze · Yazar'}
+                  className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                />
+              </div>
+
+              {/* Tags */}
+              <div className="mt-4">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+                  <Tag size={13} />
+                  Etiketler
+                </label>
+                {form.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {form.tags.map(tag => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 rounded-full bg-[#F2F2F2] py-1 pl-3 pr-1 text-xs font-medium text-[#525252]"
+                        style={{ fontFamily: 'var(--font-mono)' }}
+                      >
+                        #{tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          aria-label={`${tag} etiketini kaldır`}
+                          className="ml-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[#737373] hover:bg-white hover:text-[#0A0A0A]"
+                        >
+                          <X size={11} strokeWidth={2.5} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <input
+                  type="text"
+                  value={tagDraft}
+                  onChange={event => setTagDraft(event.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                  onBlur={() => addTag(tagDraft)}
+                  placeholder={form.locale === 'en'
+                    ? 'Type and press Enter… (auto if empty)'
+                    : 'Yaz, Enter\'a bas… (boşsa otomatik türetilir)'}
+                  className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-medium outline-none focus:border-[#C6F24E]"
+                />
+              </div>
+
+              {/* Pull quote */}
+              <div className="mt-4">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+                  <Quote size={13} />
+                  Vurgulu alıntı
+                </label>
+                <textarea
+                  rows={3}
+                  maxLength={280}
+                  value={form.pullQuote}
+                  onChange={event => setForm(f => ({ ...f, pullQuote: event.target.value }))}
+                  placeholder={form.locale === 'en'
+                    ? 'A single sharp sentence highlighted between graphite lines mid-article.'
+                    : 'Makalenin ortasında graphite çizgiler arasında vurgulanan tek cümle.'}
+                  className="mt-2 w-full resize-none rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-sm leading-[1.55] text-[#0A0A0A] outline-none focus:border-[#C6F24E] focus:bg-white"
+                />
+                <input
+                  type="text"
+                  maxLength={80}
+                  value={form.pullQuoteAuthor}
+                  onChange={event => setForm(f => ({ ...f, pullQuoteAuthor: event.target.value }))}
+                  placeholder={form.locale === 'en'
+                    ? 'Quote author (defaults to post author)'
+                    : 'Alıntının sahibi (boşsa yazar adı)'}
+                  className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-medium outline-none focus:border-[#C6F24E]"
+                />
+              </div>
+
+              {/* CTA override */}
+              <div className="mt-4 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+                  <ExternalLink size={13} />
+                  Dark CTA (opsiyonel)
+                </label>
+                <input
+                  type="text"
+                  maxLength={120}
+                  value={form.ctaTitle}
+                  onChange={event => setForm(f => ({ ...f, ctaTitle: event.target.value }))}
+                  placeholder={form.locale === 'en'
+                    ? 'Headline (default: Ready to grow…)'
+                    : 'Başlık (default: Google politikalarına…)'}
+                  className="mt-3 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-[#C6F24E]"
+                />
+                <input
+                  type="text"
+                  maxLength={160}
+                  value={form.ctaSubtitle}
+                  onChange={event => setForm(f => ({ ...f, ctaSubtitle: event.target.value }))}
+                  placeholder={form.locale === 'en' ? 'Subtitle' : 'Alt metin'}
+                  className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-[#C6F24E]"
+                />
+                <input
+                  type="text"
+                  maxLength={40}
+                  value={form.ctaButtonLabel}
+                  onChange={event => setForm(f => ({ ...f, ctaButtonLabel: event.target.value }))}
+                  placeholder={form.locale === 'en' ? 'Button label (default: Start free)' : 'Buton etiketi (default: Ücretsiz başla)'}
+                  className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-[#C6F24E]"
+                />
               </div>
             </div>
           </aside>
