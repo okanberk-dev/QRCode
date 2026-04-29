@@ -6,12 +6,11 @@ import { IllusMountain, IllusShield } from '@/components/marketing/PulseIllustra
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
 import { BarChart3, Inbox, QrCode, Sparkles, Star } from 'lucide-react';
 import MarqueeRow from '@/components/marketing/MarqueeRow';
-import WatchDemoButton from '@/components/marketing/WatchDemoButton';
 import StickyCtaBar from '@/components/marketing/StickyCtaBar';
 import SocialProofToast from '@/components/marketing/SocialProofToast';
 import HomeIndustryTabs from '@/components/marketing/HomeIndustryTabs';
 import LiveReviewTicker from '@/components/marketing/LiveReviewTicker';
-import HomeHeroDashboard from '@/components/marketing/HomeHeroDashboard';
+import HomeHero from '@/components/marketing/HomeHero';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
@@ -124,41 +123,6 @@ export default async function LandingPage({
   };
 
   // ── Section content (inline locale, keeps translations.ts untouched) ──
-  const heroHeadline = isTr ? (
-    <>
-      İtibarınızı
-      <br />
-      <span className="relative inline-block">
-        bir{' '}
-        <span className="inline-block rounded-[10px] bg-[#C6F24E] px-3.5 pb-0.5 -rotate-[0.5deg]">
-          nabız
-        </span>{' '}
-        gibi
-      </span>
-      <br />
-      izleyin.
-    </>
-  ) : (
-    <>
-      Track your
-      <br />
-      reputation like
-      <br />a{' '}
-      <span className="inline-block rounded-[10px] bg-[#C6F24E] px-3.5 pb-0.5 -rotate-[0.5deg]">
-        pulse
-      </span>
-      .
-    </>
-  );
-
-  const heroSub = isTr
-    ? 'QR ile gerçek müşterilerden geri bildirim toplayın, yorumları tek panelden yönetin, Google politikalarına uyumlu şekilde itibarınızı büyütün.'
-    : 'Collect feedback from real customers via QR, manage every review from one panel, grow your reputation in a way that stays compliant with Google policies.';
-
-  const trustTicks = isTr
-    ? ['Kredi kartı gerekmez', '5 dakikada kurulum']
-    : ['No credit card required', '5-minute setup'];
-
   // Audit §8.4 — fake-looking wordmarks ("HOTEL NORA", "LAW&CO", ...) were
   // implying specific paying customers without consent, which is FTC and
   // Reklam Kurulu deceptive-advertising risk. Replaced with industry
@@ -344,79 +308,9 @@ export default async function LandingPage({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ═══════════════════════════════════════════════════════════
-          1. HERO — Homepage v2 design
+          1. HERO — Reputation OS edition
       ═══════════════════════════════════════════════════════════ */}
-      <section className="px-5 pb-16 pt-16 sm:px-8 sm:pb-20 sm:pt-20 lg:px-16 lg:pb-20 lg:pt-24">
-        <div className="mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-8 sm:gap-12 md:grid-cols-2 lg:gap-16">
-          <div className="flex flex-col gap-5 sm:gap-7">
-            <h1 className="bz-fade-up bz-d1 text-[38px] font-medium leading-[0.95] tracking-[-0.04em] text-[#0A0A0A] text-balance sm:text-[64px] sm:leading-[0.96] lg:text-[76px] lg:leading-[0.92]">
-              {heroHeadline}
-            </h1>
-
-            <p className="bz-fade-up bz-d2 max-w-[500px] text-[15px] font-normal leading-[1.6] text-[#525252] text-pretty sm:text-[18px] sm:leading-[1.65]">
-              {heroSub}
-            </p>
-
-            <div className="bz-fade-up bz-d3 flex flex-col items-stretch gap-3 pt-1 sm:flex-row sm:items-center">
-              <Link
-                href={`${base}/auth/register`}
-                className="bz-btn-primary inline-flex items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-7 py-4 text-[16px] font-semibold text-white transition-all hover:bg-[#1A1A1A]"
-              >
-                {isTr ? '14 gün ücretsiz başla' : 'Start 14-day free trial'}
-                <span aria-hidden>→</span>
-              </Link>
-              <WatchDemoButton locale={locale} />
-            </div>
-
-            <ul className="bz-fade-up bz-d4 flex flex-wrap gap-x-4 gap-y-2 pt-1 sm:gap-x-5">
-              {trustTicks.map((tick) => (
-                <li key={tick} className="text-[13px] text-[#737373]">
-                  ✓ {tick}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="bz-scale-in relative w-full md:pr-4">
-            <HomeHeroDashboard locale={locale} />
-
-            {/* Floating badges — design `.design/site/site-homepage-v3.jsx:240-262`.
-                Wrapped here (not inside HomeHeroDashboard) because the dashboard
-                uses `overflow-hidden` for its radial-gradient bg; absolute children
-                would clip inside the rounded card. */}
-            <div className="bz-float pointer-events-none absolute -right-3 -top-3 z-10 rounded-2xl bg-[#0A0A0A] px-4 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.25)] sm:-right-[18px] sm:-top-[18px]">
-              <div
-                className="text-[24px] font-semibold leading-none tracking-tight text-[#C6F24E] sm:text-[28px]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                +184%
-              </div>
-              <div className="pulse-eyebrow mt-1 text-[#A3A3A3]">
-                {isTr ? 'YORUM ARTIŞI' : 'REVIEW GROWTH'}
-              </div>
-            </div>
-            <div
-              className="bz-float pointer-events-none absolute -bottom-3 -left-3 z-10 flex items-center gap-2.5 rounded-2xl border border-[#EDEDED] bg-white px-4 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.1)] sm:-bottom-[14px] sm:-left-[18px]"
-              style={{ animationDelay: '1.2s' }}
-            >
-              <div
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EAF9B8] text-[15px] font-semibold text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                72
-              </div>
-              <div>
-                <div className="pulse-eyebrow text-[#737373]">
-                  {isTr ? 'NPS PUANI' : 'NPS SCORE'}
-                </div>
-                <div className="text-[12px] font-semibold text-[#16A34A]">
-                  ↑ {isTr ? 'Mükemmel' : 'Excellent'}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HomeHero locale={locale} />
 
       {/* ═══════════════════════════════════════════════════════════
           2. LOGO STRIP — trusted brands
