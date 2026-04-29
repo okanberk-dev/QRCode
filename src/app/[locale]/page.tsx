@@ -350,7 +350,7 @@ export default async function LandingPage({
               >
                 +184%
               </div>
-              <div className="pulse-eyebrow mt-1 text-[#737373]">
+              <div className="pulse-eyebrow mt-1 text-[#A3A3A3]">
                 {isTr ? 'YORUM ARTIŞI' : 'REVIEW GROWTH'}
               </div>
             </div>

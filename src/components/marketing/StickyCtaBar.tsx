@@ -91,7 +91,7 @@ export default function StickyCtaBar({ locale, threshold = 600 }: Props) {
             type="button"
             onClick={onDismiss}
             aria-label={isTr ? 'Kapat' : 'Dismiss'}
-            className="rounded-full p-2 text-[#737373] transition-colors hover:bg-white/5 hover:text-white"
+            className="rounded-full p-2 text-[#A3A3A3] transition-colors hover:bg-white/5 hover:text-white"
           >
             <X size={16} />
           </button>
