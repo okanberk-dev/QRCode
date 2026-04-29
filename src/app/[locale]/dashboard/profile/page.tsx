@@ -25,6 +25,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, Badge, Eyebrow, PageHeader, PlatformChip } from '@/components/ui';
 import BrandIdentityCard from '@/components/dashboard/BrandIdentityCard';
+import BillingReadOnlyCard from '@/components/dashboard/BillingReadOnlyCard';
 import { SECTORS } from '@/lib/sectors';
 import { detectSector, getSectorPlatforms } from '@/lib/sector-platforms';
 
@@ -296,7 +297,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
           <SettingsRow
             icon={<CreditCard size={16} strokeWidth={2} />}
             title={isTr ? 'Plan & faturalandırma' : 'Plan & billing'}
-            href="#account"
+            href="#billing"
           />
           <SettingsRow
             icon={<Bell size={16} strokeWidth={2} />}
@@ -557,7 +558,12 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
         </section>
       )}
 
-      {/* Card 3 — KVKK & Rıza Yönetimi (1:1 design). Read-only display of
+      {/* Card 3 — Faturalandırma (Faz 2). Read-only mirror of admin-managed
+          subscription state. Sources: /api/billing/summary + /invoices.
+          Edit CTAs disabled with banner; Iyzico provider wiring deferred. */}
+      <BillingReadOnlyCard isTr={isTr} />
+
+      {/* Card 4 — KVKK & Rıza Yönetimi (1:1 design). Read-only display of
           the active legal posture. Pulse mail templates render these
           documents per locale; admins manage versions via /admin/mail-templates. */}
       <section id="legal" className="bz-card p-6 sm:p-7 scroll-mt-20">
