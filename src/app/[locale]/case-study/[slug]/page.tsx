@@ -25,6 +25,26 @@ interface CaseStudyPersonRole {
 
 const VALID = ['tr', 'en'] as const;
 
+const CASE_STUDY_SELECT = {
+  slug: true,
+  brand: true,
+  sector: true,
+  sectorEn: true,
+  location: true,
+  heroImage: true,
+  heroTr: true,
+  heroEn: true,
+  subtitleTr: true,
+  subtitleEn: true,
+  stats: true,
+  highlights: true,
+  quoteTr: true,
+  quoteEn: true,
+  personName: true,
+  personRole: true,
+  isPublished: true,
+} as const;
+
 function resolveSector(study: { sector: string; sectorEn: string | null }, isTr: boolean) {
   return isTr ? study.sector : study.sectorEn || study.sector;
 }
@@ -35,7 +55,15 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale; slug: string }>;
 }): Promise<Metadata> {
   const { locale, slug } = await params;
-  const study = await prisma.caseStudy.findUnique({ where: { slug } });
+  const study = await prisma.caseStudy.findUnique({
+    where: { slug },
+    select: {
+      brand: true,
+      heroTr: true,
+      heroEn: true,
+      isPublished: true,
+    },
+  });
   if (!study || !study.isPublished) return { title: 'Case study · Buaze' };
   const isTr = locale === 'tr';
   const title = `${study.brand} · ${isTr ? 'Buaze ile' : 'with Buaze'}`;
@@ -60,13 +88,26 @@ export default async function CaseStudyPage({
   const { locale, slug } = await params;
   if (!VALID.includes(locale as typeof VALID[number])) notFound();
 
-  const study = await prisma.caseStudy.findUnique({ where: { slug } });
+  const study = await prisma.caseStudy.findUnique({
+    where: { slug },
+    select: CASE_STUDY_SELECT,
+  });
   if (!study || !study.isPublished) notFound();
 
   const others = await prisma.caseStudy.findMany({
     where: { isPublished: true, slug: { not: slug } },
     orderBy: { publishedAt: 'desc' },
     take: 2,
+    select: {
+      slug: true,
+      brand: true,
+      sector: true,
+      sectorEn: true,
+      location: true,
+      heroTr: true,
+      heroEn: true,
+      stats: true,
+    },
   });
 
   const t = getTranslations(locale);
@@ -88,7 +129,7 @@ export default async function CaseStudyPage({
       <div className="border-b border-[#EDEDED] bg-[#FAFAFA] px-6 py-4 sm:px-10">
         <div className="mx-auto max-w-[1200px]">
           <Link
-            href={`${base}/customer-stories`}
+            href={`${base}/case-study`}
             className="inline-flex items-center gap-1.5 pulse-eyebrow text-[#737373] hover:text-[#0A0A0A]"
           >
             <ArrowLeft size={12} />
@@ -229,7 +270,7 @@ export default async function CaseStudyPage({
                 {isTr ? 'Başka sektörlerden' : 'From other sectors'}
               </h2>
               <Link
-                href={`${base}/customer-stories`}
+                href={`${base}/case-study`}
                 className="pulse-eyebrow text-[#737373] hover:text-[#0A0A0A]"
               >
                 {isTr ? 'TÜMÜ' : 'ALL'} →
