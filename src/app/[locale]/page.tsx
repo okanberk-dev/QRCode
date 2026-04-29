@@ -708,7 +708,7 @@ export default async function LandingPage({
       {/* ═══════════════════════════════════════════════════════════
           6. INDUSTRY TABS — interactive sector switcher
       ═══════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#FAFAFA] border-t border-[#EDEDED] px-4 py-[56px] sm:px-10 sm:py-24 lg:py-28">
+      <section className="relative overflow-hidden bg-[#FAFAFA] border-t border-[#EDEDED] px-5 py-[60px] sm:px-10 sm:py-24 lg:py-28">
         <div
           aria-hidden
           className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#C6F24E]/60 to-transparent"
@@ -722,7 +722,7 @@ export default async function LandingPage({
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Sektörler' : 'Industries'}
             </span>
-            <h2 className="mt-4 text-[34px] sm:text-[52px] lg:text-[64px] font-medium leading-[0.98] tracking-[-0.045em] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[52px] font-medium leading-[1] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? 'Her sektör için, tam oturur.' : 'Fits every industry, perfectly.'}
             </h2>
             <p className="mt-4 text-[15px] leading-[1.7] text-[#525252] sm:mx-auto sm:max-w-[620px] sm:text-[17px]">
@@ -739,13 +739,13 @@ export default async function LandingPage({
           6.4 PLATFORM COVERAGE — EN ONLY (international home)
       ═══════════════════════════════════════════════════════════ */}
       {!isTr && (
-        <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-6 sm:px-10 py-20 sm:py-24">
+        <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
           <div className="max-w-[1200px] mx-auto">
             <div className="max-w-[720px]">
               <span className="pulse-eyebrow text-[#737373]">
                 One dashboard · Every platform
               </span>
-              <h2 className="mt-4 text-[36px] sm:text-[48px] lg:text-[56px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]">
+              <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]">
                 From Yelp to Tripadvisor to DoorDash.
               </h2>
             </div>

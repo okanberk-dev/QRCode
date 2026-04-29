@@ -37,7 +37,7 @@ export default function LegalPageLayout({
       <MarketingNavbar locale={locale} t={t} />
 
       {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-14 sm:pt-20 pb-10 border-b border-[#EDEDED]">
+      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-20 pb-10 border-b border-[#EDEDED]">
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
@@ -53,7 +53,7 @@ export default function LegalPageLayout({
         </svg>
         <div className="relative max-w-[760px] mx-auto">
           <span className="pulse-eyebrow text-[#737373]">{eyebrow}</span>
-          <h1 className="mt-4 text-[36px] sm:text-[52px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]">
+          <h1 className="mt-4 text-[28px] sm:text-[44px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]">
             {title}
           </h1>
           <div className="mt-4 pulse-eyebrow text-[#A3A3A3]">{lastUpdated}</div>
@@ -61,7 +61,7 @@ export default function LegalPageLayout({
       </section>
 
       {/* ─── Body ─── */}
-      <main className="flex-1 px-6 sm:px-10 py-12 sm:py-16">
+      <main className="flex-1 px-5 sm:px-10 py-[60px] sm:py-16">
         <div className="mx-auto grid max-w-[1040px] grid-cols-1 gap-10 lg:grid-cols-[1fr_220px]">
           <div>
             {intro && (
@@ -73,7 +73,7 @@ export default function LegalPageLayout({
             <div className="space-y-10">
               {sections.map((s, i) => (
                 <section key={i} className="scroll-mt-24" id={`sec-${i + 1}`}>
-                  <h2 className="text-[22px] sm:text-[26px] font-medium tracking-[-0.02em] text-[#0A0A0A] leading-tight">
+                  <h2 className="text-[20px] sm:text-[24px] font-medium tracking-[-0.02em] text-[#0A0A0A] leading-tight">
                     {s.heading}
                   </h2>
                   <div className="mt-4 text-[15px] sm:text-[16px] text-[#525252] leading-[1.75] space-y-4 [&_a]:text-[#0A0A0A] [&_a]:underline [&_a]:decoration-[#C6F24E] [&_a]:decoration-2 [&_a]:underline-offset-4 hover:[&_a]:decoration-[#A8D62E] [&_strong]:text-[#0A0A0A] [&_strong]:font-medium [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:space-y-2 [&_li]:pl-1">

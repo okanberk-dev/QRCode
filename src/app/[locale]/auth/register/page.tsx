@@ -72,7 +72,7 @@ export default async function RegisterPage({
             {isTr ? '14 GÜN ÜCRETSİZ' : '14 DAYS FREE'}
           </span>
           <h2
-            className="mt-4 text-[52px] sm:text-[64px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+            className="mt-4 text-[36px] sm:text-[52px] lg:text-[64px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? (
