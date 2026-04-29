@@ -23,8 +23,8 @@ const REVIEWS: Review[] = [
     name: 'Ayşe K.',
     stars: 5,
     text: {
-      tr: 'Servis çok hızlıydı, tatlılar harika.',
-      en: 'Service was fast, desserts were great.',
+      tr: 'Servis çok hızlıydı.',
+      en: 'Service was fast.',
     },
     platform: 'Google',
   },
@@ -33,8 +33,8 @@ const REVIEWS: Review[] = [
     name: 'Mert D.',
     stars: 5,
     text: {
-      tr: 'Mekan güzel, ama biraz sesliydi.',
-      en: 'Nice place, just a bit loud.',
+      tr: 'Mekan çok güzel.',
+      en: 'Nice place.',
     },
     platform: 'Yelp',
   },
@@ -43,8 +43,8 @@ const REVIEWS: Review[] = [
     name: 'Jenny A.',
     stars: 5,
     text: {
-      tr: 'Kahve tam istediğim gibi geldi.',
-      en: 'Coffee came exactly how I ordered.',
+      tr: 'Kahve harika geldi.',
+      en: 'Coffee was perfect.',
     },
     platform: 'Tripadvisor',
   },
@@ -53,8 +53,8 @@ const REVIEWS: Review[] = [
     name: 'Sarah B.',
     stars: 5,
     text: {
-      tr: 'Harika atmosfer, güler yüzlü ekip!',
-      en: 'Great atmosphere and friendly staff!',
+      tr: 'Atmosfer mükemmeldi!',
+      en: 'Great atmosphere!',
     },
     platform: 'Google',
   },
@@ -110,10 +110,10 @@ export default function LiveReviewTicker({ locale, rotateMs = 2800 }: Props) {
           return (
             <div
               key={`${pivot}-${offset}`}
-              className={`flex items-start gap-3 rounded-[20px] border px-3.5 py-3 transition-all duration-500 ${
+              className={`flex items-center gap-3 rounded-[14px] border px-3.5 py-2.5 transition-all duration-500 ${
                 isTop
-                  ? 'border-[#C6F24E]/18 bg-white/[0.08] shadow-[0_18px_36px_-26px_rgba(198,242,78,0.18)]'
-                  : 'border-white/8 bg-black/20 opacity-80'
+                  ? 'border-[#C6F24E]/20 bg-white/[0.08] shadow-[0_12px_28px_-20px_rgba(198,242,78,0.22)]'
+                  : 'border-white/10 bg-black/20 opacity-80'
               }`}
             >
               <div
@@ -124,22 +124,18 @@ export default function LiveReviewTicker({ locale, rotateMs = 2800 }: Props) {
               >
                 {r.init}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="truncate text-[13px] font-semibold text-white">{r.name}</p>
-                  <span className="pulse-star-pill shrink-0" aria-label={`${r.stars} ${isTr ? 'yıldız' : 'stars'}`}>
-                    {Array.from({ length: r.stars }).map((_, starIndex) => (
-                      <Star key={starIndex} size={12} fill="currentColor" strokeWidth={0} />
-                    ))}
-                  </span>
-                </div>
-                <p className="mt-1 text-[12px] leading-[1.55] text-[#D4D4D4] line-clamp-2">
-                  {r.text[isTr ? 'tr' : 'en']}
-                </p>
-                <span className="pulse-eyebrow mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-1 text-white/55">
-                  {r.platform.toUpperCase()}
-                </span>
-              </div>
+              <p className="min-w-0 flex-1 truncate text-[13px] text-white">
+                <strong className="font-semibold">{r.name}</strong>{' '}
+                <span className="text-[#D4D4D4]">{r.text[isTr ? 'tr' : 'en']}</span>
+              </p>
+              <span
+                className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-[#0A0A0A] px-2 py-1 text-[#C6F24E] ring-1 ring-[#C6F24E]/20"
+                aria-label={`${r.stars} ${isTr ? 'yıldız' : 'stars'}`}
+              >
+                {Array.from({ length: r.stars }).map((_, starIndex) => (
+                  <Star key={starIndex} size={9} fill="currentColor" strokeWidth={0} />
+                ))}
+              </span>
             </div>
           );
         })}

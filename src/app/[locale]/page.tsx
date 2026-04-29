@@ -180,21 +180,21 @@ export default async function LandingPage({
       iconBg: '#C6F24E',
       iconFg: '#0A0A0A',
       visual: (
-        <div className="flex items-center gap-2.5 rounded-xl bg-[#EAF9B8] px-3.5 py-3">
+        <div className="flex items-center gap-3 rounded-[14px] border border-[#EDEDED] bg-white px-3.5 py-2.5">
           <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF9B8] text-[12px] font-semibold text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             M
           </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-semibold text-[#0A0A0A]">M. Demir</div>
-            <div className="text-[11px] text-[#525252]">
-              {isTr ? 'Yorum bıraktı · az önce' : 'Left a review · just now'}
-            </div>
-          </div>
+          <p className="min-w-0 flex-1 truncate text-[13px] text-[#0A0A0A]">
+            <strong className="font-semibold">M. Demir</strong>{' '}
+            <span className="text-[#525252]">
+              {isTr ? 'Servis harikaydı!' : 'Service was great!'}
+            </span>
+          </p>
           <span
-            className="inline-flex items-center gap-0.5 rounded-md bg-[#0A0A0A] px-1.5 py-0.5 text-[#C6F24E]"
+            className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-[#0A0A0A] px-2 py-1 text-[#C6F24E]"
             aria-label={isTr ? '5 yıldız' : '5 stars'}
           >
             {Array.from({ length: 5 }).map((_, i) => (
