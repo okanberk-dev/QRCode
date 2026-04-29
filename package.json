@@ -46,6 +46,13 @@
     "sharp": "^0.34.5",
     "zod": "^4.4.0"
   },
+  "browserslist": [
+    "Chrome >= 100",
+    "Firefox >= 100",
+    "Safari >= 15.4",
+    "iOS >= 15.4",
+    "Edge >= 100"
+  ],
   "devDependencies": {
     "@prisma/client": "^6.19.3",
     "@tailwindcss/postcss": "^4.2.2",

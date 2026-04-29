@@ -82,11 +82,16 @@ export default function RootLayout({
   return (
     <html lang="tr" className={`${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}>
       <body className={`${inter.className} antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-screen`}>
+        {/* Analytics scripts run on `lazyOnload` to keep them out of the
+            critical path. PageSpeed flagged ~410ms (GA) + ~399ms (Yandex)
+            of main-thread CPU during page load, all attributable to these
+            two libraries. `lazyOnload` runs them after the browser is idle,
+            so TBT and LCP recover without losing any tracking data. */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
+        <Script id="google-analytics" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
@@ -94,8 +99,12 @@ export default function RootLayout({
             gtag('config', '${GA_MEASUREMENT_ID}');
           `}
         </Script>
-        {/* Yandex Metrica */}
-        <Script id="yandex-metrica" strategy="afterInteractive">
+        {/* Yandex Metrica — webvisor disabled because the recording
+            sub-domain (mc.yandex.com/solid.ws) was failing DNS resolution
+            in production, surfacing as a console error on every page load,
+            and we don't currently consume the session-recording UI. Click
+            map + bounce + link tracking still run. */}
+        <Script id="yandex-metrica" strategy="lazyOnload">
           {`
             (function(m,e,t,r,i,k,a){
               m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
@@ -103,7 +112,7 @@ export default function RootLayout({
               for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}
               k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
             })(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=${YM_ID}','ym');
-            ym(${YM_ID},'init',{ssr:true,webvisor:true,clickmap:true,ecommerce:"dataLayer",referrer:document.referrer,url:location.href,accurateTrackBounce:true,trackLinks:true});
+            ym(${YM_ID},'init',{ssr:true,webvisor:false,clickmap:true,ecommerce:"dataLayer",accurateTrackBounce:true,trackLinks:true});
           `}
         </Script>
         <noscript
