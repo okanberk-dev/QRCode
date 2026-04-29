@@ -24,6 +24,7 @@ import {
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, Badge, Eyebrow, PageHeader, PlatformChip } from '@/components/ui';
+import BrandIdentityCard from '@/components/dashboard/BrandIdentityCard';
 import { SECTORS } from '@/lib/sectors';
 import { detectSector, getSectorPlatforms } from '@/lib/sector-platforms';
 
@@ -245,7 +246,7 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
           <SettingsRow
             icon={<ImageIcon size={16} strokeWidth={2} />}
             title={isTr ? 'Logo & marka' : 'Logo & brand'}
-            href={`/${locale}/dashboard/restaurants`}
+            href={`#brand`}
           />
           <SettingsRow
             icon={<MenuIcon size={16} strokeWidth={2} />}
@@ -520,47 +521,41 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
         </section>
       </form>
 
-      {/* Card 2 — Görsel Kimlik (design's "GÖRSEL KİMLİK"). Logo + accent
-          color are restaurant-scoped, so the form lives on the per-restaurant
-          page; this card surfaces the entry point. */}
-      <section className="bz-card p-6 sm:p-7">
-        <div className="flex items-center gap-2 mb-1">
-          <Palette size={14} strokeWidth={2} className="text-[#0A0A0A]" />
-          <Eyebrow>{isTr ? 'GÖRSEL KİMLİK' : 'BRAND'}</Eyebrow>
-        </div>
-        <div className="bz-h-tight mt-1 mb-5" style={{ fontSize: 18 }}>
-          {isTr ? 'Logo ve renk' : 'Logo & color'}
-        </div>
-        <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-          <div
-            className="flex flex-col items-center justify-center gap-1 shrink-0"
-            style={{
-              width: 88,
-              height: 88,
-              borderRadius: 16,
-              background: '#FAFAFA',
-              border: '1px dashed #D4D4D4',
-            }}
+      {/* Card 2 — Marka kimliği. Edit surface for logo / favicon / 3 colors /
+          accent font / slogan. Backed by /api/settings/brand (BrandSettings
+          model + Restaurant.menuLogoUrl/menuAccentColor mirror). Owner can
+          only edit their first restaurant here; multi-location operators
+          manage per-location brands on the restaurant detail page (link
+          above). Saving is gated by IDOR (canAccessRestaurant). */}
+      {businessData.id ? (
+        <BrandIdentityCard
+          restaurantId={businessData.id}
+          restaurantName={businessData.name}
+          isTr={isTr}
+        />
+      ) : (
+        <section id="brand" className="bz-card p-6 sm:p-7 scroll-mt-20">
+          <div className="flex items-center gap-2 mb-1">
+            <Palette size={14} strokeWidth={2} className="text-[#0A0A0A]" />
+            <Eyebrow>{isTr ? 'MARKA KİMLİĞİ' : 'BRAND IDENTITY'}</Eyebrow>
+          </div>
+          <div className="bz-h-tight mt-1 mb-3" style={{ fontSize: 18 }}>
+            {isTr ? 'Marka kimliği' : 'Brand identity'}
+          </div>
+          <p className="text-[13px] text-[#737373] leading-[1.55]">
+            {isTr
+              ? 'Marka kimliğini düzenlemek için önce bir işletme oluştur.'
+              : 'Create a business first to edit your brand identity.'}
+          </p>
+          <Link
+            href={`/${locale}/dashboard/restaurants`}
+            className="bz-btn-ghost mt-3 inline-flex"
           >
-            <ImageIcon size={20} className="text-[#A3A3A3]" strokeWidth={2} />
-            <span className="pulse-eyebrow text-[#A3A3A3]">LOGO</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <Link
-              href={`/${locale}/dashboard/restaurants`}
-              className="bz-btn-ghost"
-            >
-              <Upload size={14} strokeWidth={2} />
-              {isTr ? 'İşletme markasını yönet' : 'Manage business brand'}
-            </Link>
-            <p className="mt-2.5 text-[12px] text-[#737373] leading-[1.55]">
-              {isTr
-                ? 'Logo, marka rengi ve menü teması işletme detay sayfasından düzenlenir. Birden fazla konumun varsa her biri kendi markasını taşır.'
-                : 'Logo, brand color and menu theme are managed on the restaurant detail page. Each location keeps its own brand.'}
-            </p>
-          </div>
-        </div>
-      </section>
+            <Upload size={14} strokeWidth={2} />
+            {isTr ? 'İşletme oluştur' : 'Create business'}
+          </Link>
+        </section>
+      )}
 
       {/* Card 3 — KVKK & Rıza Yönetimi (1:1 design). Read-only display of
           the active legal posture. Pulse mail templates render these

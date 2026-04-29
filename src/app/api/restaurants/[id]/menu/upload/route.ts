@@ -9,12 +9,14 @@ import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const MAX_OPTIMIZED_BYTES = 220 * 1024; // ~300KB base64 after encode
 
-// Kinds affect target dimensions. "logo" is square-ish, "item" is card-sized.
-type UploadKind = 'item' | 'logo';
+// Kinds affect target dimensions. "logo" is square-ish, "item" is card-sized,
+// "favicon" is small square (browser tab icon).
+type UploadKind = 'item' | 'logo' | 'favicon';
 
 const DIMENSIONS: Record<UploadKind, { width: number; height: number | null; fit: 'cover' | 'inside' }> = {
   item: { width: 1200, height: null, fit: 'inside' },
   logo: { width: 512, height: 512, fit: 'cover' },
+  favicon: { width: 256, height: 256, fit: 'cover' },
 };
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -43,7 +45,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const file = form.get('file');
   const kindRaw = form.get('kind');
-  const kind: UploadKind = kindRaw === 'logo' ? 'logo' : 'item';
+  const kind: UploadKind =
+    kindRaw === 'logo' ? 'logo' : kindRaw === 'favicon' ? 'favicon' : 'item';
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'Dosya bulunamadı' }, { status: 400 });
