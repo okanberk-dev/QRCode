@@ -274,7 +274,7 @@ export default async function DashboardPage({
       id: 1,
       label: isTr ? 'İşletme profilini tamamla' : 'Complete business profile',
       done: !!user.name && hasRestaurant,
-      href: `/${locale}/dashboard/profile`,
+      href: `/${locale}/dashboard/account?section=profile`,
     },
     {
       id: 2,

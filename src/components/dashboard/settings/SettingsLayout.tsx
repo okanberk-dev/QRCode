@@ -1,7 +1,7 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
-import { Tabs, type TabItem } from "@/components/ui";
+import { Fragment, ReactNode, useEffect, useMemo, useState } from "react";
+import { Eyebrow, Tabs, type TabItem } from "@/components/ui";
 
 export interface SettingsTab {
   id: string;
@@ -9,6 +9,20 @@ export interface SettingsTab {
   count?: number | string;
   badge?: ReactNode;
   disabled?: boolean;
+  /**
+   * Optional group key for the vertical (lg) nav. Tabs in the same group
+   * render adjacent under a single eyebrow heading. Tabs without a group
+   * fall back to a flat list. Horizontal (md) nav ignores grouping —
+   * groups become a sequential strip.
+   */
+  group?: string;
+}
+
+interface SettingsGroup {
+  /** Group key matching SettingsTab.group */
+  id: string;
+  /** Eyebrow label rendered above this group in the vertical nav */
+  label: string;
 }
 
 interface SettingsLayoutProps {
@@ -21,6 +35,13 @@ interface SettingsLayoutProps {
   header?: ReactNode;
   children: ReactNode;
   ariaLabel?: string;
+  /**
+   * Optional group definitions. When provided, the vertical (lg) tab nav
+   * renders each group's tabs under that group's eyebrow label. Groups are
+   * rendered in array order; tabs without a matching group fall through
+   * to a tail-end ungrouped block.
+   */
+  groups?: SettingsGroup[];
 }
 
 /**
@@ -42,6 +63,7 @@ export function SettingsLayout({
   header,
   children,
   ariaLabel,
+  groups,
 }: SettingsLayoutProps) {
   const tabItems: TabItem[] = tabs.map((t) => ({
     id: t.id,
@@ -50,6 +72,39 @@ export function SettingsLayout({
     badge: t.badge,
     disabled: t.disabled,
   }));
+
+  // Vertical nav: when groups are provided, slice tabs by group key into
+  // distinct <Tabs> instances under their eyebrow header. Each group's
+  // <Tabs> is independent so keyboard navigation cycles within the group;
+  // we accept that trade-off for the visual separation. Tabs that don't
+  // belong to any defined group fall into a final ungrouped block.
+  const groupedTabs = useMemo(() => {
+    if (!groups || groups.length === 0) return null;
+    const buckets = new Map<string, TabItem[]>();
+    groups.forEach((g) => buckets.set(g.id, []));
+    const ungrouped: TabItem[] = [];
+    tabs.forEach((t) => {
+      const bucket = t.group && buckets.get(t.group);
+      if (bucket) {
+        bucket.push({
+          id: t.id,
+          label: t.label,
+          count: t.count,
+          badge: t.badge,
+          disabled: t.disabled,
+        });
+      } else {
+        ungrouped.push({
+          id: t.id,
+          label: t.label,
+          count: t.count,
+          badge: t.badge,
+          disabled: t.disabled,
+        });
+      }
+    });
+    return { buckets, ungrouped };
+  }, [tabs, groups]);
 
   // Track viewport so mobile shows all sections (accordion); ≥ md shows only active.
   const [isCompactNav, setIsCompactNav] = useState(false);
@@ -76,13 +131,51 @@ export function SettingsLayout({
           {/* Tab nav: horizontal on md, vertical on lg */}
           <aside className={`lg:sticky ${stickyTopClass} self-start`}>
             <div className="hidden lg:block">
-              <Tabs
-                items={tabItems}
-                active={active}
-                onChange={onChange}
-                variant="vertical"
-                ariaLabel={ariaLabel}
-              />
+              {groupedTabs && groups ? (
+                <div className="space-y-5">
+                  {groups.map((g, idx) => {
+                    const items = groupedTabs.buckets.get(g.id) ?? [];
+                    if (items.length === 0) return null;
+                    return (
+                      <Fragment key={g.id}>
+                        {idx > 0 && <div className="border-t border-[#EDEDED]" aria-hidden />}
+                        <div className="space-y-2">
+                          <div className="px-1">
+                            <Eyebrow>{g.label}</Eyebrow>
+                          </div>
+                          <Tabs
+                            items={items}
+                            active={active}
+                            onChange={onChange}
+                            variant="vertical"
+                            ariaLabel={`${ariaLabel ?? ""} — ${g.label}`.trim()}
+                          />
+                        </div>
+                      </Fragment>
+                    );
+                  })}
+                  {groupedTabs.ungrouped.length > 0 && (
+                    <Fragment>
+                      <div className="border-t border-[#EDEDED]" aria-hidden />
+                      <Tabs
+                        items={groupedTabs.ungrouped}
+                        active={active}
+                        onChange={onChange}
+                        variant="vertical"
+                        ariaLabel={ariaLabel}
+                      />
+                    </Fragment>
+                  )}
+                </div>
+              ) : (
+                <Tabs
+                  items={tabItems}
+                  active={active}
+                  onChange={onChange}
+                  variant="vertical"
+                  ariaLabel={ariaLabel}
+                />
+              )}
             </div>
             <div className="lg:hidden -mx-5 px-5 sm:-mx-7 sm:px-7 overflow-x-auto no-scrollbar">
               <Tabs
