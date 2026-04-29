@@ -28,7 +28,7 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 | ORM | Prisma 6 | `prisma db push` Dockerfile'da otomatik |
 | Auth | Custom JWT (`jose`) + httpOnly cookie | `src/lib/auth.ts` — edge compatible |
 | Auth (Google Sign-in) | Firebase Web SDK (`firebase`) | `src/lib/firebase-client.ts` + `firebase-admin.ts` — sadece Google OAuth için, primary auth değil |
-| UI | Tailwind v4 (PostCSS) + lucide-react (ikonlar) | **shadcn/ui kullanılmıyor** — elle yazılmış bileşenler. Radix UI primitive'leri (`@radix-ui/react-dialog`, `dropdown-menu`, `tabs`, `tooltip`, `popover`, `select`) headless infrastructure olarak eklendi (shadcn değil) |
+| UI | Tailwind v4 (PostCSS) + lucide-react (ikonlar) | Elle yazılmış bileşenler + Radix UI primitive'leri (`@radix-ui/react-dialog`, `dropdown-menu`, `tabs`, `tooltip`, `popover`, `select`) headless infrastructure |
 | Server-state | `@tanstack/react-query` | Admin/dashboard fetch dağınıklığı için cache + dedup + retry. `<QueryProvider>` `src/app/layout.tsx`'te root'ta (CLAUDE.md §27) |
 | Charts | recharts | |
 | Görsel işleme | sharp (WebP dönüşüm + resize) | |
@@ -163,7 +163,7 @@ src/
 │   ├── auth.ts                # JWT + actor resolve + IDOR helpers
 │   ├── prisma.ts              # Tek instance (HMR-safe)
 │   ├── translations.ts        # tr/en string haritası
-│   ├── validations.ts         # Zod yok; elle doğrulama
+│   ├── validations.ts         # form/API validation helpers
 │   └── menu-access.ts         # Menü erişim kontrolü
 └── prisma/
     └── schema.prisma          # Tüm modeller
@@ -184,8 +184,6 @@ Aşağıdakiler **bilinçli kararlar** — değiştirmek için güçlü sebep ge
 - Uzun dropdown / toolbar'larda mobilde `flex-col md:flex-row` + `w-full sm:w-auto`.
 
 ### ❌ Yapma
-- **shadcn/ui veya headless UI ekleme** — mevcut stil deseni Tailwind + basit `<select>`/`<button>`.
-- **Zod ekleme** — elle validasyon tercih edilmiş, küçük ölçekli projeye yeterli.
 - **Prisma migration dosyası (`prisma/migrations/...`) oluşturma** — deploy akışı `prisma db push --accept-data-loss` üzerine kurulu, `migrate dev` kullanılmıyor.
 - **Ortak abstraction'lar** (shared PLATFORM_CONFIG modülü gibi) **üç yerden fazla tekrar** olmadıkça yazma.
 - **AI / otomasyon / rol refactor** ekleme — kullanıcının açıkça istediği scope'a sadık kal.
@@ -2230,7 +2228,7 @@ Mevcut UI primitive'leri (`src/components/ui/Modal`, `Tabs`, vb.) elle yazılmı
 - `@radix-ui/react-popover` — settings dropdown'ları, range pickers
 - `@radix-ui/react-select` — form `<select>` replace (mobile-friendly + searchable)
 
-**Önemli:** Bu **shadcn/ui değil**. Radix `Primitive.Trigger` / `Primitive.Content` headless component'ler — kendi className'imizi (`bz-card`, `bz-btn-primary`, vb.) Tailwind ile uygulayacağız. shadcn'in styled wrapper'ı yok.
+Radix `Primitive.Trigger` / `Primitive.Content` headless component'ler — kendi className'imizi (`bz-card`, `bz-btn-primary`, vb.) Tailwind ile uygulayacağız.
 
 **Yap:** Yeni complex UI (combobox, command palette, date range picker) eklemek gerekirse Radix primitive'inden başla, üstüne Tailwind ile Pulse styling.
 
