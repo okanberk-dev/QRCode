@@ -30,6 +30,13 @@ export const LOCKED_MAIL_FIELDS: Partial<Record<MailTemplateKey, Set<string>>> =
     'sentLine', // "Bu yanıt"
     'sentSuffix', // "ile gönderildi"
   ]),
+  // Verify-email security messaging. Same logic as forgot-password —
+  // tampering with these strings opens phishing avenues.
+  'verify-email': new Set([
+    'statusText', // "Aktif · 24 saat geçerli" — token expiry warning
+    'notYouTitle', // "Sen değil misin?" — abuse-recovery prompt
+    'notYouBody', // ignore-mail security guidance
+  ]),
 };
 
 export function isFieldLocked(templateKey: string, fieldKey: string): boolean {

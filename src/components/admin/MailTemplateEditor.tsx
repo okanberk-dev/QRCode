@@ -120,6 +120,17 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'detailLabel', label: 'Detay kart başlığı' },
     { key: 'detailSub', label: 'Detay kart açıklaması', multiline: true },
   ],
+  'verify-email': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"E-POSTA ONAYI"' },
+    { key: 'title', label: 'Başlık 1. satır', hint: '"Hesabını birkaç"' },
+    { key: 'titleAccent', label: 'Başlık vurgu', hint: '"saniyede aç" — lime renkli' },
+    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['verify-email'] },
+    { key: 'cardEyebrow', label: 'Token kart etiketi', hint: '"Tek kullanımlık link"' },
+    { key: 'statusText', label: 'Durum pill metni', hint: '"Aktif · 24 saat geçerli"', locked: true, lockReason: 'Güvenlik: token süre uyarısı, değiştirmek phishing riski yaratır' },
+    { key: 'cta', label: 'Birincil CTA buton metni' },
+    { key: 'notYouTitle', label: '"Sen değil misin?" başlık', locked: true, lockReason: 'Güvenlik uyarısı — hesap sahibi değilsen ne yapmalı bilgisi' },
+    { key: 'notYouBody', label: '"Sen değil misin?" gövde', multiline: true, locked: true, lockReason: 'Güvenlik uyarısı içeriği' },
+  ],
   'customer-reply': [
     { key: 'headerEyebrow', label: 'Üst eyebrow', hint: '"Sana özel · Kişisel yanıt"' },
     { key: 'ownerLabel', label: 'İşletmeci rozeti', hint: '"İŞLETMECİ"' },
@@ -150,6 +161,7 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'weekly-report': 'Haftalık rapor',
   'customer-reply': 'Müşteri yanıtı',
   'form-confirmation': 'Form onayı',
+  'verify-email': 'E-posta onayı',
 };
 
 interface Props {

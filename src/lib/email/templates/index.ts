@@ -30,3 +30,6 @@ export type { ContactAdminParams } from './contact-admin';
 
 export { renderTeamInvite } from './team-invite';
 export type { TeamInviteParams } from './team-invite';
+
+export { renderVerifyEmail } from './verify-email';
+export type { VerifyEmailParams } from './verify-email';

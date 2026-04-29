@@ -1,22 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomBytes } from 'crypto';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
+import { isStrongPassword } from '@/lib/validations';
+import { sendVerifyEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// Section 5 — Davet kabul akışı (Faz 4).
+// Section 5 — Davet kabul akışı (Faz 4 + §22 update).
 //
 // GET ?token=...
 //   Token geçerli mi kontrol eder, public landing page için detay döner
 //   (owner adı, role, locations, expiresAt). Auth GEREKMEZ — token bilgi.
 //
-// POST { token, name?, password? }
-//   Davet kabul edilir. Email zaten User olarak varsa: TeamMember.status =
-//   'active'. Yoksa: User row create + TeamMember.status = 'active'. Şu an
-//   davet edilen kişi henüz buaze hesabı oluşturmadığında, Faz 4 scope'unda
-//   kullanıcı /auth/register'a yönlendirilir (bu endpoint sadece TeamMember
-//   row'unu activate eder, User row create akışı /auth/register'a bırakılır).
+// POST { token, name?, password?, phoneNumber? }
+//   Davet kabul edilir.
+//   - Email zaten User olarak varsa: TeamMember.status = 'active' → /dashboard
+//   - Yoksa: name + password + (opsiyonel phone) zorunlu. User create
+//     (emailVerified=false, role='team_member'), TeamMember activate, verify
+//     mail tetikle, client → /auth/check-email yönlendir.
+//   §22'den önce bu endpoint hesap yoksa /auth/register'a redirect ediyordu;
+//   artık self-contained — davet linki tek formla biter.
+
+const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 saat
+const TRIAL_DAYS = 14;
+
+function generateVerifyToken(): string {
+  return randomBytes(32).toString('hex');
+}
 
 interface InviteInfo {
   ok: true;
@@ -106,7 +119,8 @@ export async function GET(req: NextRequest): Promise<NextResponse<InviteInfo | I
 
 interface AcceptResponse {
   ok: boolean;
-  needsAccount?: boolean;
+  needsVerification?: boolean;
+  email?: string;
   redirectTo?: string;
   error?: string;
 }
@@ -122,7 +136,13 @@ export async function POST(req: NextRequest): Promise<NextResponse<AcceptRespons
     );
   }
 
-  let body: { token?: string } = {};
+  let body: {
+    token?: string;
+    name?: string;
+    password?: string;
+    phoneNumber?: string;
+    locale?: string;
+  } = {};
   try {
     body = await req.json();
   } catch {
@@ -140,13 +160,14 @@ export async function POST(req: NextRequest): Promise<NextResponse<AcceptRespons
       email: true,
       status: true,
       inviteTokenExpiresAt: true,
+      ownerId: true,
     },
   });
   if (!member) {
     return NextResponse.json({ ok: false, error: 'invalid_token' }, { status: 400 });
   }
   if (member.status === 'active') {
-    return NextResponse.json({ ok: true, redirectTo: '/' }, { status: 200 });
+    return NextResponse.json({ ok: true, redirectTo: '/dashboard' }, { status: 200 });
   }
   if (member.status === 'revoked') {
     return NextResponse.json({ ok: false, error: 'revoked' }, { status: 400 });
@@ -158,31 +179,97 @@ export async function POST(req: NextRequest): Promise<NextResponse<AcceptRespons
     return NextResponse.json({ ok: false, error: 'expired' }, { status: 400 });
   }
 
-  // Davet edilen kişinin User hesabı var mı? Yoksa /auth/register'a yönlendir
-  // (kayıt sonrası mail eşleşmesi otomatik olarak TeamMember activate akışına
-  // bağlanmıyor — Faz 4 scope'unda manuel: kayıt sonrası kullanıcı tekrar
-  // accept linkine tıklar). Backend gap raporlanmalı.
-  const account = await prisma.user.findUnique({
+  const localeStr: 'tr' | 'en' = body.locale === 'en' ? 'en' : 'tr';
+
+  // Davet edilen email zaten Buaze hesabı sahibi mi?
+  const existingAccount = await prisma.user.findUnique({
     where: { email: member.email },
     select: { id: true },
   });
-  if (!account) {
-    return NextResponse.json({
-      ok: false,
-      needsAccount: true,
-      redirectTo: `/auth/register?email=${encodeURIComponent(member.email)}&inviteToken=${token}`,
+
+  if (existingAccount) {
+    // Mevcut hesap akışı — sadece TeamMember'ı aktive et, User'a dokunma
+    // (zaten kendi şifresi + verify durumu var). Verify mail GÖNDERİLMEZ.
+    await prisma.teamMember.update({
+      where: { id: member.id },
+      data: {
+        status: 'active',
+        inviteToken: null,
+        inviteTokenExpiresAt: null,
+      },
     });
+    return NextResponse.json({ ok: true, redirectTo: `/${localeStr}/dashboard` });
   }
 
-  await prisma.teamMember.update({
-    where: { id: member.id },
-    data: {
-      status: 'active',
-      // Token'ı bir kez kullanıldıktan sonra geçersizleştir.
-      inviteToken: null,
-      inviteTokenExpiresAt: null,
-    },
+  // Yeni hesap akışı — name + password zorunlu, phone opsiyonel.
+  const name = typeof body.name === 'string' ? body.name.trim().slice(0, 120) : '';
+  const password = typeof body.password === 'string' ? body.password : '';
+  const phoneNumberRaw = typeof body.phoneNumber === 'string' ? body.phoneNumber.trim().slice(0, 40) : '';
+  const phoneNumber = phoneNumberRaw.length > 0 ? phoneNumberRaw : null;
+
+  if (!name) {
+    return NextResponse.json({ ok: false, error: 'name_required' }, { status: 400 });
+  }
+  if (!password || !isStrongPassword(password)) {
+    return NextResponse.json({ ok: false, error: 'weak_password' }, { status: 400 });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  const verifyToken = generateVerifyToken();
+  const verifyTokenExpiresAt = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
+
+  // tx: User create + TeamMember activate atomik. Davet kabul edilirken
+  // User insert'i FAIL olursa TeamMember 'invited' kalmalı (idempotent retry).
+  const created = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        email: member.email,
+        passwordHash,
+        name,
+        phoneNumber,
+        plan: 'trial',
+        trialEndsAt,
+        // §22: davet edilen kullanıcılar 'team_member' rolüyle yaratılır;
+        // panel-access bu role'ü TeamMember.locations'tan scope eder.
+        role: 'team_member',
+        locale: localeStr,
+        emailVerified: false,
+        emailVerifyToken: verifyToken,
+        emailVerifyTokenExpiresAt: verifyTokenExpiresAt,
+      },
+      select: { id: true, email: true, name: true },
+    });
+    await tx.teamMember.update({
+      where: { id: member.id },
+      data: {
+        status: 'active',
+        inviteToken: null,
+        inviteTokenExpiresAt: null,
+      },
+    });
+    return user;
   });
 
-  return NextResponse.json({ ok: true, redirectTo: '/' });
+  // Verify maili — fire-and-forget. notifyOpsOfMailFailure sender içinde
+  // (CLAUDE.md §21.33). Mail gitmezse kullanıcı /auth/check-email'da
+  // "Tekrar gönder" butonunu kullanır.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const verifyUrl = `${appUrl}/${localeStr}/auth/verify-email?token=${verifyToken}`;
+  void sendVerifyEmail({
+    to: created.email,
+    firstName: created.name,
+    verifyUrl,
+    locale: localeStr,
+  }).catch((err) => {
+    console.error('[accept-invite] verify mail send failed:', (err as Error).message);
+  });
+
+  return NextResponse.json({
+    ok: true,
+    needsVerification: true,
+    email: created.email,
+    redirectTo: `/${localeStr}/auth/check-email?email=${encodeURIComponent(created.email)}`,
+  });
 }

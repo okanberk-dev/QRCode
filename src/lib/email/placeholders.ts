@@ -21,6 +21,7 @@ export const MAIL_PLACEHOLDERS = {
   'weekly-report': ['restaurantName', 'totalReviews', 'avgRating'],
   'customer-reply': ['customerFirstName', 'restaurantName', 'ownerName'],
   'form-confirmation': ['firstName'],
+  'verify-email': ['firstName'],
 } as const;
 
 export type MailTemplateKeyForPlaceholders = keyof typeof MAIL_PLACEHOLDERS;

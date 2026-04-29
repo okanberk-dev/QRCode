@@ -15,6 +15,7 @@ const TEMPLATES = [
   { key: 'customer-reply', label: 'Müşteriye yanıt', desc: 'Düşük puanlı müşteriye kişisel cevap' },
   { key: 'trial-ending', label: 'Deneme bitiyor', desc: 'Plan kartları + ÖNERİLEN badge' },
   { key: 'contact-admin', label: 'İletişim formu (admin)', desc: 'Yeni iletişim talebi bildirimi' },
+  { key: 'verify-email', label: 'E-posta onayı', desc: 'Davet sonrası zorunlu verify maili' },
 ] as const;
 
 export default function MailPreviewIndex() {

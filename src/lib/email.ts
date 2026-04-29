@@ -11,6 +11,7 @@ import {
   renderTrialEnding,
   renderContactAdmin,
   renderTeamInvite,
+  renderVerifyEmail,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -202,6 +203,45 @@ export async function sendTeamInviteEmail(params: TeamInviteParams & {
     html: rendered.html,
     text: rendered.text,
   });
+}
+
+// ─── Verify email (§22 davet akışı) ─────────────────────────────────────
+
+/**
+ * §22 — E-posta onay maili. Davet kabul + register sonrası ZORUNLU gate.
+ * Login akışı emailVerified=false ise 403 + check-email yönlendirir; bu mail
+ * o gate'i açan tek-kullanımlık linki taşır (24 saat geçerli).
+ *
+ * Kritik mail: notifyOpsOfMailFailure ile wire'lı (CLAUDE.md §21.33). Resend
+ * çakılırsa ops alert mailbox'una düşer; gönderilmediğinde kullanıcı hesabı
+ * locked kalır → manuel müdahale gerekir.
+ */
+export async function sendVerifyEmail(params: {
+  to: string;
+  firstName?: string | null;
+  verifyUrl: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderVerifyEmail(
+    { firstName: params.firstName, verifyUrl: params.verifyUrl },
+    locale,
+  );
+  const ok = await sendResendEmail({
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'verify-email',
+      recipient: params.to,
+      reason: 'send_failed',
+      metadata: { locale },
+    });
+  }
+  return ok;
 }
 
 // ─── Form confirmation (contact / career / roi / newsletter) ────────────

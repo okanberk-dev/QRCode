@@ -35,6 +35,11 @@ export default function AdminTeamPage() {
   );
 }
 
+interface OwnerRestaurant {
+  id: string;
+  name: string;
+}
+
 function AdminTeamBody() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
@@ -43,16 +48,34 @@ function AdminTeamBody() {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<TeamMember['role']>('manager');
+  // §22 — owner davet ederken zorunlu restoran ataması (TeamMember.locations
+  // [restaurantId] olarak gönderilir; panel-access bu listeden scope eder).
+  const [restaurants, setRestaurants] = useState<OwnerRestaurant[]>([]);
+  const [inviteRestaurant, setInviteRestaurant] = useState<string>('');
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/team');
-        if (res.ok) {
-          const data = await res.json();
+        const [teamRes, restaurantsRes] = await Promise.all([
+          fetch('/api/team'),
+          fetch('/api/restaurants'),
+        ]);
+        if (teamRes.ok) {
+          const data = await teamRes.json();
           setMembers((data.data as TeamMember[]) ?? []);
+        }
+        if (restaurantsRes.ok) {
+          const data = await restaurantsRes.json();
+          // /api/restaurants response shape: array veya { data: [...] }.
+          const list: OwnerRestaurant[] = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.data)
+              ? data.data
+              : [];
+          setRestaurants(list.map((r) => ({ id: r.id, name: r.name })));
+          if (list.length === 1) setInviteRestaurant(list[0].id);
         }
       } catch {
         /* empty state will show */
@@ -67,13 +90,17 @@ function AdminTeamBody() {
   };
 
   const onInvite = async () => {
-    if (!inviteEmail.trim()) return;
+    if (!inviteEmail.trim() || !inviteRestaurant) return;
     setSending(true);
     try {
       const res = await fetch('/api/team', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+        body: JSON.stringify({
+          email: inviteEmail,
+          role: inviteRole,
+          locations: [inviteRestaurant],
+        }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -87,6 +114,7 @@ function AdminTeamBody() {
         }
         flash(isTr ? 'Davet gönderildi' : 'Invite sent');
         setInviteEmail('');
+        setInviteRestaurant(restaurants.length === 1 ? restaurants[0].id : '');
         setShowInvite(false);
       } else if (res.status === 403) {
         flash(isTr ? 'Yetkisiz — sadece işletme sahibi davet edebilir' : 'Only the workspace owner can invite');
@@ -214,6 +242,37 @@ function AdminTeamBody() {
                 <option value="owner">{isTr ? 'Sahip' : 'Owner'}</option>
               </select>
             </label>
+            <label className="block">
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'RESTORAN' : 'RESTAURANT'}
+              </span>
+              <select
+                value={inviteRestaurant}
+                onChange={(e) => setInviteRestaurant(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]"
+              >
+                <option value="">
+                  {isTr ? '— Seç —' : '— Select —'}
+                </option>
+                {restaurants.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-[11px] text-[#737373]">
+                {isTr
+                  ? 'Davet edilen kullanıcı sadece bu restorana erişir, panele girince oradan başlar.'
+                  : 'The invited user only sees this restaurant and starts there on sign-in.'}
+              </p>
+              {restaurants.length === 0 && (
+                <p className="mt-1 text-[11px] text-[#991B1B]">
+                  {isTr
+                    ? 'Önce bir restoran oluştur — davet ederken erişimi kapsamlı kılmak için zorunlu.'
+                    : 'Create a restaurant first — required to scope invite access.'}
+                </p>
+              )}
+            </label>
           </div>
           <div className="mt-5 flex items-center justify-end gap-2">
             <button
@@ -224,7 +283,7 @@ function AdminTeamBody() {
             </button>
             <button
               onClick={onInvite}
-              disabled={sending || !inviteEmail.trim()}
+              disabled={sending || !inviteEmail.trim() || !inviteRestaurant}
               className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-40"
             >
               {sending ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}

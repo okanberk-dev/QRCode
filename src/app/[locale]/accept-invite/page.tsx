@@ -3,7 +3,15 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, Clock, Loader2, ShieldCheck, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  Eye,
+  EyeOff,
+  Loader2,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import { AlertBanner, PageHeader } from "@/components/ui";
 
 interface InviteInfo {
@@ -21,17 +29,27 @@ interface InviteError {
   error: "invalid_token" | "expired" | "already_accepted" | "revoked";
 }
 
+const PHONE_PLACEHOLDER = "+90 5XX XXX XX XX";
+
 function AcceptInviteInner() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = params.locale === "en" ? "en" : "tr";
+  const isTr = locale === "tr";
   const token = searchParams.get("token") ?? "";
 
   const [info, setInfo] = useState<InviteInfo | InviteError | null>(null);
   const [loading, setLoading] = useState(true);
-  const [accepting, setAccepting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // §22 self-contained form: hesap yoksa /register'a redirect değil, burada
+  // toplanır. Hesap varsa form gizli, sadece "Daveti kabul et" butonu var.
+  const [name, setName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,30 +80,61 @@ function AcceptInviteInner() {
     };
   }, [token]);
 
-  const accept = async () => {
-    if (accepting) return;
-    setAccepting(true);
+  const submit = async (
+    payload: Record<string, unknown>,
+    onSuccessRedirect: (data: { redirectTo?: string }) => string,
+  ) => {
+    if (submitting) return;
+    setSubmitting(true);
     setError(null);
     try {
       const res = await fetch("/api/team/accept-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token, locale, ...payload }),
       });
       const data = await res.json();
-      if (data.ok) {
-        router.push(`/${locale}/dashboard`);
-        return;
+      if (!res.ok || !data.ok) {
+        const msg =
+          data.error === "weak_password"
+            ? isTr
+              ? "Şifre en az 8 karakter, harf + rakam içermeli."
+              : "Password must be 8+ chars with a letter and a digit."
+            : data.error === "name_required"
+              ? isTr
+                ? "Ad Soyad alanı zorunlu."
+                : "Name is required."
+              : data.error === "expired"
+                ? isTr
+                  ? "Davet bağlantısının süresi dolmuş."
+                  : "The invite link has expired."
+                : data.error === "rate_limited"
+                  ? isTr
+                    ? "Çok hızlı denedin, biraz bekle."
+                    : "Too fast — try again shortly."
+                  : isTr
+                    ? "Davet kabul edilemedi."
+                    : "Could not accept invite.";
+        throw new Error(msg);
       }
-      if (data.needsAccount && data.redirectTo) {
-        router.push(`/${locale}${data.redirectTo}`);
-        return;
-      }
-      throw new Error(data.error || "Davet kabul edilemedi");
+      router.push(onSuccessRedirect(data));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Hata");
-      setAccepting(false);
+      setError(err instanceof Error ? err.message : isTr ? "Hata" : "Error");
+      setSubmitting(false);
     }
+  };
+
+  const acceptExisting = () =>
+    submit({}, (data) => data.redirectTo || `/${locale}/dashboard`);
+
+  const submitNewAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    void submit(
+      { name, password, phoneNumber },
+      (data) =>
+        data.redirectTo ||
+        `/${locale}/auth/check-email?email=${encodeURIComponent(info && info.ok ? info.email : "")}`,
+    );
   };
 
   if (loading) {
@@ -93,7 +142,7 @@ function AcceptInviteInner() {
       <div className="mx-auto max-w-[680px] px-5 py-12">
         <div className="flex items-center justify-center gap-2 text-[#737373] text-[13px]">
           <Loader2 size={14} className="animate-spin" />
-          Yükleniyor…
+          {isTr ? "Yükleniyor…" : "Loading…"}
         </div>
       </div>
     );
@@ -102,9 +151,9 @@ function AcceptInviteInner() {
   return (
     <div className="mx-auto max-w-[680px] px-5 sm:px-7 py-8 lg:py-12">
       <PageHeader
-        eyebrow="EKİP DAVETİ"
+        eyebrow={isTr ? "EKİP DAVETİ" : "TEAM INVITE"}
         eyebrowColor="#C6F24E"
-        title="Buaze hesabına davet edildin"
+        title={isTr ? "Buaze hesabına davet edildin" : "You've been invited to Buaze"}
       />
 
       {info && !info.ok && (
@@ -123,22 +172,32 @@ function AcceptInviteInner() {
               <X size={20} />
             </div>
             <div>
-              <h2 className="bz-h-tight text-[18px]">Davet geçersiz</h2>
+              <h2 className="bz-h-tight text-[18px]">
+                {isTr ? "Davet geçersiz" : "Invalid invite"}
+              </h2>
               <p className="text-[13px] text-[#525252] mt-2">
                 {info.error === "expired"
-                  ? "Bu davet bağlantısı süresi dolmuş. İşletme sahibinden yeni bir davet isteyebilirsin."
+                  ? isTr
+                    ? "Bu davet bağlantısı süresi dolmuş. İşletme sahibinden yeni bir davet isteyebilirsin."
+                    : "This invite has expired. Ask the workspace owner to send a new one."
                   : info.error === "already_accepted"
-                    ? "Bu davet zaten kabul edilmiş. Hesabınla giriş yapmayı deneyebilirsin."
+                    ? isTr
+                      ? "Bu davet zaten kabul edilmiş. Hesabınla giriş yapmayı deneyebilirsin."
+                      : "This invite has already been accepted. Try signing in."
                     : info.error === "revoked"
-                      ? "Bu davet iptal edilmiş. İşletme sahibiyle iletişime geç."
-                      : "Bağlantı geçerli değil. Lütfen davet maili'ndeki doğru bağlantıyı kullan."}
+                      ? isTr
+                        ? "Bu davet iptal edilmiş. İşletme sahibiyle iletişime geç."
+                        : "This invite was revoked. Contact the workspace owner."
+                      : isTr
+                        ? "Bağlantı geçerli değil. Lütfen davet maili'ndeki doğru bağlantıyı kullan."
+                        : "Link is not valid. Use the exact link from the invite email."}
               </p>
               <div className="mt-4 flex gap-2">
                 <Link href={`/${locale}/auth/login`} className="bz-btn-primary">
-                  Giriş yap
+                  {isTr ? "Giriş yap" : "Sign in"}
                 </Link>
                 <Link href={`/${locale}`} className="bz-btn-ghost">
-                  Ana sayfa
+                  {isTr ? "Ana sayfa" : "Home"}
                 </Link>
               </div>
             </div>
@@ -169,11 +228,17 @@ function AcceptInviteInner() {
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <h2 className="bz-h-tight text-[18px]">Davet geçerli</h2>
+                <h2 className="bz-h-tight text-[18px]">
+                  {isTr ? "Davet geçerli" : "Invite valid"}
+                </h2>
                 <p className="text-[13px] text-[#737373] mt-0.5">
                   {info.ownerName
-                    ? `${info.ownerName} seni ekibine davet etti.`
-                    : "Buaze hesabına davet edildin."}
+                    ? isTr
+                      ? `${info.ownerName} seni ekibine davet etti.`
+                      : `${info.ownerName} invited you to their team.`
+                    : isTr
+                      ? "Buaze hesabına davet edildin."
+                      : "You've been invited to a Buaze workspace."}
                 </p>
               </div>
             </div>
@@ -181,19 +246,19 @@ function AcceptInviteInner() {
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[13px]">
               <div>
                 <dt className="text-[11px] text-[#737373] uppercase bz-mono">
-                  E-posta
+                  {isTr ? "E-posta" : "Email"}
                 </dt>
                 <dd className="bz-mono text-[#0A0A0A] mt-0.5">{info.email}</dd>
               </div>
               <div>
                 <dt className="text-[11px] text-[#737373] uppercase bz-mono">
-                  Rol
+                  {isTr ? "Rol" : "Role"}
                 </dt>
                 <dd className="text-[#0A0A0A] mt-0.5">{info.roleLabel}</dd>
               </div>
               <div className="sm:col-span-2">
                 <dt className="text-[11px] text-[#737373] uppercase bz-mono">
-                  Geçerlilik
+                  {isTr ? "Geçerlilik" : "Valid until"}
                 </dt>
                 <dd className="text-[#0A0A0A] mt-0.5 inline-flex items-center gap-1.5">
                   <Clock size={12} />
@@ -208,38 +273,153 @@ function AcceptInviteInner() {
           {info.hasAccount ? (
             <div className="bz-card p-6">
               <p className="text-[13px] text-[#525252] mb-4">
-                <strong className="text-[#0A0A0A]">{info.email}</strong> ile zaten
-                Buaze hesabın var. Daveti kabul ettiğinde bu workspace'e erişimin
-                aktifleşir.
+                {isTr ? (
+                  <>
+                    <strong className="text-[#0A0A0A]">{info.email}</strong> ile
+                    zaten Buaze hesabın var. Daveti kabul ettiğinde bu workspace'e
+                    erişimin aktifleşir.
+                  </>
+                ) : (
+                  <>
+                    You already have a Buaze account at{" "}
+                    <strong className="text-[#0A0A0A]">{info.email}</strong>.
+                    Accepting this invite activates your access to this workspace.
+                  </>
+                )}
               </p>
               <button
                 type="button"
-                onClick={accept}
-                disabled={accepting}
+                onClick={acceptExisting}
+                disabled={submitting}
                 className="bz-btn-primary inline-flex items-center gap-1.5"
               >
-                {accepting ? (
+                {submitting ? (
                   <Loader2 size={14} className="animate-spin" />
                 ) : (
                   <CheckCircle2 size={14} />
                 )}
-                Daveti kabul et
+                {isTr ? "Daveti kabul et" : "Accept invite"}
               </button>
             </div>
           ) : (
-            <div className="bz-card p-6">
-              <p className="text-[13px] text-[#525252] mb-4">
-                Daveti kabul etmek için önce <strong>{info.email}</strong> ile
-                bir Buaze hesabı oluşturman gerekiyor. Hesap oluştuktan sonra
-                bu sayfaya tekrar gelmen yeterli.
-              </p>
-              <Link
-                href={`/${locale}/auth/register?email=${encodeURIComponent(info.email)}&inviteToken=${encodeURIComponent(token)}`}
-                className="bz-btn-primary inline-flex items-center gap-1.5"
+            <form onSubmit={submitNewAccount} className="bz-card p-6 space-y-4">
+              <div>
+                <h3 className="bz-h-tight text-[16px]">
+                  {isTr ? "Hesabını oluştur" : "Create your account"}
+                </h3>
+                <p className="text-[13px] text-[#525252] mt-1.5">
+                  {isTr
+                    ? "Birkaç bilgi alacağız. E-postan onaylanınca panele yönlendirilirsin — ekstra onboarding yok."
+                    : "Just a few details. After your email is verified, you’ll go straight to the panel — no extra onboarding."}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="acc-name"
+                  className="pulse-eyebrow text-[#737373] block"
+                >
+                  {isTr ? "AD SOYAD" : "FULL NAME"}
+                </label>
+                <input
+                  id="acc-name"
+                  type="text"
+                  required
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="bz-input"
+                  placeholder={isTr ? "Emre Kaya" : "Emre Kaya"}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="pulse-eyebrow text-[#737373] block">
+                  {isTr ? "E-POSTA" : "EMAIL"}
+                </label>
+                <input
+                  type="email"
+                  value={info.email}
+                  readOnly
+                  className="bz-input bg-[#FAFAFA] text-[#525252] cursor-not-allowed"
+                  aria-label={isTr ? "Davet edilen e-posta" : "Invited email"}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="acc-phone"
+                  className="pulse-eyebrow text-[#737373] block"
+                >
+                  {isTr ? "TELEFON (OPSİYONEL)" : "PHONE (OPTIONAL)"}
+                </label>
+                <input
+                  id="acc-phone"
+                  type="tel"
+                  autoComplete="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder={PHONE_PLACEHOLDER}
+                  className="bz-input"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="acc-password"
+                  className="pulse-eyebrow text-[#737373] block"
+                >
+                  {isTr ? "ŞİFRE" : "PASSWORD"}
+                </label>
+                <div className="relative">
+                  <input
+                    id="acc-password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bz-input pr-12"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center text-[#737373] hover:text-[#0A0A0A]"
+                    aria-label={
+                      showPassword
+                        ? isTr
+                          ? "Şifreyi gizle"
+                          : "Hide password"
+                        : isTr
+                          ? "Şifreyi göster"
+                          : "Show password"
+                    }
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <p className="text-[11px] text-[#737373]">
+                  {isTr
+                    ? "En az 8 karakter, harf ve rakam içermeli."
+                    : "At least 8 characters with a letter and a digit."}
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="bz-btn-primary inline-flex items-center justify-center gap-1.5 w-full"
               >
-                Hesap oluştur
-              </Link>
-            </div>
+                {submitting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <CheckCircle2 size={14} />
+                )}
+                {isTr ? "Hesabı oluştur ve onay maili al" : "Create account and verify"}
+              </button>
+            </form>
           )}
         </div>
       )}

@@ -46,7 +46,9 @@ export async function POST(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  if (actor.source !== 'user') {
+  // §22 — team_member rolündeki kullanıcı kendi davetlerini yönetemez,
+  // sadece restaurant_owner workspace üzerinde davet yetkisine sahip.
+  if (actor.source !== 'user' || actor.role !== 'restaurant_owner') {
     return NextResponse.json(
       { error: 'forbidden', hint: 'only workspace owner can invite' },
       { status: 403 },
