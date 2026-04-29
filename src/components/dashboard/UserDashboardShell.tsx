@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Settings, Store, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, Link2, LogOut, Megaphone, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -56,6 +56,7 @@ function useTopBar(locale: Locale, pathname: string | null) {
   if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORMLAR' : 'PANEL / PLATFORMS', title: isTr ? 'Platform bağlantıları' : 'Review platforms' };
   if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
+  if (rest.startsWith('/account')) return { breadcrumb: isTr ? 'PANEL / HESABIM' : 'PANEL / ACCOUNT', title: isTr ? 'Hesabım' : 'Account' };
   if (rest.startsWith('/profile')) return { breadcrumb: isTr ? 'AYARLAR / HESAP' : 'SETTINGS / ACCOUNT', title: isTr ? 'Ayarlar' : 'Settings' };
   return null;
 }
@@ -162,6 +163,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       integrations: isTr ? 'Entegrasyonlar' : 'Integrations',
       guide: isTr ? 'Kılavuz' : 'Guide',
       profile: isTr ? 'Ayarlar' : 'Settings',
+      account: isTr ? 'Hesabım' : 'Account',
       logout: isTr ? 'Çıkış' : 'Logout',
       plan: isTr ? 'Plan' : 'Plan',
       trialLeft: isTr ? 'gün kaldı' : 'days left',
@@ -229,6 +231,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
       ],
     },
+    // Workspace-level settings hub (Faz 2). Faturalandırma + Kullanıcılar &
+    // Roller + Bildirim. Per-restaurant ayarlar /restaurants/[id]/settings'te.
+    { type: 'item', href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
     { type: 'item', href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
 
@@ -247,6 +252,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
     { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
     { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
+    { href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
     { href: `/${locale}/dashboard/profile`, icon: Settings, label: copy.profile },
   ];
   const moreActive = moreSheetItems.some(
