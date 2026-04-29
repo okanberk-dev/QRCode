@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const firebaseAuthProxyTarget =
   process.env.FIREBASE_AUTH_PROXY_TARGET ||
@@ -68,4 +69,17 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Wrap with Sentry only when DSN is set; otherwise return config untouched
+// (no source-map upload, no extra build overhead during local dev).
+export default process.env.SENTRY_DSN
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      silent: !process.env.CI,
+      widenClientFileUpload: true,
+      tunnelRoute: '/monitoring',
+      disableLogger: true,
+      automaticVercelMonitors: true,
+    })
+  : nextConfig;
