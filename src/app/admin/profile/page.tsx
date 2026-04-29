@@ -133,6 +133,15 @@ export default function AdminProfilePage() {
     <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       <PageHeader eyebrow="PROFİL" title="Profilim" />
 
+      {/* Kurtarma e-postası eksik uyarısı — şifremi unuttum akışı bunsuz
+          çalışmaz. ENV admin için göstermeyiz (zaten profile düzenleyemez). */}
+      {!isEnvAdmin && profile && !profile.recoveryEmail && (
+        <AlertBanner kind="warn">
+          Hesabında kurtarma e-postası yok. Şifreni unutursan kurtarma akışı çalışmaz.
+          Aşağıdaki <strong>Kurtarma e-postası</strong> kartından bir adres ekle.
+        </AlertBanner>
+      )}
+
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError('')}>
           {error}

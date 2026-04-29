@@ -39,9 +39,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const username = String(body.username || '').trim().toLowerCase();
-    if (!username) {
-      return NextResponse.json({ error: 'Kullanıcı adı zorunludur.' }, { status: 400 });
+    // UI artık tek alan kullanıyor: "Kullanıcı adı veya e-posta". `username`
+    // veya `identifier` field'ından gelir; her ikisini de destekleriz.
+    const rawIdentifier = String(body.identifier || body.username || '').trim().toLowerCase();
+    if (!rawIdentifier) {
+      return NextResponse.json(
+        { error: 'Kullanıcı adı veya e-posta zorunludur.' },
+        { status: 400 },
+      );
     }
 
     // Generic OK response — never leak whether the username exists or not
@@ -49,14 +54,22 @@ export async function POST(req: NextRequest) {
 
     let admin: {
       id: string;
+      username: string;
       email: string | null;
       resetAttempts: number;
       resetLastAttempt: Date | null;
     } | null = null;
+    const looksLikeEmail = rawIdentifier.includes('@');
     try {
       admin = await prisma.adminUser.findUnique({
-        where: { username },
-        select: { id: true, email: true, resetAttempts: true, resetLastAttempt: true },
+        where: looksLikeEmail ? { email: rawIdentifier } : { username: rawIdentifier },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          resetAttempts: true,
+          resetLastAttempt: true,
+        },
       });
     } catch (err) {
       // P2022: column doesn't exist yet (deploy race) — fail silently
@@ -96,7 +109,9 @@ export async function POST(req: NextRequest) {
     });
 
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com').replace(/\/+$/, '');
-    const resetUrl = `${appUrl}/admin/reset-password?username=${encodeURIComponent(username)}`;
+    // Reset URL her zaman username taşır — kullanıcı email ile arasa bile
+    // kod doğrulama akışında AdminUser.username zorunludur.
+    const resetUrl = `${appUrl}/admin/reset-password?username=${encodeURIComponent(admin.username)}`;
 
     // Fire-and-forget — UI doesn't reveal whether send succeeded (anti-enum)
     sendPasswordResetEmail({

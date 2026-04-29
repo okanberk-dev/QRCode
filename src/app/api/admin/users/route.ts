@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
         select: {
           id: true,
           username: true,
+          email: true,
           role: true,
           restaurantId: true,
           restaurant: {
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { username, password, role, restaurantId, isNewRestaurant, restaurantData } = body;
+    const { username, password, role, email, restaurantId, isNewRestaurant, restaurantData } = body;
 
     if (!username || !password || !role) {
       return ApiErrors.badRequest('Kullanıcı adı, şifre ve rol zorunludur', 'MISSING_FIELDS');
@@ -78,6 +79,20 @@ export async function POST(req: NextRequest) {
       }
     } else if (role === 'manager' && !restaurantId) {
       return ApiErrors.badRequest('Manager rolü için bir restoran seçilmelidir', 'MISSING_RESTAURANT');
+    }
+
+    // Recovery email (opsiyonel ama ŞİDDETLE TAVSİYE) — şifremi unuttum
+    // akışı bunsuz çalışmaz. Boşsa null bırak; daha sonra admin profile'den
+    // eklenebilir. Validate ederse normalize et.
+    let normalizedEmail: string | null = null;
+    if (typeof email === 'string') {
+      const trimmed = email.trim().toLowerCase();
+      if (trimmed) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) || trimmed.length > 256) {
+          return ApiErrors.badRequest('Geçerli bir e-posta gir', 'INVALID_EMAIL');
+        }
+        normalizedEmail = trimmed;
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -119,11 +134,12 @@ export async function POST(req: NextRequest) {
         return await tx.adminUser.create({
           data: {
             username,
+            email: normalizedEmail,
             passwordHash: hashedPassword,
             role,
             restaurantId: role === 'manager' ? finalRestaurantId : null,
           },
-          select: { id: true, username: true, role: true, restaurantId: true },
+          select: { id: true, username: true, email: true, role: true, restaurantId: true },
         });
       });
 
@@ -143,6 +159,9 @@ export async function POST(req: NextRequest) {
         }
         if (target.includes('username')) {
           return ApiErrors.conflict('Bu kullanıcı adı zaten kullanılıyor');
+        }
+        if (target.includes('email')) {
+          return ApiErrors.conflict('Bu e-posta zaten başka bir admin tarafından kullanılıyor');
         }
         return ApiErrors.conflict('Benzersiz alan çakışması');
       }

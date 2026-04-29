@@ -38,7 +38,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   try {
     const body = await req.json();
-    const { password, role, restaurantId } = body;
+    const { password, role, restaurantId, email } = body;
 
     if (role !== 'superadmin' && role !== 'manager') {
       return NextResponse.json({ error: 'Geçersiz rol' }, { status: 400 });
@@ -56,7 +56,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const before = await prisma.adminUser.findUnique({
       where: { id },
-      select: { role: true, restaurantId: true },
+      select: { role: true, restaurantId: true, email: true },
     });
 
     const data: Prisma.AdminUserUncheckedUpdateInput = { role, restaurantId: role === 'manager' ? restaurantId : null };
@@ -65,11 +65,41 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       data.passwordHash = await bcrypt.hash(password, 12);
     }
 
-    const user = await prisma.adminUser.update({
-      where: { id },
-      data,
-      select: { id: true, username: true, role: true }
-    });
+    // Recovery email — boş string explicit clear, undefined dokunma sinyali.
+    if (email !== undefined) {
+      if (typeof email !== 'string') {
+        return NextResponse.json({ error: 'Geçersiz e-posta' }, { status: 400 });
+      }
+      const trimmed = email.trim().toLowerCase();
+      if (trimmed === '') {
+        data.email = null;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) || trimmed.length > 256) {
+        return NextResponse.json({ error: 'Geçerli bir e-posta gir' }, { status: 400 });
+      } else {
+        data.email = trimmed;
+      }
+    }
+
+    let user: { id: string; username: string; email: string | null; role: string };
+    try {
+      user = await prisma.adminUser.update({
+        where: { id },
+        data,
+        select: { id: true, username: true, email: true, role: true },
+      });
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      const target = Array.isArray((err as { meta?: { target?: unknown } }).meta?.target)
+        ? ((err as { meta: { target: string[] } }).meta.target as string[]).join(',')
+        : '';
+      if (code === 'P2002' && target.includes('email')) {
+        return NextResponse.json(
+          { error: 'Bu e-posta zaten başka bir admin tarafından kullanılıyor' },
+          { status: 409 },
+        );
+      }
+      throw err;
+    }
 
     await writeAudit({
       actorId: String(admin.id),
@@ -78,7 +108,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       targetId: id,
       payload: {
         before,
-        after: { role: user.role, restaurantId: data.restaurantId },
+        after: { role: user.role, restaurantId: data.restaurantId, email: user.email },
         passwordChanged: Boolean(password),
       },
     });
