@@ -80,6 +80,7 @@ function AdminReviewsContent() {
   const [assigning, setAssigning] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [aiSource, setAiSource] = useState<Source>(null);
+  const [aiTone, setAiTone] = useState<'warm' | 'formal' | 'apologetic'>('warm');
   const [notice, setNotice] = useState<{ msg: string; tone: Tone } | null>(null);
   const [sendEmail, setSendEmail] = useState(true);
 
@@ -165,16 +166,14 @@ function AdminReviewsContent() {
     );
   };
 
-  const onSuggest = async () => {
+  const onSuggest = async (toneOverride?: 'warm' | 'formal' | 'apologetic') => {
     if (!active) return;
     setSuggesting(true);
-    setDraft(buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }));
-    setAiSource('template');
     try {
       const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ locale }),
+        body: JSON.stringify({ locale, tone: toneOverride }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -184,9 +183,15 @@ function AdminReviewsContent() {
         }
       } else if (res.status === 429) {
         flash(isTr ? 'Çok sık istek — biraz bekle' : 'Too many requests — slow down', 'error');
+      } else {
+        // Network/server failure — fall back to deterministic template so the
+        // operator can still produce a starting point.
+        setDraft(buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }));
+        setAiSource('template-fallback');
       }
     } catch {
-      /* keep local template */
+      setDraft(buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }));
+      setAiSource('template-fallback');
     }
     setSuggesting(false);
   };
@@ -536,14 +541,27 @@ function AdminReviewsContent() {
                       </span>
                     )}
                   </div>
-                  <button
-                    onClick={onSuggest}
-                    disabled={suggesting}
-                    className="pulse-eyebrow inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-3 py-1 text-white hover:bg-[#1A1A1A] disabled:opacity-50"
-                  >
-                    {suggesting && <Loader2 size={10} className="animate-spin" />}
-                    {isTr ? 'Taslak oluştur' : 'Generate draft'}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      value={aiTone}
+                      onChange={(e) => setAiTone(e.target.value as 'warm' | 'formal' | 'apologetic')}
+                      disabled={suggesting}
+                      aria-label={isTr ? 'Pulse AI tonu' : 'Pulse AI tone'}
+                      className="pulse-eyebrow rounded-full border border-[#EDEDED] bg-white px-2.5 py-1 text-[#0A0A0A] outline-none focus:border-[#0A0A0A] disabled:opacity-50"
+                    >
+                      <option value="warm">{isTr ? 'Samimi' : 'Warm'}</option>
+                      <option value="formal">{isTr ? 'Resmi' : 'Formal'}</option>
+                      <option value="apologetic">{isTr ? 'Özür' : 'Apologetic'}</option>
+                    </select>
+                    <button
+                      onClick={() => onSuggest(aiTone)}
+                      disabled={suggesting}
+                      className="pulse-eyebrow inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-3 py-1 text-white hover:bg-[#1A1A1A] disabled:opacity-50"
+                    >
+                      {suggesting && <Loader2 size={10} className="animate-spin" />}
+                      {isTr ? 'Taslak oluştur' : 'Generate draft'}
+                    </button>
+                  </div>
                 </div>
                 <p className="mt-2 text-[12px] text-[#525252]">
                   {isTr

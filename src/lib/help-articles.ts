@@ -968,7 +968,7 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
     lead: 'Faturada sürpriz olmamasının yolu kullanımı sezgiyle değil sayısal olarak izlemektir. Doğru eşikler tanımlandığında ekip, plan yükseltme veya optimizasyon kararını zamanında alır.',
     keyInsight: 'Eşik <em>panik düğmesi</em> değil <strong>karar tetikleyicisi</strong>dir. %70 fark et, %90 hareket et — basit bir kural sürpriz fatura olasılığını sıfırlar.',
     sections: [
-      { title: 'İzlenmesi gereken metrikler', items: ['Aylık aktif yorum sayısı.', 'AI Co-Pilot taslak sayısı.', 'API çağrı hacmi.', 'Aktif restoran ve ekip üye sayısı.', 'Webhook teslim adedi.'] },
+      { title: 'İzlenmesi gereken metrikler', items: ['Aylık aktif yorum sayısı.', 'Pulse AI taslak sayısı.', 'API çağrı hacmi.', 'Aktif restoran ve ekip üye sayısı.', 'Webhook teslim adedi.'] },
       { title: 'Eşik mantığı', paragraphs: ['Plan limitinin yüzde 70’i aşıldığında ekibe haber verecek hafif bir uyarı (renk veya rozet), yüzde 90’da ise eyleme zorlayan bir bildirim mantıklıdır. Bu sayede ay sonuna birkaç gün kala plan yükseltme kararı sakince alınır.'] },
       { title: 'Kullanımı düşürme', paragraphs: ['Bazı durumlarda yükseltme yerine optimizasyon yeterlidir: pasif restoranları arşivleyin, kullanılmayan webhook’ları kapatın, gereksiz API çağrılarını cache’leyin.'] },
     ],
@@ -982,7 +982,7 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
     lead: 'Avoiding billing surprises is a numerical exercise, not a gut feel. With clear thresholds, the team makes upgrade or optimization decisions on time.',
     keyInsight: 'A threshold is not a <em>panic button</em>; it is a <strong>decision trigger</strong>. Notice at 70%, act at 90% — that simple rule removes billing surprises.',
     sections: [
-      { title: 'Metrics worth tracking', items: ['Monthly active reviews.', 'AI Co-Pilot draft count.', 'API call volume.', 'Active restaurants and team members.', 'Webhook delivery count.'] },
+      { title: 'Metrics worth tracking', items: ['Monthly active reviews.', 'Pulse AI draft count.', 'API call volume.', 'Active restaurants and team members.', 'Webhook delivery count.'] },
       { title: 'Threshold logic', paragraphs: ['At 70% of plan limit, a soft signal (color or badge) is enough. At 90%, an action-forcing notification helps. This pattern lets the team make plan changes calmly a few days before month end.'] },
       { title: 'Reducing usage', paragraphs: ['Sometimes optimization is enough instead of upgrading: archive inactive restaurants, disable unused webhooks, cache unnecessary API calls.'] },
     ],
@@ -1053,7 +1053,7 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
     lead: 'Rate limit, sistemi koruyan bir mekanizmadır; düşman değildir. Doğru kullanılırsa hem entegrasyonunuz daha güvenilir olur hem de Buaze tarafında genel performans korunur.',
     keyInsight: 'Yüksek 429 oranı bir <em>performans</em> sorunu değil, bir <strong>tasarım</strong> sorunudur. Limite tepki kodlamak yerine limitle uyumlu yazmak baştan kolaydır.',
     sections: [
-      { title: 'Tipik limitler', paragraphs: ['Çoğu endpoint dakika başına orta seviye bir istek tavanına sahiptir. AI Co-Pilot gibi maliyetli endpoint’lerde tavan daha düşüktür ve workspace owner seviyesinde keylenir, böylece bir ekip üyesi quota’yı tek başına tüketemez.'] },
+      { title: 'Tipik limitler', paragraphs: ['Çoğu endpoint dakika başına orta seviye bir istek tavanına sahiptir. Pulse AI gibi maliyetli endpoint’lerde tavan daha düşüktür ve workspace owner seviyesinde keylenir, böylece bir ekip üyesi quota’yı tek başına tüketemez.'] },
       { title: 'Sağlıklı istek deseni', items: ['Ardışık istekler arasında 100-300 ms boşluk.', 'Toplu görevleri 50’şerli batch’lere bölün.', 'Cache kullanın: aynı veriyi 5 dakikada tekrar istemeyin.', 'Backoff: 429 alındığında 2-4-8 sn beklemeyle retry.', 'Retry sayacı 3’ü geçmesin, sonra alarm yakın.'] },
       { title: 'Operasyonel izleme', paragraphs: ['Entegrasyon tarafında 429 oranını dashboard’a yazın. Yüksek orana ulaşırsa bu, performans sorunu değil tasarım sorunudur ve istek mimarisi gözden geçirilmelidir.'] },
     ],
@@ -1067,7 +1067,7 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
     lead: 'Rate limits protect the system; they are not the enemy. Used correctly, your integration becomes more reliable and overall Buaze performance stays healthy.',
     keyInsight: 'A high 429 ratio is not a <em>performance</em> issue; it is a <strong>design</strong> issue. Writing with the limit in mind is easier than reacting to it.',
     sections: [
-      { title: 'Typical limits', paragraphs: ['Most endpoints have a moderate per-minute ceiling. Costly endpoints like AI Co-Pilot have a lower ceiling, keyed at workspace owner level so a single team member cannot exhaust the quota alone.'] },
+      { title: 'Typical limits', paragraphs: ['Most endpoints have a moderate per-minute ceiling. Costly endpoints like Pulse AI have a lower ceiling, keyed at workspace owner level so a single team member cannot exhaust the quota alone.'] },
       { title: 'Healthy request pattern', items: ['Add 100-300 ms between sequential requests.', 'Split bulk jobs into batches of 50.', 'Cache: do not re-request the same data within 5 minutes.', 'Backoff: on 429, wait 2-4-8 seconds before retry.', 'Stop after 3 retries and raise an alarm.'] },
       { title: 'Operational monitoring', paragraphs: ['Track 429 ratio on your integration dashboard. A high ratio is a design issue, not a performance one; revisit your request architecture.'] },
     ],

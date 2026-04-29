@@ -56,7 +56,7 @@ const PLAN_TIERS: PlanTier[] = [
       'Starter\'daki her şey',
       'Çoklu konum yönetimi',
       'Menü builder + menü analitiği',
-      'AI Co-Pilot yanıt önerileri',
+      'Pulse AI yanıt önerileri',
       'Ekip üyesi davet (3 kullanıcı)',
     ],
     badge: 'En popüler',

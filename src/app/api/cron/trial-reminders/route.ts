@@ -153,7 +153,7 @@ async function collectUsage(restaurantId: string | undefined): Promise<{
         createdAt: { gte: twentyEightDaysAgo, lt: fourteenDaysAgo },
       },
     }),
-    // FeedbackReply.source filter — only AI Co-Pilot approved replies count.
+    // FeedbackReply.source filter — only Pulse AI approved replies count.
     // `.catch` keeps the cron alive if Prisma hasn't seen the column yet
     // (e.g. fresh deploy where db push lagged behind code rollout).
     prisma.feedbackReply

@@ -20,6 +20,8 @@ interface FeedbackRow {
   aspects?: { service?: number; food?: number; price?: number; atmosphere?: number } | null;
   isReplied?: boolean;
   isFlagged?: boolean;
+  hasPendingAiDraft?: boolean;
+  aiDraftTone?: 'warm' | 'formal' | 'apologetic' | null;
   restaurant?: { name: string; slug?: string } | null;
 }
 
@@ -173,25 +175,46 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // a deterministic template via buildReplyTemplate).
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [aiRegenerating, setAiRegenerating] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [aiSource, setAiSource] = useState<'openai' | 'template' | 'template-fallback' | null>(null);
+  const [aiTone, setAiTone] = useState<'warm' | 'formal' | 'apologetic'>('warm');
+  const [aiFromBackground, setAiFromBackground] = useState(false);
 
   useEffect(() => {
     if (!active) {
       setAiSuggestion('');
       setAiSource(null);
+      setAiLoading(false);
+      setAiFromBackground(false);
       return;
     }
-    // Default to email delivery when we actually have one on file; high-
-    // rating redirects won't provide an address, so this lands on
-    // internal-only automatically.
     setSendEmail(Boolean(active.customerEmail));
-    // Optimistic local draft — instant, will be replaced by the server
-    // response below (AI provider when OPENAI_API_KEY is set, template otherwise).
-    setAiSuggestion(
-      buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }),
-    );
-    setAiSource('template');
+    setAiSuggestion('');
+    setAiSource(null);
+    setAiFromBackground(false);
+    setAiLoading(true);
     (async () => {
+      // First: check if a Pulse AI background draft already exists. If so,
+      // surface it instantly and skip the on-demand fetch.
+      try {
+        const draftRes = await fetch(`/api/feedback/${active.id}/draft`);
+        if (draftRes.ok) {
+          const data = await draftRes.json();
+          if (data?.draft?.body) {
+            setAiSuggestion(data.draft.body);
+            setAiSource(data.draft.source === 'ai_copilot' ? 'openai' : 'template-fallback');
+            if (data.draft.tone === 'warm' || data.draft.tone === 'formal' || data.draft.tone === 'apologetic') {
+              setAiTone(data.draft.tone);
+            }
+            setAiFromBackground(true);
+            setAiLoading(false);
+            return;
+          }
+        }
+      } catch {
+        /* fall through to on-demand */
+      }
+      // Fallback: on-demand suggest-reply call.
       try {
         const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
           method: 'POST',
@@ -202,26 +225,44 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           const data = await res.json();
           if (typeof data?.suggestion === 'string') setAiSuggestion(data.suggestion);
           if (typeof data?.source === 'string') setAiSource(data.source);
+          if (data?.tone === 'warm' || data?.tone === 'formal' || data?.tone === 'apologetic') {
+            setAiTone(data.tone);
+          }
+        } else {
+          setAiSuggestion(
+            buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }),
+          );
+          setAiSource('template-fallback');
         }
       } catch {
-        /* keep local template */
+        setAiSuggestion(
+          buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }),
+        );
+        setAiSource('template-fallback');
+      } finally {
+        setAiLoading(false);
       }
     })();
   }, [active, locale]);
 
-  const regenerateAi = async () => {
+  const regenerateAi = async (toneOverride?: 'warm' | 'formal' | 'apologetic') => {
     if (!active) return;
+    const targetTone = toneOverride ?? aiTone;
     setAiRegenerating(true);
+    setAiFromBackground(false);
     try {
       const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locale }),
+        body: JSON.stringify({ locale, tone: targetTone }),
       });
       if (res.ok) {
         const data = await res.json();
         if (typeof data?.suggestion === 'string') setAiSuggestion(data.suggestion);
         if (typeof data?.source === 'string') setAiSource(data.source);
+        if (data?.tone === 'warm' || data?.tone === 'formal' || data?.tone === 'apologetic') {
+          setAiTone(data.tone);
+        }
       }
     } catch {
       /* ignore */
@@ -240,7 +281,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setSendingReply(true);
     const wantsEmail = sendEmail && Boolean(active.customerEmail);
     // Mirror /admin/reviews — track whether the reply originated from the
-    // AI Co-Pilot draft so trial-ending mail can count operator vs AI replies.
+    // Pulse AI draft so trial-ending mail can count operator vs AI replies.
     const replySource =
       aiSource === 'openai'
         ? 'ai_copilot'
@@ -261,9 +302,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
-        setFeedbacks((list) => list.map((r) => (r.id === active.id ? { ...r, isReplied: true } : r)));
+        setFeedbacks((list) =>
+          list.map((r) =>
+            r.id === active.id ? { ...r, isReplied: true, hasPendingAiDraft: false } : r,
+          ),
+        );
         setReplyDraft('');
         setAiSource(null);
+        setAiFromBackground(false);
         const emailStatus = data?.email?.status as 'sent' | 'skipped' | 'failed' | undefined;
         if (emailStatus === 'sent') {
           flashReply(
@@ -451,8 +497,19 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                           {(r.platform || 'buaze').toUpperCase()}
                           {r.restaurant?.name ? ` · ${r.restaurant.name}` : ''}
                         </span>
+                        {r.hasPendingAiDraft && !r.isReplied && (
+                          <span
+                            title={isTr ? 'Pulse AI taslağı hazır' : 'Pulse AI draft ready'}
+                            className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#EAF9B8] px-1.5 py-0.5 text-[9px] font-semibold text-[#0A0A0A]"
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#A8D62E]" aria-hidden="true" />
+                            <span className="hidden sm:inline">PULSE AI</span>
+                          </span>
+                        )}
                         {r.isReplied && <span className="ml-auto text-[10px] text-[#16A34A]">✓</span>}
-                        {r.rating <= 2 && !r.isReplied && <span className="ml-auto text-[10px] text-[#DC2626]">⚠</span>}
+                        {r.rating <= 2 && !r.isReplied && !r.hasPendingAiDraft && (
+                          <span className="ml-auto text-[10px] text-[#DC2626]">⚠</span>
+                        )}
                       </div>
                     </button>
                   </li>
@@ -554,40 +611,79 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 <span className="pulse-eyebrow text-[#C6F24E]">
                   {isTr ? 'BUAZE PULSE AI ÖNERİSİ' : 'BUAZE PULSE AI SUGGESTION'}
                 </span>
-                {aiSource === 'openai' && (
+                {!aiLoading && aiSource === 'openai' && (
                   <span className="pulse-eyebrow rounded-full bg-[#C6F24E] px-2 py-0.5 text-[#0A0A0A]">
                     {isTr ? 'CANLI' : 'LIVE'}
                   </span>
                 )}
-                {(aiSource === 'template' || aiSource === 'template-fallback') && (
+                {!aiLoading && (aiSource === 'template' || aiSource === 'template-fallback') && (
                   <span className="pulse-eyebrow rounded-full bg-white/10 px-2 py-0.5 text-white/70">
                     {isTr ? 'ŞABLON' : 'TEMPLATE'}
                   </span>
                 )}
+                {!aiLoading && aiFromBackground && (
+                  <span className="pulse-eyebrow rounded-full bg-white/10 px-2 py-0.5 text-white/70">
+                    {isTr ? 'HAZIR' : 'READY'}
+                  </span>
+                )}
+                {aiLoading && (
+                  <span className="pulse-eyebrow inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-white/70">
+                    <Loader2 size={10} className="animate-spin" />
+                    {isTr ? 'HAZIRLANIYOR' : 'WORKING'}
+                  </span>
+                )}
               </div>
-              <p className="mt-3 text-[13px] leading-[1.65] text-white/80">{`"${aiSuggestion}"`}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              {aiLoading ? (
+                <div className="mt-3 space-y-2" aria-hidden="true">
+                  <div className="h-3 w-full rounded bg-white/10 animate-pulse" />
+                  <div className="h-3 w-[88%] rounded bg-white/10 animate-pulse" />
+                  <div className="h-3 w-[60%] rounded bg-white/10 animate-pulse" />
+                </div>
+              ) : (
+                <p className="mt-3 text-[13px] leading-[1.65] text-white/80">
+                  {aiSuggestion ? `"${aiSuggestion}"` : (isTr ? 'Pulse AI henüz bir taslak üretmedi.' : 'Pulse AI has not produced a draft yet.')}
+                </p>
+              )}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setReplyDraft(aiSuggestion)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
+                  disabled={aiLoading || !aiSuggestion}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Sparkles size={12} strokeWidth={2} />
                   {isTr ? 'Kullan & gönder' : 'Use & send'}
                 </button>
                 <button
                   type="button"
-                  onClick={regenerateAi}
-                  disabled={aiRegenerating}
+                  onClick={() => regenerateAi()}
+                  disabled={aiLoading || aiRegenerating}
                   className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-4 py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50"
                 >
                   <RotateCw size={12} strokeWidth={2} className={aiRegenerating ? 'animate-spin' : ''} />
                   {isTr ? 'Yeniden öner' : 'Regenerate'}
                 </button>
+                <select
+                  value={aiTone}
+                  onChange={(e) => {
+                    const next = e.target.value as 'warm' | 'formal' | 'apologetic';
+                    setAiTone(next);
+                    void regenerateAi(next);
+                  }}
+                  disabled={aiLoading || aiRegenerating}
+                  aria-label={isTr ? 'Pulse AI tonu' : 'Pulse AI tone'}
+                  className="rounded-full border border-white/20 bg-transparent px-3 py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50 outline-none focus:border-[#C6F24E]"
+                  style={{ colorScheme: 'dark' }}
+                >
+                  <option value="warm" className="text-[#0A0A0A]">{isTr ? 'Ton: Samimi' : 'Tone: Warm'}</option>
+                  <option value="formal" className="text-[#0A0A0A]">{isTr ? 'Ton: Resmi' : 'Tone: Formal'}</option>
+                  <option value="apologetic" className="text-[#0A0A0A]">{isTr ? 'Ton: Özür' : 'Tone: Apologetic'}</option>
+                </select>
                 <button
                   type="button"
                   onClick={() => setReplyDraft(aiSuggestion)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-4 py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors"
+                  disabled={aiLoading || !aiSuggestion}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-4 py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Pencil size={12} strokeWidth={2} />
                   {isTr ? 'Düzenle' : 'Edit'}

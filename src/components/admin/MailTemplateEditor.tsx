@@ -83,7 +83,7 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'eyebrowAction', label: 'Aksiyon urgency etiketi', hint: '"Aksiyon gerektiriyor · 1 saat içinde dön"' },
     { key: 'title', label: 'Başlık', hint: '"${rating} yıldız geldi."', placeholders: MAIL_PLACEHOLDERS['low-rating-alert'] },
     { key: 'titleSub', label: 'Başlık alt satır', hint: '"Önce dinleyelim."', placeholders: MAIL_PLACEHOLDERS['low-rating-alert'] },
-    { key: 'aiEyebrow', label: 'AI Co-Pilot kart etiketi' },
+    { key: 'aiEyebrow', label: 'Pulse AI kart etiketi' },
     { key: 'toneLabel', label: 'AI tone default etiket', hint: 'aiTone param yokken görünür' },
     { key: 'aiEdit', label: '"Düzenle" buton metni' },
     { key: 'aiApprove', label: '"Onayla & Yanıtla" buton metni' },

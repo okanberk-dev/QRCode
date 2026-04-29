@@ -115,7 +115,7 @@ export const SEEDS = {
   newsletter: (): NewsletterParams => ({
     issueNumber: 4,
     posts: [
-      { title: 'AI Co-Pilot 2.0: ses tonun, makinen.', excerpt: 'Yeni model, marka diline göre fine-tune ediliyor. Türkçe hassasiyeti %38 arttı.', url: `${APP_URL}/tr/blog/ai-copilot-2`, category: 'Ürün', readMinutes: 12 },
+      { title: 'Pulse AI 2.0: ses tonun, makinen.', excerpt: 'Yeni model, marka diline göre fine-tune ediliyor. Türkçe hassasiyeti %38 arttı.', url: `${APP_URL}/tr/blog/pulse-ai-2`, category: 'Ürün', readMinutes: 12 },
       { title: 'Vaka: Kadıköy Bistro 6 ayda nasıl 4.2\'den 4.7\'ye çıktı', excerpt: 'Yorum yönetimi pratiği + Google rehberi.', url: `${APP_URL}/tr/blog/kadikoy-vakasi`, category: 'Vaka', readMinutes: 8 },
       { title: '2026 Q1 yorum davranış raporu', excerpt: '12.000 yorum, 4 sektör, 1 net çıkarım.', url: `${APP_URL}/tr/blog/q1-rapor`, category: 'Veri', readMinutes: 6 },
       { title: 'Düşük puanlı yorumlar: tehdit mi, fırsat mı?', excerpt: 'Pulse ekibinden bir görüş yazısı.', url: `${APP_URL}/tr/blog/dusuk-puan`, category: 'Görüş', readMinutes: 7 },

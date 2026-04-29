@@ -57,8 +57,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const requestedEmail = body.channel === 'email' || body.sendEmail === true;
   const customerEmail = access.feedback.email;
 
-  // `source` lets us tell apart manual replies from those approved off an
-  // AI Co-Pilot draft. Trial-ending mail surfaces this as the AI-reply count;
+  // `source` lets us tell apart manual replies from those approved off a
+  // Pulse AI draft. Trial-ending mail surfaces this as the AI-reply count;
   // unknown values fall back to 'manual' so a misbehaving client can't poison
   // analytics.
   const ALLOWED_SOURCES = new Set(['manual', 'ai_copilot', 'template_fallback']);
@@ -88,6 +88,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       source: replySource,
     },
   });
+
+  // Pulse AI draft consumed — clean up so the inbox no longer surfaces a
+  // pending-draft badge for this feedback. Defensive try/catch in case the
+  // FeedbackAiDraft table hasn't been pushed (preview without `prisma db
+  // push`); reply success must not depend on this.
+  try {
+    await prisma.feedbackAiDraft.deleteMany({ where: { feedbackId: id } });
+  } catch (err) {
+    console.error('[feedback/reply] draft cleanup failed (non-fatal):', err);
+  }
 
   if (channel === 'email' && customerEmail) {
     try {
