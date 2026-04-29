@@ -1,9 +1,34 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Loader2, Check, AlertTriangle, Crown, CreditCard, RefreshCw, Store, ToggleLeft, ToggleRight } from 'lucide-react';
-import { AlertBanner, Badge, type BadgeKind, Modal, PageHeader, TableSkeleton } from '@/components/ui';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
+import {
+  AlertTriangle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  Crown,
+  Download,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Search,
+  Store,
+  ToggleLeft,
+  ToggleRight,
+} from 'lucide-react';
+import {
+  AlertBanner,
+  Badge,
+  type BadgeKind,
+  EmptyState,
+  Modal,
+  PageHeader,
+  TableSkeleton,
+} from '@/components/ui';
 import MemberBillingModal from '@/components/admin/MemberBillingModal';
+import MemberCreateModal from '@/components/admin/MemberCreateModal';
 
 interface Member {
   id: string;
@@ -12,8 +37,17 @@ interface Member {
   plan: string;
   trialEndsAt: string | null;
   isActive: boolean;
+  deactivatedAt?: string | null;
+  lastInvitedAt?: string | null;
   createdAt: string;
   _count: { restaurants: number };
+}
+
+interface Meta {
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
 }
 
 function daysLeft(trialEndsAt: string | null): number | null {
@@ -29,9 +63,33 @@ const PLAN_BADGE: Record<string, { label: string; kind: BadgeKind }> = {
   free: { label: 'Ücretsiz', kind: 'ghost' },
 };
 
+const PLAN_FILTER_OPTIONS = [
+  { v: '', l: 'Tüm planlar' },
+  { v: 'trial', l: 'Deneme' },
+  { v: 'monthly', l: 'Aylık' },
+  { v: 'yearly', l: 'Yıllık' },
+  { v: 'free', l: 'Ücretsiz' },
+];
+
+const STATUS_FILTER_OPTIONS = [
+  { v: 'active', l: 'Aktif' },
+  { v: 'passive', l: 'Pasif' },
+  { v: 'all', l: 'Hepsi' },
+];
+
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
+  const [meta, setMeta] = useState<Meta>({ total: 0, page: 1, perPage: 25, totalPages: 1 });
   const [loading, setLoading] = useState(true);
+
+  // filters
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [planFilter, setPlanFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'active' | 'passive' | 'all'>('active');
+  const [page, setPage] = useState(1);
+
+  // edit + billing + create modals
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -41,28 +99,60 @@ export default function MembersPage() {
   const [editIsActive, setEditIsActive] = useState(true);
   const [editTrialEndsAt, setEditTrialEndsAt] = useState('');
   const [billingMember, setBillingMember] = useState<Member | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
-  const fetchMembers = async () => {
+  // Debounce search input by 300ms — matches admin/customers pattern.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const queryString = useMemo(() => {
+    const qp = new URLSearchParams();
+    if (debouncedSearch) qp.set('search', debouncedSearch);
+    if (planFilter) qp.set('plan', planFilter);
+    qp.set('status', statusFilter);
+    qp.set('page', String(page));
+    qp.set('perPage', '25');
+    return qp.toString();
+  }, [debouncedSearch, planFilter, statusFilter, page]);
+
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/members');
-      if (res.ok) setMembers(await res.json());
+      const res = await fetch(`/api/admin/members?${queryString}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMembers(data.data || []);
+        if (data.meta) setMeta(data.meta);
+      }
     } catch (e) {
       console.error(e);
     }
     setLoading(false);
-  };
+  }, [queryString]);
 
-  useEffect(() => { fetchMembers(); }, []);
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
+
+  const filtersActive = debouncedSearch || planFilter || statusFilter !== 'active';
+  const clearFilters = () => {
+    setSearchInput('');
+    setPlanFilter('');
+    setStatusFilter('active');
+    setPage(1);
+  };
 
   const openEdit = (member: Member) => {
     setEditingMember(member);
     setEditPlan(member.plan);
     setEditIsActive(member.isActive);
     setEditTrialEndsAt(
-      member.trialEndsAt
-        ? new Date(member.trialEndsAt).toISOString().split('T')[0]
-        : ''
+      member.trialEndsAt ? new Date(member.trialEndsAt).toISOString().split('T')[0] : '',
     );
     setError('');
     setSuccess('');
@@ -97,14 +187,13 @@ export default function MembersPage() {
     setSaving(false);
   };
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
-        <PageHeader eyebrow="İŞLETME SAHİPLERİ" title="Yükleniyor…" />
-        <TableSkeleton rows={6} cols={5} />
-      </div>
-    );
-  }
+  const handleExport = () => {
+    const qp = new URLSearchParams();
+    if (debouncedSearch) qp.set('search', debouncedSearch);
+    if (planFilter) qp.set('plan', planFilter);
+    qp.set('status', statusFilter);
+    window.location.href = `/api/admin/members/export?${qp.toString()}`;
+  };
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
@@ -113,129 +202,262 @@ export default function MembersPage() {
         title="İşletme sahipleri"
         description="Buaze'ye kayıtlı işletme sahibi hesaplarının plan, deneme süresi, erişim durumu ve bağlı işletme sayısını yönet."
         actions={
-          <button onClick={fetchMembers} className="bz-btn-ghost">
-            <RefreshCw size={14} strokeWidth={2} />
-            Yenile
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={fetchMembers} className="bz-btn-ghost" disabled={loading}>
+              <RefreshCw size={14} strokeWidth={2} />
+              Yenile
+            </button>
+            <button onClick={handleExport} className="bz-btn-ghost">
+              <Download size={14} strokeWidth={2} />
+              CSV
+            </button>
+            <button onClick={() => setShowCreate(true)} className="bz-btn-primary">
+              <Plus size={14} strokeWidth={2} />
+              Yeni İşletme Sahibi
+            </button>
+          </div>
         }
       />
 
       {success && (
-        <AlertBanner kind="success" icon={<Check size={14} strokeWidth={2} className="mt-0.5" />}>
+        <AlertBanner kind="success" onDismiss={() => setSuccess('')}>
           {success}
         </AlertBanner>
       )}
 
-      {/* Table */}
-      <div className="bg-white rounded-xl sm:rounded-2xl border border-[#EDEDED] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse sm:min-w-[600px]">
-            <thead>
-              <tr className="bg-[#1f2937] pulse-eyebrow text-[#9ca3af]">
-                <th className="px-3 py-4 sm:px-5">İŞLETME SAHİBİ</th>
-                <th className="hidden md:table-cell px-3 py-4 sm:px-5">PLAN</th>
-                <th className="hidden lg:table-cell px-3 py-4 sm:px-5">DENEME / BİTİŞ</th>
-                    <th className="hidden lg:table-cell px-3 py-4 sm:px-5">İŞLETME</th>
-                <th className="hidden md:table-cell px-3 py-4 sm:px-5">DURUM</th>
-                <th className="px-3 py-4 sm:px-5 text-right">EYLEM</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#FFFFFF]">
-              {members.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-sm font-bold text-[#6B7280]">
-                    Henüz kayıtlı işletme sahibi yok.
-                  </td>
-                </tr>
-              ) : members.map((m) => {
-                const dl = daysLeft(m.trialEndsAt);
-                const trialExpired = m.plan === 'trial' && dl !== null && dl <= 0;
-                const trialSoon = m.plan === 'trial' && dl !== null && dl > 0 && dl <= 3;
-                const planMeta = PLAN_BADGE[m.plan] || { label: m.plan, kind: 'ghost' as const };
-
-                return (
-                  <tr key={m.id} className="hover:bg-[#FAFAFA] transition-all">
-                    <td className="px-3 py-4 sm:px-5">
-                      <div className="flex items-center gap-3">
-                        <div className="bz-avatar" style={{ width: 36, height: 36 }}>
-                          {(m.name || m.email).charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-semibold text-[#0A0A0A] truncate">{m.name || '—'}</p>
-                          <p className="text-[11px] text-[#737373] truncate">{m.email}</p>
-                          <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
-                            <Badge kind={planMeta.kind}>{planMeta.label}</Badge>
-                            <Badge kind={m.isActive ? 'ok' : 'danger'}>
-                              {m.isActive ? 'Aktif' : 'Pasif'}
-                            </Badge>
-                            {m.plan === 'trial' && m.trialEndsAt && (
-                              <Badge kind={trialExpired ? 'danger' : trialSoon ? 'warn' : 'ghost'}>
-                                {trialExpired ? 'Süresi doldu' : `${dl}g kaldı`}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-4 sm:px-5">
-                      <Badge kind={planMeta.kind}>
-                        <Crown size={10} strokeWidth={2} />
-                        {planMeta.label}
-                      </Badge>
-                    </td>
-                    <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
-                      {m.plan === 'trial' && m.trialEndsAt ? (
-                        <span
-                          className="text-xs font-medium flex items-center gap-1.5"
-                          style={{ color: trialExpired ? '#DC2626' : trialSoon ? '#D97706' : '#525252' }}
-                        >
-                          {trialExpired ? <AlertTriangle size={12} strokeWidth={2} /> : null}
-                          {trialExpired
-                            ? `Süresi doldu (${Math.abs(dl!)} gün önce)`
-                            : `${dl} gün kaldı`}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-[#737373]">—</span>
-                      )}
-                    </td>
-                    <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-[#0A0A0A]">
-                        <Store size={13} strokeWidth={2} />
-                        {m._count.restaurants}
-                      </div>
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-4 sm:px-5">
-                      <Badge kind={m.isActive ? 'ok' : 'danger'}>
-                        {m.isActive ? 'Aktif' : 'Pasif'}
-                      </Badge>
-                    </td>
-                    <td className="px-2 py-4 sm:px-5 text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        <button
-                          onClick={() => setBillingMember(m)}
-                          className="bz-btn-ghost"
-                          style={{ padding: '6px 12px', fontSize: 12 }}
-                          title="Faturalandırma"
-                        >
-                          <CreditCard size={12} strokeWidth={2} />
-                          <span className="hidden sm:inline">Fatura</span>
-                        </button>
-                        <button
-                          onClick={() => openEdit(m)}
-                          className="bz-btn-ghost"
-                          style={{ padding: '6px 12px', fontSize: 12 }}
-                        >
-                          Düzenle
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {/* Filter row */}
+      <div className="bz-card flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-center">
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="İşletme sahibi ara (email veya isim)…"
+            className="bz-input w-full pl-11"
+          />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={planFilter}
+            onChange={(e) => {
+              setPlanFilter(e.target.value);
+              setPage(1);
+            }}
+            className="bz-input"
+            aria-label="Plan filtresi"
+          >
+            {PLAN_FILTER_OPTIONS.map((p) => (
+              <option key={p.v} value={p.v}>
+                {p.l}
+              </option>
+            ))}
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as 'active' | 'passive' | 'all');
+              setPage(1);
+            }}
+            className="bz-input"
+            aria-label="Durum filtresi"
+          >
+            {STATUS_FILTER_OPTIONS.map((s) => (
+              <option key={s.v} value={s.v}>
+                {s.l}
+              </option>
+            ))}
+          </select>
+          {filtersActive && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-[12px] text-[#737373] hover:text-[#0A0A0A] underline"
+            >
+              Filtreleri temizle
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Table */}
+      {loading ? (
+        <TableSkeleton rows={6} cols={5} />
+      ) : members.length === 0 ? (
+        <EmptyState
+          icon={<Store size={20} strokeWidth={2} />}
+          title={filtersActive ? 'Filtreyle eşleşen sonuç yok' : 'Henüz kayıtlı işletme sahibi yok'}
+          body={
+            filtersActive
+              ? 'Filtreleri değiştir veya temizle.'
+              : 'Yeni İşletme Sahibi butonu ile davetli olarak ilk hesabı oluştur.'
+          }
+        />
+      ) : (
+        <div className="bg-white rounded-xl sm:rounded-2xl border border-[#EDEDED] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse sm:min-w-[600px]">
+              <thead>
+                <tr className="bg-[#1f2937] pulse-eyebrow text-[#9ca3af]">
+                  <th className="px-3 py-4 sm:px-5">İŞLETME SAHİBİ</th>
+                  <th className="hidden md:table-cell px-3 py-4 sm:px-5">PLAN</th>
+                  <th className="hidden lg:table-cell px-3 py-4 sm:px-5">DENEME / BİTİŞ</th>
+                  <th className="hidden lg:table-cell px-3 py-4 sm:px-5">İŞLETME</th>
+                  <th className="hidden md:table-cell px-3 py-4 sm:px-5">DURUM</th>
+                  <th className="px-3 py-4 sm:px-5 text-right">EYLEM</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#FFFFFF]">
+                {members.map((m) => {
+                  const dl = daysLeft(m.trialEndsAt);
+                  const trialExpired = m.plan === 'trial' && dl !== null && dl <= 0;
+                  const trialSoon = m.plan === 'trial' && dl !== null && dl > 0 && dl <= 3;
+                  const planMeta = PLAN_BADGE[m.plan] || { label: m.plan, kind: 'ghost' as const };
+
+                  return (
+                    <tr
+                      key={m.id}
+                      className={`hover:bg-[#FAFAFA] transition-all ${m.isActive ? '' : 'opacity-60'}`}
+                    >
+                      <td className="px-3 py-4 sm:px-5">
+                        <div className="flex items-center gap-3">
+                          <div className="bz-avatar" style={{ width: 36, height: 36 }}>
+                            {(m.name || m.email).charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <Link
+                              href={`/admin/members/${m.id}`}
+                              className="text-[13px] font-semibold text-[#0A0A0A] truncate hover:underline block"
+                            >
+                              {m.name || '—'}
+                            </Link>
+                            <p className="text-[11px] text-[#737373] truncate">{m.email}</p>
+                            <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
+                              <Badge kind={planMeta.kind}>{planMeta.label}</Badge>
+                              <Badge kind={m.isActive ? 'ok' : 'danger'}>
+                                {m.isActive ? 'Aktif' : 'Pasif'}
+                              </Badge>
+                              {m.plan === 'trial' && m.trialEndsAt && (
+                                <Badge
+                                  kind={trialExpired ? 'danger' : trialSoon ? 'warn' : 'ghost'}
+                                >
+                                  {trialExpired ? 'Süresi doldu' : `${dl}g kaldı`}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-4 sm:px-5">
+                        <Badge kind={planMeta.kind}>
+                          <Crown size={10} strokeWidth={2} />
+                          {planMeta.label}
+                        </Badge>
+                      </td>
+                      <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
+                        {m.plan === 'trial' && m.trialEndsAt ? (
+                          <span
+                            className="text-xs font-medium flex items-center gap-1.5"
+                            style={{
+                              color: trialExpired
+                                ? '#DC2626'
+                                : trialSoon
+                                  ? '#D97706'
+                                  : '#525252',
+                            }}
+                          >
+                            {trialExpired ? <AlertTriangle size={12} strokeWidth={2} /> : null}
+                            {trialExpired
+                              ? `Süresi doldu (${Math.abs(dl!)} gün önce)`
+                              : `${dl} gün kaldı`}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-[#737373]">—</span>
+                        )}
+                      </td>
+                      <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-[#0A0A0A]">
+                          <Store size={13} strokeWidth={2} />
+                          {m._count.restaurants}
+                        </div>
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-4 sm:px-5">
+                        <Badge kind={m.isActive ? 'ok' : 'danger'}>
+                          {m.isActive ? 'Aktif' : 'Pasif'}
+                        </Badge>
+                      </td>
+                      <td className="px-2 py-4 sm:px-5 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <Link
+                            href={`/admin/members/${m.id}`}
+                            className="bz-btn-ghost"
+                            style={{ padding: '6px 12px', fontSize: 12 }}
+                            title="Detay"
+                          >
+                            <span className="hidden sm:inline">Detay</span>
+                            <ChevronRight size={12} strokeWidth={2} />
+                          </Link>
+                          <button
+                            onClick={() => setBillingMember(m)}
+                            className="bz-btn-ghost"
+                            style={{ padding: '6px 12px', fontSize: 12 }}
+                            title="Faturalandırma"
+                          >
+                            <CreditCard size={12} strokeWidth={2} />
+                            <span className="hidden sm:inline">Fatura</span>
+                          </button>
+                          <button
+                            onClick={() => openEdit(m)}
+                            className="bz-btn-ghost"
+                            style={{ padding: '6px 12px', fontSize: 12 }}
+                          >
+                            Düzenle
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && members.length > 0 && meta.totalPages > 1 && (
+        <div className="flex items-center justify-between text-[12px] text-[#525252] flex-wrap gap-2">
+          <span>
+            {(meta.page - 1) * meta.perPage + 1}–
+            {Math.min(meta.page * meta.perPage, meta.total)} / {meta.total}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={meta.page <= 1}
+              className="bz-btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ padding: '6px 12px', fontSize: 12 }}
+            >
+              <ChevronLeft size={12} strokeWidth={2} />
+              Önceki
+            </button>
+            <span className="px-2 text-[12px] text-[#737373]">
+              {meta.page} / {meta.totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+              disabled={meta.page >= meta.totalPages}
+              className="bz-btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ padding: '6px 12px', fontSize: 12 }}
+            >
+              Sonraki
+              <ChevronRight size={12} strokeWidth={2} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingMember && (
@@ -284,7 +506,7 @@ export default function MembersPage() {
                   type="date"
                   value={editTrialEndsAt}
                   onChange={(e) => setEditTrialEndsAt(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[#EDEDED] bg-white focus:ring-2 focus:ring-[#C6F24E] focus:border-[#0A0A0A] outline-none text-[13px]"
+                  className="bz-input w-full"
                 />
               </div>
             )}
@@ -293,18 +515,28 @@ export default function MembersPage() {
             <div className="flex items-center justify-between p-4 bg-[#FAFAFA] rounded-2xl border border-[#EDEDED]">
               <div>
                 <p className="text-[13px] font-medium text-[#0A0A0A]">Hesap durumu</p>
-                <p className="text-[11px] text-[#737373] mt-0.5">{editIsActive ? 'Kullanıcı sisteme girebilir.' : 'Kullanıcı erişimi engellendi.'}</p>
+                <p className="text-[11px] text-[#737373] mt-0.5">
+                  {editIsActive
+                    ? 'Kullanıcı sisteme girebilir.'
+                    : 'Kullanıcı erişimi engellendi.'}
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setEditIsActive((v) => !v)}
                 aria-pressed={editIsActive}
-                aria-label={editIsActive ? 'Aktif - tıklayarak devre dışı bırak' : 'Devre dışı - tıklayarak etkinleştir'}
-                className={`transition-all duration-200 active:scale-95 ${editIsActive ? 'text-[#A8D62E] hover:text-[#0A0A0A]' : 'text-[#737373] hover:text-[#0A0A0A]'}`}
+                aria-label={editIsActive ? 'Aktif' : 'Pasif'}
+                className={`transition-all duration-200 active:scale-95 ${
+                  editIsActive
+                    ? 'text-[#A8D62E] hover:text-[#0A0A0A]'
+                    : 'text-[#737373] hover:text-[#0A0A0A]'
+                }`}
               >
-                {editIsActive
-                  ? <ToggleRight size={36} strokeWidth={1.5} />
-                  : <ToggleLeft size={36} strokeWidth={1.5} />}
+                {editIsActive ? (
+                  <ToggleRight size={36} strokeWidth={1.5} />
+                ) : (
+                  <ToggleLeft size={36} strokeWidth={1.5} />
+                )}
               </button>
             </div>
 
@@ -331,7 +563,7 @@ export default function MembersPage() {
         </Modal>
       )}
 
-      {/* Faturalandırma Modal — Faz 3 admin per-user billing edit */}
+      {/* Faturalandırma Modal */}
       {billingMember && (
         <MemberBillingModal
           userId={billingMember.id}
@@ -340,6 +572,17 @@ export default function MembersPage() {
           onClose={() => setBillingMember(null)}
           onSaved={() => {
             setSuccess('Faturalandırma güncellendi.');
+            fetchMembers();
+          }}
+        />
+      )}
+
+      {/* Create Modal */}
+      {showCreate && (
+        <MemberCreateModal
+          onClose={() => setShowCreate(false)}
+          onCreated={(msg) => {
+            setSuccess(msg);
             fetchMembers();
           }}
         />
