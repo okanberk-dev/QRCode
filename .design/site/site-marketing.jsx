@@ -55,29 +55,8 @@ function HomePage() {
         ))}
       </div>
 
-      {/* 3 STEPS */}
-      <div style={{ padding: '80px 48px' }}>
-        <div style={{ textAlign: 'center', maxWidth: 720, margin: '0 auto 56px' }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#737373', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Nasıl çalışır</div>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 56, fontWeight: 500, letterSpacing: '-0.03em', marginTop: 10, lineHeight: 1 }}>
-            Üç adım, üç saniye.
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
-          {[
-            { n: '01', t: 'Topla', d: 'Masanızdaki QR kodu tarayan müşteri, 20 saniyede yorum bırakır. Zahmet sıfır.', illus: <IllusCompass size={180} /> },
-            { n: '02', t: 'Yönet', d: 'Tüm yorumları tek panelden yanıtla. Olumsuzu ekibine ata, olumluyu Google\'da yayına taşı.', illus: <IllusInbox size={180} /> },
-            { n: '03', t: 'Büyü', d: 'Canlı analitik ile puanını izle, Google sıralamanı yükselt, organik büyümeyi yakala.', illus: <IllusChart size={180} /> },
-          ].map(s => (
-            <div key={s.n} style={{ background: '#FAFAFA', border: '1px solid #EDEDED', borderRadius: 18, padding: 28, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 14 }}>{s.illus}</div>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#C6F24E', letterSpacing: '0.16em', fontWeight: 600 }}>ADIM {s.n}</div>
-              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 30, fontWeight: 500, letterSpacing: '-0.025em' }}>{s.t}</div>
-              <div style={{ fontSize: 14, color: '#525252', lineHeight: 1.55 }}>{s.d}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* 3 STEPS — Editorial */}
+      <ThreeStepsEditorial />
 
       {/* FEATURE — BIG IMAGE LEFT */}
       <div style={{ padding: '60px 48px', background: '#0A0A0A', color: '#fff' }}>
