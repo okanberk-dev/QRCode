@@ -109,13 +109,15 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
     label: { tr: string; en: string };
     desc: { tr: string; en: string };
     icon: React.ComponentType<{ size?: number }>;
+    /** Backend cron not yet wired; toggle is read-only with a "soon" chip. */
+    comingSoon?: boolean;
   }> = [
     {
       key: 'lowRatingEmail',
       label: { tr: 'Düşük puan uyarısı', en: 'Low-rating alert' },
       desc: {
-        tr: '1-2 yıldız bir yorum geldiğinde e-posta ile anında bildir.',
-        en: 'Email me instantly when a 1-2 star review arrives.',
+        tr: '1-3 yıldız bir yorum geldiğinde e-posta ile anında bildir.',
+        en: 'Email me instantly when a 1-3 star review arrives.',
       },
       icon: Mail,
     },
@@ -127,6 +129,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
         en: 'A morning digest of the last 24 hours, every day at 08:00.',
       },
       icon: MessageSquare,
+      comingSoon: true,
     },
     {
       key: 'weeklyReport',
@@ -170,29 +173,41 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
             {rows.map((row) => {
               const Icon = row.icon;
               const on = Boolean(prefs[row.key]);
+              const disabled = saving || row.comingSoon === true;
               return (
-                <div key={row.key} className="flex items-start justify-between gap-4 p-5">
-                  <div className="flex items-start gap-3">
+                <div
+                  key={row.key}
+                  className="flex items-start justify-between gap-3 p-4 sm:gap-4 sm:p-5"
+                >
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
                     <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#0A0A0A]">
                       <Icon size={14} />
                     </span>
-                    <div>
-                      <p className="text-[14px] font-semibold text-[#0A0A0A]">
-                        {row.label[isTr ? 'tr' : 'en']}
-                      </p>
-                      <p className="mt-1 text-[12px] text-[#525252]">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <p className="text-[14px] font-semibold text-[#0A0A0A]">
+                          {row.label[isTr ? 'tr' : 'en']}
+                        </p>
+                        {row.comingSoon && (
+                          <span className="inline-flex items-center rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#92400E] ring-1 ring-[#FDE68A]">
+                            {isTr ? 'Yakında' : 'Soon'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-[12px] leading-relaxed text-[#525252]">
                         {row.desc[isTr ? 'tr' : 'en']}
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => toggle(row.key)}
-                    disabled={saving}
+                    onClick={() => !row.comingSoon && toggle(row.key)}
+                    disabled={disabled}
                     role="switch"
                     aria-checked={on}
                     aria-label={row.label[isTr ? 'tr' : 'en']}
-                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:opacity-60 ${
+                    title={row.comingSoon ? (isTr ? 'Yakında' : 'Coming soon') : undefined}
+                    className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
                       on ? 'bg-[#C6F24E]' : 'bg-[#EDEDED]'
                     }`}
                   >
@@ -208,21 +223,29 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
             })}
           </section>
 
-          <section className="bz-card p-5">
+          <section className="bz-card p-4 sm:p-5">
             <div className="flex items-start gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#0A0A0A]">
                 <Webhook size={14} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold text-[#0A0A0A]">
-                  {isTr ? 'Slack webhook' : 'Slack webhook'}
-                </p>
-                <p className="mt-1 text-[12px] text-[#525252]">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <p className="text-[14px] font-semibold text-[#0A0A0A]">
+                    {isTr ? 'Slack webhook' : 'Slack webhook'}
+                  </p>
+                  {prefs.slackWebhook && !webhookDirty && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#ECFDF5] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#14532D] ring-1 ring-[#A7F3D0]">
+                      <Check size={9} strokeWidth={3} />
+                      {isTr ? 'Bağlı' : 'Connected'}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-[12px] leading-relaxed text-[#525252]">
                   {isTr
                     ? 'Düşük puan geldiğinde Slack kanalına anında mesaj at. Slack’ten oluşturduğun webhook URL’ini yapıştır.'
                     : 'Post low-rating alerts to a Slack channel. Paste the incoming webhook URL from Slack.'}
                 </p>
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-stretch">
                   <input
                     type="url"
                     placeholder="https://hooks.slack.com/services/..."
@@ -231,26 +254,38 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
                       setPrefs({ ...prefs, slackWebhook: e.target.value });
                       setWebhookDirty(true);
                     }}
-                    className="bz-input flex-1"
+                    className="bz-input min-w-0 flex-1"
                   />
-                  <button
-                    type="button"
-                    onClick={() => save(prefs)}
-                    disabled={saving || !webhookDirty}
-                    className="bz-btn-primary inline-flex items-center justify-center gap-1.5 px-4 py-2 text-[12px] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {saving ? (
-                      <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <Check size={12} />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => save(prefs)}
+                      disabled={saving || !webhookDirty}
+                      className="bz-btn-primary inline-flex flex-1 items-center justify-center gap-1.5 px-4 py-2 text-[12px] disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                    >
+                      {saving ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <Check size={12} />
+                      )}
+                      {isTr ? 'Kaydet' : 'Save'}
+                    </button>
+                    {prefs.slackWebhook && (
+                      <button
+                        type="button"
+                        onClick={() => save({ ...prefs, slackWebhook: null })}
+                        disabled={saving}
+                        className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 px-3 py-2 text-[12px] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isTr ? 'Kaldır' : 'Remove'}
+                      </button>
                     )}
-                    {isTr ? 'Kaydet' : 'Save'}
-                  </button>
+                  </div>
                 </div>
-                <p className="mt-2 text-[11px] text-[#A3A3A3]">
+                <p className="mt-2 text-[11px] leading-relaxed text-[#A3A3A3]">
                   {isTr
-                    ? 'İpucu: Slack’te Apps → Incoming Webhooks ile yeni bir webhook oluşturup buraya yapıştır.'
-                    : 'Tip: Create an Incoming Webhook in Slack (Apps → Incoming Webhooks) and paste the URL here.'}
+                    ? 'İpucu: Slack’te Apps → Incoming Webhooks ile yeni bir webhook oluşturup buraya yapıştır. URL https:// ile başlamalı.'
+                    : 'Tip: Create an Incoming Webhook in Slack (Apps → Incoming Webhooks) and paste the URL here. URL must start with https://.'}
                 </p>
               </div>
             </div>

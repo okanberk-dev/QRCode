@@ -33,9 +33,26 @@ export async function GET(req: NextRequest) {
         slug: true,
         notificationEmail: true,
         googlePlaceId: true,
+        userId: true,
         user: { select: { email: true, locale: true } },
       },
     });
+
+    // Pre-load weekly-report opt-out / opt-in for every owner in one query
+    // so we don't fan out N+1 lookups inside the loop. The model defaults
+    // to weeklyReport: true, so missing rows fall back to "send".
+    const ownerIds = Array.from(
+      new Set(restaurants.map((r) => r.userId).filter(Boolean) as string[]),
+    );
+    const prefRows = ownerIds.length
+      ? await prisma.notificationPreference.findMany({
+          where: { userId: { in: ownerIds } },
+          select: { userId: true, weeklyReport: true },
+        })
+      : [];
+    const weeklyReportByUser = new Map(
+      prefRows.map((p) => [p.userId, p.weeklyReport]),
+    );
 
     let sent = 0;
     let skipped = 0;
@@ -43,6 +60,17 @@ export async function GET(req: NextRequest) {
     for (const rest of restaurants) {
       const email = rest.notificationEmail || rest.user?.email;
       if (!email) {
+        skipped++;
+        continue;
+      }
+
+      // Honour the owner's "Haftalık rapor" toggle. Default true (no row =
+      // opted in) preserves the legacy behaviour for restaurants that
+      // never visited the notifications panel.
+      const ownerWantsWeekly = rest.userId
+        ? weeklyReportByUser.get(rest.userId) ?? true
+        : true;
+      if (!ownerWantsWeekly) {
         skipped++;
         continue;
       }
