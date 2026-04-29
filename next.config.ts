@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const firebaseAuthProxyTarget =
   process.env.FIREBASE_AUTH_PROXY_TARGET ||
@@ -68,4 +69,20 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Always wrap with Sentry per the canonical SDK skill — when SENTRY_AUTH_TOKEN
+// is missing the plugin skips source-map upload silently; runtime SDK init is
+// gated separately on SENTRY_DSN inside instrumentation.ts / *.config.ts.
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  // Upload source maps for the App Router client bundles too.
+  widenClientFileUpload: true,
+  // Tunnel SDK traffic through the app origin to dodge ad-blockers.
+  // Middleware matcher is `/admin/:path*` so /monitoring is already excluded.
+  tunnelRoute: '/monitoring',
+  // Hide Sentry's own logger noise from the production browser console.
+  disableLogger: true,
+  automaticVercelMonitors: true,
+});
