@@ -10,7 +10,6 @@ import {
   Globe,
   HelpCircle,
   Inbox,
-  KeyRound,
   Layers,
   Mail,
   Menu,
@@ -148,12 +147,6 @@ export default function MarketingNavbarClient({
       label: isTr ? 'Entegrasyonlar' : 'Integrations',
       sub: isTr ? 'Google · Yemeksepeti · Getir' : 'Google · Yelp · Tripadvisor',
       icon: <Plug size={16} />,
-    },
-    {
-      href: '/admin/api',
-      label: 'API & Webhook',
-      sub: isTr ? 'Geliştiriciler için' : 'For developers',
-      icon: <KeyRound size={16} />,
     },
   ];
 
