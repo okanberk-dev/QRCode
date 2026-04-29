@@ -181,6 +181,7 @@ export default async function AboutPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* ─── Hero · design: 1.3fr / 1fr with lighthouse right ─── */}
       <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-[60px] sm:pb-16">
@@ -345,6 +346,7 @@ export default async function AboutPage({
         </div>
       </section>
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );

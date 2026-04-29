@@ -587,11 +587,17 @@ export default function HomeHero({ locale }: Props) {
   const sx = cursor.active ? cursor.x * 100 : 30;
   const sy = cursor.active ? cursor.y * 100 : 18;
 
+  // Subtitle is the LCP element on the homepage. Earlier it was wrapped in
+  // `bz-fade-up` with a 0.5s animation-delay, which kept it at opacity:0
+  // until ~1s after first paint — Web Vitals doesn't count an opacity-0
+  // element as "rendered," so PageSpeed reported a 4.27s element delay on
+  // top of the (otherwise fast) TTFB. Dropping the fade lets the LCP timer
+  // finish on first paint. Heading kademeli reveal'i (bz-fade-up + bz-d1..4)
+  // korundu; subtitle text okunabilir, dramatik bir reveal'e ihtiyacı yok.
   const subtitleStyle: CSSProperties = {
     fontSize: 'clamp(15px, 1.4vw, 18px)',
     lineHeight: 1.55,
     textWrap: 'pretty',
-    animationDelay: '0.5s',
   } as CSSProperties;
 
   const headlineStyle: CSSProperties = {
@@ -671,7 +677,7 @@ export default function HomeHero({ locale }: Props) {
               </h1>
 
               <p
-                className="bz-fade-up mt-6 max-w-[520px] text-[#525252]"
+                className="mt-6 max-w-[520px] text-[#525252]"
                 style={subtitleStyle}
               >
                 {isTr ? (

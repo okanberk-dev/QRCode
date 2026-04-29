@@ -158,6 +158,7 @@ export default async function PricingPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
+      <main id="main-content">
 
       {/* ─── Hero ─── */}
       <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-24 pb-14 sm:pb-20">
@@ -324,6 +325,7 @@ export default async function PricingPage({
       {/* ─── FAQ ─── */}
       <PricingFaq faqs={faqs} title={t.faq_title} subtitle={t.faq_subtitle} />
 
+      </main>
       <MarketingFooter locale={locale} t={t} />
     </div>
   );
