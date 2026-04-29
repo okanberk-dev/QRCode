@@ -23,7 +23,11 @@ export default async function OwnerPlatformsRedirect({
   const payload = await verifyJwt(token);
   if (!payload) redirect(`/${locale}/auth/login`);
 
-  const userId = (payload.sub || (payload as { id?: string }).id) as string | undefined;
+  // JWT payload login route'da `userId` field'ı ile imzalanır (auth.ts signJwt
+  // çağrısında {userId: user.id, ...}). Önceki implementasyon yanlışlıkla
+  // payload.sub / payload.id okuyordu → undefined → /auth/login redirect →
+  // middleware /dashboard'a geri yolluyordu (kullanıcı raporu).
+  const userId = typeof payload.userId === 'string' ? payload.userId : null;
   if (!userId) redirect(`/${locale}/auth/login`);
 
   const first = await prisma.restaurant.findFirst({

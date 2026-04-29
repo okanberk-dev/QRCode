@@ -20,7 +20,8 @@ export default async function OwnerIntegrationsRedirect({
   const payload = await verifyJwt(token);
   if (!payload) redirect(`/${locale}/auth/login`);
 
-  const userId = (payload.sub || (payload as { id?: string }).id) as string | undefined;
+  // JWT payload login route'da `userId` field'ı ile imzalanır.
+  const userId = typeof payload.userId === 'string' ? payload.userId : null;
   if (!userId) redirect(`/${locale}/auth/login`);
 
   const first = await prisma.restaurant.findFirst({
