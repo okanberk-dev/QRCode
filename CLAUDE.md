@@ -2249,3 +2249,112 @@ Radix `Primitive.Trigger` / `Primitive.Content` headless component'ler — kendi
 | **Toplam** | ~60 KB gzip (tree-shake'le sadece kullanılan kısım yüklenir) |
 
 Mobil 3G'de ek ~150 ms parse, kabul edilir. Server-state caching kazançı bunu çoktan karşılar.
+
+---
+
+## 28. Backend Validation Strategy
+
+Buaze 125+ API endpoint'i çoğunlukla elle validation kullanıyor (CLAUDE.md §6 `validations.ts`). Bu pattern bilinçli ve çalışıyor — **toplu refactor yok**. Zod opsiyonel ek katmandır, mevcut endpoint'leri zorla migrate etmez.
+
+### 28.1 Kurallar
+
+1. **Çalışan mevcut endpoint'leri elle, somut bir feature/bug fix için değiştirmiyorsan, oldukları gibi bırak.** Çalışan validation bozulmaz.
+2. **Tüm endpoint'leri Zod'a otomatik migrate etme.** Toplu refactor scope creep'tir, regression riski büyüktür, code review yükü çoğaltır.
+3. **Zod sadece yeni veya yüksek-risk modüller için.** Mevcut bir route'a sadece zaten o feature için PR açmışsan ekle.
+4. **Zod tercih edilen alanlar:**
+   - Google Business Profile entegrasyonu (gelecek)
+   - Billing / subscription / invoice flow'ları (Iyzico Wave 3.5)
+   - Campaign create / update
+   - QR create / update
+   - Onboarding multi-step state
+   - Admin role / permission güncellemeleri
+   - Webhook / API key oluşturma
+   - Feedback submission (public, kullanıcı kontrolünde değil)
+   - Karmaşık public form'lar
+5. **Elle validation kabul edilebilir alanlar:**
+   - Basit GET / list endpoint'leri
+   - Health / status endpoint'leri
+   - Cron health check'leri
+   - Tek-iki alanlı küçük update/toggle endpoint'leri
+6. **Yeni validation katmanı incremental, typed, küçük, Vercel serverless uyumlu olmalı.** Build-time generated runtime SDK'lar yok (tRPC), heavy decorator pattern'leri yok (NestJS).
+7. **Büyük framework değişiklikleri yapma:** NestJS migration, tRPC migration, full NextAuth migration, BullMQ worker mimarisi — explicit istek olmadıkça **hayır**.
+
+### 28.2 Helper: `src/lib/api/validate.ts`
+
+Tek export: `validateBody(schema, body)` — Zod schema kabul eder, typed parsed data veya 400 response döner. Kullanım pattern'i:
+
+```ts
+import { z } from 'zod';
+import { validateBody } from '@/lib/api/validate';
+
+const Body = z.object({
+  name: z.string().min(1).max(120),
+  platforms: z.array(z.string()).max(10),
+});
+
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => null);
+  const parsed = validateBody(Body, body);
+  if (!parsed.ok) return parsed.response;
+  // parsed.data fully typed — { name: string; platforms: string[] }
+}
+```
+
+Hata response'u stable contract:
+```json
+{
+  "error": "validation_error",
+  "message": "Request body failed validation.",
+  "issues": [{ "path": "platforms.0", "message": "..." }]
+}
+```
+
+Client kod `error === 'validation_error'` ile auth (401) / authz (403) / server (500) hatalarından ayırt edebilir.
+
+### 28.3 Yapma
+
+- Mevcut endpoint'i Zod'a migrate ederken **ilgisiz refactor ekleme** (response shape değişikliği, error handling tweak, vb.) — minimum diff.
+- `validateBody`'yi `@/lib/validations`'la karıştırma — eski elle helper'lar kalır, yeni Zod kullanımı için ayrı dosya.
+- Form library (react-hook-form, @hookform/resolvers) ekleme — bu task **backend-only**. Frontend form'ları ayrı scope.
+- Schema'ları ortak modüle çıkarmaya zorlama — 3+ yerden import edilene kadar route-local kalsın (CLAUDE.md §7 abstraction kaçınma ilkesi).
+
+---
+
+## 29. Backend API Foundation Plan
+
+Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microservice yok, NestJS yok, tRPC yok, BullMQ yok.
+
+### 29.1 Şu anki durum + öneri sırası
+
+| # | Modül | Mevcut | Öneri |
+|---|---|---|---|
+| 1 | Shared API response helper | Yok (her route kendi `NextResponse.json`'ı) | İncremental — `src/lib/api/response.ts` opsiyonel, sadece tekrar çıkarsa |
+| 2 | Shared error handler + Sentry | `onRequestError` global hook (§26) | Yeterli; manuel `Sentry.captureException` yüksek-risk yerler için |
+| 3 | Shared auth/role guard | `getPanelActorFromRequest` + `requireRestaurantAccess` (§4) | Çalışıyor, dokunma |
+| 4 | Optional Zod validation helper | **Bu task** — `validateBody` (§28) | Yeni complex route'larda kullan |
+| 5 | Shared Upstash rate-limit helper | `rateLimit()` (§14.2, distributed) | Yeterli; yeni public endpoint'lerde kullan |
+| 6 | Audit log helper | `AdminAuditLog` model şemada var, kullanılmıyor | Yeni admin write action'larında kullanılması önerilir |
+| 7 | Vercel Cron endpoints | 4 cron çalışıyor (§21.12) | BullMQ yerine bu pattern kalır |
+| 8 | Centralized mail service | `src/lib/email.ts` + `src/lib/email/` (§21) | Mevcut, mail gönderimi route içinde değil |
+| 9 | Google Business Profile OAuth | Yok | Stratejik gelecek modülü — Zod ile başla (§28.1.4) |
+
+### 29.2 Mimari kuralları
+
+**Yap:**
+- Monolitik Next.js App Router yapısını koru
+- Vercel serverless uyumlu kal (request-scoped state, no in-memory queues)
+- Scheduled job'lar için **Vercel Cron + API route + Upstash/DB** üçlüsü
+- Sentry'yi şu kategorilerde kullan:
+  - Caught error'lar (try/catch içinde explicit `captureException`)
+  - Error boundary'ler (`global-error.tsx` zaten yapıyor)
+  - API failure'lar (`onRequestError` zaten yakalıyor)
+  - Cron failure'lar (cron handler `try/catch` + `captureException` + tag `{ cron: 'name' }`)
+  - Önemli integration failure'lar (OpenAI, Resend, Iyzico — fallback öncesi capture)
+
+**Yapma:**
+- Microservice'lere bölme
+- Long-running worker'lar (BullMQ, Bee-Queue, Sidekiq-style)
+- Background queue managerleri (Vercel serverless 10s gateway timeout, queue worker yeri yok)
+- Mevcut DB schema'yı bir feature gerektirmedikçe değiştirme
+- Authentication'ı yeniden yazma (mevcut `jose` JWT + httpOnly cookie çalışıyor)
+- UI'ı bu task'ta değiştirme — backend-only scope
