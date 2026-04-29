@@ -28,7 +28,8 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 | ORM | Prisma 6 | `prisma db push` Dockerfile'da otomatik |
 | Auth | Custom JWT (`jose`) + httpOnly cookie | `src/lib/auth.ts` — edge compatible |
 | Auth (Google Sign-in) | Firebase Web SDK (`firebase`) | `src/lib/firebase-client.ts` + `firebase-admin.ts` — sadece Google OAuth için, primary auth değil |
-| UI | Tailwind v4 (PostCSS) + lucide-react (ikonlar) | **shadcn/ui kullanılmıyor** — elle yazılmış bileşenler |
+| UI | Tailwind v4 (PostCSS) + lucide-react (ikonlar) | **shadcn/ui kullanılmıyor** — elle yazılmış bileşenler. Radix UI primitive'leri (`@radix-ui/react-dialog`, `dropdown-menu`, `tabs`, `tooltip`, `popover`, `select`) headless infrastructure olarak eklendi (shadcn değil) |
+| Server-state | `@tanstack/react-query` | Admin/dashboard fetch dağınıklığı için cache + dedup + retry. `<QueryProvider>` `src/app/layout.tsx`'te root'ta (CLAUDE.md §27) |
 | Charts | recharts | |
 | Görsel işleme | sharp (WebP dönüşüm + resize) | |
 | QR | qrcode | `/api/restaurants/[id]/qr` |
@@ -2178,3 +2179,75 @@ Sentry.captureException(error, { tags: { cron: 'monthly-newsletter' } });
 ### 26.7 Maliyet
 
 Free tier: 5K error event + 10K transaction + 50 replay / ay. Mevcut Buaze trafiğine göre yıllar sürecek. Üst limit'e yaklaşırsa Sentry dashboard'da uyarı geliyor; o zaman plan upgrade veya `tracesSampleRate` düşür (`0.1` → `0.05`).
+
+---
+
+## 27. React Query + Radix UI — Infrastructure Dep'leri
+
+İki yeni dep tek amaca hizmet eder: **panel performansı + a11y baseline**. CLAUDE.md §7 minimum-dep disiplinine aykırı değil çünkü bu **abstraction değil infrastructure** — her ikisi de mevcut pattern'leri replace etmek için değil, ortak ihtiyaçları tek noktadan çözmek için.
+
+### 27.1 `@tanstack/react-query` (server-state)
+
+**Sorun:** Admin + dashboard'da her component kendi `fetch + useState + useEffect` pattern'ini yazıyor. `dashboard/feedbacks/page.tsx` 800+ satır, 10+ ayrı fetch hook'u. Cache yok → her route geçişinde yeniden fetch (gereksiz Postgres round-trip + ms latency). Race conditions → kullanıcı 2 kez tıklayınca duplicate request.
+
+**Setup:**
+- `src/components/providers/QueryProvider.tsx` — `<QueryClientProvider>` wrap, `useState` ile single instance, default options:
+  - `staleTime: 60_000` (60 sn fresh window)
+  - `gcTime: 5 * 60_000` (5 dk cache GC)
+  - `retry: 1` (transient hatalar için tek retry; 4xx loop'unu önler)
+  - `refetchOnWindowFocus: false` (panel chart'ları ağır, focus'ta refetch istemiyoruz)
+- `src/app/layout.tsx` root'ta `<QueryProvider>` ile children sarılı — tüm `[locale]` + `admin` + `r/[slug]` + `menu/[slug]` route'ları kapsar.
+- Devtools: sadece `NODE_ENV !== 'production'`'da render (sağ-altta floating button).
+
+**Migration pattern (PR PR ile):**
+```ts
+// Önce
+const [data, setData] = useState(null);
+const [loading, setLoading] = useState(true);
+useEffect(() => { fetch('/api/X').then(r => r.json()).then(d => { setData(d); setLoading(false); }); }, []);
+
+// Sonra
+const { data, isLoading } = useQuery({ queryKey: ['x'], queryFn: () => fetch('/api/X').then(r => r.json()) });
+```
+
+**Yap:** Yeni client component eklerken `useQuery` ile başla. Mevcut fetch'leri opportunistic refactor — heavy admin sayfalarından başla (dashboard, feedbacks, analytics).
+
+**Yapma:** Server component'lerde React Query — server-side fetch + Prisma direct kalsın, RQ sadece client-side için. SSR initial state için `dehydrate` / `hydrate` pattern'i gerekirse sonradan eklenir.
+
+### 27.2 Radix UI primitive'leri (a11y headless)
+
+Mevcut UI primitive'leri (`src/components/ui/Modal`, `Tabs`, vb.) elle yazılmış focus-trap + ARIA + ESC handler. Çalışıyor ama:
+- Focus trap subtle bug'ları kolay (mod-tab ordering, refs, restoration)
+- Screen reader announcement'lar manuel — `aria-live`, `role="dialog"` doğru kombinasyon zor
+- Touch dismiss gestures yok
+- Animated mount/unmount manuel state machine
+
+**Eklenen primitive'ler:**
+- `@radix-ui/react-dialog` — Modal + slide-over (mevcut `<Modal>` replace edilebilir)
+- `@radix-ui/react-dropdown-menu` — Admin sidebar dropdown'ları
+- `@radix-ui/react-tabs` — mevcut `<Tabs>` replace edilebilir (a11y baseline yükseltir)
+- `@radix-ui/react-tooltip` — yardım metinleri için (henüz tooltip primitive yok)
+- `@radix-ui/react-popover` — settings dropdown'ları, range pickers
+- `@radix-ui/react-select` — form `<select>` replace (mobile-friendly + searchable)
+
+**Önemli:** Bu **shadcn/ui değil**. Radix `Primitive.Trigger` / `Primitive.Content` headless component'ler — kendi className'imizi (`bz-card`, `bz-btn-primary`, vb.) Tailwind ile uygulayacağız. shadcn'in styled wrapper'ı yok.
+
+**Yap:** Yeni complex UI (combobox, command palette, date range picker) eklemek gerekirse Radix primitive'inden başla, üstüne Tailwind ile Pulse styling.
+
+**Yapma:** Mevcut `src/components/ui/*` primitive'lerini toplu Radix'e migrate etme — sadece a11y bug fix gerektiği veya yeni feature gerektirdiği yerlerde değiştir. Phase 7+ backlog: opportunistic Modal/Tabs migration.
+
+### 27.3 Bundle size
+
+| Lib | Gzip cost (~) |
+|---|---|
+| `@tanstack/react-query` | 13 KB |
+| `@tanstack/react-query-devtools` | dev-only, prod bundle'da yok |
+| `@radix-ui/react-dialog` | 8 KB |
+| `@radix-ui/react-dropdown-menu` | 10 KB |
+| `@radix-ui/react-tabs` | 4 KB |
+| `@radix-ui/react-tooltip` | 6 KB |
+| `@radix-ui/react-popover` | 7 KB |
+| `@radix-ui/react-select` | 12 KB |
+| **Toplam** | ~60 KB gzip (tree-shake'le sadece kullanılan kısım yüklenir) |
+
+Mobil 3G'de ek ~150 ms parse, kabul edilir. Server-state caching kazançı bunu çoktan karşılar.
