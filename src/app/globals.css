@@ -459,8 +459,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Hero float — gentle up/down oscillation for floating badges.
- * Used by the "+184%" badge on HomeHeroDashboard. */
+/* Hero float — gentle up/down oscillation for floating badges. */
 @keyframes bzFloat {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-6px); }
@@ -468,6 +467,27 @@ h1, h2, h3, h4, h5, h6 {
 
 .bz-float {
   animation: bzFloat 3.2s ease-in-out infinite;
+}
+
+/* Hero — kinetic sector word swap (rotates inside the headline). */
+@keyframes bzWordSwap {
+  0%   { opacity: 0; transform: rotate(-0.6deg) translateY(0.6em); filter: blur(4px); }
+  60%  { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: rotate(-0.6deg) translateY(0); }
+}
+
+.bz-word-swap {
+  animation: bzWordSwap 0.55s cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+
+/* Hero — typewriter caret blink for AI draft. */
+@keyframes bzCaretBlink {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.bz-caret-blink {
+  animation: bzCaretBlink 1s steps(2) infinite;
 }
 
 /* Marquee — horizontal logo strip, GPU-friendly, respects reduced motion */
@@ -851,6 +871,8 @@ input::-webkit-inner-spin-button {
   .bz-scale-in,
   .bz-skeleton,
   .bz-float,
+  .bz-word-swap,
+  .bz-caret-blink,
   .pulse-heartbeat,
   .animate-marquee,
   .animate-slide-in,
