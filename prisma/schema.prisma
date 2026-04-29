@@ -18,6 +18,14 @@ model User {
   trialEndsAt         DateTime? @map("trial_ends_at")
   locale              String    @default("tr")
   isActive            Boolean   @default(true) @map("is_active")
+  // Soft delete timestamp — set when admin "Pasifleştir" runs (isActive=false).
+  // Null when active. Reactivate sets back to null. Distinct from isActive
+  // so we keep the moment-of-deactivation for audit/forensics.
+  deactivatedAt       DateTime? @map("deactivated_at")
+  // Last time admin sent an invite / password-reset mail to this user.
+  // Powers per-admin re-send rate limit on /admin/members detail page
+  // (1 hour cooldown — disables the button server + client side).
+  lastInvitedAt       DateTime? @map("last_invited_at")
   // Last time the trial-reminders cron sent this user a "trial ending" email.
   // Used as a 20-hour dedup so a single cron tick can't fire repeatedly and
   // 4 daily ticks (1/2/3/4 days remaining) each send exactly one mail.
