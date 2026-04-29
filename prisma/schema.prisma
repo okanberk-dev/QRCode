@@ -342,6 +342,12 @@ model TeamMember {
   locations  Json? // string[] — restaurant ids
   status     String    @default("invited") // invited | active | revoked
   lastSeenAt DateTime? @map("last_seen_at")
+  // Section 5 — Davet kabul akışı (Faz 4). Invite gönderildiğinde token üretilir
+  // (32 byte hex). /accept-invite?token=... ile kullanıcı kabul edip aktive eder.
+  // expiresAt 7 gün; resend yeni token üretir + expiresAt yenilenir.
+  inviteToken          String?   @unique @map("invite_token")
+  inviteTokenExpiresAt DateTime? @map("invite_token_expires_at")
+  lastInvitedAt        DateTime? @map("last_invited_at")
   createdAt  DateTime  @default(now()) @map("created_at")
 
   @@unique([ownerId, email])

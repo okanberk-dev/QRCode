@@ -10,6 +10,7 @@ import {
   renderCustomerReply,
   renderTrialEnding,
   renderContactAdmin,
+  renderTeamInvite,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -17,6 +18,7 @@ import {
   type CustomerReplyParams,
   type TrialEndingParams,
   type ContactAdminParams,
+  type TeamInviteParams,
 } from './email/templates';
 import { escapeHtml as _escapeHtml } from './email/escape';
 import { sendResendEmail } from './email-internal';
@@ -180,6 +182,26 @@ export async function sendWelcomeEmail(params: {
   const dashboardUrl = `${appUrl()}/${locale}/dashboard`;
   const rendered = await renderWelcome({ firstName: params.firstName, dashboardUrl } satisfies WelcomeParams, locale);
   return sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+}
+
+// ─── Team invite (Faz 4) ────────────────────────────────────────────────
+
+/**
+ * Section 5 — Team davet maili. POST /api/team + resend-invite endpoint'leri
+ * tarafından çağrılır. Token URL'inde inviteToken olur, expiresInDays default 7.
+ */
+export async function sendTeamInviteEmail(params: TeamInviteParams & {
+  to: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const rendered = renderTeamInvite(rest, locale ?? 'tr');
+  return sendResendEmail({
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
 }
 
 // ─── Form confirmation (contact / career / roi / newsletter) ────────────

@@ -228,6 +228,27 @@ export default function ProfilePage({ params }: { params: Promise<{ locale: Loca
         </AlertBanner>
       )}
 
+      {/* Faz 4 — Yeni Settings hub'ları yer aldı. /profile sayfası user-level
+          ayarlar (ad/email/şifre/dil) için kalıyor; ekip/billing/bildirim
+          /account'a, marka/işletme bilgileri /restaurants/[id]/settings'e taşındı. */}
+      <AlertBanner kind="info">
+        <strong>{isTr ? 'Yeni:' : 'New:'}</strong>{' '}
+        {isTr
+          ? 'Bildirim, faturalandırma ve ekip ayarları artık'
+          : 'Notification, billing and team settings now live in'}{' '}
+        <Link href={`/${isTr ? 'tr' : 'en'}/dashboard/account`} className="underline">
+          {isTr ? 'Hesabım' : 'Account'}
+        </Link>
+        {isTr ? '’da. İşletme ayarları için' : '. For business settings see'}{' '}
+        <Link
+          href={`/${isTr ? 'tr' : 'en'}/dashboard/restaurants`}
+          className="underline"
+        >
+          {isTr ? 'işletmeler' : 'Businesses'}
+        </Link>
+        {isTr ? ' sayfasından bir işletme seç ve "Ayarlar"a gir.' : ' page.'}
+      </AlertBanner>
+
       {/* Mobile-only — design's MOwnerSettings 4-group nav list (md+ uses full
           forms below). Each row deep-links to the relevant page or scrolls
           the user to the in-page form section. */}
