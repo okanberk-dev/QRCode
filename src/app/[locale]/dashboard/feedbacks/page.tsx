@@ -500,7 +500,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                         {r.hasPendingAiDraft && !r.isReplied && (
                           <span
                             title={isTr ? 'Pulse AI taslağı hazır' : 'Pulse AI draft ready'}
-                            className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#EAF9B8] px-1.5 py-0.5 text-[9px] font-semibold text-[#0A0A0A]"
+                            className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#EAF9B8] px-1.5 py-0.5 text-[10px] font-semibold text-[#0A0A0A]"
                           >
                             <span className="h-1.5 w-1.5 rounded-full bg-[#A8D62E]" aria-hidden="true" />
                             <span className="hidden sm:inline">PULSE AI</span>
@@ -665,13 +665,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 </button>
                 <select
                   value={aiTone}
-                  onChange={(e) => {
-                    const next = e.target.value as 'warm' | 'formal' | 'apologetic';
-                    setAiTone(next);
-                    void regenerateAi(next);
-                  }}
+                  onChange={(e) => setAiTone(e.target.value as 'warm' | 'formal' | 'apologetic')}
                   disabled={aiLoading || aiRegenerating}
                   aria-label={isTr ? 'Pulse AI tonu' : 'Pulse AI tone'}
+                  title={isTr ? '"Yeniden öner"e bas' : 'Click "Regenerate"'}
                   className="rounded-full border border-white/20 bg-transparent px-3 py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50 outline-none focus:border-[#C6F24E]"
                   style={{ colorScheme: 'dark' }}
                 >

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
-import { AlertBanner } from "@/components/ui";
+import { AlertBanner, RadioCard, Toggle } from "@/components/ui";
 import type { Locale } from "@/lib/translations";
 
 type Tone = "warm" | "formal" | "apologetic";
@@ -159,15 +159,16 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
               )}
             </div>
 
-            <label className="mt-4 flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
+            <div className="mt-4 flex items-start gap-3">
+              <Toggle
                 checked={Boolean(s?.enableAiDraft)}
+                onChange={(next) => update(r.id, { enableAiDraft: next })}
                 disabled={!s?.loaded || s.saving}
-                onChange={(e) => update(r.id, { enableAiDraft: e.target.checked })}
-                className="mt-0.5 h-4 w-4 accent-[#0A0A0A]"
+                ariaLabel={
+                  isTr ? "Pulse AI taslaklarını otomatik hazırla" : "Auto-prepare Pulse AI drafts"
+                }
               />
-              <span className="text-[14px] text-[#0A0A0A]">
+              <div className="text-[14px] text-[#0A0A0A]">
                 <span className="font-semibold">
                   {isTr ? "Pulse AI taslaklarını otomatik hazırla" : "Auto-prepare Pulse AI drafts"}
                 </span>
@@ -176,37 +177,24 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                     ? "1-3★ yorum geldiğinde taslak inbox'a gelir, manuel onaylayıp gönderirsin."
                     : "When a 1-3★ review arrives, a draft lands in the inbox for your approval."}
                 </span>
-              </span>
-            </label>
+              </div>
+            </div>
 
             <div className="mt-5">
               <p className="pulse-eyebrow text-[#737373] mb-2">
                 {isTr ? "VARSAYILAN TON" : "DEFAULT TONE"}
               </p>
-              <div className="grid gap-2.5 sm:grid-cols-3">
-                {TONE_OPTIONS.map((opt) => {
-                  const active = s?.aiDraftTone === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      disabled={!s?.loaded || s.saving}
-                      onClick={() => update(r.id, { aiDraftTone: opt.value })}
-                      className={`text-left rounded-[14px] border p-3.5 transition-colors disabled:opacity-50 ${
-                        active
-                          ? "border-[#0A0A0A] bg-[#FAFAFA]"
-                          : "border-[#EDEDED] bg-white hover:border-[#0A0A0A]/30"
-                      }`}
-                    >
-                      <span className="bz-h-tight text-[14px] block">
-                        {isTr ? opt.labelTr : opt.labelEn}
-                      </span>
-                      <span className="text-[12px] text-[#737373] mt-1 block leading-snug">
-                        {isTr ? opt.descTr : opt.descEn}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div role="radiogroup" aria-label={isTr ? "Varsayılan ton" : "Default tone"} className="grid gap-2.5 sm:grid-cols-3">
+                {TONE_OPTIONS.map((opt) => (
+                  <RadioCard
+                    key={opt.value}
+                    active={s?.aiDraftTone === opt.value}
+                    disabled={!s?.loaded || s.saving}
+                    onClick={() => update(r.id, { aiDraftTone: opt.value })}
+                    title={isTr ? opt.labelTr : opt.labelEn}
+                    body={isTr ? opt.descTr : opt.descEn}
+                  />
+                ))}
               </div>
             </div>
 
