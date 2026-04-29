@@ -2,14 +2,9 @@ import type { Metadata } from 'next';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
-import {
-  IllusMountain,
-  IllusCompass,
-  IllusInbox,
-  IllusChart,
-  IllusShield,
-} from '@/components/marketing/PulseIllustrations';
+import { IllusMountain, IllusShield } from '@/components/marketing/PulseIllustrations';
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
+import { BarChart3, Inbox, QrCode, Sparkles, Star } from 'lucide-react';
 import MarqueeRow from '@/components/marketing/MarqueeRow';
 import WatchDemoButton from '@/components/marketing/WatchDemoButton';
 import StickyCtaBar from '@/components/marketing/StickyCtaBar';
@@ -172,30 +167,132 @@ export default async function LandingPage({
     ? ['Restoranlar', 'Oteller', 'Klinikler', 'Hukuk büroları', 'Kafeler', 'Spa & güzellik']
     : ['Restaurants', 'Hotels', 'Clinics', 'Law firms', 'Cafés', 'Spa & wellness'];
 
+  // Three step cards — design `.design/site/site-homepage-v3.jsx:268-282 + 504-535`.
+  // Each card carries an inline product-mock visual instead of a decorative illustration.
   const steps = [
     {
-      num: '01',
+      n: 1,
       title: isTr ? 'Topla' : 'Collect',
       body: isTr
         ? 'Masanızdaki QR kodu tarayan müşteri, 20 saniyede yorum bırakır. Zahmet sıfır.'
         : 'A customer scans the QR on your table and leaves a review in 20 seconds. Zero friction.',
-      Ill: IllusCompass,
+      Icon: QrCode,
+      iconBg: '#C6F24E',
+      iconFg: '#0A0A0A',
+      visual: (
+        <div className="flex items-center gap-2.5 rounded-xl bg-[#EAF9B8] px-3.5 py-3">
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            M
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[12px] font-semibold text-[#0A0A0A]">M. Demir</div>
+            <div className="text-[11px] text-[#525252]">
+              {isTr ? 'Yorum bıraktı · az önce' : 'Left a review · just now'}
+            </div>
+          </div>
+          <span
+            className="inline-flex items-center gap-0.5 rounded-md bg-[#0A0A0A] px-1.5 py-0.5 text-[#C6F24E]"
+            aria-label={isTr ? '5 yıldız' : '5 stars'}
+          >
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} size={9} fill="currentColor" strokeWidth={0} />
+            ))}
+          </span>
+        </div>
+      ),
     },
     {
-      num: '02',
+      n: 2,
       title: isTr ? 'Yönet' : 'Manage',
       body: isTr
-        ? 'Hem Google\'a düşen yorumları hem de işletmene özel gönderilen geri bildirimleri tek panelden yanıtla.'
+        ? "Hem Google'a düşen yorumları hem de işletmene özel gönderilen geri bildirimleri tek panelden yanıtla."
         : 'Reply to every review — public Google posts and private guest feedback — from one shared inbox.',
-      Ill: IllusInbox,
+      Icon: Inbox,
+      iconBg: '#0A0A0A',
+      iconFg: '#C6F24E',
+      visual: (
+        <div className="rounded-xl bg-[#0A0A0A] px-3.5 py-3">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C6F24E] opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#C6F24E]" />
+            </span>
+            <span className="pulse-eyebrow text-[#C6F24E]">+184%</span>
+          </div>
+          <p className="mt-2 text-[12px] leading-snug text-[#A3A3A3]">
+            {isTr ? 'Tüm yorumlar tek yerde. Ata, yanıtla, kapat.' : 'All reviews in one place. Assign, reply, close.'}
+          </p>
+        </div>
+      ),
     },
     {
-      num: '03',
+      n: 3,
       title: isTr ? 'Büyü' : 'Grow',
       body: isTr
         ? 'Canlı analitik ile puanını izle, Google sıralamanı yükselt, organik büyümeyi yakala.'
         : 'Track your score with live analytics, lift your Google ranking, capture organic growth.',
-      Ill: IllusChart,
+      Icon: BarChart3,
+      iconBg: '#EAF9B8',
+      iconFg: '#0A0A0A',
+      visual: (
+        <svg viewBox="0 0 260 140" className="w-full" aria-hidden>
+          {/* Browser-style card */}
+          <rect x="8" y="20" width="244" height="115" rx="10" fill="#FFFFFF" stroke="#EDEDED" strokeWidth="1.5" />
+          {/* Title placeholders */}
+          <rect x="22" y="32" width="60" height="6" rx="3" fill="#0A0A0A" />
+          <rect x="22" y="42" width="40" height="4" rx="2" fill="#EDEDED" />
+          {/* Grid lines */}
+          {[60, 85, 110].map((y) => (
+            <line key={y} x1="22" y1={y} x2="240" y2={y} stroke="#F5F5F5" strokeWidth="1" />
+          ))}
+          {/* Bars — 5 bars, 3rd one (peak) is lime */}
+          {([
+            [45, 50],
+            [80, 70],
+            [115, 100],
+            [150, 55],
+            [185, 80],
+          ] as const).map(([x, h], i) => (
+            <rect
+              key={x}
+              x={x - 9}
+              y={120 - h}
+              width="18"
+              height={h}
+              rx="2.5"
+              fill={i === 2 ? '#C6F24E' : '#0A0A0A'}
+            />
+          ))}
+          {/* Trend line — dashed, connects bar tops */}
+          <path
+            d="M45 70 L80 50 L115 20 L150 65 L185 40"
+            fill="none"
+            stroke="#0A0A0A"
+            strokeWidth="1.5"
+            strokeDasharray="3,3"
+          />
+          {/* Leader line from peak to +184% pill */}
+          <path d="M115 20 L195 11" fill="none" stroke="#0A0A0A" strokeWidth="1" />
+          {/* +184% pill — top-right floating badge */}
+          <rect x="195" y="2" width="55" height="18" rx="9" fill="#0A0A0A" />
+          <text
+            x="222.5"
+            y="14.5"
+            textAnchor="middle"
+            fontFamily="var(--font-mono)"
+            fontSize="10"
+            fill="#C6F24E"
+            fontWeight="600"
+          >
+            +184%
+          </text>
+          {/* Peak dot — lime fill, graphite stroke */}
+          <circle cx="115" cy="20" r="6" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
+        </svg>
+      ),
     },
   ];
 
@@ -280,8 +377,43 @@ export default async function LandingPage({
             </ul>
           </div>
 
-          <div className="bz-scale-in w-full md:pr-4">
+          <div className="bz-scale-in relative w-full md:pr-4">
             <HomeHeroDashboard locale={locale} />
+
+            {/* Floating badges — design `.design/site/site-homepage-v3.jsx:240-262`.
+                Wrapped here (not inside HomeHeroDashboard) because the dashboard
+                uses `overflow-hidden` for its radial-gradient bg; absolute children
+                would clip inside the rounded card. */}
+            <div className="bz-float pointer-events-none absolute -right-3 -top-3 z-10 rounded-2xl bg-[#0A0A0A] px-4 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.25)] sm:-right-[18px] sm:-top-[18px]">
+              <div
+                className="text-[24px] font-semibold leading-none tracking-tight text-[#C6F24E] sm:text-[28px]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                +184%
+              </div>
+              <div className="pulse-eyebrow mt-1 text-[#A3A3A3]">
+                {isTr ? 'YORUM ARTIŞI' : 'REVIEW GROWTH'}
+              </div>
+            </div>
+            <div
+              className="bz-float pointer-events-none absolute -bottom-3 -left-3 z-10 flex items-center gap-2.5 rounded-2xl border border-[#EDEDED] bg-white px-4 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.1)] sm:-bottom-[14px] sm:-left-[18px]"
+              style={{ animationDelay: '1.2s' }}
+            >
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EAF9B8] text-[15px] font-semibold text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                72
+              </div>
+              <div>
+                <div className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'NPS PUANI' : 'NPS SCORE'}
+                </div>
+                <div className="text-[12px] font-semibold text-[#16A34A]">
+                  ↑ {isTr ? 'Mükemmel' : 'Excellent'}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -319,26 +451,40 @@ export default async function LandingPage({
             </h2>
           </div>
 
-          {/* auto-fit grid — design buaze-mobil/home.jsx:442
-              `repeat(auto-fit,minmax(260px,1fr))` so the cards collapse
-              to single column on phones and 2-up on tablets without a
-              hard breakpoint flip. */}
-          <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
-            {steps.map(({ num, title, body, Ill }) => (
+          {/* design `.design/site/site-homepage-v3.jsx:268-282` — fixed 3-col grid;
+              each card has a watermarked step number, lucide icon tile, STEP chip,
+              h3, body, and an inline product mock at the bottom. */}
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            {steps.map(({ n, title, body, Icon, iconBg, iconFg, visual }) => (
               <div
-                key={num}
-                className="bz-card flex flex-col p-7"
+                key={n}
+                className="bz-card relative flex flex-col overflow-hidden p-7"
               >
-                <div className="flex justify-center mb-4">
-                  <Ill size={160} />
-                </div>
-                <span className="pulse-eyebrow text-[#A8D62E]">
-                  {isTr ? 'ADIM' : 'STEP'} {num}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -top-2.5 right-1.5 select-none text-[100px] font-extrabold leading-none tracking-[-0.05em] text-[#F5F5F5]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  0{n}
                 </span>
-                <h3 className="mt-3 text-[20px] sm:text-[28px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] text-balance">
-                  {title}
-                </h3>
-                <p className="mt-2.5 text-[14px] text-[#525252] leading-[1.6] text-pretty">{body}</p>
+                <div className="relative">
+                  <div className="mb-4 flex items-center gap-2.5">
+                    <span
+                      className="flex h-10 w-10 items-center justify-center rounded-xl"
+                      style={{ backgroundColor: iconBg, color: iconFg }}
+                    >
+                      <Icon size={18} strokeWidth={2} />
+                    </span>
+                    <span className="rounded bg-[#0A0A0A] px-2 py-0.5 text-[10px] font-bold tracking-[0.16em] text-[#C6F24E]" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {isTr ? 'ADIM' : 'STEP'} 0{n}
+                    </span>
+                  </div>
+                  <h3 className="text-[22px] sm:text-[26px] font-medium leading-[1.1] tracking-[-0.02em] text-[#0A0A0A] text-balance">
+                    {title}
+                  </h3>
+                  <p className="mt-2 text-[14px] text-[#525252] leading-[1.6] text-pretty">{body}</p>
+                  <div className="mt-4">{visual}</div>
+                </div>
               </div>
             ))}
           </div>
@@ -459,11 +605,11 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
-          5.5 BENTO GRID — QR Studio / Buaze Pulse AI / Analytics / Platforms
+          5.5 BENTO — Tek panelde dört süper güç
       ═══════════════════════════════════════════════════════════ */}
       <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[1200px] mx-auto">
-          <div className="max-w-[720px] mb-10 sm:mb-12">
+          <div className="max-w-[720px] mb-10 sm:mb-14">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Tek platform' : 'One platform'}
             </span>
@@ -473,57 +619,93 @@ export default async function LandingPage({
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2">
-            {/* QR Studio — lg:col-span-2 lg:row-span-2 */}
-            <div className="relative overflow-hidden rounded-2xl border border-[#EDEDED] bg-[#0A0A0A] p-6 sm:p-7 text-white lg:col-span-2 lg:row-span-2">
-              <span className="pulse-eyebrow text-[#C6F24E]">QR STUDIO</span>
-              <h3
-                className="mt-3 text-[26px] sm:text-[32px] font-medium leading-[1.05] tracking-[-0.025em]"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
-              >
-                {isTr ? 'Tasarla. Yerleştir. Takip et.' : 'Design. Place. Track.'}
-              </h3>
-              <p className="mt-3 text-[14px] leading-[1.6] text-white/70 max-w-[400px]">
-                {isTr
-                  ? 'Markana özel QR şablonları, dört yerleştirme yolu (masa / fatura / kapı / paket), ham rapor.'
-                  : 'Branded QR templates, four placement modes (table / receipt / door / pack), raw reports.'}
-              </p>
-              <div className="mt-8 flex items-end justify-between gap-6">
-                <svg viewBox="0 0 90 90" className="h-28 w-28 sm:h-32 sm:w-32" aria-hidden>
-                  <rect x="2" y="2" width="86" height="86" rx="6" fill="#C6F24E" />
-                  <g fill="#0A0A0A">
-                    {[
-                      [10, 10, 20, 20],
-                      [60, 10, 20, 20],
-                      [10, 60, 20, 20],
-                      [40, 40, 10, 10],
-                      [55, 40, 10, 10],
-                      [40, 55, 10, 10],
-                      [60, 60, 20, 20],
-                    ].map(([x, y, w, h], i) => (
-                      <rect key={i} x={x} y={y} width={w} height={h} />
-                    ))}
-                  </g>
-                </svg>
-                <div className="text-right">
-                  <p
-                    className="text-[38px] font-semibold leading-none tracking-tight text-[#C6F24E] sm:text-[46px]"
-                    style={{ fontFamily: 'var(--font-space-grotesk)' }}
-                  >
-                    +184%
-                  </p>
-                  <p className="pulse-eyebrow mt-1 text-[#A3A3A3]">
-                    {isTr ? 'ORGANİK YORUM' : 'ORGANIC REVIEWS'}
-                  </p>
+            {/* QR Studio — large dark hero (2x2) */}
+            <div className="bz-fade-up bz-d1 pulse-card-hover relative overflow-hidden rounded-2xl border border-[#0A0A0A] bg-[#0A0A0A] p-6 text-white sm:p-7 lg:col-span-2 lg:row-span-2">
+              <div
+                className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-[#C6F24E]/10 blur-3xl"
+                aria-hidden
+              />
+              <div className="relative">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="pulse-eyebrow text-[#C6F24E]">QR STUDIO</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
+                    </span>
+                    <span className="pulse-eyebrow text-white/70">{isTr ? 'CANLI' : 'LIVE'}</span>
+                  </span>
+                </div>
+                <h3
+                  className="mt-3 text-[26px] sm:text-[34px] font-medium leading-[1.05] tracking-[-0.025em] text-white"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {isTr ? 'Tasarla. Yerleştir. Takip et.' : 'Design. Place. Track.'}
+                </h3>
+                <p className="mt-3 max-w-[400px] text-[14px] leading-[1.6] text-white/70">
+                  {isTr
+                    ? 'Markana özel QR şablonları, dört yerleştirme yolu (masa / fatura / kapı / paket), ham rapor.'
+                    : 'Branded QR templates, four placement modes (table / receipt / door / pack), raw reports.'}
+                </p>
+                <div className="mt-8 flex items-end justify-between gap-6">
+                  {/* Realistic QR mock — 3 finder patterns + scattered data cells */}
+                  <svg viewBox="0 0 100 100" className="h-32 w-32 sm:h-36 sm:w-36" aria-hidden>
+                    <rect x="2" y="2" width="96" height="96" rx="8" fill="#C6F24E" />
+                    <g fill="#0A0A0A">
+                      {[
+                        [10, 10],
+                        [70, 10],
+                        [10, 70],
+                      ].map(([x, y], i) => (
+                        <g key={i}>
+                          <rect x={x} y={y} width="20" height="20" rx="2" />
+                          <rect x={x + 4} y={y + 4} width="12" height="12" fill="#C6F24E" />
+                          <rect x={x + 7} y={y + 7} width="6" height="6" />
+                        </g>
+                      ))}
+                      {[
+                        [36, 12], [42, 12], [48, 12], [54, 12], [60, 12],
+                        [36, 18], [48, 18], [60, 18],
+                        [36, 24], [42, 24], [54, 24],
+                        [12, 36], [18, 36], [30, 36], [36, 42], [48, 42], [60, 42],
+                        [12, 48], [24, 48], [36, 48], [42, 48], [54, 48], [60, 48],
+                        [12, 54], [30, 54], [36, 54], [60, 54],
+                        [36, 60], [42, 60], [54, 60],
+                        [40, 72], [46, 72], [58, 72], [70, 72], [78, 72],
+                        [40, 78], [52, 78], [64, 78],
+                        [40, 84], [64, 84], [78, 84],
+                        [46, 90], [58, 90], [70, 90],
+                      ].map(([x, y], i) => (
+                        <rect key={`d-${i}`} x={x} y={y} width="4" height="4" />
+                      ))}
+                    </g>
+                  </svg>
+                  <div className="text-right">
+                    <p
+                      className="text-[40px] sm:text-[52px] font-semibold leading-none tracking-tight text-[#C6F24E]"
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      +184%
+                    </p>
+                    <p className="pulse-eyebrow mt-1.5 text-white/60">
+                      {isTr ? 'ORGANİK YORUM' : 'ORGANIC REVIEWS'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Buaze Pulse AI */}
-            <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8]/40 p-6">
-              <span className="pulse-eyebrow text-[#0A0A0A]">BUAZE PULSE AI</span>
+            {/* Buaze Pulse AI — top-right tile */}
+            <div className="bz-fade-up bz-d2 pulse-card-hover relative overflow-hidden rounded-2xl border border-[#C6F24E] bg-gradient-to-br from-[#EAF9B8]/70 to-[#EAF9B8]/30 p-6">
+              <div className="flex items-center gap-2">
+                <span className="pulse-eyebrow text-[#0A0A0A]">BUAZE PULSE AI</span>
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0A0A0A]">
+                  <Sparkles size={11} className="text-[#C6F24E]" strokeWidth={2.5} />
+                </span>
+              </div>
               <h3
                 className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? 'Yanıtı saniyede yaz.' : 'Draft replies in seconds.'}
               </h3>
@@ -532,9 +714,17 @@ export default async function LandingPage({
                   ? 'Her yorum için Buaze Pulse AI ile Türkçe yanıt taslağı.'
                   : 'Turkish/English reply drafts with Buaze Pulse AI.'}
               </p>
-              <div className="mt-4 rounded-xl bg-[#0A0A0A] px-3 py-2 text-[11px] text-white">
-                <span className="pulse-eyebrow text-[#C6F24E]">DRAFT</span>
-                <p className="mt-1 leading-snug text-white/80">
+              <div className="mt-4 rounded-xl bg-[#0A0A0A] px-3 py-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="pulse-eyebrow text-[#C6F24E]">DRAFT</span>
+                  <span
+                    className="text-[10px] text-[#A3A3A3]"
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                  >
+                    0.8s
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-snug text-white/85">
                   {isTr
                     ? '"Merhaba Mert, harika yorumun için çok teşekkür ederiz…"'
                     : '"Hi Mark, thank you so much for taking the time…"'}
@@ -542,26 +732,44 @@ export default async function LandingPage({
               </div>
             </div>
 
-            {/* Analytics */}
-            <div className="rounded-2xl border border-[#EDEDED] bg-white p-6">
-              <span className="pulse-eyebrow text-[#737373]">
-                {isTr ? 'ANALİTİK' : 'ANALYTICS'}
-              </span>
+            {/* Analitik — top-right corner tile */}
+            <div className="bz-fade-up bz-d3 pulse-card-hover relative rounded-2xl border border-[#EDEDED] bg-white p-6">
+              <div className="flex items-center gap-2">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'ANALİTİK' : 'ANALYTICS'}
+                </span>
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16A34A] opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
+                </span>
+              </div>
               <h3
                 className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? 'Nabzını canlı izle.' : 'Watch your pulse live.'}
               </h3>
-              <svg viewBox="0 0 220 56" className="mt-4 w-full">
+              <svg viewBox="0 0 220 56" className="mt-4 w-full" aria-hidden>
                 <defs>
                   <linearGradient id="bentoG" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#C6F24E" stopOpacity="0.45" />
+                    <stop offset="0%" stopColor="#C6F24E" stopOpacity="0.5" />
                     <stop offset="100%" stopColor="#C6F24E" stopOpacity="0" />
                   </linearGradient>
                 </defs>
-                <path d="M0 40 L30 36 L60 30 L90 20 L120 24 L150 14 L180 16 L210 8 L220 6 L220 56 L0 56 Z" fill="url(#bentoG)" />
-                <path d="M0 40 L30 36 L60 30 L90 20 L120 24 L150 14 L180 16 L210 8 L220 6" fill="none" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" />
+                {[14, 28, 42].map((y) => (
+                  <line key={y} x1="0" y1={y} x2="220" y2={y} stroke="#F5F5F5" strokeWidth="1" />
+                ))}
+                <path
+                  d="M0 42 L25 38 L50 32 L75 22 L100 26 L125 16 L150 18 L175 10 L200 8 L220 6 L220 56 L0 56 Z"
+                  fill="url(#bentoG)"
+                />
+                <path
+                  d="M0 42 L25 38 L50 32 L75 22 L100 26 L125 16 L150 18 L175 10 L200 8 L220 6"
+                  fill="none"
+                  stroke="#0A0A0A"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
                 <circle cx="220" cy="6" r="4" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
               </svg>
               <p className="mt-3 text-[12px] text-[#737373]">
@@ -569,29 +777,34 @@ export default async function LandingPage({
               </p>
             </div>
 
-            {/* Platforms */}
-            <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-6 sm:col-span-2">
+            {/* Entegrasyonlar — bottom-right wide tile */}
+            <div className="bz-fade-up bz-d4 pulse-card-hover relative rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-6 sm:col-span-2">
               <span className="pulse-eyebrow text-[#737373]">
                 {isTr ? 'ENTEGRASYONLAR' : 'INTEGRATIONS'}
               </span>
               <h3
                 className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? 'Türkiye ve dünya — aynı panelde.' : 'Turkey and the world, same panel.'}
               </h3>
               <div className="mt-4 flex flex-wrap gap-2">
-                {(['google', 'yemeksepeti', 'getir-yemek', 'trendyol-go', 'yelp', 'tripadvisor', 'booking'] as const).map((id) => (
-                  <div
-                    key={id}
-                    className="flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-white px-2.5 py-1.5"
-                  >
-                    <PlatformLogo id={id} size={22} rounded={4} />
-                    <span className="text-[11px] font-medium text-[#0A0A0A] capitalize">
-                      {id.replace('-', ' ')}
-                    </span>
-                  </div>
-                ))}
+                {(['google', 'yemeksepeti', 'getir-yemek', 'trendyol-go', 'yelp', 'tripadvisor', 'booking'] as const).map(
+                  (id) => (
+                    <div
+                      key={id}
+                      className="flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-white px-2.5 py-1.5 transition-colors hover:border-[#0A0A0A]"
+                    >
+                      <PlatformLogo id={id} size={22} rounded={4} />
+                      <span className="text-[11px] font-medium capitalize text-[#0A0A0A]">
+                        {id.replace('-', ' ')}
+                      </span>
+                    </div>
+                  ),
+                )}
+                <div className="flex items-center gap-1.5 rounded-lg border border-dashed border-[#D4D4D4] bg-transparent px-2.5 py-1.5 text-[11px] font-medium text-[#737373]">
+                  + {isTr ? '12 daha' : '12 more'}
+                </div>
               </div>
             </div>
           </div>

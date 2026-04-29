@@ -11,6 +11,7 @@ import {
   renderNewsletter,
   renderCustomerReply,
   renderTrialEnding,
+  renderContactAdmin,
 } from '@/lib/email/templates';
 import { isPreviewTemplate, SEEDS, type PreviewTemplate } from './seeds';
 import { getUnsubscribeUrl } from '@/lib/email';
@@ -18,7 +19,7 @@ import { getUnsubscribeUrl } from '@/lib/email';
 export const dynamic = 'force-dynamic';
 
 /**
- * Email preview endpoint. Renders any of the 9 Pulse templates with
+ * Email preview endpoint. Renders any of the 10 Pulse templates with
  * realistic seed data so a dev / superadmin can eyeball layout in a
  * real browser. Originally dev-only but enabled in production for
  * operators to verify mail content after editing — superadmin auth
@@ -127,5 +128,7 @@ export async function renderTemplate(
       return renderCustomerReply(SEEDS['customer-reply'](), locale);
     case 'trial-ending':
       return renderTrialEnding(SEEDS['trial-ending'](), locale);
+    case 'contact-admin':
+      return renderContactAdmin(SEEDS['contact-admin'](), locale);
   }
 }

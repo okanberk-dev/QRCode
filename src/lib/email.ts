@@ -9,12 +9,14 @@ import {
   renderNewsletter,
   renderCustomerReply,
   renderTrialEnding,
+  renderContactAdmin,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
   type WelcomeParams,
   type CustomerReplyParams,
   type TrialEndingParams,
+  type ContactAdminParams,
 } from './email/templates';
 import { escapeHtml as _escapeHtml } from './email/escape';
 import { sendResendEmail } from './email-internal';
@@ -195,6 +197,17 @@ export async function sendFormConfirmationEmail(params: {
     params.locale ?? 'tr',
   );
   return sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+}
+
+// ─── Contact form (admin notification) ──────────────────────────────────
+// Fires when a user submits the public contact form. Sender helper is
+// sync-rendering (no DB-driven copy) — the inline copy in the template is
+// the source of truth for now. See CLAUDE.md §21.26 if you want to lift
+// this into the MailTemplate CMS later.
+export async function sendContactAdminEmail(params: ContactAdminParams & { to: string | string[]; replyTo?: string; locale?: 'tr' | 'en' }): Promise<boolean> {
+  const { to, replyTo, locale, ...rest } = params;
+  const rendered = renderContactAdmin(rest, locale ?? 'tr');
+  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text, replyTo });
 }
 
 // ─── Customer reply (low rating → customer) ─────────────────────────────

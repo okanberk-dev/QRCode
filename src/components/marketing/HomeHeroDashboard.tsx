@@ -229,42 +229,25 @@ export default function HomeHeroDashboard({ locale }: Props) {
             </div>
           </div>
 
+          {/* Inline delta tile removed — `+184%` now renders as a floating
+              badge on the homepage hero (page.tsx). Keeps `delta` in the
+              snapshot data unused but available for future surfaces. */}
           <div className="flex flex-col gap-2 sm:items-end">
-            <div className="flex flex-wrap items-stretch gap-2.5 sm:justify-end">
-              <div className="min-w-[120px] rounded-[18px] border border-[#EAEAEA] bg-white/90 px-4 py-3 shadow-[0_18px_34px_-26px_rgba(10,10,10,0.3)] backdrop-blur">
-                <p className="pulse-eyebrow text-[#737373]">{isTr ? 'ŞİMDİ' : 'NOW'}</p>
-                <div
-                  className="mt-1 text-[28px] font-medium tracking-tight text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-space-grotesk)' }}
-                >
-                  {mounted ? (
-                    <AnimatedCounter
-                      key={`hero-count-${snapshotIndex}`}
-                      to={activeSnapshot.total}
-                      locale={isTr ? 'tr-TR' : 'en-US'}
-                    />
-                  ) : (
-                    <span>0</span>
-                  )}
-                </div>
-              </div>
-
+            <div className="min-w-[120px] rounded-[18px] border border-[#EAEAEA] bg-white/90 px-4 py-3 shadow-[0_18px_34px_-26px_rgba(10,10,10,0.3)] backdrop-blur">
+              <p className="pulse-eyebrow text-[#737373]">{isTr ? 'ŞİMDİ' : 'NOW'}</p>
               <div
-                className="sm:bz-float rounded-[18px] bg-[#0A0A0A] px-4 py-3 text-[#EAF9B8] shadow-[0_18px_34px_-24px_rgba(10,10,10,0.45)]"
-                style={{
-                  opacity: mounted ? 1 : 0,
-                  transition: 'opacity 320ms ease',
-                }}
+                className="mt-1 text-[28px] font-medium tracking-tight text-[#0A0A0A]"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
               >
-                <p
-                  className="text-[22px] font-semibold leading-none tracking-tight text-[#C6F24E]"
-                  style={{ fontFamily: 'var(--font-space-grotesk)' }}
-                >
-                  {activeSnapshot.delta}
-                </p>
-                <p className="pulse-eyebrow mt-1 text-[#EAF9B8]/70">
-                  {isTr ? 'YORUM ARTIŞI' : 'REVIEW GROWTH'}
-                </p>
+                {mounted ? (
+                  <AnimatedCounter
+                    key={`hero-count-${snapshotIndex}`}
+                    to={activeSnapshot.total}
+                    locale={isTr ? 'tr-TR' : 'en-US'}
+                  />
+                ) : (
+                  <span>0</span>
+                )}
               </div>
             </div>
 
