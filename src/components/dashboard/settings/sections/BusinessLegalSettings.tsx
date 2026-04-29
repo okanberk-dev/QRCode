@@ -36,30 +36,30 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
     ? [
         {
           k: "Aydınlatma metni",
-          s: "v2.0 · Pulse şablonundan",
+          s: "Buaze tarafından güncel tutulan şablon",
           ok: true,
         },
         {
           k: "Açık rıza metni",
-          s: "v2.0 · Pulse şablonundan",
+          s: "Buaze tarafından güncel tutulan şablon",
           ok: true,
         },
         {
           k: "Ticari elektronik ileti izni",
-          s: "Public review formunda toplanır",
+          s: "Yorum formunda toplanır",
           ok: true,
         },
         {
           k: "Çerez politikası",
-          s: "v1.0 · Site genelinde aktif",
+          s: "Site genelinde aktif",
           ok: true,
         },
       ]
     : [
-        { k: "KVKK disclosure", s: "v2.0 · from Pulse template", ok: true },
-        { k: "Explicit consent", s: "v2.0 · from Pulse template", ok: true },
-        { k: "Commercial email consent", s: "Captured in the public review form", ok: true },
-        { k: "Cookie policy", s: "v1.0 · Active site-wide", ok: true },
+        { k: "KVKK disclosure", s: "Maintained by Buaze", ok: true },
+        { k: "Explicit consent", s: "Maintained by Buaze", ok: true },
+        { k: "Commercial email consent", s: "Captured in the review form", ok: true },
+        { k: "Cookie policy", s: "Active site-wide", ok: true },
       ];
 
   return (
@@ -69,8 +69,8 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
         title={isTr ? "Yasal metinler" : "Legal documents"}
         description={
           isTr
-            ? "Aşağıdaki metinler tüm işletmelerinde aktif olan Pulse şablonları. Bir işletme için özel KVKK metni gerekirse, o işletmenin Güvenlik ayarlarından düzenleyebilirsin."
-            : "These Pulse-template documents are active across all your locations. To customize KVKK text for a specific business, edit it from that location's Security tab."
+            ? "Aşağıdaki yasal metinler Buaze tarafından merkezi olarak hazırlanır ve güncellenir. Tüm işletmelerinde aktif olarak çalışır."
+            : "These legal documents are centrally prepared and kept up to date by Buaze. They are active across all your locations."
         }
       >
         <div className="flex flex-col gap-2.5">
@@ -101,8 +101,8 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
         title={isTr ? "Müşteri akışı" : "Customer flow"}
         description={
           isTr
-            ? "Müşteri yorum formunu ziyaret ettiğinde aydınlatma + açık rıza onayı toplanır. Pazarlama izni opt-in (KVKK Açık Rıza zorunluluğu — CLAUDE.md §19.1)."
-            : "When a customer opens the review form, KVKK disclosure + explicit consent are collected. Marketing consent is opt-in (CLAUDE.md §19.1)."
+            ? "Müşteri yorum formunu ziyaret ettiğinde aydınlatma + açık rıza onayı toplanır. Pazarlama izni opt-in (KVKK Açık Rıza zorunluluğu)."
+            : "When a customer opens the review form, KVKK disclosure + explicit consent are collected. Marketing consent is opt-in."
         }
       >
         <ul className="space-y-2 text-[13px] leading-[1.6] text-[#525252]">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell, Check, Loader2, Mail, MessageSquare, Webhook } from 'lucide-react';
+import { Bell, Check, Loader2, Mail, Webhook } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
 import { PageHeader } from '@/components/ui';
@@ -91,14 +91,8 @@ function AdminNotificationsBody() {
     {
       key: 'lowRatingEmail',
       label: { tr: 'Düşük puan uyarısı', en: 'Low-rating alert' },
-      desc: { tr: '1-2 yıldız geldiğinde e-posta ile anında bildir.', en: 'Email me instantly when a 1-2 star review arrives.' },
+      desc: { tr: '1-3 yıldız geldiğinde e-posta ile anında bildir.', en: 'Email me instantly when a 1-3 star review arrives.' },
       icon: Mail,
-    },
-    {
-      key: 'dailyDigestEmail',
-      label: { tr: 'Günlük özet', en: 'Daily digest' },
-      desc: { tr: 'Her sabah 08:00’de son 24 saatin özeti.', en: 'A morning digest of the last 24 hours.' },
-      icon: MessageSquare,
     },
     {
       key: 'weeklyReport',

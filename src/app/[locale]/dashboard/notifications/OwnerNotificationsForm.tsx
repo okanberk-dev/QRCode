@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell, Check, Loader2, Mail, MessageSquare, Webhook } from 'lucide-react';
+import { Bell, Check, Loader2, Mail, Webhook } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, PageHeader } from '@/components/ui';
 
@@ -114,19 +114,10 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
       key: 'lowRatingEmail',
       label: { tr: 'Düşük puan uyarısı', en: 'Low-rating alert' },
       desc: {
-        tr: '1-2 yıldız bir yorum geldiğinde e-posta ile anında bildir.',
-        en: 'Email me instantly when a 1-2 star review arrives.',
+        tr: '1-3 yıldız bir yorum geldiğinde e-posta ile anında bildir.',
+        en: 'Email me instantly when a 1-3 star review arrives.',
       },
       icon: Mail,
-    },
-    {
-      key: 'dailyDigestEmail',
-      label: { tr: 'Günlük özet', en: 'Daily digest' },
-      desc: {
-        tr: 'Her sabah 08:00’de son 24 saatin özetini e-posta ile gönder.',
-        en: 'A morning digest of the last 24 hours, every day at 08:00.',
-      },
-      icon: MessageSquare,
     },
     {
       key: 'weeklyReport',
