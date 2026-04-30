@@ -2,15 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Check,
-  Copy,
   FileText,
-  Key,
   Loader2,
   Lock,
-  Plus,
   ShieldCheck,
-  Trash2,
 } from "lucide-react";
 import {
   AlertBanner,
@@ -38,30 +33,6 @@ interface BusinessSecuritySettingsProps {
   onSaved?: (partial: Partial<RestaurantData>) => void;
 }
 
-interface ApiKey {
-  id: string;
-  name: string;
-  prefix: string;
-  scopes: string[];
-  createdAt: string;
-  lastUsedAt: string | null;
-  revokedAt: string | null;
-}
-
-interface ApiKeyCreatedResponse extends ApiKey {
-  token: string;
-}
-
-const SCOPE_OPTIONS = [
-  { id: "feedback:read", label: "Yorumları oku" },
-  { id: "feedback:write", label: "Yoruma yanıt" },
-  { id: "restaurants:read", label: "İşletme oku" },
-  { id: "restaurants:write", label: "İşletme yaz" },
-  { id: "analytics:read", label: "Analitik oku" },
-  { id: "menu:read", label: "Menü oku" },
-  { id: "menu:write", label: "Menü yaz" },
-];
-
 interface FormState {
   isActive: boolean;
 }
@@ -77,12 +48,11 @@ function isDirty(a: FormState, b: FormState) {
 /**
  * Section 8 — Güvenlik & Erişim.
  *
- * 5 alt-bölüm:
+ * 4 alt-bölüm:
  *  1. 2FA TOTP — Toggle + Setup Modal + Disable flow
  *  2. Aktif Oturumlar — UserSession listesi + revoke
- *  3. API Anahtarları — list + create modal + revoke
- *  4. KVKK Aydınlatma metni — Buaze tarafından sağlanan default metin (read-only info)
- *  5. İşletmeyi devre dışı bırak — isActive Toggle
+ *  3. KVKK Aydınlatma metni — Buaze tarafından sağlanan default metin (read-only info)
+ *  4. İşletmeyi devre dışı bırak — isActive Toggle
  */
 export function BusinessSecuritySettings({
   restaurant,
@@ -175,99 +145,6 @@ export function BusinessSecuritySettings({
     else setDisableOpen(true);
   };
 
-  // ─── API keys state ───
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-  const [apiKeysLoading, setApiKeysLoading] = useState(true);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [createName, setCreateName] = useState("");
-  const [createScopes, setCreateScopes] = useState<string[]>(["feedback:read"]);
-  const [creating, setCreating] = useState(false);
-  const [newToken, setNewToken] = useState<string | null>(null);
-  const [tokenCopied, setTokenCopied] = useState(false);
-
-  const loadApiKeys = async () => {
-    try {
-      const res = await fetch("/api/api-keys");
-      if (!res.ok) throw new Error("load_failed");
-      const data = await res.json();
-      // The endpoint historically returned either { keys: [...] } or a bare
-      // array. The previous `?? data ?? []` chain only guarded against
-      // null/undefined — an `{ error }` envelope on 200 would slip through
-      // and crash the .map below. Be strict about the array shape.
-      const list = Array.isArray(data?.keys)
-        ? data.keys
-        : Array.isArray(data)
-          ? data
-          : [];
-      setApiKeys(list);
-    } catch {
-      setApiKeys([]);
-    } finally {
-      setApiKeysLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadApiKeys();
-  }, []);
-
-  const handleCreateKey = async () => {
-    if (!createName.trim()) {
-      setError("Anahtar için isim gir.");
-      return;
-    }
-    setCreating(true);
-    try {
-      const res = await fetch("/api/api-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: createName.trim(), scopes: createScopes }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Oluşturulamadı");
-      }
-      const data: ApiKeyCreatedResponse = await res.json();
-      setNewToken(data.token);
-      setCreateName("");
-      setCreateScopes(["feedback:read"]);
-      await loadApiKeys();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Hata");
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const handleRevokeKey = (id: string, name: string) => {
-    askConfirm({
-      title: "Anahtarı iptal et?",
-      body: `"${name}" iptal edildikten sonra bu anahtarla yapılan istekler 401 döner.`,
-      confirmLabel: "İptal et",
-      variant: "danger",
-      onConfirm: async () => {
-        try {
-          const res = await fetch(`/api/api-keys/${id}`, { method: "DELETE" });
-          if (!res.ok) throw new Error("revoke_failed");
-          await loadApiKeys();
-        } catch (err) {
-          setError(err instanceof Error ? err.message : "Hata");
-        }
-      },
-    });
-  };
-
-  const copyToken = async () => {
-    if (!newToken) return;
-    try {
-      await navigator.clipboard.writeText(newToken);
-      setTokenCopied(true);
-      setTimeout(() => setTokenCopied(false), 1500);
-    } catch {
-      /* ignore */
-    }
-  };
-
   return (
     <div className="space-y-5">
       {confirmEl}
@@ -358,88 +235,7 @@ export function BusinessSecuritySettings({
         </SettingsCard>
       )}
 
-      {/* 3. API anahtarları */}
-      <SettingsCard
-        icon={<Key size={18} />}
-        title="API anahtarları"
-        description="Geliştiricilerin Buaze API'sine erişmesi için anahtar üret."
-        actions={
-          <button
-            type="button"
-            onClick={() => {
-              setCreateOpen(true);
-              setNewToken(null);
-            }}
-            className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
-            style={{ height: 28, padding: "0 12px", borderRadius: 999 }}
-          >
-            <Plus size={12} />
-            Yeni anahtar
-          </button>
-        }
-      >
-        {apiKeysLoading ? (
-          <div className="flex items-center gap-2 text-[13px] text-[#737373]">
-            <Loader2 size={14} className="animate-spin" />
-            Yükleniyor…
-          </div>
-        ) : apiKeys.length === 0 ? (
-          <p className="text-[13px] text-[#737373]">
-            Henüz anahtar yok. "Yeni anahtar" butonuyla bir tane oluştur.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {apiKeys.map((k) => (
-              <div
-                key={k.id}
-                className="flex items-center gap-3 p-3"
-                style={{ background: "#FAFAFA", border: "1px solid #EDEDED", borderRadius: 10 }}
-              >
-                <div
-                  className="shrink-0 flex items-center justify-center"
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 8,
-                    background: "#0A0A0A",
-                    color: "#C6F24E",
-                  }}
-                >
-                  <Key size={14} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="bz-h-tight text-[13px]">{k.name}</span>
-                    {k.revokedAt && <Badge kind="off">İptal edilmiş</Badge>}
-                  </div>
-                  <div className="bz-mono text-[11.5px] text-[#737373] mt-0.5">
-                    {k.prefix}
-                  </div>
-                  <div className="text-[11px] text-[#A3A3A3] mt-0.5">
-                    {k.scopes.join(" · ")} ·{" "}
-                    {k.lastUsedAt
-                      ? `Son kullanım ${new Date(k.lastUsedAt).toLocaleDateString("tr-TR")}`
-                      : "Hiç kullanılmadı"}
-                  </div>
-                </div>
-                {!k.revokedAt && (
-                  <button
-                    type="button"
-                    onClick={() => handleRevokeKey(k.id, k.name)}
-                    className="bz-btn-icon"
-                    aria-label="İptal et"
-                    title="İptal et"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </SettingsCard>
-
-      {/* 4. KVKK */}
+      {/* 3. KVKK */}
       <SettingsCard
         icon={<FileText size={18} />}
         title="KVKK aydınlatma metni"
@@ -456,7 +252,7 @@ export function BusinessSecuritySettings({
         </p>
       </SettingsCard>
 
-      {/* 5. isActive */}
+      {/* 4. isActive */}
       <SettingsCard
         icon={<Lock size={18} />}
         title="İşletmeyi devre dışı bırak"
@@ -497,107 +293,6 @@ export function BusinessSecuritySettings({
             setDisableOpen(false);
           }}
         />
-      )}
-
-      {createOpen && (
-        <Modal
-          title={newToken ? "Yeni anahtar oluşturuldu" : "Yeni API anahtarı"}
-          onClose={() => {
-            setCreateOpen(false);
-            setNewToken(null);
-          }}
-          size={520}
-        >
-          {newToken ? (
-            <div className="space-y-4">
-              <AlertBanner kind="warn">
-                Bu anahtarı şimdi kopyala — tekrar gösterilmez!
-              </AlertBanner>
-              <div
-                className="flex items-center gap-2 p-3 bz-mono text-[12px]"
-                style={{ background: "#FAFAFA", border: "1px solid #EDEDED", borderRadius: 10 }}
-              >
-                <span className="flex-1 break-all">{newToken}</span>
-                <button
-                  type="button"
-                  onClick={copyToken}
-                  className="bz-btn-ghost inline-flex items-center gap-1 text-[12px]"
-                  style={{ height: 28, padding: "0 10px", borderRadius: 999 }}
-                >
-                  {tokenCopied ? <Check size={12} /> : <Copy size={12} />}
-                  {tokenCopied ? "Kopyalandı" : "Kopyala"}
-                </button>
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCreateOpen(false);
-                    setNewToken(null);
-                  }}
-                  className="bz-btn-primary"
-                >
-                  Kapat
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <Field label="Anahtar adı" required>
-                <input
-                  className="bz-input"
-                  type="text"
-                  value={createName}
-                  maxLength={100}
-                  onChange={(e) => setCreateName(e.target.value)}
-                  placeholder="Örn: ZapierEntegrasyonu"
-                />
-              </Field>
-              <div>
-                <label className="block text-[12px] text-[#525252] mb-2">
-                  İzinler
-                </label>
-                <div className="space-y-2">
-                  {SCOPE_OPTIONS.map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 text-[13px]">
-                      <input
-                        type="checkbox"
-                        checked={createScopes.includes(s.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setCreateScopes((prev) => [...new Set([...prev, s.id])]);
-                          } else {
-                            setCreateScopes((prev) => prev.filter((x) => x !== s.id));
-                          }
-                        }}
-                      />
-                      <span className="bz-mono text-[12px]">{s.id}</span>
-                      <span className="text-[#525252]">— {s.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCreateOpen(false)}
-                  className="bz-btn-ghost"
-                >
-                  İptal
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCreateKey}
-                  disabled={creating || !createName.trim() || createScopes.length === 0}
-                  className="bz-btn-primary inline-flex items-center gap-1.5"
-                >
-                  {creating && <Loader2 size={14} className="animate-spin" />}
-                  Oluştur
-                </button>
-              </div>
-            </div>
-          )}
-        </Modal>
       )}
 
       <UnsavedChangesBar

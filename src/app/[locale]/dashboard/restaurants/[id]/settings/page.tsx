@@ -304,7 +304,7 @@ export default function RestaurantSettingsPage() {
         active={active === "security"}
         eyebrow="05 — GÜVENLİK"
         title="Güvenlik & erişim"
-        description="2FA, aktif oturumlar, API anahtarları, KVKK metni ve aktiflik."
+        description="2FA, aktif oturumlar, KVKK metni ve aktiflik."
         actions={
           <span className="text-[#737373]" aria-hidden="true">
             <Lock size={18} />
