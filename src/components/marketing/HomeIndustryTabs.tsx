@@ -196,11 +196,11 @@ export default function HomeIndustryTabs({ locale }: Props) {
     <div className="relative">
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-8 top-24 h-32 w-32 rounded-full bg-[#C6F24E]/25 blur-3xl lg:hidden"
+        className="pointer-events-none absolute -left-8 top-20 h-28 w-28 rounded-full bg-[#C6F24E]/25 blur-3xl lg:hidden"
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.76fr_1.24fr] lg:gap-6">
-        <div className="rounded-[26px] border border-[#EDEDED] bg-white/80 p-2 shadow-[0_24px_60px_-54px_rgba(10,10,10,0.55)] backdrop-blur sm:p-3 lg:rounded-[30px] lg:p-4">
+        <div className="rounded-[22px] border border-[#EDEDED] bg-white/80 p-1.5 shadow-[0_24px_60px_-54px_rgba(10,10,10,0.55)] backdrop-blur sm:p-2 lg:rounded-[26px] lg:p-3">
           <div
             role="tablist"
             aria-label={isTr ? 'Sektör seçimi' : 'Industry selector'}
@@ -218,21 +218,21 @@ export default function HomeIndustryTabs({ locale }: Props) {
                   aria-selected={isActive}
                   aria-controls="industry-panel"
                   onClick={() => setActive(idx)}
-                  className={`group flex min-h-[76px] w-[min(82vw,360px)] shrink-0 snap-start items-center gap-3 rounded-[22px] px-4 py-3 text-left transition-all duration-300 lg:w-full ${
+                  className={`group flex min-h-[64px] w-[min(78vw,320px)] shrink-0 snap-start items-center gap-2.5 rounded-[18px] px-3 py-2.5 text-left transition-all duration-300 lg:w-full ${
                     isActive
                       ? 'bg-[#0A0A0A] text-white shadow-[0_18px_38px_-28px_rgba(10,10,10,0.9)]'
                       : 'bg-[#F5F5F5] text-[#525252] hover:bg-[#EDEDED]'
                   }`}
                 >
                   <span
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-colors ${
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
                       isActive ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-white text-[#0A0A0A]'
                     }`}
                   >
-                    <ItemIcon size={19} strokeWidth={2.2} />
+                    <ItemIcon size={16} strokeWidth={2.2} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className={`block truncate text-[15px] font-semibold ${isActive ? 'text-white' : 'text-[#0A0A0A]'}`}>
+                    <span className={`block truncate text-[13.5px] font-semibold ${isActive ? 'text-white' : 'text-[#0A0A0A]'}`}>
                       {item.label[isTr ? 'tr' : 'en']}
                     </span>
                     <span
@@ -252,24 +252,24 @@ export default function HomeIndustryTabs({ locale }: Props) {
         <article
           id="industry-panel"
           role="tabpanel"
-          className="relative overflow-hidden rounded-[28px] border border-[#EDEDED] bg-white p-5 shadow-[0_28px_70px_-58px_rgba(10,10,10,0.55)] sm:p-7 lg:min-h-[424px] lg:rounded-[34px] lg:p-9"
+          className="relative overflow-hidden rounded-[22px] border border-[#EDEDED] bg-white p-4 shadow-[0_28px_70px_-58px_rgba(10,10,10,0.55)] sm:p-6 lg:min-h-[360px] lg:rounded-[28px] lg:p-7"
         >
           <div
             aria-hidden
-            className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#C6F24E]/30 blur-[70px]"
+            className="absolute -right-16 -top-16 h-36 w-36 rounded-full bg-[#C6F24E]/30 blur-[60px]"
           />
           <div className="relative">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-[52px] w-[52px] items-center justify-center rounded-[20px] bg-[#C6F24E] text-[#0A0A0A] sm:h-14 sm:w-14">
-                  <Icon size={24} strokeWidth={2.2} />
+                <div className="flex h-[44px] w-[44px] items-center justify-center rounded-[16px] bg-[#C6F24E] text-[#0A0A0A] sm:h-12 sm:w-12">
+                  <Icon size={20} strokeWidth={2.2} />
                 </div>
                 <div className="min-w-0">
                   <p className="pulse-eyebrow text-[#737373]">
                     {isTr ? 'AKTİF SEKTÖR' : 'ACTIVE INDUSTRY'}
                   </p>
                   <h3
-                    className="mt-1 truncate text-[28px] font-medium leading-none tracking-[-0.035em] text-[#0A0A0A] sm:text-[38px]"
+                    className="mt-1 truncate text-[22px] font-medium leading-none tracking-[-0.035em] text-[#0A0A0A] sm:text-[30px]"
                     style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     {sector.label[isTr ? 'tr' : 'en']}
@@ -284,11 +284,11 @@ export default function HomeIndustryTabs({ locale }: Props) {
               </div>
             </div>
 
-            <p className="mt-6 max-w-[760px] text-[16px] leading-[1.7] text-[#525252] sm:text-[18px]">
+            <p className="mt-5 max-w-[760px] text-[14px] leading-[1.65] text-[#525252] sm:text-[15px]">
               {sector.body[isTr ? 'tr' : 'en']}
             </p>
 
-            <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="mt-6 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
               {[
                 {
                   label: isTr ? 'Temas noktası' : 'Touchpoints',
@@ -303,28 +303,28 @@ export default function HomeIndustryTabs({ locale }: Props) {
                   value: isTr ? '24sa' : '24h',
                 },
               ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
+                <div key={item.label} className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
                   <div
-                    className="text-[28px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
+                    className="text-[22px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
                     style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     {item.value}
                   </div>
-                  <div className="pulse-eyebrow mt-2 text-[#737373]">{item.label}</div>
+                  <div className="pulse-eyebrow mt-1.5 text-[#737373]">{item.label}</div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-7 rounded-[22px] bg-[#0A0A0A] p-4 text-white sm:p-5">
+            <div className="mt-5 rounded-[18px] bg-[#0A0A0A] p-3.5 text-white sm:p-4">
               <div className="flex items-start gap-3">
-                <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[#C6F24E]" />
-                <p className="text-[14px] leading-[1.65] text-white/78 sm:text-[15px]">
+                <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#C6F24E]" />
+                <p className="text-[13px] leading-[1.6] text-white/78 sm:text-[14px]">
                   {sector.outcome[isTr ? 'tr' : 'en']}
                 </p>
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {sector.touchpoints[isTr ? 'tr' : 'en'].map((item) => (
-                  <span key={item} className="rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-medium text-white">
+                  <span key={item} className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white">
                     {item}
                   </span>
                 ))}
@@ -333,10 +333,10 @@ export default function HomeIndustryTabs({ locale }: Props) {
 
             <Link
               href={`/${locale}${sector.href}`}
-              className="mt-6 inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-6 py-3 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] sm:w-auto"
+              className="mt-5 inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-5 py-2.5 text-[13px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] sm:w-auto"
             >
               {isTr ? 'Sektör detayını gör' : 'View industry page'}
-              <ArrowRight size={16} />
+              <ArrowRight size={14} />
             </Link>
           </div>
         </article>

@@ -71,7 +71,7 @@ export default async function LoginPage({
 
         <div className="mx-auto w-full max-w-[400px] py-10">
           <h1
-            className="text-[40px] sm:text-[42px] font-medium leading-[1] tracking-[-0.03em] text-[#0A0A0A]"
+            className="text-[32px] sm:text-[42px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? (
