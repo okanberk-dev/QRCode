@@ -84,6 +84,19 @@ const styles = StyleSheet.create({
   footerNote: { fontSize: 8, color: C.n500 },
   pageNumber: { fontFamily: 'Courier-Bold', fontSize: 8, color: C.n500 },
 
+  /* AI insight card — kapak sayfası "Buaze analizi" section'ı için
+     graphite zemin + lime accent leverage callout + numbered next steps. */
+  insightCard: { backgroundColor: C.graphite, borderRadius: 14, padding: 18, marginTop: 16 },
+  insightEyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 1.6, color: C.lime, textTransform: 'uppercase' },
+  insightSummary: { marginTop: 7, fontSize: 10.5, lineHeight: 1.55, color: '#FFFFFFE6' },
+  insightLeverage: { marginTop: 12, padding: '10px 12px' as any, backgroundColor: 'rgba(198,242,78,0.14)', borderLeftWidth: 3, borderLeftColor: C.lime, borderRadius: 6 },
+  insightLeverageEyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 8, letterSpacing: 1.4, color: C.lime, textTransform: 'uppercase', marginBottom: 3 },
+  insightLeverageBody: { fontSize: 10, lineHeight: 1.5, color: C.white },
+  insightStepsLabel: { marginTop: 14, fontFamily: 'Helvetica-Bold', fontSize: 8, letterSpacing: 1.4, color: '#FFFFFF8C', textTransform: 'uppercase', marginBottom: 6 },
+  insightStep: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 },
+  insightStepNum: { width: 22, fontFamily: 'Courier-Bold', fontSize: 10, color: C.lime, paddingTop: 1 },
+  insightStepText: { flex: 1, fontSize: 10, lineHeight: 1.5, color: '#FFFFFFE6' },
+
   /* CTA card */
   cta: { backgroundColor: C.lime, borderRadius: 14, padding: 22, marginTop: 24 },
   ctaTitle: { fontFamily: 'Helvetica-Bold', fontSize: 16, color: C.graphite, marginBottom: 6, letterSpacing: -0.2 },
@@ -158,6 +171,15 @@ export interface RoiPdfData {
   paybackMonths: number | null;
   aiHoursSaved: number;
   platformBreakdown: Array<{ key: string; share: number; reviews: number }>;
+  /** Optional AI insight (CLAUDE.md §15 — OpenAI veya deterministic
+   *  fallback). Sağlanırsa kapak sayfasında ayrı section olarak render
+   *  edilir; null ise atlanır. */
+  insight?: {
+    summary: string;
+    highlight: string;
+    nextSteps: string[];
+    source: 'ai' | 'template';
+  } | null;
 }
 
 function fmt(n: number): string {
@@ -294,6 +316,27 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
             </Text>
           </View>
         </View>
+
+        {/* AI insight — sana özel kişiselleştirilmiş analiz */}
+        {data.insight && (
+          <View style={styles.insightCard}>
+            <Text style={styles.insightEyebrow}>
+              {data.insight.source === 'ai' ? 'AI ANALİZİ · SANA ÖZEL' : 'BUAZE ANALİZİ · SANA ÖZEL'}
+            </Text>
+            <Text style={styles.insightSummary}>{data.insight.summary}</Text>
+            <View style={styles.insightLeverage}>
+              <Text style={styles.insightLeverageEyebrow}>EN GÜÇLÜ KALDIRAÇ</Text>
+              <Text style={styles.insightLeverageBody}>{data.insight.highlight}</Text>
+            </View>
+            <Text style={styles.insightStepsLabel}>İLK 30 GÜN — 3 ÖNCELİK</Text>
+            {data.insight.nextSteps.map((step, i) => (
+              <View key={i} style={styles.insightStep}>
+                <Text style={styles.insightStepNum}>{String(i + 1).padStart(2, '0')}.</Text>
+                <Text style={styles.insightStepText}>{step}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Footer */}
         <View style={styles.footer} fixed>
