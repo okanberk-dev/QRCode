@@ -368,7 +368,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
         </div>
       </form>
 
-      {/* ─── 2. Preview (design 1:1: site-more.jsx:53-86) ─── */}
+      {/* ─── 2. Preview ─── */}
       <div className="min-w-0 lg:order-2">
         <h2
           className="text-[22px] sm:text-[24px] font-semibold text-[#0A0A0A] tracking-[-0.015em] mb-5"
@@ -378,36 +378,62 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
         </h2>
 
         <figure
-          className="mx-auto flex w-full max-w-[420px] flex-col items-center justify-between overflow-hidden rounded-[18px] text-center transition-colors sm:max-w-none"
+          className="relative mx-auto flex w-full max-w-[420px] flex-col items-center overflow-hidden rounded-[20px] text-center transition-colors sm:max-w-none sm:rounded-[22px]"
           style={{
             background: palette.card,
             color: palette.fg,
             border: palette.border === 'transparent' ? '1px solid transparent' : `1px solid ${palette.border}`,
-            aspectRatio: '3 / 4',
-            padding: 'clamp(24px, 5vw, 40px)',
+            padding: 'clamp(28px, 6vw, 48px) clamp(20px, 5vw, 40px)',
+            gap: 'clamp(20px, 4vw, 32px)',
+            aspectRatio: 'auto',
           }}
         >
-          <div className="w-full min-w-0">
+          {/* Subtle decorative corner — adds visual interest without adding more elements */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-bl-[40px]"
+            style={{
+              background:
+                template === 'koyu'
+                  ? 'rgba(255,255,255,0.04)'
+                  : template === 'lime'
+                    ? 'rgba(255,255,255,0.18)'
+                    : 'rgba(10,10,10,0.025)',
+            }}
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 left-0 h-16 w-16 rounded-tr-[32px]"
+            style={{
+              background:
+                template === 'koyu'
+                  ? 'rgba(255,255,255,0.04)'
+                  : template === 'lime'
+                    ? 'rgba(255,255,255,0.18)'
+                    : 'rgba(10,10,10,0.025)',
+            }}
+          />
+
+          <div className="relative w-full min-w-0">
             <div
               className="truncate"
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.2em',
+                fontSize: 'clamp(10px, 2.4vw, 11px)',
+                letterSpacing: '0.22em',
                 textTransform: 'uppercase',
                 color: palette.eyebrow,
-                opacity: 1,
               }}
             >
               {(businessName || 'BUAZE').slice(0, 28)}
             </div>
             <div
-              className="mt-2.5 break-words"
+              className="mt-2 break-words sm:mt-2.5"
               style={{
                 fontFamily: 'var(--font-heading)',
-                fontSize: 'clamp(24px, 4.4vw, 38px)',
+                fontSize: 'clamp(22px, 4.6vw, 38px)',
                 fontWeight: 500,
-                lineHeight: 1,
+                lineHeight: 1.05,
                 letterSpacing: '-0.03em',
                 color: palette.fg,
                 display: '-webkit-box',
@@ -420,16 +446,24 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
             </div>
           </div>
 
+          {/* QR card with refined styling — inset ring + soft drop shadow */}
           <div
-            className="max-w-full shrink-0 bg-white"
-            style={{ borderRadius: 16, padding: 'clamp(10px, 3vw, 16px)' }}
+            className="relative max-w-full shrink-0 bg-white"
+            style={{
+              borderRadius: 'clamp(14px, 3vw, 18px)',
+              padding: 'clamp(14px, 3.6vw, 22px)',
+              boxShadow:
+                template === 'koyu'
+                  ? '0 8px 30px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)'
+                  : '0 10px 32px -14px rgba(10,10,10,0.18), 0 0 0 1px rgba(10,10,10,0.04)',
+            }}
           >
             <canvas
               ref={canvasRef}
               className="block"
               style={{
-                width: 'min(44vw, 160px)',
-                height: 'min(44vw, 160px)',
+                width: 'min(52vw, 200px)',
+                height: 'min(52vw, 200px)',
                 maxWidth: '100%',
               }}
               width={480}
@@ -441,17 +475,32 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
             />
           </div>
 
-          <div
-            className="truncate w-full"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: palette.eyebrow,
-            }}
-          >
-            {isTr ? 'BUAZE · TARA ✦ PAYLAŞ' : 'BUAZE · SCAN ✦ SHARE'}
+          {/* Footer eyebrow with separator line for visual rhythm */}
+          <div className="relative w-full">
+            <span
+              aria-hidden
+              className="mx-auto mb-3 block h-px w-12"
+              style={{
+                background:
+                  template === 'koyu'
+                    ? 'rgba(255,255,255,0.18)'
+                    : template === 'lime'
+                      ? 'rgba(10,10,10,0.18)'
+                      : 'rgba(10,10,10,0.12)',
+              }}
+            />
+            <div
+              className="truncate"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 'clamp(9.5px, 2.3vw, 11px)',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: palette.eyebrow,
+              }}
+            >
+              {isTr ? 'BUAZE · TARA ✦ PAYLAŞ' : 'BUAZE · SCAN ✦ SHARE'}
+            </div>
           </div>
         </figure>
 
@@ -459,24 +508,24 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           {isGenerating ? (isTr ? 'Oluşturuluyor…' : 'Generating…') : submittedUrl}
         </p>
 
-        <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:mt-3.5 sm:grid-cols-2 sm:gap-2.5">
           <button
             type="button"
             onClick={handlePngDownload}
-            className="inline-flex items-center justify-center gap-1.5 bg-[#0A0A0A] text-white text-[13px] font-medium px-[18px] py-3 rounded-full hover:bg-[#1A1A1A] transition-colors"
+            className="inline-flex min-h-[46px] items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-[18px] py-3 text-[13.5px] font-medium text-white transition-all duration-200 hover:bg-[#1A1A1A] active:scale-[0.98] sm:min-h-[44px] sm:text-[13px]"
           >
-            <Download size={13} aria-hidden />
+            <Download size={14} aria-hidden />
             {isTr ? 'PNG indir' : 'PNG download'}
           </button>
           <button
             type="button"
             onClick={handleDesignDownload}
             disabled={isDesignDownloading}
-            className="inline-flex items-center justify-center gap-1.5 bg-white text-[#0A0A0A] text-[13px] font-medium px-[18px] py-3 rounded-full border border-[#0A0A0A] hover:bg-[#FAFAFA] transition-colors"
+            className="inline-flex min-h-[46px] items-center justify-center gap-1.5 rounded-full border border-[#0A0A0A] bg-white px-[18px] py-3 text-[13.5px] font-medium text-[#0A0A0A] transition-all duration-200 hover:bg-[#FAFAFA] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[44px] sm:text-[13px]"
           >
-            <Download size={13} aria-hidden />
+            <Download size={14} aria-hidden />
             {isDesignDownloading
-              ? (isTr ? 'Hazırlanıyor' : 'Preparing')
+              ? (isTr ? 'Hazırlanıyor…' : 'Preparing…')
               : (isTr ? 'Tasarım ile indir' : 'Download design')}
           </button>
         </div>
