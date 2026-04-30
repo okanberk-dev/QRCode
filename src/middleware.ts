@@ -27,8 +27,28 @@ const PUBLIC_ADMIN_PATHS = new Set<string>(['/admin', '/admin/trial-expired']);
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Only guard admin sub-routes. `/admin` itself (the login page) and
-  // `/admin/trial-expired` are public.
+  // /admin (login page): if the visitor is already authenticated, send
+  // them straight to the dashboard. Otherwise the AdminLayout would still
+  // render its sidebar around the login form (since the layout reads the
+  // cookie itself), producing the broken "logged in but seeing login"
+  // screen the user reported.
+  if (pathname === '/admin') {
+    const token = req.cookies.get('admin_token')?.value;
+    if (token) {
+      try {
+        const { payload } = await jose.jwtVerify(token, getSecretBytes());
+        if (isAllowedAdminPanelRole(payload.role)) {
+          return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+        }
+      } catch {
+        // Invalid / expired token — fall through and let the login page
+        // render so the user can re-authenticate.
+      }
+    }
+    return NextResponse.next();
+  }
+
+  // Only guard admin sub-routes. `/admin/trial-expired` stays public.
   if (!pathname.startsWith('/admin') || PUBLIC_ADMIN_PATHS.has(pathname)) {
     return NextResponse.next();
   }
