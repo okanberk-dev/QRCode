@@ -126,7 +126,6 @@ export default async function PulseAiPage({
             </div>
             <h1
               className="mt-5 text-[40px] sm:text-[60px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-white"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? (
                 <>
@@ -256,7 +255,6 @@ export default async function PulseAiPage({
                 </span>
                 <h3
                   className="mt-4 text-[18px] font-semibold leading-tight text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-space-grotesk)' }}
                 >
                   {c.title}
                 </h3>

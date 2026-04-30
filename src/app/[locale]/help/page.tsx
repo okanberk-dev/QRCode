@@ -143,7 +143,6 @@ export default async function HelpCenterPage({
           </span>
           <h1
             className="mt-3 text-[38px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Sorunuzun cevabı burada.' : 'Your answer is right here.'}
           </h1>
@@ -173,7 +172,6 @@ export default async function HelpCenterPage({
                   </span>
                   <h3
                     className="mt-3 text-[18px] font-semibold tracking-[-0.015em] text-[#0A0A0A]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     {meta.title}
                   </h3>
@@ -200,7 +198,6 @@ export default async function HelpCenterPage({
           <div className="mx-auto max-w-[1200px]">
             <h2
               className="text-[28px] sm:text-[32px] font-medium leading-[1.1] tracking-[-0.02em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? 'Popüler sorular' : 'Popular questions'}
             </h2>
@@ -243,7 +240,6 @@ export default async function HelpCenterPage({
         <div className="mx-auto max-w-[720px] text-center">
           <h2
             className="text-[24px] sm:text-[28px] font-medium tracking-[-0.02em] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Cevabını bulamadın mı?' : "Still can't find it?"}
           </h2>

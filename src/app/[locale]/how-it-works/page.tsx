@@ -205,7 +205,6 @@ export default async function HowItWorksPage({
                     </span>
                     <h2
                       className="text-[26px] sm:text-[36px] font-medium leading-[1.05] tracking-[-0.025em] text-[#0A0A0A]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
                     >
                       {step.title}
                     </h2>

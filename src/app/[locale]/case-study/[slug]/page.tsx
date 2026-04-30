@@ -156,7 +156,6 @@ export default async function CaseStudyPage({
               </p>
               <h1
                 className="mt-3 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
               >
                 {study.brand}
               </h1>
@@ -266,7 +265,6 @@ export default async function CaseStudyPage({
             <div className="flex items-end justify-between gap-4">
               <h2
                 className="text-[26px] font-medium tracking-[-0.025em] text-[#0A0A0A] sm:text-[36px]"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
               >
                 {isTr ? 'Başka sektörlerden' : 'From other sectors'}
               </h2>
@@ -292,7 +290,6 @@ export default async function CaseStudyPage({
                     </p>
                     <h3
                       className="mt-2 text-[22px] font-medium text-[#0A0A0A]"
-                      style={{ fontFamily: 'var(--font-space-grotesk)' }}
                     >
                       {o.brand}
                     </h3>

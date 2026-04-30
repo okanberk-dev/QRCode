@@ -275,7 +275,6 @@ export default async function AboutPage({
                 <span className="pulse-eyebrow text-[#A8D62E]">{value.n}</span>
                 <h3
                   className="mt-3 text-[24px] sm:text-[26px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-tight"
-                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {value.title}
                 </h3>

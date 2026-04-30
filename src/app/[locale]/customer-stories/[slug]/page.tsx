@@ -133,7 +133,6 @@ export default async function CustomerStoryPage({
             </div>
             <h1
               className="mt-5 text-[34px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A] sm:text-[52px] lg:text-[68px]"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {title}
             </h1>
@@ -203,7 +202,6 @@ export default async function CustomerStoryPage({
               <p className="pulse-eyebrow text-[#A8D62E]">{item.eyebrow}</p>
               <h2
                 className="mt-3 text-[24px] font-medium leading-[1.1] tracking-[-0.02em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {item.title}
               </h2>
@@ -221,7 +219,6 @@ export default async function CustomerStoryPage({
             </span>
             <h2
               className="mt-4 text-[30px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] sm:text-[44px]"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? 'Yorum değil, operasyon kuruldu.' : 'Not just reviews, an operation.'}
             </h2>
@@ -241,7 +238,6 @@ export default async function CustomerStoryPage({
                 <div>
                   <h3
                     className="text-[20px] font-medium leading-tight tracking-[-0.02em] text-[#0A0A0A]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     {storyText(step.title, locale)}
                   </h3>
@@ -266,7 +262,6 @@ export default async function CustomerStoryPage({
             </div>
             <h2
               className="mt-5 text-[30px] font-medium leading-[1.02] tracking-[-0.035em] text-white sm:text-[44px]"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? 'Her müşteriye aynı şeffaf yol.' : 'The same transparent path for every customer.'}
             </h2>
@@ -304,7 +299,6 @@ export default async function CustomerStoryPage({
               </span>
               <h2
                 className="mt-3 text-[28px] font-medium tracking-[-0.025em] text-[#0A0A0A] sm:text-[38px]"
-                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? 'Farklı sektörlerden örnekler' : 'Examples from other sectors'}
               </h2>
@@ -329,7 +323,6 @@ export default async function CustomerStoryPage({
                 </div>
                 <h3
                   className="mt-3 text-[21px] font-medium tracking-[-0.02em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {item.brand}
                 </h3>

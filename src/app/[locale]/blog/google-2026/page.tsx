@@ -274,7 +274,6 @@ export default async function GoogleTwentyTwentySixPost({
             </div>
             <h1
               className="mt-3 sm:mt-4 text-[32px] sm:text-[48px] lg:text-[56px] font-medium leading-[1] tracking-[-0.03em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {title}
             </h1>
@@ -389,7 +388,6 @@ export default async function GoogleTwentyTwentySixPost({
 
                 <h2
                   className="mb-3.5 text-[28px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {s.h}
                 </h2>
@@ -481,7 +479,6 @@ export default async function GoogleTwentyTwentySixPost({
               </div>
               <h3
                 className="mt-3 text-[22px] sm:text-[24px] font-medium leading-[1.2] tracking-[-0.02em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? '4 kural, 1 sayfada.' : '4 rules, on one page.'}
               </h3>
@@ -511,7 +508,6 @@ export default async function GoogleTwentyTwentySixPost({
                 </div>
                 <h3
                   className="mt-2.5 text-[24px] sm:text-[28px] font-medium leading-[1.15] tracking-[-0.02em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {isTr
                     ? 'Google politikalarına uyumlu büyümeye hazır mısın?'

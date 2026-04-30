@@ -154,7 +154,6 @@ export default async function CaseStudiesPage({
             </span>
             <h1
               className="mt-5 text-[42px] font-medium leading-[0.95] tracking-[-0.045em] text-[#0A0A0A] sm:text-[72px] lg:text-[92px]"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? 'Gerçek operasyonlardan ölçülebilir sonuçlar.' : 'Measurable outcomes from real operations.'}
             </h1>
@@ -206,7 +205,6 @@ export default async function CaseStudiesPage({
               </p>
               <h2
                 className="mt-3 text-[34px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] sm:text-[52px]"
-                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {featured.brand}
               </h2>
@@ -269,7 +267,6 @@ export default async function CaseStudiesPage({
               </div>
               <h3
                 className="mt-5 text-[24px] font-medium tracking-[-0.02em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {item.title}
               </h3>
@@ -288,7 +285,6 @@ export default async function CaseStudiesPage({
               </span>
               <h2
                 className="mt-3 text-[30px] font-medium leading-[1.04] tracking-[-0.035em] text-[#0A0A0A] sm:text-[46px]"
-                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? 'Sektöre göre inceleyin.' : 'Explore by industry.'}
               </h2>
@@ -325,7 +321,6 @@ export default async function CaseStudiesPage({
                     </p>
                     <h3
                       className="mt-3 text-[25px] font-medium tracking-[-0.025em] text-[#0A0A0A]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
                     >
                       {study.brand}
                     </h3>
@@ -357,7 +352,6 @@ export default async function CaseStudiesPage({
             </span>
             <h2
               className="mt-4 max-w-[680px] text-[32px] font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-[48px]"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? 'Yorum operasyonunuzu ölçülebilir hale getirelim.' : 'Let’s make your review operation measurable.'}
             </h2>

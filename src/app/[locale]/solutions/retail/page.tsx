@@ -115,7 +115,6 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
             </span>
             <h1
               className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-white"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? (
                 <>
@@ -243,7 +242,6 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
             >
               <h3
                 className="text-[20px] font-semibold tracking-[-0.015em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {f.title}
               </h3>
@@ -258,7 +256,6 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
         <div className="mx-auto max-w-[900px] text-center">
           <h2
             className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Mağaza ağınızı itibara çevirin.' : 'Turn your store network into reputation.'}
           </h2>

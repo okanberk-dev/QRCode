@@ -538,7 +538,6 @@ export default async function LandingPage({
                 </div>
                 <h3
                   className="mt-3 text-[26px] sm:text-[34px] font-medium leading-[1.05] tracking-[-0.025em] text-white"
-                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {isTr ? 'Tasarla. Yerleştir. Takip et.' : 'Design. Place. Track.'}
                 </h3>
@@ -605,7 +604,6 @@ export default async function LandingPage({
               </div>
               <h3
                 className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? 'Yanıtı saniyede yaz.' : 'Draft replies in seconds.'}
               </h3>
@@ -645,7 +643,6 @@ export default async function LandingPage({
               </div>
               <h3
                 className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? 'Nabzını canlı izle.' : 'Watch your pulse live.'}
               </h3>
@@ -684,7 +681,6 @@ export default async function LandingPage({
               </span>
               <h3
                 className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? 'Türkiye ve dünya — aynı panelde.' : 'Turkey and the world, same panel.'}
               </h3>
