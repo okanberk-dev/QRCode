@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { BarChart3, Calendar, Layers, Loader2, SlidersHorizontal, TrendingUp } from 'lucide-react';
+import { BarChart3, Calendar, Layers, Loader2, TrendingUp } from 'lucide-react';
 import StatsCards from '@/components/admin/StatsCards';
 import RatingChart from '@/components/admin/RatingChart';
-import AspectBreakdown from '@/components/admin/AspectBreakdown';
 import GoogleConversionPanel from '@/components/admin/GoogleConversionPanel';
 import PlatformDistribution from '@/components/admin/PlatformDistribution';
 
@@ -192,20 +191,9 @@ export default function RestaurantAnalyticsPanel({ locale, restaurants }: Restau
         <>
           <StatsCards stats={stats} />
 
-          {stats.aspects && (
-            <div className="bz-card p-5 sm:p-6">
-              <div className="mb-4 flex items-center gap-3 sm:mb-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
-                  <SlidersHorizontal size={20} strokeWidth={2} />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">{copy.aspects}</h3>
-                  <p className="mt-0.5 text-xs font-bold text-[#1A1A1A]">{copy.aspectsSub}</p>
-                </div>
-              </div>
-              <AspectBreakdown aspects={stats.aspects} locale={locale} />
-            </div>
-          )}
+          {/* Kategori Analizi (AspectBreakdown) — kullanıcı isteği üzerine
+              kaldırıldı. Yemek/servis/atmosfer puanlama özelliği aktif değil
+              ve Henüz puanlama yok empty state'i sayfayı kalabalıklaştırıyordu. */}
 
           {stats.googleConversion && (
             <div className="bz-card p-5 sm:p-6">
