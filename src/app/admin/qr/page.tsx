@@ -30,6 +30,8 @@ interface Restaurant {
   trendyolYemekUrl?: string | null;
   tripAdvisorUrl?: string | null;
   airbnbUrl?: string | null;
+  bookingUrl?: string | null;
+  yandexUrl?: string | null;
 }
 
 interface QrHistoryItem {
@@ -50,6 +52,8 @@ const PLATFORM_TO_CHIP: Record<string, PlatformId> = {
   trendyol_go: 'trendyol_go',
   tripadvisor: 'tripadvisor',
   airbnb: 'airbnb',
+  booking: 'booking',
+  yandex: 'yandex',
 };
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -59,6 +63,8 @@ const PLATFORM_LABELS: Record<string, string> = {
   trendyol_go: 'Trendyol GO',
   tripadvisor: 'Tripadvisor',
   airbnb: 'Airbnb',
+  booking: 'Booking',
+  yandex: 'Yandex',
 };
 
 function AdminQrContent() {
@@ -537,6 +543,8 @@ function AdminQrContent() {
               trendyolYemekUrl: r.trendyolYemekUrl ?? null,
               tripAdvisorUrl: r.tripAdvisorUrl ?? null,
               airbnbUrl: r.airbnbUrl ?? null,
+              bookingUrl: r.bookingUrl ?? null,
+              yandexUrl: r.yandexUrl ?? null,
             }))}
           defaultRestaurantId={preselected || undefined}
           locale="tr"

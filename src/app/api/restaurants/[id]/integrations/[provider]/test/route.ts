@@ -28,6 +28,8 @@ type ProviderId =
   | 'trendyol_go'
   | 'tripadvisor'
   | 'airbnb'
+  | 'booking'
+  | 'yandex'
   | 'instagram'
   | 'facebook'
   | 'whatsapp'
@@ -41,6 +43,8 @@ type RestaurantUrlField =
   | 'trendyolYemekUrl'
   | 'tripAdvisorUrl'
   | 'airbnbUrl'
+  | 'bookingUrl'
+  | 'yandexUrl'
   | 'instagramUrl'
   | 'facebookUrl'
   | 'whatsappUrl'
@@ -54,6 +58,8 @@ const PROVIDER_FIELD_MAP: Record<ProviderId, RestaurantUrlField> = {
   trendyol_go: 'trendyolYemekUrl',
   tripadvisor: 'tripAdvisorUrl',
   airbnb: 'airbnbUrl',
+  booking: 'bookingUrl',
+  yandex: 'yandexUrl',
   instagram: 'instagramUrl',
   facebook: 'facebookUrl',
   whatsapp: 'whatsappUrl',
@@ -75,6 +81,8 @@ async function loadRestaurant(id: string) {
       trendyolYemekUrl: true,
       tripAdvisorUrl: true,
       airbnbUrl: true,
+      bookingUrl: true,
+      yandexUrl: true,
       instagramUrl: true,
       facebookUrl: true,
       whatsappUrl: true,

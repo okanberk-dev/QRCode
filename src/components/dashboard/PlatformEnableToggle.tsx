@@ -4,7 +4,15 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Toggle } from '@/components/ui';
 
-type PlatformKey = 'google' | 'yemekSepeti' | 'getir' | 'trendyol' | 'tripAdvisor' | 'airbnb';
+type PlatformKey =
+  | 'google'
+  | 'yemekSepeti'
+  | 'getir'
+  | 'trendyol'
+  | 'tripAdvisor'
+  | 'airbnb'
+  | 'booking'
+  | 'yandex';
 
 const FIELD_NAME: Record<PlatformKey, string> = {
   google: 'googleEnabled',
@@ -13,6 +21,8 @@ const FIELD_NAME: Record<PlatformKey, string> = {
   trendyol: 'trendyolEnabled',
   tripAdvisor: 'tripAdvisorEnabled',
   airbnb: 'airbnbEnabled',
+  booking: 'bookingEnabled',
+  yandex: 'yandexEnabled',
 };
 
 interface Props {

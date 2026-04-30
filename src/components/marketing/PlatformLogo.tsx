@@ -11,6 +11,7 @@ export type PlatformId =
   | 'yelp'
   | 'tripadvisor'
   | 'booking'
+  | 'yandex'
   | 'facebook'
   | 'trustpilot'
   | 'foursquare'
@@ -42,6 +43,7 @@ const PLATFORM_ASSET: Partial<Record<PlatformId, string>> = {
   yelp: '/platforms/yelp.svg',
   tripadvisor: '/platforms/tripadvisor.svg',
   booking: '/platforms/booking.svg',
+  yandex: '/platforms/yandex.svg',
   facebook: '/platforms/facebook.svg',
   trustpilot: '/platforms/trustpilot.svg',
   foursquare: '/platforms/foursquare.svg',

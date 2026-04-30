@@ -3,7 +3,15 @@
 import { Info, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-export type HelpPlatform = 'google' | 'yemeksepeti' | 'getir' | 'trendyol' | 'tripadvisor' | 'airbnb';
+export type HelpPlatform =
+  | 'google'
+  | 'yemeksepeti'
+  | 'getir'
+  | 'trendyol'
+  | 'tripadvisor'
+  | 'airbnb'
+  | 'booking'
+  | 'yandex';
 
 const GUIDE: Record<HelpPlatform, { title: string; steps: string[]; hint?: string }> = {
   google: {
@@ -56,6 +64,24 @@ const GUIDE: Record<HelpPlatform, { title: string; steps: string[]; hint?: strin
       'Bu alana yapıştırın. URL "airbnb.com/rooms/..." veya "airbnb.com.tr/..." ile başlamalı.',
     ],
     hint: 'Sadece konaklama segmenti için. Yorumlar Airbnb hesabınız üzerinden bırakılır.',
+  },
+  booking: {
+    title: 'Booking.com Otel Linki',
+    steps: [
+      'booking.com\'da otelinizin sayfasını açın.',
+      'Tarayıcının adres çubuğundaki tam URL\'yi kopyalayın.',
+      'Bu alana yapıştırın. URL "booking.com/hotel/..." ile başlamalı.',
+    ],
+    hint: 'Otel / konaklama segmenti için. 4+ yıldız verenler buraya yönlendirilebilir.',
+  },
+  yandex: {
+    title: 'Yandex Haritalar İşletme Linki',
+    steps: [
+      'yandex.com.tr/maps üzerinde işletmenizi açın.',
+      'Adres çubuğundaki tam URL\'yi kopyalayın (yandex.com.tr/maps/org/...).',
+      'Bu alana yapıştırın. yandex.com / yandex.com.tr / yandex.ru hostlarını kabul ederiz.',
+    ],
+    hint: 'TR pazarında Google\'a alternatif harita + review surface.',
   },
 };
 

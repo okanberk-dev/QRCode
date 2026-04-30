@@ -473,10 +473,12 @@ function PlatformStep({
   const PLATFORM_OPTIONS = [
     { id: 'google', chip: 'google', label: 'Google', group: 'review' as const },
     { id: 'tripadvisor', chip: 'tripadvisor', label: 'Tripadvisor', group: 'review' as const },
-    { id: 'yelp', chip: 'foursquare', label: 'Yelp', group: 'review' as const },
+    { id: 'yelp', chip: 'yelp', label: 'Yelp', group: 'review' as const },
+    { id: 'yandex', chip: 'yandex', label: 'Yandex', group: 'review' as const },
     { id: 'yemeksepeti', chip: 'yemeksepeti', label: 'Yemeksepeti', group: 'delivery' as const },
     { id: 'getir', chip: 'getir', label: 'Getir', group: 'delivery' as const },
     { id: 'trendyol_go', chip: 'trendyol', label: 'Trendyol GO', group: 'delivery' as const },
+    { id: 'booking', chip: 'booking', label: 'Booking', group: 'hospitality' as const },
     { id: 'airbnb', chip: 'airbnb', label: 'Airbnb', group: 'hospitality' as const },
   ];
 
