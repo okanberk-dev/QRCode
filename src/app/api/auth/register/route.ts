@@ -5,6 +5,8 @@ import { signJwt } from '@/lib/auth';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { isStrongPassword } from '@/lib/validations';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { recordConsentBatch } from '@/lib/legal/consent';
+import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
 
 export async function POST(req: NextRequest) {
   try {
@@ -82,6 +84,32 @@ export async function POST(req: NextRequest) {
         trialEndsAt,
       },
     });
+
+    // Kayıt onayı log'u — kullanıcı kayıt akışında kullanım şartları + gizlilik
+    // politikası + KVKK aydınlatma metnini kabul ediyor sayılır (UI bu üçünü
+    // tek "kayıt olarak kabul ediyorum" string'i altında toplar). ETK izni
+    // ayrı tutulur — register form'unda toplanmıyor (kullanıcı dashboard'tan
+    // bültene abone olduğunda toplanacak).
+    {
+      const ua = req.headers.get('user-agent');
+      const localeRaw = typeof locale === 'string' ? locale.toLowerCase() : 'tr';
+      const consentLocale: LegalLocale = isSupportedLegalLocale(localeRaw) ? localeRaw : 'tr';
+      void recordConsentBatch(
+        {
+          locale: consentLocale,
+          subjectType: 'user',
+          subjectId: user.id,
+          source: 'register',
+          ipAddress: ip ?? null,
+          userAgent: ua,
+        },
+        [
+          { key: 'kullanim-sartlari', granted: true },
+          { key: 'gizlilik-politikasi', granted: true },
+          { key: 'kvkk-aydinlatma', granted: true },
+        ],
+      );
+    }
 
     // Auto-activate TeamMember after register (Section 5 davet kabul akışı).
     // Davet maili'ndeki link kullanıcıyı /auth/register?inviteToken=... ile buraya

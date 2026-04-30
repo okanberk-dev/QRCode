@@ -14,6 +14,8 @@ import {
   getNotificationPrefsForRestaurant,
   postSlackWebhook,
 } from '@/lib/notification-preferences';
+import { recordConsentBatch } from '@/lib/legal/consent';
+import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
 
 function parseAspectRating(value: unknown): number | null {
   const n = typeof value === 'number' ? value : Number(value);
@@ -132,6 +134,31 @@ export async function POST(req: NextRequest) {
         atmosphereRating: parseAspectRating(aspects?.atmosphere),
       },
     });
+
+    // KVKK / marketing onay log — fire-and-forget. Hata feedback yazımını
+    // bozmamalı (CLAUDE.md §32). Açıkça reddedilen marketing onay'ı da
+    // granted=false ile yazılır → admin "kullanıcı reddetti" raporu çekebilir.
+    {
+      const ua = req.headers.get('user-agent');
+      const localeRaw = typeof body.locale === 'string' ? body.locale.toLowerCase() : 'tr';
+      const consentLocale: LegalLocale = isSupportedLegalLocale(localeRaw) ? localeRaw : 'tr';
+      const items: Array<{ key: 'kvkk-aydinlatma' | 'acik-riza' | 'ticari-ileti'; granted?: boolean }> = [
+        { key: 'kvkk-aydinlatma', granted: body.hasKvkkConsent ?? true },
+        { key: 'acik-riza', granted: body.hasKvkkConsent ?? true },
+        { key: 'ticari-ileti', granted: body.hasMarketingConsent ?? false },
+      ];
+      void recordConsentBatch(
+        {
+          locale: consentLocale,
+          subjectType: 'feedback',
+          subjectId: feedback.id,
+          source: 'review_form',
+          ipAddress: ip,
+          userAgent: ua,
+        },
+        items,
+      );
+    }
 
     // Notification preferences (owner toggles in /dashboard/notifications).
     // Pulled once per request — used both for the low-rating mail gate and

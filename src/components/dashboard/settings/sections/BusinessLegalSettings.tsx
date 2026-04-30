@@ -1,66 +1,82 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Book, ExternalLink, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui";
 import type { Locale } from "@/lib/translations";
+import { LEGAL_DOCUMENT_KEYS, LEGAL_DOCUMENT_LABELS } from "@/lib/legal/keys";
 import { SettingsCard } from "../SettingsCard";
 
 interface BusinessLegalSettingsProps {
   locale?: Locale;
 }
 
-interface LegalDoc {
-  k: string;
-  s: string;
-  href?: string;
-  ok: boolean;
+interface DocCard {
+  key: string;
+  label: string;
+  description: string;
+  href: string;
+  active: boolean;
+  version: number;
+  effectiveAt: string | null;
 }
 
 /**
- * Section — KVKK & Yasal (Faz unified hub).
+ * Owner panel — Yasal Metinler.
  *
- * Read-only display of the active legal posture. The actual KVKK
- * disclosure (Restaurant.kvkkText) is edited per location at
- * /dashboard/restaurants/[id]/settings → Güvenlik tab. Pulse mail
- * templates render these documents per locale; admin-managed versions
- * live at /admin/mail-templates.
+ * Bu sayfa salt-okunur özet sunar: Buaze tarafından merkezi yönetilen
+ * sözleşme ve onay metinlerinin işletmenin akışında kullanıldığını gösterir.
+ * Belge düzenlemesi süperadminde (`/admin/legal-documents`).
  *
- * This section is intentionally informational — it documents what's
- * active for the workspace and points operators to the per-restaurant
- * editor when they need to amend the KVKK text for a specific location.
+ * İşletme sahibi linklerden public sayfaya gidip metni doğrudan okuyabilir.
  */
 export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsProps) {
   const isTr = locale === "tr";
+  const [docs, setDocs] = useState<DocCard[]>(() =>
+    LEGAL_DOCUMENT_KEYS.map((key) => ({
+      key,
+      label: LEGAL_DOCUMENT_LABELS[key][locale],
+      description: "",
+      href: linkForKey(key, locale),
+      active: false,
+      version: 0,
+      effectiveAt: null,
+    })),
+  );
+  const [loading, setLoading] = useState(true);
 
-  const docs: LegalDoc[] = isTr
-    ? [
-        {
-          k: "Aydınlatma metni",
-          s: "Buaze tarafından güncel tutulan şablon",
-          ok: true,
-        },
-        {
-          k: "Açık rıza metni",
-          s: "Buaze tarafından güncel tutulan şablon",
-          ok: true,
-        },
-        {
-          k: "Ticari elektronik ileti izni",
-          s: "Yorum formunda toplanır",
-          ok: true,
-        },
-        {
-          k: "Çerez politikası",
-          s: "Site genelinde aktif",
-          ok: true,
-        },
-      ]
-    : [
-        { k: "KVKK disclosure", s: "Maintained by Buaze", ok: true },
-        { k: "Explicit consent", s: "Maintained by Buaze", ok: true },
-        { k: "Commercial email consent", s: "Captured in the review form", ok: true },
-        { k: "Cookie policy", s: "Active site-wide", ok: true },
-      ];
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/legal-documents?locale=${locale}`);
+        if (!res.ok) return;
+        const body = await res.json();
+        if (!alive) return;
+        setDocs((prev) =>
+          prev.map((d) => {
+            const match = body.docs.find((x: { key: string }) => x.key === d.key);
+            return match
+              ? {
+                  ...d,
+                  description: match.description ?? "",
+                  active: match.isActive,
+                  version: match.version,
+                  effectiveAt: match.effectiveAt,
+                }
+              : d;
+          }),
+        );
+      } catch {
+        // public endpoint hatası — yine link kartları gösterilir
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [locale]);
 
   return (
     <div className="space-y-5">
@@ -69,29 +85,50 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
         title={isTr ? "Yasal metinler" : "Legal documents"}
         description={
           isTr
-            ? "Aşağıdaki yasal metinler Buaze tarafından merkezi olarak hazırlanır ve güncellenir. Tüm işletmelerinde aktif olarak çalışır."
-            : "These legal documents are centrally prepared and kept up to date by Buaze. They are active across all your locations."
+            ? "Aşağıdaki sözleşme ve onay metinleri Buaze tarafından merkezi yönetilir; tüm işletmelerinde aynı sürüm aktiftir. Açmak için kart üzerine tıkla."
+            : "These documents are centrally managed by Buaze and run on every location with the same version. Click a card to view."
         }
       >
-        <div className="flex flex-col gap-2.5">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           {docs.map((d) => (
-            <div
-              key={d.k}
-              className="flex items-center justify-between gap-3"
-              style={{
-                padding: 14,
-                border: "1px solid #EDEDED",
-                borderRadius: 10,
-              }}
+            <a
+              key={d.key}
+              href={d.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center justify-between gap-3 rounded-[10px] border border-[#EDEDED] bg-white px-3.5 py-3 transition-colors hover:border-[#0A0A0A]"
             >
               <div className="min-w-0 flex-1">
-                <div className="text-[13px] font-semibold text-[#0A0A0A] truncate">{d.k}</div>
-                <div className="text-[11.5px] text-[#737373] mt-0.5 truncate">{d.s}</div>
+                <div className="flex items-center gap-2">
+                  <div className="truncate text-[13px] font-semibold text-[#0A0A0A]">
+                    {d.label}
+                  </div>
+                  {d.version > 0 && (
+                    <span className="text-[10px] uppercase tracking-wider text-[#A3A3A3]">
+                      v{d.version}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 flex items-center gap-2 text-[11.5px] text-[#737373]">
+                  {loading ? (
+                    isTr ? "Yükleniyor..." : "Loading..."
+                  ) : d.active ? (
+                    <Badge kind="ok">{isTr ? "Aktif" : "Active"}</Badge>
+                  ) : (
+                    <Badge kind="ghost">{isTr ? "Taslak" : "Draft"}</Badge>
+                  )}
+                  {d.effectiveAt && (
+                    <span className="hidden sm:inline">
+                      · {new Date(d.effectiveAt).toLocaleDateString(isTr ? "tr-TR" : "en-US")}
+                    </span>
+                  )}
+                </div>
               </div>
-              <Badge kind={d.ok ? "ok" : "off"}>
-                {d.ok ? (isTr ? "Aktif" : "Active") : isTr ? "Yok" : "Missing"}
-              </Badge>
-            </div>
+              <ExternalLink
+                size={14}
+                className="shrink-0 text-[#A3A3A3] transition-colors group-hover:text-[#0A0A0A]"
+              />
+            </a>
           ))}
         </div>
       </SettingsCard>
@@ -101,8 +138,8 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
         title={isTr ? "Müşteri akışı" : "Customer flow"}
         description={
           isTr
-            ? "Müşteri yorum formunu ziyaret ettiğinde aydınlatma + açık rıza onayı toplanır. Pazarlama izni opt-in (KVKK Açık Rıza zorunluluğu)."
-            : "When a customer opens the review form, KVKK disclosure + explicit consent are collected. Marketing consent is opt-in."
+            ? "Yorum formunu açan müşteriden KVKK aydınlatma + açık rıza onayı toplanır. Pazarlama izni opt-in (KVKK + ETK gereği). Her onay versiyon numarasıyla loglanır."
+            : "When a customer opens the review form, KVKK + explicit consent are collected. Marketing consent is opt-in. Each consent is logged with the version number."
         }
       >
         <ul className="space-y-2 text-[13px] leading-[1.6] text-[#525252]">
@@ -110,42 +147,65 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
             <span className="text-[#A3A3A3]">·</span>
             <span>
               {isTr
-                ? "KVKK metni ön-checked — submit-gate olarak işlev görür."
-                : "KVKK consent is pre-checked — acts as a submit gate."}
+                ? "KVKK aydınlatma + açık rıza submit-gate olarak işler."
+                : "KVKK + explicit consent are required to submit."}
             </span>
           </li>
           <li className="flex gap-2">
             <span className="text-[#A3A3A3]">·</span>
             <span>
               {isTr
-                ? "Pazarlama izni opt-in: müşteri kendisi işaretler."
-                : "Marketing consent is opt-in: the customer must tick it themselves."}
+                ? "Pazarlama izni opt-in: müşteri kendisi işaretler, ETK m.6 + İYS uyumlu."
+                : "Marketing is opt-in: customer ticks it, ETK Art. 6 + IYS compliant."}
             </span>
           </li>
           <li className="flex gap-2">
             <span className="text-[#A3A3A3]">·</span>
             <span>
               {isTr
-                ? "IP retention 90 gün (KVKK data minimization)."
-                : "IP retention is 90 days (KVKK data minimization)."}
+                ? "IP retention 90 gün — KVKK veri minimizasyonu ilkesi."
+                : "IP retention is 90 days — KVKK data minimisation."}
             </span>
           </li>
         </ul>
       </SettingsCard>
 
-      <p className="text-[11.5px] leading-[1.55] text-[#737373] px-1">
-        {isTr ? "Şablonlar Buaze ekibi tarafından sürdürülür. Yasal güncelleme gerektiğinde " : "Templates are maintained by Buaze. For legal updates, contact us at "}
+      <p className="px-1 text-[11.5px] leading-[1.55] text-[#737373]">
+        {isTr
+          ? "Metinler Buaze ekibi tarafından sürdürülür ve hukuk danışmanı onayıyla yayına alınır. Yasal güncelleme talepleri için "
+          : "Documents are maintained by the Buaze team and published after legal review. For legal update requests, contact us at "}
         <a
           href="mailto:legal@buaze.com"
-          className="underline inline-flex items-center gap-1 text-[#0A0A0A]"
+          className="inline-flex items-center gap-1 text-[#0A0A0A] underline"
         >
           legal@buaze.com
           <ExternalLink size={11} strokeWidth={2} />
         </a>
-        {isTr ? " adresinden bize yazabilirsin." : "."}
+        {isTr ? " adresine yazabilirsin." : "."}
       </p>
     </div>
   );
+}
+
+function linkForKey(key: string, locale: Locale): string {
+  switch (key) {
+    case "kvkk-aydinlatma":
+      return `/${locale}/kvkk`;
+    case "acik-riza":
+      return `/${locale}/acik-riza`;
+    case "gizlilik-politikasi":
+      return locale === "tr" ? "/tr/gizlilik" : "/en/privacy";
+    case "kullanim-sartlari":
+      return `/${locale}/terms`;
+    case "cerez-politikasi":
+      return `/${locale}/cookie`;
+    case "ticari-ileti":
+      return `/${locale}/ticari-ileti`;
+    case "kullanim-sozlesmesi":
+      return `/${locale}/kullanim-sozlesmesi`;
+    default:
+      return `/${locale}`;
+  }
 }
 
 export default BusinessLegalSettings;

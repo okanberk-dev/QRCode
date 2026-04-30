@@ -18,6 +18,7 @@ import {
   Mail,
   Megaphone,
   QrCode,
+  ScrollText,
   Settings,
   Sparkles,
   Store,
@@ -243,6 +244,11 @@ export default function AdminSidebar() {
         children: [
           { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog' },
           { href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular' },
+          {
+            href: '/admin/legal-documents',
+            icon: ScrollText,
+            label: locale === 'en' ? 'Legal Documents' : 'Hukuki Metinler',
+          },
           { href: '/admin/site-settings', icon: Settings, label: locale === 'en' ? 'Site Settings' : 'Site Ayarları' },
         ],
       },

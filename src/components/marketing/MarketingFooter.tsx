@@ -327,8 +327,9 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 ? [
                     { label: 'Açık Rıza', href: `${base}/acik-riza` },
                     { label: 'Ticari İleti', href: `${base}/ticari-ileti` },
+                    { label: 'Sözleşme', href: `${base}/kullanim-sozlesmesi` },
                   ]
-                : []),
+                : [{ label: 'Agreement', href: `${base}/kullanim-sozlesmesi` }]),
               { label: isTr ? 'Google Uyumu' : 'Google compliance', href: `${base}/google-compliance` },
             ].map((item) => (
               <li key={item.href}>
