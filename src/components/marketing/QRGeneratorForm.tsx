@@ -387,7 +387,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
             padding: 'clamp(24px, 5vw, 40px)',
           }}
         >
-          <div className="w-full min-w-0">
+          <div className="w-full min-w-0 shrink-0">
             <div
               className="truncate"
               style={{
@@ -421,10 +421,10 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           </div>
 
           <div
-            className="max-w-full shrink-0 bg-white"
+            className="my-auto mx-auto max-w-full shrink-0 bg-white"
             style={{
               borderRadius: 14,
-              padding: 'clamp(10px, 2.6vw, 14px)',
+              padding: 'clamp(12px, 3vw, 16px)',
               boxShadow:
                 template === 'koyu'
                   ? '0 8px 24px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)'
@@ -435,8 +435,8 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
               ref={canvasRef}
               className="block"
               style={{
-                width: 'min(36vw, 140px)',
-                height: 'min(36vw, 140px)',
+                width: 'min(28vw, 110px)',
+                height: 'min(28vw, 110px)',
                 maxWidth: '100%',
               }}
               width={480}
@@ -449,7 +449,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
           </div>
 
           <div
-            className="truncate w-full"
+            className="truncate w-full shrink-0"
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
