@@ -76,18 +76,34 @@ const AI_REPLY_TIME_SAVED_MIN = 4;
 
 // Yüksek puan akışında platform dağılımı default ağırlıkları. Kullanıcı
 // seçili olmayan platformları sıfırlar; geri kalanlar runtime'da normalize
-// edilir. Resmi marka hex'leri CLAUDE.md §11 dokunulmaz tablosundan.
-type PlatformKey = 'google' | 'yemeksepeti' | 'getir' | 'trendyol';
+// edilir. Resmi marka hex'leri (CLAUDE.md §11 dokunulmaz tablosu + ek
+// platformların kendi brand guideline'ları).
+type PlatformKey =
+  | 'google'
+  | 'yemeksepeti'
+  | 'getir'
+  | 'trendyol'
+  | 'tripadvisor'
+  | 'foursquare'
+  | 'yandex';
 const PLATFORM_META: Record<
   PlatformKey,
   { labelTr: string; labelEn: string; weight: number; color: string }
 > = {
-  google: { labelTr: 'Google', labelEn: 'Google', weight: 0.50, color: '#4285F4' },
-  yemeksepeti: { labelTr: 'Yemeksepeti', labelEn: 'Yemeksepeti', weight: 0.25, color: '#FA0050' },
-  getir: { labelTr: 'Getir', labelEn: 'Getir', weight: 0.15, color: '#5D3EBC' },
+  google: { labelTr: 'Google', labelEn: 'Google', weight: 0.40, color: '#4285F4' },
+  yemeksepeti: { labelTr: 'Yemeksepeti', labelEn: 'Yemeksepeti', weight: 0.22, color: '#FA0050' },
+  getir: { labelTr: 'Getir', labelEn: 'Getir', weight: 0.13, color: '#5D3EBC' },
   trendyol: { labelTr: 'Trendyol GO', labelEn: 'Trendyol GO', weight: 0.10, color: '#F27A1A' },
+  tripadvisor: { labelTr: 'Tripadvisor', labelEn: 'Tripadvisor', weight: 0.08, color: '#00AF87' },
+  foursquare: { labelTr: 'Foursquare', labelEn: 'Foursquare', weight: 0.04, color: '#F94877' },
+  yandex: { labelTr: 'Yandex', labelEn: 'Yandex', weight: 0.03, color: '#FC3F1D' },
 };
 const ALL_PLATFORMS = Object.keys(PLATFORM_META) as PlatformKey[];
+
+// Default açık platformlar — TR pazarındaki çekirdek 4. Ek 3 (tripadvisor /
+// foursquare / yandex) chip group'ta görünür ama varsayılan olarak kapalıdır;
+// işletmesi o platformlarda olan operatör ilgili chip'i tek tıkla açar.
+const DEFAULT_PLATFORMS: PlatformKey[] = ['google', 'yemeksepeti', 'getir', 'trendyol'];
 
 export default function RoiCalculator({ locale }: RoiCalculatorProps) {
   const isTr = locale === 'tr';
@@ -99,7 +115,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
   const [avgTicket, setAvgTicket] = useState(isTr ? 320 : 28);
   const [currentGoogle, setCurrentGoogle] = useState(4.2);
   const [lowRatingsPerMonth, setLowRatingsPerMonth] = useState(12);
-  const [platforms, setPlatforms] = useState<PlatformKey[]>([...ALL_PLATFORMS]);
+  const [platforms, setPlatforms] = useState<PlatformKey[]>([...DEFAULT_PLATFORMS]);
   const [plan, setPlan] = useState<PlanKey>('growth');
 
   function togglePlatform(key: PlatformKey) {
@@ -475,13 +491,23 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
 
         {/* Aktif platformlar (yüksek puan dağılımı) */}
         <div>
-          <span className="pulse-eyebrow text-[#0A0A0A] block">
-            {isTr ? 'AKTİF PLATFORMLARIN' : 'ACTIVE PLATFORMS'}
-          </span>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="pulse-eyebrow text-[#0A0A0A]">
+              {isTr ? 'AKTİF PLATFORMLARIN' : 'ACTIVE PLATFORMS'}
+            </span>
+            <span className="bz-mono text-[11px] text-[#737373] tabular-nums">
+              {platforms.length}/{ALL_PLATFORMS.length}
+            </span>
+          </div>
+          <p className="mt-1 text-[11px] text-[#737373] leading-[1.5]">
+            {isTr
+              ? 'İşletmen hangilerinde varsa açık tut. Yüksek puan akışı yalnız seçili platformlara dağılır.'
+              : 'Keep on the ones your business is on. The high-rating flow distributes only to active platforms.'}
+          </p>
           <div
             role="group"
             aria-label={isTr ? 'Yönlendirilen platformlar' : 'Active redirect platforms'}
-            className="mt-2.5 flex flex-wrap gap-2"
+            className="mt-2.5 flex flex-wrap gap-1.5"
           >
             {ALL_PLATFORMS.map((key) => {
               const meta = PLATFORM_META[key];
@@ -493,7 +519,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
                   role="checkbox"
                   aria-checked={active}
                   onClick={() => togglePlatform(key)}
-                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-[12px] font-semibold transition-all active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[12px] font-semibold transition-all active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
                     active
                       ? 'bg-[#0A0A0A] text-white border border-[#0A0A0A]'
                       : 'bg-white text-[#525252] border border-[#E5E5E5] hover:border-[#0A0A0A]'
@@ -501,7 +527,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
                 >
                   <span
                     aria-hidden
-                    className="h-2 w-2 rounded-full"
+                    className="h-1.5 w-1.5 rounded-full"
                     style={{ backgroundColor: meta.color }}
                   />
                   {isTr ? meta.labelTr : meta.labelEn}
@@ -854,7 +880,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
                       Buaze ekibinin benimle iletişime geçmesini ve raporu e-posta ile
                       göndermesini onaylıyorum. Detaylar{' '}
                       <Link
-                        href={`/${locale}/legal/privacy`}
+                        href={`/${locale}/privacy`}
                         className="font-semibold text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
                       >
                         gizlilik politikası
@@ -866,7 +892,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
                       I consent to be contacted by Buaze and to receive the report by
                       email. See{' '}
                       <Link
-                        href={`/${locale}/legal/privacy`}
+                        href={`/${locale}/privacy`}
                         className="font-semibold text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
                       >
                         privacy policy

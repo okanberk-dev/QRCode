@@ -104,11 +104,11 @@ export default async function RoiPage({
     ? [
         {
           q: 'Buaze ROI hesaplayıcısı sayıları nereden alıyor?',
-          a: 'Hesap, BrightLocal 2024 yerel arama verilerine ve ~2.400 Buaze müşteri kohortuna kalibre edilmiştir. Üç temel sürücü kullanılır: düşük yorum filtreleme oranı (~%85), çoklu platform dağılım ağırlıkları (Google %50 / Yemeksepeti %25 / Getir %15 / Trendyol %10) ve AI Co-Pilot zaman tasarrufu (yanıt başına ~4 dakika).',
+          a: 'Hesap, BrightLocal 2024 yerel arama verilerine ve ~2.400 Buaze müşteri kohortuna kalibre edilmiştir. Üç temel sürücü kullanılır: düşük yorum filtreleme oranı (~%85), çoklu platform dağılım ağırlıkları (Google %40 / Yemeksepeti %22 / Getir %13 / Trendyol GO %10 + opsiyonel Tripadvisor / Foursquare / Yandex) ve AI Co-Pilot zaman tasarrufu (yanıt başına ~4 dakika).',
         },
         {
           q: 'Düşük puan filtrelemesi tam olarak ne demek?',
-          a: 'Buaze QR akışında müşteri yüksek puan verirse seçili platforma (Google, Yemeksepeti, Getir, Trendyol) yönlendirilir; düşük puan veren müşteri dahili form\'a düşer. Bu sayede 1-3 yıldızlı yorumların %85\'i Google\'a sızmadan işletme sahibinin admin paneline gelir; sahip müşteriyle özel iletişim kurabilir, sorun çözülürse müşteri sonradan kendi isteğiyle pozitif yorum bırakabilir. Bu pattern Google\'ın yorum politikasıyla uyumludur — müşteri istediği yere yorum yapma hakkını saklı tutar, akış sadece yönlendirir.',
+          a: 'Buaze QR akışında müşteri yüksek puan verirse seçili platforma (Google, Yemeksepeti, Getir, Trendyol GO, ek olarak işaretlenirse Tripadvisor, Foursquare veya Yandex) yönlendirilir; düşük puan veren müşteri dahili form\'a düşer. Bu sayede 1-3 yıldızlı yorumların %85\'i Google\'a sızmadan işletme sahibinin admin paneline gelir; sahip müşteriyle özel iletişim kurabilir, sorun çözülürse müşteri sonradan kendi isteğiyle pozitif yorum bırakabilir. Bu pattern Google\'ın yorum politikasıyla uyumludur — müşteri istediği yere yorum yapma hakkını saklı tutar, akış sadece yönlendirir.',
         },
         {
           q: 'Hesap bana özel mi yoksa genel ortalama mı?',
@@ -126,11 +126,11 @@ export default async function RoiPage({
     : [
         {
           q: 'Where do the numbers in the Buaze ROI calculator come from?',
-          a: 'The model is calibrated on BrightLocal 2024 local search data and ~2,400 Buaze customer accounts. Three drivers anchor the math: low-rating filter rate (~85%), multi-platform routing weights (Google 50% / Yemeksepeti 25% / Getir 15% / Trendyol 10%), and AI Co-Pilot time savings (~4 min per reply).',
+          a: 'The model is calibrated on BrightLocal 2024 local search data and ~2,400 Buaze customer accounts. Three drivers anchor the math: low-rating filter rate (~85%), multi-platform routing weights (Google 40% / Yemeksepeti 22% / Getir 13% / Trendyol GO 10% + optional Tripadvisor / Foursquare / Yandex), and AI Co-Pilot time savings (~4 min per reply).',
         },
         {
           q: 'What does low-rating filtering mean exactly?',
-          a: 'In the Buaze QR flow, customers giving a high rating are forwarded to the selected platform (Google, Yemeksepeti, Getir, Trendyol); customers giving a low rating land on an internal form. As a result, ~85% of 1-3 star reviews never leak to Google — they reach the admin panel where the owner can resolve the issue privately. The customer keeps the right to leave a review anywhere; the flow only routes, never gates. This pattern is compliant with Google\'s review policy.',
+          a: 'In the Buaze QR flow, customers giving a high rating are forwarded to the selected platform (Google, Yemeksepeti, Getir, Trendyol GO; optionally Tripadvisor, Foursquare or Yandex); customers giving a low rating land on an internal form. As a result, ~85% of 1-3 star reviews never leak to Google — they reach the admin panel where the owner can resolve the issue privately. The customer keeps the right to leave a review anywhere; the flow only routes, never gates. This pattern is compliant with Google\'s review policy.',
         },
         {
           q: 'Is the calculation specific to my business or a generic average?',
@@ -323,7 +323,7 @@ export default async function RoiPage({
                   {
                     n: '02',
                     h: 'Çoklu platform yönlendirme',
-                    body: 'Yüksek puan akışı sadece Google\'a değil; Yemeksepeti, Getir ve Trendyol GO\'ya da default ağırlıklarla (%50 / %25 / %15 / %10) dağılır. Hangi platformları aktif tuttuğun seçilebilir; seçili olmayan platformların ağırlığı kalanlara normalize edilir.',
+                    body: 'Yüksek puan akışı sadece Google\'a değil; Yemeksepeti, Getir, Trendyol GO ve istersen Tripadvisor, Foursquare veya Yandex\'e de dağılır (default ağırlıklar %40 / %22 / %13 / %10 / %8 / %4 / %3). Hangi platformları aktif tuttuğun seçilebilir; seçili olmayan platformların ağırlığı kalanlara normalize edilir.',
                   },
                   {
                     n: '03',
@@ -340,7 +340,7 @@ export default async function RoiPage({
                   {
                     n: '02',
                     h: 'Multi-platform routing',
-                    body: 'The high-rating flow distributes across Google, Yemeksepeti, Getir and Trendyol GO with default weights (50% / 25% / 15% / 10%). You pick which platforms are active; deselected platforms get their weight normalized to the rest.',
+                    body: 'The high-rating flow distributes across Google, Yemeksepeti, Getir, Trendyol GO and optionally Tripadvisor, Foursquare or Yandex (default weights 40% / 22% / 13% / 10% / 8% / 4% / 3%). You pick which platforms are active; deselected platforms get their weight normalized to the rest.',
                   },
                   {
                     n: '03',
