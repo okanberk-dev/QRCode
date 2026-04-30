@@ -68,8 +68,12 @@ export async function POST(req: NextRequest) {
 
     // Validate platform value if provided. Falsy / unknown → null so the
     // feedback isn't misattributed to Google when the customer never picked
-    // a platform via QR.
-    const validPlatforms = ['google', 'yemeksepeti', 'getir', 'trendyol_go'];
+    // a platform via QR. Mirror /api/restaurants/[id]/qr `validPlatforms`
+    // and /r/[slug] `platformUrls` keys.
+    const validPlatforms = [
+      'google', 'yemeksepeti', 'getir', 'trendyol_go',
+      'tripadvisor', 'airbnb', 'booking', 'yandex',
+    ];
     const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : null;
 
     // Validation

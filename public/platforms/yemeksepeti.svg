@@ -1,5 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-  <rect width="40" height="40" rx="9" fill="#FA0050"/>
-  <text x="20" y="25.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="800" fill="#fff" letter-spacing="-.7">ys</text>
-  <circle cx="29.7" cy="12" r="1.7" fill="#fff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Yemeksepeti">
+  <rect width="1024" height="1024" rx="220" fill="#EA004B"/>
+  <text
+    x="512"
+    y="560"
+    text-anchor="middle"
+    font-family="Arial Rounded MT Bold, Helvetica, Arial, sans-serif"
+    font-size="150"
+    font-weight="700"
+    fill="#FFFFFF"
+    letter-spacing="-4"
+  >
+    yemeksepeti
+  </text>
 </svg>
