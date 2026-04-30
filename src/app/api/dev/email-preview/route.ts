@@ -14,6 +14,8 @@ import {
   renderContactAdmin,
   renderVerifyEmail,
 } from '@/lib/email/templates';
+import { renderRoiCustomerReport } from '@/lib/email/templates/roi-customer-report';
+import { renderRoiAdminNotification } from '@/lib/email/templates/roi-admin-notification';
 import { isPreviewTemplate, SEEDS, type PreviewTemplate } from './seeds';
 import { getUnsubscribeUrl } from '@/lib/email';
 
@@ -133,5 +135,9 @@ export async function renderTemplate(
       return renderContactAdmin(SEEDS['contact-admin'](), locale);
     case 'verify-email':
       return renderVerifyEmail(SEEDS['verify-email'](), locale);
+    case 'roi-customer-report':
+      return renderRoiCustomerReport(SEEDS['roi-customer-report'](), locale);
+    case 'roi-admin-notification':
+      return renderRoiAdminNotification(SEEDS['roi-admin-notification'](), locale);
   }
 }

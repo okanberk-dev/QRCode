@@ -13,6 +13,8 @@ import type { CustomerReplyParams } from '@/lib/email/templates/customer-reply';
 import type { TrialEndingParams } from '@/lib/email/templates/trial-ending';
 import type { ContactAdminParams } from '@/lib/email/templates/contact-admin';
 import type { VerifyEmailParams } from '@/lib/email/templates/verify-email';
+import type { RoiCustomerReportParams } from '@/lib/email/templates/roi-customer-report';
+import type { RoiAdminNotificationParams } from '@/lib/email/templates/roi-admin-notification';
 
 export const PREVIEW_TEMPLATES = [
   'forgot-password',
@@ -26,6 +28,8 @@ export const PREVIEW_TEMPLATES = [
   'trial-ending',
   'contact-admin',
   'verify-email',
+  'roi-customer-report',
+  'roi-admin-notification',
 ] as const;
 
 export type PreviewTemplate = (typeof PREVIEW_TEMPLATES)[number];
@@ -157,5 +161,72 @@ export const SEEDS = {
   'verify-email': (): VerifyEmailParams => ({
     firstName: 'Mert',
     verifyUrl: `${APP_URL}/tr/auth/verify-email?token=4f8e2bd71pulseabc123`,
+  }),
+  'roi-customer-report': (): RoiCustomerReportParams => ({
+    restaurantName: 'Kadıköy Bistro',
+    firstName: null, // template içinde "team" suffix fallback'i devreye girer
+    currency: '₺',
+    netGain: 142800,
+    roiMultiple: 13.2,
+    monthlyUplift: 14250,
+    paybackMonths: 1,
+    reviewers: 94,
+    filteredLowReviews: 10,
+    projectedGoogle: 4.5,
+    currentGoogle: 4.2,
+    newCustomers: 8,
+    aiHoursSaved: 6.3,
+    plan: 'growth',
+    planPrice: 899,
+    platforms: ['google', 'yemeksepeti', 'getir', 'trendyol_go'],
+    aiSummary:
+      'Kadıköy Bistro için 12 aylık projeksiyon ₺142.800 net kazanç ve 13.2× ROI yansıtıyor. Düşük puan filtreleme akışı ile aylık 10 kötü yorum Google\'a sızmadan paneline düşer; yüksek puan akışı 4 platformu birlikte yukarı çeker.',
+    aiHighlight:
+      'Aylık 10 kötü yorumun Google\'a sızmadan filtrelenmesi en yüksek kaldıraç — bugünkü 4.2 ★\'a en hızlı etkisi.',
+    aiNextSteps: [
+      'QR\'ı masa altlığı + kasa yanına yerleştir; ilk 7 gün tarama oranını ölç.',
+      'AI Co-Pilot taslak yanıtlarını ilk 2 hafta her yorum için onayla — model işletme tonuna kalibre olsun.',
+      'Yemeksepeti + Getir + Trendyol GO URL\'lerini admin panelden gir; yüksek puan akışı doğru yere gitsin.',
+    ],
+    hasPdf: true,
+    contactUrl: `${APP_URL}/tr/contact`,
+    pricingUrl: `${APP_URL}/tr/pricing`,
+  }),
+  'roi-admin-notification': (): RoiAdminNotificationParams => ({
+    email: 'mert@kadikoybistro.co',
+    restaurantName: 'Kadıköy Bistro',
+    phone: '+90 532 555 12 34',
+    sector: 'restaurant',
+    monthlyCustomers: 1800,
+    avgTicket: 320,
+    currentGoogle: 4.2,
+    lowRatingsPerMonth: 12,
+    platforms: ['google', 'yemeksepeti', 'getir', 'trendyol_go'],
+    plan: 'growth',
+    planPrice: 899,
+    currency: '₺',
+    scanned: 540,
+    reviewers: 94,
+    filteredLowReviews: 10,
+    projectedGoogle: 4.5,
+    newCustomers: 8,
+    monthlyUplift: 14250,
+    yearlyUplift: 171000,
+    netGain: 142800,
+    roiMultiple: 13.2,
+    paybackMonths: 1,
+    aiHoursSaved: 6.3,
+    aiSummary:
+      'Kadıköy Bistro için 12 aylık projeksiyon ₺142.800 net kazanç ve 13.2× ROI yansıtıyor. Düşük puan filtreleme akışı ile aylık 10 kötü yorum Google\'a sızmadan paneline düşer.',
+    aiHighlight:
+      'Aylık 10 kötü yorumun Google\'a sızmadan filtrelenmesi en yüksek kaldıraç.',
+    aiNextSteps: [
+      'QR\'ı masa altlığı + kasa yanına yerleştir; ilk 7 gün tarama oranını ölç.',
+      'AI Co-Pilot taslak yanıtlarını ilk 2 hafta her yorum için onayla.',
+      'Yemeksepeti + Getir + Trendyol GO URL\'lerini admin panelden gir.',
+    ],
+    aiSource: 'ai',
+    panelUrl: `${APP_URL}/admin/leads`,
+    ip: '88.247.123.42',
   }),
 } satisfies Record<PreviewTemplate, () => unknown>;
