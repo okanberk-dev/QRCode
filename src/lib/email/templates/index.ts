@@ -33,3 +33,9 @@ export type { TeamInviteParams } from './team-invite';
 
 export { renderVerifyEmail } from './verify-email';
 export type { VerifyEmailParams } from './verify-email';
+
+export { renderRoiCustomerReport } from './roi-customer-report';
+export type { RoiCustomerReportParams } from './roi-customer-report';
+
+export { renderRoiAdminNotification } from './roi-admin-notification';
+export type { RoiAdminNotificationParams } from './roi-admin-notification';

@@ -16,6 +16,8 @@ const TEMPLATES = [
   { key: 'trial-ending', label: 'Deneme bitiyor', desc: 'Plan kartları + ÖNERİLEN badge' },
   { key: 'contact-admin', label: 'İletişim formu (admin)', desc: 'Yeni iletişim talebi bildirimi' },
   { key: 'verify-email', label: 'E-posta onayı', desc: 'Davet sonrası zorunlu verify maili' },
+  { key: 'roi-customer-report', label: 'ROI raporu (müşteri)', desc: '12 aylık projeksiyon + AI analizi + mailto CTA' },
+  { key: 'roi-admin-notification', label: 'ROI lead (admin)', desc: 'Sales inbox\'a yeni ROI lead bildirimi' },
 ] as const;
 
 export default function MailPreviewIndex() {
@@ -51,7 +53,7 @@ export default function MailPreviewIndex() {
       <PageHeader
         eyebrow="MAIL ÖNİZLEME"
         title="Mail önizleme (dev)"
-        description="9 Pulse mail template'i seed verilerle render edilir. Browser'da yeni tab'da görüntüle ya da kendi e-posta adresine test gönder."
+        description="13 Pulse mail template'i seed verilerle render edilir. Browser'da yeni tab'da görüntüle ya da kendi e-posta adresine test gönder."
         actions={
           <div className="inline-flex rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-1 pulse-eyebrow">
             {(['tr', 'en'] as const).map((opt) => (

@@ -66,8 +66,18 @@ export function renderRoiCustomerReport(
   const fmt = (n: number) => n.toLocaleString(isTr ? 'tr-TR' : 'en-US');
   const c = params.currency;
   const planLabel = PLAN_LABEL[params.plan] ?? params.plan;
+  // Greeting fallback: form firstName toplamıyor (gelecek scope). Yoksa
+  // selamı işletme adı + " ekibi"/"team" ile kur — eski "Merhaba merhaba,"
+  // ve restaurantName.split(/[\s,.]/)[0] türetimi (route.ts:226) bug'ları
+  // ortadan kalkar. Kişiselleştirme korunur, awkward selamlama olmaz.
   const firstName = (params.firstName || '').trim();
-  const greetingName = firstName || (isTr ? 'merhaba' : 'hello');
+  const greetingLine = firstName
+    ? isTr
+      ? `Merhaba ${firstName},`
+      : `Hi ${firstName},`
+    : isTr
+      ? `Merhaba ${params.restaurantName} ekibi,`
+      : `Hi ${params.restaurantName} team,`;
   const platformLabels = params.platforms
     .map((p) => (isTr ? PLATFORM_LABEL_TR[p] : p) ?? p)
     .join(', ');
@@ -94,10 +104,12 @@ export function renderRoiCustomerReport(
     .join('');
 
   // ─── HERO: greeting + headline + big number ────────────────────────────
+  // Mobile class hook'lar: bz-roi-h1 (30→24px), bz-roi-bignum (42→32px),
+  // bz-roi-card (24→18px padding). Inline base = Gmail clipping fallback.
   const hero = `
     ${renderEyebrow(isTr ? 'BUAZE ROI RAPORU · 12 AY' : 'BUAZE ROI REPORT · 12 MO', PULSE.n500)}
-    <h1 style="margin:8px 0 0;font-family:${FONTS.heading};font-size:30px;line-height:1.1;letter-spacing:-0.025em;color:${PULSE.graphite};font-weight:600;">
-      ${escapeHtml(isTr ? `Merhaba ${greetingName},` : `Hi ${greetingName},`)}
+    <h1 class="bz-roi-h1" style="margin:8px 0 0;font-family:${FONTS.heading};font-size:30px;line-height:1.1;letter-spacing:-0.025em;color:${PULSE.graphite};font-weight:600;">
+      ${escapeHtml(greetingLine)}
     </h1>
     <p style="margin:14px 0 22px;font-size:15px;line-height:1.6;color:${PULSE.n800};">
       ${escapeHtml(
@@ -106,9 +118,9 @@ export function renderRoiCustomerReport(
           : `We turned your scenario for ${params.restaurantName} into a 12-month projection using the Buaze model. Highlights below; ${params.hasPdf ? 'detailed PDF is attached' : 'details follow'}.`,
       )}
     </p>
-    <div style="background:${PULSE.graphite};color:${PULSE.pure};border-radius:16px;padding:24px;">
+    <div class="bz-roi-card" style="background:${PULSE.graphite};color:${PULSE.pure};border-radius:16px;padding:24px;">
       ${renderEyebrow(isTr ? 'YILLIK NET KAZANÇ' : 'ANNUAL NET GAIN', PULSE.lime)}
-      <div style="margin-top:8px;font-family:${FONTS.heading};font-size:42px;line-height:1;letter-spacing:-0.03em;color:${PULSE.lime};font-weight:600;">${c}${fmt(Math.max(0, Math.round(params.netGain)))}</div>
+      <div class="bz-roi-bignum" style="margin-top:8px;font-family:${FONTS.heading};font-size:42px;line-height:1;letter-spacing:-0.03em;color:${PULSE.lime};font-weight:600;">${c}${fmt(Math.max(0, Math.round(params.netGain)))}</div>
       <div style="margin-top:12px;font-size:13.5px;line-height:1.55;color:rgba(255,255,255,0.75);">
         ${escapeHtml(
           isTr
@@ -127,12 +139,12 @@ export function renderRoiCustomerReport(
           { v: `+${fmt(params.reviewers)}`, l: isTr ? 'Yorum / ay' : 'Reviews / mo' },
           { v: fmt(params.filteredLowReviews), l: isTr ? 'Filtrelenen kötü' : 'Low filtered', accent: true },
           { v: params.projectedGoogle.toFixed(1), l: isTr ? 'Yeni Google ★' : 'New Google ★' },
-          { v: `${params.aiHoursSaved.toFixed(1)} sa`, l: isTr ? 'AI tasarruf' : 'AI saved' },
+          { v: `${params.aiHoursSaved.toFixed(1)} ${isTr ? 'sa' : 'h'}`, l: isTr ? 'AI tasarruf' : 'AI saved' },
         ]
           .map(
             (k) => `<td class="cell stack-col" valign="top" style="width:25%;padding:6px;">
-              <div style="background:${k.accent ? PULSE.limeSoft : PULSE.n50};border:1px solid ${k.accent ? PULSE.limeDeep + '33' : PULSE.n200};border-radius:12px;padding:14px;">
-                <div style="font-family:${FONTS.heading};font-size:18px;line-height:1.1;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${escapeHtml(k.v)}</div>
+              <div class="bz-roi-kpi-cell" style="background:${k.accent ? PULSE.limeSoft : PULSE.n50};border:1px solid ${k.accent ? PULSE.limeDeep + '33' : PULSE.n200};border-radius:12px;padding:14px;">
+                <div class="bz-roi-kpi-val" style="font-family:${FONTS.heading};font-size:18px;line-height:1.1;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${escapeHtml(k.v)}</div>
                 <div style="margin-top:6px;font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.n500};">${escapeHtml(k.l)}</div>
               </div>
             </td>`,
@@ -191,14 +203,26 @@ export function renderRoiCustomerReport(
   `;
 
   // ─── Priority actions list ─────────────────────────────────────────────
-  const stepsBlock = `
+  // Yalnız aiNextSteps doluyken render — boş array'de orphan başlık olmaz.
+  const stepsBlock =
+    params.aiNextSteps.length > 0
+      ? `
     <h2 style="margin:0 0 14px;font-family:${FONTS.heading};font-size:18px;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${isTr ? 'İlk 30 gün için 3 öncelik' : 'Three priorities for the first 30 days'}</h2>
     <ol style="margin:0;padding:0 0 0 4px;list-style:none;">${stepsSafeHtml}</ol>
-  `;
+  `
+      : '';
 
-  // ─── CTA card (lime) ──────────────────────────────────────────────────
+  // ─── CTA card (lime) — primary "Schedule a demo" + secondary mailto ───
+  // Secondary mailto button: kullanıcı doğrudan hello@buaze.com'a ulaşabilsin.
+  // White bg + graphite border = lower visual weight (primary lime CTA'ya
+  // rakip değil). encodeURIComponent subject için zorunlu.
+  const mailtoSubject = encodeURIComponent(
+    isTr
+      ? `Buaze ROI raporum hakkında — ${params.restaurantName}`
+      : `About my Buaze ROI report — ${params.restaurantName}`,
+  );
   const ctaCard = `
-    <div style="background:${PULSE.lime};border-radius:16px;padding:26px;text-align:center;">
+    <div class="bz-roi-card" style="background:${PULSE.lime};border-radius:16px;padding:26px;text-align:center;">
       ${renderEyebrow(isTr ? 'SIRADAKİ ADIM' : 'NEXT STEP', PULSE.graphite)}
       <h2 style="margin:8px 0 6px;font-family:${FONTS.heading};font-size:22px;line-height:1.2;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${escapeHtml(
         isTr ? '30 dk canlı kurulum + soru-cevap' : '30-min live setup & Q&A',
@@ -209,32 +233,36 @@ export function renderRoiCustomerReport(
           : `Let's walk through this projection together, tailor the ${planLabel} plan, and ship your first QR. No credit card; 30-day free trial.`,
       )}</p>
       <a href="${escapeHtml(params.contactUrl)}" style="display:inline-block;background:${PULSE.graphite};color:${PULSE.pure};padding:14px 26px;border-radius:999px;text-decoration:none;font-family:${FONTS.heading};font-size:14px;font-weight:600;letter-spacing:-0.01em;">${escapeHtml(isTr ? 'Demo daveti gönder' : 'Schedule a demo')} →</a>
+      <div style="margin-top:12px;">
+        <a href="mailto:hello@buaze.com?subject=${mailtoSubject}" style="display:inline-block;background:${PULSE.pure};color:${PULSE.graphite};border:1px solid ${PULSE.graphite};padding:11px 22px;border-radius:999px;text-decoration:none;font-family:${FONTS.heading};font-size:13px;font-weight:600;letter-spacing:-0.005em;">
+          ${escapeHtml(isTr ? '✉ Bize doğrudan yaz · hello@buaze.com' : '✉ Email us directly · hello@buaze.com')}
+        </a>
+      </div>
       <div style="margin-top:14px;font-size:11.5px;color:${PULSE.graphite};opacity:0.75;">${escapeHtml(
         isTr ? 'Ya da planları gör' : 'Or browse plans',
       )}: <a href="${escapeHtml(params.pricingUrl)}" style="color:${PULSE.graphite};font-weight:600;text-decoration:underline;">${isTr ? 'buaze.com/fiyatlandirma' : 'buaze.com/pricing'}</a></div>
     </div>
   `;
 
-  // ─── Risk-free strip ──────────────────────────────────────────────────
+  // ─── Risk-free strip — inline-block chip pattern (mobile-friendly wrap) ─
+  // Eski <table class="stack-row"> mobilde 3 pill'i full-width 3 satıra
+  // dönüştürüyordu (kullanıcı orantısız geniş bulmuştu). Tek <div> +
+  // inline-block <span> chip'leri Outlook/Gmail/Apple Mail uyumlu, mobilde
+  // doğal flex-wrap davranışı.
   const riskFree = `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="stack-row">
-      <tr>
-        ${[
-          isTr ? '30 gün ücretsiz' : '30-day free',
-          isTr ? 'Kredi kartı yok' : 'No credit card',
-          isTr ? 'İstediğin an iptal' : 'Cancel anytime',
-        ]
-          .map(
-            (label) => `<td class="stack-col" valign="middle" style="width:33.33%;padding:4px;text-align:center;">
-              <span style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:${PULSE.limeSoft};border:1px solid ${PULSE.limeDeep}33;border-radius:999px;font-size:11.5px;color:${PULSE.graphite};font-weight:500;">
-                <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${PULSE.limeDeep};"></span>
-                ${escapeHtml(label)}
-              </span>
-            </td>`,
-          )
-          .join('')}
-      </tr>
-    </table>
+    <div style="text-align:center;">
+      ${[
+        isTr ? '30 gün ücretsiz' : '30-day free',
+        isTr ? 'Kredi kartı yok' : 'No credit card',
+        isTr ? 'İstediğin an iptal' : 'Cancel anytime',
+      ]
+        .map(
+          (label) => `<span style="display:inline-block;margin:4px 5px;padding:7px 12px;background:${PULSE.limeSoft};border:1px solid ${PULSE.limeDeep}33;border-radius:999px;font-size:11.5px;color:${PULSE.graphite};font-weight:500;line-height:1;">
+            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${PULSE.limeDeep};vertical-align:middle;margin-right:6px;"></span>${escapeHtml(label)}
+          </span>`,
+        )
+        .join('')}
+    </div>
   `;
 
   const content = `
@@ -263,9 +291,7 @@ export function renderRoiCustomerReport(
 
   // ─── Plain text fallback ───────────────────────────────────────────────
   const text = [
-    isTr
-      ? `Merhaba ${greetingName},`
-      : `Hi ${greetingName},`,
+    greetingLine,
     '',
     isTr
       ? `${params.restaurantName} için 12 aylık ROI projeksiyonun hazır.`
@@ -281,12 +307,19 @@ export function renderRoiCustomerReport(
     '',
     `${isTr ? 'EN GÜÇLÜ KALDIRAÇ' : 'STRONGEST LEVERAGE'}: ${params.aiHighlight}`,
     '',
-    `${isTr ? 'İLK 30 GÜN — 3 ÖNCELİK' : 'FIRST 30 DAYS — 3 PRIORITIES'}:`,
-    ...params.aiNextSteps.map((s, i) => `${i + 1}. ${s}`),
-    '',
+    ...(params.aiNextSteps.length > 0
+      ? [
+          `${isTr ? 'İLK 30 GÜN — 3 ÖNCELİK' : 'FIRST 30 DAYS — 3 PRIORITIES'}:`,
+          ...params.aiNextSteps.map((s, i) => `${i + 1}. ${s}`),
+          '',
+        ]
+      : []),
     isTr
       ? `Demo daveti: ${params.contactUrl}`
       : `Schedule a demo: ${params.contactUrl}`,
+    isTr
+      ? `Bize doğrudan yaz: hello@buaze.com`
+      : `Email us directly: hello@buaze.com`,
     isTr ? `Planlar: ${params.pricingUrl}` : `Plans: ${params.pricingUrl}`,
     '',
     params.hasPdf

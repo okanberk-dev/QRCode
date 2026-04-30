@@ -56,6 +56,16 @@ a { color:${PULSE.graphite}; }
   h1.bz-h1 { font-size:32px !important; line-height:1.1 !important; }
   h1.bz-h1-lg { font-size:36px !important; line-height:1.1 !important; }
   .bz-hide-mobile { display:none !important; }
+
+  /* ROI templates — mobile-only sizing.
+     Inline base size'lar fallback (Gmail clipping); class'lar mobile override.
+     Hero h1 30→24, big number 42→32 (320-375px viewport'ta sığsın). */
+  h1.bz-roi-h1 { font-size:24px !important; line-height:1.15 !important; }
+  .bz-roi-bignum { font-size:32px !important; line-height:1 !important; }
+  .bz-roi-bignum-sm { font-size:26px !important; line-height:1.05 !important; }
+  .bz-roi-kpi-val { font-size:16px !important; }
+  .bz-roi-kpi-cell { padding:11px !important; }
+  .bz-roi-card { padding:18px !important; }
 }
 </style>
 </head>

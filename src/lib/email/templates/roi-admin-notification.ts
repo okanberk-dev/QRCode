@@ -109,13 +109,18 @@ export function renderRoiAdminNotification(
     .join(', ');
 
   const subject = isTr
-    ? `🎯 Yeni ROI lead'i · ${params.restaurantName} · ${c}${fmt(Math.round(params.netGain))}/yıl`
-    : `🎯 New ROI lead · ${params.restaurantName} · ${c}${fmt(Math.round(params.netGain))}/yr`;
+    ? `[Lead] ${params.restaurantName} · ${c}${fmt(Math.round(params.netGain))}/yıl`
+    : `[Lead] ${params.restaurantName} · ${c}${fmt(Math.round(params.netGain))}/yr`;
 
   const summarySafe = escapeHtml(params.aiSummary);
   const highlightSafe = escapeHtml(params.aiHighlight);
+  // Steps list color'ı koyu zemin için baştan beyaz set ediliyor — eski
+  // .replace() regex hack'i (PULSE.graphite literal'ine bağımlıydı) kaldırıldı.
   const stepsSafeHtml = params.aiNextSteps
-    .map((s) => `<li style="margin:0 0 8px;padding-left:6px;color:${PULSE.graphite};font-size:13.5px;line-height:1.55;">${escapeHtml(s)}</li>`)
+    .map(
+      (s) =>
+        `<li style="margin:0 0 8px;padding-left:6px;color:rgba(255,255,255,0.9);font-size:13.5px;line-height:1.55;">${escapeHtml(s)}</li>`,
+    )
     .join('');
 
   const insightSourceLabel = isTr
@@ -170,15 +175,15 @@ export function renderRoiAdminNotification(
         <td style="vertical-align:middle;">
           ${renderEyebrow(isTr ? `${sectorLabel} · ${planLabel}` : `${sectorLabel} · ${planLabel}`, PULSE.n500)}
           <h1 style="margin:4px 0 2px;font-family:${FONTS.heading};font-size:24px;line-height:1.15;letter-spacing:-0.025em;color:${PULSE.graphite};font-weight:600;">${businessSafe}</h1>
-          <a href="mailto:${emailSafe}" style="font-family:${FONTS.mono};font-size:12.5px;color:${PULSE.graphite};text-decoration:underline;">${emailSafe}</a>
+          <a href="mailto:${encodeURI(params.email)}" style="font-family:${FONTS.mono};font-size:12.5px;color:${PULSE.graphite};text-decoration:underline;">${emailSafe}</a>
           ${phoneSafe ? `<span style="display:inline-block;margin-left:10px;font-family:${FONTS.mono};font-size:12.5px;color:${PULSE.n500};">· ${phoneSafe}</span>` : ''}
         </td>
       </tr>
     </table>
     ${spacer(18)}
-    <div style="background:${PULSE.limeSoft};border:1px solid ${PULSE.limeDeep}33;border-radius:14px;padding:18px 20px;">
+    <div class="bz-roi-card" style="background:${PULSE.limeSoft};border:1px solid ${PULSE.limeDeep}33;border-radius:14px;padding:18px 20px;">
       ${renderEyebrow(isTr ? 'YILLIK NET KAZANÇ' : 'ANNUAL NET GAIN', PULSE.graphite)}
-      <div style="margin-top:6px;font-family:${FONTS.heading};font-size:32px;line-height:1.05;letter-spacing:-0.03em;color:${PULSE.graphite};font-weight:600;">${c}${fmt(Math.max(0, Math.round(params.netGain)))}</div>
+      <div class="bz-roi-bignum-sm" style="margin-top:6px;font-family:${FONTS.heading};font-size:32px;line-height:1.05;letter-spacing:-0.03em;color:${PULSE.graphite};font-weight:600;">${c}${fmt(Math.max(0, Math.round(params.netGain)))}</div>
       <div style="margin-top:8px;font-size:13px;color:${PULSE.n800};line-height:1.55;">
         12 ${isTr ? 'ayda' : 'mo'} ${params.roiMultiple.toFixed(1)}× ROI${params.paybackMonths ? ` · ${isTr ? 'amorti' : 'payback'} ~${params.paybackMonths} ${isTr ? 'ay' : 'mo'}` : ''} · ${c}${fmt(Math.round(params.monthlyUplift))}/${isTr ? 'ay' : 'mo'} ${isTr ? 'ek gelir' : 'uplift'}
       </div>
@@ -193,12 +198,12 @@ export function renderRoiAdminNotification(
           { v: `+${fmt(params.reviewers)}`, l: isTr ? 'Yorum / ay' : 'Reviews / mo' },
           { v: fmt(params.filteredLowReviews), l: isTr ? 'Filtrelenen' : 'Filtered', accent: true },
           { v: params.projectedGoogle.toFixed(1), l: isTr ? 'Yeni ★' : 'New ★' },
-          { v: `${params.aiHoursSaved.toFixed(1)} sa`, l: isTr ? 'AI tasarruf' : 'AI saved' },
+          { v: `${params.aiHoursSaved.toFixed(1)} ${isTr ? 'sa' : 'h'}`, l: isTr ? 'AI tasarruf' : 'AI saved' },
         ]
           .map(
             (k) => `<td class="cell stack-col" valign="top" style="width:25%;padding:6px;">
-              <div style="background:${k.accent ? PULSE.limeSoft : PULSE.n50};border:1px solid ${k.accent ? PULSE.limeDeep + '33' : PULSE.n200};border-radius:12px;padding:14px;">
-                <div style="font-family:${FONTS.heading};font-size:18px;line-height:1.1;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${escapeHtml(k.v)}</div>
+              <div class="bz-roi-kpi-cell" style="background:${k.accent ? PULSE.limeSoft : PULSE.n50};border:1px solid ${k.accent ? PULSE.limeDeep + '33' : PULSE.n200};border-radius:12px;padding:14px;">
+                <div class="bz-roi-kpi-val" style="font-family:${FONTS.heading};font-size:18px;line-height:1.1;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${escapeHtml(k.v)}</div>
                 <div style="margin-top:6px;font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.n500};">${escapeHtml(k.l)}</div>
               </div>
             </td>`,
@@ -209,6 +214,16 @@ export function renderRoiAdminNotification(
   `;
 
   // ─── AI INSIGHT card (graphite bg + lime accent) ───────────────────────
+  // Priority actions section yalnız aiNextSteps doluyken render edilir;
+  // boş array'de orphan başlık + boş <ol> görünmez.
+  const prioritySection =
+    params.aiNextSteps.length > 0
+      ? `
+      <div style="margin-top:16px;">
+        <div style="font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:8px;">${isTr ? 'ÖNCELİK AKSİYONLAR' : 'PRIORITY ACTIONS'}</div>
+        <ol style="margin:0;padding:0 0 0 22px;color:rgba(255,255,255,0.9);">${stepsSafeHtml}</ol>
+      </div>`
+      : '';
   const aiInsightCard = `
     <div style="background:${PULSE.graphite};border-radius:16px;padding:22px;color:${PULSE.pure};">
       ${renderEyebrow(insightSourceLabel, PULSE.lime)}
@@ -217,12 +232,9 @@ export function renderRoiAdminNotification(
         <div style="font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.lime};margin-bottom:4px;">${isTr ? 'EN GÜÇLÜ KALDIRAÇ' : 'STRONGEST LEVERAGE'}</div>
         <div style="font-size:13px;line-height:1.55;color:${PULSE.pure};">${highlightSafe}</div>
       </div>
-      <div style="margin-top:16px;">
-        <div style="font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:8px;">${isTr ? 'ÖNCELİK AKSİYONLAR' : 'PRIORITY ACTIONS'}</div>
-        <ol style="margin:0;padding:0 0 0 22px;color:rgba(255,255,255,0.9);">${stepsSafeHtml}</ol>
-      </div>
+      ${prioritySection}
     </div>
-  `.replace(/li style="[^"]*?color:#0A0A0A/g, 'li style="margin:0 0 8px;padding-left:6px;color:rgba(255,255,255,0.9)');
+  `;
 
   // ─── Scenario table ────────────────────────────────────────────────────
   const tableRow = (label: string, value: string, accent = false) => `
@@ -246,9 +258,12 @@ export function renderRoiAdminNotification(
   `;
 
   // ─── Quick action 3-grid (Reply / Call / Panel) ────────────────────────
-  const callHref = phoneSafe ? `tel:${phoneSafe.replace(/[^+0-9]/g, '')}` : '#';
+  // tel: ve mailto: URL attribute'larında HTML-escape'li değer KULLANILMAZ —
+  // & -> &amp; dönüşümü URL'i bozar. Raw email + raw phone (ASCII filter).
+  const rawPhone = params.phone ? params.phone.replace(/[^+0-9]/g, '') : '';
+  const callHref = rawPhone ? `tel:${rawPhone}` : '#';
   const panelHref = params.panelUrl || 'https://buaze.com/admin/leads';
-  const replyHref = `mailto:${emailSafe}?subject=${encodeURIComponent(
+  const replyHref = `mailto:${encodeURI(params.email)}?subject=${encodeURIComponent(
     isTr ? `Buaze ROI hesabınız hakkında — ${params.restaurantName}` : `About your Buaze ROI estimate — ${params.restaurantName}`,
   )}`;
 

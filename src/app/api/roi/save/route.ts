@@ -47,9 +47,13 @@ function toDecimal(value: unknown): Prisma.Decimal | null {
 
 function toStr(value: unknown, max = 200): string | null {
   if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  return trimmed.slice(0, max);
+  // CRLF strip — restaurantName / phone subject veya mail header'a
+  // gidebilir; defansif sanitization. Resend HTTP API JSON-encoded body
+  // kullansa da defense-in-depth: header injection / line break artifact
+  // önler.
+  const cleaned = value.replace(/[\r\n\t]/g, ' ').trim();
+  if (!cleaned) return null;
+  return cleaned.slice(0, max);
 }
 
 export async function POST(req: NextRequest) {
@@ -103,11 +107,20 @@ export async function POST(req: NextRequest) {
 
   const phone = toStr(body.phone, 60);
   const locale: 'tr' | 'en' = body.locale === 'en' ? 'en' : 'tr';
+  const restaurantName = toStr(body.restaurantName);
+
+  // Email + işletme adı ikisi de yoksa lead value sıfır → DB'ye yazma.
+  // Bot rate-limit içinde kalıp anonim form post etse bile rOIRequest
+  // tablosu kirlenmesin. Legitimate "abandon-with-projection" akışında
+  // kullanıcı en az birini doldurur (en azından restoran adı).
+  if (!email && !restaurantName) {
+    return NextResponse.json({ ok: true });
+  }
 
   const row = await prisma.rOIRequest.create({
     data: {
       email: email?.toLowerCase() ?? null,
-      restaurantName: toStr(body.restaurantName),
+      restaurantName,
       tables: toInt(body.tables),
       avgTicket: toDecimal(body.avgTicket),
       noShowRate: toFloat(body.noShowRate),
@@ -138,64 +151,35 @@ export async function POST(req: NextRequest) {
     const cachedInsight = await getCachedInsight(cacheKey);
     const isDuplicate = cachedInsight !== null;
 
-    // AI insight + PDF base64 paralel. Cache hit varsa OpenAI çağrısı
-    // atlanır → maliyet ve latency tasarrufu.
-    const [insight, pdfBase64] = await Promise.all([
-      cachedInsight
-        ? Promise.resolve(cachedInsight)
-        : generateRoiInsight({ data: pdfData, locale })
-            .then(async (result) => {
-              if (result) {
-                // Sadece AI source'lu insight'ı cache'le; template fallback'i
-                // her zaman yeniden hesaplansın (deterministic + cheap).
-                if (result.source === 'ai') {
-                  await setCachedInsight(cacheKey, result).catch((err) =>
-                    console.error('[roi/save] cache write failed', err),
-                  );
-                }
-                return result;
+    // AI insight önce, sonra tek PDF render. Eski paralel akış AI sonucu
+    // gelince PDF'i 2. kez render ediyordu (~1-2s ekstra latency).
+    // generateRoiInsight kendi içinde 8s timeout'lu; başarısız olursa
+    // null döner ve aşağıdaki insightOrFallback kapsar — PDF bir kez,
+    // doğru insight ile basılır.
+    const insight: RoiInsight | null = cachedInsight
+      ? cachedInsight
+      : await generateRoiInsight({ data: pdfData, locale })
+          .then(async (result) => {
+            if (result) {
+              // Sadece AI source'lu insight'ı cache'le; template fallback'i
+              // her zaman yeniden hesaplansın (deterministic + cheap).
+              if (result.source === 'ai') {
+                await setCachedInsight(cacheKey, result).catch((err) =>
+                  console.error('[roi/save] cache write failed', err),
+                );
               }
-              return null;
-            })
-            .catch((err) => {
-              console.error('[roi/save] insight generation failed', err);
-              return null as RoiInsight | null;
-            }),
-      generateRoiPdfBase64({ ...pdfData, insight: null })
-        .catch(async (err) => {
-          console.error('[roi/save] pdf generation (initial) failed', err);
-          return null;
-        }),
-    ]);
+              return result;
+            }
+            return null;
+          })
+          .catch((err) => {
+            console.error('[roi/save] insight generation failed', err);
+            return null as RoiInsight | null;
+          });
 
-    // Insight başarılıysa PDF'i insight ile yeniden render et (kapakta
-    // "Buaze analizi" section'ı görünür). PDF render hızlı (<2s) — toplam
-    // budget'i sınırlamaz.
-    let finalPdfBase64 = pdfBase64;
-    if (insight) {
-      try {
-        finalPdfBase64 = await generateRoiPdfBase64({ ...pdfData, insight });
-      } catch (err) {
-        console.error('[roi/save] pdf re-render with insight failed', err);
-        // İnsight'sız PDF kullan; insight yine mail body'de görünür.
-      }
-    }
-
-    const safeName = (pdfData.restaurantName || 'isletme')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
-      .slice(0, 40) || 'isletme';
-    const attachments = finalPdfBase64
-      ? [
-          {
-            filename: `buaze-roi-${safeName}.pdf`,
-            content: finalPdfBase64,
-            contentType: 'application/pdf',
-          },
-        ]
-      : undefined;
-
+    // insightOrFallback önce build edilir — PDF render bunu tek sefer
+    // kullanacak. Insight null ise deterministic template fallback'a düşer
+    // (kapakta "Buaze analizi" section'ı her zaman görünür).
     const insightOrFallback: RoiInsight = insight ?? {
       summary:
         locale === 'tr'
@@ -220,14 +204,43 @@ export async function POST(req: NextRequest) {
       source: 'template',
     };
 
+    // Tek PDF render — insightOrFallback ile (insight başarılıysa AI,
+    // değilse template). Eski paralel akıştaki 2. rerender path'i kaldırıldı.
+    const pdfBase64 = await generateRoiPdfBase64({
+      ...pdfData,
+      insight: insightOrFallback,
+    }).catch((err) => {
+      console.error('[roi/save] pdf generation failed', err);
+      return null;
+    });
+
+    const safeName =
+      (pdfData.restaurantName || 'isletme')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .slice(0, 40) || 'isletme';
+    const attachments = pdfBase64
+      ? [
+          {
+            filename: `buaze-roi-${safeName}.pdf`,
+            content: pdfBase64,
+            contentType: 'application/pdf',
+          },
+        ]
+      : undefined;
+
     // Customer mail (Pulse roi-customer-report) — email varsa.
     if (email) {
       const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com').replace(/\/+$/, '');
-      const firstNameGuess = pdfData.restaurantName.split(/[\s,.]/)[0] || null;
+      // firstName form'da toplanmıyor → null pas et; template kendi
+      // içinde "İşletme adı + ekibi"/"team" fallback'ini üretir.
+      // (Eski restaurantName.split(/[\s,.]/)[0] türetimi awkward selamlama
+      // üretiyordu: "Cafe Karaköy" → "Hi Cafe,". Kaldırıldı.)
       const customerRendered = renderRoiCustomerReport(
         {
           restaurantName: pdfData.restaurantName,
-          firstName: firstNameGuess,
+          firstName: null,
           currency: pdfData.currency,
           netGain: pdfData.netGain,
           roiMultiple: pdfData.roiMultiple,
