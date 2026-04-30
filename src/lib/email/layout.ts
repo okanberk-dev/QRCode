@@ -53,8 +53,10 @@ a { color:${PULSE.graphite}; }
   table.grid-4 td.cell { display:inline-block !important; width:50% !important; box-sizing:border-box; }
   .badge-absolute { position:static !important; display:inline-block !important; margin:0 0 8px 0 !important; top:auto !important; right:auto !important; }
   table.bar-chart td { padding:0 2px !important; }
-  h1.bz-h1 { font-size:32px !important; line-height:1.1 !important; }
-  h1.bz-h1-lg { font-size:36px !important; line-height:1.1 !important; }
+  h1.bz-h1 { font-size:28px !important; line-height:1.15 !important; }
+  h1.bz-h1-lg { font-size:32px !important; line-height:1.1 !important; }
+  /* trial-ending plan price + similar bold display numbers in cards */
+  .bz-price-mobile { font-size:24px !important; line-height:1 !important; }
   .bz-hide-mobile { display:none !important; }
 
   /* ROI templates — mobile-only sizing.
