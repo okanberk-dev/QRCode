@@ -378,94 +378,69 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
         </h2>
 
         <figure
-          className="relative mx-auto flex w-full max-w-[420px] flex-col items-center overflow-hidden rounded-[20px] text-center transition-colors sm:max-w-none sm:rounded-[22px]"
+          className="mx-auto flex w-full max-w-[440px] flex-col items-center justify-center rounded-[22px] text-center transition-colors sm:max-w-none sm:rounded-[24px]"
           style={{
             background: palette.card,
             color: palette.fg,
             border: palette.border === 'transparent' ? '1px solid transparent' : `1px solid ${palette.border}`,
-            padding: 'clamp(28px, 6vw, 48px) clamp(20px, 5vw, 40px)',
-            gap: 'clamp(20px, 4vw, 32px)',
-            aspectRatio: 'auto',
+            padding: 'clamp(28px, 6vw, 44px) clamp(24px, 5.5vw, 40px)',
           }}
         >
-          {/* Subtle decorative corner — adds visual interest without adding more elements */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-bl-[40px]"
-            style={{
-              background:
-                template === 'koyu'
-                  ? 'rgba(255,255,255,0.04)'
-                  : template === 'lime'
-                    ? 'rgba(255,255,255,0.18)'
-                    : 'rgba(10,10,10,0.025)',
-            }}
-          />
-          <span
-            aria-hidden
-            className="pointer-events-none absolute bottom-0 left-0 h-16 w-16 rounded-tr-[32px]"
-            style={{
-              background:
-                template === 'koyu'
-                  ? 'rgba(255,255,255,0.04)'
-                  : template === 'lime'
-                    ? 'rgba(255,255,255,0.18)'
-                    : 'rgba(10,10,10,0.025)',
-            }}
-          />
-
-          <div className="relative w-full min-w-0">
-            <div
-              className="truncate"
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 'clamp(10px, 2.4vw, 11px)',
-                letterSpacing: '0.22em',
-                textTransform: 'uppercase',
-                color: palette.eyebrow,
-              }}
-            >
-              {(businessName || 'BUAZE').slice(0, 28)}
-            </div>
-            <div
-              className="mt-2 break-words sm:mt-2.5"
-              style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: 'clamp(22px, 4.6vw, 38px)',
-                fontWeight: 500,
-                lineHeight: 1.05,
-                letterSpacing: '-0.03em',
-                color: palette.fg,
-                display: '-webkit-box',
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-              }}
-            >
-              {message || defaultMessage}
-            </div>
-          </div>
-
-          {/* QR card with refined styling — inset ring + soft drop shadow */}
+          {/* Eyebrow — business name */}
           <div
-            className="relative max-w-full shrink-0 bg-white"
+            className="w-full max-w-full truncate"
             style={{
-              borderRadius: 'clamp(14px, 3vw, 18px)',
-              padding: 'clamp(14px, 3.6vw, 22px)',
-              boxShadow:
-                template === 'koyu'
-                  ? '0 8px 30px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)'
-                  : '0 10px 32px -14px rgba(10,10,10,0.18), 0 0 0 1px rgba(10,10,10,0.04)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 'clamp(10px, 2.4vw, 11px)',
+              letterSpacing: '0.24em',
+              textTransform: 'uppercase',
+              color: palette.eyebrow,
+              fontWeight: 600,
             }}
           >
+            {(businessName || 'BUAZE').slice(0, 28)}
+          </div>
+
+          {/* Headline */}
+          <h3
+            className="mt-2.5 w-full break-words sm:mt-3"
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontSize: 'clamp(22px, 4.8vw, 38px)',
+              fontWeight: 500,
+              lineHeight: 1.05,
+              letterSpacing: '-0.03em',
+              color: palette.fg,
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {message || defaultMessage}
+          </h3>
+
+          {/* QR poster — perfectly centered square with refined chrome */}
+          <div
+            className="relative mt-6 flex aspect-square w-full max-w-[260px] items-center justify-center bg-white sm:mt-8 sm:max-w-[280px]"
+            style={{
+              borderRadius: 'clamp(16px, 3.5vw, 22px)',
+              padding: 'clamp(16px, 4vw, 24px)',
+              boxShadow:
+                template === 'koyu'
+                  ? '0 12px 36px -14px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06)'
+                  : '0 14px 40px -16px rgba(10,10,10,0.22), 0 0 0 1px rgba(10,10,10,0.05)',
+            }}
+          >
+            {/* Corner brackets — subtle "scan target" hint */}
+            <span aria-hidden className="absolute left-2 top-2 h-3 w-3 rounded-tl-[6px] border-l-2 border-t-2 border-[#0A0A0A]/15 sm:left-2.5 sm:top-2.5" />
+            <span aria-hidden className="absolute right-2 top-2 h-3 w-3 rounded-tr-[6px] border-r-2 border-t-2 border-[#0A0A0A]/15 sm:right-2.5 sm:top-2.5" />
+            <span aria-hidden className="absolute bottom-2 left-2 h-3 w-3 rounded-bl-[6px] border-b-2 border-l-2 border-[#0A0A0A]/15 sm:bottom-2.5 sm:left-2.5" />
+            <span aria-hidden className="absolute bottom-2 right-2 h-3 w-3 rounded-br-[6px] border-b-2 border-r-2 border-[#0A0A0A]/15 sm:bottom-2.5 sm:right-2.5" />
+
             <canvas
               ref={canvasRef}
-              className="block"
-              style={{
-                width: 'min(52vw, 200px)',
-                height: 'min(52vw, 200px)',
-                maxWidth: '100%',
-              }}
+              className="block h-full w-full"
               width={480}
               height={480}
               role="img"
@@ -475,32 +450,43 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
             />
           </div>
 
-          {/* Footer eyebrow with separator line for visual rhythm */}
-          <div className="relative w-full">
+          {/* Footer eyebrow */}
+          <div
+            className="mt-5 flex w-full max-w-full items-center justify-center gap-2.5 truncate sm:mt-6"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 'clamp(9.5px, 2.3vw, 11px)',
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              color: palette.eyebrow,
+              fontWeight: 600,
+            }}
+          >
             <span
               aria-hidden
-              className="mx-auto mb-3 block h-px w-12"
+              className="h-px w-6 shrink-0"
               style={{
                 background:
                   template === 'koyu'
-                    ? 'rgba(255,255,255,0.18)'
+                    ? 'rgba(255,255,255,0.25)'
                     : template === 'lime'
-                      ? 'rgba(10,10,10,0.18)'
-                      : 'rgba(10,10,10,0.12)',
+                      ? 'rgba(10,10,10,0.22)'
+                      : 'rgba(10,10,10,0.15)',
               }}
             />
-            <div
-              className="truncate"
+            <span className="truncate">{isTr ? 'BUAZE · TARA ✦ PAYLAŞ' : 'BUAZE · SCAN ✦ SHARE'}</span>
+            <span
+              aria-hidden
+              className="h-px w-6 shrink-0"
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 'clamp(9.5px, 2.3vw, 11px)',
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: palette.eyebrow,
+                background:
+                  template === 'koyu'
+                    ? 'rgba(255,255,255,0.25)'
+                    : template === 'lime'
+                      ? 'rgba(10,10,10,0.22)'
+                      : 'rgba(10,10,10,0.15)',
               }}
-            >
-              {isTr ? 'BUAZE · TARA ✦ PAYLAŞ' : 'BUAZE · SCAN ✦ SHARE'}
-            </div>
+            />
           </div>
         </figure>
 
