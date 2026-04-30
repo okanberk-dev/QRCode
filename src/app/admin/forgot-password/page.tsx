@@ -3,7 +3,16 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, AtSign, Info, Loader2, Mail, ShieldCheck } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  AtSign,
+  CheckCircle2,
+  Info,
+  KeyRound,
+  Loader2,
+  Mail,
+} from 'lucide-react';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import { AlertBanner } from '@/components/ui';
 
@@ -48,121 +57,156 @@ function ForgotPasswordContent() {
   };
 
   return (
-    <main className="min-h-[100dvh] bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40">
+    <main className="relative min-h-[100dvh] overflow-hidden bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40">
+      {/* Soft top accent */}
       <div
         aria-hidden
-        className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,#EAF9B8_0%,rgba(234,249,184,0)_62%)]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,#EAF9B8_0%,rgba(234,249,184,0)_65%)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-[-10%] top-[-15%] h-[380px] w-[380px] rounded-full bg-[#C6F24E]/20 blur-[120px]"
       />
 
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 sm:px-5 py-5 sm:py-6">
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-5 sm:px-7 py-5 sm:py-7">
+        {/* Top bar */}
         <header className="flex items-center justify-between">
-          <Link href="/admin" className="inline-flex items-center gap-2 sm:gap-2.5">
+          <Link href="/admin" className="inline-flex items-center gap-2.5">
             <BuazeLogo size={32} />
-            <span className="text-lg sm:text-xl font-semibold tracking-tight">
+            <span className="bz-h-tight text-[20px] sm:text-[22px]" style={{ letterSpacing: '-0.03em' }}>
               buaze<span className="text-[#A8D62E]">.</span>
             </span>
           </Link>
           <Link
             href="/admin"
-            className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] px-3 py-1.5 text-[12px] font-semibold text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] px-3.5 py-2 text-[12px] font-semibold text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
           >
-            <ArrowLeft size={12} strokeWidth={2} />
+            <ArrowLeft size={12} strokeWidth={2.2} />
             Girişe dön
           </Link>
         </header>
 
+        {/* Main */}
         <section className="flex flex-1 items-center justify-center py-8 sm:py-10">
-          <div className="w-full max-w-[420px]">
-            <div className="mb-6 sm:mb-7 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
-                <ShieldCheck size={22} strokeWidth={2} />
+          <div className="bz-fade-in w-full max-w-[440px]">
+            {/* Brand block */}
+            <div className="mb-7 sm:mb-8 text-center">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E] shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)]">
+                <KeyRound size={22} strokeWidth={2} />
               </div>
-              <p className="pulse-eyebrow text-[#737373]">YÖNETİCİ PANELİ</p>
+              <span className="pulse-eyebrow text-[#737373]">YÖNETİCİ PANELİ</span>
               <h1
-                className="mt-2 text-[28px] sm:text-[34px] font-medium leading-[1.05] tracking-[-0.04em] text-[#0A0A0A]"
+                className="mt-3 text-[30px] sm:text-[38px] font-medium leading-[1.05] tracking-[-0.04em] text-[#0A0A0A]"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
                 Şifremi unuttum
               </h1>
-              <p className="mt-2.5 text-[13px] sm:text-sm text-[#737373] leading-[1.55] max-w-[360px] mx-auto">
-                Kullanıcı adını veya kayıtlı kurtarma e-postanı gir; bu adrese 6 haneli kod
+              <p className="mx-auto mt-3 max-w-[360px] text-[13px] sm:text-[14px] leading-[1.6] text-[#525252]">
+                Kullanıcı adını veya kayıtlı kurtarma e-postanı gir; bu adrese{' '}
+                <span className="font-semibold text-[#0A0A0A]">6 haneli kod</span>{' '}
                 göndereceğiz.
               </p>
             </div>
 
-            <div className="rounded-3xl sm:rounded-[28px] border border-[#EDEDED] bg-white p-5 sm:p-7 shadow-[0_24px_70px_-42px_rgba(10,10,10,0.45)]">
+            {/* Card */}
+            <div className="rounded-[28px] border border-[#EDEDED] bg-white p-6 sm:p-8 shadow-[0_28px_80px_-48px_rgba(10,10,10,0.45)]">
               {submitted ? (
-                <div className="text-center py-2">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#C6F24E]">
-                    <Mail size={24} strokeWidth={2} className="text-[#0A0A0A]" />
+                <div className="text-center">
+                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_18px_40px_-18px_rgba(168,214,46,0.6)]">
+                    <Mail size={26} strokeWidth={2} className="text-[#0A0A0A]" />
                   </div>
                   <h2
-                    className="bz-h-tight"
-                    style={{ fontSize: 20 }}
+                    className="text-[22px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+                    style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     Kodu gönderdik
                   </h2>
-                  <p className="mt-2 text-[13px] text-[#525252] leading-[1.55]">
-                    Eğer bu kullanıcı için kayıtlı bir kurtarma e-postası varsa kod birkaç dakika
-                    içinde gelecek. Kodun{' '}
-                    <span className="font-semibold text-[#0A0A0A]">15 dakika</span> geçerlidir.
+                  <p className="mx-auto mt-3 max-w-[340px] text-[13px] leading-[1.6] text-[#525252]">
+                    Eğer bu kullanıcı için kayıtlı bir kurtarma e-postası varsa kod birkaç
+                    dakika içinde gelecek. Kodun{' '}
+                    <span className="font-semibold text-[#0A0A0A]">15 dakika</span>{' '}
+                    geçerlidir.
                   </p>
+
+                  {/* Sub-tip */}
+                  <div className="mx-auto mt-5 flex max-w-[340px] items-start gap-2 rounded-2xl bg-[#FAFAFA] px-3.5 py-3 text-left text-[12px] leading-[1.55] text-[#525252]">
+                    <CheckCircle2
+                      size={14}
+                      strokeWidth={2.2}
+                      className="mt-0.5 shrink-0 text-[#A8D62E]"
+                    />
+                    <span>
+                      Mailini açtıktan sonra{' '}
+                      <span className="font-semibold text-[#0A0A0A]">spam / promosyon</span>{' '}
+                      klasörünü de kontrol etmeyi unutma.
+                    </span>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => {
-                      // Email girilmiş olabilir; reset sayfası username ister.
-                      // Kullanıcı email girdiyse, kullanıcı adını orada
-                      // tekrar yazsın. URL'e ipucu sadece email-değilse koy.
                       const value = identifier.trim();
                       const isEmail = value.includes('@');
                       const qs = isEmail ? '' : `?username=${encodeURIComponent(value)}`;
                       router.push(`/admin/reset-password${qs}`);
                     }}
-                    className="mt-5 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0A0A0A] px-5 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A]"
+                    className="group mt-5 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)] transition-all hover:-translate-y-px hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
                   >
                     Kodumu girdim
-                    <ArrowRight size={16} strokeWidth={2} />
+                    <ArrowRight
+                      size={16}
+                      strokeWidth={2.2}
+                      className="transition-transform group-hover:translate-x-0.5"
+                    />
                   </button>
-                  <p className="mt-3 text-[11px] text-[#737373]">
+
+                  <p className="mt-4 text-[12px] text-[#737373]">
                     Kod gelmediyse{' '}
                     <button
                       type="button"
-                      className="font-semibold text-[#0A0A0A] underline hover:text-[#A8D62E]"
+                      className="font-semibold text-[#0A0A0A] underline-offset-4 hover:text-[#A8D62E] hover:underline"
                       onClick={() => setSubmitted(false)}
                     >
                       tekrar dene
                     </button>{' '}
-                    veya yöneticinle iletiş.
+                    veya yöneticinle iletişime geç.
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {error && (
-                    <AlertBanner kind="danger">{error}</AlertBanner>
-                  )}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
                   <div className="space-y-2">
-                    <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                    <label
+                      htmlFor="adminIdentifier"
+                      className="pulse-eyebrow text-[#737373]"
+                    >
                       Kullanıcı adı veya e-posta
                     </label>
-                    <div className="relative">
+                    <div className="group relative">
                       <AtSign
-                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
+                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3] transition-colors group-focus-within:text-[#0A0A0A]"
                         size={16}
                         strokeWidth={2}
                       />
                       <input
+                        id="adminIdentifier"
                         type="text"
                         required
                         autoComplete="username"
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        enterKeyHint="send"
+                        inputMode="email"
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
-                        className="w-full min-h-[48px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-4 text-[14px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:bg-white"
+                        className="w-full min-h-[52px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-4 text-[16px] sm:text-[15px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] hover:border-[#D4D4D4] hover:bg-white focus:border-[#0A0A0A] focus:bg-white focus:ring-4 focus:ring-[#C6F24E]/30"
                         placeholder="admin veya admin@buaze.com"
                         autoFocus
                       />
                     </div>
-                    <div className="flex items-start gap-1.5 text-[11px] text-[#737373] leading-[1.55]">
+                    <div className="flex items-start gap-1.5 pt-0.5 text-[11.5px] leading-[1.55] text-[#737373]">
                       <Info size={11} strokeWidth={2} className="mt-0.5 shrink-0" />
                       <span>
                         Hesabında kayıtlı kurtarma e-postası yoksa kod gönderilemez. Bir
@@ -174,7 +218,7 @@ function ForgotPasswordContent() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0A0A0A] px-5 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="group flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)] transition-all hover:-translate-y-px hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
                   >
                     {loading ? (
                       <Loader2 className="animate-spin" size={18} />
@@ -183,6 +227,7 @@ function ForgotPasswordContent() {
                         Kodu gönder
                         <ArrowRight
                           size={16}
+                          strokeWidth={2.2}
                           className="transition-transform group-hover:translate-x-0.5"
                         />
                       </>
@@ -191,6 +236,11 @@ function ForgotPasswordContent() {
                 </form>
               )}
             </div>
+
+            {/* Footer line */}
+            <p className="mt-6 text-center text-[11px] tracking-[0.02em] text-[#A3A3A3]">
+              Buaze hesap kurtarma · KVKK uyumlu, anti-enumerasyon korumalı
+            </p>
           </div>
         </section>
       </div>
