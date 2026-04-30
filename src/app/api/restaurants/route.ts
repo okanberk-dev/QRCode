@@ -32,9 +32,12 @@ export async function GET(req: NextRequest) {
           yemekSepetiUrl: true,
           trendyolYemekUrl: true,
           // Konaklama / non-delivery vertical platforms — public surface
-          // needs them to honour `?platform=tripadvisor|airbnb` QR params.
+          // needs them to honour `?platform=tripadvisor|airbnb|booking|yandex`
+          // QR params.
           tripAdvisorUrl: true,
           airbnbUrl: true,
+          bookingUrl: true,
+          yandexUrl: true,
           primaryColor: true,
           isActive: true,
           // `defaultRedirectPlatform` powers the public review surface's
@@ -183,7 +186,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { name, slug, category, address, city, kvkkText, phone, googlePlaceId, googleReviewUrl, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, tripAdvisorUrl, airbnbUrl, userId: bodyUserId } = body;
+    const { name, slug, category, address, city, kvkkText, phone, googlePlaceId, googleReviewUrl, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, tripAdvisorUrl, airbnbUrl, bookingUrl, yandexUrl, userId: bodyUserId } = body;
 
     if (!name || !slug) {
       return ApiErrors.badRequest('Ad ve slug zorunludur', 'MISSING_FIELDS');
@@ -241,6 +244,8 @@ export async function POST(req: NextRequest) {
         trendyolYemekUrl: trendyolYemekUrl || null,
         tripAdvisorUrl: tripAdvisorUrl || null,
         airbnbUrl: airbnbUrl || null,
+        bookingUrl: bookingUrl || null,
+        yandexUrl: yandexUrl || null,
         userId: ownerUserId,
       },
     });

@@ -18,19 +18,19 @@ export type SectorKey =
   | 'other';
 
 export const SECTOR_PLATFORMS: Record<SectorKey, PlatformId[]> = {
-  food: ['google', 'yemeksepeti', 'getir', 'trendyol', 'tripadvisor'],
+  food: ['google', 'yemeksepeti', 'getir', 'trendyol', 'tripadvisor', 'yandex'],
   delivery: ['google', 'yemeksepeti', 'getir', 'trendyol'],
-  hospitality: ['google', 'tripadvisor', 'airbnb'],
-  clinic: ['google'],
+  hospitality: ['google', 'tripadvisor', 'booking', 'airbnb', 'yandex'],
+  clinic: ['google', 'yandex'],
   legal: ['google'],
-  spa: ['google'],
-  retail: ['google'],
+  spa: ['google', 'yandex'],
+  retail: ['google', 'yandex'],
   fitness: ['google'],
   education: ['google'],
   // Unknown / catch-all sector: show universal review surfaces only — neither
   // delivery-specific nor lodging-specific. Owners with an unusual business
   // can still set Google + Tripadvisor without committing to a vertical.
-  other: ['google', 'tripadvisor'],
+  other: ['google', 'tripadvisor', 'yandex'],
 };
 
 // Categories are free-form across three entry points (onboarding sector list,

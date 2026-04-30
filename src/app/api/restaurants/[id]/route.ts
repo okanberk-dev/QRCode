@@ -104,6 +104,11 @@ export async function PUT(
       airbnbUrl,
       tripAdvisorEnabled,
       airbnbEnabled,
+      // Konaklama / TR-pazarı ek platformlar (yeni — booking + yandex)
+      bookingUrl,
+      yandexUrl,
+      bookingEnabled,
+      yandexEnabled,
       // Faz 2 — Sosyal medya entegrasyonları
       instagramUrl,
       facebookUrl,
@@ -121,7 +126,8 @@ export async function PUT(
     // platformUrls map. Konaklama / catch-all sectors can default to
     // tripadvisor/airbnb when those URLs are filled in.
     const ALLOWED_DEFAULT_PLATFORMS = new Set([
-      'google', 'yemeksepeti', 'getir', 'trendyol_go', 'tripadvisor', 'airbnb',
+      'google', 'yemeksepeti', 'getir', 'trendyol_go',
+      'tripadvisor', 'airbnb', 'booking', 'yandex',
     ]);
     if (defaultRedirectPlatform !== undefined && defaultRedirectPlatform !== null && defaultRedirectPlatform !== '') {
       if (typeof defaultRedirectPlatform !== 'string' || !ALLOWED_DEFAULT_PLATFORMS.has(defaultRedirectPlatform)) {
@@ -206,6 +212,8 @@ export async function PUT(
       trendyol_go: trendyolYemekUrl,
       tripadvisor: tripAdvisorUrl,
       airbnb: airbnbUrl,
+      booking: bookingUrl,
+      yandex: yandexUrl,
     };
     const orphanedDefault =
       defaultRedirectPlatform === undefined &&
@@ -297,6 +305,10 @@ export async function PUT(
         ...(airbnbUrl !== undefined && { airbnbUrl: airbnbUrl || null }),
         ...(tripAdvisorEnabled !== undefined && { tripAdvisorEnabled: Boolean(tripAdvisorEnabled) }),
         ...(airbnbEnabled !== undefined && { airbnbEnabled: Boolean(airbnbEnabled) }),
+        ...(bookingUrl !== undefined && { bookingUrl: bookingUrl || null }),
+        ...(yandexUrl !== undefined && { yandexUrl: yandexUrl || null }),
+        ...(bookingEnabled !== undefined && { bookingEnabled: Boolean(bookingEnabled) }),
+        ...(yandexEnabled !== undefined && { yandexEnabled: Boolean(yandexEnabled) }),
         ...(menuLogoUrl !== undefined && { menuLogoUrl: menuLogoUrl || null }),
         ...(defaultRedirectPlatform !== undefined && {
           defaultRedirectPlatform: defaultRedirectPlatform || null,

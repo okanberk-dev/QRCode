@@ -16,6 +16,8 @@ export type IntegrationProvider =
   | 'trendyol_go'
   | 'tripadvisor'
   | 'airbnb'
+  | 'booking'
+  | 'yandex'
   | 'instagram'
   | 'facebook'
   | 'whatsapp'
@@ -29,6 +31,8 @@ export const PROVIDER_DOMAINS: Record<IntegrationProvider, string[] | null> = {
   trendyol_go: ['tgoapp.com', 'trendyol.com', 'trendyolgo.com'],
   tripadvisor: ['tripadvisor.com', 'tripadvisor.com.tr'],
   airbnb: ['airbnb.com', 'airbnb.com.tr'],
+  booking: ['booking.com'],
+  yandex: ['yandex.com', 'yandex.com.tr', 'yandex.ru'],
   instagram: ['instagram.com', 'instagr.am'],
   facebook: ['facebook.com', 'fb.com', 'fb.me', 'm.facebook.com'],
   whatsapp: ['whatsapp.com', 'wa.me', 'api.whatsapp.com'],
@@ -43,6 +47,8 @@ export const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
   trendyol_go: 'Trendyol GO',
   tripadvisor: 'Tripadvisor',
   airbnb: 'Airbnb',
+  booking: 'Booking',
+  yandex: 'Yandex',
   instagram: 'Instagram',
   facebook: 'Facebook',
   whatsapp: 'WhatsApp',

@@ -113,10 +113,12 @@ model Restaurant {
   getirYemekUrl           String?   @map("getir_yemek_url")
   yemekSepetiUrl          String?   @map("yemek_sepeti_url")
   trendyolYemekUrl        String?   @map("trendyol_yemek_url")
-  // Otel/konaklama segmenti için Tripadvisor + Airbnb URL'leri. Null =
-  // henüz bağlanmadı; UI "Henüz bağlanmadı" gösterir.
+  // Konaklama / turizm segmenti için ek platformlar. Null = henüz
+  // bağlanmadı; UI "Henüz bağlanmadı" gösterir.
   tripAdvisorUrl          String?   @map("tripadvisor_url")
   airbnbUrl               String?   @map("airbnb_url")
+  bookingUrl              String?   @map("booking_url")
+  yandexUrl               String?   @map("yandex_url")
   // Per-platform enable flag — owner panelde toggle ile manuel kapatılabilir.
   // URL doluyken toggle off ise platform "passive" (varsayılana fallback).
   // Default true; URL boşsa UI yine "Henüz bağlanmadı" gösterir (enabled
@@ -127,6 +129,8 @@ model Restaurant {
   trendyolEnabled         Boolean   @default(true) @map("trendyol_enabled")
   tripAdvisorEnabled      Boolean   @default(true) @map("tripadvisor_enabled")
   airbnbEnabled           Boolean   @default(true) @map("airbnb_enabled")
+  bookingEnabled          Boolean   @default(true) @map("booking_enabled")
+  yandexEnabled           Boolean   @default(true) @map("yandex_enabled")
   // Owner's chosen fallback platform when a QR has no explicit ?platform=
   // query string. NULL → Google fallback (legacy default). Values mirror
   // Feedback.platform: google | yemeksepeti | getir | trendyol_go.
