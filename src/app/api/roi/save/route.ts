@@ -82,16 +82,62 @@ export async function POST(req: NextRequest) {
 
   const salesInbox = process.env.NOTIFICATION_EMAIL;
   if (email && salesInbox) {
-    const projectionSnippet =
+    // Önemli alanları okunabilir formata çevir; bilinmeyen tüm yapı için
+    // JSON fallback bırakırız ki future schema değişikliklerinde sales mail
+    // kırılmasın.
+    const projObj =
       body.projection && typeof body.projection === 'object'
-        ? `\n\nProjeksiyon: ${JSON.stringify(body.projection)}`
+        ? (body.projection as Record<string, unknown>)
+        : null;
+    const calcObj =
+      projObj && typeof projObj.calc === 'object' && projObj.calc !== null
+        ? (projObj.calc as Record<string, unknown>)
+        : null;
+
+    const projLines: string[] = [];
+    const projHtmlRows: string[] = [];
+    function addRow(label: string, value: unknown) {
+      if (value === undefined || value === null || value === '') return;
+      const v = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      projLines.push(`${label}: ${v}`);
+      projHtmlRows.push(`<li>${escape(label)}: ${escape(v)}</li>`);
+    }
+    if (projObj) {
+      addRow('Sektör', projObj.sector);
+      addRow('Aylık müşteri', projObj.monthlyCustomers);
+      addRow('Mevcut Google ★', projObj.currentGoogle);
+      addRow('Aylık 1-3★ yorum', projObj.lowRatingsPerMonth);
+      addRow(
+        'Platformlar',
+        Array.isArray(projObj.platforms) ? projObj.platforms.join(', ') : projObj.platforms,
+      );
+      addRow('Plan', projObj.plan);
+    }
+    if (calcObj) {
+      addRow('Beklenen QR scan / ay', calcObj.scanned);
+      addRow('Beklenen yorum / ay', calcObj.reviewers);
+      addRow('Filtrelenen kötü yorum / ay', calcObj.filteredLowReviews);
+      addRow('Yeni Google ★', calcObj.projectedGoogle);
+      addRow('Yeni müşteri / ay', calcObj.newCustomers);
+      addRow('Aylık ek gelir', calcObj.monthlyUplift);
+      addRow('Yıllık net kazanç', calcObj.netGain);
+      addRow('ROI çarpanı', calcObj.roiMultiple);
+      addRow('Amorti (ay)', calcObj.paybackMonths);
+      addRow('AI Co-Pilot tasarruf (sa/ay)', calcObj.aiHoursSaved);
+    }
+    const projectionText = projLines.length ? `\n\n— Projeksiyon —\n${projLines.join('\n')}` : '';
+    const projectionHtml = projHtmlRows.length
+      ? `<h4 style="margin:16px 0 6px">Projeksiyon</h4><ul>${projHtmlRows.join('')}</ul>`
+      : projObj
+        ? `<pre style="white-space:pre-wrap">${escape(JSON.stringify(projObj, null, 2))}</pre>`
         : '';
+
     sendMail({
       to: salesInbox,
       replyTo: email,
       subject: `Buaze ROI hesaplayıcı · yeni lead · ${row.restaurantName ?? email}`,
-      text: `Yeni ROI hesap lead'i geldi.\n\nEmail: ${email}\nİşletme: ${row.restaurantName ?? '-'}\nMasa: ${row.tables ?? '-'}\nOrt. kişi başı: ${row.avgTicket ?? '-'}\nNo-show oranı: ${row.noShowRate ?? '-'}${projectionSnippet}`,
-      html: `<h3>Yeni ROI lead'i</h3><ul><li>Email: ${escape(email)}</li><li>İşletme: ${escape(row.restaurantName ?? '-')}</li><li>Masa: ${escape(String(row.tables ?? '-'))}</li><li>Ort. kişi başı: ${escape(String(row.avgTicket ?? '-'))}</li><li>No-show oranı: ${escape(String(row.noShowRate ?? '-'))}</li></ul>${projectionSnippet ? `<pre>${escape(projectionSnippet)}</pre>` : ''}`,
+      text: `Yeni ROI hesap lead'i geldi.\n\nEmail: ${email}\nİşletme: ${row.restaurantName ?? '-'}\nOrt. kişi başı: ${row.avgTicket ?? '-'}${projectionText}`,
+      html: `<h3>Yeni ROI lead'i</h3><ul><li>Email: ${escape(email)}</li><li>İşletme: ${escape(row.restaurantName ?? '-')}</li><li>Ort. kişi başı: ${escape(String(row.avgTicket ?? '-'))}</li></ul>${projectionHtml}`,
     }).catch((err) => {
       console.error('[roi/save] sales mail failed', err);
     });

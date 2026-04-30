@@ -76,10 +76,10 @@ export default async function RoiPage({
               </>
             )}
           </h1>
-          <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[620px] mx-auto leading-[1.6]">
+          <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[640px] mx-auto leading-[1.6]">
             {isTr
-              ? 'Sektör ortalamalarına göre kendi senaryonu çıkar. Sürükle, plan seç, sonucu gör — kaydolmadan.'
-              : 'Build your own scenario from sector averages. Drag, pick a plan, see the result — no signup.'}
+              ? 'Buaze düşük yorumları nasıl filtreliyor, hangi platforma kaç yorum yönlendiriyor ve AI Co-Pilot sana ne kadar zaman kazandırıyor — sürükle, gör. Kaydolmadan.'
+              : 'See how Buaze filters low ratings, how reviews route across platforms and how much time AI Co-Pilot saves you — drag, see. No signup.'}
           </p>
         </div>
       </section>

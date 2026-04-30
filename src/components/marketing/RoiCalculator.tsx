@@ -1,7 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { ArrowRight, Clock, Loader2, MailCheck, ShieldCheck, Sparkles, Star } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
+import { AlertBanner, Field } from '@/components/ui';
+import { getRecaptchaToken } from '@/lib/recaptcha-client';
 
 interface RoiCalculatorProps {
   locale: Locale;
@@ -53,6 +57,38 @@ const MAX_RATING_DELTA = 0.6;
 // % of new discovery that converts to a paying customer.
 const DISCOVERY_TO_CUSTOMER_RATE = 0.32;
 
+// Buaze'nin signature faydası: düşük puan filtrelemesi.
+// Yüksek puan platforma yönlendirilirken düşük puan dahili form'a düşer →
+// Google'a sızma oranı tipik ~%15. Yani ~%85 filtrelenir.
+const LOW_RATING_FILTER_RATE = 0.85;
+
+// Filtrelenen her kötü yorumun Google ortalamasına marjinal etkisi.
+// 0.012 ≈ 50 kötü yorum filtresi MAX_RATING_DELTA cap'ine yaklaşır.
+const RATING_LIFT_PER_FILTERED = 0.012;
+
+// Mevcut headroom heuristic'i artık ratingLift'e %25 ağırlıkla katılır;
+// gerisi filtreleme tarafından sürülür → düşük yorum slider'ının somut etkisi.
+const HEADROOM_WEIGHT = 0.25;
+
+// AI Co-Pilot taslak (CLAUDE.md §15) yanıt başına ortalama kazanım.
+// Manuel yanıt 5-7 dk, AI taslak + edit 1-2 dk → ~4 dk tasarruf / yanıt.
+const AI_REPLY_TIME_SAVED_MIN = 4;
+
+// Yüksek puan akışında platform dağılımı default ağırlıkları. Kullanıcı
+// seçili olmayan platformları sıfırlar; geri kalanlar runtime'da normalize
+// edilir. Resmi marka hex'leri CLAUDE.md §11 dokunulmaz tablosundan.
+type PlatformKey = 'google' | 'yemeksepeti' | 'getir' | 'trendyol';
+const PLATFORM_META: Record<
+  PlatformKey,
+  { labelTr: string; labelEn: string; weight: number; color: string }
+> = {
+  google: { labelTr: 'Google', labelEn: 'Google', weight: 0.50, color: '#4285F4' },
+  yemeksepeti: { labelTr: 'Yemeksepeti', labelEn: 'Yemeksepeti', weight: 0.25, color: '#FA0050' },
+  getir: { labelTr: 'Getir', labelEn: 'Getir', weight: 0.15, color: '#5D3EBC' },
+  trendyol: { labelTr: 'Trendyol GO', labelEn: 'Trendyol GO', weight: 0.10, color: '#F27A1A' },
+};
+const ALL_PLATFORMS = Object.keys(PLATFORM_META) as PlatformKey[];
+
 export default function RoiCalculator({ locale }: RoiCalculatorProps) {
   const isTr = locale === 'tr';
   const currency = isTr ? '₺' : '$';
@@ -62,24 +98,151 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
   const [monthlyCustomers, setMonthlyCustomers] = useState(isTr ? 1200 : 800);
   const [avgTicket, setAvgTicket] = useState(isTr ? 320 : 28);
   const [currentGoogle, setCurrentGoogle] = useState(4.2);
+  const [lowRatingsPerMonth, setLowRatingsPerMonth] = useState(12);
+  const [platforms, setPlatforms] = useState<PlatformKey[]>([...ALL_PLATFORMS]);
   const [plan, setPlan] = useState<PlanKey>('growth');
+
+  function togglePlatform(key: PlatformKey) {
+    setPlatforms((prev) => {
+      // En az 1 platform seçili kalmalı — son platformun kapanmasını engelle.
+      if (prev.includes(key)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((p) => p !== key);
+      }
+      return [...prev, key];
+    });
+  }
+
+  // ─── Lead form (Detaylı PDF + 1-1 demo iste) ───────────────────────────
+  const [leadName, setLeadName] = useState('');
+  const [leadEmail, setLeadEmail] = useState('');
+  const [leadPhone, setLeadPhone] = useState('');
+  const [leadConsent, setLeadConsent] = useState(false);
+  const [leadErrors, setLeadErrors] = useState<{
+    name?: string;
+    email?: string;
+    consent?: string;
+  }>({});
+  const [leadStatus, setLeadStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>(
+    'idle',
+  );
+  const [leadServerError, setLeadServerError] = useState<string | null>(null);
+
+  function validateLead() {
+    const errors: typeof leadErrors = {};
+    const name = leadName.trim();
+    if (name.length < 2) {
+      errors.name = isTr ? 'İşletme adı en az 2 karakter olmalı.' : 'At least 2 characters.';
+    }
+    const email = leadEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = isTr ? 'Geçerli bir e-posta gir.' : 'Enter a valid email address.';
+    }
+    if (!leadConsent) {
+      errors.consent = isTr
+        ? 'İletişim için onay gerekli.'
+        : 'Consent is required.';
+    }
+    setLeadErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  async function handleLeadSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLeadServerError(null);
+    if (!validateLead()) return;
+    setLeadStatus('sending');
+    try {
+      const recaptchaToken = await getRecaptchaToken('roi_save').catch(() => null);
+      const projection = {
+        sector,
+        monthlyCustomers,
+        avgTicket,
+        currentGoogle,
+        lowRatingsPerMonth,
+        platforms,
+        plan,
+        // Hesaplanmış değerler — sales mail + form-confirmation context'i için
+        calc: {
+          scanned: calc.scanned,
+          reviewers: calc.reviewers,
+          filteredLowReviews: calc.filteredLowReviews,
+          projectedGoogle: calc.projectedGoogle,
+          newCustomers: calc.newCustomers,
+          monthlyUplift: Math.round(calc.monthlyUplift),
+          yearlyUplift: Math.round(calc.yearlyUplift),
+          netGain: Math.round(calc.netGain),
+          roiMultiple: Number(calc.roiMultiple.toFixed(2)),
+          paybackMonths: calc.paybackMonths,
+          aiHoursSaved: Number(calc.aiHoursSaved.toFixed(1)),
+          platformBreakdown: calc.platformBreakdown.map((p) => ({
+            key: p.key,
+            share: Number(p.share.toFixed(3)),
+            reviews: p.reviews,
+          })),
+        },
+      };
+      const res = await fetch('/api/roi/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: leadEmail.trim(),
+          restaurantName: leadName.trim(),
+          phone: leadPhone.trim() || undefined,
+          avgTicket,
+          recaptchaToken,
+          projection,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        const code = data?.error;
+        const msg =
+          code === 'rate_limited'
+            ? isTr
+              ? 'Çok hızlı denedin. Birkaç dakika sonra yeniden gönder.'
+              : 'Too many tries. Please retry in a few minutes.'
+            : code === 'invalid_email'
+              ? isTr
+                ? 'E-posta adresi geçersiz.'
+                : 'Invalid email address.'
+              : isTr
+                ? 'Gönderim başarısız. Tekrar dene.'
+                : 'Submit failed. Please retry.';
+        setLeadServerError(msg);
+        setLeadStatus('error');
+        return;
+      }
+      setLeadStatus('sent');
+    } catch {
+      setLeadServerError(
+        isTr ? 'Bağlantı hatası. Tekrar dene.' : 'Connection error. Please retry.',
+      );
+      setLeadStatus('error');
+    }
+  }
 
   const planDef = PLANS.find((p) => p.key === plan)!;
   const planPrice = isTr ? planDef.priceTr : planDef.priceEn;
   const sectorDef = SECTORS[sector];
 
-  // Rating uplift scales with where you start: a 3.5★ business has more
-  // headroom than a 4.6★ one. Cap projection at 4.9 (no realistic 5.0).
-  const ratingDelta = Math.min(MAX_RATING_DELTA, Math.max(0, 4.9 - currentGoogle));
-  const projectedGoogle = Math.min(4.9, currentGoogle + ratingDelta);
-
   const calc = useMemo(() => {
     const scanned = Math.round(monthlyCustomers * planDef.scanRate);
     const reviewers = Math.round(scanned * REVIEW_SUBMISSION_RATE);
 
-    // Discovery uplift = how much more your local-pack appearance grows
-    // because of the rating bump.
-    const discoveryUplift = ratingDelta * DISCOVERY_GAIN_PER_STAR;
+    // 1) Buaze filtrelemesi — düşük yorumların ne kadarı Google'a sızmaz.
+    const filteredLowReviews = Math.round(lowRatingsPerMonth * LOW_RATING_FILTER_RATE);
+
+    // 2) Rating lift = filtreleme katkısı (ana sürücü) + headroom heuristic'i.
+    //    Filtreleme her kötü yorum başına marjinal etki bırakır; mevcut puan
+    //    4.9'a yaklaştıkça headroom payı küçülür.
+    const filteredLift = filteredLowReviews * RATING_LIFT_PER_FILTERED;
+    const headroomLift = Math.max(0, 4.9 - currentGoogle) * HEADROOM_WEIGHT;
+    const ratingLift = Math.min(MAX_RATING_DELTA, filteredLift + headroomLift);
+    const projectedGoogle = Math.min(4.9, currentGoogle + ratingLift);
+
+    // 3) Discovery uplift — rating bump'ın local-pack CTR'ye yansıması.
+    const discoveryUplift = ratingLift * DISCOVERY_GAIN_PER_STAR;
     const newCustomers = Math.round(
       monthlyCustomers * discoveryUplift * DISCOVERY_TO_CUSTOMER_RATE * sectorDef.mult,
     );
@@ -90,17 +253,56 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
     const netGain = yearlyUplift - yearlyPlan;
     const roiMultiple = yearlyPlan > 0 ? Math.max(0, netGain / yearlyPlan) : 0;
 
-    // Payback in months: plan / monthly uplift, capped at 99.
-    const paybackMonths = monthlyUplift > planPrice / 12
-      ? Math.max(1, Math.ceil(planPrice / Math.max(monthlyUplift, 1)))
-      : null;
+    // Payback: aylık uplift planın aylık maliyetini geçtiği andan itibaren
+    // kaç ayda kümülatif kazanç planı amorti eder.
+    const monthlyPlan = planPrice;
+    const paybackMonths =
+      monthlyUplift > 0 && monthlyUplift > monthlyPlan * 0.1
+        ? Math.max(1, Math.ceil(monthlyPlan / Math.max(monthlyUplift, 1)))
+        : null;
+
+    // 4) AI Co-Pilot zaman tasarrufu — ay başına saat (yanıtlanan yorum × 4 dk).
+    const aiHoursSaved = (reviewers * AI_REPLY_TIME_SAVED_MIN) / 60;
+
+    // 5) Platform breakdown — yüksek puan akışı seçili platformlara dağılır.
+    //    Default ağırlıklar normalize edilir (seçili olmayan = 0).
+    const totalWeight = platforms.reduce((sum, key) => sum + PLATFORM_META[key].weight, 0);
+    const platformBreakdown: Array<{ key: PlatformKey; share: number; reviews: number }> =
+      platforms.map((key) => {
+        const share = totalWeight > 0 ? PLATFORM_META[key].weight / totalWeight : 0;
+        return { key, share, reviews: Math.round(reviewers * share) };
+      });
 
     return {
-      scanned, reviewers, newCustomers,
-      monthlyUplift, yearlyUplift, yearlyPlan,
-      netGain, roiMultiple, paybackMonths,
+      scanned,
+      reviewers,
+      filteredLowReviews,
+      ratingLift,
+      projectedGoogle,
+      newCustomers,
+      monthlyUplift,
+      yearlyUplift,
+      yearlyPlan,
+      netGain,
+      roiMultiple,
+      paybackMonths,
+      aiHoursSaved,
+      platformBreakdown,
     };
-  }, [monthlyCustomers, avgTicket, planPrice, planDef.scanRate, ratingDelta, sectorDef.mult]);
+  }, [
+    monthlyCustomers,
+    avgTicket,
+    planPrice,
+    planDef.scanRate,
+    currentGoogle,
+    lowRatingsPerMonth,
+    platforms,
+    sectorDef.mult,
+  ]);
+
+  // Backward compat — JSX'te `projectedGoogle` ve `ratingDelta` referansları
+  // eski formülde top-level idi; artık calc içinden çekilir.
+  const projectedGoogle = calc.projectedGoogle;
 
   const fmt = (n: number) => n.toLocaleString(localeTag);
   const fmtRoi = (n: number) =>
@@ -117,7 +319,8 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] gap-6 lg:gap-8 items-stretch">
+    <div className="flex flex-col gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] gap-6 lg:gap-8 items-stretch">
       {/* ─── Inputs (FAFAFA card) ─── */}
       <form
         aria-label={isTr ? 'ROI hesaplayıcı girdileri' : 'ROI calculator inputs'}
@@ -236,6 +439,78 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
           />
         </div>
 
+        {/* Aylık düşük yorum (Buaze filtreleme inputu) */}
+        <div>
+          <div className="flex items-baseline justify-between gap-3">
+            <label htmlFor="roi-lowratings" className="pulse-eyebrow text-[#0A0A0A]">
+              {isTr ? 'AYLIK 1-3★ YORUM' : 'LOW REVIEWS / MO'}
+            </label>
+            <output
+              htmlFor="roi-lowratings"
+              className="bz-mono text-[15px] sm:text-[16px] font-semibold text-[#0A0A0A] tabular-nums"
+            >
+              {fmt(lowRatingsPerMonth)}
+              <span className="text-[#A8D62E] font-normal">
+                {' '}
+                → {fmt(calc.filteredLowReviews)} {isTr ? 'filtre' : 'filtered'}
+              </span>
+            </output>
+          </div>
+          <input
+            id="roi-lowratings"
+            type="range"
+            min={0}
+            max={60}
+            step={1}
+            value={lowRatingsPerMonth}
+            onChange={(e) => setLowRatingsPerMonth(Number(e.target.value))}
+            className="mt-3 w-full accent-[#C6F24E]"
+          />
+          <p className="mt-1.5 text-[11px] text-[#737373] leading-[1.5]">
+            {isTr
+              ? 'Buaze, düşük puanları dahili form\'a düşürür → Google\'a sızma %15\'e iner.'
+              : 'Buaze routes low ratings to an internal form → only ~15% leak to Google.'}
+          </p>
+        </div>
+
+        {/* Aktif platformlar (yüksek puan dağılımı) */}
+        <div>
+          <span className="pulse-eyebrow text-[#0A0A0A] block">
+            {isTr ? 'AKTİF PLATFORMLARIN' : 'ACTIVE PLATFORMS'}
+          </span>
+          <div
+            role="group"
+            aria-label={isTr ? 'Yönlendirilen platformlar' : 'Active redirect platforms'}
+            className="mt-2.5 flex flex-wrap gap-2"
+          >
+            {ALL_PLATFORMS.map((key) => {
+              const meta = PLATFORM_META[key];
+              const active = platforms.includes(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="checkbox"
+                  aria-checked={active}
+                  onClick={() => togglePlatform(key)}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-[12px] font-semibold transition-all active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+                    active
+                      ? 'bg-[#0A0A0A] text-white border border-[#0A0A0A]'
+                      : 'bg-white text-[#525252] border border-[#E5E5E5] hover:border-[#0A0A0A]'
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: meta.color }}
+                  />
+                  {isTr ? meta.labelTr : meta.labelEn}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Plan seçimi */}
         <div>
           <span className="pulse-eyebrow text-[#0A0A0A] block">
@@ -270,8 +545,8 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
 
         <p className="text-[11px] text-[#737373] leading-[1.5]">
           {isTr
-            ? 'Hesaplama BrightLocal 2024 yerel arama verileri ve ~2.400 Buaze müşteri kohortu üzerinde kalibre edildi. Sektörünüze göre dönüşüm çarpanı uygulanır.'
-            : 'Model calibrated on BrightLocal 2024 local search data and ~2,400 Buaze accounts. Sector-specific conversion multiplier is applied.'}
+            ? 'Üç temel sürücü: düşük yorum filtreleme (%85), çoklu platform yönlendirme ve AI Co-Pilot zaman tasarrufu. BrightLocal 2024 + ~2.400 Buaze hesabı kohortu üzerinde kalibre.'
+            : 'Three drivers: low-review filtering (85%), multi-platform routing, and AI Co-Pilot time savings. Calibrated on BrightLocal 2024 + ~2,400 Buaze accounts.'}
         </p>
       </form>
 
@@ -300,6 +575,52 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
               </>
             )}
           </p>
+        </div>
+
+        {/* Buaze metrik şeridi — 4 KPI (signature faydaların görünür özeti) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {[
+            {
+              icon: <Sparkles size={14} strokeWidth={2.2} className="text-white/70" />,
+              v: `+${fmt(calc.reviewers)}`,
+              l: isTr ? 'Ek yorum / ay' : 'New reviews / mo',
+            },
+            {
+              icon: <ShieldCheck size={14} strokeWidth={2.2} className="text-[#C6F24E]" />,
+              v: `${fmt(calc.filteredLowReviews)}`,
+              l: isTr ? 'Filtrelenen kötü' : 'Low filtered',
+              accent: true,
+            },
+            {
+              icon: <Star size={14} strokeWidth={2.2} className="text-white/70" />,
+              v: calc.projectedGoogle.toFixed(1),
+              l: isTr ? 'Yeni Google ★' : 'New Google ★',
+            },
+            {
+              icon: <Clock size={14} strokeWidth={2.2} className="text-white/70" />,
+              v: `${calc.aiHoursSaved.toFixed(1)}${isTr ? 'sa' : 'h'}`,
+              l: isTr ? 'AI tasarruf / ay' : 'AI saved / mo',
+            },
+          ].map((kpi) => (
+            <div
+              key={kpi.l}
+              className={`rounded-2xl border p-3 ${
+                kpi.accent
+                  ? 'bg-[#C6F24E]/10 border-[#C6F24E]/30'
+                  : 'bg-white/5 border-white/10'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">{kpi.icon}</div>
+              <div
+                className={`bz-h-tight mt-1.5 text-[16px] sm:text-[20px] font-medium leading-none tracking-[-0.02em] tabular-nums ${
+                  kpi.accent ? 'text-[#C6F24E]' : 'text-white'
+                }`}
+              >
+                {kpi.v}
+              </div>
+              <div className="pulse-eyebrow mt-1.5 text-white/55">{kpi.l}</div>
+            </div>
+          ))}
         </div>
 
         {/* Pipeline */}
@@ -334,6 +655,39 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
           ))}
         </ul>
 
+        {/* Platform breakdown — yüksek puan akışı seçili platformlara dağılır */}
+        {calc.platformBreakdown.length > 0 && calc.reviewers > 0 && (
+          <div>
+            <span className="pulse-eyebrow text-white/55 block">
+              {isTr ? 'PLATFORMA YÖNLENDİRME' : 'PLATFORM ROUTING'}
+            </span>
+            <ul className="mt-3 space-y-2">
+              {calc.platformBreakdown.map(({ key, share, reviews }) => {
+                const meta = PLATFORM_META[key];
+                return (
+                  <li key={key} className="flex items-center gap-3">
+                    <span className="w-24 sm:w-28 shrink-0 text-[12px] text-white/80 truncate">
+                      {isTr ? meta.labelTr : meta.labelEn}
+                    </span>
+                    <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.max(2, Math.round(share * 100))}%`,
+                          backgroundColor: meta.color,
+                        }}
+                      />
+                    </div>
+                    <span className="bz-mono text-[11px] text-white/70 tabular-nums w-14 text-right">
+                      +{fmt(reviews)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
         {/* Sub-stats */}
         <div className="grid grid-cols-3 gap-2.5">
           {[
@@ -349,6 +703,182 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
             </div>
           ))}
         </div>
+      </div>
+      </div>
+
+      {/* ─── Lead form — Detaylı PDF + 1-1 demo iste (opsiyonel) ─── */}
+      <div className="bz-card p-5 sm:p-7">
+        {leadStatus === 'sent' ? (
+          <div className="text-center py-2">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#C6F24E]">
+              <MailCheck size={26} strokeWidth={2} className="text-[#0A0A0A]" />
+            </div>
+            <h3 className="bz-h-tight text-[20px] sm:text-[22px] font-medium tracking-[-0.03em] text-[#0A0A0A]">
+              {isTr ? 'PDF yolda · ekibimiz seninle iletişime geçecek' : 'PDF on the way · our team will reach out'}
+            </h3>
+            <p className="mx-auto mt-2 max-w-[440px] text-[13px] sm:text-[14px] leading-[1.6] text-[#525252]">
+              {isTr
+                ? 'Detaylı 12 aylık projeksiyon ve 1-1 kurulum daveti birkaç dakika içinde mailbox\'a düşecek. Spam / promosyon klasörünü de kontrol et.'
+                : 'A detailed 12-month projection and a 1-1 setup invite will land in your inbox shortly. Check Promotions / Spam too.'}
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleLeadSubmit} className="grid gap-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div>
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? '3. Detaylı raporu iste' : '3. Get the detailed report'}
+                </span>
+                <h3 className="bz-h-tight mt-1.5 text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A]">
+                  {isTr
+                    ? 'Detaylı PDF + 1-1 kurulum daveti'
+                    : 'Detailed PDF + 1-1 setup invite'}
+                </h3>
+                <p className="mt-1.5 text-[13px] text-[#525252] leading-[1.55] max-w-[440px]">
+                  {isTr
+                    ? 'İşletmene özel 12 aylık projeksiyon, plan amortismanı ve canlı demo daveti — kredi kartı sormuyoruz.'
+                    : 'A tailored 12-month projection, plan payback and a live demo invite — no credit card required.'}
+                </p>
+              </div>
+              <AlertBanner kind="lime" className="sm:max-w-[280px]">
+                {isTr
+                  ? '5 dk içinde mailbox\'a düşer · 2 sa içinde ekibimiz aradığında.'
+                  : 'Inbox in 5 min · our team calls within 2 hours.'}
+              </AlertBanner>
+            </div>
+
+            {leadServerError && <AlertBanner kind="danger">{leadServerError}</AlertBanner>}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field
+                label={isTr ? 'İşletme adı' : 'Business name'}
+                required
+                error={leadErrors.name}
+              >
+                <input
+                  type="text"
+                  value={leadName}
+                  onChange={(e) => setLeadName(e.target.value)}
+                  className="bz-input"
+                  placeholder={isTr ? 'Örn. Karaköy Lokantası' : 'e.g. Karaköy Lokantası'}
+                  autoComplete="organization"
+                  enterKeyHint="next"
+                  maxLength={120}
+                />
+              </Field>
+              <Field
+                label={isTr ? 'E-posta' : 'Email'}
+                required
+                error={leadErrors.email}
+              >
+                <input
+                  type="email"
+                  value={leadEmail}
+                  onChange={(e) => setLeadEmail(e.target.value)}
+                  className="bz-input"
+                  placeholder={isTr ? 'sen@isletmen.com' : 'you@yourbiz.com'}
+                  autoComplete="email"
+                  inputMode="email"
+                  enterKeyHint="next"
+                  spellCheck={false}
+                  maxLength={200}
+                />
+              </Field>
+              <Field
+                label={isTr ? 'Telefon (opsiyonel)' : 'Phone (optional)'}
+                hint={isTr ? 'Hızlı geri arama için.' : 'For a quick callback.'}
+              >
+                <input
+                  type="tel"
+                  value={leadPhone}
+                  onChange={(e) => setLeadPhone(e.target.value)}
+                  className="bz-input"
+                  placeholder={isTr ? '+90 5xx xxx xx xx' : '+1 555 ...'}
+                  autoComplete="tel"
+                  inputMode="tel"
+                  enterKeyHint="send"
+                  maxLength={40}
+                />
+              </Field>
+              <div className="flex items-start gap-2.5 sm:pt-7">
+                <input
+                  id="roi-consent"
+                  type="checkbox"
+                  checked={leadConsent}
+                  onChange={(e) => setLeadConsent(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-[#D4D4D4] accent-[#C6F24E]"
+                  aria-invalid={!!leadErrors.consent}
+                  aria-describedby={leadErrors.consent ? 'roi-consent-error' : undefined}
+                />
+                <label
+                  htmlFor="roi-consent"
+                  className="text-[12.5px] leading-[1.55] text-[#525252] cursor-pointer"
+                >
+                  {isTr ? (
+                    <>
+                      Buaze ekibinin benimle iletişime geçmesini ve raporu e-posta ile
+                      göndermesini onaylıyorum. Detaylar{' '}
+                      <Link
+                        href={`/${locale}/legal/privacy`}
+                        className="font-semibold text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
+                      >
+                        gizlilik politikası
+                      </Link>
+                      .
+                    </>
+                  ) : (
+                    <>
+                      I consent to be contacted by Buaze and to receive the report by
+                      email. See{' '}
+                      <Link
+                        href={`/${locale}/legal/privacy`}
+                        className="font-semibold text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
+                      >
+                        privacy policy
+                      </Link>
+                      .
+                    </>
+                  )}
+                  {leadErrors.consent && (
+                    <span
+                      id="roi-consent-error"
+                      role="alert"
+                      className="block mt-1 text-[11.5px] text-[#DC2626]"
+                    >
+                      {leadErrors.consent}
+                    </span>
+                  )}
+                </label>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+              <p className="text-[11px] text-[#737373] leading-[1.5] sm:max-w-[440px]">
+                {isTr
+                  ? 'Bilgilerin yalnız Buaze ekibiyle paylaşılır; üçüncü taraflara satılmaz. Diler dilemez aboneliği kapatabilirsin.'
+                  : 'Your info stays with Buaze, never sold. Unsubscribe anytime.'}
+              </p>
+              <button
+                type="submit"
+                disabled={leadStatus === 'sending'}
+                className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)] transition-all hover:-translate-y-px hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+              >
+                {leadStatus === 'sending' ? (
+                  <Loader2 className="animate-spin" size={18} />
+                ) : (
+                  <>
+                    {isTr ? 'Detaylı raporu iste' : 'Request detailed report'}
+                    <ArrowRight
+                      size={16}
+                      strokeWidth={2.2}
+                      className="transition-transform group-hover:translate-x-0.5"
+                    />
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
