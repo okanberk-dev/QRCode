@@ -73,8 +73,10 @@ const PLAN_FILTER_OPTIONS = [
 
 const STATUS_FILTER_OPTIONS = [
   { v: 'active', l: 'Aktif' },
-  { v: 'passive', l: 'Pasif' },
-  { v: 'all', l: 'Hepsi' },
+  // 'Silinmiş' = soft delete (isActive=false + deactivatedAt set). Kayıt
+  // DB'de duruyor; aktif listede gizli; arşivden geri getirilebilir.
+  { v: 'passive', l: 'Silinmiş (arşiv)' },
+  { v: 'all', l: 'Tümü (silinmiş dahil)' },
 ];
 
 export default function MembersPage() {
@@ -335,7 +337,7 @@ export default function MembersPage() {
                             <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
                               <Badge kind={planMeta.kind}>{planMeta.label}</Badge>
                               <Badge kind={m.isActive ? 'ok' : 'danger'}>
-                                {m.isActive ? 'Aktif' : 'Pasif'}
+                                {m.isActive ? 'Aktif' : 'Silinmiş'}
                               </Badge>
                               {m.plan === 'trial' && m.trialEndsAt && (
                                 <Badge
@@ -383,7 +385,7 @@ export default function MembersPage() {
                       </td>
                       <td className="hidden md:table-cell px-3 py-4 sm:px-5">
                         <Badge kind={m.isActive ? 'ok' : 'danger'}>
-                          {m.isActive ? 'Aktif' : 'Pasif'}
+                          {m.isActive ? 'Aktif' : 'Silinmiş'}
                         </Badge>
                       </td>
                       <td className="px-2 py-4 sm:px-5 text-right">
@@ -525,7 +527,7 @@ export default function MembersPage() {
                 type="button"
                 onClick={() => setEditIsActive((v) => !v)}
                 aria-pressed={editIsActive}
-                aria-label={editIsActive ? 'Aktif' : 'Pasif'}
+                aria-label={editIsActive ? 'Aktif' : 'Silinmiş'}
                 className={`transition-all duration-200 active:scale-95 ${
                   editIsActive
                     ? 'text-[#A8D62E] hover:text-[#0A0A0A]'
