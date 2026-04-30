@@ -206,12 +206,13 @@ function AdminLoginContent() {
                     />
                     Beni hatırla
                   </label>
-                  <a
+                  <Link
                     href="/admin/forgot-password"
+                    prefetch={false}
                     className="rounded-md text-[13px] font-semibold text-[#0A0A0A] underline-offset-4 hover:underline hover:text-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 transition-colors"
                   >
                     Şifremi unuttum
-                  </a>
+                  </Link>
                 </div>
 
                 <button
