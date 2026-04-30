@@ -38,7 +38,10 @@ const styles = StyleSheet.create({
   eyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 1.6, color: C.n500, textTransform: 'uppercase' },
   meta: { fontSize: 9, color: C.n500 },
   h1: { fontFamily: 'Helvetica-Bold', fontSize: 30, lineHeight: 1.05, letterSpacing: -0.6, color: C.graphite, marginBottom: 8 },
-  h2: { fontFamily: 'Helvetica-Bold', fontSize: 18, lineHeight: 1.1, letterSpacing: -0.3, color: C.graphite, marginBottom: 8, marginTop: 28 },
+  // h2.marginTop 28 → 20: Page 2 vertical compaction. Eski değerde
+  // "Calculation breakdown" başlığı orphan oluyor, table sayfa sonuna
+  // sıkışıp sonraki sayfaya itiliyordu (kullanıcı raporladı).
+  h2: { fontFamily: 'Helvetica-Bold', fontSize: 18, lineHeight: 1.1, letterSpacing: -0.3, color: C.graphite, marginBottom: 8, marginTop: 20 },
   h3: { fontFamily: 'Helvetica-Bold', fontSize: 12, color: C.graphite, marginBottom: 4 },
   lead: { fontSize: 11, color: C.n500, lineHeight: 1.55, marginBottom: 24 },
   body: { fontSize: 10, color: C.n800, lineHeight: 1.55 },
@@ -46,14 +49,18 @@ const styles = StyleSheet.create({
   /* Hero stat */
   hero: { backgroundColor: C.graphite, color: C.white, borderRadius: 14, padding: 22, marginBottom: 18 },
   heroEyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 1.6, color: C.lime, textTransform: 'uppercase' },
-  heroValue: { fontFamily: 'Helvetica-Bold', fontSize: 38, color: C.lime, marginTop: 6, marginBottom: 4 },
+  // Explicit lineHeight + larger marginBottom: Page-default lineHeight 1.55
+  // 38pt face için yetersiz hesaplanıyor, descender heroSub'a çakışıyordu.
+  // 1.05 + marginBottom 12 ile bounding box ve sub-text netleşir.
+  heroValue: { fontFamily: 'Helvetica-Bold', fontSize: 38, lineHeight: 1.05, color: C.lime, marginTop: 6, marginBottom: 12 },
   heroSub: { fontSize: 10, color: '#FFFFFFCC' },
 
   /* KPI grid */
   kpiRow: { flexDirection: 'row', gap: 8, marginBottom: 18 },
   kpiCell: { flex: 1, backgroundColor: C.n50, borderRadius: 10, padding: 12, borderWidth: 0.5, borderColor: C.n200 },
   kpiCellAccent: { flex: 1, backgroundColor: C.limeSoft, borderRadius: 10, padding: 12, borderWidth: 0.5, borderColor: C.limeDeep },
-  kpiValue: { fontFamily: 'Helvetica-Bold', fontSize: 16, color: C.graphite, marginBottom: 2 },
+  // Defansif lineHeight: uzun sayılarda (örn. "+1,250") aynı overlap riski.
+  kpiValue: { fontFamily: 'Helvetica-Bold', fontSize: 16, lineHeight: 1.1, color: C.graphite, marginBottom: 2 },
   kpiLabel: { fontFamily: 'Helvetica-Bold', fontSize: 7.5, letterSpacing: 1.2, color: C.n500, textTransform: 'uppercase' },
 
   /* Flow diagram */
@@ -576,7 +583,7 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
             { l: L.rowLowReviews, v: fmt(data.lowRatingsPerMonth) },
             {
               l: L.rowPlatforms,
-              v: data.platforms.map((p) => PLATFORM_LABEL[p] ?? p).join(', '),
+              v: data.platforms.map((p) => PLATFORM_LABEL[p] ?? p).join(', ') || '—',
             },
             {
               l: L.rowPlan,
@@ -590,35 +597,40 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
           ))}
         </View>
 
-        <Text style={styles.h2}>{L.breakdownH2}</Text>
-        <View style={styles.table}>
-          {[
-            { l: L.rowQrScans, v: fmt(data.scanned) },
-            { l: L.rowReviews, v: `+${fmt(data.reviewers)}` },
-            { l: L.rowFiltered, v: fmt(data.filteredLowReviews) },
-            {
-              l: L.rowProjectedGoogle,
-              v: `${data.currentGoogle.toFixed(1)} → ${data.projectedGoogle.toFixed(1)}`,
-            },
-            { l: L.rowNewCustomers, v: `+${fmt(data.newCustomers)}` },
-            {
-              l: L.rowMonthlyUplift,
-              v: `${data.currency}${fmt(Math.round(data.monthlyUplift))}`,
-            },
-            {
-              l: L.rowYearlyUplift,
-              v: `${data.currency}${fmt(Math.round(data.yearlyUplift))}`,
-            },
-            {
-              l: L.rowAiSaved,
-              v: `${data.aiHoursSaved.toFixed(1)} ${L.aiSavedSuffix}`,
-            },
-          ].map((row, i, arr) => (
-            <View key={row.l} style={i === arr.length - 1 ? styles.trLast : styles.tr}>
-              <Text style={styles.th}>{row.l}</Text>
-              <Text style={styles.tdMono}>{row.v}</Text>
-            </View>
-          ))}
+        {/* Breakdown başlığı + tablosu tek wrap={false} blok — orphan
+            başlık önlenir. Eski hâlinde h2 page 2 sonunda kalıyor, table
+            page 3'e itiliyordu (kullanıcı raporladı boşluk). */}
+        <View wrap={false}>
+          <Text style={styles.h2}>{L.breakdownH2}</Text>
+          <View style={styles.table}>
+            {[
+              { l: L.rowQrScans, v: fmt(data.scanned) },
+              { l: L.rowReviews, v: `+${fmt(data.reviewers)}` },
+              { l: L.rowFiltered, v: fmt(data.filteredLowReviews) },
+              {
+                l: L.rowProjectedGoogle,
+                v: `${data.currentGoogle.toFixed(1)} → ${data.projectedGoogle.toFixed(1)}`,
+              },
+              { l: L.rowNewCustomers, v: `+${fmt(data.newCustomers)}` },
+              {
+                l: L.rowMonthlyUplift,
+                v: `${data.currency}${fmt(Math.round(data.monthlyUplift))}`,
+              },
+              {
+                l: L.rowYearlyUplift,
+                v: `${data.currency}${fmt(Math.round(data.yearlyUplift))}`,
+              },
+              {
+                l: L.rowAiSaved,
+                v: `${data.aiHoursSaved.toFixed(1)} ${L.aiSavedSuffix}`,
+              },
+            ].map((row, i, arr) => (
+              <View key={row.l} style={i === arr.length - 1 ? styles.trLast : styles.tr}>
+                <Text style={styles.th}>{row.l}</Text>
+                <Text style={styles.tdMono}>{row.v}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* Platform breakdown */}
