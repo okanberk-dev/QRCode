@@ -413,6 +413,12 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
   const ticketStep = isTr ? 10 : 1;
   const customersMax = isTr ? 12000 : 6000;
 
+  // Slider lime fill yüzdesi — globals.css `.roi-slider` track gradient'ine
+  // CSS var olarak iletilir. Mobilde özellikle önemli: thumb'ın hangi
+  // pozisyonda olduğu görsel kontrast olarak da net görünür.
+  const sliderFill = (value: number, min: number, max: number) =>
+    `${Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))}%`;
+
   function handleSectorChange(next: SectorKey) {
     setSector(next);
     setAvgTicket(isTr ? SECTORS[next].defaultTicketTr : SECTORS[next].defaultTicketEn);
@@ -420,6 +426,40 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
 
   return (
     <div className="flex flex-col gap-6 lg:gap-8">
+      {/* ─── Mobile sticky result bar ──────────────────────────────────────
+          Mobilde slider sürükledikçe sayfanın üstünde küçük bir özet kartı
+          sticky kalır → kullanıcı sürekli "sonuç var mı" diye scroll etmek
+          zorunda kalmaz. Desktop'ta gizli (sağdaki output paneli zaten
+          görünür durumda). Top offset = MarketingNavbar yüksekliği (64px). */}
+      <div
+        className="lg:hidden sticky top-[64px] z-30 -mx-5 px-5 pt-2 pb-3 bg-white/95 backdrop-blur-md border-b border-[#EDEDED]"
+        aria-live="polite"
+      >
+        <a
+          href="#roi-result"
+          className="flex items-center justify-between gap-3 rounded-full bg-[#0A0A0A] text-white px-4 py-2.5 shadow-[0_8px_24px_-12px_rgba(10,10,10,0.45)] active:scale-[0.98] transition-transform"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="pulse-eyebrow text-[#C6F24E] text-[9px]">
+              {isTr ? 'YILLIK NET KAZANÇ' : 'ANNUAL NET GAIN'}
+            </div>
+            <div className="bz-h-tight text-[18px] sm:text-[20px] font-semibold tracking-[-0.025em] text-[#C6F24E] tabular-nums truncate">
+              {currency}
+              {fmt(Math.max(0, Math.round(calc.netGain)))}
+              <span className="ml-2 text-[12px] font-normal text-white/65">
+                {fmtRoi(calc.roiMultiple)}× ROI
+              </span>
+            </div>
+          </div>
+          <span
+            aria-hidden
+            className="shrink-0 inline-flex items-center gap-1 text-[11px] text-white/70 whitespace-nowrap"
+          >
+            {isTr ? 'Detayı gör' : 'See details'} ↓
+          </span>
+        </a>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] gap-6 lg:gap-8 items-stretch">
       {/* ─── Inputs (FAFAFA card) ─── */}
       <form
@@ -476,7 +516,8 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
             step={50}
             value={monthlyCustomers}
             onChange={(e) => setMonthlyCustomers(Number(e.target.value))}
-            className="mt-3 w-full accent-[#C6F24E]"
+            className="roi-slider mt-3 w-full"
+            style={{ ['--roi-fill' as string]: sliderFill(monthlyCustomers, 100, customersMax) }}
           />
           <div className="mt-1 flex justify-between text-[10px] text-[#737373] bz-mono">
             <span>100</span>
@@ -505,7 +546,8 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
             step={ticketStep}
             value={avgTicket}
             onChange={(e) => setAvgTicket(Number(e.target.value))}
-            className="mt-3 w-full accent-[#C6F24E]"
+            className="roi-slider mt-3 w-full"
+            style={{ ['--roi-fill' as string]: sliderFill(avgTicket, ticketMin, ticketMax) }}
           />
           <div className="mt-1 flex justify-between text-[10px] text-[#737373] bz-mono">
             <span>{currency}{fmt(ticketMin)}</span>
@@ -535,7 +577,8 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
             step={0.1}
             value={currentGoogle}
             onChange={(e) => setCurrentGoogle(Number(e.target.value))}
-            className="mt-3 w-full accent-[#C6F24E]"
+            className="roi-slider mt-3 w-full"
+            style={{ ['--roi-fill' as string]: sliderFill(currentGoogle, 2.5, 4.8) }}
           />
         </div>
 
@@ -564,7 +607,8 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
             step={1}
             value={lowRatingsPerMonth}
             onChange={(e) => setLowRatingsPerMonth(Number(e.target.value))}
-            className="mt-3 w-full accent-[#C6F24E]"
+            className="roi-slider mt-3 w-full"
+            style={{ ['--roi-fill' as string]: sliderFill(lowRatingsPerMonth, 0, 60) }}
           />
           <p className="mt-1.5 text-[11px] text-[#737373] leading-[1.5]">
             {isTr
@@ -637,9 +681,9 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
                   role="radio"
                   aria-checked={active}
                   onClick={() => setPlan(p.key)}
-                  className={`px-2 py-3 rounded-[10px] text-left transition-colors active:scale-[0.98] ${
+                  className={`min-h-[58px] px-2 py-3 rounded-[10px] text-left transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
                     active
-                      ? 'bg-[#0A0A0A] text-white border-2 border-[#0A0A0A]'
+                      ? 'bg-[#0A0A0A] text-white border border-[#0A0A0A] outline outline-2 outline-[#0A0A0A] -outline-offset-1'
                       : 'bg-white border border-[#E5E5E5] text-[#0A0A0A] hover:border-[#0A0A0A]'
                   }`}
                 >
@@ -662,14 +706,15 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
 
       {/* ─── Outputs (dark hero) ─── */}
       <div
-        className="bg-[#0A0A0A] text-white rounded-3xl p-5 sm:p-8 flex flex-col gap-6"
+        id="roi-result"
+        className="bg-[#0A0A0A] text-white rounded-3xl p-5 sm:p-8 flex flex-col gap-5 sm:gap-6"
         aria-live="polite"
       >
         <div>
           <span className="pulse-eyebrow text-[#C6F24E]">
             {isTr ? '2. Yıllık net kazanç' : '2. Annual net gain'}
           </span>
-          <div className="bz-h-tight mt-3 text-[40px] sm:text-[60px] font-medium leading-none tracking-[-0.035em] text-[#C6F24E] tabular-nums">
+          <div className="bz-h-tight mt-3 text-[32px] sm:text-[52px] lg:text-[60px] font-medium leading-none tracking-[-0.035em] text-[#C6F24E] tabular-nums break-all">
             {currency}{fmt(Math.max(0, Math.round(calc.netGain)))}
           </div>
           <p className="mt-3 text-[13px] sm:text-[14px] text-white/70 leading-[1.55]">
@@ -798,15 +843,20 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
           </div>
         )}
 
-        {/* Sub-stats */}
-        <div className="grid grid-cols-3 gap-2.5">
+        {/* Sub-stats — mobilde 3-col tabular-nums dar ekranda taşar.
+            375px ekranda 2x2 grid (3. card single full row) sığar; sm+
+            tek satıra çıkar. Text-[14px] → [15px] minimum okunabilir. */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
           {[
             { k: `${currency}${fmt(Math.round(calc.monthlyUplift))}`, l: isTr ? 'Aylık' : 'Monthly' },
             { k: `${currency}${fmt(calc.yearlyPlan)}`, l: isTr ? 'Plan / yıl' : 'Plan / yr' },
-            { k: `${fmtRoi(calc.roiMultiple)}×`, l: 'ROI' },
+            { k: `${fmtRoi(calc.roiMultiple)}×`, l: 'ROI', className: 'col-span-2 sm:col-span-1' },
           ].map((x) => (
-            <div key={x.l} className="bg-white/5 border border-white/10 rounded-2xl p-3 sm:p-4">
-              <div className="bz-h-tight text-[15px] sm:text-[18px] font-medium leading-none tracking-[-0.02em] text-white tabular-nums">
+            <div
+              key={x.l}
+              className={`bg-white/5 border border-white/10 rounded-2xl p-3 sm:p-4 ${x.className ?? ''}`}
+            >
+              <div className="bz-h-tight text-[14px] sm:text-[18px] font-medium leading-none tracking-[-0.02em] text-white tabular-nums break-all">
                 {x.k}
               </div>
               <div className="pulse-eyebrow text-white/60 mt-2">{x.l}</div>
@@ -840,7 +890,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
         </div>
         <Link
           href={`/${locale}/solutions/qr-generator`}
-          className="group inline-flex items-center justify-center gap-1.5 rounded-full border border-[#0A0A0A] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 shrink-0"
+          className="group inline-flex w-full sm:w-auto min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-[#0A0A0A] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 shrink-0"
         >
           {isTr ? 'Ücretsiz QR oluştur' : 'Generate free QR'}
           <ArrowRight
@@ -951,7 +1001,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
                   type="checkbox"
                   checked={leadConsent}
                   onChange={(e) => setLeadConsent(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-[#D4D4D4] accent-[#C6F24E]"
+                  className="mt-0.5 h-[18px] w-[18px] sm:h-4 sm:w-4 rounded border-[#D4D4D4] accent-[#C6F24E] shrink-0 cursor-pointer"
                   aria-invalid={!!leadErrors.consent}
                   aria-describedby={leadErrors.consent ? 'roi-consent-error' : undefined}
                 />
@@ -1024,7 +1074,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
               <button
                 type="submit"
                 disabled={leadStatus === 'sending'}
-                className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)] transition-all hover:-translate-y-px hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+                className="group inline-flex w-full sm:w-auto min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)] transition-all hover:-translate-y-px hover:bg-[#1A1A1A] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
               >
                 {leadStatus === 'sending' ? (
                   <Loader2 className="animate-spin" size={18} />
