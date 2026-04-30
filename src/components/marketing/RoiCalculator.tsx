@@ -62,13 +62,15 @@ const DISCOVERY_TO_CUSTOMER_RATE = 0.32;
 // Google'a sızma oranı tipik ~%15. Yani ~%85 filtrelenir.
 const LOW_RATING_FILTER_RATE = 0.85;
 
-// Filtrelenen her kötü yorumun Google ortalamasına marjinal etkisi.
-// 0.012 ≈ 50 kötü yorum filtresi MAX_RATING_DELTA cap'ine yaklaşır.
-const RATING_LIFT_PER_FILTERED = 0.012;
-
-// Mevcut headroom heuristic'i artık ratingLift'e %25 ağırlıkla katılır;
-// gerisi filtreleme tarafından sürülür → düşük yorum slider'ının somut etkisi.
-const HEADROOM_WEIGHT = 0.25;
+// Yeni Google puanı projeksiyonu için dilüsyon modeli sabitleri:
+// - Buaze QR akışında çekilen yüksek-puanlı yorumların ortalama yıldızı
+// - Filtreden kaçan ~%15 düşük yorumun ortalama yıldızı
+// - Mevcut Google yorum havuzu tahmini: aylık müşterinin %4'ü 12 ay
+//   içinde yorum bırakmış varsayımı (BrightLocal benchmark)
+const HIGH_REVIEW_AVG_STARS = 4.7;
+const LEAKED_LOW_AVG_STARS = 2.0;
+const ASSUMED_EXISTING_REVIEW_RATE = 0.04;
+const MIN_EXISTING_REVIEWS = 20;
 
 // AI Co-Pilot taslak (CLAUDE.md §15) yanıt başına ortalama kazanım.
 // Manuel yanıt 5-7 dk, AI taslak + edit 1-2 dk → ~4 dk tasarruf / yanıt.
@@ -248,14 +250,34 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
 
     // 1) Buaze filtrelemesi — düşük yorumların ne kadarı Google'a sızmaz.
     const filteredLowReviews = Math.round(lowRatingsPerMonth * LOW_RATING_FILTER_RATE);
+    const leakedLowReviewsPerMonth = lowRatingsPerMonth - filteredLowReviews;
 
-    // 2) Rating lift = filtreleme katkısı (ana sürücü) + headroom heuristic'i.
-    //    Filtreleme her kötü yorum başına marjinal etki bırakır; mevcut puan
-    //    4.9'a yaklaştıkça headroom payı küçülür.
-    const filteredLift = filteredLowReviews * RATING_LIFT_PER_FILTERED;
-    const headroomLift = Math.max(0, 4.9 - currentGoogle) * HEADROOM_WEIGHT;
-    const ratingLift = Math.min(MAX_RATING_DELTA, filteredLift + headroomLift);
-    const projectedGoogle = Math.min(4.9, currentGoogle + ratingLift);
+    // 2) Yeni Google puanı — dilüsyon modeli (12 ay sonunda yeni ortalama):
+    //    mevcut yorum havuzu × mevcut puan + Buaze'den gelen yeni yüksek
+    //    yorumlar × 4.7★ + filtreden kaçan düşük yorumlar × 2.0★, hepsi
+    //    toplanır ve toplam yorum sayısına bölünür. Aylık müşteri, plan
+    //    (scanRate) ve sektör değiştikçe `reviewers` değişir → projeksiyon
+    //    da gerçekten hareket eder.
+    const existingReviews = Math.max(
+      MIN_EXISTING_REVIEWS,
+      Math.round(monthlyCustomers * 12 * ASSUMED_EXISTING_REVIEW_RATE),
+    );
+    const newHighReviewsTotal = reviewers * 12;
+    const newLeakedLowTotal = leakedLowReviewsPerMonth * 12;
+    const totalReviews12mo = existingReviews + newHighReviewsTotal + newLeakedLowTotal;
+    const totalPoints12mo =
+      existingReviews * currentGoogle +
+      newHighReviewsTotal * HIGH_REVIEW_AVG_STARS +
+      newLeakedLowTotal * LEAKED_LOW_AVG_STARS;
+    const rawProjectedGoogle =
+      totalReviews12mo > 0 ? totalPoints12mo / totalReviews12mo : currentGoogle;
+    // Cap üst: 4.9 (gerçekçi ceiling). Cap alt: mevcut puan (Buaze hiç
+    // bir senaryoda mevcut ortalamayı düşürmez — filtreleme sayesinde).
+    const projectedGoogle = Math.max(
+      currentGoogle,
+      Math.min(4.9, rawProjectedGoogle),
+    );
+    const ratingLift = Math.min(MAX_RATING_DELTA, projectedGoogle - currentGoogle);
 
     // 3) Discovery uplift — rating bump'ın local-pack CTR'ye yansıması.
     const discoveryUplift = ratingLift * DISCOVERY_GAIN_PER_STAR;

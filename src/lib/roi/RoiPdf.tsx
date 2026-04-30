@@ -1,0 +1,430 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// Buaze ROI Projeksiyonu — server-side PDF document.
+// Pulse marka kimliği (CLAUDE.md §11): graphite #0A0A0A + lime #C6F24E +
+// pure white. @react-pdf/renderer JSX API'siyle iki sayfalık estetik
+// rapor; lead form'unu dolduran restoran sahibine email attachment olarak
+// gönderilir.
+import { Document, Page, Text, View, StyleSheet, Svg, Path, Circle, Rect } from '@react-pdf/renderer';
+
+const C = {
+  graphite: '#0A0A0A',
+  lime: '#C6F24E',
+  limeDeep: '#A8D62E',
+  limeSoft: '#EAF9B8',
+  white: '#FFFFFF',
+  n50: '#FAFAFA',
+  n100: '#F2F2F2',
+  n200: '#EDEDED',
+  n400: '#A3A3A3',
+  n500: '#737373',
+  n800: '#1A1A1A',
+};
+
+const styles = StyleSheet.create({
+  page: {
+    backgroundColor: C.white,
+    color: C.graphite,
+    paddingTop: 48,
+    paddingHorizontal: 48,
+    paddingBottom: 60,
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    lineHeight: 1.55,
+  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 36 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  brandWord: { fontFamily: 'Helvetica-Bold', fontSize: 16, letterSpacing: -0.4, color: C.graphite },
+  brandDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.limeDeep, marginLeft: 1 },
+  eyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 1.6, color: C.n500, textTransform: 'uppercase' },
+  meta: { fontSize: 9, color: C.n500 },
+  h1: { fontFamily: 'Helvetica-Bold', fontSize: 30, lineHeight: 1.05, letterSpacing: -0.6, color: C.graphite, marginBottom: 8 },
+  h2: { fontFamily: 'Helvetica-Bold', fontSize: 18, lineHeight: 1.1, letterSpacing: -0.3, color: C.graphite, marginBottom: 8, marginTop: 28 },
+  h3: { fontFamily: 'Helvetica-Bold', fontSize: 12, color: C.graphite, marginBottom: 4 },
+  lead: { fontSize: 11, color: C.n500, lineHeight: 1.55, marginBottom: 24 },
+  body: { fontSize: 10, color: C.n800, lineHeight: 1.55 },
+
+  /* Hero stat */
+  hero: { backgroundColor: C.graphite, color: C.white, borderRadius: 14, padding: 22, marginBottom: 18 },
+  heroEyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 1.6, color: C.lime, textTransform: 'uppercase' },
+  heroValue: { fontFamily: 'Helvetica-Bold', fontSize: 38, color: C.lime, marginTop: 6, marginBottom: 4 },
+  heroSub: { fontSize: 10, color: '#FFFFFFCC' },
+
+  /* KPI grid */
+  kpiRow: { flexDirection: 'row', gap: 8, marginBottom: 18 },
+  kpiCell: { flex: 1, backgroundColor: C.n50, borderRadius: 10, padding: 12, borderWidth: 0.5, borderColor: C.n200 },
+  kpiCellAccent: { flex: 1, backgroundColor: C.limeSoft, borderRadius: 10, padding: 12, borderWidth: 0.5, borderColor: C.limeDeep },
+  kpiValue: { fontFamily: 'Helvetica-Bold', fontSize: 16, color: C.graphite, marginBottom: 2 },
+  kpiLabel: { fontFamily: 'Helvetica-Bold', fontSize: 7.5, letterSpacing: 1.2, color: C.n500, textTransform: 'uppercase' },
+
+  /* Flow diagram */
+  flow: { borderRadius: 12, borderWidth: 0.5, borderColor: C.n200, padding: 18, marginBottom: 12, backgroundColor: C.white },
+  flowRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  flowChip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: C.graphite },
+  flowChipText: { color: C.white, fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 0.8 },
+  flowArrow: { color: C.n500, marginHorizontal: 8, fontSize: 12 },
+  flowDesc: { flex: 1, fontSize: 9.5, color: C.n800, lineHeight: 1.5 },
+
+  /* Scenario table */
+  table: { borderRadius: 10, borderWidth: 0.5, borderColor: C.n200, overflow: 'hidden', marginBottom: 18 },
+  tr: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: C.n200 },
+  trLast: { flexDirection: 'row' },
+  th: { flex: 1, padding: 10, backgroundColor: C.n50, fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 1, color: C.n500, textTransform: 'uppercase' },
+  td: { flex: 1, padding: 10, fontSize: 10, color: C.graphite },
+  tdMono: { flex: 1, padding: 10, fontFamily: 'Courier-Bold', fontSize: 10, color: C.graphite },
+
+  /* Bar */
+  barRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  barLabel: { width: 90, fontSize: 9, color: C.graphite },
+  barTrack: { flex: 1, height: 5, borderRadius: 3, backgroundColor: C.n100, marginRight: 8 },
+  barFill: { height: 5, borderRadius: 3 },
+  barValue: { width: 40, fontFamily: 'Courier-Bold', fontSize: 9, color: C.n500, textAlign: 'right' },
+
+  /* Footer */
+  footer: { position: 'absolute', bottom: 24, left: 48, right: 48, flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 0.5, borderTopColor: C.n200, paddingTop: 10 },
+  footerNote: { fontSize: 8, color: C.n500 },
+  pageNumber: { fontFamily: 'Courier-Bold', fontSize: 8, color: C.n500 },
+
+  /* CTA card */
+  cta: { backgroundColor: C.lime, borderRadius: 14, padding: 22, marginTop: 24 },
+  ctaTitle: { fontFamily: 'Helvetica-Bold', fontSize: 16, color: C.graphite, marginBottom: 6, letterSpacing: -0.2 },
+  ctaBody: { fontSize: 10.5, color: C.graphite, lineHeight: 1.55, marginBottom: 8 },
+  ctaLink: { fontFamily: 'Helvetica-Bold', fontSize: 10.5, color: C.graphite, textDecoration: 'underline' },
+});
+
+const PLATFORM_COLOR: Record<string, string> = {
+  google: '#4285F4',
+  yemeksepeti: '#FA0050',
+  getir: '#5D3EBC',
+  trendyol: '#F27A1A',
+  tripadvisor: '#00AF87',
+  foursquare: '#F94877',
+  yandex: '#FC3F1D',
+};
+const PLATFORM_LABEL: Record<string, string> = {
+  google: 'Google',
+  yemeksepeti: 'Yemeksepeti',
+  getir: 'Getir',
+  trendyol: 'Trendyol GO',
+  tripadvisor: 'Tripadvisor',
+  foursquare: 'Foursquare',
+  yandex: 'Yandex',
+};
+
+const SECTOR_LABEL: Record<string, string> = {
+  restaurant: 'Restoran',
+  cafe: 'Kafe',
+  hotel: 'Otel',
+  clinic: 'Klinik',
+  other: 'Diğer',
+};
+
+const PLAN_LABEL: Record<string, string> = {
+  starter: 'Starter',
+  growth: 'Growth',
+  pro: 'Pro',
+};
+
+export interface RoiPdfData {
+  restaurantName: string;
+  email: string;
+  generatedAt: Date;
+  currency: string; // ₺ veya $
+  // Inputs
+  sector: string;
+  monthlyCustomers: number;
+  avgTicket: number;
+  currentGoogle: number;
+  lowRatingsPerMonth: number;
+  platforms: string[];
+  plan: string;
+  planPrice: number;
+  // Outputs
+  scanned: number;
+  reviewers: number;
+  filteredLowReviews: number;
+  projectedGoogle: number;
+  newCustomers: number;
+  monthlyUplift: number;
+  yearlyUplift: number;
+  yearlyPlan: number;
+  netGain: number;
+  roiMultiple: number;
+  paybackMonths: number | null;
+  aiHoursSaved: number;
+  platformBreakdown: Array<{ key: string; share: number; reviews: number }>;
+}
+
+function fmt(n: number): string {
+  return n.toLocaleString('tr-TR');
+}
+
+// Logo: yorum baloncuğu + ECG nabız + lime accent dot (CLAUDE.md §11).
+// Inline SVG path — bağımsız asset upload yok.
+function BuazeLogo() {
+  return (
+    <Svg width={26} height={26} viewBox="0 0 64 64">
+      <Path
+        d="M10 14 C10 11 12 9 15 9 L49 9 C52 9 54 11 54 14 L54 38 C54 41 52 43 49 43 L26 43 L18 51 L18 43 L15 43 C12 43 10 41 10 38 Z"
+        fill={C.graphite}
+      />
+      <Path
+        d="M18 26 L24 26 L27 20 L31 32 L34 24 L37 28 L46 28"
+        stroke={C.white}
+        strokeWidth={2.4}
+        fill="none"
+      />
+      <Circle cx={50} cy={16} r={5} fill={C.lime} />
+    </Svg>
+  );
+}
+
+export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
+  const dateStr = data.generatedAt.toLocaleDateString('tr-TR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  // Pipeline: 4-5★ akışı seçili platformlara dağılır
+  const totalRoute = data.platformBreakdown.reduce((s, p) => s + p.reviews, 0) || 1;
+
+  return (
+    <Document
+      title={`Buaze ROI Projeksiyonu — ${data.restaurantName}`}
+      author="Buaze"
+      subject="12 Aylık ROI Projeksiyonu"
+      creator="Buaze ROI Calculator"
+    >
+      {/* ─── Page 1: Kapak + Sonuç ──────────────────────────────────── */}
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.brandRow}>
+            <BuazeLogo />
+            <Text style={styles.brandWord}>buaze</Text>
+            <View style={styles.brandDot} />
+          </View>
+          <Text style={styles.meta}>{dateStr}</Text>
+        </View>
+
+        <Text style={styles.eyebrow}>ROI PROJEKSİYONU · 12 AY</Text>
+        <Text style={styles.h1}>{data.restaurantName} için Buaze etkisi.</Text>
+        <Text style={styles.lead}>
+          Bu rapor, sayfada girdiğin senaryo üzerine ~2.400 Buaze hesabı kohortu ve
+          BrightLocal 2024 yerel arama verileriyle kalibre edilmiş bir 12 aylık
+          projeksiyondur. Tüm sayılar tahmindir; gerçek sonuçlar işletmenin akışına
+          ve yorum yanıt disiplinine göre değişir.
+        </Text>
+
+        {/* Hero — yıllık net kazanç */}
+        <View style={styles.hero}>
+          <Text style={styles.heroEyebrow}>YILLIK NET KAZANÇ</Text>
+          <Text style={styles.heroValue}>
+            {data.currency}
+            {fmt(Math.max(0, Math.round(data.netGain)))}
+          </Text>
+          <Text style={styles.heroSub}>
+            12 ayda Buaze yatırımının yaklaşık {data.roiMultiple.toFixed(1)}× geri dönüşü
+            {data.paybackMonths
+              ? ` · amorti süresi ~${data.paybackMonths} ay.`
+              : '.'}
+          </Text>
+        </View>
+
+        {/* 4 KPI grid */}
+        <View style={styles.kpiRow}>
+          <View style={styles.kpiCell}>
+            <Text style={styles.kpiValue}>+{fmt(data.reviewers)}</Text>
+            <Text style={styles.kpiLabel}>EK YORUM / AY</Text>
+          </View>
+          <View style={styles.kpiCellAccent}>
+            <Text style={styles.kpiValue}>{fmt(data.filteredLowReviews)}</Text>
+            <Text style={styles.kpiLabel}>FİLTRELENEN KÖTÜ</Text>
+          </View>
+          <View style={styles.kpiCell}>
+            <Text style={styles.kpiValue}>{data.projectedGoogle.toFixed(1)}</Text>
+            <Text style={styles.kpiLabel}>YENİ GOOGLE ★</Text>
+          </View>
+          <View style={styles.kpiCell}>
+            <Text style={styles.kpiValue}>{data.aiHoursSaved.toFixed(1)} sa</Text>
+            <Text style={styles.kpiLabel}>AI TASARRUF / AY</Text>
+          </View>
+        </View>
+
+        {/* Buaze akış diyagramı — 1-3★ vs 4-5★ akışı açık anlatım */}
+        <Text style={styles.h2}>Buaze QR akışı: yorumlar nereye gider?</Text>
+        <Text style={[styles.body, { marginBottom: 14, color: C.n500 }]}>
+          Müşteri verdiği yıldıza göre iki farklı akışa ayrılır. İçerik gizlenmez,
+          müşteri yine istediği yere yorum yazma hakkını korur — Buaze yalnızca
+          yönlendirir. Bu pattern Google&apos;ın kullanıcı katkı politikasıyla uyumludur.
+        </Text>
+
+        <View style={styles.flow}>
+          {/* 1-3★ akışı */}
+          <View style={styles.flowRow}>
+            <View style={[styles.flowChip, { backgroundColor: C.graphite }]}>
+              <Text style={styles.flowChipText}>1-2-3 ★</Text>
+            </View>
+            <Text style={styles.flowArrow}>→</Text>
+            <Text style={styles.flowDesc}>
+              <Text style={{ fontFamily: 'Helvetica-Bold' }}>Dahili form</Text>
+              {' '}(Buaze admin paneli). Düşük puanların ~%85&apos;i Google&apos;a sızmadan
+              sahibinin gelen kutusuna düşer; sahip müşteriye özel iletişim kurar,
+              sorunu çözebilir.
+            </Text>
+          </View>
+
+          {/* 4-5★ akışı */}
+          <View style={[styles.flowRow, { marginBottom: 0 }]}>
+            <View style={[styles.flowChip, { backgroundColor: C.limeDeep }]}>
+              <Text style={[styles.flowChipText, { color: C.graphite }]}>4-5 ★</Text>
+            </View>
+            <Text style={styles.flowArrow}>→</Text>
+            <Text style={styles.flowDesc}>
+              <Text style={{ fontFamily: 'Helvetica-Bold' }}>Seçili platform</Text>
+              {' '}(Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Foursquare,
+              Yandex — sahibinin aktif tuttukları). Yüksek puanlar arama görünürlüğünü
+              ve dönüşüm oranını birlikte yukarı çeker.
+            </Text>
+          </View>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerNote}>
+            Buaze · Pulse ROI Projeksiyonu · {data.email}
+          </Text>
+          <Text
+            style={styles.pageNumber}
+            render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
+          />
+        </View>
+      </Page>
+
+      {/* ─── Page 2: Senaryo + Platform breakdown + CTA ───────────────── */}
+      <Page size="A4" style={styles.page}>
+        {/* Header (kompakt) */}
+        <View style={styles.header}>
+          <View style={styles.brandRow}>
+            <BuazeLogo />
+            <Text style={styles.brandWord}>buaze</Text>
+            <View style={styles.brandDot} />
+          </View>
+          <Text style={styles.meta}>Senaryon ve dağılım</Text>
+        </View>
+
+        <Text style={styles.h2}>Senin senaryon — sayfada girdiğin değerler</Text>
+
+        <View style={styles.table}>
+          {[
+            { l: 'Sektör', v: SECTOR_LABEL[data.sector] ?? data.sector },
+            { l: 'Aylık müşteri', v: fmt(data.monthlyCustomers) },
+            { l: 'Ortalama sepet', v: `${data.currency}${fmt(data.avgTicket)}` },
+            { l: 'Mevcut Google ★', v: data.currentGoogle.toFixed(1) },
+            { l: 'Aylık 1-3★ yorum', v: fmt(data.lowRatingsPerMonth) },
+            {
+              l: 'Aktif platformlar',
+              v: data.platforms.map((p) => PLATFORM_LABEL[p] ?? p).join(', '),
+            },
+            {
+              l: 'Buaze planı',
+              v: `${PLAN_LABEL[data.plan] ?? data.plan} · ${data.currency}${fmt(data.planPrice)}/ay`,
+            },
+          ].map((row, i, arr) => (
+            <View key={row.l} style={i === arr.length - 1 ? styles.trLast : styles.tr}>
+              <Text style={styles.th}>{row.l}</Text>
+              <Text style={styles.td}>{row.v}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.h2}>Hesap dökümü</Text>
+        <View style={styles.table}>
+          {[
+            { l: 'QR\'ı tarayan / ay', v: fmt(data.scanned) },
+            { l: 'Yorum bırakan / ay', v: `+${fmt(data.reviewers)}` },
+            { l: 'Filtrelenen düşük yorum / ay', v: fmt(data.filteredLowReviews) },
+            {
+              l: 'Yeni Google ★ (12 ay sonu)',
+              v: `${data.currentGoogle.toFixed(1)} → ${data.projectedGoogle.toFixed(1)}`,
+            },
+            { l: 'Yeni müşteri / ay', v: `+${fmt(data.newCustomers)}` },
+            {
+              l: 'Aylık ek gelir',
+              v: `${data.currency}${fmt(Math.round(data.monthlyUplift))}`,
+            },
+            {
+              l: 'Yıllık ek gelir',
+              v: `${data.currency}${fmt(Math.round(data.yearlyUplift))}`,
+            },
+            {
+              l: 'AI Co-Pilot zaman tasarrufu',
+              v: `${data.aiHoursSaved.toFixed(1)} sa / ay`,
+            },
+          ].map((row, i, arr) => (
+            <View key={row.l} style={i === arr.length - 1 ? styles.trLast : styles.tr}>
+              <Text style={styles.th}>{row.l}</Text>
+              <Text style={styles.tdMono}>{row.v}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Platform breakdown */}
+        {data.platformBreakdown.length > 0 && (
+          <>
+            <Text style={styles.h2}>Yüksek-puan akışı: platforma yönlendirme</Text>
+            <View style={{ marginBottom: 6 }}>
+              {data.platformBreakdown.map((p) => {
+                const pct = totalRoute > 0 ? (p.reviews / totalRoute) * 100 : 0;
+                return (
+                  <View key={p.key} style={styles.barRow}>
+                    <Text style={styles.barLabel}>
+                      {PLATFORM_LABEL[p.key] ?? p.key}
+                    </Text>
+                    <View style={styles.barTrack}>
+                      <Rect
+                        x={0}
+                        y={0}
+                        width={`${Math.max(2, Math.round(pct))}%` as any}
+                        height={5}
+                        rx={2.5}
+                        fill={PLATFORM_COLOR[p.key] ?? C.graphite}
+                      />
+                    </View>
+                    <Text style={styles.barValue}>+{fmt(p.reviews)}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
+
+        {/* CTA — sonraki adım */}
+        <View style={styles.cta}>
+          <Text style={styles.ctaTitle}>Sıradaki adım: 30 dk canlı kurulum</Text>
+          <Text style={styles.ctaBody}>
+            Bu projeksiyonu birlikte gözden geçirelim. {PLAN_LABEL[data.plan] ?? data.plan}
+            {' '}planını işletmene uyarlayalım, ilk QR&apos;ı sahanda devreye alalım.
+            Kredi kartı sormuyoruz; 30 gün ücretsiz deneme açık.
+          </Text>
+          <Text style={styles.ctaBody}>
+            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Demo davet:</Text>
+            {' '}buaze.com/iletisim · <Text style={{ fontFamily: 'Helvetica-Bold' }}>E-posta:</Text>{' '}
+            hello@buaze.com
+          </Text>
+          <Text style={styles.ctaLink}>buaze.com</Text>
+        </View>
+
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerNote}>
+            Kalibrasyon: BrightLocal 2024 + Buaze 2026-Q1 kohortu (~2.400 hesap)
+          </Text>
+          <Text
+            style={styles.pageNumber}
+            render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
+          />
+        </View>
+      </Page>
+    </Document>
+  );
+}
