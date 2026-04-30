@@ -38,6 +38,10 @@ const PLATFORM_COLORS: Record<string, string> = {
   yemeksepeti: '#FA0050',
   getir: '#5D3EBC',
   trendyol_go: '#F27A1A',
+  tripadvisor: '#00AF87',
+  airbnb: '#FF5A5F',
+  booking: '#003580',
+  yandex: '#FC3F1D',
   unspecified: '#737373',
   unknown: '#737373',
 };

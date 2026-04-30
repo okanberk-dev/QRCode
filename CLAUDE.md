@@ -117,7 +117,7 @@ Stripe/Linear/Vercel disiplini — her entity için tek terim. **"Üyeler" süpe
 
 ## 5. Platform Sistemi (Yorumları Ayrıştırma)
 
-Müşteri QR'dan gelirken URL'de `platform` parametresi taşıyor: `google | yemeksepeti | getir | trendyol_go`. Bu değer:
+Müşteri QR'dan gelirken URL'de `platform` parametresi taşıyor: `google | yemeksepeti | getir | trendyol_go | tripadvisor | airbnb | booking | yandex`. Konaklama segmenti (otel) için `tripadvisor | airbnb | booking`, TR pazarı arama alternatifi için `yandex` desteklenir. Bu değer:
 - `Feedback.platform` sütununa yazılır
 - İstatistiklerde `groupBy({ by: ['platform'] })` ile ayrıştırılır
 - QR oluştururken `QrGeneration.platform` olarak da kaydedilir (history için)
