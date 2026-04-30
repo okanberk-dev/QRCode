@@ -116,6 +116,80 @@ const STUDIES: Seed[] = [
     personRole: { tr: 'Kurucu Hekim', en: 'Founding Physician' },
     isPublished: true,
   },
+  {
+    slug: 'pera-kahvecisi',
+    brand: 'Pera Kahvecisi',
+    sector: 'Kafe & Brunch',
+    sectorEn: 'Café & Brunch',
+    location: 'İstanbul · 4 şube',
+    heroImage: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?auto=format&fit=crop&w=1800&q=85',
+    heroTr: "Brunch yoğunluğunda hesap fişine basılı QR akışı; üç ayda Google yorum hacmi 5 katına çıktı, ortalama puan 4.3'ten 4.7'ye yükseldi.",
+    heroEn: 'A receipt-printed QR woven into the brunch rush; in three months Google review volume 5x’d and the average score rose from 4.3 to 4.7.',
+    subtitleTr: "Sabah, öğle ve hafta sonu için ayrı kampanyalar — şube performansı tek panelde, yorum yanıt akışı AI Co-Pilot ile destekli.",
+    subtitleEn: 'Separate campaigns for breakfast, lunch and weekend rushes — branch performance in one panel, replies drafted by AI Co-Pilot.',
+    stats: [
+      { label: { tr: 'GOOGLE ORT.', en: 'GOOGLE AVG.' }, value: '4.3 → 4.7' },
+      { label: { tr: 'YORUM HACMİ', en: 'REVIEW VOLUME' }, value: '5×' },
+      { label: { tr: 'GÜNLÜK TARANMA', en: 'DAILY SCANS' }, value: '240' },
+      { label: { tr: 'AKTİF ŞUBE', en: 'ACTIVE BRANCHES' }, value: '4' },
+    ],
+    highlights: [
+      {
+        tr: 'Hesap fişine basılı QR sticker; brunch yoğunluğunda dahi servis ekibi 30 saniye fazla mesai harcamadan misafiri yorum akışına yönlendiriyor.',
+        en: 'A QR sticker is printed on every receipt; even in the brunch rush, servers route guests into the review flow without spending 30 extra seconds.',
+      },
+      {
+        tr: 'Sabah, öğle ve hafta sonu için ayrı kampanyalar; aynı menünün hangi servis diliminde daha güçlü olduğunu şube bazında görüyoruz.',
+        en: 'Separate campaigns for breakfast, lunch and weekend reveal which service window the same menu performs strongest in, branch by branch.',
+      },
+      {
+        tr: 'AI Co-Pilot düşük puanlı geri bildirime beş dakika içinde Türkçe taslak hazırlıyor; yönetici onayla göndermeden önce müşteri kapıdan çıkmamış oluyor.',
+        en: 'AI Co-Pilot drafts a Turkish reply to low-rated feedback within five minutes; a manager can approve and send before the customer leaves the venue.',
+      },
+    ],
+    quoteTr: "Üç ay önce Google'da 4.3 olan ortalamamız bugün 4.7. Daha kıymetlisi: problemleri masada çözebiliyoruz, çünkü misafir hesabı kapatırken not bize ulaşıyor.",
+    quoteEn: 'Three months ago our Google average was 4.3; today it’s 4.7. The real win: we resolve issues at the table, because the note reaches us as the guest closes the bill.',
+    personName: 'Burak Tuncer',
+    personRole: { tr: 'Ortak Yönetici', en: 'Co-Founder' },
+    isPublished: true,
+  },
+  {
+    slug: 'studio-lume',
+    brand: 'Studio Lume',
+    sector: 'Güzellik Salonu',
+    sectorEn: 'Beauty Salon',
+    location: 'Nişantaşı · 2 şube',
+    heroImage: 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1800&q=85',
+    heroTr: "Randevu sonrası otomatik WhatsApp QR'ı her seansı bir yorum fırsatına dönüştürdü; altı ayda Instagram'dan organik müşteri akışı %62 büyüdü.",
+    heroEn: 'A post-appointment WhatsApp QR turned every session into a review opportunity; in six months organic Instagram-driven traffic grew by 62%.',
+    subtitleTr: "Saç, cilt, manikür ve kaş için ayrı QR kampanyaları — hizmet bazlı NPS uzman performansını şeffaf şekilde gösteriyor.",
+    subtitleEn: 'Per-service QR campaigns for hair, skin, manicure and brows — service-level NPS shows specialist performance transparently.',
+    stats: [
+      { label: { tr: 'GOOGLE ORT.', en: 'GOOGLE AVG.' }, value: '4.6 → 4.9' },
+      { label: { tr: 'INSTAGRAM AKIŞI', en: 'INSTAGRAM TRAFFIC' }, value: '+62%' },
+      { label: { tr: 'YENİ MÜŞTERİ / AY', en: 'NEW CLIENTS / MO' }, value: '+47%' },
+      { label: { tr: 'NPS', en: 'NPS' }, value: '81' },
+    ],
+    highlights: [
+      {
+        tr: 'Randevu bittikten 30 dakika sonra otomatik WhatsApp mesajı; misafir hâlâ deneyimi taze hatırlarken yorum yazıyor.',
+        en: 'An automated WhatsApp message goes out 30 minutes after the appointment ends; the guest writes their review while the experience is still fresh.',
+      },
+      {
+        tr: 'Hizmet ve uzman bazlı QR — yorumlar "salon geneli" olarak değil, "bu uzmanın sandalyesi" olarak işliyor; performans değerlendirmesi adil hâle geldi.',
+        en: 'Service- and specialist-level QR — feedback is logged against the chair, not the salon; performance reviews became fair and grounded.',
+      },
+      {
+        tr: 'Düşük puan operasyon paneline anlık alarm olarak düşüyor; salon sahibi misafir kapıdan çıkmadan kişisel iletişim kurabiliyor.',
+        en: 'Low ratings drop into the operations panel as instant alerts; the owner can reach the guest personally before they leave the salon.',
+      },
+    ],
+    quoteTr: "Yorum hacmimiz 6 katına çıktı ama daha kıymetlisi: hangi uzmanın hangi hizmette güçlü olduğunu artık tahmin etmiyoruz, görüyoruz.",
+    quoteEn: 'Review volume rose 6x — but the real value is that we no longer guess which specialist is strong at which service. We see it.',
+    personName: 'Selin Aksoy',
+    personRole: { tr: 'Kurucu', en: 'Founder' },
+    isPublished: true,
+  },
 ];
 
 async function main() {
