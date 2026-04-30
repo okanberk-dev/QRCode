@@ -465,13 +465,26 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
         </div>
       )}
 
+      {modalOpen && (
       <Modal
-        open={modalOpen}
         onClose={closeModal}
         size={720}
         title={editingId ? `${form.nameTr || 'Paket'} düzenle` : 'Yeni paket oluştur'}
         footer={
           <>
+            {editingId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setModalOpen(false);
+                  setDeleteId(editingId);
+                }}
+                disabled={saving}
+                className="mr-auto inline-flex items-center gap-1.5 rounded-full border border-[#FECACA] px-4 py-2 text-[12px] font-semibold text-[#991B1B] hover:bg-[#FEF2F2] disabled:opacity-60"
+              >
+                <Trash2 size={12} /> Bu paketi sil
+              </button>
+            )}
             <button type="button" onClick={closeModal} disabled={saving} className="bz-btn-ghost">
               Vazgeç
             </button>
@@ -688,9 +701,10 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
           </div>
         </div>
       </Modal>
+      )}
 
+      {deleteId !== null && (
       <Modal
-        open={deleteId !== null}
         onClose={() => setDeleteId(null)}
         size={420}
         title="Paket silinsin mi?"
@@ -714,6 +728,7 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
           Bu işlem geri alınamaz. Public sayfada bu paket artık görünmez.
         </p>
       </Modal>
+      )}
     </div>
   );
 }
