@@ -186,7 +186,7 @@ export default function MemberDetailPage({
         setSuccess('Hesap pasifleştirildi.');
         fetchDetail();
       } else {
-        setError('Pasifleştirme başarısız.');
+        setError('Silme işlemi başarısız.');
       }
     } catch {
       setError('Bağlantı hatası.');
@@ -270,7 +270,7 @@ export default function MemberDetailPage({
               <>
                 {' · '}
                 <span className="text-[#DC2626] font-medium">
-                  Pasif (deaktive: {dateLabel(user.deactivatedAt)})
+                  Silinmiş (silinme tarihi: {dateLabel(user.deactivatedAt)})
                 </span>
               </>
             )}
@@ -287,7 +287,7 @@ export default function MemberDetailPage({
                 cooldownActive
                   ? `Son davet: ${dateLabel(user.lastInvitedAt)}. 1 saat sonra tekrar dene.`
                   : !user.isActive
-                    ? 'Pasif hesaba mail gönderilemez'
+                    ? 'Silinmiş hesaba mail gönderilemez'
                     : undefined
               }
             >
@@ -305,9 +305,10 @@ export default function MemberDetailPage({
                 onClick={() => setConfirmAction('deactivate')}
                 disabled={actionRunning === 'deactivate'}
                 className="bz-btn-ghost text-[#DC2626] hover:bg-red-50 hover:border-[#DC2626]"
+                title="Hesabı sil — DB'de korunur, geri alınabilir"
               >
                 <Ban size={14} strokeWidth={2} />
-                Pasifleştir
+                Sil
               </button>
             ) : (
               <button
@@ -315,9 +316,10 @@ export default function MemberDetailPage({
                 onClick={() => setConfirmAction('reactivate')}
                 disabled={actionRunning === 'reactivate'}
                 className="bz-btn-ghost"
+                title="Silinmiş hesabı geri getir"
               >
                 <Power size={14} strokeWidth={2} />
-                Yeniden aktive et
+                Geri getir
               </button>
             )}
           </div>
@@ -402,7 +404,7 @@ export default function MemberDetailPage({
                 label="Hesap"
                 valueNode={
                   <Badge kind={user.isActive ? 'ok' : 'danger'}>
-                    {user.isActive ? 'Aktif' : 'Pasif'}
+                    {user.isActive ? 'Aktif' : 'Silinmiş'}
                   </Badge>
                 }
               />
@@ -473,9 +475,9 @@ export default function MemberDetailPage({
       {/* Confirm dialogs */}
       <ConfirmDialog
         open={confirmAction === 'deactivate'}
-        title="Hesabı pasifleştir"
-        body="Bu hesap pasifleştirilecek. Kullanıcı paneli kullanamayacak ama veriler (restoranlar, faturalar, audit log) korunacak. İstediğin zaman 'Yeniden aktive et' ile geri açabilirsin."
-        confirmLabel="Pasifleştir"
+        title="Hesabı sil"
+        body="Bu hesap silinecek (arşive alınacak). Kullanıcı listede gözükmeyecek, panele giriş yapamayacak. Veriler (restoranlar, faturalar, audit log) DB'de korunur — istersen 'Silinmiş (arşiv)' filtresinden bulup 'Geri getir' diyebilirsin."
+        confirmLabel="Sil"
         variant="danger"
         onConfirm={performDeactivate}
         onCancel={() => setConfirmAction(null)}
@@ -483,12 +485,12 @@ export default function MemberDetailPage({
       />
       <ConfirmDialog
         open={confirmAction === 'reactivate'}
-        title="Hesabı yeniden aktive et"
-        body="Bu hesap tekrar aktif olacak; kullanıcı panele giriş yapabilecek."
+        title="Hesabı geri getir"
+        body="Bu hesap arşivden çıkarılacak; kullanıcı panele giriş yapabilecek ve aktif listede yeniden görünecek."
         confirmLabel={
           <span className="inline-flex items-center gap-1.5">
             <RotateCcw size={14} strokeWidth={2} />
-            Aktive et
+            Geri getir
           </span>
         }
         onConfirm={performReactivate}
