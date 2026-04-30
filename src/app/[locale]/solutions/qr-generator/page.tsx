@@ -135,7 +135,7 @@ export default async function QRGeneratorPage({
         {/* ─── Generator (design 1:1: site-more.jsx:23-87) ─── */}
         <section
           aria-label={isTr ? 'QR kod oluşturucu' : 'QR code generator'}
-          className="px-5 sm:px-10 lg:px-12 pt-5 pb-20"
+          className="px-5 sm:px-10 lg:px-12 pt-5 pb-28 sm:pb-20"
         >
           <div className="max-w-[1200px] mx-auto">
             <QRGeneratorForm locale={locale} />
