@@ -133,7 +133,10 @@ export default async function DashboardPage({
   const dayLabelsTr = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
   const dayLabelsEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const dayLabels = isTrLocale ? dayLabelsTr : dayLabelsEn;
-  const trendData: { label: string; value: number }[] = Array.from({ length: 7 }, (_, i) => {
+  const trendData: { label: string; value: number }[] = [];
+  // İkincil seri — günlük ortalama puan (hover tooltip'ine yazılır).
+  const trendRatingsPerDay: number[] = [];
+  for (let i = 0; i < 7; i++) {
     const dayStart = new Date();
     dayStart.setHours(0, 0, 0, 0);
     dayStart.setDate(dayStart.getDate() - (6 - i));
@@ -142,11 +145,15 @@ export default async function DashboardPage({
     // Mon-Sun mapping (getDay: 0=Sun, 1=Mon, ...)
     const jsDay = dayStart.getDay();
     const labelIdx = jsDay === 0 ? 6 : jsDay - 1;
-    const count = trendFeedbacks.filter(
+    const dayFbs = trendFeedbacks.filter(
       (f) => f.createdAt >= dayStart && f.createdAt < dayEnd,
-    ).length;
-    return { label: dayLabels[labelIdx], value: count };
-  });
+    );
+    const count = dayFbs.length;
+    const ratingSum = dayFbs.reduce((sum, f) => sum + (f.rating || 0), 0);
+    const ratingAvg = count > 0 ? Math.round((ratingSum / count) * 10) / 10 : 0;
+    trendData.push({ label: dayLabels[labelIdx], value: count });
+    trendRatingsPerDay.push(ratingAvg);
+  }
 
   // Per-restaurant avg rating for "Konum performansı" widget
   const restaurantRatings = user.restaurants.length
@@ -674,7 +681,15 @@ export default async function DashboardPage({
               <LegendDot color="#C6F24E" label={isTr ? 'Puan' : 'Rating'} />
             </div>
           </div>
-          <BarChart data={trendData} height={140} />
+          <BarChart
+            data={trendData}
+            height={140}
+            showValues
+            secondaryValues={{
+              label: isTr ? 'Ort. puan' : 'Avg rating',
+              values: trendRatingsPerDay,
+            }}
+          />
           <div className="mt-5 pt-3.5 border-t border-[#EDEDED] grid grid-cols-3 gap-2 text-[12px] text-[#525252]">
             <span>
               <strong className="text-[#0A0A0A]">{last7Total}</strong>{' '}
