@@ -236,43 +236,79 @@ export default async function CaseStudiesPage({
         </div>
       </section>
 
-      <section className="border-y border-[#EDEDED] bg-[#FAFAFA] px-5 py-[56px] sm:px-10 sm:py-20">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-5 md:grid-cols-3">
+      <section aria-label={isTr ? 'Vaka çalışmaları sayıları' : 'Case study figures'} className="border-t border-[#EDEDED] bg-white px-5 py-[40px] sm:px-10 sm:py-14">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4">
           {[
-            {
-              icon: <TrendingUp size={18} />,
-              title: isTr ? 'Büyüme metriği' : 'Growth metric',
-              body: isTr
-                ? 'Her vaka; yorum hacmi, yanıt süresi veya şube performansı gibi ölçülebilir bir iş sonucuna bağlanır.'
-                : 'Every case connects to a measurable business result such as review volume, response time or branch performance.',
-            },
-            {
-              icon: <ShieldCheck size={18} />,
-              title: isTr ? 'Politika uyumu' : 'Policy alignment',
-              body: isTr
-                ? 'Akışlar teşvik, seçici yorum isteme veya negatif yorumu caydırma üzerine kurulmaz; gerçek deneyim sinyali toplar.'
-                : 'Flows are not built on incentives, selective solicitation or discouraging negative reviews; they collect genuine experience signals.',
-            },
-            {
-              icon: <BarChart3 size={18} />,
-              title: isTr ? 'Operasyon görünürlüğü' : 'Operational visibility',
-              body: isTr
-                ? 'Geri bildirim sadece pazarlama verisi değil; şube, ekip ve servis kalitesi için günlük yönetim girdisidir.'
-                : 'Feedback is not just marketing data; it becomes daily management input for branches, teams and service quality.',
-            },
-          ].map((item) => (
-            <article key={item.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-7">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]">
-                {item.icon}
-              </div>
-              <h3
-                className="mt-5 text-[24px] font-medium tracking-[-0.02em] text-[#0A0A0A]"
+            { value: String(studies.length), label: isTr ? 'YAYINDA VAKA' : 'PUBLISHED CASES' },
+            { value: '5', label: isTr ? 'FARKLI SEKTÖR' : 'DIFFERENT INDUSTRIES' },
+            { value: '+184% – 5×', label: isTr ? 'YORUM HACMİ ARTIŞI' : 'REVIEW VOLUME GAIN' },
+            { value: isTr ? '12 dk' : '12 min', label: isTr ? 'ORT. İLK YANIT' : 'AVG. FIRST REPLY' },
+          ].map((stat) => (
+            <div key={stat.label} className="border-l-2 border-[#0A0A0A] pl-4 sm:border-l-0 sm:border-t-2 sm:pl-0 sm:pt-4">
+              <div
+                className="text-[28px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A] sm:text-[36px]"
+                style={{ fontFamily: 'var(--font-heading)' }}
               >
-                {item.title}
-              </h3>
-              <p className="mt-3 text-[14px] leading-[1.7] text-[#525252]">{item.body}</p>
-            </article>
+                {stat.value}
+              </div>
+              <div className="pulse-eyebrow mt-2 text-[#737373]">{stat.label}</div>
+            </div>
           ))}
+        </div>
+      </section>
+
+      <section className="border-y border-[#EDEDED] bg-[#FAFAFA] px-5 py-[56px] sm:px-10 sm:py-20">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="mb-10 max-w-[680px]">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'METODOLOJİMİZ' : 'OUR METHODOLOGY'}
+            </span>
+            <h2 className="mt-3 text-[26px] font-medium leading-[1.04] tracking-[-0.03em] text-[#0A0A0A] sm:text-[36px]">
+              {isTr ? 'Vaka çalışmalarını nasıl yazıyoruz?' : 'How we write a case study.'}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                icon: <TrendingUp size={18} />,
+                title: isTr ? 'Büyüme metriği' : 'Growth metric',
+                body: isTr
+                  ? 'Her vaka; yorum hacmi, yanıt süresi veya şube performansı gibi ölçülebilir bir iş sonucuna bağlanır.'
+                  : 'Every case connects to a measurable business result such as review volume, response time or branch performance.',
+              },
+              {
+                icon: <ShieldCheck size={18} />,
+                title: isTr ? 'Politika uyumu' : 'Policy alignment',
+                body: isTr
+                  ? 'Akışlar teşvik, seçici yorum isteme veya negatif yorumu caydırma üzerine kurulmaz; gerçek deneyim sinyali toplar.'
+                  : 'Flows are not built on incentives, selective solicitation or discouraging negative reviews; they collect genuine experience signals.',
+              },
+              {
+                icon: <BarChart3 size={18} />,
+                title: isTr ? 'Operasyon görünürlüğü' : 'Operational visibility',
+                body: isTr
+                  ? 'Geri bildirim sadece pazarlama verisi değil; şube, ekip ve servis kalitesi için günlük yönetim girdisidir.'
+                  : 'Feedback is not just marketing data; it becomes daily management input for branches, teams and service quality.',
+              },
+              {
+                icon: <CheckCircle2 size={18} />,
+                title: isTr ? 'Şeffaf veri' : 'Transparent data',
+                body: isTr
+                  ? 'Vakadaki sayılar Buaze panelinden alınır; aynı işletme bu metrikleri her ay kendi panelinde de görür.'
+                  : 'The numbers come straight from the Buaze panel; the same metrics are visible to the business in its own dashboard every month.',
+              },
+            ].map((item) => (
+              <article key={item.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-7">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]">
+                  {item.icon}
+                </div>
+                <h3 className="mt-5 text-[20px] font-medium tracking-[-0.02em] text-[#0A0A0A]">
+                  {item.title}
+                </h3>
+                <p className="mt-3 text-[14px] leading-[1.7] text-[#525252]">{item.body}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -345,23 +381,55 @@ export default async function CaseStudiesPage({
       </section>
 
       <section className="bg-[#0A0A0A] px-5 py-[56px] text-white sm:px-10 sm:py-20">
-        <div className="mx-auto flex max-w-[1000px] flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
-          <div>
-            <span className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'SIRADAKİ VAKA SİZ OLABİLİRSİNİZ' : 'YOUR STORY COULD BE NEXT'}
-            </span>
-            <h2
-              className="mt-4 max-w-[680px] text-[32px] font-medium leading-[1.04] tracking-[-0.035em] text-white sm:text-[48px]"
-            >
-              {isTr ? 'Yorum operasyonunuzu ölçülebilir hale getirelim.' : 'Let’s make your review operation measurable.'}
-            </h2>
+        <div className="mx-auto max-w-[1100px]">
+          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
+            <div>
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'SIRADAKİ VAKA SİZ OLABİLİRSİNİZ' : 'YOUR STORY COULD BE NEXT'}
+              </span>
+              <h2 className="mt-4 max-w-[640px] text-[30px] font-medium leading-[1.05] tracking-[-0.035em] text-white sm:text-[44px]">
+                {isTr ? 'Yorum operasyonunuzu ölçülebilir hâle getirelim.' : 'Let’s make your review operation measurable.'}
+              </h2>
+              <p className="mt-5 max-w-[560px] text-[15px] leading-[1.7] text-white/70 sm:text-[16px]">
+                {isTr
+                  ? 'Buaze ile başlangıç görüşmesi 25 dakika sürer; sektörünüzü, mevcut yorum hacminizi ve hedef puanınızı birlikte konuşur, vaka çalışmalarındaki akışın size nasıl uyacağını gösteririz.'
+                  : 'A Buaze starter call takes 25 minutes; we discuss your industry, current review volume and target rating, then map how the case-study flow fits your operation.'}
+              </p>
+            </div>
+            <ul className="space-y-3 text-[14px] leading-[1.6] text-white/85">
+              {[
+                isTr ? 'Sektörünüze en yakın vakayı bir arada inceleriz.' : 'We walk through the case closest to your industry together.',
+                isTr ? 'Tek panelden şube ve ekip görünürlüğünü canlı gösteririz.' : 'We demo branch and team visibility from a single live panel.',
+                isTr ? 'KVKK ve Google politikalarıyla uyumlu akış konusunda sorularınızı yanıtlarız.' : 'We answer questions on KVKK and Google-policy-aligned flows.',
+              ].map((line) => (
+                <li key={line} className="flex items-start gap-3">
+                  <span className="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]">
+                    <CheckCircle2 size={13} />
+                  </span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <Link
-            href={`${base}/contact`}
-            className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#C6F24E] px-7 py-4 text-[15px] font-medium text-[#0A0A0A] hover:bg-[#A8D62E]"
-          >
-            {isTr ? 'Görüşme planla' : 'Book a call'} →
-          </Link>
+          <div className="mt-10 flex flex-col items-start gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
+            <p className="pulse-eyebrow text-white/60">
+              {isTr ? 'YANIT 1 İŞ GÜNÜ İÇİNDE' : 'REPLY WITHIN 1 BUSINESS DAY'}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href={`${base}/contact`}
+                className="inline-flex items-center justify-center rounded-full bg-[#C6F24E] px-7 py-4 text-[15px] font-medium text-[#0A0A0A] hover:bg-[#A8D62E]"
+              >
+                {isTr ? 'Görüşme planla' : 'Book a call'} →
+              </Link>
+              <Link
+                href={`${base}/customer-stories`}
+                className="inline-flex items-center justify-center rounded-full border border-white/25 px-7 py-4 text-[15px] font-medium text-white/90 hover:border-white"
+              >
+                {isTr ? 'Müşteri hikayeleri' : 'Customer stories'}
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
