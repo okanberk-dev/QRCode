@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Clock, Loader2, MailCheck, ShieldCheck, Sparkles, Star } from 'lucide-react';
+import { ArrowRight, Check, Clock, Loader2, MailCheck, ShieldCheck, Sparkles, Star } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, Field } from '@/components/ui';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
@@ -706,6 +706,41 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
       </div>
       </div>
 
+      {/* ─── Mikro-CTA — düşük friction adım (kayıt yok, kredi kartı yok) ─── */}
+      <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
+        <div className="flex items-center gap-3 flex-1">
+          <span
+            aria-hidden
+            className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF9B8] text-[#0A0A0A]"
+          >
+            <Sparkles size={18} strokeWidth={2} />
+          </span>
+          <div className="min-w-0">
+            <div className="bz-h-tight text-[14px] sm:text-[15px] font-semibold text-[#0A0A0A]">
+              {isTr
+                ? 'Önce küçük adımla dene — kayıt yok'
+                : 'Try a small step first — no signup'}
+            </div>
+            <p className="mt-0.5 text-[12px] sm:text-[12.5px] text-[#737373] leading-[1.5]">
+              {isTr
+                ? 'Tek tıkla restoranına özel ücretsiz QR oluştur. Kredi kartı sormuyoruz, e-posta istemiyoruz.'
+                : 'Generate a free QR for your business in one click. No credit card, no email needed.'}
+            </p>
+          </div>
+        </div>
+        <Link
+          href={`/${locale}/solutions/qr-generator`}
+          className="group inline-flex items-center justify-center gap-1.5 rounded-full border border-[#0A0A0A] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 shrink-0"
+        >
+          {isTr ? 'Ücretsiz QR oluştur' : 'Generate free QR'}
+          <ArrowRight
+            size={14}
+            strokeWidth={2.2}
+            className="transition-transform group-hover:translate-x-0.5"
+          />
+        </Link>
+      </div>
+
       {/* ─── Lead form — Detaylı PDF + 1-1 demo iste (opsiyonel) ─── */}
       <div className="bz-card p-5 sm:p-7">
         {leadStatus === 'sent' ? (
@@ -851,6 +886,24 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
                 </label>
               </div>
             </div>
+
+            {/* Risk-free badge sırası — submit butonuna yakın güven sinyali */}
+            <ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[#525252]">
+              {(isTr
+                ? ['30 gün ücretsiz', 'Kredi kartı yok', 'İstediğin an iptal']
+                : ['30-day free trial', 'No credit card', 'Cancel anytime']
+              ).map((label) => (
+                <li key={label} className="inline-flex items-center gap-1.5">
+                  <span
+                    aria-hidden
+                    className="flex h-4 w-4 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]"
+                  >
+                    <Check size={10} strokeWidth={3} />
+                  </span>
+                  <span className="font-medium">{label}</span>
+                </li>
+              ))}
+            </ul>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
               <p className="text-[11px] text-[#737373] leading-[1.5] sm:max-w-[440px]">

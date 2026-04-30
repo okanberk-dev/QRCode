@@ -247,6 +247,43 @@ export default async function RoiPage({
         </div>
       </section>
 
+      {/* Trust strip — calculator hemen üstü. Uydurma logo / fake aciliyet
+          yok; sadece CLAUDE.md §11'de geçen kohort metriği + kalibrasyon
+          kaynağı + tek hat halinde 4 stat. */}
+      <section className="px-5 sm:px-10 pb-6">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="flex flex-wrap items-stretch justify-center gap-x-8 gap-y-3 sm:gap-x-12 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4">
+            {(isTr
+              ? [
+                  { v: '2.400+', l: 'Aktif Buaze işletmesi' },
+                  { v: '+0,4★', l: 'Ortalama yıldız lift / 90 gün' },
+                  { v: '%85', l: 'Düşük yorum filtrelendi' },
+                  { v: 'BrightLocal 2024', l: 'Kalibrasyon kaynağı' },
+                ]
+              : [
+                  { v: '2,400+', l: 'Active Buaze businesses' },
+                  { v: '+0.4★', l: 'Avg. star lift / 90 days' },
+                  { v: '85%', l: 'Low reviews filtered' },
+                  { v: 'BrightLocal 2024', l: 'Calibration source' },
+                ]
+            ).map((m, i) => (
+              <div key={i} className="flex items-center gap-2.5 min-w-0">
+                <span
+                  aria-hidden
+                  className="h-1.5 w-1.5 rounded-full bg-[#A8D62E] shrink-0"
+                />
+                <div className="flex flex-col leading-tight min-w-0">
+                  <span className="bz-mono text-[13px] sm:text-[14px] font-semibold text-[#0A0A0A] tabular-nums truncate">
+                    {m.v}
+                  </span>
+                  <span className="text-[11px] text-[#737373] truncate">{m.l}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
         <div className="max-w-[1100px] mx-auto">
           <RoiCalculator locale={locale} />
