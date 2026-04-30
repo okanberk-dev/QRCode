@@ -252,7 +252,7 @@ export default async function RoiPage({
           kaynağı + tek hat halinde 4 stat. */}
       <section className="px-5 sm:px-10 pb-6">
         <div className="max-w-[1100px] mx-auto">
-          <div className="flex flex-wrap items-stretch justify-center gap-x-8 gap-y-3 sm:gap-x-12 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-stretch sm:justify-center gap-x-4 sm:gap-x-12 gap-y-3 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 sm:px-5 py-4">
             {(isTr
               ? [
                   { v: '2.400+', l: 'Aktif Buaze işletmesi' },
