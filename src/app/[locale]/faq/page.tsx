@@ -144,7 +144,6 @@ export default async function FaqPage({
             </span>
             <h1
               className="mt-3 text-[38px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? 'Cevaplar.' : 'Answers.'}
             </h1>
@@ -170,7 +169,6 @@ export default async function FaqPage({
         <div className="max-w-[720px] mx-auto text-center">
           <h2
             className="text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-tight"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Cevabını bulamadığın bir soru mu var?' : "Can't find what you're looking for?"}
           </h2>

@@ -118,15 +118,6 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
                   >
                     <item.Icon size={22} className="text-[#0A0A0A]" strokeWidth={2} />
                   </Link>
-                  {/* Decorative metric badge above-right of the FAB,
-                      design buaze-mobil/layout.jsx parity. aria-hidden so
-                      screen readers skip the marketing chrome. */}
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute -top-1 right-2 text-[10px] font-bold leading-none tracking-tight text-[#0A0A0A]"
-                  >
-                    +184%
-                  </span>
                 </li>
               );
             }

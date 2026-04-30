@@ -122,6 +122,11 @@ export default function ForgotPasswordForm({ locale }: Props) {
           type="email"
           required
           autoComplete="email"
+          inputMode="email"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="send"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="emre@arkbistro.com"

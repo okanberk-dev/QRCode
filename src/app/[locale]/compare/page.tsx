@@ -114,7 +114,7 @@ export default async function ComparisonPage({
       <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
         <div className="max-w-[1000px] mx-auto">
           <div className="rounded-3xl border border-[#EDEDED] bg-white overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto no-scrollbar">
               <table className="w-full border-collapse min-w-[640px]">
                 <thead>
                   <tr className="bg-[#FAFAFA] border-b border-[#EDEDED]">

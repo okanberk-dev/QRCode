@@ -316,7 +316,6 @@ export default async function BlogPostPage({
             </div>
             <h1
               className="mt-3 sm:mt-4 text-[32px] sm:text-[48px] lg:text-[56px] font-medium leading-[1] tracking-[-0.03em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {post.title}
             </h1>
@@ -487,7 +486,6 @@ export default async function BlogPostPage({
                     </div>
                     <h3
                       className="mt-3 text-[22px] sm:text-[24px] font-medium leading-[1.2] tracking-[-0.02em] text-[#0A0A0A]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
                     >
                       {isTr ? `${takeaways.length} başlık, 1 sayfada.` : `${takeaways.length} ideas, on one page.`}
                     </h3>
@@ -518,7 +516,6 @@ export default async function BlogPostPage({
                     </div>
                     <h3
                       className="mt-2.5 text-[24px] sm:text-[28px] font-medium leading-[1.15] tracking-[-0.02em]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
                     >
                       {ctaTitle}
                     </h3>

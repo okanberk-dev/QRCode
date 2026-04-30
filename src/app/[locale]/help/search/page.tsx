@@ -112,7 +112,6 @@ export default async function HelpSearchPage({ params, searchParams }: PageParam
 
           <h1
             className="text-[28px] sm:text-[36px] font-medium leading-[1.05] tracking-[-0.02em] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {q.length > 0
               ? isTr
@@ -156,7 +155,6 @@ export default async function HelpSearchPage({ params, searchParams }: PageParam
                         <span className="pulse-eyebrow text-[#737373]">{catLabel}</span>
                         <h3
                           className="mt-1 text-[17px] sm:text-[19px] font-medium tracking-[-0.015em] text-[#0A0A0A]"
-                          style={{ fontFamily: 'var(--font-heading)' }}
                         >
                           {r.title}
                         </h3>
@@ -257,7 +255,6 @@ function NoResults({ locale, q }: { locale: Locale; q: string }) {
               <div className="min-w-0">
                 <h3
                   className="text-[14px] font-semibold tracking-[-0.01em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {meta.title}
                 </h3>

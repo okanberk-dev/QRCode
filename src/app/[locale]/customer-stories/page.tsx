@@ -62,7 +62,6 @@ export default async function CustomerStoriesPage({
           </span>
           <h1
             className="mt-3 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Rakam konuşur.' : 'Numbers do the talking.'}
           </h1>
@@ -91,7 +90,6 @@ export default async function CustomerStoriesPage({
                 </span>
                 <h3
                   className="mt-2 text-[24px] sm:text-[30px] font-medium leading-none tracking-[-0.02em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {st.brand}
                 </h3>
@@ -135,7 +133,6 @@ export default async function CustomerStoriesPage({
         <div className="max-w-[900px] mx-auto text-center">
           <h2
             className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr
               ? 'Bir sonraki başarı hikayesi sizinki olsun.'

@@ -140,7 +140,6 @@ export default async function HelpCategoryPage({ params }: PageParams) {
             </span>
             <h1
               className="text-[32px] sm:text-[48px] lg:text-[56px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {meta.title}
             </h1>
@@ -190,7 +189,6 @@ export default async function HelpCategoryPage({ params }: PageParams) {
                     <div className="min-w-0 flex-1">
                       <h3
                         className="text-[17px] sm:text-[19px] font-medium tracking-[-0.015em] text-[#0A0A0A]"
-                        style={{ fontFamily: 'var(--font-heading)' }}
                       >
                         {a.title}
                       </h3>
@@ -224,7 +222,6 @@ export default async function HelpCategoryPage({ params }: PageParams) {
         <div className="mx-auto max-w-[720px] text-center">
           <h2
             className="text-[22px] sm:text-[26px] font-medium tracking-[-0.02em] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Yardımcı olamadık mı?' : 'Still stuck?'}
           </h2>

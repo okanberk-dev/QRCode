@@ -74,7 +74,6 @@ export default async function BlogIndexPage({
           </span>
           <h1
             className="mt-3 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'İtibar kütüphanesi.' : 'The reputation library.'}
           </h1>
@@ -180,7 +179,6 @@ export default async function BlogIndexPage({
                     </span>
                     <h2
                       className="mt-2.5 text-[24px] sm:text-[28px] lg:text-[32px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] group-hover:text-[#0A0A0A]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
                     >
                       {featured.title}
                     </h2>
@@ -238,7 +236,6 @@ export default async function BlogIndexPage({
                       </span>
                       <h3
                         className="mt-1.5 text-[18px] sm:text-[20px] font-medium leading-[1.25] tracking-[-0.02em] text-[#0A0A0A]"
-                        style={{ fontFamily: 'var(--font-heading)' }}
                       >
                         {p.title}
                       </h3>

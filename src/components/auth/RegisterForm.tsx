@@ -234,6 +234,11 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             type={f.type}
             required={f.required}
             autoComplete={f.autoComplete}
+            inputMode={f.type === 'email' ? 'email' : f.type === 'tel' ? 'tel' : undefined}
+            autoCapitalize={f.type === 'email' ? 'off' : f.key === 'name' ? 'words' : undefined}
+            autoCorrect={f.type === 'email' ? 'off' : undefined}
+            spellCheck={f.type === 'email' ? false : undefined}
+            enterKeyHint="next"
             value={form[f.key]}
             onChange={(e) => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
             placeholder={f.placeholder}
@@ -253,6 +258,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             required
             minLength={8}
             autoComplete="new-password"
+            enterKeyHint="send"
             value={form.password}
             onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
             className="min-h-[46px] w-full px-3.5 py-3 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"

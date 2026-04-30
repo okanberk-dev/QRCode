@@ -102,6 +102,7 @@ export default async function DashboardLayout({
       email: true,
       plan: true,
       trialEndsAt: true,
+      createdAt: true,
       isActive: true,
       restaurants: {
         select: {
@@ -138,6 +139,7 @@ export default async function DashboardLayout({
         email: user.email,
         plan: user.plan,
         trialEndsAt: user.trialEndsAt?.toISOString() || null,
+        createdAt: user.createdAt.toISOString(),
       }}
       workspace={{
         primaryName: user.restaurants[0]?.name ?? null,

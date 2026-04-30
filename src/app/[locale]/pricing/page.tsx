@@ -257,7 +257,7 @@ export default async function PricingPage({
           </div>
 
           <div className="rounded-3xl border border-[#EDEDED] bg-white overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto no-scrollbar">
               <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
                   <tr className="bg-[#FAFAFA] border-b border-[#EDEDED]">

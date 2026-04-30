@@ -169,7 +169,6 @@ export default async function HelpArticlePage({ params }: PageParams) {
           </span>
           <h1
             className="mt-3 text-[28px] sm:text-[44px] lg:text-[52px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {article.title}
           </h1>
@@ -211,7 +210,6 @@ export default async function HelpArticlePage({ params }: PageParams) {
         <div className="mt-12 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-6 sm:p-7">
           <h2
             className="text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Sorun çözülmedi mi?' : 'Did this not solve it?'}
           </h2>
@@ -237,7 +235,6 @@ export default async function HelpArticlePage({ params }: PageParams) {
             <div className="mb-6 flex items-end justify-between gap-4">
               <h2
                 className="text-[22px] sm:text-[26px] font-medium tracking-[-0.02em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
               >
                 {isTr ? 'Aynı kategoride' : 'In this category'}
               </h2>
@@ -257,7 +254,6 @@ export default async function HelpArticlePage({ params }: PageParams) {
                 >
                   <h3
                     className="text-[16px] font-semibold leading-[1.3] tracking-[-0.015em] text-[#0A0A0A]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     {r.title}
                   </h3>

@@ -98,7 +98,6 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
             </span>
             <h1
               className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
             >
               {isTr ? (
                 <>
@@ -199,7 +198,6 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
         <div className="mx-auto max-w-[1200px]">
           <h2
             className="text-[26px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr
               ? 'Restoranın her noktasında, bir nabız.'
@@ -222,7 +220,6 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
                 </svg>
                 <h3
                   className="text-[18px] font-semibold text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {u.t}
                 </h3>
@@ -238,7 +235,6 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
         <div className="mx-auto max-w-[900px] text-center">
           <h2
             className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
-            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? 'Her masa, bir fırsat.' : 'Every table, an opportunity.'}
           </h2>

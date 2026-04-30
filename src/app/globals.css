@@ -777,13 +777,17 @@ input::-webkit-inner-spin-button {
 .bz-input {
   width: 100%;
   font-family: var(--font-body);
-  font-size: 13px; color: #0A0A0A;
+  /* 16px on mobile to prevent iOS Safari auto-zoom on focus; tighten on tablet+ */
+  font-size: 16px; color: #0A0A0A;
   background: #FFFFFF;
   border: 1px solid #EDEDED;
   border-radius: 10px;
   padding: 10px 12px;
   outline: none;
   transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+@media (min-width: 640px) {
+  .bz-input { font-size: 13px; }
 }
 .bz-input::placeholder { color: #A3A3A3; }
 .bz-input:hover:not(:disabled) { border-color: #D4D4D4; }

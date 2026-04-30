@@ -142,7 +142,6 @@ export default function PricingPlans({ locale, monthlyCta, yearlyCta, monthlyPer
               <div className={`${isDark ? 'pt-2' : ''} mb-6`}>
                 <h2
                   className={`text-[22px] font-medium tracking-[-0.02em] ${isDark ? 'text-white' : 'text-[#0A0A0A]'}`}
-                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {p.name}
                 </h2>

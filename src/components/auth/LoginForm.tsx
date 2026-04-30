@@ -294,6 +294,11 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
           type="email"
           required
           autoComplete="email"
+          inputMode="email"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="next"
           value={form.email}
           onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
           className="min-h-[48px] w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
@@ -319,6 +324,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
             type={showPassword ? 'text' : 'password'}
             required
             autoComplete="current-password"
+            enterKeyHint="send"
             value={form.password}
             onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
             className="min-h-[48px] w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
