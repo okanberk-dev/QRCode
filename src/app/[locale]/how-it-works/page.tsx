@@ -70,8 +70,8 @@ export default async function HowItWorksPage({
         : 'The customer scans the QR and sees the public Google review link first. They can optionally also leave private feedback for your team in the same flow — no rating-based gating.',
       Ill: IllusInbox,
       perks: isTr
-        ? ['Anlık bildirim', 'Tek tıkla Google bağlantısı', 'Google uyumlu akış', 'Opsiyonel özel geri bildirim']
-        : ['Live notifications', 'One-tap Google link', 'Google-compliant flow', 'Optional private feedback'],
+        ? ['Anlık bildirim', 'Tek tıkla Google bağlantısı', 'Şeffaf yorum akışı', 'Opsiyonel özel geri bildirim']
+        : ['Live notifications', 'One-tap Google link', 'Transparent review flow', 'Optional private feedback'],
     },
     {
       id: '03',

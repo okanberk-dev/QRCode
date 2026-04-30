@@ -355,8 +355,8 @@ export default async function BlogPostPage({
             ? 'Buaze ekibinden, restoran ve perakende için itibar yönetimi üzerine yazıyor.'
             : 'Writes about restaurant and retail reputation management for the Buaze team.');
           const ctaTitle = post.ctaTitle || (isTr
-            ? 'Google politikalarına uyumlu büyümeye hazır mısın?'
-            : 'Ready to grow the Google-compliant way?');
+            ? 'Şeffaf yorum akışıyla büyümeye hazır mısın?'
+            : 'Ready to grow with a transparent review flow?');
           const ctaSubtitle = post.ctaSubtitle || (isTr
             ? '14 gün ücretsiz · kredi kartı gerekmez · 5 dakikada kurulum'
             : '14 days free · no card required · 5-minute setup');
