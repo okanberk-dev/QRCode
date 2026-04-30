@@ -7,6 +7,15 @@ import { KULLANIM_SARTLARI_TR, KULLANIM_SARTLARI_EN } from './kullanim-sartlari'
 import { CEREZ_POLITIKASI_TR, CEREZ_POLITIKASI_EN } from './cerez-politikasi';
 import { TICARI_ILETI_TR, TICARI_ILETI_EN } from './ticari-ileti';
 import { KULLANIM_SOZLESMESI_TR, KULLANIM_SOZLESMESI_EN } from './kullanim-sozlesmesi';
+import {
+  MESAFELI_HIZMET_SOZLESMESI_TR,
+  MESAFELI_HIZMET_SOZLESMESI_EN,
+} from './mesafeli-hizmet-sozlesmesi';
+import { IADE_IPTAL_POLITIKASI_TR, IADE_IPTAL_POLITIKASI_EN } from './iade-iptal-politikasi';
+import {
+  VERI_ISLEYICI_SOZLESMESI_TR,
+  VERI_ISLEYICI_SOZLESMESI_EN,
+} from './veri-isleyici-sozlesmesi';
 
 export interface LegalTemplateContent {
   title: string;
@@ -51,6 +60,18 @@ export const LEGAL_TEMPLATE_DEFAULTS: Record<
   'kullanim-sozlesmesi': {
     tr: KULLANIM_SOZLESMESI_TR,
     en: KULLANIM_SOZLESMESI_EN,
+  },
+  'mesafeli-hizmet-sozlesmesi': {
+    tr: MESAFELI_HIZMET_SOZLESMESI_TR,
+    en: MESAFELI_HIZMET_SOZLESMESI_EN,
+  },
+  'iade-iptal-politikasi': {
+    tr: IADE_IPTAL_POLITIKASI_TR,
+    en: IADE_IPTAL_POLITIKASI_EN,
+  },
+  'veri-isleyici-sozlesmesi': {
+    tr: VERI_ISLEYICI_SOZLESMESI_TR,
+    en: VERI_ISLEYICI_SOZLESMESI_EN,
   },
 };
 

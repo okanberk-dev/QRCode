@@ -328,8 +328,14 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                     { label: 'Açık Rıza', href: `${base}/acik-riza` },
                     { label: 'Ticari İleti', href: `${base}/ticari-ileti` },
                     { label: 'Sözleşme', href: `${base}/kullanim-sozlesmesi` },
+                    { label: 'Mesafeli Sözleşme', href: `${base}/mesafeli-hizmet-sozlesmesi` },
+                    { label: 'İade & İptal', href: `${base}/iade-iptal-politikasi` },
                   ]
-                : [{ label: 'Agreement', href: `${base}/kullanim-sozlesmesi` }]),
+                : [
+                    { label: 'Agreement', href: `${base}/kullanim-sozlesmesi` },
+                    { label: 'Distance Contract', href: `${base}/mesafeli-hizmet-sozlesmesi` },
+                    { label: 'Refund Policy', href: `${base}/iade-iptal-politikasi` },
+                  ]),
               { label: isTr ? 'Google Uyumu' : 'Google compliance', href: `${base}/google-compliance` },
             ].map((item) => (
               <li key={item.href}>

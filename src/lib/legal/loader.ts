@@ -7,6 +7,7 @@ import {
   isSupportedLegalLocale,
 } from './keys';
 import { getLegalTemplateDefault, type LegalTemplateContent } from './templates';
+import { loadLegalVariableMap, substituteLegalVariables } from './variables';
 
 /**
  * In-process cache — Vercel serverless cold start'ta sıfırlanır, kabul
@@ -114,6 +115,34 @@ export async function loadActiveLegalDocument(
   cache.set(k, { expiresAt: Date.now() + CACHE_TTL_MS, data: snapshot });
   return snapshot;
 }
+
+/**
+ * Public surface'lerde kullanılır — ham metin değil, `{{KEY}}` placeholder'ları
+ * gerçek değişken değerleriyle doldurulmuş hâli döner. Admin paneli ham (raw)
+ * versiyonu görmeli; bu yüzden `loadActiveLegalDocument` ham döndürür ve
+ * public sayfa bu helper'ı çağırır.
+ */
+export async function loadActiveLegalDocumentRendered(
+  key: LegalDocumentKey,
+  locale: LegalLocale,
+): Promise<LegalDocumentSnapshot> {
+  const [snapshot, vars] = await Promise.all([
+    loadActiveLegalDocument(key, locale),
+    loadLegalVariableMap(),
+  ]);
+  return {
+    ...snapshot,
+    title: substituteLegalVariables(snapshot.title, vars),
+    description: substituteLegalVariables(snapshot.description, vars),
+    content: substituteLegalVariables(snapshot.content, vars),
+  };
+}
+
+/**
+ * Liste view'da (footer link'ler vb.) sadece title + meta gerekir; gövde
+ * substitute edilmez. `loadActiveLegalDocumentList` için title substitute
+ * yeterli olduğundan tek round-trip kullanır.
+ */
 
 /**
  * Liste view (owner panel "Yasal metinler" / public footer link

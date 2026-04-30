@@ -18,6 +18,9 @@ export const LEGAL_DOCUMENT_KEYS = [
   'cerez-politikasi',
   'ticari-ileti',
   'kullanim-sozlesmesi',
+  'mesafeli-hizmet-sozlesmesi',
+  'iade-iptal-politikasi',
+  'veri-isleyici-sozlesmesi',
 ] as const;
 
 export type LegalDocumentKey = (typeof LEGAL_DOCUMENT_KEYS)[number];
@@ -70,6 +73,18 @@ export const LEGAL_DOCUMENT_LABELS: Record<
     tr: 'Platform Kullanım Sözleşmesi',
     en: 'Platform User Agreement',
   },
+  'mesafeli-hizmet-sozlesmesi': {
+    tr: 'Mesafeli Hizmet Sözleşmesi',
+    en: 'Distance Services Agreement',
+  },
+  'iade-iptal-politikasi': {
+    tr: 'İade ve İptal Politikası',
+    en: 'Refund & Cancellation Policy',
+  },
+  'veri-isleyici-sozlesmesi': {
+    tr: 'Veri İşleyici Sözleşmesi (DPA)',
+    en: 'Data Processing Agreement (DPA)',
+  },
 };
 
 /**
@@ -106,6 +121,18 @@ export const LEGAL_DOCUMENT_DESCRIPTIONS: Record<
   'kullanim-sozlesmesi': {
     tr: 'Buaze ile işletme arasındaki SaaS hizmet sözleşmesi (ödeme, SLA, fesih).',
     en: 'SaaS service agreement between Buaze and business operator.',
+  },
+  'mesafeli-hizmet-sozlesmesi': {
+    tr: 'TKHK + Mesafeli Sözleşmeler Yönetmeliği uyarınca ön bilgilendirme + mesafeli sözleşme.',
+    en: 'Pre-contract info + distance contract under Turkish consumer law.',
+  },
+  'iade-iptal-politikasi': {
+    tr: 'Cayma hakkı, abonelik iptali, kısmi iade ve ödeme iadesi süreçlerinin operasyonel rehberi.',
+    en: 'Operational guide for withdrawal, cancellation, pro-rata refund and payment processing.',
+  },
+  'veri-isleyici-sozlesmesi': {
+    tr: 'KVKK m.12 kapsamında müşteri verilerinin işlenmesine dair veri işleyici sözleşmesi.',
+    en: 'Data processor agreement under KVKK Art.12 for processing customer data.',
   },
 };
 

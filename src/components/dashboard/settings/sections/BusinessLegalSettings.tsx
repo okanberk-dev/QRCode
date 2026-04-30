@@ -203,6 +203,12 @@ function linkForKey(key: string, locale: Locale): string {
       return `/${locale}/ticari-ileti`;
     case "kullanim-sozlesmesi":
       return `/${locale}/kullanim-sozlesmesi`;
+    case "mesafeli-hizmet-sozlesmesi":
+      return `/${locale}/mesafeli-hizmet-sozlesmesi`;
+    case "iade-iptal-politikasi":
+      return `/${locale}/iade-iptal-politikasi`;
+    case "veri-isleyici-sozlesmesi":
+      return `/${locale}/veri-isleyici-sozlesmesi`;
     default:
       return `/${locale}`;
   }
