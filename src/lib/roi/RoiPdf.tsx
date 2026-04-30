@@ -97,6 +97,44 @@ const styles = StyleSheet.create({
   insightStepNum: { width: 22, fontFamily: 'Courier-Bold', fontSize: 10, color: C.lime, paddingTop: 1 },
   insightStepText: { flex: 1, fontSize: 10, lineHeight: 1.5, color: '#FFFFFFE6' },
 
+  /* Star comparison row (current → projected) */
+  starRow: { marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  starCol: { flex: 1, padding: 12, borderRadius: 10, borderWidth: 0.5, borderColor: C.n200, backgroundColor: C.white },
+  starColAccent: { flex: 1, padding: 12, borderRadius: 10, borderWidth: 0.5, borderColor: C.limeDeep, backgroundColor: C.limeSoft },
+  starLabel: { fontFamily: 'Helvetica-Bold', fontSize: 8, letterSpacing: 1.4, color: C.n500, textTransform: 'uppercase', marginBottom: 6 },
+  starLabelAccent: { fontFamily: 'Helvetica-Bold', fontSize: 8, letterSpacing: 1.4, color: C.limeDeep, textTransform: 'uppercase', marginBottom: 6 },
+  starValue: { fontFamily: 'Helvetica-Bold', fontSize: 22, color: C.graphite, marginTop: 6, letterSpacing: -0.4 },
+  starArrow: { fontSize: 16, color: C.n400, marginHorizontal: 4 },
+
+  /* 30-60-90 milestone timeline */
+  milestoneRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  milestoneCol: { flex: 1 },
+  milestoneNum: { fontFamily: 'Courier-Bold', fontSize: 10, letterSpacing: 1.4, color: C.limeDeep, textTransform: 'uppercase', marginBottom: 4 },
+  milestoneTitle: { fontFamily: 'Helvetica-Bold', fontSize: 11, color: C.graphite, marginBottom: 5, letterSpacing: -0.1 },
+  milestoneBody: { fontSize: 9.5, lineHeight: 1.5, color: C.n800 },
+  milestoneBar: { height: 3, backgroundColor: C.n100, borderRadius: 2, marginBottom: 10, overflow: 'hidden' },
+  milestoneBarFill: { height: 3, backgroundColor: C.lime },
+
+  /* Social proof strip */
+  socialProof: { flexDirection: 'row', gap: 8, marginTop: 16, padding: 14, borderRadius: 12, backgroundColor: C.n50, borderWidth: 0.5, borderColor: C.n200 },
+  socialProofCell: { flex: 1, alignItems: 'center' },
+  socialProofValue: { fontFamily: 'Helvetica-Bold', fontSize: 14, color: C.graphite, letterSpacing: -0.2 },
+  socialProofLabel: { fontFamily: 'Helvetica', fontSize: 8.5, color: C.n500, marginTop: 3, textAlign: 'center' as const, lineHeight: 1.35 },
+
+  /* Risk-free pill row */
+  riskFreeRow: { flexDirection: 'row', gap: 8, marginTop: 14, justifyContent: 'center', flexWrap: 'wrap' },
+  riskFreePill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: C.limeSoft, borderWidth: 0.5, borderColor: C.limeDeep + '55' },
+  riskFreeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.limeDeep },
+  riskFreeText: { fontSize: 10, color: C.graphite, fontFamily: 'Helvetica-Bold' },
+
+  /* Enhanced footer (her iki sayfa) — logo + wordmark + tagline + page # */
+  footerEnhanced: { position: 'absolute', bottom: 24, left: 48, right: 48, borderTopWidth: 0.5, borderTopColor: C.n200, paddingTop: 12 },
+  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  footerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  footerWordmark: { fontFamily: 'Helvetica-Bold', fontSize: 11, color: C.graphite, letterSpacing: -0.3 },
+  footerDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: C.limeDeep, marginLeft: 1 },
+  footerTagline: { fontSize: 8.5, color: C.n500, marginTop: 2 },
+
   /* CTA card */
   cta: { backgroundColor: C.lime, borderRadius: 14, padding: 22, marginTop: 24 },
   ctaTitle: { fontFamily: 'Helvetica-Bold', fontSize: 16, color: C.graphite, marginBottom: 6, letterSpacing: -0.2 },
@@ -385,23 +423,58 @@ function fmtFor(locale: LocaleKey) {
   return (n: number) => n.toLocaleString(tag);
 }
 
-// Logo: yorum baloncuğu + ECG nabız + lime accent dot (CLAUDE.md §11).
-// Inline SVG path — bağımsız asset upload yok.
-function BuazeLogo() {
+// Logo: asimetrik yorum baloncuğu (sol-alt kuyruk) + ECG nabız + sağ-üst
+// lime kıvılcım accent (CLAUDE.md §11 BuazeLogo'yla 1:1). Inline SVG —
+// asset upload yok.
+function BuazeLogo({ size = 28 }: { size?: number }) {
   return (
-    <Svg width={26} height={26} viewBox="0 0 64 64">
+    <Svg width={size} height={size} viewBox="0 0 64 64">
+      {/* Asimetrik konuşma baloncuğu — kuyruk sol-altta */}
       <Path
-        d="M10 14 C10 11 12 9 15 9 L49 9 C52 9 54 11 54 14 L54 38 C54 41 52 43 49 43 L26 43 L18 51 L18 43 L15 43 C12 43 10 41 10 38 Z"
+        d="M10 14 C10 11 12 9 15 9 L49 9 C52 9 54 11 54 14 L54 38 C54 41 52 43 49 43 L24 43 L14 53 L16 43 L15 43 C12 43 10 41 10 38 Z"
         fill={C.graphite}
       />
+      {/* ECG nabız çizgisi */}
       <Path
         d="M18 26 L24 26 L27 20 L31 32 L34 24 L37 28 L46 28"
         stroke={C.white}
-        strokeWidth={2.4}
+        strokeWidth={2.6}
         fill="none"
       />
-      <Circle cx={50} cy={16} r={5} fill={C.lime} />
+      {/* Sağ-üst lime kıvılcım — Pulse marka aksanı (5.5px outer + 2.2px iç graphite çekirdek) */}
+      <Circle cx={51} cy={15} r={5.5} fill={C.lime} />
+      <Circle cx={51} cy={15} r={2.2} fill={C.graphite} />
     </Svg>
+  );
+}
+
+// 5-yıldız row visualization. Inline SVG path star; rating tam → lime,
+// yarı (rating ≥ s-0.5) → açık lime, geri kalan → n200.
+function StarRow({
+  rating,
+  size = 12,
+  filled = C.lime,
+  empty = C.n200,
+}: {
+  rating: number;
+  size?: number;
+  filled?: string;
+  empty?: string;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 2 }}>
+      {[1, 2, 3, 4, 5].map((s) => {
+        const fillColor = rating >= s ? filled : rating >= s - 0.5 ? '#D6E97A' : empty;
+        return (
+          <Svg key={s} width={size} height={size} viewBox="0 0 24 24">
+            <Path
+              d="M12 2 L15.09 8.26 L22 9.27 L17 14.14 L18.18 21.02 L12 17.77 L5.82 21.02 L7 14.14 L2 9.27 L8.91 8.26 Z"
+              fill={fillColor}
+            />
+          </Svg>
+        );
+      })}
+    </View>
   );
 }
 
@@ -490,6 +563,21 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
           </View>
         </View>
 
+        {/* Star comparison: mevcut → projeksiyon (görsel ikna) */}
+        <View style={styles.starRow}>
+          <View style={styles.starCol}>
+            <Text style={styles.starLabel}>{L.starTodayLabel}</Text>
+            <StarRow rating={data.currentGoogle} size={14} />
+            <Text style={styles.starValue}>{data.currentGoogle.toFixed(1)}</Text>
+          </View>
+          <Text style={styles.starArrow}>→</Text>
+          <View style={styles.starColAccent}>
+            <Text style={styles.starLabelAccent}>{L.starProjectedLabel}</Text>
+            <StarRow rating={data.projectedGoogle} size={14} />
+            <Text style={styles.starValue}>{data.projectedGoogle.toFixed(1)}</Text>
+          </View>
+        </View>
+
         {/* Buaze akış diyagramı — 1-3★ vs 4-5★ akışı açık anlatım */}
         <Text style={styles.h2}>{L.flowH2}</Text>
         <Text style={[styles.body, { marginBottom: 14, color: C.n500 }]}>{L.flowLead}</Text>
@@ -541,15 +629,28 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
           </View>
         )}
 
-        {/* Footer */}
-        <View style={styles.footer} fixed>
-          <Text style={styles.footerNote}>
+        {/* Enhanced footer (sayfa 1) — logo + buaze. wordmark + lime dot
+            + tagline + sayfa numarası. Premium marka tutarlılığı. */}
+        <View style={styles.footerEnhanced} fixed>
+          <View style={styles.footerRow}>
+            <View style={styles.footerLeft}>
+              <BuazeLogo size={20} />
+              <View style={{ marginLeft: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={styles.footerWordmark}>buaze</Text>
+                  <View style={styles.footerDot} />
+                </View>
+                <Text style={styles.footerTagline}>{L.footerTagline}</Text>
+              </View>
+            </View>
+            <Text
+              style={styles.pageNumber}
+              render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
+            />
+          </View>
+          <Text style={[styles.footerNote, { marginTop: 6 }]}>
             {L.footerNotePage1Prefix}{data.email}{L.footerNotePage1Suffix}
           </Text>
-          <Text
-            style={styles.pageNumber}
-            render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
-          />
         </View>
       </Page>
 
@@ -651,6 +752,74 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
           </>
         )}
 
+        {/* 30-60-90 milestone timeline — operatör için somut yol haritası */}
+        <Text style={styles.h2}>{L.milestoneH2}</Text>
+        <Text style={[styles.body, { marginBottom: 6, color: C.n500 }]}>
+          {L.milestoneLead}
+        </Text>
+        <View style={styles.milestoneRow}>
+          <View style={styles.milestoneCol}>
+            <View style={styles.milestoneBar}>
+              <View style={[styles.milestoneBarFill, { width: '33%' }]} />
+            </View>
+            <Text style={styles.milestoneNum}>{L.m1Eyebrow}</Text>
+            <Text style={styles.milestoneTitle}>{L.m1Title}</Text>
+            <Text style={styles.milestoneBody}>{L.m1Body}</Text>
+          </View>
+          <View style={styles.milestoneCol}>
+            <View style={styles.milestoneBar}>
+              <View style={[styles.milestoneBarFill, { width: '66%' }]} />
+            </View>
+            <Text style={styles.milestoneNum}>{L.m2Eyebrow}</Text>
+            <Text style={styles.milestoneTitle}>{L.m2Title}</Text>
+            <Text style={styles.milestoneBody}>{L.m2Body}</Text>
+          </View>
+          <View style={styles.milestoneCol}>
+            <View style={styles.milestoneBar}>
+              <View style={[styles.milestoneBarFill, { width: '100%' }]} />
+            </View>
+            <Text style={styles.milestoneNum}>{L.m3Eyebrow}</Text>
+            <Text style={styles.milestoneTitle}>{L.m3Title}</Text>
+            <Text style={styles.milestoneBody}>
+              {L.m3BodyA}
+              {data.paybackMonths
+                ? `${L.m3PaybackA}${data.paybackMonths}${L.m3PaybackB}`
+                : L.m3PaybackNoneSuffix}
+              {L.m3BodyB}
+            </Text>
+          </View>
+        </View>
+
+        {/* Sosyal kanıt strip — 4-cell metrik bandı */}
+        <View style={styles.socialProof}>
+          <View style={styles.socialProofCell}>
+            <Text style={styles.socialProofValue}>2.400+</Text>
+            <Text style={styles.socialProofLabel}>{L.socialActiveBusinesses}</Text>
+          </View>
+          <View style={styles.socialProofCell}>
+            <Text style={styles.socialProofValue}>+0,4 ★</Text>
+            <Text style={styles.socialProofLabel}>{L.socialAvgLift}</Text>
+          </View>
+          <View style={styles.socialProofCell}>
+            <Text style={styles.socialProofValue}>%85</Text>
+            <Text style={styles.socialProofLabel}>{L.socialFilterRate}</Text>
+          </View>
+          <View style={styles.socialProofCell}>
+            <Text style={styles.socialProofValue}>{L.socialBrightLocal}</Text>
+            <Text style={styles.socialProofLabel}>{L.socialCalibration}</Text>
+          </View>
+        </View>
+
+        {/* Risk-free pill row — CTA'dan önce conversion bariyer kaldırma */}
+        <View style={styles.riskFreeRow}>
+          {[L.riskFree1, L.riskFree2, L.riskFree3].map((label) => (
+            <View key={label} style={styles.riskFreePill}>
+              <View style={styles.riskFreeDot} />
+              <Text style={styles.riskFreeText}>{label}</Text>
+            </View>
+          ))}
+        </View>
+
         {/* CTA — sonraki adım */}
         <View style={styles.cta}>
           <Text style={styles.ctaTitle}>{L.ctaTitle}</Text>
@@ -666,12 +835,25 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
           <Text style={styles.ctaLink}>buaze.com</Text>
         </View>
 
-        <View style={styles.footer} fixed>
-          <Text style={styles.footerNote}>{L.footerNotePage2}</Text>
-          <Text
-            style={styles.pageNumber}
-            render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
-          />
+        {/* Enhanced footer (sayfa 2) — sayfa 1 ile birebir tutarlı */}
+        <View style={styles.footerEnhanced} fixed>
+          <View style={styles.footerRow}>
+            <View style={styles.footerLeft}>
+              <BuazeLogo size={20} />
+              <View style={{ marginLeft: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={styles.footerWordmark}>buaze</Text>
+                  <View style={styles.footerDot} />
+                </View>
+                <Text style={styles.footerTagline}>{L.footerTagline}</Text>
+              </View>
+            </View>
+            <Text
+              style={styles.pageNumber}
+              render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
+            />
+          </View>
+          <Text style={[styles.footerNote, { marginTop: 6 }]}>{L.footerNotePage2}</Text>
         </View>
       </Page>
     </Document>
