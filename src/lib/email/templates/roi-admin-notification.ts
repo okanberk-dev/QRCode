@@ -181,9 +181,9 @@ export function renderRoiAdminNotification(
       </tr>
     </table>
     ${spacer(18)}
-    <div style="background:${PULSE.limeSoft};border:1px solid ${PULSE.limeDeep}33;border-radius:14px;padding:18px 20px;">
+    <div class="bz-roi-card" style="background:${PULSE.limeSoft};border:1px solid ${PULSE.limeDeep}33;border-radius:14px;padding:18px 20px;">
       ${renderEyebrow(isTr ? 'YILLIK NET KAZANÇ' : 'ANNUAL NET GAIN', PULSE.graphite)}
-      <div style="margin-top:6px;font-family:${FONTS.heading};font-size:32px;line-height:1.05;letter-spacing:-0.03em;color:${PULSE.graphite};font-weight:600;">${c}${fmt(Math.max(0, Math.round(params.netGain)))}</div>
+      <div class="bz-roi-bignum-sm" style="margin-top:6px;font-family:${FONTS.heading};font-size:32px;line-height:1.05;letter-spacing:-0.03em;color:${PULSE.graphite};font-weight:600;">${c}${fmt(Math.max(0, Math.round(params.netGain)))}</div>
       <div style="margin-top:8px;font-size:13px;color:${PULSE.n800};line-height:1.55;">
         12 ${isTr ? 'ayda' : 'mo'} ${params.roiMultiple.toFixed(1)}× ROI${params.paybackMonths ? ` · ${isTr ? 'amorti' : 'payback'} ~${params.paybackMonths} ${isTr ? 'ay' : 'mo'}` : ''} · ${c}${fmt(Math.round(params.monthlyUplift))}/${isTr ? 'ay' : 'mo'} ${isTr ? 'ek gelir' : 'uplift'}
       </div>
@@ -202,8 +202,8 @@ export function renderRoiAdminNotification(
         ]
           .map(
             (k) => `<td class="cell stack-col" valign="top" style="width:25%;padding:6px;">
-              <div style="background:${k.accent ? PULSE.limeSoft : PULSE.n50};border:1px solid ${k.accent ? PULSE.limeDeep + '33' : PULSE.n200};border-radius:12px;padding:14px;">
-                <div style="font-family:${FONTS.heading};font-size:18px;line-height:1.1;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${escapeHtml(k.v)}</div>
+              <div class="bz-roi-kpi-cell" style="background:${k.accent ? PULSE.limeSoft : PULSE.n50};border:1px solid ${k.accent ? PULSE.limeDeep + '33' : PULSE.n200};border-radius:12px;padding:14px;">
+                <div class="bz-roi-kpi-val" style="font-family:${FONTS.heading};font-size:18px;line-height:1.1;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${escapeHtml(k.v)}</div>
                 <div style="margin-top:6px;font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.n500};">${escapeHtml(k.l)}</div>
               </div>
             </td>`,
