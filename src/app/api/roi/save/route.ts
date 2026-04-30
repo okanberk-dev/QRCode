@@ -7,6 +7,12 @@ import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { generateRoiPdfBase64 } from '@/lib/roi/generate-roi-pdf';
 import type { RoiPdfData } from '@/lib/roi/RoiPdf';
 import { generateRoiInsight, type RoiInsight } from '@/lib/roi/generate-insight';
+import {
+  buildInsightCacheKey,
+  getCachedInsight,
+  setCachedInsight,
+} from '@/lib/roi/insight-cache';
+import { checkSpamGuard } from '@/lib/roi/spam-guard';
 import { renderRoiAdminNotification } from '@/lib/email/templates/roi-admin-notification';
 import { renderRoiCustomerReport } from '@/lib/email/templates/roi-customer-report';
 
@@ -73,6 +79,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_email' }, { status: 400 });
   }
 
+  // Spam guard — reCAPTCHA Enterprise üstüne defense-in-depth katmanı.
+  // Honeypot / disposable email / submission velocity. Bot'a "başarılı"
+  // yanıt döndürürüz (200 + ok:true) — gerçek müşteri akışını (DB write,
+  // PDF, AI, mail) tetiklemeyiz; bot loop'ları heyecanlanır ama lead
+  // düşmez. CLAUDE.md §14.1 reCAPTCHA pattern'i ile uyumlu.
+  if (email) {
+    const guard = checkSpamGuard({
+      email,
+      honeypot: body.website_url, // form'daki hidden field
+      formStartedAt: typeof body.formStartedAt === 'number' ? body.formStartedAt : undefined,
+    });
+    if (!guard.ok) {
+      console.warn('[roi/save] spam guard rejected', {
+        reason: guard.reason,
+        ip,
+        emailDomain: email.split('@')[1],
+      });
+      // Sessiz başarı — bot 200 alır, DB / mail tetiklenmez.
+      return NextResponse.json({ ok: true });
+    }
+  }
+
   const phone = toStr(body.phone, 60);
   const locale: 'tr' | 'en' = body.locale === 'en' ? 'en' : 'tr';
 
@@ -100,15 +128,39 @@ export async function POST(req: NextRequest) {
   // Email yoksa müşteri mail'i gönderilmez ama sales mail (panel ekibi
   // operatöre triage etmesi için) yine gönderilir — eğer en az bir
   // anlamlı projection varsa.
-  const pdfData = buildRoiPdfData(body, row, email);
+  const pdfData = buildRoiPdfData(body, row, email, locale);
 
   if (pdfData) {
-    // AI insight ve PDF base64 paralel.
+    // Cache + dedupe: aynı senaryo için tek bir OpenAI çağrısı (24 saat
+    // TTL); aynı email son 24 saat içinde aynı projection ile geldiyse
+    // sales mail tekrar gönderilmez (operatör spam'i yok).
+    const cacheKey = buildInsightCacheKey(pdfData, locale);
+    const cachedInsight = await getCachedInsight(cacheKey);
+    const isDuplicate = cachedInsight !== null;
+
+    // AI insight + PDF base64 paralel. Cache hit varsa OpenAI çağrısı
+    // atlanır → maliyet ve latency tasarrufu.
     const [insight, pdfBase64] = await Promise.all([
-      generateRoiInsight({ data: pdfData, locale }).catch((err) => {
-        console.error('[roi/save] insight generation failed', err);
-        return null as RoiInsight | null;
-      }),
+      cachedInsight
+        ? Promise.resolve(cachedInsight)
+        : generateRoiInsight({ data: pdfData, locale })
+            .then(async (result) => {
+              if (result) {
+                // Sadece AI source'lu insight'ı cache'le; template fallback'i
+                // her zaman yeniden hesaplansın (deterministic + cheap).
+                if (result.source === 'ai') {
+                  await setCachedInsight(cacheKey, result).catch((err) =>
+                    console.error('[roi/save] cache write failed', err),
+                  );
+                }
+                return result;
+              }
+              return null;
+            })
+            .catch((err) => {
+              console.error('[roi/save] insight generation failed', err);
+              return null as RoiInsight | null;
+            }),
       generateRoiPdfBase64({ ...pdfData, insight: null })
         .catch(async (err) => {
           console.error('[roi/save] pdf generation (initial) failed', err);
@@ -209,9 +261,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Sales mail (Pulse roi-admin-notification) — yalnız email + sales
-    // inbox varsa (admin'e e-posta yoksa kullanıcı kim? bilinmez).
+    // inbox varsa. Lead deduplication: aynı senaryo son 24 saat içinde
+    // gelmişse (cache hit) sales mail tekrar GÖNDERİLMEZ — operatör
+    // spam'i önlenir. Customer mail yine gider (kullanıcı PDF'i tekrar
+    // istemiş olabilir; UX değişmez).
     const salesInbox = process.env.NOTIFICATION_EMAIL;
-    if (email && salesInbox) {
+    if (email && salesInbox && !isDuplicate) {
       const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com').replace(/\/+$/, '');
       const adminRendered = renderRoiAdminNotification(
         {
@@ -267,6 +322,7 @@ function buildRoiPdfData(
   body: Record<string, unknown>,
   row: { restaurantName: string | null; avgTicket: Prisma.Decimal | null },
   email: string | null,
+  locale: 'tr' | 'en',
 ): RoiPdfData | null {
   const proj = body.projection;
   if (!proj || typeof proj !== 'object') return null;
@@ -307,7 +363,8 @@ function buildRoiPdfData(
     restaurantName: row.restaurantName ?? str(p.restaurantName, 'İşletmen'),
     email: email ?? '',
     generatedAt: new Date(),
-    currency: '₺',
+    currency: locale === 'en' ? '$' : '₺',
+    locale,
     sector: str(p.sector, 'restaurant'),
     monthlyCustomers: num(p.monthlyCustomers),
     avgTicket: avgTicketRow,

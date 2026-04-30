@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check, Clock, Loader2, MailCheck, ShieldCheck, Sparkles, Star } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
@@ -207,6 +207,12 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
     'idle',
   );
   const [leadServerError, setLeadServerError] = useState<string | null>(null);
+  // Honeypot field — bot'lar otomatik doldurur, gerçek kullanıcı görmez.
+  // Server-side spam-guard `body.website_url` non-empty ise sessiz reject.
+  const [honeypotValue, setHoneypotValue] = useState('');
+  // Form mount timestamp — submission velocity check için. Bot tipik
+  // <3 saniye içinde submit eder; gerçek kullanıcı slider sürükleyip okur.
+  const formStartedAtRef = useRef<number>(Date.now());
 
   function validateLead() {
     const errors: typeof leadErrors = {};
@@ -272,6 +278,10 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
           avgTicket,
           recaptchaToken,
           projection,
+          locale,
+          // Spam guard inputs (server-side checkSpamGuard).
+          website_url: honeypotValue,
+          formStartedAt: formStartedAtRef.current,
         }),
       });
       if (!res.ok) {
@@ -943,6 +953,22 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
             </div>
 
             {leadServerError && <AlertBanner kind="danger">{leadServerError}</AlertBanner>}
+
+            {/* Honeypot — bot'lar otomatik doldurur. display:none + tabindex
+                + aria-hidden + autocomplete=off görsel/erişilebilirlik
+                kanallarından gizlendi; gerçek kullanıcı asla dokunmaz. */}
+            <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}>
+              <label htmlFor="roi-website-url">Web sitesi (boş bırak)</label>
+              <input
+                id="roi-website-url"
+                name="website_url"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypotValue}
+                onChange={(e) => setHoneypotValue(e.target.value)}
+              />
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field
