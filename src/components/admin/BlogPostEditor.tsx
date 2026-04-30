@@ -14,6 +14,7 @@ import {
   Heading2,
   Heading3,
   Italic,
+  ImagePlus,
   LayoutTemplate,
   Link2,
   List,
@@ -24,6 +25,7 @@ import {
   Save,
   Sparkles,
   Tag,
+  Trash2,
   User,
   Wand2,
   X,
@@ -245,6 +247,41 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
   };
 
   const [tagDraft, setTagDraft] = useState('');
+  const coverFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
+
+  const handleCoverFileSelect = async (file: File) => {
+    setCoverUploadError(null);
+    if (!file.type.startsWith('image/')) {
+      setCoverUploadError('Sadece görsel dosyası yüklenebilir.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setCoverUploadError("Görsel 5 MB'dan büyük olamaz.");
+      return;
+    }
+    setCoverUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/admin/blog/upload-image', {
+        method: 'POST',
+        body: fd,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.url) {
+        setCoverUploadError(data?.error || 'Görsel yüklenemedi.');
+        return;
+      }
+      setForm((f) => ({ ...f, coverImage: data.url as string }));
+    } catch {
+      setCoverUploadError('Bağlantı hatası.');
+    } finally {
+      setCoverUploading(false);
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
 
   const addTag = (raw: string) => {
     const value = raw.trim().replace(/^#+/, '').replace(/\s+/g, ' ');
@@ -591,14 +628,71 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#737373]">Kapak görseli URL</label>
-                  <input
-                    type="text"
-                    value={form.coverImage}
-                    onChange={event => setForm(f => ({ ...f, coverImage: event.target.value }))}
-                    placeholder="https://... veya /images/..."
-                    className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
-                  />
+                  <label className="text-xs font-semibold text-[#737373]">Kapak görseli</label>
+                  {/* Preview — visible whenever coverImage is set */}
+                  {form.coverImage && (
+                    <div className="mt-2 relative overflow-hidden rounded-2xl border border-[#EDEDED] bg-[#FAFAFA]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={form.coverImage}
+                        alt="Kapak önizlemesi"
+                        className="h-40 w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, coverImage: '' }))}
+                        className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-[#0A0A0A] shadow-sm hover:bg-white"
+                        aria-label="Kapağı kaldır"
+                      >
+                        <Trash2 size={11} /> Kaldır
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Upload + URL hybrid */}
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => coverFileInputRef.current?.click()}
+                      disabled={coverUploading}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-xs font-semibold text-[#0A0A0A] hover:border-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    >
+                      {coverUploading ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          Yükleniyor…
+                        </>
+                      ) : (
+                        <>
+                          <ImagePlus size={14} />
+                          {form.coverImage ? 'Görseli değiştir' : 'Görsel yükle'}
+                        </>
+                      )}
+                    </button>
+                    <input
+                      ref={coverFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) handleCoverFileSelect(file);
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={form.coverImage}
+                      onChange={(event) => setForm((f) => ({ ...f, coverImage: event.target.value }))}
+                      placeholder="veya URL yapıştır: https://..."
+                      className="flex-1 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                    />
+                  </div>
+                  <p className="mt-2 text-[11px] text-[#737373] leading-[1.55]">
+                    JPG/PNG/WebP, en fazla 5 MB. Otomatik 1600×900 (16:9) WebP'ye çevrilir.
+                  </p>
+                  {coverUploadError && (
+                    <p className="mt-2 text-[12px] font-semibold text-[#991B1B]">{coverUploadError}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between rounded-2xl border border-[#EDEDED] bg-white p-4">
