@@ -278,12 +278,12 @@ export default async function LandingPage({
     ? [
         { n: '01', t: 'Google önce', d: 'Her misafire önce Google yorum bağlantısı sunulur — yıldıza göre dallandırma yok.' },
         { n: '02', t: 'Şeffaf akış', d: 'Negatif yorumlar süzülmez veya engellenmez; isteyen Google\'a yazar, isteyen ek olarak işletmeye özel geri bildirim de bırakır.' },
-        { n: '03', t: 'Kural motoru', d: 'Her kampanya Google politikasına göre otomatik denetlenir.' },
+        { n: '03', t: 'Şeffaf raporlama', d: 'Yorumlar gizlenmez veya filtrelenmez; her sinyal panelde olduğu gibi görünür.' },
       ]
     : [
         { n: '01', t: 'Google first', d: 'Every guest sees the public Google review link first — no rating-based gating.' },
         { n: '02', t: 'Transparent flow', d: 'Negative reviews are never filtered or blocked; private feedback to your team is an optional extra step in the same flow.' },
-        { n: '03', t: 'Rule engine', d: 'Every campaign is auto-audited against Google policy.' },
+        { n: '03', t: 'Transparent reporting', d: 'No review is hidden or filtered; every signal lands in the panel as-is.' },
       ];
 
   const caseStats = isTr
@@ -477,11 +477,11 @@ export default async function LandingPage({
             <span className="pulse-chip-soft">
               <span className="h-2 w-2 rounded-full bg-[#16A34A] pulse-heartbeat" />
               <span className="pulse-eyebrow whitespace-nowrap leading-none text-[#0A0A0A]">
-                {isTr ? 'Google güvenli' : 'Google safe'}
+                {isTr ? 'Şeffaf akış' : 'Transparent flow'}
               </span>
             </span>
             <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
-              {isTr ? 'Politikalara uyumlu. Organik büyüme.' : 'Policy compliant. Organic growth.'}
+              {isTr ? 'Şeffaf akış. Organik büyüme.' : 'Transparent flow. Organic growth.'}
             </h2>
 
             <div className="mt-10 divide-y divide-[#EDEDED] border-y border-[#EDEDED]">
@@ -495,6 +495,14 @@ export default async function LandingPage({
                 </div>
               ))}
             </div>
+
+            <Link
+              href={`${base}/google-compliance`}
+              className="mt-6 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#A8D62E]"
+            >
+              {isTr ? 'Politika uyum detayları' : 'Policy compliance details'}
+              <span aria-hidden>→</span>
+            </Link>
           </div>
 
           <div className="flex justify-center lg:justify-end">

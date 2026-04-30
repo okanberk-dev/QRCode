@@ -162,12 +162,12 @@ export default async function CaseStudiesPage({
           <div className="max-w-[560px] lg:ml-auto">
             <p className="text-[17px] leading-[1.65] text-[#525252] sm:text-[20px]">
               {isTr
-                ? 'Buaze vaka çalışmaları; QR geri bildirim, şube takibi, Google yorum yönetimi ve ekip yanıt süreçlerinin işletme içinde nasıl çalıştığını sade, ölçülebilir ve politika uyumlu şekilde anlatır.'
-                : 'Buaze case studies show how QR feedback, branch tracking, Google review management and team response workflows operate inside businesses in a simple, measurable and policy-aligned way.'}
+                ? 'Buaze vaka çalışmaları; QR geri bildirim, şube takibi, Google yorum yönetimi ve ekip yanıt süreçlerinin işletme içinde nasıl çalıştığını sade, ölçülebilir ve şeffaf şekilde anlatır.'
+                : 'Buaze case studies show how QR feedback, branch tracking, Google review management and team response workflows operate inside businesses in a simple, measurable and transparent way.'}
             </p>
             <div className="mt-7 flex flex-wrap gap-2">
               {[
-                isTr ? 'Google uyumlu' : 'Google-aligned',
+                isTr ? 'Şeffaf akış' : 'Transparent flow',
                 isTr ? 'QR geri bildirim' : 'QR feedback',
                 isTr ? 'Şube yönetimi' : 'Branch operations',
               ].map((item) => (

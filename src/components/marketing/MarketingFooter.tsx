@@ -144,8 +144,8 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
             </h3>
             <p className="mt-2 text-[13px] text-[#A3A3A3]">
               {isTr
-                ? 'Google politikaları, QR ipuçları, vaka çalışmaları. Haftada bir, fazla değil.'
-                : 'Google policies, QR tips, case studies. Once a week, never more.'}
+                ? 'Yorum yönetimi taktikleri, QR ipuçları, vaka çalışmaları. Haftada bir, fazla değil.'
+                : 'Review management tactics, QR tips, case studies. Once a week, never more.'}
             </p>
           </div>
           <NewsletterSignup locale={locale} source="footer" />

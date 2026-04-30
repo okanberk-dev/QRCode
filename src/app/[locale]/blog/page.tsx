@@ -19,8 +19,8 @@ export async function generateMetadata({
       absolute: locale === 'tr' ? 'Blog & Rehberler | Buaze' : 'Blog & Guides | Buaze',
     },
     description: locale === 'tr'
-      ? 'Yorum yönetimi, Google politikaları, büyüme taktikleri — haftalık uzman rehberleri.'
-      : 'Review management, Google policies, growth tactics — weekly expert guides.',
+      ? 'Yorum yönetimi, müşteri psikolojisi, büyüme taktikleri — haftalık uzman rehberleri.'
+      : 'Review management, customer psychology, growth tactics — weekly expert guides.',
     alternates: {
       canonical: `https://buaze.com/${locale}/blog`,
       languages: {
@@ -80,8 +80,8 @@ export default async function BlogIndexPage({
           </h1>
           <p className="mt-4 max-w-[560px] text-[16px] text-[#525252] leading-[1.55]">
             {isTr
-              ? 'Yorum yönetimi, Google politikaları, büyüme taktikleri — haftalık uzman rehberleri.'
-              : 'Review management, Google policies, growth tactics — weekly expert guides.'}
+              ? 'Yorum yönetimi, müşteri psikolojisi, büyüme taktikleri — haftalık uzman rehberleri.'
+              : 'Review management, customer psychology, growth tactics — weekly expert guides.'}
           </p>
 
           {/* Filter chips (visual-only) */}

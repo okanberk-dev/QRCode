@@ -128,7 +128,7 @@ export default async function CustomerStoryPage({
                 {sector} · {story.location}
               </span>
               <span className="pulse-eyebrow rounded-full border border-[#EDEDED] px-3 py-1 text-[#737373]">
-                {isTr ? 'Google uyumlu akış' : 'Google-compliant flow'}
+                {isTr ? 'Şeffaf akış' : 'Transparent flow'}
               </span>
             </div>
             <h1

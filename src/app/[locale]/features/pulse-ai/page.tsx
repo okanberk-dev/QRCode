@@ -23,8 +23,8 @@ export async function generateMetadata({
       : 'Buaze Pulse AI — Draft replies in seconds | Buaze';
   const description =
     locale === 'tr'
-      ? 'Buaze Pulse AI, her yoruma puan ve tonuna göre özel Türkçe yanıt taslağı üretir. Google politikalarına uyumlu, onay kontrollü çalışır.'
-      : 'Buaze Pulse AI drafts rating-aware replies for every review. It is approval-led and designed around Google policy compliance.';
+      ? 'Buaze Pulse AI, her yoruma puan ve tonuna göre özel Türkçe yanıt taslağı üretir. Onay kontrollü, hızlı yanıt akışı.'
+      : 'Buaze Pulse AI drafts rating-aware replies for every review. Approval-led, fast response flow.';
   return {
     title,
     description,
@@ -53,7 +53,7 @@ export default async function PulseAiPage({
     ? [
         {
           title: 'Puan-farkında taslaklar',
-          body: 'Müşterinin yıldızına göre ton değişir — 5 yıldıza teşekkür + geri davet, 1-2 yıldıza özür + somut düzeltme. Ücretsiz ikram önermez (Google politikası).',
+          body: 'Müşterinin yıldızına göre ton değişir — 5 yıldıza teşekkür + geri davet, 1-2 yıldıza özür + somut düzeltme. Ücretsiz ikram önermez (platform kuralları).',
         },
         {
           title: 'TR ve EN, saniyeler içinde',
@@ -71,7 +71,7 @@ export default async function PulseAiPage({
     : [
         {
           title: 'Rating-aware drafts',
-          body: "Tone changes with the star — 5★ gets a thank-you + invite back; 1–2★ gets an apology + concrete fix. Never offers free items (Google policy).",
+          body: "Tone changes with the star — 5★ gets a thank-you + invite back; 1–2★ gets an apology + concrete fix. Never offers free items (platform rules).",
         },
         {
           title: 'TR and EN, in seconds',

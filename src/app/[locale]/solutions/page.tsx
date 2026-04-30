@@ -114,7 +114,7 @@ export default async function SolutionsOverviewPage({
       desc: isTr
         ? 'Gating yok, gizleme yok. Google\'a organik deneyim gider. Buaze panelinde tüm yorumlar şeffaf görünür.'
         : 'No gating, no hiding. The customer journey stays organic on Google. Every review is transparent in your Buaze panel.',
-      cta: isTr ? 'Google uyumu' : 'Google compliance',
+      cta: isTr ? 'Detayları gör' : 'See the details',
       href: `${base}/google-compliance`,
     },
   ];
