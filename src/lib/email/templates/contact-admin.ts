@@ -30,9 +30,10 @@ export function renderContactAdmin(
   const businessOrName = params.business || params.name;
   const firstName = params.name.split(' ')[0] || params.name;
 
+  // Subject deliverability §21.23: 📥 emoji çıkarıldı.
   const subject = isTr
-    ? `📥 Yeni iletişim talebi · ${businessOrName}`
-    : `📥 New contact request · ${businessOrName}`;
+    ? `[İletişim] ${businessOrName}`
+    : `[Contact] ${businessOrName}`;
   const messagePreview = params.message.slice(0, 80).replace(/\s+/g, ' ').trim();
   const preheader = isTr
     ? `${params.name} az önce iletişim formundan ulaştı. ${messagePreview}${params.message.length > 80 ? '…' : ''}`
